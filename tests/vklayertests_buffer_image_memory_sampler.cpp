@@ -9399,6 +9399,142 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
     }
 }
 
+TEST_F(VkLayerTest, InvalidImageViewLayerCount) {
+    TEST_DESCRIPTION("Image and ImageView arrayLayers/layerCount parameters not being compatibile");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>(nullptr);
+    image_ci.flags = 0;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.extent = {128, 1, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    image_ci.imageType = VK_IMAGE_TYPE_1D;
+    VkImageObj image_1d(m_device);
+    image_1d.init(&image_ci);
+    ASSERT_TRUE(image_1d.initialized());
+
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    VkImageObj image_2d(m_device);
+    image_2d.init(&image_ci);
+    ASSERT_TRUE(image_2d.initialized());
+
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    VkImageObj image_3d(m_device);
+    image_3d.init(&image_ci);
+    ASSERT_TRUE(image_3d.initialized());
+
+    image_ci.arrayLayers = 2;
+
+    image_ci.imageType = VK_IMAGE_TYPE_1D;
+    VkImageObj image_1d_array(m_device);
+    image_1d_array.init(&image_ci);
+    ASSERT_TRUE(image_1d_array.initialized());
+
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    VkImageObj image_2d_array(m_device);
+    image_2d_array.init(&image_ci);
+    ASSERT_TRUE(image_2d_array.initialized());
+
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    VkImageObj image_3d_array(m_device);
+    image_3d_array.init(&image_ci);
+    ASSERT_TRUE(image_3d_array.initialized());
+
+    // base for each test that never changes
+    VkImageViewCreateInfo image_view_ci = LvlInitStruct<VkImageViewCreateInfo>(nullptr);
+    image_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_view_ci.subresourceRange.baseMipLevel = 0;
+    image_view_ci.subresourceRange.levelCount = 1;
+    image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    // Sanity checks
+    {
+        image_view_ci.subresourceRange.baseArrayLayer = 0;
+        image_view_ci.subresourceRange.layerCount = 1;
+
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D;
+        image_view_ci.image = image_1d_array.image();
+        CreateImageViewTest(*this, &image_view_ci);
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        image_view_ci.image = image_2d_array.image();
+        CreateImageViewTest(*this, &image_view_ci);
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+        image_view_ci.image = image_3d_array.image();
+        CreateImageViewTest(*this, &image_view_ci);
+
+        image_view_ci.subresourceRange.baseArrayLayer = 1;
+        image_view_ci.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D;
+        image_view_ci.image = image_1d_array.image();
+        CreateImageViewTest(*this, &image_view_ci);
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        image_view_ci.image = image_2d_array.image();
+        CreateImageViewTest(*this, &image_view_ci);
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+        image_view_ci.image = image_3d_array.image();
+        CreateImageViewTest(*this, &image_view_ci);
+
+        image_view_ci.subresourceRange.baseArrayLayer = 0;
+        image_view_ci.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D;
+        image_view_ci.image = image_1d.image();
+        CreateImageViewTest(*this, &image_view_ci);
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        image_view_ci.image = image_2d.image();
+        CreateImageViewTest(*this, &image_view_ci);
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+        image_view_ci.image = image_3d.image();
+        CreateImageViewTest(*this, &image_view_ci);
+    }
+
+    // layerCount is not 1 as imageView is not an array type
+    {
+        image_view_ci.subresourceRange.baseArrayLayer = 0;
+        image_view_ci.subresourceRange.layerCount = 2;
+
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D;
+        image_view_ci.image = image_1d_array.image();
+        CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04973");
+
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        image_view_ci.image = image_2d_array.image();
+        CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04973");
+
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+        image_view_ci.image = image_3d_array.image();
+        CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04973");
+    }
+
+    // layerCount is VK_REMAINING_ARRAY_LAYERS but not 1
+    {
+        image_view_ci.subresourceRange.baseArrayLayer = 0;
+        image_view_ci.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D;
+        image_view_ci.image = image_1d_array.image();
+        CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04974");
+
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        image_view_ci.image = image_2d_array.image();
+        CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04974");
+
+        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+        image_view_ci.image = image_3d_array.image();
+        CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04974");
+    }
+}
+
 TEST_F(VkLayerTest, CreateImageMiscErrors) {
     TEST_DESCRIPTION("Misc leftover valid usage errors in VkImageCreateInfo struct");
 
