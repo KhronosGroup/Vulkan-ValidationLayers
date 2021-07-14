@@ -11143,3 +11143,25 @@ TEST_F(VkLayerTest, MergePipelineCachesInvalidDst) {
     vk::MergePipelineCaches(m_device->device(), dstCache, 2, srcCaches);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, ValidateGeometryShaderEnabled) {
+    TEST_DESCRIPTION("Validate geometry shader feature is enabled if geometry shader stage is used");
+
+    VkPhysicalDeviceFeatures deviceFeatures = {};
+    deviceFeatures.geometryShader = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj gs(m_device, bindStateGeomShaderText, VK_SHADER_STAGE_GEOMETRY_BIT, this);
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, kErrorBit,
+        std::vector<string>{"VUID-VkPipelineShaderStageCreateInfo-stage-00704", "VUID-VkShaderModuleCreateInfo-pCode-01091"});
+}
