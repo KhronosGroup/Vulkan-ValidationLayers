@@ -89,24 +89,27 @@ struct SyncStageAccess {
     }
 };
 
-// The resource tag is relative to the command buffer or queue in which it's found
 struct ResourceUsageRecord {
     using TagIndex = size_t;
     using Count = uint32_t;
     constexpr static TagIndex kMaxIndex = std::numeric_limits<TagIndex>::max();
-    constexpr static uint32_t kMaxCount = std::numeric_limits<Count>::max();
-
-    TagIndex index = 0U;  // the index of the command within the command buffer itself (primary or secondary)
+    constexpr static Count kMaxCount = std::numeric_limits<Count>::max();
     CMD_TYPE command = CMD_NONE;
     Count seq_num = 0U;
     Count sub_command = 0U;
+
+    // This is somewhat repetitive, but it prevents the need for Exec/Submit time touchup, after which usage records can be
+    // from different command buffers and resets.
     const CMD_BUFFER_STATE *cb_state = nullptr;  // plain pointer as a shared pointer is held by the context storing this record
+    Count reset_count;
 
     ResourceUsageRecord() = default;
-    ResourceUsageRecord(TagIndex index_, Count seq_num_, Count sub_command_, CMD_TYPE command_, const CMD_BUFFER_STATE *cb_state_)
-        : index(index_), command(command_), seq_num(seq_num_), sub_command(sub_command_), cb_state(cb_state_) {}
+    ResourceUsageRecord(CMD_TYPE command_, Count seq_num_, Count sub_command_, const CMD_BUFFER_STATE *cb_state_,
+                        Count reset_count_)
+        : command(command_), seq_num(seq_num_), sub_command(sub_command_), cb_state(cb_state_), reset_count(reset_count_) {}
 };
 
+// The resource tag index is relative to the command buffer or queue in which it's found
 using ResourceUsageTag = ResourceUsageRecord::TagIndex;
 using ResourceUsageRange = sparse_container::range<ResourceUsageTag>;
 
@@ -971,24 +974,13 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         SyncOpEntry(const SyncOpEntry &other) = default;
     };
 
-    struct CmdBufReference {
-        // This is an object lifetime guard for the plain pointers in the ResourceUsageRecords
-        std::shared_ptr<const CMD_BUFFER_STATE> cb_state;
-        // NOTE: This may not
-        uint32_t reset_count;
-        CmdBufReference(const std::shared_ptr<CMD_BUFFER_STATE> &cb_state_, uint32_t reset_count_)
-            : cb_state(cb_state_), reset_count(reset_count_) {}
-        CmdBufReference() = default;
-        CmdBufReference &operator=(const CmdBufReference &) = default;
-    };
-
     CommandBufferAccessContext(SyncValidator *sync_validator = nullptr)
         : CommandExecutionContext(sync_validator),
           cb_state_(),
           queue_flags_(),
           destroyed_(false),
           access_log_(),
-          cb_execution_reference_(),
+          cbs_referenced_(),
           command_number_(0),
           subcommand_number_(0),
           reset_count_(0),
@@ -1013,7 +1005,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
 
     void Reset() {
         access_log_.clear();
-        cb_execution_reference_.clear();
+        cbs_referenced_.clear();
         sync_ops_.clear();
         command_number_ = 0;
         subcommand_number_ = 0;
@@ -1063,7 +1055,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
 
     inline ResourceUsageTag NextSubcommandTag(CMD_TYPE command) {
         ResourceUsageTag next = access_log_.size();
-        access_log_.emplace_back(next, command_number_, ++subcommand_number_, command, cb_state_.get());
+        access_log_.emplace_back(command, command_number_, ++subcommand_number_, cb_state_.get(), reset_count_);
         return next;
     }
     inline ResourceUsageTag GetTagLimit() const { return access_log_.size(); }
@@ -1074,7 +1066,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         ResourceUsageTag next = access_log_.size();
         // The lowest bit is a sub-command number used to separate operations at the end of the previous renderpass
         // from the start of the new one in VkCmdNextRenderpass().
-        access_log_.emplace_back(next, command_number_, subcommand_number_, command, cb_state_.get());
+        access_log_.emplace_back(command, command_number_, subcommand_number_, cb_state_.get(), reset_count_);
         return next;
     }
 
@@ -1095,7 +1087,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     bool destroyed_;
 
     std::vector<ResourceUsageRecord> access_log_;
-    layer_data::unordered_map<const CMD_BUFFER_STATE *, CmdBufReference> cb_execution_reference_;
+    layer_data::unordered_set<std::shared_ptr<const CMD_BUFFER_STATE>> cbs_referenced_;
     uint32_t command_number_;
     uint32_t subcommand_number_;
     uint32_t reset_count_;

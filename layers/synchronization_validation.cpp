@@ -230,11 +230,7 @@ std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) 
             out << " (destroyed)";
         }
 
-        const auto found_it = cb_execution_reference_.find(record.cb_state);
-        assert(found_it != cb_execution_reference_.end());
-        if (found_it != cb_execution_reference_.end()) {
-            out << ", reset_no: " << std::to_string(found_it->second.reset_count);
-        }
+        out << ", reset_no: " << std::to_string(record.reset_count);
     } else {
         out << ", reset_no: " << std::to_string(reset_count_);
     }
@@ -2281,9 +2277,7 @@ void CommandBufferAccessContext::ResolveRecordedContext(const AccessContext &rec
 ResourceUsageRange CommandBufferAccessContext::ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context) {
     // The execution references ensure lifespan for the referenced child CB's...
     ResourceUsageRange tag_range(GetTagLimit(), 0);
-    const auto &rec_cb = recorded_context.cb_state_;
-    const CMD_BUFFER_STATE *const_rec_cb_plain = rec_cb.get();
-    cb_execution_reference_.emplace(const_rec_cb_plain, CmdBufReference(rec_cb, recorded_context.reset_count_));
+    cbs_referenced_.emplace(recorded_context.cb_state_);
     access_log_.insert(access_log_.end(), recorded_context.access_log_.cbegin(), recorded_context.access_log_.end());
     tag_range.end = access_log_.size();
     return tag_range;
