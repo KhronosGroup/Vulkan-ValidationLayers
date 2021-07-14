@@ -12906,3 +12906,32 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, ValidateViewportStateScissorOverflow) {
+    TEST_DESCRIPTION("Validate sum of offset and width of viewport state scissor");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    VkRect2D scissor_x = {{INT32_MAX / 2, 0}, {INT32_MAX / 2 + 64, 64}};
+    VkRect2D scissor_y = {{0, INT32_MAX / 2}, {64, INT32_MAX / 2 + 64}};
+
+    const auto break_vp_x = [&](CreatePipelineHelper &helper) {
+        helper.vp_state_ci_.viewportCount = 1;
+        helper.vp_state_ci_.pViewports = &viewport;
+        helper.vp_state_ci_.scissorCount = 1;
+        helper.vp_state_ci_.pScissors = &scissor_x;
+    };
+    CreatePipelineHelper::OneshotTest(*this, break_vp_x, kErrorBit,
+                                      vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-offset-02822"}));
+
+    const auto break_vp_y = [&](CreatePipelineHelper &helper) {
+        helper.vp_state_ci_.viewportCount = 1;
+        helper.vp_state_ci_.pViewports = &viewport;
+        helper.vp_state_ci_.scissorCount = 1;
+        helper.vp_state_ci_.pScissors = &scissor_y;
+    };
+    CreatePipelineHelper::OneshotTest(*this, break_vp_y, kErrorBit,
+                                      vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-offset-02823"}));
+}
