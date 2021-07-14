@@ -1405,6 +1405,10 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             }
         }
     }
+    if (!enabled_features.core.geometryShader && (pPipeline->active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT)) {
+        skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-stage-00704",
+                         "Invalid Pipeline CreateInfo[%u] State: Geometry Shader not supported.", pipelineIndex);
+    }
     if (device_extensions.vk_nv_mesh_shader) {
         // VS or mesh is required
         if (!(pPipeline->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_NV))) {
