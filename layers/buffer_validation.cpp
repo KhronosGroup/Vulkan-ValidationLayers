@@ -6788,6 +6788,36 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
             if ((sub_aspect != VK_IMAGE_ASPECT_DEPTH_BIT) && (sub_aspect != VK_IMAGE_ASPECT_STENCIL_BIT)) {
             }
         }
+        if (!FormatIsDepthAndStencil(img_format) && !FormatIsDepthOnly(img_format)) {
+            if (sub_aspect & VK_IMAGE_ASPECT_DEPTH_BIT) {
+                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04464",
+                                 "vkGetImageSubresourceLayout(): Image format (%s) does not contain a depth component, "
+                                 "but VkImageSubresource.aspectMask contains VK_IMAGE_ASPECT_DEPTH_BIT.",
+                                 string_VkFormat(img_format));
+            }
+        } else {
+            if ((sub_aspect & VK_IMAGE_ASPECT_DEPTH_BIT) == 0) {
+                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04462",
+                                 "vkGetImageSubresourceLayout(): Image format (%s) contains a depth component, "
+                                 "but VkImageSubresource.aspectMask does not contain VK_IMAGE_ASPECT_DEPTH_BIT.",
+                                 string_VkFormat(img_format));
+            }
+        }
+        if (!FormatIsDepthAndStencil(img_format) && !FormatIsStencilOnly(img_format)) {
+            if (sub_aspect & VK_IMAGE_ASPECT_STENCIL_BIT) {
+                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04464",
+                                 "vkGetImageSubresourceLayout(): Image format (%s) does not contain a stencil component, "
+                                 "but VkImageSubresource.aspectMask contains VK_IMAGE_ASPECT_STENCIL_BIT.",
+                                 string_VkFormat(img_format));
+            }
+        } else {
+            if ((sub_aspect & VK_IMAGE_ASPECT_STENCIL_BIT) == 0) {
+                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04463",
+                                 "vkGetImageSubresourceLayout(): Image format (%s) contains a stencil component, "
+                                 "but VkImageSubresource.aspectMask does not contain VK_IMAGE_ASPECT_STENCIL_BIT.",
+                                 string_VkFormat(img_format));
+            }
+        }
     } else if (image_entry->createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         if ((sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT) && (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT) &&
             (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT) && (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
