@@ -4911,6 +4911,7 @@ bool StatelessValidation::PreCallValidateMergePipelineCaches(
     bool skip = false;
     skip |= validate_required_handle("vkMergePipelineCaches", "dstCache", dstCache);
     skip |= validate_handle_array("vkMergePipelineCaches", "srcCacheCount", "pSrcCaches", srcCacheCount, pSrcCaches, true, true, "VUID-vkMergePipelineCaches-srcCacheCount-arraylength");
+    if (!skip) skip |= manual_PreCallValidateMergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches);
     return skip;
 }
 
