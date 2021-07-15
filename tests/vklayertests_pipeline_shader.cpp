@@ -11081,3 +11081,27 @@ TEST_F(VkLayerTest, SpecializationInvalidSizeZero) {
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkLayerTest, MergePipelineCachesInvalidDst) {
+    TEST_DESCRIPTION("Test mergeing pipeline caches with dst cache in src list");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    CreatePipelineHelper other_pipe(*this);
+    other_pipe.InitInfo();
+    other_pipe.InitState();
+    other_pipe.CreateGraphicsPipeline();
+
+    VkPipelineCache dstCache = pipe.pipeline_cache_;
+    VkPipelineCache srcCaches[2] = {other_pipe.pipeline_cache_, pipe.pipeline_cache_};
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMergePipelineCaches-dstCache-00770");
+    vk::MergePipelineCaches(m_device->device(), dstCache, 2, srcCaches);
+    m_errorMonitor->VerifyFound();
+}
