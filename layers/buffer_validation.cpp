@@ -6807,6 +6807,20 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
                 }
             }
         }
+        if (!FormatIsDepthAndStencil(img_format) && !FormatIsDepthOnly(img_format)) {
+            if (sub_aspect & VK_IMAGE_ASPECT_DEPTH_BIT) {
+                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04464",
+                                 "vkGetImageSubresourceLayout(): For formats that do not contain a depth component, "
+                                 "VkImageSubresource.aspectMask must not contain VK_IMAGE_ASPECT_DEPTH_BIT.");
+            }
+        }
+        if (!FormatIsDepthAndStencil(img_format) && !FormatIsStencilOnly(img_format)) {
+            if (sub_aspect & VK_IMAGE_ASPECT_STENCIL_BIT) {
+                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04464",
+                                 "vkGetImageSubresourceLayout(): For formats that do not contain a stencil component, "
+                                 "VkImageSubresource.aspectMask must not contain VK_IMAGE_ASPECT_STENCIL_BIT.");
+            }
+        }
     } else if (image_entry->createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         if ((sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT) && (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT) &&
             (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT) && (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
