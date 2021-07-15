@@ -7197,3 +7197,20 @@ bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer
     }
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache,
+                                                                    uint32_t srcCacheCount,
+                                                                    const VkPipelineCache *pSrcCaches) const {
+    bool skip = false;
+    if (pSrcCaches) {
+        for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
+            if (pSrcCaches[index0] == dstCache) {
+                skip |= LogError(instance, "VUID-vkMergePipelineCaches-dstCache-00770",
+                                 "vkMergePipelineCaches(): dstCache %s is in pSrcCaches list.",
+                                 report_data->FormatHandle(dstCache).c_str());
+                break;
+            }
+        }
+    }
+    return skip;
+}

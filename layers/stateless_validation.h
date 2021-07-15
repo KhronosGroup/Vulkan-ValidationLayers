@@ -1747,5 +1747,9 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
                                                 const void *pValues) const;
+
+    bool manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
+                                                   const VkPipelineCache *pSrcCaches) const;
+
 #include "parameter_validation.h"
 };  // Class StatelessValidation

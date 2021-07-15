@@ -246,7 +246,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCreateDisplayModeKHR',
             'vkCreatePrivateDataSlotEXT',
             'vkCmdSetVertexInputEXT',
-            'vkCmdPushConstants'
+            'vkCmdPushConstants',
+            'vkMergePipelineCaches'
             ]
 
         # Commands to ignore
