@@ -323,6 +323,25 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
     m_commandBuffer->EndRenderPass();
 }
 
+TEST_F(VkBestPracticesLayerTest, CmdBeginRenderPassZeroSizeRenderArea) {
+    TEST_DESCRIPTION("Test for getting warned when render area is 0 in VkRenderPassBeginInfo during vkCmdBeginRenderPass");
+
+    InitBestPracticesFramework();
+    InitState();
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-zero-size-render-area");
+
+    m_commandBuffer->begin();
+    m_renderPassBeginInfo.renderArea.extent.width = 0;
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
     InitBestPracticesFramework();
     InitState();
