@@ -2363,6 +2363,21 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     if (!has_dynamic_scissor && viewport_state.pScissors) {
                         for (uint32_t scissor_i = 0; scissor_i < viewport_state.scissorCount; ++scissor_i) {
                             const auto &scissor = viewport_state.pScissors[scissor_i];
+
+                            if (scissor.offset.x < 0) {
+                                skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-x-02821",
+                                                 "vkCreateGraphicsPipelines: offset.x (=%" PRIi32 ") of pCreateInfos[%" PRIu32
+                                                 "].pViewportState->pScissors[%" PRIu32 "] is negative.",
+                                                 scissor.offset.x, i, scissor_i);
+                            }
+
+                            if (scissor.offset.y < 0) {
+                                skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-x-02821",
+                                                 "vkCreateGraphicsPipelines: offset.y (=%" PRIi32 ") of pCreateInfos[%" PRIu32
+                                                 "].pViewportState->pScissors[%" PRIu32 "] is negative.",
+                                                 scissor.offset.y, i, scissor_i);
+                            }
+
                             const int64_t x_sum =
                                 static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
                             if (x_sum > std::numeric_limits<int32_t>::max()) {
@@ -2372,6 +2387,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                                  "] will overflow int32_t.",
                                                  scissor.offset.x, scissor.extent.width, x_sum, i, scissor_i);
                             }
+
                             const int64_t y_sum =
                                 static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
                             if (y_sum > std::numeric_limits<int32_t>::max()) {
