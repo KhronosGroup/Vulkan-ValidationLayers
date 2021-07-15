@@ -8694,6 +8694,35 @@ TEST_F(VkLayerTest, ExerciseGetImageSubresourceLayout) {
         vk::GetImageSubresourceLayout(m_device->device(), img.image(), &subres, &subres_layout);
         m_errorMonitor->VerifyFound();
     }
+
+    // 04464 If format does not contain stencil or depth component the aspectMask member of pResource must not contain
+    // VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT
+    {
+        VkImageObj img(m_device);
+        img.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+        ASSERT_TRUE(img.initialized());
+
+        VkImageSubresource subres = {};
+        subres.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;  // ERROR: triggers VU 00997 and 04464
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-format-04464");
+        vk::GetImageSubresourceLayout(m_device->device(), img.image(), &subres, &subres_layout);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkImageObj img(m_device);
+        img.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+        ASSERT_TRUE(img.initialized());
+
+        VkImageSubresource subres = {};
+        subres.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;  // ERROR: triggers VU 00997 and 04464
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-format-04464");
+        vk::GetImageSubresourceLayout(m_device->device(), img.image(), &subres, &subres_layout);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, ImageLayerUnsupportedFormat) {
