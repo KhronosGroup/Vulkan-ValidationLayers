@@ -956,37 +956,18 @@ class CoreChecks : public ValidationStateTracker {
                                        VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                        VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
                                        uint32_t width, uint32_t height, uint32_t depth) const override;
-    void PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
-                                      VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
-                                      VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
-                                      VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
-                                      VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
-                                      VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                      uint32_t width, uint32_t height, uint32_t depth) override;
     bool PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                         const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                         const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
                                         const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                         const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width,
                                         uint32_t height, uint32_t depth) const override;
-    void PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
-                                       const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
-                                       const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
-                                       const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
-                                       const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width,
-                                       uint32_t height, uint32_t depth) override;
     bool PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
                                                 const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
                                                 VkDeviceAddress indirectDeviceAddress) const override;
-    void PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                               const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
-                                               const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
-                                               const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
-                                               const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
-                                               VkDeviceAddress indirectDeviceAddress) override;
     bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) const override;
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
