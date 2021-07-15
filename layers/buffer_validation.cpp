@@ -6791,20 +6791,7 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
                                  "VK_IMAGE_ASPECT_COLOR.");
             }
         } else if (FormatIsDepthOrStencil(img_format)) {
-            if (FormatIsDepthAndStencil(img_format) || FormatIsDepthOnly(img_format)) {
-                if (!(sub_aspect & VK_IMAGE_ASPECT_DEPTH_BIT)) {
-                    skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04462",
-                                     "vkGetImageSubresourceLayout(): For depth formats, VkImageSubresource.aspectMask must contain "
-                                     "VK_IMAGE_ASPECT_DEPTH_BIT.");
-                }
-            }
-            if (FormatIsDepthAndStencil(img_format) || FormatIsStencilOnly(img_format)) {
-                if (!(sub_aspect & VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                    skip |=
-                        LogError(image, "VUID-vkGetImageSubresourceLayout-format-04463",
-                                 "vkGetImageSubresourceLayout(): For stencil formats, VkImageSubresource.aspectMask must contain "
-                                 "VK_IMAGE_ASPECT_STENCIL_BIT.");
-                }
+            if ((sub_aspect != VK_IMAGE_ASPECT_DEPTH_BIT) && (sub_aspect != VK_IMAGE_ASPECT_STENCIL_BIT)) {
             }
         }
     } else if (image_entry->createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
