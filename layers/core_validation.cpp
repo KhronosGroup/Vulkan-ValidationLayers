@@ -1409,6 +1409,11 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-stage-00704",
                          "Invalid Pipeline CreateInfo[%u] State: Geometry Shader not supported.", pipelineIndex);
     }
+    if (!enabled_features.core.tessellationShader && (pPipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
+                                                      pPipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
+        skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-stage-00705",
+                         "Invalid Pipeline CreateInfo[%u] State: Tessellation Shader not supported.", pipelineIndex);
+    }
     if (device_extensions.vk_nv_mesh_shader) {
         // VS or mesh is required
         if (!(pPipeline->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_NV))) {
