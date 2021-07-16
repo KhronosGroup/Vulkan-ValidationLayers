@@ -138,9 +138,11 @@ TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
     phys_dev_props_2.pNext = &bad_version_1_1_struct;
 
     // VkPhysDevVulkan12Props was introduced in 1.2, so try adding it to a 1.1 pNext chain
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
-    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
-    m_errorMonitor->VerifyFound();
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+        vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+        m_errorMonitor->VerifyFound();
+    }
 
     // 1.1 context, VK_KHR_depth_stencil_resolve is NOT enabled, but using its struct is valid
     if (DeviceExtensionSupported(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) {
