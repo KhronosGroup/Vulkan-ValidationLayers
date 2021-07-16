@@ -320,9 +320,19 @@ void IMAGE_VIEW_STATE::Destroy() {
     BASE_NODE::Destroy();
 }
 
-static VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR *pCreateInfo) {
+static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR *pCreateInfo) {
     auto image_ci = LvlInitStruct<VkImageCreateInfo>();
-    image_ci.pNext = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
+    // Pull out the format list only. This stack variable will get copied onto the heap
+    // by the 'safe' constructor used to build the return value below.
+    VkImageFormatListCreateInfo fmt_info;
+    auto chain_fmt_info = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
+    if (chain_fmt_info) {
+        fmt_info = *chain_fmt_info;
+        fmt_info.pNext = nullptr;
+        image_ci.pNext = &fmt_info;
+    } else {
+        image_ci.pNext = nullptr;
+    }
     image_ci.flags = 0;  // to be updated below
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = pCreateInfo->imageFormat;
@@ -348,7 +358,7 @@ static VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR *pCre
     if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) {
         image_ci.flags |= (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
     }
-    return image_ci;
+    return safe_VkImageCreateInfo(&image_ci);
 }
 
 SWAPCHAIN_NODE::SWAPCHAIN_NODE(const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain)

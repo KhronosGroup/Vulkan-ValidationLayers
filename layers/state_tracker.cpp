@@ -5374,7 +5374,7 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
                 GetImageFormatFeatures(physical_device, device, pSwapchainImages[i], swapchain_state->image_create_info.format,
                                        swapchain_state->image_create_info.tiling);
 
-            auto image_state = std::make_shared<IMAGE_STATE>(device, pSwapchainImages[i], &swapchain_state->image_create_info,
+            auto image_state = std::make_shared<IMAGE_STATE>(device, pSwapchainImages[i], swapchain_state->image_create_info.ptr(),
                                                              swapchain, i, format_features);
 
             if (swapchain_image.bound_images.empty()) {
