@@ -9263,13 +9263,13 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
                 img_view_info.subresourceRange = range;
                 CreateImageViewTest(*this, &img_view_info);
             }
-            // all mips, first layer (should be invalid?)
+            // all mips, first layer (invalid)
             {
                 const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 4, 0, 1};
                 VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
                 img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
                 img_view_info.subresourceRange = range;
-                CreateImageViewTest(*this, &img_view_info);
+                CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-image-04970");
             }
             // first mip, all layers (should be invalid?)
             {
@@ -9305,13 +9305,13 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
                 img_view_info.subresourceRange = range;
                 CreateImageViewTest(*this, &img_view_info);
             }
-            // all mips, first layer (should be invalid?)
+            // all mips, first layer (invalid)
             {
                 const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 4, 0, 1};
                 VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
                 img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
                 img_view_info.subresourceRange = range;
-                CreateImageViewTest(*this, &img_view_info);
+                CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-image-04970");
             }
             // first mip, all layers
             {
@@ -9345,6 +9345,53 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
                 img_view_info.subresourceRange = range;
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-02724");
                 CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-02725");
+            }
+
+            // Checking sparse flags are not set
+            VkImageViewCreateInfo sparse_image_view_ci = volume_img_view_info_template;
+            sparse_image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+            // using VK_IMAGE_CREATE_SPARSE_BINDING_BIT
+            if (device_features.sparseBinding) {
+                VkImageObj sparse_image(m_device);
+                image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+                sparse_image.Init(image_ci, 0, false);
+                sparse_image_view_ci.image = sparse_image.handle();
+
+                sparse_image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01020");
+                CreateImageViewTest(*this, &sparse_image_view_ci, "VUID-VkImageViewCreateInfo-image-04971");
+                sparse_image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+                m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01020");
+                CreateImageViewTest(*this, &sparse_image_view_ci, "VUID-VkImageViewCreateInfo-image-04971");
+            }
+            // using VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT
+            if (device_features.sparseResidencyImage3D) {
+                VkImageObj sparse_image(m_device);
+                image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
+                sparse_image.Init(image_ci, 0, false);
+                sparse_image_view_ci.image = sparse_image.handle();
+
+                sparse_image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01020");
+                CreateImageViewTest(*this, &sparse_image_view_ci, "VUID-VkImageViewCreateInfo-image-04971");
+                sparse_image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+                m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01020");
+                CreateImageViewTest(*this, &sparse_image_view_ci, "VUID-VkImageViewCreateInfo-image-04971");
+            }
+            // using VK_IMAGE_CREATE_SPARSE_ALIASED_BIT
+            if (device_features.sparseResidencyAliased) {
+                VkImageObj sparse_image(m_device);
+                image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT;
+                sparse_image.Init(image_ci, 0, false);
+                sparse_image_view_ci.image = sparse_image.handle();
+
+                sparse_image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01020");
+                CreateImageViewTest(*this, &sparse_image_view_ci, "VUID-VkImageViewCreateInfo-image-04971");
+                sparse_image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+                m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01020");
+                CreateImageViewTest(*this, &sparse_image_view_ci, "VUID-VkImageViewCreateInfo-image-04971");
             }
         }
     }

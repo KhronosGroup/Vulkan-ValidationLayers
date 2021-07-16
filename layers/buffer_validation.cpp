@@ -5735,16 +5735,23 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                             if (!(image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT)) {
                                 skip |=
                                     LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01005",
-                                             "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s.",
+                                             "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type "
+                                             "%s since the image doesn't have VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag set.",
                                              string_VkImageViewType(view_type), string_VkImageType(image_type));
                             } else if ((image_flags & (VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT |
                                                        VK_IMAGE_CREATE_SPARSE_ALIASED_BIT))) {
                                 skip |= LogError(
-                                    pCreateInfo->image, "VUID-VkImageViewCreateInfo-subResourceRange-01021",
+                                    pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04971",
                                     "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s "
                                     "when the VK_IMAGE_CREATE_SPARSE_BINDING_BIT, VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT, or "
                                     "VK_IMAGE_CREATE_SPARSE_ALIASED_BIT flags are enabled.",
                                     string_VkImageViewType(view_type), string_VkImageType(image_type));
+                            } else if (pCreateInfo->subresourceRange.levelCount != 1) {
+                                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04970",
+                                                 "vkCreateImageView(): pCreateInfo->viewType %s is with image type %s must have a "
+                                                 "levelCount of 1 but it is %u.",
+                                                 string_VkImageViewType(view_type), string_VkImageType(image_type),
+                                                 pCreateInfo->subresourceRange.levelCount);
                             }
                         } else {
                             skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-subResourceRange-01021",
@@ -5754,9 +5761,17 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                     }
                 } else {
                     if (view_type != VK_IMAGE_VIEW_TYPE_3D) {
-                        skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-subResourceRange-01021",
-                                         "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s.",
-                                         string_VkImageViewType(view_type), string_VkImageType(image_type));
+                        // Help point to VK_KHR_maintenance1
+                        if ((view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
+                            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-subResourceRange-01021",
+                                             "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s "
+                                             "without VK_KHR_maintenance1 enabled which was promoted in Vulkan 1.0.",
+                                             string_VkImageViewType(view_type), string_VkImageType(image_type));
+                        } else {
+                            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-subResourceRange-01021",
+                                             "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s.",
+                                             string_VkImageViewType(view_type), string_VkImageType(image_type));
+                        }
                     }
                 }
                 break;
