@@ -8459,6 +8459,13 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer,
                          report_data->FormatHandle(queryPool).c_str());
     }
 
+    if ((query_pool_state != nullptr) && (slot >= query_pool_state->createInfo.queryCount)) {
+        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp-query-04904",
+                         "vkCmdWriteTimestamp(): query (%" PRIu32 ") is not lower than the number of queries (%" PRIu32
+                         ") in Query pool %s.",
+                         slot, query_pool_state->createInfo.queryCount, report_data->FormatHandle(queryPool).c_str());
+    }
+
     return skip;
 }
 
