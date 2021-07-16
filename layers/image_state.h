@@ -185,7 +185,7 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     bool retired;
     const bool shared_presentable;
     uint32_t get_swapchain_image_count;
-    const VkImageCreateInfo image_create_info;
+    const safe_VkImageCreateInfo image_create_info;
 
     SWAPCHAIN_NODE(const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
 
