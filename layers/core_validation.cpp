@@ -12497,6 +12497,19 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                                  "VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set",
                                  bind_idx, image_idx);
             }
+
+            for (uint32_t image_bind_idx = 0; image_bind_idx < image_bind.bindCount; ++image_bind_idx) {
+                const VkSparseImageMemoryBind &memory_bind = image_bind.pBinds[image_bind_idx];
+                const auto *mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
+                if (mem_info) {
+                    if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
+                        skip |= LogError(
+                            image_bind.image, "VUID-VkSparseMemoryBind-memoryOffset-01101",
+                            "vkQueueBindSparse(): pBindInfo[%u].pImageBinds[%u]: memoryOffset is not less than the size of memory",
+                            bind_idx, image_idx);
+                    }
+                }
+            }
         }
     }
 
