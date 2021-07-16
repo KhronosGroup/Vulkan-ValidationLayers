@@ -979,11 +979,13 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
         TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci_same, rp2Supported,
                              "VUID-VkSubpassDescription-pDepthStencilAttachment-04438", nullptr);
 
-        safe_VkRenderPassCreateInfo2 create_info2;
-        ConvertVkRenderPassCreateInfoToV2KHR(rpci_same, &create_info2);
-        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pColorAttachments-02898");
-        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), create_info2.ptr(),
-                                 "VUID-VkSubpassDescription2-pDepthStencilAttachment-04440");
+        if (rp2Supported) {
+            safe_VkRenderPassCreateInfo2 create_info2;
+            ConvertVkRenderPassCreateInfoToV2KHR(rpci_same, &create_info2);
+            m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pColorAttachments-02898");
+            TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), create_info2.ptr(),
+                                     "VUID-VkSubpassDescription2-pDepthStencilAttachment-04440");
+        }
 
         // Same test but use 2 different VkAttachmentReference to point to same attachment
         subpass_same.pDepthStencilAttachment = &depth_1bit.data()[1];
@@ -992,10 +994,13 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
         TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci_same, rp2Supported,
                              "VUID-VkSubpassDescription-pDepthStencilAttachment-04438", nullptr);
 
-        ConvertVkRenderPassCreateInfoToV2KHR(rpci_same, &create_info2);
-        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pColorAttachments-02898");
-        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), create_info2.ptr(),
-                                 "VUID-VkSubpassDescription2-pDepthStencilAttachment-04440");
+        if (rp2Supported) {
+            safe_VkRenderPassCreateInfo2 create_info2;
+            ConvertVkRenderPassCreateInfoToV2KHR(rpci_same, &create_info2);
+            m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pColorAttachments-02898");
+            TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), create_info2.ptr(),
+                                     "VUID-VkSubpassDescription2-pDepthStencilAttachment-04440");
+        }
     }
 }
 
