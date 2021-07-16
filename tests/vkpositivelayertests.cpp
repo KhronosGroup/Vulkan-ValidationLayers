@@ -12689,6 +12689,67 @@ TEST_F(VkPositiveLayerTest, InitSwapchain) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
+    TEST_DESCRIPTION("Try destroying a swapchain which has multiple images");
+
+    if (!AddSurfaceInstanceExtension()) return;
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    // Check for VK_KHR_get_memory_requirements2 extension
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    } else {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        return;
+    }
+
+    if (!AddSwapchainDeviceExtension()) return;
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSwapchain()) {
+        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto vkBindImageMemory2KHR =
+        reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkBindImageMemory2KHR"));
+
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = m_surface_formats[0].format;
+    image_create_info.extent.width = m_surface_capabilities.minImageExtent.width;
+    image_create_info.extent.height = m_surface_capabilities.minImageExtent.height;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    auto image_swapchain_create_info = LvlInitStruct<VkImageSwapchainCreateInfoKHR>();
+    image_swapchain_create_info.swapchain = m_swapchain;
+
+    image_create_info.pNext = &image_swapchain_create_info;
+    std::array<VkImage, 3> images;
+
+    m_errorMonitor->ExpectSuccess();
+    for (auto &image : images) {
+        vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+        auto bind_swapchain_info = LvlInitStruct<VkBindImageMemorySwapchainInfoKHR>();
+        bind_swapchain_info.swapchain = m_swapchain;
+        bind_swapchain_info.imageIndex = 0;
+
+        auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>(&bind_swapchain_info);
+        bind_info.image = image;
+        bind_info.memory = VK_NULL_HANDLE;
+        bind_info.memoryOffset = 0;
+
+        vkBindImageMemory2KHR(m_device->device(), 1, &bind_info);
+    }
+    DestroySwapchain();
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, ProtectedSwapchainImageColorAttachment) {
     TEST_DESCRIPTION(
         "Make sure images from protected swapchain are considered protected image when writing to it as a color attachment");
