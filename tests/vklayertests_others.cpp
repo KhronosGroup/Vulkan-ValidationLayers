@@ -12964,3 +12964,32 @@ TEST_F(VkLayerTest, ValidateViewportStateScissorNegative) {
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp_y, kErrorBit, "VUID-VkPipelineViewportStateCreateInfo-x-02821");
 }
+
+TEST_F(VkLayerTest, WriteTimeStampInvalidQuery) {
+    TEST_DESCRIPTION("Test for invalid query slot in query pool.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    uint32_t queue_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
+    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+        printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    VkQueryPool query_pool;
+    VkQueryPoolCreateInfo query_pool_ci{};
+    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_ci.queryCount = 1;
+    vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-query-04904");
+    m_commandBuffer->begin();
+    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 1);
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyFound();
+}
