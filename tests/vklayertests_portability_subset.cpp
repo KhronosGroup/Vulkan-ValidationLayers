@@ -209,6 +209,13 @@ TEST_F(VkPortabilitySubsetTest, CreateImageView) {
     ci.subresourceRange.layerCount = 1;
     CreateImageViewTest(*this, &ci, "VUID-VkImageViewCreateInfo-imageViewFormatSwizzle-04465");
 
+    // Verify using VK_COMPONENT_SWIZZLE_R/G/B/A works when imageViewFormatSwizzle == VK_FALSE
+    ci.components.r = VK_COMPONENT_SWIZZLE_R;
+    ci.components.g = VK_COMPONENT_SWIZZLE_G;
+    ci.components.b = VK_COMPONENT_SWIZZLE_B;
+    ci.components.a = VK_COMPONENT_SWIZZLE_A;
+    CreateImageViewTest(*this, &ci);
+
     ci.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
     ci.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
     ci.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;

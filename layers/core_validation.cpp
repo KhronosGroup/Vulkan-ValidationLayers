@@ -1247,8 +1247,8 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STA
 
         // Validate vertex inputs
         for (const auto &desc : pipeline->vertex_binding_descriptions_) {
-            if ((desc.stride < phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment) ||
-                ((desc.stride % phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment) != 0)) {
+            const auto min_alignment = phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment;
+            if ((desc.stride < min_alignment) || (min_alignment == 0) || ((desc.stride % min_alignment) != 0)) {
                 skip |= LogError(
                     device, "VUID-VkVertexInputBindingDescription-stride-04456",
                     "Invalid Pipeline CreateInfo[%d] (portability error): Vertex input stride must be at least as large as and a "
