@@ -11166,3 +11166,56 @@ TEST_F(VkLayerTest, ValidateGeometryShaderEnabled) {
         *this, set_info, kErrorBit,
         std::vector<string>{"VUID-VkPipelineShaderStageCreateInfo-stage-00704", "VUID-VkShaderModuleCreateInfo-pCode-01091"});
 }
+
+TEST_F(VkLayerTest, ValidateTessellationShaderEnabled) {
+    TEST_DESCRIPTION(
+        "Validate tessellation shader feature is enabled if tessellation control or tessellation evaluation shader stage is used");
+
+    VkPhysicalDeviceFeatures deviceFeatures = {};
+    deviceFeatures.tessellationShader = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *tcsSource = R"glsl(
+        #version 450
+        layout(location=0) out int x[];
+        layout(vertices=3) out;
+        void main(){
+           gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;
+           gl_TessLevelInner[0] = 1;
+           x[gl_InvocationID] = gl_InvocationID;
+        }
+    )glsl";
+    char const *tesSource = R"glsl(
+        #version 450
+        layout(triangles, equal_spacing, cw) in;
+        layout(location=0) patch in int x;
+        void main(){
+           gl_Position.xyz = gl_TessCoord;
+           gl_Position.w = x;
+        }
+    )glsl";
+
+    VkShaderObj tcs(m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+    VkShaderObj tes(m_device, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+
+    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                 VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+
+    VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+        helper.gp_ci_.pTessellationState = &tsci;
+        helper.gp_ci_.pInputAssemblyState = &iasci;
+        helper.shader_stages_.emplace_back(tcs.GetStageCreateInfo());
+        helper.shader_stages_.emplace_back(tes.GetStageCreateInfo());
+    };
+
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, kErrorBit,
+        std::vector<string>{"VUID-VkPipelineShaderStageCreateInfo-stage-00705", "VUID-VkShaderModuleCreateInfo-pCode-01091",
+                            "VUID-VkShaderModuleCreateInfo-pCode-01091",
+                            "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430"});
+}
