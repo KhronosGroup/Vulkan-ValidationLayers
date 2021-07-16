@@ -131,7 +131,7 @@ class IMAGE_STATE : public BINDABLE {
 
     void Destroy() override;
 
-    void AddAliasingImage(IMAGE_STATE *bound_images);
+    void AddAliasingImage(IMAGE_STATE *bound_image);
 
     VkExtent3D GetSubresourceExtent(const VkImageSubresourceLayers &subresource) const;
 
@@ -175,7 +175,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 
 struct SWAPCHAIN_IMAGE {
     IMAGE_STATE *image_state = nullptr;
-    layer_data::unordered_set<IMAGE_STATE *> bound_images;
+    layer_data::unordered_map<VkImage, std::shared_ptr<IMAGE_STATE>> bound_images;
 };
 
 class SWAPCHAIN_NODE : public BASE_NODE {

@@ -388,9 +388,9 @@ void SWAPCHAIN_NODE::Destroy() {
         // TODO: missing validation that the bound images are empty (except for image_state above)
         // Clean up the aliases and the bound_images *before* erasing the image_state.
         // TODO: RemoveAliasingImages(swapchain_image.bound_images);
-        for (auto &image : swapchain_image.bound_images) {
-            image->RemoveParent(this);
-            image->Destroy();
+        for (auto &entry : swapchain_image.bound_images) {
+            entry.second->RemoveParent(this);
+            entry.second->Destroy();
         }
         swapchain_image.bound_images.clear();
         // TODO: imageMap.erase(swapchain_image.image_state->image());
@@ -407,10 +407,10 @@ void SWAPCHAIN_NODE::NotifyInvalidate(const LogObjectList &invalid_handles, bool
             IMAGE_STATE *invalid_image = static_cast<IMAGE_STATE *>(immediate_child.node);
             assert(invalid_image);
             auto &swapchain_image = images[invalid_image->bind_swapchain_imageIndex];
-            swapchain_image.bound_images.erase(invalid_image);
             if (swapchain_image.image_state == invalid_image) {
                 swapchain_image.image_state = nullptr;
             }
+            swapchain_image.bound_images.erase(invalid_image->image());
         }
     }
 }
