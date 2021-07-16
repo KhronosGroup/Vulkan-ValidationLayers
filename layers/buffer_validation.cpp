@@ -438,12 +438,6 @@ void CoreChecks::SetImageViewLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_
     IMAGE_STATE *image_state = view_state.image_state.get();
 
     VkImageSubresourceRange sub_range = view_state.normalized_subresource_range;
-    // When changing the layout of a 3D image subresource via a 2D or 2D_ARRRAY image view, all depth slices of
-    // the subresource mip level(s) are transitioned, ignoring any layers restriction in the subresource info.
-    if ((image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) && (view_state.create_info.viewType != VK_IMAGE_VIEW_TYPE_3D)) {
-        sub_range.baseArrayLayer = 0;
-        sub_range.layerCount = image_state->createInfo.extent.depth;
-    }
 
     if (sub_range.aspectMask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) && layoutStencil != kInvalidLayout) {
         sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -1495,15 +1489,6 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
         }
     }
     auto normalized_isr = image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
-    const auto &image_create_info = image_state->createInfo;
-
-    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag bit, where <extent.depth> and
-    // <arrayLayers> can potentially alias.  When recording layout for the entire image, pre-emptively record layouts
-    // for all (potential) layer sub_resources.
-    if (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT)) {
-        normalized_isr.baseArrayLayer = 0;
-        normalized_isr.layerCount = image_create_info.extent.depth;  // Treat each depth slice as a layer subresource
-    }
 
     VkImageLayout initial_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.oldLayout);
     VkImageLayout new_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.newLayout);

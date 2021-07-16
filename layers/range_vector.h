@@ -1720,7 +1720,8 @@ bool splice(DstRangeMap &to, const SrcRangeMap &from, SourceIterator begin, Sour
                     // otherwise we need to split the destination range.
                     auto value_to_update = write_it->second; // intentional copy
                     updated |= updater.update(value_to_update, read_it->second);
-                    to.overwrite_range(to_lb->lower_bound, std::make_pair(range, value_to_update));
+                    auto intersected_range = write_it->first & range;
+                    to.overwrite_range(to_lb->lower_bound, std::make_pair(intersected_range, value_to_update));
                     par_it.invalidate_A();  // we've changed map 'to' behind to_lb's back... let it know.
                 }
             } else {

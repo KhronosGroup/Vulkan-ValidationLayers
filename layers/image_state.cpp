@@ -72,25 +72,42 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image
     VkImageSubresourceRange norm = range;
     norm.levelCount = ResolveRemainingLevels(&range, image_create_info.mipLevels);
 
-    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag bit, where <extent.depth> and
-    // <arrayLayers> can potentially alias.
-    uint32_t layer_limit = (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT))
-                               ? image_create_info.extent.depth
-                               : image_create_info.arrayLayers;
-    norm.layerCount = ResolveRemainingLayers(&range, layer_limit);
+    norm.layerCount = ResolveRemainingLayers(&range, image_create_info.arrayLayers);
 
     // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
-    VkImageAspectFlags &aspect_mask = norm.aspectMask;
     if (FormatIsMultiplane(image_create_info.format)) {
-        if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
-            aspect_mask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
-            aspect_mask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
+        if (norm.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
+            norm.aspectMask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
+            norm.aspectMask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
             if (FormatPlaneCount(image_create_info.format) > 2) {
-                aspect_mask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+                norm.aspectMask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
             }
         }
     }
     return norm;
+}
+
+static VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
+                                                         const VkImageViewCreateInfo &view_create_info) {
+    auto range = view_create_info.subresourceRange;
+
+    // if we're mapping a 3D image to a 2d image view, convert the view's subresource range to be compatible with the
+    // image's understanding of the world. From the VkImageSubresourceRange section of the Vulkan spec:
+    //
+    //     When the VkImageSubresourceRange structure is used to select a subset of the slices of a 3D image’s mip level in
+    //     order to create a 2D or 2D array image view of a 3D image created with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT,
+    //     baseArrayLayer and layerCount specify the first slice index and the number of slices to include in the created
+    //     image view. Such an image view can be used as a framebuffer attachment that refers only to the specified range
+    //     of slices of the selected mip level. However, any layout transitions performed on such an attachment view during
+    //     a render pass instance still apply to the entire subresource referenced which includes all the slices of the selected mip
+    //     level.
+    //
+    if ((image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) &&
+        (view_create_info.viewType == VK_IMAGE_VIEW_TYPE_2D || view_create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
+        range.baseArrayLayer = 0;
+        range.layerCount = 1;
+    }
+    return NormalizeSubresourceRange(image_create_info, range);
 }
 
 static VkExternalMemoryHandleTypeFlags GetExternalHandleType(const VkImageCreateInfo *pCreateInfo) {
@@ -296,7 +313,7 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
                                    VkFormatFeatureFlags ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
     : BASE_NODE(iv, kVulkanObjectTypeImageView),
       create_info(*ci),
-      normalized_subresource_range(::NormalizeSubresourceRange(im->createInfo, ci->subresourceRange)),
+      normalized_subresource_range(::NormalizeSubresourceRange(im->createInfo, *ci)),
       range_generator(im->subresource_encoder, normalized_subresource_range),
       samples(im->createInfo.samples),
       // When the image has a external format the views format must be VK_FORMAT_UNDEFINED and it is required to use a sampler
