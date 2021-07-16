@@ -4280,7 +4280,9 @@ void ValidationStateTracker::PreCallRecordDestroySwapchainKHR(VkDevice device, V
     if (!swapchain_data) return;
 
     for (auto &swapchain_image : swapchain_data->images) {
-        for (auto *image : swapchain_image.bound_images) {
+        // Avoid iterating over bound_images, as the iterator will be invalidated as images are erased
+        while (!swapchain_image.bound_images.empty()) {
+            auto *image = *swapchain_image.bound_images.begin();
             imageMap.erase(image->image());
         }
     }
