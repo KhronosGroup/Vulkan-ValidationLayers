@@ -1,4 +1,4 @@
-﻿/* Copyright (c) 2015-2021 The Khronos Group Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
  * Copyright (c) 2015-2021 Valve Corporation
  * Copyright (c) 2015-2021 LunarG, Inc.
  *
@@ -1462,6 +1462,12 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
 
     if (!pRenderPassBegin) {
         return skip;
+    }
+
+    if (pRenderPassBegin->renderArea.extent.width == 0 || pRenderPassBegin->renderArea.extent.height == 0) {
+        skip |= LogWarning(device, kVUID_BestPractices_BeginRenderPass_ZeroSizeRenderArea,
+                           "This render pass has a zero-size render area. It cannot write to any attachments, "
+                           "and can only be used for side effects such as layout transitions.");
     }
 
     auto rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
