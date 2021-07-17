@@ -12985,9 +12985,41 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
             }
         }
 
+        for (uint32_t buffer_idx = 0; buffer_idx < bind_info.bufferBindCount; ++buffer_idx) {
+            const VkSparseBufferMemoryBindInfo &buffer_bind = bind_info.pBufferBinds[buffer_idx];
+            for (uint32_t buffer_bind_idx = 0; buffer_bind_idx < buffer_bind.bindCount; ++buffer_bind_idx) {
+                const VkSparseMemoryBind &memory_bind = buffer_bind.pBinds[buffer_bind_idx];
+                const auto *mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
+                if (mem_info) {
+                    if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
+                        skip |= LogError(
+                            buffer_bind.buffer, "VUID-VkSparseMemoryBind-memoryOffset-01101",
+                            "vkQueueBindSparse(): pBindInfo[%u].pBufferBinds[%u]: memoryOffset is not less than the size of memory",
+                            bind_idx, buffer_idx);
+                    }
+                }
+            }
+        }
+
+        for (uint32_t image_opaque_idx = 0; image_opaque_idx < bind_info.bufferBindCount; ++image_opaque_idx) {
+            const VkSparseImageOpaqueMemoryBindInfo &image_opaque_bind = bind_info.pImageOpaqueBinds[image_opaque_idx];
+            for (uint32_t image_opaque_bind_idx = 0; image_opaque_bind_idx < image_opaque_bind.bindCount; ++image_opaque_bind_idx) {
+                const VkSparseMemoryBind &memory_bind = image_opaque_bind.pBinds[image_opaque_bind_idx];
+                const auto *mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
+                if (mem_info) {
+                    if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
+                        skip |= LogError(image_opaque_bind.image, "VUID-VkSparseMemoryBind-memoryOffset-01101",
+                                         "vkQueueBindSparse(): pBindInfo[%u].pImageOpaqueBinds[%u]: memoryOffset is not less than "
+                                         "the size of memory",
+                                         bind_idx, image_opaque_idx);
+                    }
+                }
+            }
+        }
+
         for (uint32_t image_idx = 0; image_idx < bind_info.imageBindCount; ++image_idx) {
             const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_idx];
-            const auto image_state = GetImageState(image_bind.image);
+            const auto image_state = Get<IMAGE_STATE>(image_bind.image);
 
             if (image_state && !(image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT)) {
                 skip |= LogError(image_bind.image, "VUID-VkSparseImageMemoryBindInfo-image-02901",
