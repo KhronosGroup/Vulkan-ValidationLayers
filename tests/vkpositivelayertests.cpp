@@ -3511,6 +3511,13 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithFeature) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
+    // Devsim won't read in values like maxDescriptorSetUpdateAfterBindUniformBuffers which cause OneshotTest to fail pipeline
+    // layout creation if using 1.2 devsim as it enables VK_EXT_descriptor_indexing
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
         return;
@@ -3616,6 +3623,13 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithoutFeature12) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
+    // Devsim won't read in values like maxDescriptorSetUpdateAfterBindUniformBuffers which cause OneshotTest to fail pipeline
+    // layout creation if using 1.2 devsim as it enables VK_EXT_descriptor_indexing
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
         return;
@@ -3671,6 +3685,13 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithFeature) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    // Devsim won't read in values like maxDescriptorSetUpdateAfterBindUniformBuffers which cause OneshotTest to fail pipeline
+    // layout creation if using 1.2 devsim as it enables VK_EXT_descriptor_indexing
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
@@ -13354,6 +13375,11 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     m_errorMonitor->ExpectSuccess();
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
