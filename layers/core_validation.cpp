@@ -2112,6 +2112,12 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             "The vertexInputDynamicState feature must be enabled to use the VK_DYNAMIC_STATE_VERTEX_INPUT_EXT dynamic state");
     }
 
+    if (!enabled_features.color_write_features.colorWriteEnable && IsDynamic(pPipeline, VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
+        skip |= LogError(
+            device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04800",
+            "The colorWriteEnable feature must be enabled to use the VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT dynamic state");
+    }
+
     return skip;
 }
 
