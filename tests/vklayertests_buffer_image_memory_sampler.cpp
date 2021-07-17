@@ -13531,10 +13531,24 @@ TEST_F(VkLayerTest, InvalidImageFormatList) {
     CreateImageViewTest(*this, &imageViewInfo, {});
 }
 
-TEST_F(VkLayerTest, SparseImageMemoryBindOffset) {
+TEST_F(VkLayerTest, SparseMemoryBindOffset) {
     TEST_DESCRIPTION("Try to use VkSparseImageMemoryBind with offset not less than memory size");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    buffer_create_info.size = 1024;
+    buffer_create_info.queueFamilyIndexCount = 0;
+    buffer_create_info.pQueueFamilyIndices = NULL;
+    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (m_device->phy().features().sparseResidencyBuffer) {
+        buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT;
+    } else {
+        printf("%s Test requires unsupported sparseResidencyBuffer feature. Skipped.\n", kSkipPrefix);
+        return;
+    }
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(nullptr);
     image_create_info.flags = 0;
@@ -13560,6 +13574,9 @@ TEST_F(VkLayerTest, SparseImageMemoryBindOffset) {
         return;
     }
 
+    VkBufferObj buffer;
+    buffer.init_no_mem(*m_device, buffer_create_info);
+
     VkImageObj image(m_device);
     image.init_no_mem(*m_device, image_create_info);
 
@@ -13571,21 +13588,41 @@ TEST_F(VkLayerTest, SparseImageMemoryBindOffset) {
     err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
     ASSERT_VK_SUCCESS(err);
 
+    VkSparseMemoryBind buffer_memory_bind = {};
+    buffer_memory_bind.size = 1024;
+    buffer_memory_bind.memory = mem;
+    buffer_memory_bind.memoryOffset = 2048;
+
     VkSparseImageMemoryBind image_memory_bind = {};
     image_memory_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     image_memory_bind.memoryOffset = 4096;
     image_memory_bind.memory = mem;
+
+    VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
+    buffer_memory_bind_info.buffer = buffer.handle();
+    buffer_memory_bind_info.bindCount = 1;
+    buffer_memory_bind_info.pBinds = &buffer_memory_bind;
+
+    VkSparseImageOpaqueMemoryBindInfo image_opaque_memory_bind_info = {};
+    image_opaque_memory_bind_info.image = image.handle();
+    image_opaque_memory_bind_info.bindCount = 1;
+    image_opaque_memory_bind_info.pBinds = &buffer_memory_bind;
 
     VkSparseImageMemoryBindInfo image_memory_bind_info = {};
     image_memory_bind_info.image = image.handle();
     image_memory_bind_info.bindCount = 1;
     image_memory_bind_info.pBinds = &image_memory_bind;
 
-    VkBindSparseInfo bind_info = {};
-    bind_info.sType = VK_STRUCTURE_TYPE_BIND_SPARSE_INFO;
+    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    bind_info.bufferBindCount = 1;
+    bind_info.pBufferBinds = &buffer_memory_bind_info;
+    bind_info.imageOpaqueBindCount = 1;
+    bind_info.pImageOpaqueBinds = &image_opaque_memory_bind_info;
     bind_info.imageBindCount = 1;
     bind_info.pImageBinds = &image_memory_bind_info;
 
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
     vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
