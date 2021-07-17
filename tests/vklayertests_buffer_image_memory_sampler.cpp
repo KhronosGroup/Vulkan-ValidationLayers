@@ -13955,7 +13955,7 @@ TEST_F(VkLayerTest, InvalidImageFormatList) {
     CreateImageViewTest(*this, &imageViewInfo, {});
 }
 
-TEST_F(VkLayerTest, SparseImageMemoryBindOffset) {
+TEST_F(VkLayerTest, SparseMemoryBindOffset) {
     TEST_DESCRIPTION("Try to use VkSparseImageMemoryBind with offset not less than memory size");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -13995,20 +13995,21 @@ TEST_F(VkLayerTest, SparseImageMemoryBindOffset) {
     err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
     ASSERT_VK_SUCCESS(err);
 
-    VkSparseImageMemoryBind image_memory_bind = {};
-    image_memory_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_memory_bind.memoryOffset = 4096;
-    image_memory_bind.memory = mem;
+    VkSparseMemoryBind sparse_bind = {};
+    sparse_bind.size = 256;
+    sparse_bind.memory = mem;
+    sparse_bind.memoryOffset = 4096;
+    sparse_bind.flags = VK_SPARSE_MEMORY_BIND_METADATA_BIT;
 
-    VkSparseImageMemoryBindInfo image_memory_bind_info = {};
-    image_memory_bind_info.image = image.handle();
-    image_memory_bind_info.bindCount = 1;
-    image_memory_bind_info.pBinds = &image_memory_bind;
+    VkSparseImageOpaqueMemoryBindInfo opaque_bind_info = {};
+    opaque_bind_info.image = image.image();
+    opaque_bind_info.bindCount = 1;
+    opaque_bind_info.pBinds = &sparse_bind;
 
     VkBindSparseInfo bind_info = {};
     bind_info.sType = VK_STRUCTURE_TYPE_BIND_SPARSE_INFO;
-    bind_info.imageBindCount = 1;
-    bind_info.pImageBinds = &image_memory_bind_info;
+    bind_info.imageOpaqueBindCount = 1;
+    bind_info.pImageOpaqueBinds = &opaque_bind_info;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
     vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
