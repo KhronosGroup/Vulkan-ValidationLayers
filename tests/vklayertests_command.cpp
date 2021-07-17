@@ -7644,6 +7644,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer_unprotected);
 
     // Create actual protected and unprotected images
+    const VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_protected(m_device);
     VkImageObj image_unprotected(m_device);
     VkImageObj image_protected_descriptor(m_device);
@@ -7654,7 +7655,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_create_info.pNext = nullptr;
     image_create_info.extent = {64, 64, 1};
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.format = image_format;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -7662,24 +7663,19 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.arrayLayers = 1;
     image_create_info.mipLevels = 1;
-
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
     image_protected.init_no_mem(*m_device, image_create_info);
     image_protected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_views[0] = image_protected.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     image_protected_descriptor.init_no_mem(*m_device, image_create_info);
     image_protected_descriptor.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_views_descriptor[0] = image_protected_descriptor.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     image_create_info.flags = 0;
     image_unprotected.init_no_mem(*m_device, image_create_info);
     image_unprotected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_views[1] = image_unprotected.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     image_unprotected_descriptor.init_no_mem(*m_device, image_create_info);
     image_unprotected_descriptor.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_views_descriptor[1] = image_unprotected_descriptor.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     // Create protected and unproteced memory
     VkDeviceMemory memory_protected = VK_NULL_HANDLE;
@@ -7734,13 +7730,21 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     vk::BindBufferMemory(device(), buffer_unprotected, memory_unprotected, 0);
     vk::BindImageMemory(device(), image_protected.handle(), memory_protected, 0);
     vk::BindImageMemory(device(), image_unprotected.handle(), memory_unprotected, 0);
+    vk::BindImageMemory(device(), image_protected_descriptor.handle(), memory_protected, 0);
+    vk::BindImageMemory(device(), image_unprotected_descriptor.handle(), memory_unprotected, 0);
+
+    // need memory bound at image view creation time
+    image_views[0] = image_protected.targetView(image_format);
+    image_views[1] = image_unprotected.targetView(image_format);
+    image_views_descriptor[0] = image_protected_descriptor.targetView(image_format);
+    image_views_descriptor[1] = image_unprotected_descriptor.targetView(image_format);
 
     // A renderpass and framebuffer that contains a protected and unprotected image view
     VkAttachmentDescription attachments[2] = {
-        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        {0, image_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
          VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
-        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        {0, image_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
          VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
     };

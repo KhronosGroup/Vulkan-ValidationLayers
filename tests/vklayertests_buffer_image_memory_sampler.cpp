@@ -9959,6 +9959,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
         } else {
             VkImageCreateInfo image_ci = safe_image_ci;
             image_ci.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+            image_ci.format = VK_FORMAT_R8G8_UNORM;  // only mandatory format for fragment density map
             VkImageFormatProperties img_limits;
             ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
@@ -10910,6 +10911,11 @@ TEST_F(VkLayerTest, ImageStencilCreate) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
 
+    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR vkGetPhysicalDeviceImageFormatProperties2KHR =
+        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(instance(),
+                                                                                  "vkGetPhysicalDeviceImageFormatProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceImageFormatProperties2KHR != nullptr);
+
     VkImageCreateInfo image_create_info = {};
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_create_info.pNext = nullptr;
@@ -10952,7 +10958,7 @@ TEST_F(VkLayerTest, ImageStencilCreate) {
     // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539");
-    vk::GetPhysicalDeviceImageFormatProperties2(m_device->phy().handle(), &image_format_info2, &image_format_properties2);
+    vkGetPhysicalDeviceImageFormatProperties2KHR(m_device->phy().handle(), &image_format_info2, &image_format_properties2);
     m_errorMonitor->VerifyFound();
     // test vkCreateImage as well for this case
     CreateImageTest(*this, &image_create_info, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539");

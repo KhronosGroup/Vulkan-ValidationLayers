@@ -1994,6 +1994,9 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
             device_extensions.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-ppEnabledExtensions-02835");
         }
+    } else {
+        // VkPhysicalDeviceVulkan11Features was not added until Vulkan 1.2
+        m_errorMonitor->SetUnexpectedError("VUID-VkDeviceCreateInfo-pNext-pNext");
     }
 
     VkDeviceCreateInfo device_create_info = {};
