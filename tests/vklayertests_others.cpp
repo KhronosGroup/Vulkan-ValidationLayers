@@ -2005,6 +2005,10 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
     device_create_info.enabledExtensionCount = device_extensions.size();
     VkDevice testDevice;
 
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        // VkPhysicalDeviceVulkan11Features was not added until Vulkan 1.2
+        m_errorMonitor->SetUnexpectedError("VUID-VkDeviceCreateInfo-pNext-pNext");
+    }
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");
     vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
     m_errorMonitor->VerifyFound();
