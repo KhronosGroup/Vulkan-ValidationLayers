@@ -12302,6 +12302,19 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
             }
 
+            const auto bind_image_memory_device_group_info = LvlFindInChain<VkBindImageMemoryDeviceGroupInfo>(bind_info.pNext);
+            if (bind_image_memory_device_group_info && bind_image_memory_device_group_info->splitInstanceBindRegionCount != 0) {
+                if (!(image_state->createInfo.flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT)) {
+                    skip |= LogError(bind_info.image, "VUID-VkBindImageMemoryInfo-pNext-01627",
+                                     "%s: pNext of VkBindImageMemoryInfo contains VkBindImageMemoryDeviceGroupInfo with "
+                                     "splitInstanceBindRegionCount (%" PRIi32
+                                     ") not equal to 0 and %s is not created with "
+                                     "VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT.",
+                                     error_prefix, bind_image_memory_device_group_info->splitInstanceBindRegionCount,
+                                     report_data->FormatHandle(image_state->image()).c_str());
+                }
+            }
+
             if (plane_info) {
                 // Checks for disjoint bit in image
                 if (image_state->disjoint == false) {
