@@ -14033,3 +14033,36 @@ TEST_F(VkLayerTest, SparseImageMemoryBindOffset) {
     vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, DedicatedAllocationBufferWithInvalidFlags) {
+    TEST_DESCRIPTION("Verify that flags are valid with VkDedicatedAllocationBufferCreateInfoNV");
+
+    // Positive test to check parameter_validation and unique_objects support for NV_dedicated_allocation
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    } else {
+        printf("%s VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME Extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkDedicatedAllocationBufferCreateInfoNV dedicated_buffer_create_info = {};
+    dedicated_buffer_create_info.sType = VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_BUFFER_CREATE_INFO_NV;
+    dedicated_buffer_create_info.pNext = nullptr;
+    dedicated_buffer_create_info.dedicatedAllocation = VK_TRUE;
+
+    uint32_t queue_family_index = 0;
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.pNext = &dedicated_buffer_create_info;
+    buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    buffer_create_info.size = 1024;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_create_info.queueFamilyIndexCount = 1;
+    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
+
+    VkBuffer buffer;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-pNext-01571");
+    vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
+    m_errorMonitor->VerifyFound();
+}
