@@ -14110,3 +14110,56 @@ TEST_F(VkLayerTest, InvalidMemoryAllocatepNextChain) {
     m_errorMonitor->VerifyFound();
 #endif
 }
+
+TEST_F(VkLayerTest, CreateImageViewWithInvalidLevelOrLayerCount) {
+    TEST_DESCRIPTION(
+        "Attempts to create an Image View with an image using VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT, but levelCount and "
+        "layerCount are not 1.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
+        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 4;
+    image_create_info.arrayLayers = 2;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkImageObj image(m_device);
+    image.Init(image_create_info, 0);
+
+    VkImageViewCreateInfo ivci = {};
+    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    // Test for error message
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.levelCount = 4;
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01584");
+
+    // Test for error message
+    ivci.subresourceRange.layerCount = 2;
+    ivci.subresourceRange.levelCount = 1;
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01584");
+}
