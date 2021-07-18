@@ -4290,9 +4290,27 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
 }
 
 bool CoreChecks::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo) const {
-    return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
-                                pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                                pBlitImageInfo->filter, COPY_COMMAND_VERSION_2);
+    bool skip = false;
+
+    auto src_image_state = Get<IMAGE_STATE>(pBlitImageInfo->srcImage);
+
+    auto copy_command_transform = LvlFindInChain<VkCopyCommandTransformInfoQCOM>(pBlitImageInfo->pNext);
+    if (copy_command_transform) {
+        if (src_image_state->createInfo.imageType != VK_IMAGE_TYPE_2D || FormatIsMultiplane(src_image_state->createInfo.format)) {
+            skip |= LogError(
+                device, "VUID-VkBlitImageInfo2KHR-pRegions-04562",
+                "vkCmdBlitImage2KHR(): if pNext chain contains VkCopyCommandTransformInfoQCOM then the "
+                "pBlitImageInfo.srcImage (%s) must be of type VK_IMAGE_TYPE_2D and in a non multi-planar format, but type "
+                "is %s and format is %s.",
+                report_data->FormatHandle(src_image_state->image()).c_str(),
+                string_VkImageType(src_image_state->createInfo.imageType), string_VkFormat(src_image_state->createInfo.format));
+        }
+    }
+
+    skip |= ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
+                                 pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
+                                 pBlitImageInfo->filter, COPY_COMMAND_VERSION_2);
+    return skip;
 }
 
 template <typename RegionType>
