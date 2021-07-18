@@ -11118,6 +11118,23 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
             }
         }
 
+        const VkDeviceGroupRenderPassBeginInfo *device_group_render_pass_begin_info =
+            LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
+        if (!device_group_render_pass_begin_info || device_group_render_pass_begin_info->deviceRenderAreaCount == 0) {
+            if (pRenderPassBegin->renderArea.offset.x < 0) {
+                skip |= LogError(render_pass_state->renderPass(), "VUID-VkRenderPassBeginInfo-pNext-02850",
+                                 "If renderArea.offset.x (%" PRIi32 ") is negative the pNext chain must contain a "
+                                 "VkDeviceGroupRenderPassBeginInfo with deviceRenderAreaCount not equal to 0.",
+                                 pRenderPassBegin->renderArea.offset.x);
+            }
+            if (pRenderPassBegin->renderArea.offset.y < 0) {
+                skip |= LogError(render_pass_state->renderPass(), "VUID-VkRenderPassBeginInfo-pNext-02851",
+                                 "If renderArea.offset.y (%" PRIi32 ") is negative the pNext chain must contain a "
+                                 "VkDeviceGroupRenderPassBeginInfo with deviceRenderAreaCount not equal to 0.",
+                                 pRenderPassBegin->renderArea.offset.y);
+            }
+        }
+
         for (uint32_t i = 0; i < render_pass_state->createInfo.attachmentCount; ++i) {
             auto attachment = &render_pass_state->createInfo.pAttachments[i];
             if (FormatSpecificLoadAndStoreOpSettings(attachment->format, attachment->loadOp, attachment->stencilLoadOp,
