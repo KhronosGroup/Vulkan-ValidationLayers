@@ -8940,7 +8940,7 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
         ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         ivci.image = image_obj.image();
         ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        ivci.format = VK_FORMAT_R8_SNORM;  // Compat is VK_FORMAT_R8_UNORM
+        ivci.format = VK_FORMAT_R16_UNORM;  // Compat is VK_FORMAT_R8_UNORM
         ivci.subresourceRange.layerCount = 1;
         ivci.subresourceRange.baseMipLevel = 0;
         ivci.subresourceRange.levelCount = 1;
@@ -8951,6 +8951,10 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
 
         // Correct format succeeds
         ivci.format = VK_FORMAT_R8_UNORM;
+        CreateImageViewTest(*this, &ivci);
+
+        // Format compatible with the correct format succeeds
+        ivci.format = VK_FORMAT_R8_UINT;
         CreateImageViewTest(*this, &ivci);
 
         // Try a multiplane imageview
