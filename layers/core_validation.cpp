@@ -10386,6 +10386,17 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                              "vkCreateRenderPass(): Dependency count is %u but multiview info has a dependency count of %u.",
                              pCreateInfo->dependencyCount, multiview_info->dependencyCount);
         }
+        bool all_zero = true;
+        bool all_not_zero = true;
+        for (uint32_t i = 0; i < multiview_info->subpassCount; ++i) {
+            all_zero &= multiview_info->pViewMasks[i] == 0;
+            all_not_zero &= !(multiview_info->pViewMasks[i] == 0);
+        }
+        if (!all_zero && !all_not_zero) {
+            skip |= LogError(
+                device, "VUID-VkRenderPassCreateInfo-pNext-02513",
+                "vkCreateRenderPass(): elements of VkRenderPassMultiviewCreateInfo pViewMasks must all be either 0 or not 0.");
+        }
     }
     const VkRenderPassInputAttachmentAspectCreateInfo *input_attachment_aspect_info =
         LvlFindInChain<VkRenderPassInputAttachmentAspectCreateInfo>(pCreateInfo->pNext);
