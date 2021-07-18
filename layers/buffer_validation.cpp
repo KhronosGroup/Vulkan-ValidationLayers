@@ -2160,6 +2160,14 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
+    if (device_group_create_info.physicalDeviceCount == 1) {
+        if (pCreateInfo->flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-physicalDeviceCount-01421",
+                             "vkCreateImage: Device was created with VkDeviceGroupDeviceCreateInfo::physicalDeviceCount 1, but "
+                             "flags contain VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT bit.");
+        }
+    }
+
     return skip;
 }
 
