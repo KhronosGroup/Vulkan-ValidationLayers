@@ -9667,3 +9667,32 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentLayout) {
     }
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, RenderPassRenderAreaOffsetX) {
+    TEST_DESCRIPTION("Create renderpass where renderArea.offset.x is invalid");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkClearValue clearValue;
+    clearValue.color.int32[0] = 0;
+    clearValue.color.int32[1] = 0;
+    clearValue.color.int32[2] = 0;
+    clearValue.color.int32[3] = 1;
+
+    auto rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    rpbi.framebuffer = m_framebuffer;
+    rpbi.renderPass = m_renderPass;
+    rpbi.renderArea.offset.x = -16;
+    rpbi.renderArea.extent.width = 64;
+    rpbi.renderArea.extent.height = 64;
+    rpbi.clearValueCount = 1;
+    rpbi.pClearValues = &clearValue;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02850");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidRenderArea");
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyFound();
+}
