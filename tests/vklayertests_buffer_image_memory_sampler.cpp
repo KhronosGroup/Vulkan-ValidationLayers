@@ -14066,3 +14066,47 @@ TEST_F(VkLayerTest, DedicatedAllocationBufferWithInvalidFlags) {
     vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidMemoryAllocatepNextChain) {
+    // Attempts to allocate from a memory type that doesn't exist
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    // Check for external memory device extensions
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    } else {
+        printf("%s External memory extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkPhysicalDeviceMemoryProperties memory_info;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
+
+    VkExportMemoryAllocateInfoNV export_memory_info_nv = LvlInitStruct<VkExportMemoryAllocateInfoNV>();
+    export_memory_info_nv.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    VkExportMemoryAllocateInfo export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>(&export_memory_info_nv);
+    export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>(&export_memory_info);
+    mem_alloc.memoryTypeIndex = memory_info.memoryTypeCount;
+    mem_alloc.allocationSize = 4;
+
+    VkDeviceMemory mem;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
+    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+    m_errorMonitor->VerifyFound();
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    VkExportMemoryWin32HandleInfoNV export_memory_info_win32_nv = LvlInitStruct<VkExportMemoryWin32HandleInfoNV>();
+    export_memory_info_win32_nv.pAttributes = nullptr;
+    export_memory_info_win32_nv.dwAccess = 0;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
+    export_memory_info.pNext = &export_memory_info_win32_nv;
+    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+    m_errorMonitor->VerifyFound();
+#endif
+}
