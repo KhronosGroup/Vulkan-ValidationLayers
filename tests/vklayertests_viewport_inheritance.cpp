@@ -198,7 +198,8 @@ class ViewportInheritanceTestData {
     // Return whether the needed features were found or not.
     template <typename AddDeviceExtension>
     static bool InitState(VkRenderFramework* p_framework, AddDeviceExtension add_device_extension, const char** pp_reason,
-                          bool inheritedViewportScissor2D, bool extended_dynamic_state_multi_viewport) {
+                          bool inheritedViewportScissor2D, bool extended_dynamic_state_multi_viewport,
+                          bool disable_multi_viewport = false) {
         VkPhysicalDeviceExtendedDynamicStateFeaturesEXT ext = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, nullptr};
         VkPhysicalDeviceInheritedViewportScissorFeaturesNV nv = {
@@ -240,6 +241,10 @@ class ViewportInheritanceTestData {
             return false;
         }
         nv.inheritedViewportScissor2D = inheritedViewportScissor2D;
+
+        if (disable_multi_viewport) {
+            features2.features.multiViewport = VK_FALSE;
+        }
 
         p_framework->InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
         return true;
@@ -942,6 +947,33 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
         if (should_fail) m_errorMonitor->VerifyFound();
         else m_errorMonitor->VerifyNotFound();
     }
+}
+
+TEST_F(VkLayerTest, ViewportInheritanceScissorMissingFeature) {
+    TEST_DESCRIPTION("Error using VK_NV_inherited_viewport_scissor without enabling multiViewport feature.");
+    m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    bool has_features = false;
+    const char* missing_feature_string = nullptr;
+    auto self = this;
+    ASSERT_NO_FATAL_FAILURE(has_features = ViewportInheritanceTestData::InitState(
+                                this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
+                                &missing_feature_string, true, false, true));
+    if (!has_features) {
+        printf("%s\n", missing_feature_string);
+        return;
+    }
+
+    ViewportInheritanceTestData test_data(m_device, gpu());
+    if (test_data.FailureReason()) {
+        printf("%s Test internal failure: %s\n", kSkipPrefix, test_data.FailureReason());
+        return;
+    }
+    VkCommandPool pool = m_commandPool->handle();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04783");
+    test_data.MakeBeginSubpassCommandBuffer(pool, 2, test_data.kViewportArray);
+    m_errorMonitor->VerifyFound();
 }
 
 
