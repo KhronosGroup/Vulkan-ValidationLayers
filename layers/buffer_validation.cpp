@@ -5875,6 +5875,19 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             }
         }
 
+        if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
+            if (pCreateInfo->subresourceRange.levelCount != 1) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01584",
+                                 "vkCreateImageView(): Image was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit, "
+                                 "but subresourcesRange.levelCount is not 1.");
+            }
+            if (pCreateInfo->subresourceRange.layerCount != 1) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01584",
+                                 "vkCreateImageView(): Image was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit, "
+                                 "but subresourcesRange.layerCount is not 1.");
+            }
+        }
+
         if (pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT) {
             if (!enabled_features.fragment_density_map2_features.fragmentDensityMapDeferred) {
                 skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-flags-03567",
