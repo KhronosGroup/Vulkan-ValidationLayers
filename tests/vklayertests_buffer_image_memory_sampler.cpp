@@ -14034,6 +14034,89 @@ TEST_F(VkLayerTest, SparseImageMemoryBindOffset) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, BlitImageWithCopyCommandTransform) {
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
+        printf("%s Test requires unsupported extension VK_KHR_copy_commands2. Skipped.\n", kSkipPrefix);
+        return;
+    } else if (!DeviceExtensionSupported(gpu(), nullptr, VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME)) {
+        printf("%s Test requires unsupported extension VK_QCOM_rotated_copy_commands. Skipped.\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkCmdBlitImage2KHR vkCmdBlitImage2Function =
+        (PFN_vkCmdBlitImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBlitImage2KHR");
+
+    VkImageBlit blitRegion = {};
+    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blitRegion.srcSubresource.baseArrayLayer = 0;
+    blitRegion.srcSubresource.layerCount = 1;
+    blitRegion.srcSubresource.mipLevel = 0;
+    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blitRegion.dstSubresource.baseArrayLayer = 0;
+    blitRegion.dstSubresource.layerCount = 1;
+    blitRegion.dstSubresource.mipLevel = 0;
+    blitRegion.srcOffsets[0] = {0, 0, 0};
+    blitRegion.srcOffsets[1] = {64, 64, 1};
+    blitRegion.dstOffsets[0] = {0, 0, 0};
+    blitRegion.dstOffsets[1] = {32, 32, 1};
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 64;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.flags = 0;
+
+    VkImageObj src_image(m_device);
+    src_image.Init(image_create_info);
+    ASSERT_TRUE(src_image.initialized());
+    src_image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageObj dst_image(m_device);
+    dst_image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                   VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(dst_image.initialized());
+    dst_image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    const VkImageBlit2KHR blitRegion2 = {VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+                                         blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
+                                         blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
+
+    VkCopyCommandTransformInfoQCOM copy_command_transform = LvlInitStruct<VkCopyCommandTransformInfoQCOM>();
+    copy_command_transform.transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+
+    const VkBlitImageInfo2KHR blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
+                                                  &copy_command_transform,
+                                                  src_image.image(),
+                                                  src_image.Layout(),
+                                                  dst_image.image(),
+                                                  dst_image.Layout(),
+                                                  1,
+                                                  &blitRegion2,
+                                                  VK_FILTER_NEAREST};
+    // Unsigned int vs not an int
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBlitImageInfo2KHR-pNext-pNext");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBlitImageInfo2KHR-pRegions-04562");
+    m_commandBuffer->begin();
+    vkCmdBlitImage2Function(m_commandBuffer->handle(), &blit_image_info2);
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
     TEST_DESCRIPTION("Bind image memory with VkBindImageMemoryDeviceGroupInfo but invalid flags");
 
