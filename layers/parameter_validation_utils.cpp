@@ -4409,6 +4409,13 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                 }
             }
         }
+
+        if ((pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE) &&
+            (pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)) {
+            skip |= LogError(device, "VUID-VkDescriptorPoolCreateInfo-flags-04607",
+                             "vkCreateDescriptorPool(): pCreateInfo->flags must not contain both "
+                             "VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE and VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT");
+        }
     }
 
     return skip;
