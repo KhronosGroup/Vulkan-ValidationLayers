@@ -3797,6 +3797,16 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
                         "pBeginInfo->pInheritanceInfo->pNext<VkCommandBufferInheritanceConditionalRenderingInfoEXT> is VK_TRUE.");
                 }
             }
+
+            auto p_inherited_viewport_scissor_info = LvlFindInChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
+            if (p_inherited_viewport_scissor_info != nullptr && !physical_device_features.multiViewport &&
+                p_inherited_viewport_scissor_info->viewportScissor2D == VK_TRUE &&
+                p_inherited_viewport_scissor_info->viewportDepthCount != 1) {
+                skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04783",
+                                 "vkBeginCommandBuffer: multiViewport feature is disabled, but "
+                                 "VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D in "
+                                 "pBeginInfo->pInheritanceInfo->pNext is VK_TRUE and viewportDepthCount is not 1.");
+            }
         }
     }
     return skip;
