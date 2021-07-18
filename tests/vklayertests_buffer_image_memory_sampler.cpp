@@ -14034,6 +14034,90 @@ TEST_F(VkLayerTest, SparseImageMemoryBindOffset) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
+    TEST_DESCRIPTION("Bind image memory with VkBindImageMemoryDeviceGroupInfo but invalid flags");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    bool bind_memory_2_extension = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    bool device_group_extension = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+
+    if (!bind_memory_2_extension) {
+        printf("%s test requires VK_KHR_bind_memory2 extensions, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    } else if (!device_group_extension) {
+        printf("%s test requires VK_KHR_device_group extensions, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
+
+    if (bind_memory_2_extension) {
+        if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+            vkBindImageMemory2Function = vk::BindImageMemory2;
+        } else {
+            vkBindImageMemory2Function =
+                (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+        }
+    }
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(nullptr);
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_create_info);
+
+    VkDeviceMemory image_mem;
+    VkMemoryRequirements mem_reqs;
+    vk::GetImageMemoryRequirements(m_device->device(), image.handle(), &mem_reqs);
+    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>(nullptr);
+    mem_alloc.allocationSize = mem_reqs.size;
+
+    for (int i = 0; i < 32; i++) {
+        if (mem_reqs.memoryTypeBits & (1 << i)) {
+            mem_alloc.memoryTypeIndex = i;
+            break;
+        }
+    }
+
+    vk::AllocateMemory(device(), &mem_alloc, NULL, &image_mem);
+
+    std::array<uint32_t, 2> deviceIndices = {{0, 0}};
+    VkRect2D splitInstanceBindregion = {{0, 0}, {16, 16}};
+    VkBindImageMemoryDeviceGroupInfo bind_devicegroup_info = LvlInitStruct<VkBindImageMemoryDeviceGroupInfo>();
+    bind_devicegroup_info.deviceIndexCount = 2;
+    bind_devicegroup_info.pDeviceIndices = deviceIndices.data();
+    bind_devicegroup_info.splitInstanceBindRegionCount = 1;
+    bind_devicegroup_info.pSplitInstanceBindRegions = &splitInstanceBindregion;
+
+    VkBindImageMemoryInfo bindInfo = LvlInitStruct<VkBindImageMemoryInfo>();
+    bindInfo.pNext = &bind_devicegroup_info;
+    bindInfo.image = image.handle();
+    bindInfo.memory = image_mem;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01627");
+    vkBindImageMemory2Function(device(), 1, &bindInfo);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, DedicatedAllocationBufferWithInvalidFlags) {
     TEST_DESCRIPTION("Verify that flags are valid with VkDedicatedAllocationBufferCreateInfoNV");
 
