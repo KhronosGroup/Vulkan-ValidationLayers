@@ -4854,6 +4854,24 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
             }
         }
 
+        auto export_memory = LvlFindInChain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);
+        if (export_memory) {
+            auto export_memory_nv = LvlFindInChain<VkExportMemoryAllocateInfoNV>(pAllocateInfo->pNext);
+            if (export_memory_nv) {
+                skip |= LogError(device, "VUID-VkMemoryAllocateInfo-pNext-00640",
+                                 "pNext chain of VkMemoryAllocateInfo includes both VkExportMemoryAllocateInfo and "
+                                 "VkExportMemoryAllocateInfoNV");
+            }
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+            auto export_memory_win32_nv = LvlFindInChain<VkExportMemoryWin32HandleInfoNV>(pAllocateInfo->pNext);
+            if (export_memory_win32_nv) {
+                skip |= LogError(device, "VUID-VkMemoryAllocateInfo-pNext-00640",
+                                 "pNext chain of VkMemoryAllocateInfo includes both VkExportMemoryAllocateInfo and "
+                                 "VkExportMemoryWin32HandleInfoNV");
+            }
+#endif
+        }
+
         if (flags) {
             VkBool32 capture_replay = false;
             VkBool32 buffer_device_address = false;
