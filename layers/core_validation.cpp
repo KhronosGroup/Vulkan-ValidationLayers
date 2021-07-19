@@ -5469,7 +5469,8 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
     return cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
         this, pCreateInfo, IsExtEnabled(device_extensions.vk_khr_push_descriptor), phys_dev_ext_props.max_push_descriptors,
         IsExtEnabled(device_extensions.vk_ext_descriptor_indexing), &enabled_features.core12,
-        &enabled_features.inline_uniform_block, &phys_dev_ext_props.inline_uniform_block_props, &device_extensions);
+        &enabled_features.inline_uniform_block, &phys_dev_ext_props.inline_uniform_block_props,
+        &enabled_features.ray_tracing_acceleration_structure_features, &device_extensions);
 }
 
 enum DSL_DESCRIPTOR_GROUPS {

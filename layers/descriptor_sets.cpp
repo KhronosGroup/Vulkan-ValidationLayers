@@ -337,7 +337,9 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
     const uint32_t max_push_descriptors, const bool descriptor_indexing_ext,
     const VkPhysicalDeviceVulkan12Features *core12_features,
     const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
-    const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props, const DeviceExtensions *device_extensions) {
+    const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
+    const VkPhysicalDeviceAccelerationStructureFeaturesKHR *acceleration_structure_features,
+    const DeviceExtensions *device_extensions) {
     bool skip = false;
     layer_data::unordered_set<uint32_t> bindings;
     uint64_t total_descriptors = 0;
@@ -548,6 +550,19 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                             "vkCreateDescriptorSetLayout(): pBindings[%u] can't have VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT "
                             "for %s since descriptorBindingInlineUniformBlockUpdateAfterBind is not enabled.",
                             i, string_VkDescriptorType(binding_info.descriptorType));
+                    }
+                    if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR ||
+                         binding_info.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) &&
+                        !acceleration_structure_features->descriptorBindingAccelerationStructureUpdateAfterBind) {
+                        skip |= val_obj->LogError(val_obj->device,
+                                                  "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-"
+                                                  "descriptorBindingAccelerationStructureUpdateAfterBind-03570",
+                                                  "vkCreateDescriptorSetLayout(): pBindings[%" PRIu32
+                                                  "] can't have VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT "
+                                                  "for %s if "
+                                                  "VkPhysicalDeviceAccelerationStructureFeaturesKHR::"
+                                                  "descriptorBindingAccelerationStructureUpdateAfterBind is not enabled.",
+                                                  i, string_VkDescriptorType(binding_info.descriptorType));
                     }
                 }
 
