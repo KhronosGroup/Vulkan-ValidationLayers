@@ -10072,3 +10072,55 @@ TEST_F(VkLayerTest, RenderPassBeginNullValues) {
     TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rpbi, false,
                         "VUID-VkRenderPassBeginInfo-clearValueCount-04962", nullptr);
 }
+
+TEST_F(VkLayerTest, ValidateDescriptorBindingUpdateAfterBindWithAccelerationStructure) {
+    TEST_DESCRIPTION("Validate acceleration structure descriptor writing.");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
+        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE3_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE3_EXTENSION_NAME);
+    } else {
+        printf("%s Descriptor Indexing or Maintenance3 Extension not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping tests\n", kSkipPrefix, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkDescriptorSetLayoutBinding binding = {};
+    binding.binding = 0;
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    binding.descriptorCount = 1;
+    binding.stageFlags = VK_SHADER_STAGE_ALL;
+    binding.pImmutableSamplers = nullptr;
+
+    VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+
+    auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+    flags_create_info.bindingCount = 1;
+    flags_create_info.pBindingFlags = &flags;
+
+    VkDescriptorSetLayoutCreateInfo create_info = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(&flags_create_info);
+    create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+    create_info.bindingCount = 1;
+    create_info.pBindings = &binding;
+
+    VkDescriptorSetLayout setLayout;
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingAccelerationStructureUpdateAfterBind-03570");
+    vk::CreateDescriptorSetLayout(m_device->handle(), &create_info, nullptr, &setLayout);
+    m_errorMonitor->VerifyFound();
+}
