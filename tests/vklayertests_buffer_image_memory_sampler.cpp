@@ -14128,6 +14128,64 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBindings) {
+    TEST_DESCRIPTION("Create descriptor set layout with incompatible bindings.");
+
+    if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, NULL,
+                                                         m_errorMonitor))) {
+        printf("Descriptor indexing or one of its dependencies not supported, skipping tests\n");
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (VK_FALSE == indexing_features.descriptorBindingUniformBufferUpdateAfterBind) {
+        printf("%s Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind, skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkDescriptorSetLayoutBinding update_binding = {};
+    update_binding.binding = 0;
+    update_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    update_binding.descriptorCount = 1;
+    update_binding.stageFlags = VK_SHADER_STAGE_ALL;
+    update_binding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutBinding dynamic_binding = {};
+    dynamic_binding.binding = 1;
+    dynamic_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+    dynamic_binding.descriptorCount = 1;
+    dynamic_binding.stageFlags = VK_SHADER_STAGE_ALL;
+    dynamic_binding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutBinding bindings[2] = {update_binding, dynamic_binding};
+
+    VkDescriptorBindingFlags flags[2] = {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, 0};
+
+    auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+    flags_create_info.bindingCount = 2;
+    flags_create_info.pBindingFlags = flags;
+
+    VkDescriptorSetLayoutCreateInfo create_info = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    create_info.pNext = &flags_create_info;
+    create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+    create_info.bindingCount = 2;
+    create_info.pBindings = bindings;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-03001");
+    VkDescriptorSetLayout setLayout;
+    vk::CreateDescriptorSetLayout(m_device->handle(), &create_info, nullptr, &setLayout);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBinding) {
     TEST_DESCRIPTION("Create invalid descriptor set layout.");
 
