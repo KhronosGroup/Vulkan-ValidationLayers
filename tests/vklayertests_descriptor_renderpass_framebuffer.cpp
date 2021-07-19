@@ -9689,3 +9689,45 @@ TEST_F(VkLayerTest, InvalidCreateDescriptorPoolFlags) {
     vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &bad_pool);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidCreateDescriptorPoolAllocateFlags) {
+    TEST_DESCRIPTION("Create descriptor pool with invalid flags.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDescriptorPoolSize ds_type_count = {};
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+    ds_type_count.descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    ds_pool_ci.flags = 0;
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    VkDescriptorPool pool;
+    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &pool);
+
+    VkDescriptorSetLayoutBinding dsl_binding_samp = {};
+    dsl_binding_samp.binding = 0;
+    dsl_binding_samp.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    dsl_binding_samp.descriptorCount = 1;
+    dsl_binding_samp.stageFlags = VK_SHADER_STAGE_ALL;
+    dsl_binding_samp.pImmutableSamplers = NULL;
+
+    const VkDescriptorSetLayoutObj ds_layout_samp(m_device, {dsl_binding_samp},
+                                                  VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE);
+
+    VkDescriptorSetLayout set_layout = ds_layout_samp.handle();
+
+    VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.descriptorPool = pool;
+    alloc_info.pSetLayouts = &set_layout;
+
+    VkDescriptorSet descriptor_set;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetAllocateInfo-pSetLayouts-04610");
+    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
+    m_errorMonitor->VerifyFound();
+}
