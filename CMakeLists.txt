@@ -38,6 +38,8 @@ if (NOT VVL_CPP_STANDARD)
     set(VVL_CPP_STANDARD 11)
 endif()
 
+option(VVL_ENABLE_ASAN "Use address sanitization (specifically -fsanitize=address)" OFF)
+
 # API_NAME allows renaming builds to avoid conflicts with installed SDKs.  It is referenced by layers/vk_loader_platform.h
 set(API_NAME "Vulkan" CACHE STRING "API name to use when building")
 string(TOLOWER ${API_NAME} API_LOWERCASE)
@@ -369,6 +371,11 @@ add_library(VkLayer_utils
             layers/vk_format_utils.cpp)
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
 set_target_properties(VkLayer_utils PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
+if (VVL_ENABLE_ASAN)
+    target_compile_options(VkLayer_utils PRIVATE -fsanitize=address)
+    # NOTE: Use target_link_options when cmake 3.13 is available on CI
+    target_link_libraries(VkLayer_utils PRIVATE "-fsanitize=address")
+endif()
 if (UPDATE_DEPS)
     add_dependencies(VkLayer_utils vvl_update_deps)
 endif()

@@ -85,6 +85,12 @@ macro(AddVkLayer target LAYER_COMPILE_DEFINITIONS)
     target_compile_definitions(VkLayer_${target} PUBLIC ${LAYER_COMPILE_DEFINITIONS})
     target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
 
+    if (VVL_ENABLE_ASAN)
+        target_compile_options(VkLayer_${target} PRIVATE -fsanitize=address)
+        # NOTE: Use target_link_options when cmake 3.13 is available on CI
+        target_link_libraries(VkLayer_${target} PRIVATE "-fsanitize=address")
+    endif()
+
     if(WIN32)
         target_sources(VkLayer_${target} PRIVATE VkLayer_${target}.def)
         target_compile_definitions(VkLayer_${target} PUBLIC NOMINMAX)
