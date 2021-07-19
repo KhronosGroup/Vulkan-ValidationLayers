@@ -132,6 +132,12 @@ if (PORTABILITY_TESTS_USE_DEVSIM)
     target_compile_definitions(vk_layer_validation_tests PRIVATE PORTABILITY_TESTS_USE_DEVSIM=1)
 endif()
 
+if (VVL_ENABLE_ASAN)
+    target_compile_options(vk_layer_validation_tests  PRIVATE -fsanitize=address)
+    # NOTE: Use target_link_options when cmake 3.13 is available on CI
+    target_link_libraries(vk_layer_validation_tests  PRIVATE "-fsanitize=address")
+endif()
+
 # Specify target_link_libraries
 target_link_libraries(vk_layer_validation_tests
                       PRIVATE VkLayer_utils)
