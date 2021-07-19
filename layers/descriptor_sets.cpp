@@ -429,6 +429,13 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
             }
         }
 
+        if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE && binding_info.pImmutableSamplers != nullptr) {
+            skip |= val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutBinding-descriptorType-04605",
+                                      "vkCreateDescriptorSetLayout(): pBindings[%u] has descriptorType "
+                                      "VK_DESCRIPTOR_TYPE_MUTABLE_VALVE but pImmutableSamplers is not NULL.",
+                                      i);
+        }
+
         total_descriptors += binding_info.descriptorCount;
     }
 
