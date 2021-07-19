@@ -370,6 +370,10 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
 
     uint32_t max_binding = 0;
 
+    uint32_t update_after_bind = create_info->bindingCount;
+    uint32_t uniform_buffer_dynamic = create_info->bindingCount;
+    uint32_t storage_buffer_dynamic = create_info->bindingCount;
+
     for (uint32_t i = 0; i < create_info->bindingCount; ++i) {
         const auto &binding_info = create_info->pBindings[i];
         max_binding = std::max(max_binding, binding_info.binding);
@@ -410,6 +414,10 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                                           i, binding_info.descriptorCount, inline_uniform_block_props->maxInlineUniformBlockSize);
                 }
             }
+        } else if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+            uniform_buffer_dynamic = i;
+        } else if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+            storage_buffer_dynamic = i;
         }
 
         if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
@@ -452,6 +460,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                 const auto &binding_info = create_info->pBindings[i];
 
                 if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) {
+                    update_after_bind = i;
                     if (!update_after_bind_set) {
                         skip |= val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-03000",
                                                   "vkCreateDescriptorSetLayout(): pBindings[%u] does not have "
@@ -606,6 +615,25 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                         i);
                 }
             }
+        }
+    }
+
+    if (update_after_bind < create_info->bindingCount) {
+        if (uniform_buffer_dynamic < create_info->bindingCount) {
+            skip |=
+                val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-03001",
+                                  "vkCreateDescriptorSetLayout(): binding (%" PRIi32
+                                  ") has VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT "
+                                  "flag, but binding (%" PRIi32 ") has descriptor type VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC.",
+                                  update_after_bind, uniform_buffer_dynamic);
+        }
+        if (storage_buffer_dynamic < create_info->bindingCount) {
+            skip |=
+                val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-03001",
+                                  "vkCreateDescriptorSetLayout(): binding (%" PRIi32
+                                  ") has VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT "
+                                  "flag, but binding (%" PRIi32 ") has descriptor type VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC.",
+                                  update_after_bind, storage_buffer_dynamic);
         }
     }
 
