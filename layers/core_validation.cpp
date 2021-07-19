@@ -2519,6 +2519,19 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
                              "feature must also be enabled.");
             }
         }
+        const auto *device_group_ci = LvlFindInChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
+        if (device_group_ci) {
+            for (uint32_t i = 0; i < device_group_ci->physicalDeviceCount - 1; ++i) {
+                for (uint32_t j = i + 1; j < device_group_ci->physicalDeviceCount; ++j) {
+                    if (device_group_ci->pPhysicalDevices[i] == device_group_ci->pPhysicalDevices[j]) {
+                        skip |= LogError(pd_state->phys_device, "VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375",
+                                         "vkCreateDevice: VkDeviceGroupDeviceCreateInfo has a duplicated physical device "
+                                         "in pPhysicalDevices [%" PRIu32 "] and [%" PRIu32 "].",
+                                         i, j);
+                    }
+                }
+            }
+        }
     }
     return skip;
 }
