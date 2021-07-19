@@ -326,6 +326,15 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
 
     auto buffer_state = std::make_shared<BUFFER_STATE>(*pBuffer, pCreateInfo);
 
+    if (pCreateInfo) {
+        const auto *opaque_capture_address = LvlFindInChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
+        if (opaque_capture_address) {
+            // address is used for GPU-AV and ray tracing buffer validation
+            buffer_state->deviceAddress = opaque_capture_address->opaqueCaptureAddress;
+            buffer_address_map_.emplace(opaque_capture_address->opaqueCaptureAddress, buffer_state.get());
+        }
+    }
+
     // Get a set of requirements in the case the app does not
     DispatchGetBufferMemoryRequirements(device, *pBuffer, &buffer_state->requirements);
 
