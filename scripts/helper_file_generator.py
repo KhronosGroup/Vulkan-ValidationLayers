@@ -836,6 +836,11 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             '    if (feature == kNotEnabled) return false;',
             '    return true;',
             '};',
+            '',
+            'static bool DECORATE_UNUSED IsExtEnabledByCreateinfo(ExtEnabled feature) {',
+            '    if (feature == kEnabledByCreateinfo) return true;',
+            '    return false;',
+            '};',
             '#define VK_VERSION_1_2_NAME "VK_VERSION_1_2"',
             '']
 
