@@ -370,6 +370,10 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
 
     uint32_t max_binding = 0;
 
+    bool update_after_bind = false;
+    bool uniform_buffer_dynamic = false;
+    bool storage_buffer_dynamic = false;
+
     for (uint32_t i = 0; i < create_info->bindingCount; ++i) {
         const auto &binding_info = create_info->pBindings[i];
         max_binding = std::max(max_binding, binding_info.binding);
@@ -410,6 +414,10 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                                           i, binding_info.descriptorCount, inline_uniform_block_props->maxInlineUniformBlockSize);
                 }
             }
+        } else if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+            uniform_buffer_dynamic = true;
+        } else if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+            storage_buffer_dynamic = true;
         }
 
         if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
@@ -445,6 +453,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                 const auto &binding_info = create_info->pBindings[i];
 
                 if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) {
+                    update_after_bind = true;
                     if (!update_after_bind_set) {
                         skip |= val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-03000",
                                                   "vkCreateDescriptorSetLayout(): pBindings[%u] does not have "
@@ -600,6 +609,13 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                 }
             }
         }
+    }
+
+    if (update_after_bind && (uniform_buffer_dynamic || storage_buffer_dynamic)) {
+        skip |= val_obj->LogError(
+            val_obj->device, "VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-03001",
+            "vkCreateDescriptorSetLayout(): if any binding has VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT flag, no binding can "
+            "have descriptor type VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC or VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC.");
     }
 
     if ((push_descriptor_set) && (total_descriptors > max_push_descriptors)) {
