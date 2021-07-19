@@ -13024,3 +13024,52 @@ TEST_F(VkLayerTest, ValidateColorWriteDynamicStateDisabled) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
+    TEST_DESCRIPTION("Test invalid combinations of device features.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT shader_image_atomic_int64_feature =
+        LvlInitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
+    shader_image_atomic_int64_feature.sparseImageInt64Atomics = VK_TRUE;
+    shader_image_atomic_int64_feature.shaderImageInt64Atomics = VK_FALSE;
+
+    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shader_atomic_float_feature =
+        LvlInitStruct<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>();
+    shader_atomic_float_feature.sparseImageFloat32Atomics = VK_TRUE;
+    shader_atomic_float_feature.shaderImageFloat32Atomics = VK_FALSE;
+    shader_atomic_float_feature.sparseImageFloat32AtomicAdd = VK_TRUE;
+    shader_atomic_float_feature.shaderImageFloat32AtomicAdd = VK_FALSE;
+
+    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&shader_image_atomic_int64_feature);
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
+    device_create_info.pNext = &pd_features2;
+    device_create_info.queueCreateInfoCount = queue_info.size();
+    device_create_info.pQueueCreateInfos = queue_info.data();
+
+    {
+        VkDevice testDevice;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-None-04896");
+        vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        pd_features2.pNext = &shader_atomic_float_feature;
+
+        VkDevice testDevice;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-None-04897");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-None-04898");
+        vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+        m_errorMonitor->VerifyFound();
+    }
+}
