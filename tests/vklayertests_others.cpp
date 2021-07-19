@@ -12997,6 +12997,47 @@ TEST_F(VkLayerTest, WriteTimeStampInvalidQuery) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
+    TEST_DESCRIPTION("Duplicated physical devices in DeviceGroupDeviceCreateInfo.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    uint32_t physical_device_group_count = 0;
+    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
+
+    if (physical_device_group_count == 0) {
+        printf("%s physical_device_group_count is 0, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
+                                                                       {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
+    VkPhysicalDevice physicalDevices[2] = {physical_device_group[0].physicalDevices[0],
+                                           physical_device_group[0].physicalDevices[0]};
+
+    VkDeviceGroupDeviceCreateInfo create_device_pnext = LvlInitStruct<VkDeviceGroupDeviceCreateInfo>();
+    create_device_pnext.physicalDeviceCount = 2;
+    create_device_pnext.pPhysicalDevices = physicalDevices;
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
+
+    VkDeviceCreateInfo create_info = LvlInitStruct<VkDeviceCreateInfo>();
+    create_info.pNext = &create_device_pnext;
+    create_info.queueCreateInfoCount = queue_info.size();
+    create_info.pQueueCreateInfos = queue_info.data();
+    create_info.enabledLayerCount = 0;
+    create_info.ppEnabledLayerNames = nullptr;
+    create_info.enabledExtensionCount = m_device_extension_names.size();
+    create_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    VkDevice device;
+    m_errorMonitor->SetUnexpectedError("Failed to create");
+    vk::CreateDevice(gpu(), &create_info, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ValidateColorWriteDynamicStateDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_color_write_enable VUs when disabled");
 
