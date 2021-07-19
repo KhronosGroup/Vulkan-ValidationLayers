@@ -402,6 +402,7 @@ bool ValidateDescriptorSetLayoutCreateInfo(const ValidationObject *val_obj, cons
                                            const VkPhysicalDeviceVulkan12Features *core12_features,
                                            const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
                                            const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
+                                           const VkPhysicalDeviceAccelerationStructureFeaturesKHR *acceleration_structure_features,
                                            const DeviceExtensions *device_extensions);
 
 // All Dynamic descriptor types
