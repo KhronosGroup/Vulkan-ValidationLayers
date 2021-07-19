@@ -3050,6 +3050,14 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
                     "vkAllocateDescriptorSets(): Descriptor set layout create flags and pool create flags mismatch for index (%d)",
                     i);
             }
+            if (layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE &&
+                !(pool_state->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE)) {
+                skip |= LogError(device, "VUID-VkDescriptorSetAllocateInfo-pSetLayouts-04610",
+                                 "vkAllocateDescriptorSets(): pSetLayouts[%d].flags contain "
+                                 "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE bit, but the pool was not created "
+                                 "with the VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE bit.",
+                                 i);
+            }
         }
     }
     if (!device_extensions.vk_khr_maintenance1) {
