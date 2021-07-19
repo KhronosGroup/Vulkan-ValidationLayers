@@ -2493,6 +2493,32 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
                 }
             }
         }
+
+        const auto *shader_image_atomic_int64_feature =
+            LvlFindInChain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(pCreateInfo->pNext);
+        if (shader_image_atomic_int64_feature) {
+            if (shader_image_atomic_int64_feature->sparseImageInt64Atomics &&
+                !shader_image_atomic_int64_feature->shaderImageInt64Atomics) {
+                skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-None-04896",
+                                 "vkCreateDevice: if shaderImageInt64Atomics feature is enabled then sparseImageInt64Atomics "
+                                 "feature must also be enabled.");
+            }
+        }
+        const auto *shader_atomic_float_feature = LvlFindInChain<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>(pCreateInfo->pNext);
+        if (shader_atomic_float_feature) {
+            if (shader_atomic_float_feature->sparseImageFloat32Atomics && !shader_atomic_float_feature->shaderImageFloat32Atomics) {
+                skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-None-04897",
+                                 "vkCreateDevice: if sparseImageFloat32Atomics feature is enabled then shaderImageFloat32Atomics "
+                                 "feature must also be enabled.");
+            }
+            if (shader_atomic_float_feature->sparseImageFloat32AtomicAdd &&
+                !shader_atomic_float_feature->shaderImageFloat32AtomicAdd) {
+                skip |=
+                    LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-None-04898",
+                             "vkCreateDevice: if sparseImageFloat32AtomicAdd feature is enabled then shaderImageFloat32AtomicAdd "
+                             "feature must also be enabled.");
+            }
+        }
     }
     return skip;
 }
