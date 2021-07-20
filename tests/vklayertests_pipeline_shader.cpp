@@ -3587,7 +3587,7 @@ TEST_F(VkLayerTest, InvalidSPIRVMagic) {
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     moduleCreateInfo.pNext = NULL;
     moduleCreateInfo.pCode = (const uint32_t *)&spv;
-    moduleCreateInfo.codeSize = sizeof(spv) + 16;
+    moduleCreateInfo.codeSize = sizeof(spv);
     moduleCreateInfo.flags = 0;
     vk::CreateShaderModule(m_device->device(), &moduleCreateInfo, NULL, &module);
 
