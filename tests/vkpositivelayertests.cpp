@@ -13743,7 +13743,7 @@ TEST_F(VkPositiveLayerTest, SpecializationUnused) {
         )";
 
     VkSpecializationMapEntry entries[4] = {
-        {0, 0, 0},  // usued
+        {0, 0, 1},  // unused
         {1, 0, 1},  // usued
         {2, 0, 4},  // OpTypeInt 32
         {3, 0, 4},  // usued
