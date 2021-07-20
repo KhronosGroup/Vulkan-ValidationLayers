@@ -13074,6 +13074,45 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
     }
 }
 
+TEST_F(VkLayerTest, ExternalMemoryAndExternalMemoryNV) {
+    TEST_DESCRIPTION("Test for both external memory and external memory NV in image create pNext chain.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) &&
+        (DeviceExtensionSupported(gpu(), nullptr, VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkExternalMemoryImageCreateInfoNV external_mem_nv = LvlInitStruct<VkExternalMemoryImageCreateInfoNV>();
+    external_mem_nv.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    VkExternalMemoryImageCreateInfo external_mem = LvlInitStruct<VkExternalMemoryImageCreateInfo>(&external_mem_nv);
+    external_mem.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    VkImageCreateInfo ici = LvlInitStruct<VkImageCreateInfo>(&external_mem);
+    ici.imageType = VK_IMAGE_TYPE_2D;
+    ici.arrayLayers = 1;
+    ici.extent = {64, 64, 1};
+    ici.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ici.mipLevels = 1;
+    ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ici.samples = VK_SAMPLE_COUNT_1_BIT;
+    ici.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-00988");
+    VkImage test_image;
+    vk::CreateImage(device(), &ici, nullptr, &test_image);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, InvalidImageCreateFlagWithPhysicalDeviceCount) {
     TEST_DESCRIPTION("Test for invalid imageCreate flags bit with physicalDeviceCount.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
