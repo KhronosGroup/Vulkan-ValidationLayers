@@ -2160,6 +2160,16 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
+    const auto external_memory_create_info_nv = LvlFindInChain<VkExternalMemoryImageCreateInfoNV>(pCreateInfo->pNext);
+    if (external_memory_create_info_nv != nullptr) {
+        const auto external_memory_create_info = LvlFindInChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
+        if (external_memory_create_info != nullptr) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-00988",
+                             "vkCreateImage(): VkImageCreateInfo struct has both VkExternalMemoryImageCreateInfoNV and "
+                             "VkExternalMemoryImageCreateInfo chained structs.");
+        }
+    }
+
     if (device_group_create_info.physicalDeviceCount == 1) {
         if (pCreateInfo->flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-physicalDeviceCount-01421",
