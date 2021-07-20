@@ -1816,6 +1816,14 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsDriver(VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA)) {
+        // Test produces validation error VUID-VkBindImageMemoryInfo-pNext-01619
+        // rather than the expected VUID-VkBindImageMemoryInfo-pNext-01620.
+        printf("%s This test should not be run on the Intel Mesa driver\n", kSkipPrefix);
+        return;
+    }
+
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
@@ -2189,6 +2197,14 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsDriver(VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA)) {
+        // Test produces validation error VUID-VkBindImageMemoryInfo-pNext-01619
+        // rather than the expected VUID-VkBindImageMemoryInfo-pNext-01620.
+        printf("%s This test should not be run on the Intel Mesa driver\n", kSkipPrefix);
+        return;
+    }
+
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
@@ -2454,6 +2470,13 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsDriver(VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA)) {
+        // Test produces validation error VUID-VkBindImageMemoryInfo-pNext-01619.
+        printf("%s This test should not be run on the Intel Mesa driver\n", kSkipPrefix);
+        return;
+    }
+
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);

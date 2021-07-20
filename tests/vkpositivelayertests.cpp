@@ -44,7 +44,14 @@
 TEST_F(VkPositiveLayerTest, TwoInstances) {
     TEST_DESCRIPTION("Create two instances before destroy");
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);  // Needed for IsDriver.
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsDriver(VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA)) {
+        printf("%s This test should not be run on the Intel Mesa driver\n", kSkipPrefix);
+        return;
+    }
 
     VkInstance i1, i2, i3;
 
@@ -8042,6 +8049,8 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
 TEST_F(VkPositiveLayerTest, CreatePipelineWithCoreChecksDisabled) {
     TEST_DESCRIPTION("Test CreatePipeline while the CoreChecks validation object is disabled");
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);  // Needed for IsDriver.
+
     // Enable KHR validation features extension
     VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
     VkValidationFeaturesEXT features = {};
@@ -8051,6 +8060,12 @@ TEST_F(VkPositiveLayerTest, CreatePipelineWithCoreChecksDisabled) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, pool_flags, &features));
+
+    if (IsDriver(VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA)) {
+        printf("%s This test should not be run on the Intel Mesa driver\n", kSkipPrefix);
+        return;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
