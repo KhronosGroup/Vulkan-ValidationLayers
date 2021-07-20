@@ -9445,9 +9445,14 @@ TEST_F(VkLayerTest, InvalidImageViewLayerCount) {
     ASSERT_TRUE(image_2d_array.initialized());
 
     image_ci.imageType = VK_IMAGE_TYPE_3D;
-    VkImageObj image_3d_array(m_device);
-    image_3d_array.init(&image_ci);
-    ASSERT_TRUE(image_3d_array.initialized());
+    VkImageFormatProperties img_limits;
+    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
+    layer_data::optional<VkImageObj> image_3d_array;
+    if (img_limits.maxArrayLayers >= image_ci.arrayLayers) {
+        image_3d_array.emplace(m_device);
+        image_3d_array->init(&image_ci);
+        ASSERT_TRUE(image_3d_array->initialized());
+    }
 
     // base for each test that never changes
     VkImageViewCreateInfo image_view_ci = LvlInitStruct<VkImageViewCreateInfo>(nullptr);
@@ -9467,9 +9472,11 @@ TEST_F(VkLayerTest, InvalidImageViewLayerCount) {
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         image_view_ci.image = image_2d_array.image();
         CreateImageViewTest(*this, &image_view_ci);
-        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
-        image_view_ci.image = image_3d_array.image();
-        CreateImageViewTest(*this, &image_view_ci);
+        if (image_3d_array) {
+            image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+            image_view_ci.image = image_3d_array->image();
+            CreateImageViewTest(*this, &image_view_ci);
+        }
 
         image_view_ci.subresourceRange.baseArrayLayer = 1;
         image_view_ci.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
@@ -9480,9 +9487,11 @@ TEST_F(VkLayerTest, InvalidImageViewLayerCount) {
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         image_view_ci.image = image_2d_array.image();
         CreateImageViewTest(*this, &image_view_ci);
-        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
-        image_view_ci.image = image_3d_array.image();
-        CreateImageViewTest(*this, &image_view_ci);
+        if (image_3d_array) {
+            image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+            image_view_ci.image = image_3d_array->image();
+            CreateImageViewTest(*this, &image_view_ci);
+        }
 
         image_view_ci.subresourceRange.baseArrayLayer = 0;
         image_view_ci.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
@@ -9511,9 +9520,11 @@ TEST_F(VkLayerTest, InvalidImageViewLayerCount) {
         image_view_ci.image = image_2d_array.image();
         CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04973");
 
-        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
-        image_view_ci.image = image_3d_array.image();
-        CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04973");
+        if (image_3d_array) {
+            image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+            image_view_ci.image = image_3d_array->image();
+            CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04973");
+        }
     }
 
     // layerCount is VK_REMAINING_ARRAY_LAYERS but not 1
@@ -9529,9 +9540,11 @@ TEST_F(VkLayerTest, InvalidImageViewLayerCount) {
         image_view_ci.image = image_2d_array.image();
         CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04974");
 
-        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
-        image_view_ci.image = image_3d_array.image();
-        CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04974");
+        if (image_3d_array) {
+            image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+            image_view_ci.image = image_3d_array->image();
+            CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04974");
+        }
     }
 }
 
