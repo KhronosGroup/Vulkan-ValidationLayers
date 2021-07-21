@@ -129,3 +129,9 @@ void BINDABLE::SetSparseMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, co
     // Need to set mem binding for this object
     bound_memory_.insert({mem->mem(), sparse_binding});
 }
+
+VkDeviceSize BINDABLE::GetFakeBaseAddress() const {
+    assert(!sparse);  // not implemented yet
+    const auto *binding = Binding();
+    return binding ? binding->offset + binding->mem_state->fake_base_address : 0;
+}

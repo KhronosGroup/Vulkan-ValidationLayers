@@ -110,8 +110,8 @@ struct PHYSICAL_DEVICE_STATE_BP {
 
 class SWAPCHAIN_STATE_BP : public SWAPCHAIN_NODE {
   public:
-    SWAPCHAIN_STATE_BP(const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR swapchain)
-        : SWAPCHAIN_NODE(pCreateInfo, swapchain) {}
+    SWAPCHAIN_STATE_BP(ValidationStateTracker* dev_data, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR swapchain)
+        : SWAPCHAIN_NODE(dev_data, pCreateInfo, swapchain) {}
     CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
 };
 
@@ -487,7 +487,7 @@ class BestPractices : public ValidationStateTracker {
 
     std::shared_ptr<SWAPCHAIN_NODE> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
                                                          VkSwapchainKHR swapchain) final {
-        return std::static_pointer_cast<SWAPCHAIN_NODE>(std::make_shared<SWAPCHAIN_STATE_BP>(create_info, swapchain));
+        return std::static_pointer_cast<SWAPCHAIN_NODE>(std::make_shared<SWAPCHAIN_STATE_BP>(this, create_info, swapchain));
     }
 
 // Include code-generated functions

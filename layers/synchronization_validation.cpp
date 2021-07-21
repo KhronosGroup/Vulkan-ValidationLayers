@@ -29,8 +29,8 @@
 static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.Binding(); }
 
 static bool SimpleBinding(const IMAGE_STATE &image_state) {
-    bool simple = SimpleBinding(static_cast<const BINDABLE &>(image_state)) || image_state.is_swapchain_image ||
-                  (VK_NULL_HANDLE != image_state.bind_swapchain);
+    bool simple =
+        SimpleBinding(static_cast<const BINDABLE &>(image_state)) || image_state.is_swapchain_image || image_state.bind_swapchain;
 
     // If it's not simple we must have an encoder.
     assert(!simple || image_state.fragment_encoder.get());
@@ -225,19 +225,7 @@ ResourceAccessState::OrderingBarriers ResourceAccessState::kOrderingRules = {
 static const ResourceUsageTag kCurrentCommandTag(ResourceUsageTag::kMaxIndex, ResourceUsageTag::kMaxCount,
                                                  ResourceUsageTag::kMaxCount, CMD_NONE);
 
-static VkDeviceSize ResourceBaseAddress(const BINDABLE &bindable) {
-    const auto *binding = bindable.Binding();
-    return binding ? binding->offset + binding->mem_state->fake_base_address : 0;
-}
-static VkDeviceSize ResourceBaseAddress(const IMAGE_STATE &image_state) {
-    VkDeviceSize base_address;
-    if (image_state.is_swapchain_image || (VK_NULL_HANDLE != image_state.bind_swapchain)) {
-        base_address = image_state.swapchain_fake_address;
-    } else {
-        base_address = ResourceBaseAddress(static_cast<const BINDABLE &>(image_state));
-    }
-    return base_address;
-}
+static VkDeviceSize ResourceBaseAddress(const BINDABLE &bindable) { return bindable.GetFakeBaseAddress(); }
 
 inline VkDeviceSize GetRealWholeSize(VkDeviceSize offset, VkDeviceSize size, VkDeviceSize whole_size) {
     if (size == VK_WHOLE_SIZE) {

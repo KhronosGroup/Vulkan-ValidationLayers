@@ -148,7 +148,7 @@ template <typename LocType>
 bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const LocType &location) const {
     bool result = false;
     if (image_state->create_from_swapchain != VK_NULL_HANDLE) {
-        if (image_state->bind_swapchain == VK_NULL_HANDLE) {
+        if (!image_state->bind_swapchain) {
             LogObjectList objlist(image_state->image());
             objlist.add(image_state->create_from_swapchain);
             result |= LogError(
@@ -157,17 +157,17 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
                 "includes VkBindImageMemorySwapchainInfoKHR.",
                 location.FuncName(), report_data->FormatHandle(image_state->image()).c_str(),
                 report_data->FormatHandle(image_state->create_from_swapchain).c_str());
-        } else if (image_state->create_from_swapchain != image_state->bind_swapchain) {
+        } else if (image_state->create_from_swapchain != image_state->bind_swapchain->swapchain()) {
             LogObjectList objlist(image_state->image());
             objlist.add(image_state->create_from_swapchain);
-            objlist.add(image_state->bind_swapchain);
+            objlist.add(image_state->bind_swapchain->Handle());
             result |=
                 LogError(objlist, location.Vuid(),
                          "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
                          "swapchain",
                          location.FuncName(), report_data->FormatHandle(image_state->image()).c_str(),
                          report_data->FormatHandle(image_state->create_from_swapchain).c_str(),
-                         report_data->FormatHandle(image_state->bind_swapchain).c_str());
+                         report_data->FormatHandle(image_state->bind_swapchain->Handle()).c_str());
         }
     } else if (image_state->IsExternalAHB()) {
         // TODO look into how to properly check for a valid bound memory for an external AHB

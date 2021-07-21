@@ -31,7 +31,9 @@
 #include "image_layout_map.h"
 #include "vk_format_utils.h"
 
+class ValidationStateTracker;
 class SURFACE_STATE;
+class SWAPCHAIN_NODE;
 
 static inline bool operator==(const VkImageSubresource &lhs, const VkImageSubresource &rhs) {
     bool is_equal = (lhs.aspectMask == rhs.aspectMask) && (lhs.mipLevel == rhs.mipLevel) && (lhs.arrayLayer == rhs.arrayLayer);
@@ -42,6 +44,24 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image
 uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t mip_levels);
 uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers);
 
+// State for VkImage objects.
+// Parent -> child relationships in the object usage tree:
+// 1. Normal images:
+//    IMAGE_STATE [1] -> [1] DEVICE_MEMORY_STATE
+//
+// 2. Sparse images:
+//    IMAGE_STATE [1] -> [N] DEVICE_MEMORY_STATE
+//
+// 3. VK_IMAGE_CREATE_ALIAS_BIT images:
+//    IMAGE_STATE [N] -> [1] DEVICE_MEMORY_STATE
+//    All other images using the same device memory are in the aliasing_images set.
+//
+// 4. Swapchain images
+//    IMAGE_STATE [N] -> [1] SWAPCHAIN_NODE
+//    All other images using the same swapchain and swapchain_image_index are in the aliasing_images set.
+//    Note that the images for *every* image_index will show up as parents of the swapchain,
+//    so swapchain_image_index values must be compared.
+//
 class IMAGE_STATE : public BINDABLE {
   public:
     const safe_VkImageCreateInfo safe_create_info;
@@ -57,8 +77,8 @@ class IMAGE_STATE : public BINDABLE {
     const uint64_t ahb_format;           // External Android format, if provided
     const VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers (slices), and aspects
     const VkSwapchainKHR create_from_swapchain;
-    VkSwapchainKHR bind_swapchain;
-    uint32_t bind_swapchain_imageIndex;
+    std::shared_ptr<SWAPCHAIN_NODE> bind_swapchain;
+    uint32_t swapchain_image_index;
     image_layout_map::Encoder range_encoder;
     const VkFormatFeatureFlags format_features;
     // Need to memory requirments for each plane if image is disjoint
@@ -70,7 +90,6 @@ class IMAGE_STATE : public BINDABLE {
     const image_layout_map::Encoder subresource_encoder;                             // Subresource resolution encoder
     std::unique_ptr<const subresource_adapter::ImageRangeEncoder> fragment_encoder;  // Fragment resolution encoder
     const VkDevice store_device_as_workaround;                                       // TODO REMOVE WHEN encoder can be const
-    VkDeviceSize swapchain_fake_address;  // Needed for swapchain syncval, since there is no VkDeviceMemory::fake_base_address
 
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
     layer_data::unordered_set<IMAGE_STATE *> aliasing_images;
@@ -131,9 +150,13 @@ class IMAGE_STATE : public BINDABLE {
         }
     }
 
-    void Destroy() override;
+    void SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset) override;
 
-    void AddAliasingImage(IMAGE_STATE *bound_image);
+    void SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint32_t swapchain_index);
+
+    VkDeviceSize GetFakeBaseAddress() const override;
+
+    void Destroy() override;
 
     VkExtent3D GetSubresourceExtent(const VkImageSubresourceLayers &subresource) const;
 
@@ -142,9 +165,13 @@ class IMAGE_STATE : public BINDABLE {
     }
 
   protected:
-    virtual void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
+    void AddAliasingImage(IMAGE_STATE *bound_image);
+    void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
 };
 
+// State for VkImageView objects.
+// Parent -> child relationships in the object usage tree:
+//    IMAGE_VIEW_STATE [N] -> [1] IMAGE_STATE
 class IMAGE_VIEW_STATE : public BASE_NODE {
   public:
     const VkImageViewCreateInfo create_info;
@@ -177,7 +204,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 
 struct SWAPCHAIN_IMAGE {
     IMAGE_STATE *image_state = nullptr;
-    layer_data::unordered_map<VkImage, std::shared_ptr<IMAGE_STATE>> bound_images;
+    VkDeviceSize fake_base_address = 0;
 };
 
 // State for VkSwapchainKHR objects.
@@ -193,8 +220,9 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     uint32_t get_swapchain_image_count;
     const safe_VkImageCreateInfo image_create_info;
     std::shared_ptr<SURFACE_STATE> surface;
+    ValidationStateTracker *dev_data;
 
-    SWAPCHAIN_NODE(const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
+    SWAPCHAIN_NODE(ValidationStateTracker *dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
 
     ~SWAPCHAIN_NODE() {
         if (!Destroyed()) {
@@ -209,6 +237,8 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     void AcquireImage(uint32_t image_index);
 
     void Destroy() override;
+
+    const BindingsType &ObjectBindings() const { return parent_nodes_; }
 
   protected:
     void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
