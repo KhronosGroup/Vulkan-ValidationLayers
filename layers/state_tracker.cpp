@@ -1477,6 +1477,13 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
     // All sets should be removed
     assert(setMap.empty());
     descriptorSetLayoutMap.clear();
+    // Because swapchains are associated with Surfaces, which are at instance level,
+    // they need to be explicitly destroyed here to avoid continued references to
+    // the device we're destroying.
+    for (auto &entry : swapchainMap) {
+        entry.second->Destroy();
+    }
+    swapchainMap.clear();
     imageViewMap.clear();
     imageMap.clear();
     bufferViewMap.clear();
@@ -4264,22 +4271,24 @@ void ValidationStateTracker::PostCallRecordCreateEvent(VkDevice device, const Vk
 }
 
 void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR *pCreateInfo,
-                                                        VkSwapchainKHR *pSwapchain, SURFACE_STATE *surface_state,
+                                                        VkSwapchainKHR *pSwapchain, std::shared_ptr<SURFACE_STATE> &&surface_state,
                                                         SWAPCHAIN_NODE *old_swapchain_state) {
     if (VK_SUCCESS == result) {
         if (surface_state->swapchain) {
-            surface_state->swapchain->RemoveParent(surface_state);
+            surface_state->RemoveParent(surface_state->swapchain);
         }
-        surface_state->swapchain = CreateSwapchainState(pCreateInfo, *pSwapchain);
-        surface_state->swapchain->AddParent(surface_state);
-        swapchainMap[*pSwapchain] = surface_state->swapchain;
+        auto swapchain = CreateSwapchainState(pCreateInfo, *pSwapchain);
+        surface_state->AddParent(swapchain.get());
+        surface_state->swapchain = swapchain.get();
+        swapchain->surface = std::move(surface_state);
+        swapchainMap[*pSwapchain] = std::move(swapchain);
     } else {
         surface_state->swapchain = nullptr;
     }
     // Spec requires that even if CreateSwapchainKHR fails, oldSwapchain is retired
+    // Retired swapchains remain associated with the surface until they are destroyed.
     if (old_swapchain_state) {
         old_swapchain_state->retired = true;
-        old_swapchain_state->RemoveParent(surface_state);
     }
     return;
 }
@@ -4287,9 +4296,9 @@ void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const V
 void ValidationStateTracker::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
                                                               VkResult result) {
-    auto surface_state = GetSurfaceState(pCreateInfo->surface);
+    auto surface_state = GetShared<SURFACE_STATE>(pCreateInfo->surface);
     auto old_swapchain_state = GetSwapchainState(pCreateInfo->oldSwapchain);
-    RecordCreateSwapchainState(result, pCreateInfo, pSwapchain, surface_state, old_swapchain_state);
+    RecordCreateSwapchainState(result, pCreateInfo, pSwapchain, std::move(surface_state), old_swapchain_state);
 }
 
 void ValidationStateTracker::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
@@ -4348,9 +4357,9 @@ void ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(VkDevice de
                                                                      VkSwapchainKHR *pSwapchains, VkResult result) {
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
-            auto surface_state = GetSurfaceState(pCreateInfos[i].surface);
+            auto surface_state = GetShared<SURFACE_STATE>(pCreateInfos[i].surface);
             auto old_swapchain_state = GetSwapchainState(pCreateInfos[i].oldSwapchain);
-            RecordCreateSwapchainState(result, &pCreateInfos[i], &pSwapchains[i], surface_state, old_swapchain_state);
+            RecordCreateSwapchainState(result, &pCreateInfos[i], &pSwapchains[i], std::move(surface_state), old_swapchain_state);
         }
     }
 }
