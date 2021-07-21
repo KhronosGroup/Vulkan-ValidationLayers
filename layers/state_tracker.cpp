@@ -1277,6 +1277,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.color_write_features = *color_write_features;
     }
 
+    const auto *shader_atomic_float2_features = LvlFindInChain<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(pCreateInfo->pNext);
+    if (shader_atomic_float2_features) {
+        state_tracker->enabled_features.shader_atomic_float2_features = *shader_atomic_float2_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);

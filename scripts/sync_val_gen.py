@@ -65,8 +65,8 @@ def ParseAccessMasks(valid_usage_path, all_stages):
         'VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR',
         # expands to INDEX_INPUT and VERTEX_ATTRIBUTE_INPUT, which are included explicitly in the VUIDs
         'VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR',
-        # temporarily disable VK_HUAWEI_subpass_shading until it has stabilized
-        'VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI',
+        # temporarily disable VK_HUAWEI_invocation_mask pending more detail in the sync chapter
+        'VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI',
     ]
     expand_stages = {
         # these have the same value
@@ -169,9 +169,12 @@ def CreateStageAccessTable(stage_order, access_stage_table):
 
     return stage_access_table
 
-# Snipped from chapters/synchronization.txt -- tag v1.2.181
+# Snipped from chapters/synchronization.txt -- tag v1.2.185
 # manual fixups:
 # - add back TOP_OF_PIPE and BOTTOM_OF_PIPE stages to everything
+# - sync2-ify stage names
+# - remove ifndef::VK_KHR_synchronization2[] content
+# - remove ifdefs
 # - make sure each pipeline section starts with "For"
 # - move single stage 'pipeline' descriptions out of the snippet
 #   and into a python list.
@@ -184,6 +187,7 @@ recorded for queues supporting ename:VK_QUEUE_GRAPHICS_BIT.
 
 For the graphics primitive pipeline executes the following stages, with the logical ordering of the
 stages matching the order specified here:
+
   * ename:VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR
@@ -229,8 +233,8 @@ ename:VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR:
 
   * ename:VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT
   * ename:VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR
-For the ray tracing shader pipeline, the following stages occur in this
-order:
+
+For the ray tracing pipeline, the following stages occur in this order:
 
   * ename:VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT_KHR
@@ -251,13 +255,14 @@ unordered_stages =  [
   'VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT',
   'VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR',
   'VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR',
+  'VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI',
 ]
 
 pipeline_name_labels = {
     'GRAPHICS': 'For the graphics primitive pipeline',
     'MESH': 'For the graphics mesh pipeline',
     'COMPUTE': 'For the compute pipeline',
-    'RAY_TRACING_SHADE': 'For the ray tracing shader pipeline',
+    'RAY_TRACING_SHADE': 'For the ray tracing pipeline',
 }
 
 def StageOrderListFromSet(stage_order, stage_set):
@@ -449,6 +454,7 @@ VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR
 VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
 VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR
 VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR
+VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI
 VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR
 VK_PIPELINE_STAGE_2_HOST_BIT_KHR
 '''
@@ -479,8 +485,12 @@ def InBitOrder(tag, enum_elem):
     return in_bit_order
 
 
-# As of tag v1.2.181, with all ifdefs removes
-# TODO: video entries are NOT in the spec, need to get them added
+# Snipped from chapters/synchronization.txt -- tag v1.2.185
+# manual fixups:
+# - sync2-ify stage names
+# - remove ifdefs
+# - expand VERTEX_INPUT and TRANSFER stages
+# - manually add VIDEO_DECODE and VIDEO_ENCODE stages TODO: get them added to the spec
 snippet_pipeline_stages_supported = '''
 [[synchronization-pipeline-stages-supported]]
 .Supported pipeline stage flags
@@ -517,6 +527,7 @@ snippet_pipeline_stages_supported = '''
 |ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | ename:VK_QUEUE_COMPUTE_BIT
 |ename:VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR           | ename:VK_QUEUE_COMPUTE_BIT
 |ename:VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT     | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI         | ename:VK_QUEUE_GRAPHICS_BIT
 |ename:VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR                 | ename:VK_QUEUE_VIDEO_DECODE_BIT_KHR
 |ename:VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR                 | ename:VK_QUEUE_VIDEO_ENCODE_BIT_KHR
 |====

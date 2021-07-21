@@ -643,6 +643,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetFragmentShadingRateKHR,
     InterceptIdPreCallRecordCmdSetFragmentShadingRateKHR,
     InterceptIdPostCallRecordCmdSetFragmentShadingRateKHR,
+    InterceptIdPreCallValidateWaitForPresentKHR,
+    InterceptIdPreCallRecordWaitForPresentKHR,
+    InterceptIdPostCallRecordWaitForPresentKHR,
     InterceptIdPreCallValidateGetBufferDeviceAddressKHR,
     InterceptIdPreCallRecordGetBufferDeviceAddressKHR,
     InterceptIdPostCallRecordGetBufferDeviceAddressKHR,
@@ -1060,6 +1063,15 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetSemaphoreZirconHandleFUCHSIA,
     InterceptIdPreCallRecordGetSemaphoreZirconHandleFUCHSIA,
     InterceptIdPostCallRecordGetSemaphoreZirconHandleFUCHSIA,
+    InterceptIdPreCallValidateGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI,
+    InterceptIdPreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI,
+    InterceptIdPostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI,
+    InterceptIdPreCallValidateCmdSubpassShadingHUAWEI,
+    InterceptIdPreCallRecordCmdSubpassShadingHUAWEI,
+    InterceptIdPostCallRecordCmdSubpassShadingHUAWEI,
+    InterceptIdPreCallValidateCmdBindInvocationMaskHUAWEI,
+    InterceptIdPreCallRecordCmdBindInvocationMaskHUAWEI,
+    InterceptIdPostCallRecordCmdBindInvocationMaskHUAWEI,
     InterceptIdPreCallValidateGetMemoryRemoteAddressNV,
     InterceptIdPreCallRecordGetMemoryRemoteAddressNV,
     InterceptIdPostCallRecordGetMemoryRemoteAddressNV,
@@ -1884,6 +1896,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetFragmentShadingRateKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetFragmentShadingRateKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetFragmentShadingRateKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateWaitForPresentKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordWaitForPresentKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordWaitForPresentKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetBufferDeviceAddressKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetBufferDeviceAddressKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetBufferDeviceAddressKHR);
@@ -2349,6 +2364,15 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordGetSemaphoreZirconHandleFUCHSIA);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetSemaphoreZirconHandleFUCHSIA);
 #endif
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSubpassShadingHUAWEI);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSubpassShadingHUAWEI);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSubpassShadingHUAWEI);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBindInvocationMaskHUAWEI);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBindInvocationMaskHUAWEI);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBindInvocationMaskHUAWEI);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetMemoryRemoteAddressNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryRemoteAddressNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetMemoryRemoteAddressNV);

@@ -79,6 +79,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceProvokingVertexFeaturesEXT provoking_vertex_features;
     VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features;
     VkPhysicalDeviceColorWriteEnableFeaturesEXT color_write_features;
+    VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT shader_atomic_float2_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };
