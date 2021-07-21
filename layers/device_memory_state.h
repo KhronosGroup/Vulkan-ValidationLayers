@@ -143,10 +143,12 @@ class BINDABLE : public BASE_NODE {
 
     const DEVICE_MEMORY_STATE *MemState() const { return Binding() ? Binding()->mem_state.get() : nullptr; }
 
-    void SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset);
+    virtual void SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset);
     void SetSparseMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, const VkDeviceSize mem_offset, const VkDeviceSize mem_size);
 
     bool IsExternalAHB() const {
         return (external_memory_handle & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) != 0;
     }
+
+    virtual VkDeviceSize GetFakeBaseAddress() const;
 };

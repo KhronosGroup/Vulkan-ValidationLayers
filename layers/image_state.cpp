@@ -28,6 +28,7 @@
 #include "image_state.h"
 #include "pipeline_state.h"
 #include "descriptor_sets.h"
+#include "state_tracker.h"
 
 static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {
     const auto format = create_info.format;
@@ -128,8 +129,7 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       ahb_format(GetExternalFormat(pCreateInfo)),
       full_range{MakeImageFullRange(*pCreateInfo)},
       create_from_swapchain(GetSwapchain(pCreateInfo)),
-      bind_swapchain(VK_NULL_HANDLE),
-      bind_swapchain_imageIndex(0),
+      swapchain_image_index(0),
       range_encoder(full_range),
       format_features(ff),
       disjoint((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
@@ -138,7 +138,6 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
       store_device_as_workaround(dev),  // TODO REMOVE WHEN encoder can be const
-      swapchain_fake_address(0U),
       sparse_requirements{} {}
 
 IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
@@ -158,8 +157,7 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       ahb_format(GetExternalFormat(pCreateInfo)),
       full_range{MakeImageFullRange(*pCreateInfo)},
       create_from_swapchain(swapchain),
-      bind_swapchain(swapchain),
-      bind_swapchain_imageIndex(swapchain_index),
+      swapchain_image_index(swapchain_index),
       range_encoder(full_range),
       format_features(ff),
       disjoint((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
@@ -167,7 +165,6 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
       store_device_as_workaround(dev),  // TODO REMOVE WHEN encoder can be const
-      swapchain_fake_address(0U),
       sparse_requirements{} {
     fragment_encoder =
         std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
@@ -179,6 +176,10 @@ void IMAGE_STATE::Destroy() {
         alias_state->aliasing_images.erase(this);
     }
     aliasing_images.clear();
+    if (bind_swapchain) {
+        bind_swapchain->RemoveParent(this);
+        bind_swapchain = nullptr;
+    }
     BINDABLE::Destroy();
 }
 
@@ -186,6 +187,10 @@ void IMAGE_STATE::NotifyInvalidate(const LogObjectList &invalid_handles, bool un
     BINDABLE::NotifyInvalidate(invalid_handles, unlink);
     if (unlink) {
         aliasing_images.clear();
+        if (bind_swapchain) {
+            bind_swapchain->RemoveParent(this);
+            bind_swapchain = nullptr;
+        }
     }
 }
 
@@ -229,7 +234,7 @@ bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) const {
         (binding->offset == other_binding->offset) && IsCreateInfoEqual(other_image_state->createInfo)) {
         return true;
     }
-    if ((bind_swapchain == other_image_state->bind_swapchain) && (bind_swapchain != VK_NULL_HANDLE)) {
+    if (bind_swapchain && (bind_swapchain == other_image_state->bind_swapchain)) {
         return true;
     }
     return false;
@@ -243,6 +248,43 @@ void IMAGE_STATE::AddAliasingImage(IMAGE_STATE *bound_image) {
             aliasing_images.emplace(bound_image);
         }
     }
+}
+
+void IMAGE_STATE::SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset) {
+    if ((createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) != 0) {
+        for (auto *base_node : mem->ObjectBindings()) {
+            if (base_node->Handle().type == kVulkanObjectTypeImage) {
+                auto other_image = static_cast<IMAGE_STATE *>(base_node);
+                AddAliasingImage(other_image);
+            }
+        }
+    }
+    BINDABLE::SetMemBinding(mem, memory_offset);
+}
+
+void IMAGE_STATE::SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint32_t swapchain_index) {
+    assert(is_swapchain_image);
+    bind_swapchain = swapchain;
+    swapchain_image_index = swapchain_index;
+    bind_swapchain->AddParent(this);
+    for (auto *base_node : swapchain->ObjectBindings()) {
+        if (base_node->Handle().type == kVulkanObjectTypeImage) {
+            auto other_image = static_cast<IMAGE_STATE *>(base_node);
+            if (swapchain_image_index == other_image->swapchain_image_index) {
+                AddAliasingImage(other_image);
+            }
+        }
+    }
+}
+
+VkDeviceSize IMAGE_STATE::GetFakeBaseAddress() const {
+    if (!is_swapchain_image) {
+        return BINDABLE::GetFakeBaseAddress();
+    }
+    if (!bind_swapchain) {
+        return 0;
+    }
+    return bind_swapchain->images[swapchain_image_index].fake_base_address;
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
@@ -361,7 +403,8 @@ static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR 
     return safe_VkImageCreateInfo(&image_ci);
 }
 
-SWAPCHAIN_NODE::SWAPCHAIN_NODE(const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain)
+SWAPCHAIN_NODE::SWAPCHAIN_NODE(ValidationStateTracker *dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo,
+                               VkSwapchainKHR swapchain)
     : BASE_NODE(swapchain, kVulkanObjectTypeSwapchainKHR),
       createInfo(pCreateInfo),
       images(),
@@ -369,7 +412,8 @@ SWAPCHAIN_NODE::SWAPCHAIN_NODE(const VkSwapchainCreateInfoKHR *pCreateInfo, VkSw
       shared_presentable(VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
                          VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode),
       get_swapchain_image_count(0),
-      image_create_info(GetImageCreateInfo(pCreateInfo)) {}
+      image_create_info(GetImageCreateInfo(pCreateInfo)),
+      dev_data(dev_data_) {}
 
 void SWAPCHAIN_NODE::PresentImage(uint32_t image_index) {
     if (image_index >= images.size()) return;
@@ -395,16 +439,12 @@ void SWAPCHAIN_NODE::AcquireImage(uint32_t image_index) {
 
 void SWAPCHAIN_NODE::Destroy() {
     for (auto &swapchain_image : images) {
-        // TODO: missing validation that the bound images are empty (except for image_state above)
-        // Clean up the aliases and the bound_images *before* erasing the image_state.
-        // TODO: RemoveAliasingImages(swapchain_image.bound_images);
-        for (auto &entry : swapchain_image.bound_images) {
-            entry.second->RemoveParent(this);
-            entry.second->Destroy();
+        if (swapchain_image.image_state) {
+            swapchain_image.image_state->Destroy();
+            dev_data->imageMap.erase(swapchain_image.image_state->image());
+            swapchain_image.image_state = nullptr;
         }
-        swapchain_image.bound_images.clear();
-        // TODO: imageMap.erase(swapchain_image.image_state->image());
-        swapchain_image.image_state = nullptr;
+        // NOTE: We don't have access to dev_data->fake_memory.Free() here, but it is currently a no-op
     }
     images.clear();
     if (surface) {
@@ -417,16 +457,6 @@ void SWAPCHAIN_NODE::Destroy() {
 void SWAPCHAIN_NODE::NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) {
     BASE_NODE::NotifyInvalidate(invalid_handles, unlink);
     if (unlink) {
-        auto &immediate_child = invalid_handles.object_list.back();
-        if (immediate_child.type == kVulkanObjectTypeImage) {
-            IMAGE_STATE *invalid_image = static_cast<IMAGE_STATE *>(immediate_child.node);
-            assert(invalid_image);
-            auto &swapchain_image = images[invalid_image->bind_swapchain_imageIndex];
-            if (swapchain_image.image_state == invalid_image) {
-                swapchain_image.image_state = nullptr;
-            }
-            swapchain_image.bound_images.erase(invalid_image->image());
-        }
         surface = nullptr;
     }
 }
