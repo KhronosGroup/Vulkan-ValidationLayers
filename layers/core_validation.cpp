@@ -2321,7 +2321,7 @@ bool CoreChecks::ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE *pd_state,
 
     if (requested_queue_family >= pd_state->queue_family_known_count) {
         const char *conditional_ext_cmd =
-            instance_extensions.vk_khr_get_physical_device_properties_2 ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]" : "";
+            instance_extensions.vk_khr_get_physical_device_properties2 ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]" : "";
 
         skip |= LogError(pd_state->phys_device, err_code,
                          "%s: %s (= %" PRIu32
@@ -2410,7 +2410,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
             // spec guarantees at least one queue for each queue family
             const uint32_t available_queue_count =
                 queue_family_has_props ? pd_state->queue_family_properties[requested_queue_family].queueCount : 1;
-            const char *conditional_ext_cmd = instance_extensions.vk_khr_get_physical_device_properties_2
+            const char *conditional_ext_cmd = instance_extensions.vk_khr_get_physical_device_properties2
                                                   ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]"
                                                   : "";
 
@@ -5766,7 +5766,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         }
     }
 
-    if (device_extensions.vk_ext_fragment_density_map_2) {
+    if (device_extensions.vk_ext_fragment_density_map2) {
         uint32_t sum_subsampled_samplers = 0;
         for (const auto &dsl : set_layouts) {
             // find the number of subsampled samplers across all stages

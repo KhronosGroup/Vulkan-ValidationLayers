@@ -528,11 +528,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                             table_type = 'device'
                         else:
                             print("Error in parameter_validation_generator.py CodeGen.")
-                        norm_ext_name = ext_name_define[:-15].lower()
                         if table_type == 'device':
-                            pnext_check += '            if ((!SupportedByPdev(physical_device, %s)) && !%s_extensions.%s) {\n' % (ext_name_define, table_type, norm_ext_name.lower())
+                            pnext_check += '            if ((!SupportedByPdev(physical_device, %s)) && !%s_extensions.%s) {\n' % (ext_name_define, table_type, ext_name.lower())
                         else:
-                            pnext_check += '            if (!%s_extensions.%s) {\n' % (table_type, norm_ext_name.lower())
+                            pnext_check += '            if (!%s_extensions.%s) {\n' % (table_type, ext_name.lower())
                         pnext_check += '                skip |= LogError(\n'
                         pnext_check += '                           instance, pnext_vuid,\n'
                         pnext_check += '                           "%%s: Includes a pNext pointer (%%s) to a VkStructureType (%s), but its parent extension "\n' % struct_type
@@ -1507,14 +1506,11 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     ext_table_type = 'device'
                 for ext in self.required_extensions[command.name]:
                     ext_name_define = ''
-                    ext_enable_name = ''
                     for extension in self.registry.extensions:
                         if extension.attrib['name'] == ext:
                             ext_name_define = extension[0][1].get('name')
-                            ext_enable_name = ext_name_define.lower()
-                            ext_enable_name = re.sub('_extension_name', '', ext_enable_name)
                             break
-                    ext_test = 'if (!%s_extensions.%s) skip |= OutputExtensionError("%s", %s);\n' % (ext_table_type, ext_enable_name, command.name, ext_name_define)
+                    ext_test = 'if (!%s_extensions.%s) skip |= OutputExtensionError("%s", %s);\n' % (ext_table_type, ext.lower(), command.name, ext_name_define)
                     lines.insert(0, ext_test)
             if lines:
                 func_sig = self.getCmdDef(command) + ' const {\n'

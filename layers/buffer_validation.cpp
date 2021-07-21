@@ -1885,7 +1885,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             "vkCreateImage(): images using sparse memory cannot have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set");
     }
 
-    if (device_extensions.vk_ext_fragment_density_map || device_extensions.vk_ext_fragment_density_map_2) {
+    if (device_extensions.vk_ext_fragment_density_map || device_extensions.vk_ext_fragment_density_map2) {
         uint32_t ceiling_width = static_cast<uint32_t>(ceil(
             static_cast<float>(device_limits->maxFramebufferWidth) /
             std::max(static_cast<float>(phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width), 1.0f)));
@@ -5932,7 +5932,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                              "flags must not contain VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT");
             }
         }
-        if (device_extensions.vk_ext_fragment_density_map_2) {
+        if (device_extensions.vk_ext_fragment_density_map2) {
             if ((image_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) && (image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) &&
                 (layer_count > phys_dev_ext_props.fragment_density_map2_props.maxSubsampledArrayLayers)) {
                 skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-03569",
