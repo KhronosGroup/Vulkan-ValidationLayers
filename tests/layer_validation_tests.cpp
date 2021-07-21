@@ -1110,9 +1110,11 @@ bool VkLayerTest::AddSurfaceInstanceExtension() {
         printf("%s %s extension not supported\n", kSkipPrefix, VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
         return false;
     }
-    if (XOpenDisplay(NULL)) {
+    auto temp_dpy = XOpenDisplay(NULL);
+    if (temp_dpy) {
         instance_extensions_.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
         bSupport = true;
+        XCloseDisplay(temp_dpy);
     }
 #endif
 
@@ -1121,9 +1123,13 @@ bool VkLayerTest::AddSurfaceInstanceExtension() {
         printf("%s %s extension not supported\n", kSkipPrefix, VK_KHR_XCB_SURFACE_EXTENSION_NAME);
         return false;
     }
-    if (!bSupport && xcb_connect(NULL, NULL)) {
-        instance_extensions_.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-        bSupport = true;
+    if (!bSupport) {
+        auto temp_xcb = xcb_connect(NULL, NULL);
+        if (temp_xcb) {
+            instance_extensions_.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+            bSupport = true;
+            xcb_disconnect(temp_xcb);
+        }
     }
 #endif
 
