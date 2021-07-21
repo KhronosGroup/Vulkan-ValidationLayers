@@ -746,62 +746,62 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
     def GenerateExtensionHelperHeader(self):
 
         V_1_0_instance_extensions_promoted_to_V_1_1_core = [
-            'vk_khr_device_group_creation',
-            'vk_khr_external_fence_capabilities',
-            'vk_khr_external_memory_capabilities',
-            'vk_khr_external_semaphore_capabilities',
-            'vk_khr_get_physical_device_properties_2',
+            'VK_KHR_device_group_creation',
+            'VK_KHR_external_fence_capabilities',
+            'VK_KHR_external_memory_capabilities',
+            'VK_KHR_external_semaphore_capabilities',
+            'VK_KHR_get_physical_device_properties2',
             ]
 
         V_1_0_device_extensions_promoted_to_V_1_1_core = [
-            'vk_khr_16bit_storage',
-            'vk_khr_bind_memory_2',
-            'vk_khr_dedicated_allocation',
-            'vk_khr_descriptor_update_template',
-            'vk_khr_device_group',
-            'vk_khr_external_fence',
-            'vk_khr_external_memory',
-            'vk_khr_external_semaphore',
-            'vk_khr_get_memory_requirements_2',
-            'vk_khr_maintenance1',
-            'vk_khr_maintenance2',
-            'vk_khr_maintenance3',
-            'vk_khr_multiview',
-            'vk_khr_relaxed_block_layout',
-            'vk_khr_sampler_ycbcr_conversion',
-            'vk_khr_shader_draw_parameters',
-            'vk_khr_storage_buffer_storage_class',
-            'vk_khr_variable_pointers',
+            'VK_KHR_16bit_storage',
+            'VK_KHR_bind_memory2',
+            'VK_KHR_dedicated_allocation',
+            'VK_KHR_descriptor_update_template',
+            'VK_KHR_device_group',
+            'VK_KHR_external_fence',
+            'VK_KHR_external_memory',
+            'VK_KHR_external_semaphore',
+            'VK_KHR_get_memory_requirements2',
+            'VK_KHR_maintenance1',
+            'VK_KHR_maintenance2',
+            'VK_KHR_maintenance3',
+            'VK_KHR_multiview',
+            'VK_KHR_relaxed_block_layout',
+            'VK_KHR_sampler_ycbcr_conversion',
+            'VK_KHR_shader_draw_parameters',
+            'VK_KHR_storage_buffer_storage_class',
+            'VK_KHR_variable_pointers',
             ]
 
         V_1_1_instance_extensions_promoted_to_V_1_2_core = [
             ]
 
         V_1_1_device_extensions_promoted_to_V_1_2_core = [
-            'vk_khr_8bit_storage',
-            'vk_khr_buffer_device_address',
-            'vk_khr_create_renderpass_2',
-            'vk_khr_depth_stencil_resolve',
-            'vk_khr_draw_indirect_count',
-            'vk_khr_driver_properties',
-            'vk_khr_image_format_list',
-            'vk_khr_imageless_framebuffer',
-            'vk_khr_sampler_mirror_clamp_to_edge',
-            'vk_khr_separate_depth_stencil_layouts',
-            'vk_khr_shader_atomic_int64',
-            'vk_khr_shader_float16_int8',
-            'vk_khr_shader_float_controls',
-            'vk_khr_shader_subgroup_extended_types',
-            'vk_khr_spirv_1_4',
-            'vk_khr_timeline_semaphore',
-            'vk_khr_uniform_buffer_standard_layout',
-            'vk_khr_vulkan_memory_model',
-            'vk_ext_descriptor_indexing',
-            'vk_ext_host_query_reset',
-            'vk_ext_sampler_filter_minmax',
-            'vk_ext_scalar_block_layout',
-            'vk_ext_separate_stencil_usage',
-            'vk_ext_shader_viewport_index_layer',
+            'VK_KHR_8bit_storage',
+            'VK_KHR_buffer_device_address',
+            'VK_KHR_create_renderpass2',
+            'VK_KHR_depth_stencil_resolve',
+            'VK_KHR_draw_indirect_count',
+            'VK_KHR_driver_properties',
+            'VK_KHR_image_format_list',
+            'VK_KHR_imageless_framebuffer',
+            'VK_KHR_sampler_mirror_clamp_to_edge',
+            'VK_KHR_separate_depth_stencil_layouts',
+            'VK_KHR_shader_atomic_int64',
+            'VK_KHR_shader_float16_int8',
+            'VK_KHR_shader_float_controls',
+            'VK_KHR_shader_subgroup_extended_types',
+            'VK_KHR_spirv_1_4',
+            'VK_KHR_timeline_semaphore',
+            'VK_KHR_uniform_buffer_standard_layout',
+            'VK_KHR_vulkan_memory_model',
+            'VK_EXT_descriptor_indexing',
+            'VK_EXT_host_query_reset',
+            'VK_EXT_sampler_filter_minmax',
+            'VK_EXT_scalar_block_layout',
+            'VK_EXT_separate_stencil_usage',
+            'VK_EXT_shader_viewport_index_layer',
             ]
 
         output = [
@@ -861,7 +861,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
 
             extension_items = sorted(extension_dict.items())
 
-            field_name = { ext_name: re.sub('_extension_name', '', info['define'].lower()) for ext_name, info in extension_items }
+            field_name = { ext_name: ext_name.lower() for ext_name, info in extension_items }
 
             # Add in pseudo-extensions for core API versions so real extensions can depend on them
             extension_dict['VK_VERSION_1_2'] = {'define':"VK_VERSION_1_2_NAME", 'ifdef':None, 'reqs':[]}
@@ -964,11 +964,11 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             struct.extend([
                 '',
                 '        static const std::vector<const char *> V_1_1_promoted_%s_apis = {' % type.lower() ])
-            struct.extend(['            %s_EXTENSION_NAME,' % ext_name.upper() for ext_name in promoted_1_1_ext_list])
+            struct.extend(['            %s,' % extension_dict[ext_name]['define'] for ext_name in promoted_1_1_ext_list])
             struct.extend([
                 '        };',
                 '        static const std::vector<const char *> V_1_2_promoted_%s_apis = {' % type.lower() ])
-            struct.extend(['            %s_EXTENSION_NAME,' % ext_name.upper() for ext_name in promoted_1_2_ext_list])
+            struct.extend(['            %s,' % extension_dict[ext_name]['define'] for ext_name in promoted_1_2_ext_list])
             struct.extend([
                 '        };',
                 '',

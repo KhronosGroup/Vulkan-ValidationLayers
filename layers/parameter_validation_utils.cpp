@@ -94,7 +94,7 @@ bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInf
 }
 
 bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, const std::string ext_name) const {
-    if (instance_extensions.vk_khr_get_physical_device_properties_2) {
+    if (instance_extensions.vk_khr_get_physical_device_properties2) {
         // Struct is legal IF it's supported
         const auto &dev_exts_enumerated = device_extensions_enumerated.find(physical_device);
         if (dev_exts_enumerated == device_extensions_enumerated.end()) return true;
@@ -5464,11 +5464,11 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain)
         skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    if (!device_extensions.vk_khr_get_surface_capabilities_2)
+    if (!device_extensions.vk_khr_get_surface_capabilities2)
         skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_surface)
         skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_SURFACE_EXTENSION_NAME);
-    if (!device_extensions.vk_khr_get_physical_device_properties_2)
+    if (!device_extensions.vk_khr_get_physical_device_properties2)
         skip |=
             OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_full_screen_exclusive)
