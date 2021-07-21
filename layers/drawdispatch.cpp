@@ -1004,12 +1004,12 @@ bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
                          "call this command.",
                          apiName);
     }
-    skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndirectCount-stride-03110", stride, "VkDrawIndirectCommand",
-                                            sizeof(VkDrawIndirectCommand));
+    skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndirectCount-stride-03110", stride,
+                                            "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand));
     if (maxDrawCount > 1) {
         const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-        skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndirectCount-maxDrawCount-03111", stride, "VkDrawIndirectCommand",
-                                                sizeof(VkDrawIndirectCommand), maxDrawCount, offset, buffer_state);
+        skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndirectCount-maxDrawCount-03111", stride,
+                                            "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand), maxDrawCount, offset, buffer_state);
     }
 
     skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNT, apiName);
@@ -1047,12 +1047,13 @@ bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuff
                          "call this command.",
                          apiName);
     }
-    skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride, "VkDrawIndexedIndirectCommand",
-                                            sizeof(VkDrawIndexedIndirectCommand));
+    skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride,
+                                            "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand));
     if (maxDrawCount > 1) {
         const BUFFER_STATE *buffer_state = GetBufferState(buffer);
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143", stride,
-                                                "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand), maxDrawCount, offset, buffer_state);
+                                                "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand), maxDrawCount,
+                                                offset, buffer_state);
     }
 
     skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNT, apiName);
