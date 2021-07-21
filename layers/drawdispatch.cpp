@@ -2,7 +2,8 @@
  * Copyright (c) 2015-2021 Valve Corporation
  * Copyright (c) 2015-2021 LunarG, Inc.
  * Copyright (C) 2015-2021 Google Inc.
- * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights
+ * reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -754,558 +755,816 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> kDrawdispatchVuid = {
 };
 // clang-format on
 
-// Getter function to provide kVUIDUndefined in case an invalid cmd_type is passed in
-const DrawDispatchVuid &CoreChecks::GetDrawDispatchVuid(CMD_TYPE cmd_type) const {
-    if (kDrawdispatchVuid.find(cmd_type) != kDrawdispatchVuid.cend()) {
-        return kDrawdispatchVuid.at(cmd_type);
-    } else {
-        return kDrawdispatchVuid.at(CMD_NONE);
-    }
+// Getter function to provide kVUIDUndefined in case an invalid cmd_type is
+// passed in
+const DrawDispatchVuid &
+CoreChecks::GetDrawDispatchVuid(CMD_TYPE cmd_type) const {
+  if (kDrawdispatchVuid.find(cmd_type) != kDrawdispatchVuid.cend()) {
+    return kDrawdispatchVuid.at(cmd_type);
+  } else {
+    return kDrawdispatchVuid.at(CMD_NONE);
+  }
 }
 
 // Generic function to handle validation for all CmdDraw* type functions
-bool CoreChecks::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
+bool CoreChecks::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed,
+                                     VkPipelineBindPoint bind_point,
+                                     CMD_TYPE cmd_type,
                                      const char *caller) const {
-    bool skip = false;
-    const CMD_BUFFER_STATE *cb_state = GetCBState(cmd_buffer);
-    if (cb_state) {
-        skip |= ValidateCmd(cb_state, cmd_type, caller);
-        skip |= ValidateCmdBufDrawState(cb_state, cmd_type, indexed, bind_point, caller);
-    }
-    return skip;
+  bool skip = false;
+  const CMD_BUFFER_STATE *cb_state = GetCBState(cmd_buffer);
+  if (cb_state) {
+    skip |= ValidateCmd(cb_state, cmd_type, caller);
+    skip |= ValidateCmdBufDrawState(cb_state, cmd_type, indexed, bind_point,
+                                    caller);
+  }
+  return skip;
 }
 
-bool CoreChecks::ValidateCmdDrawInstance(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance,
-                                         CMD_TYPE cmd_type, const char *caller) const {
-    bool skip = false;
-    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
-    const auto *cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    if (!cb_node) return skip;
-
-    // Verify maxMultiviewInstanceIndex
-    if (cb_node->activeRenderPass && cb_node->activeRenderPass->renderPass() && enabled_features.multiview_features.multiview &&
-        ((instanceCount + firstInstance) > phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex)) {
-        LogObjectList objlist(commandBuffer);
-        objlist.add(cb_node->activeRenderPass->renderPass());
-        skip |= LogError(objlist, vuid.max_multiview_instance_index,
-                         "%s: renderpass %s multiview is enabled, and maxMultiviewInstanceIndex: %" PRIu32 ", but instanceCount: %" PRIu32
-                         "and firstInstance: %" PRIu32 ".",
-                         caller, report_data->FormatHandle(cb_node->activeRenderPass->renderPass()).c_str(),
-                         phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex, instanceCount, firstInstance);
-    }
+bool CoreChecks::ValidateCmdDrawInstance(VkCommandBuffer commandBuffer,
+                                         uint32_t instanceCount,
+                                         uint32_t firstInstance,
+                                         CMD_TYPE cmd_type,
+                                         const char *caller) const {
+  bool skip = false;
+  const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+  const auto *cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+  if (!cb_node)
     return skip;
+
+  // Verify maxMultiviewInstanceIndex
+  if (cb_node->activeRenderPass && cb_node->activeRenderPass->renderPass() &&
+      enabled_features.multiview_features.multiview &&
+      ((instanceCount + firstInstance) >
+       phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex)) {
+    LogObjectList objlist(commandBuffer);
+    objlist.add(cb_node->activeRenderPass->renderPass());
+    skip |= LogError(
+        objlist, vuid.max_multiview_instance_index,
+        "%s: renderpass %s multiview is enabled, and "
+        "maxMultiviewInstanceIndex: %" PRIu32 ", but instanceCount: %" PRIu32
+        "and firstInstance: %" PRIu32 ".",
+        caller,
+        report_data->FormatHandle(cb_node->activeRenderPass->renderPass())
+            .c_str(),
+        phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex,
+        instanceCount, firstInstance);
+  }
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                        uint32_t firstVertex, uint32_t firstInstance) const {
-    bool skip = false;
-    skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance, CMD_DRAW, "vkCmdDraw()");
-    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAW, "vkCmdDraw()");
-    return skip;
+bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer,
+                                        uint32_t vertexCount,
+                                        uint32_t instanceCount,
+                                        uint32_t firstVertex,
+                                        uint32_t firstInstance) const {
+  bool skip = false;
+  skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance,
+                                  CMD_DRAW, "vkCmdDraw()");
+  skip |=
+      ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          CMD_DRAW, "vkCmdDraw()");
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
-                                                const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
-                                                uint32_t firstInstance, uint32_t stride) const {
-    bool skip = false;
-    if (!enabled_features.multi_draw_features.multiDraw) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiEXT-None-04933",
-                         "vkCmdDrawMultiEXT(): The multiDraw feature must be enabled to "
-                         "call this command.");
-    }
-    if (drawCount > phys_dev_ext_props.multi_draw_props.maxMultiDrawCount) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiEXT-drawCount-04934",
-                         "vkCmdDrawMultiEXT(): parameter, uint32_t drawCount (%" PRIu32
-                         ") must be less than VkPhysicalDeviceMultiDrawPropertiesEXT::maxMultiDrawCount (%" PRIu32 ").",
-                         drawCount, phys_dev_ext_props.multi_draw_props.maxMultiDrawCount);
-    }
+bool CoreChecks::PreCallValidateCmdDrawMultiEXT(
+    VkCommandBuffer commandBuffer, uint32_t drawCount,
+    const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
+    uint32_t firstInstance, uint32_t stride) const {
+  bool skip = false;
+  if (!enabled_features.multi_draw_features.multiDraw) {
+    skip |= LogError(
+        commandBuffer, "VUID-vkCmdDrawMultiEXT-None-04933",
+        "vkCmdDrawMultiEXT(): The multiDraw feature must be enabled to "
+        "call this command.");
+  }
+  if (drawCount > phys_dev_ext_props.multi_draw_props.maxMultiDrawCount) {
+    skip |= LogError(
+        commandBuffer, "VUID-vkCmdDrawMultiEXT-drawCount-04934",
+        "vkCmdDrawMultiEXT(): parameter, uint32_t drawCount (%" PRIu32
+        ") must be less than "
+        "VkPhysicalDeviceMultiDrawPropertiesEXT::maxMultiDrawCount (%" PRIu32
+        ").",
+        drawCount, phys_dev_ext_props.multi_draw_props.maxMultiDrawCount);
+  }
 
-    skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance, CMD_DRAWMULTIEXT, "vkCmdDrawMultiEXT()");
-    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMULTIEXT, "vkCmdDrawMultiEXT()");
-    return skip;
+  skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance,
+                                  CMD_DRAWMULTIEXT, "vkCmdDrawMultiEXT()");
+  skip |=
+      ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          CMD_DRAWMULTIEXT, "vkCmdDrawMultiEXT()");
+  return skip;
 }
 
-bool CoreChecks::ValidateCmdDrawIndexedBufferSize(VkCommandBuffer commandBuffer, uint32_t indexCount,
-    uint32_t firstIndex, const char *caller, const char *first_index_vuid) const {
-    bool skip = false;
-    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    if (cb_state->status & CBSTATUS_INDEX_BUFFER_BOUND) {
-        unsigned int index_size = 0;
-        const auto &index_buffer_binding = cb_state->index_buffer_binding;
-        if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT16) {
-            index_size = 2;
-        }
-        else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT32) {
-            index_size = 4;
-        }
-        else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT8_EXT) {
-            index_size = 1;
-        }
-        VkDeviceSize end_offset = (index_size * (static_cast<VkDeviceSize>(firstIndex) + indexCount)) + index_buffer_binding.offset;
-        if (end_offset > index_buffer_binding.size) {
-            skip |= LogError(index_buffer_binding.buffer_state->buffer(), first_index_vuid,
-                             "%s: index size (%u) * (firstIndex (%u) + indexCount (%u)) "
-                             "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
-                             " bytes, which is greater than the index buffer size (%" PRIuLEAST64 ").",
-                             caller, index_size, firstIndex, indexCount, index_buffer_binding.offset, end_offset,
-                             index_buffer_binding.size);
-        }
+bool CoreChecks::ValidateCmdDrawIndexedBufferSize(
+    VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t firstIndex,
+    const char *caller, const char *first_index_vuid) const {
+  bool skip = false;
+  const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+  if (cb_state->status & CBSTATUS_INDEX_BUFFER_BOUND) {
+    unsigned int index_size = 0;
+    const auto &index_buffer_binding = cb_state->index_buffer_binding;
+    if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT16) {
+      index_size = 2;
+    } else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT32) {
+      index_size = 4;
+    } else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT8_EXT) {
+      index_size = 1;
     }
-    return skip;
+    VkDeviceSize end_offset =
+        (index_size * (static_cast<VkDeviceSize>(firstIndex) + indexCount)) +
+        index_buffer_binding.offset;
+    if (end_offset > index_buffer_binding.size) {
+      skip |= LogError(
+          index_buffer_binding.buffer_state->buffer(), first_index_vuid,
+          "%s: index size (%u) * (firstIndex (%u) + indexCount (%u)) "
+          "+ binding offset (%" PRIuLEAST64
+          ") = an ending offset of %" PRIuLEAST64
+          " bytes, which is greater than the index buffer size (%" PRIuLEAST64
+          ").",
+          caller, index_size, firstIndex, indexCount,
+          index_buffer_binding.offset, end_offset, index_buffer_binding.size);
+    }
+  }
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                               uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const {
-    bool skip = false;
-    skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance, CMD_DRAWINDEXED, "vkCmdDrawIndexed()");
-    skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXED, "vkCmdDrawIndexed()");
-    skip |= ValidateCmdDrawIndexedBufferSize(commandBuffer, indexCount, firstIndex, "vkCmdDrawIndexed()",
-                                             "VUID-vkCmdDrawIndexed-firstIndex-04932");
-    return skip;
+bool CoreChecks::PreCallValidateCmdDrawIndexed(
+    VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
+    uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const {
+  bool skip = false;
+  skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance,
+                                  CMD_DRAWINDEXED, "vkCmdDrawIndexed()");
+  skip |=
+      ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          CMD_DRAWINDEXED, "vkCmdDrawIndexed()");
+  skip |= ValidateCmdDrawIndexedBufferSize(
+      commandBuffer, indexCount, firstIndex, "vkCmdDrawIndexed()",
+      "VUID-vkCmdDrawIndexed-firstIndex-04932");
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
-                                                       const VkMultiDrawIndexedInfoEXT *pIndexInfo, uint32_t instanceCount,
-                                                       uint32_t firstInstance, uint32_t stride,
-                                                       const int32_t *pVertexOffset) const {
-    bool skip = false;
-    if (!enabled_features.multi_draw_features.multiDraw) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiIndexedEXT-None-04937",
-                         "vkCmdDrawMultiIndexedEXT(): The multiDraw feature must be enabled to "
-                         "call this command.");
-    }
-    if (drawCount > phys_dev_ext_props.multi_draw_props.maxMultiDrawCount) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-04939",
-                         "vkCmdDrawMultiIndexedEXT(): parameter, uint32_t drawCount (0x%" PRIu32
-                         ") must be less than VkPhysicalDeviceMultiDrawPropertiesEXT::maxMultiDrawCount (0x%" PRIu32 ").",
-                         drawCount, phys_dev_ext_props.multi_draw_props.maxMultiDrawCount);
-    }
-    skip |=
-        ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance, CMD_DRAWMULTIINDEXEDEXT, "vkCmdDrawMultiIndexedEXT()");
-    skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMULTIINDEXEDEXT,
-                                "vkCmdDrawMultiIndexedEXT()");
-    const auto info_bytes = reinterpret_cast<const char *>(pIndexInfo);
-    for (uint32_t i = 0; i < drawCount; i++) {
-        const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT *>(info_bytes + i * stride);
-        skip |= ValidateCmdDrawIndexedBufferSize(commandBuffer, info_ptr->indexCount, info_ptr->firstIndex,
-                                                 "vkCmdDrawMultiIndexedEXT()", "VUID-vkCmdDrawMultiIndexedEXT-firstIndex-04938");
-    }
-    return skip;
+bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(
+    VkCommandBuffer commandBuffer, uint32_t drawCount,
+    const VkMultiDrawIndexedInfoEXT *pIndexInfo, uint32_t instanceCount,
+    uint32_t firstInstance, uint32_t stride,
+    const int32_t *pVertexOffset) const {
+  bool skip = false;
+  if (!enabled_features.multi_draw_features.multiDraw) {
+    skip |= LogError(
+        commandBuffer, "VUID-vkCmdDrawMultiIndexedEXT-None-04937",
+        "vkCmdDrawMultiIndexedEXT(): The multiDraw feature must be enabled to "
+        "call this command.");
+  }
+  if (drawCount > phys_dev_ext_props.multi_draw_props.maxMultiDrawCount) {
+    skip |= LogError(
+        commandBuffer, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-04939",
+        "vkCmdDrawMultiIndexedEXT(): parameter, uint32_t drawCount (0x%" PRIu32
+        ") must be less than "
+        "VkPhysicalDeviceMultiDrawPropertiesEXT::maxMultiDrawCount (0x%" PRIu32
+        ").",
+        drawCount, phys_dev_ext_props.multi_draw_props.maxMultiDrawCount);
+  }
+  skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance,
+                                  CMD_DRAWMULTIINDEXEDEXT,
+                                  "vkCmdDrawMultiIndexedEXT()");
+  skip |= ValidateCmdDrawType(
+      commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS,
+      CMD_DRAWMULTIINDEXEDEXT, "vkCmdDrawMultiIndexedEXT()");
+  const auto info_bytes = reinterpret_cast<const char *>(pIndexInfo);
+  for (uint32_t i = 0; i < drawCount; i++) {
+    const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT *>(
+        info_bytes + i * stride);
+    skip |= ValidateCmdDrawIndexedBufferSize(
+        commandBuffer, info_ptr->indexCount, info_ptr->firstIndex,
+        "vkCmdDrawMultiIndexedEXT()",
+        "VUID-vkCmdDrawMultiIndexedEXT-firstIndex-04938");
+  }
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                uint32_t drawCount, uint32_t stride) const {
-    bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECT, "vkCmdDrawIndirect()");
-    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDIRECT, "vkCmdDrawIndirect()");
-    if (drawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-00476", stride,
-                                                "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand));
-        skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-00488", stride,
-                                                "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand), drawCount, offset,
-                                                buffer_state);
-    } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndirectCommand)) > buffer_state->createInfo.size) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-00487",
-                         "CmdDrawIndirect: drawCount equals 1 and (offset + sizeof(VkDrawIndirectCommand)) (%" PRIu64 ") is not less than "
-                         "or equal to the size of buffer (%" PRIu64 ").",
-                         (offset + sizeof(VkDrawIndirectCommand)), buffer_state->createInfo.size);
-    }
-    // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
-    // VkDrawIndirectCommand structures accessed by this command must be 0, which will require access to the contents of 'buffer'.
-    return skip;
+bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer,
+                                                VkBuffer buffer,
+                                                VkDeviceSize offset,
+                                                uint32_t drawCount,
+                                                uint32_t stride) const {
+  bool skip =
+      ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          CMD_DRAWINDIRECT, "vkCmdDrawIndirect()");
+  const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+  skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDIRECT,
+                              "vkCmdDrawIndirect()");
+  if (drawCount > 1) {
+    skip |= ValidateCmdDrawStrideWithStruct(
+        commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-00476", stride,
+        "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand));
+    skip |= ValidateCmdDrawStrideWithBuffer(
+        commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-00488", stride,
+        "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand), drawCount,
+        offset, buffer_state);
+  } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndirectCommand)) >
+                                     buffer_state->createInfo.size) {
+    skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-00487",
+                     "CmdDrawIndirect: drawCount equals 1 and (offset + "
+                     "sizeof(VkDrawIndirectCommand)) (%" PRIu64
+                     ") is not less than "
+                     "or equal to the size of buffer (%" PRIu64 ").",
+                     (offset + sizeof(VkDrawIndirectCommand)),
+                     buffer_state->createInfo.size);
+  }
+  // TODO: If the drawIndirectFirstInstance feature is not enabled, all the
+  // firstInstance members of the VkDrawIndirectCommand structures accessed by
+  // this command must be 0, which will require access to the contents of
+  // 'buffer'.
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                       uint32_t drawCount, uint32_t stride) const {
-    bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECT,
-                                    "vkCmdDrawIndexedIndirect()");
-    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDEXEDINDIRECT, "vkCmdDrawIndexedIndirect()");
-    if (drawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-00528", stride,
-                                                "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand));
-        skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-00540", stride,
-                                                "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand), drawCount,
-                                                offset, buffer_state);
-    } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndexedIndirectCommand)) > buffer_state->createInfo.size) {
-        skip |= LogError(
-            commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-00539",
-            "CmdDrawIndexedIndirect: drawCount equals 1 and (offset + sizeof(VkDrawIndexedIndirectCommand)) (%" PRIu64 ") is not less than "
-            "or equal to the size of buffer (%" PRIu64 ").",
-            (offset + sizeof(VkDrawIndexedIndirectCommand)), buffer_state->createInfo.size);
-    }
-    // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
-    // VkDrawIndexedIndirectCommand structures accessed by this command must be 0, which will require access to the contents of
-    // 'buffer'.
-    return skip;
+bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(
+    VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+    uint32_t drawCount, uint32_t stride) const {
+  bool skip = ValidateCmdDrawType(
+      commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS,
+      CMD_DRAWINDEXEDINDIRECT, "vkCmdDrawIndexedIndirect()");
+  const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+  skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDEXEDINDIRECT,
+                              "vkCmdDrawIndexedIndirect()");
+  if (drawCount > 1) {
+    skip |= ValidateCmdDrawStrideWithStruct(
+        commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-00528", stride,
+        "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand));
+    skip |= ValidateCmdDrawStrideWithBuffer(
+        commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-00540", stride,
+        "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand),
+        drawCount, offset, buffer_state);
+  } else if ((drawCount == 1) &&
+             (offset + sizeof(VkDrawIndexedIndirectCommand)) >
+                 buffer_state->createInfo.size) {
+    skip |= LogError(
+        commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-00539",
+        "CmdDrawIndexedIndirect: drawCount equals 1 and (offset + "
+        "sizeof(VkDrawIndexedIndirectCommand)) (%" PRIu64 ") is not less than "
+        "or equal to the size of buffer (%" PRIu64 ").",
+        (offset + sizeof(VkDrawIndexedIndirectCommand)),
+        buffer_state->createInfo.size);
+  }
+  // TODO: If the drawIndirectFirstInstance feature is not enabled, all the
+  // firstInstance members of the VkDrawIndexedIndirectCommand structures
+  // accessed by this command must be 0, which will require access to the
+  // contents of 'buffer'.
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) const {
-    bool skip = false;
-    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH, "vkCmdDispatch()");
-    return skip;
+bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer,
+                                            uint32_t x, uint32_t y,
+                                            uint32_t z) const {
+  bool skip = false;
+  skip |=
+      ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE,
+                          CMD_DISPATCH, "vkCmdDispatch()");
+  return skip;
 }
 
-bool CoreChecks::ValidateBaseGroups(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ,
+bool CoreChecks::ValidateBaseGroups(VkCommandBuffer commandBuffer,
+                                    uint32_t baseGroupX, uint32_t baseGroupY,
+                                    uint32_t baseGroupZ,
                                     const char *apiName) const {
-    bool skip = false;
-    if (baseGroupX || baseGroupY || baseGroupZ) {
-        const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-        const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_COMPUTE);
-        const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-        if (pipeline_state && !(pipeline_state->computePipelineCI.flags & VK_PIPELINE_CREATE_DISPATCH_BASE)) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdDispatchBase-baseGroupX-00427",
-                             "%s(): If any of baseGroupX, baseGroupY, or baseGroupZ are not zero, then the bound compute pipeline "
-                             "must have been created with the VK_PIPELINE_CREATE_DISPATCH_BASE flag",
-                             apiName);
-        }
+  bool skip = false;
+  if (baseGroupX || baseGroupY || baseGroupZ) {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const auto lv_bind_point =
+        ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_COMPUTE);
+    const PIPELINE_STATE *pipeline_state =
+        cb_state->lastBound[lv_bind_point].pipeline_state;
+    if (pipeline_state && !(pipeline_state->computePipelineCI.flags &
+                            VK_PIPELINE_CREATE_DISPATCH_BASE)) {
+      skip |= LogError(commandBuffer, "VUID-vkCmdDispatchBase-baseGroupX-00427",
+                       "%s(): If any of baseGroupX, baseGroupY, or baseGroupZ "
+                       "are not zero, then the bound compute pipeline "
+                       "must have been created with the "
+                       "VK_PIPELINE_CREATE_DISPATCH_BASE flag",
+                       apiName);
     }
-    return skip;
+  }
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                                uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                                uint32_t groupCountZ) const {
-    bool skip = false;
-    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHBASE, "vkCmdDispatchBase()");
-    skip |= ValidateBaseGroups(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, "vkCmdDispatchBase()");
-    return skip;
+bool CoreChecks::PreCallValidateCmdDispatchBase(
+    VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+    uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+    uint32_t groupCountZ) const {
+  bool skip = false;
+  skip |=
+      ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE,
+                          CMD_DISPATCHBASE, "vkCmdDispatchBase()");
+  skip |= ValidateBaseGroups(commandBuffer, baseGroupX, baseGroupY, baseGroupZ,
+                             "vkCmdDispatchBase()");
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                                   uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                                   uint32_t groupCountZ) const {
-    bool skip = false;
-    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHBASE, "vkCmdDispatchBaseKHR()");
-    skip |= ValidateBaseGroups(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, "vkCmdDispatchBaseKHR()");
-    return skip;
+bool CoreChecks::PreCallValidateCmdDispatchBaseKHR(
+    VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+    uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+    uint32_t groupCountZ) const {
+  bool skip = false;
+  skip |=
+      ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE,
+                          CMD_DISPATCHBASE, "vkCmdDispatchBaseKHR()");
+  skip |= ValidateBaseGroups(commandBuffer, baseGroupX, baseGroupY, baseGroupZ,
+                             "vkCmdDispatchBaseKHR()");
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) const {
-    bool skip =
-        ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT, "vkCmdDispatchIndirect()");
-    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DISPATCHINDIRECT, "vkCmdDispatchIndirect()");
+bool CoreChecks::PreCallValidateCmdDispatchIndirect(
+    VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) const {
+  bool skip =
+      ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE,
+                          CMD_DISPATCHINDIRECT, "vkCmdDispatchIndirect()");
+  skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DISPATCHINDIRECT,
+                              "vkCmdDispatchIndirect()");
+  const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+  if ((offset + sizeof(VkDispatchIndirectCommand)) >
+      buffer_state->createInfo.size) {
+    skip |= LogError(commandBuffer, "VUID-vkCmdDispatchIndirect-offset-00407",
+                     "vkCmdDispatchIndirect(): The sum of offset and the size "
+                     "of VkDispatchIndirectCommand is greater than the "
+                     "size of the buffer");
+  }
+  return skip;
+}
+bool CoreChecks::ValidateCmdDrawIndirectCount(
+    VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+    uint32_t stride, const char *apiName) const {
+  bool skip = false;
+  if ((device_extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
+      ((api_version >= VK_API_VERSION_1_2) &&
+       (enabled_features.core12.drawIndirectCount == VK_FALSE))) {
+    skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-None-04445",
+                     "%s(): Starting in Vulkan 1.2 the "
+                     "VkPhysicalDeviceVulkan12Features::drawIndirectCount must "
+                     "be enabled to "
+                     "call this command.",
+                     apiName);
+  }
+  skip |= ValidateCmdDrawStrideWithStruct(
+      commandBuffer, "VUID-vkCmdDrawIndirectCount-stride-03110", stride,
+      "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand));
+  if (maxDrawCount > 1) {
     const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    if ((offset + sizeof(VkDispatchIndirectCommand)) > buffer_state->createInfo.size) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDispatchIndirect-offset-00407",
-                         "vkCmdDispatchIndirect(): The sum of offset and the size of VkDispatchIndirectCommand is greater than the "
-                         "size of the buffer");
-    }
-    return skip;
-}
-bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                              uint32_t stride, const char *apiName) const {
-    bool skip = false;
-    if ((device_extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
-        ((api_version >= VK_API_VERSION_1_2) && (enabled_features.core12.drawIndirectCount == VK_FALSE))) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-None-04445",
-                         "%s(): Starting in Vulkan 1.2 the VkPhysicalDeviceVulkan12Features::drawIndirectCount must be enabled to "
-                         "call this command.",
-                         apiName);
-    }
-    skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndirectCount-stride-03110", stride,
-                                            "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand));
-    if (maxDrawCount > 1) {
-        const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-        skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndirectCount-maxDrawCount-03111", stride,
-                                            "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand), maxDrawCount, offset, buffer_state);
-    }
+    skip |= ValidateCmdDrawStrideWithBuffer(
+        commandBuffer, "VUID-vkCmdDrawIndirectCount-maxDrawCount-03111", stride,
+        "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand), maxDrawCount,
+        offset, buffer_state);
+  }
 
-    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNT, apiName);
-    const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
-    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDIRECTCOUNT, apiName);
-    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, apiName, "VUID-vkCmdDrawIndirectCount-countBuffer-02714");
+  skip |=
+      ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          CMD_DRAWINDIRECTCOUNT, apiName);
+  const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
+  skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDIRECTCOUNT,
+                              apiName);
+  skip |= ValidateMemoryIsBoundToBuffer(
+      count_buffer_state, apiName,
+      "VUID-vkCmdDrawIndirectCount-countBuffer-02714");
+  skip |= ValidateBufferUsageFlags(
+      count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+      "VUID-vkCmdDrawIndirectCount-countBuffer-02715", apiName,
+      "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+  return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(
+    VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+    uint32_t stride) const {
+  return ValidateCmdDrawIndirectCount(
+      commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+      maxDrawCount, stride, "vkCmdDrawIndirectCountKHR");
+}
+
+bool CoreChecks::PreCallValidateCmdDrawIndirectCount(
+    VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+    uint32_t stride) const {
+  return ValidateCmdDrawIndirectCount(
+      commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+      maxDrawCount, stride, "vkCmdDrawIndirectCount");
+}
+
+bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(
+    VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+    uint32_t stride, const char *apiName) const {
+  bool skip = false;
+  if ((device_extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
+      ((api_version >= VK_API_VERSION_1_2) &&
+       (enabled_features.core12.drawIndirectCount == VK_FALSE))) {
     skip |=
-        ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                 "VUID-vkCmdDrawIndirectCount-countBuffer-02715", apiName, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
-    return skip;
+        LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-None-04445",
+                 "%s(): Starting in Vulkan 1.2 the "
+                 "VkPhysicalDeviceVulkan12Features::drawIndirectCount must be "
+                 "enabled to "
+                 "call this command.",
+                 apiName);
+  }
+  skip |= ValidateCmdDrawStrideWithStruct(
+      commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride,
+      "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand));
+  if (maxDrawCount > 1) {
+    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    skip |= ValidateCmdDrawStrideWithBuffer(
+        commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143",
+        stride, "VkDrawIndexedIndirectCommand",
+        sizeof(VkDrawIndexedIndirectCommand), maxDrawCount, offset,
+        buffer_state);
+  }
+
+  skip |=
+      ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          CMD_DRAWINDEXEDINDIRECTCOUNT, apiName);
+  const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
+  skip |= ValidateIndirectCmd(commandBuffer, buffer,
+                              CMD_DRAWINDEXEDINDIRECTCOUNT, apiName);
+  skip |= ValidateMemoryIsBoundToBuffer(
+      count_buffer_state, apiName,
+      "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
+  skip |= ValidateBufferUsageFlags(
+      count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+      "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02715", apiName,
+      "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                        uint32_t stride) const {
-    return ValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                        "vkCmdDrawIndirectCountKHR");
+bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(
+    VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+    uint32_t stride) const {
+  return ValidateCmdDrawIndexedIndirectCount(
+      commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+      maxDrawCount, stride, "vkCmdDrawIndexedIndirectCountKHR");
 }
 
-bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                     uint32_t stride) const {
-    return ValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                        "vkCmdDrawIndirectCount");
+bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(
+    VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+    uint32_t stride) const {
+  return ValidateCmdDrawIndexedIndirectCount(
+      commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+      maxDrawCount, stride, "vkCmdDrawIndexedIndirectCount");
 }
 
-bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                     uint32_t stride, const char *apiName) const {
-    bool skip = false;
-    if ((device_extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
-        ((api_version >= VK_API_VERSION_1_2) && (enabled_features.core12.drawIndirectCount == VK_FALSE))) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-None-04445",
-                         "%s(): Starting in Vulkan 1.2 the VkPhysicalDeviceVulkan12Features::drawIndirectCount must be enabled to "
-                         "call this command.",
-                         apiName);
-    }
-    skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride,
-                                            "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand));
-    if (maxDrawCount > 1) {
-        const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-        skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143", stride,
-                                                "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand), maxDrawCount,
-                                                offset, buffer_state);
-    }
-
-    skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNT, apiName);
-    const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
-    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDEXEDINDIRECTCOUNT, apiName);
-    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, apiName, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
-    skip |= ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02715", apiName,
-                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
-    return skip;
+bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(
+    VkCommandBuffer commandBuffer, uint32_t instanceCount,
+    uint32_t firstInstance, VkBuffer counterBuffer,
+    VkDeviceSize counterBufferOffset, uint32_t counterOffset,
+    uint32_t vertexStride) const {
+  bool skip = false;
+  if (!enabled_features.transform_feedback_features.transformFeedback) {
+    skip |=
+        LogError(commandBuffer,
+                 "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedback-02287",
+                 "%s: transformFeedback feature is not enabled.",
+                 "vkCmdDrawIndirectByteCountEXT()");
+  }
+  if (device_extensions.vk_ext_transform_feedback &&
+      !phys_dev_ext_props.transform_feedback_props.transformFeedbackDraw) {
+    skip |= LogError(
+        commandBuffer,
+        "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedbackDraw-02288",
+        "%s: "
+        "VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackDraw "
+        "is not supported",
+        "vkCmdDrawIndirectByteCountEXT()");
+  }
+  skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance,
+                                  CMD_DRAWINDIRECTBYTECOUNTEXT,
+                                  "vkCmdDrawIndirectByteCountEXT()");
+  skip |= ValidateCmdDrawType(
+      commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS,
+      CMD_DRAWINDIRECTBYTECOUNTEXT, "vkCmdDrawIndirectByteCountEXT()");
+  skip |= ValidateIndirectCmd(commandBuffer, counterBuffer,
+                              CMD_DRAWINDIRECTBYTECOUNTEXT,
+                              "vkCmdDrawIndirectByteCountEXT()");
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                               uint32_t maxDrawCount, uint32_t stride) const {
-    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                               "vkCmdDrawIndexedIndirectCountKHR");
+bool CoreChecks::PreCallValidateCmdTraceRaysNV(
+    VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
+    VkDeviceSize raygenShaderBindingOffset,
+    VkBuffer missShaderBindingTableBuffer, VkDeviceSize missShaderBindingOffset,
+    VkDeviceSize missShaderBindingStride, VkBuffer hitShaderBindingTableBuffer,
+    VkDeviceSize hitShaderBindingOffset, VkDeviceSize hitShaderBindingStride,
+    VkBuffer callableShaderBindingTableBuffer,
+    VkDeviceSize callableShaderBindingOffset,
+    VkDeviceSize callableShaderBindingStride, uint32_t width, uint32_t height,
+    uint32_t depth) const {
+  bool skip = ValidateCmdDrawType(commandBuffer, true,
+                                  VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
+                                  CMD_TRACERAYSNV, "vkCmdTraceRaysNV()");
+  const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+  auto callable_shader_buffer_state = const_cast<BUFFER_STATE *>(
+      GetBufferState(callableShaderBindingTableBuffer));
+  if (callable_shader_buffer_state &&
+      callableShaderBindingOffset >=
+          callable_shader_buffer_state->createInfo.size) {
+    skip |= LogError(commandBuffer,
+                     "VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02461",
+                     "vkCmdTraceRaysNV: callableShaderBindingOffset %" PRIu64
+                     " must be less than the size of "
+                     "callableShaderBindingTableBuffer %" PRIu64 " .",
+                     callableShaderBindingOffset,
+                     callable_shader_buffer_state->createInfo.size);
+  }
+  auto hit_shader_buffer_state =
+      const_cast<BUFFER_STATE *>(GetBufferState(hitShaderBindingTableBuffer));
+  if (hit_shader_buffer_state &&
+      hitShaderBindingOffset >= hit_shader_buffer_state->createInfo.size) {
+    skip |= LogError(
+        commandBuffer, "VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02459",
+        "vkCmdTraceRaysNV: hitShaderBindingOffset %" PRIu64
+        " must be less than the size of hitShaderBindingTableBuffer %" PRIu64
+        " .",
+        hitShaderBindingOffset, hit_shader_buffer_state->createInfo.size);
+  }
+  auto miss_shader_buffer_state =
+      const_cast<BUFFER_STATE *>(GetBufferState(missShaderBindingTableBuffer));
+  if (miss_shader_buffer_state &&
+      missShaderBindingOffset >= miss_shader_buffer_state->createInfo.size) {
+    skip |= LogError(
+        commandBuffer, "VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02457",
+        "vkCmdTraceRaysNV: missShaderBindingOffset %" PRIu64
+        " must be less than the size of missShaderBindingTableBuffer %" PRIu64
+        " .",
+        missShaderBindingOffset, miss_shader_buffer_state->createInfo.size);
+  }
+  auto raygen_shader_buffer_state = const_cast<BUFFER_STATE *>(
+      GetBufferState(raygenShaderBindingTableBuffer));
+  if (raygenShaderBindingOffset >=
+      raygen_shader_buffer_state->createInfo.size) {
+    skip |= LogError(
+        commandBuffer, "VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02455",
+        "vkCmdTraceRaysNV: raygenShaderBindingOffset %" PRIu64
+        " must be less than the size of raygenShaderBindingTableBuffer %" PRIu64
+        " .",
+        raygenShaderBindingOffset, raygen_shader_buffer_state->createInfo.size);
+  }
+
+  const auto lv_bind_point =
+      ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
+  const PIPELINE_STATE *pipeline_state =
+      cb_state->lastBound[lv_bind_point].pipeline_state;
+  if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
+    skip |= LogError(device, "VUID-vkCmdTraceRaysNV-None-02700",
+                     "vkCmdTraceRaysKHR: A valid pipeline must be bound to the "
+                     "pipeline bind point used by this command.");
+  }
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                            uint32_t maxDrawCount, uint32_t stride) const {
-    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                               "vkCmdDrawIndexedIndirectCount");
-}
-
-bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
-                                                            uint32_t firstInstance, VkBuffer counterBuffer,
-                                                            VkDeviceSize counterBufferOffset, uint32_t counterOffset,
-                                                            uint32_t vertexStride) const {
-    bool skip = false;
-    if (!enabled_features.transform_feedback_features.transformFeedback) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedback-02287",
-                         "%s: transformFeedback feature is not enabled.", "vkCmdDrawIndirectByteCountEXT()");
-    }
-    if (device_extensions.vk_ext_transform_feedback && !phys_dev_ext_props.transform_feedback_props.transformFeedbackDraw) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedbackDraw-02288",
-                         "%s: VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackDraw is not supported",
-                         "vkCmdDrawIndirectByteCountEXT()");
-    }
-    skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance, CMD_DRAWINDIRECTBYTECOUNTEXT,
-                                    "vkCmdDrawIndirectByteCountEXT()");
-    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTBYTECOUNTEXT,
-                                "vkCmdDrawIndirectByteCountEXT()");
-    skip |= ValidateIndirectCmd(commandBuffer, counterBuffer, CMD_DRAWINDIRECTBYTECOUNTEXT, "vkCmdDrawIndirectByteCountEXT()");
-    return skip;
-}
-
-bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
-                                               VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
-                                               VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
-                                               VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
-                                               VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
-                                               VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                               uint32_t width, uint32_t height, uint32_t depth) const {
-    bool skip =
-        ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, CMD_TRACERAYSNV, "vkCmdTraceRaysNV()");
-    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    auto callable_shader_buffer_state = const_cast<BUFFER_STATE *>(GetBufferState(callableShaderBindingTableBuffer));
-    if (callable_shader_buffer_state && callableShaderBindingOffset >= callable_shader_buffer_state->createInfo.size) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02461",
-                         "vkCmdTraceRaysNV: callableShaderBindingOffset %" PRIu64
-                         " must be less than the size of callableShaderBindingTableBuffer %" PRIu64 " .",
-                         callableShaderBindingOffset, callable_shader_buffer_state->createInfo.size);
-    }
-    auto hit_shader_buffer_state = const_cast<BUFFER_STATE *>(GetBufferState(hitShaderBindingTableBuffer));
-    if (hit_shader_buffer_state && hitShaderBindingOffset >= hit_shader_buffer_state->createInfo.size) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02459",
-                         "vkCmdTraceRaysNV: hitShaderBindingOffset %" PRIu64
-                         " must be less than the size of hitShaderBindingTableBuffer %" PRIu64 " .",
-                         hitShaderBindingOffset, hit_shader_buffer_state->createInfo.size);
-    }
-    auto miss_shader_buffer_state = const_cast<BUFFER_STATE *>(GetBufferState(missShaderBindingTableBuffer));
-    if (miss_shader_buffer_state && missShaderBindingOffset >= miss_shader_buffer_state->createInfo.size) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02457",
-                         "vkCmdTraceRaysNV: missShaderBindingOffset %" PRIu64
-                         " must be less than the size of missShaderBindingTableBuffer %" PRIu64 " .",
-                         missShaderBindingOffset, miss_shader_buffer_state->createInfo.size);
-    }
-    auto raygen_shader_buffer_state = const_cast<BUFFER_STATE *>(GetBufferState(raygenShaderBindingTableBuffer));
-    if (raygenShaderBindingOffset >= raygen_shader_buffer_state->createInfo.size) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02455",
-                         "vkCmdTraceRaysNV: raygenShaderBindingOffset %" PRIu64
-                         " must be less than the size of raygenShaderBindingTableBuffer %" PRIu64 " .",
-                         raygenShaderBindingOffset, raygen_shader_buffer_state->createInfo.size);
-    }
-
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
-    const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-None-02700",
-                         "vkCmdTraceRaysKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");
-    }
-    return skip;
-}
-
-bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
-                                                const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
-                                                const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
-                                                const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-                                                const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
-                                                uint32_t height, uint32_t depth) const {
-    bool skip =
-        ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSKHR, "vkCmdTraceRaysKHR()");
-    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-    const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-None-02700",
-                         "vkCmdTraceRaysKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");
-    } else {  // bound to valid RT pipeline
-        if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
-            if (!pHitShaderBindingTable->deviceAddress) {
-                skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03697",
-                                 "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with flags "
-                                 "that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR, the "
-                                 "deviceAddress member of pHitShaderBindingTable must not be zero.");
-            }
-            if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
-                skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03514",
-                                 "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with "
-                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR, "
-                                 "entries in pHitShaderBindingTable accessed as a result of this command in order to "
-                                 "execute an intersection shader must not be set to zero.");
-            }
-        }
-        if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
-            if (!pHitShaderBindingTable->deviceAddress) {
-                skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03696",
-                                 "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with flags "
-                                 "that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR, the "
-                                 "deviceAddress member of pHitShaderBindingTable must not be zero.");
-            }
-            if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
-                skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03513",
-                                 "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with "
-                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR, "
-                                 "entries in pHitShaderBindingTable accessed as a result of this command in order to "
-                                 "execute a closest hit shader must not be set to zero.");
-            }
-        }
-        if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
-            if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
-                skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03512",
-                                 "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with "
-                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR, "
-                                 "entries in pHitShaderBindingTable accessed as a result of this command in order to "
-                                 "execute an any hit shader must not be set to zero.");
-            }
-        }
-    }
-    return skip;
-}
-
-bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                                        const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
-                                                        const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
-                                                        const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-                                                        const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
-                                                        VkDeviceAddress indirectDeviceAddress) const {
-    bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSINDIRECTKHR,
-                                    "vkCmdTraceRaysIndirectKHR()");
-    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-    const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
+bool CoreChecks::PreCallValidateCmdTraceRaysKHR(
+    VkCommandBuffer commandBuffer,
+    const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+    uint32_t width, uint32_t height, uint32_t depth) const {
+  bool skip = ValidateCmdDrawType(commandBuffer, true,
+                                  VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                                  CMD_TRACERAYSKHR, "vkCmdTraceRaysKHR()");
+  const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+  const auto lv_bind_point =
+      ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+  const PIPELINE_STATE *pipeline_state =
+      cb_state->lastBound[lv_bind_point].pipeline_state;
+  if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
+    skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-None-02700",
+                     "vkCmdTraceRaysKHR: A valid pipeline must be bound to the "
+                     "pipeline bind point used by this command.");
+  } else { // bound to valid RT pipeline
+    if (pipeline_state->raytracingPipelineCI.flags &
+        VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
+      if (!pHitShaderBindingTable->deviceAddress) {
+        skip |= LogError(
+            device, "VUID-vkCmdTraceRaysKHR-flags-03697",
+            "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline "
+            "was created with flags "
+            "that included "
+            "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_"
+            "KHR, the "
+            "deviceAddress member of pHitShaderBindingTable must not be zero.");
+      }
+      if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 ||
+          pHitShaderBindingTable->stride == 0) {
         skip |=
-            LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-None-02700",
-                     "vkCmdTraceRaysIndirectKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");
-    } else {  // valid bind point
-        if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
-            if (!pHitShaderBindingTable || pHitShaderBindingTable->deviceAddress == 0) {
-                skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03697",
-                                 "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing pipeline was created with "
-                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR, the "
-                                 "deviceAddress member of pHitShaderBindingTable must not be zero.");
-            }
-            if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
-                skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03514",
-                                 "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing pipeline was created with "
-                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR, "
-                                 "entries in pHitShaderBindingTable accessed as a result of this command in order to "
-                                 "execute an intersection shader must not be set to zero.");
-            }
-        }
-        if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
-            if (!pHitShaderBindingTable || pHitShaderBindingTable->deviceAddress == 0) {
-                skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03696",
-                                 "vkCmdTraceRaysIndirectKHR:If the currently bound ray tracing pipeline was created with "
-                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR, "
-                                 "the deviceAddress member of pHitShaderBindingTable must not be zero.");
-            }
-            if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
-                skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03513",
-                                 "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing pipeline was created with "
-                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR, "
-                                 "entries in pHitShaderBindingTable accessed as a result of this command in order to "
-                                 "execute a closest hit shader must not be set to zero.");
-            }
-        }
-        if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
-            if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
-                skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03512",
-                                 "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing pipeline was created with "
-                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR, "
-                                 "entries in pHitShaderBindingTable accessed as a result of this command in order to "
-                                 "execute an any hit shader must not be set to zero.");
-            }
-        }
+            LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03514",
+                     "vkCmdTraceRaysKHR: If the currently bound ray tracing "
+                     "pipeline was created with "
+                     "flags that included "
+                     "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_"
+                     "SHADERS_BIT_KHR, "
+                     "entries in pHitShaderBindingTable accessed as a result "
+                     "of this command in order to "
+                     "execute an intersection shader must not be set to zero.");
+      }
     }
-    return skip;
+    if (pipeline_state->raytracingPipelineCI.flags &
+        VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
+      if (!pHitShaderBindingTable->deviceAddress) {
+        skip |= LogError(
+            device, "VUID-vkCmdTraceRaysKHR-flags-03696",
+            "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline "
+            "was created with flags "
+            "that included "
+            "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_"
+            "KHR, the "
+            "deviceAddress member of pHitShaderBindingTable must not be zero.");
+      }
+      if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 ||
+          pHitShaderBindingTable->stride == 0) {
+        skip |=
+            LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03513",
+                     "vkCmdTraceRaysKHR: If the currently bound ray tracing "
+                     "pipeline was created with "
+                     "flags that included "
+                     "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_"
+                     "SHADERS_BIT_KHR, "
+                     "entries in pHitShaderBindingTable accessed as a result "
+                     "of this command in order to "
+                     "execute a closest hit shader must not be set to zero.");
+      }
+    }
+    if (pipeline_state->raytracingPipelineCI.flags &
+        VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
+      if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 ||
+          pHitShaderBindingTable->stride == 0) {
+        skip |= LogError(
+            device, "VUID-vkCmdTraceRaysKHR-flags-03512",
+            "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline "
+            "was created with "
+            "flags that included "
+            "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR, "
+            "entries in pHitShaderBindingTable accessed as a result of this "
+            "command in order to "
+            "execute an any hit shader must not be set to zero.");
+      }
+    }
+  }
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) const {
-    bool skip =
-        ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSNV, "vkCmdDrawMeshTasksNV()");
-    return skip;
+bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(
+    VkCommandBuffer commandBuffer,
+    const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+    VkDeviceAddress indirectDeviceAddress) const {
+  bool skip = ValidateCmdDrawType(
+      commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+      CMD_TRACERAYSINDIRECTKHR, "vkCmdTraceRaysIndirectKHR()");
+  const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+  const auto lv_bind_point =
+      ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+  const PIPELINE_STATE *pipeline_state =
+      cb_state->lastBound[lv_bind_point].pipeline_state;
+  if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
+    skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-None-02700",
+                     "vkCmdTraceRaysIndirectKHR: A valid pipeline must be "
+                     "bound to the pipeline bind point used by this command.");
+  } else { // valid bind point
+    if (pipeline_state->raytracingPipelineCI.flags &
+        VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
+      if (!pHitShaderBindingTable ||
+          pHitShaderBindingTable->deviceAddress == 0) {
+        skip |= LogError(
+            device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03697",
+            "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing "
+            "pipeline was created with "
+            "flags that included "
+            "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_"
+            "KHR, the "
+            "deviceAddress member of pHitShaderBindingTable must not be zero.");
+      }
+      if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 ||
+          pHitShaderBindingTable->stride == 0) {
+        skip |=
+            LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03514",
+                     "vkCmdTraceRaysIndirectKHR: If the currently bound ray "
+                     "tracing pipeline was created with "
+                     "flags that included "
+                     "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_"
+                     "SHADERS_BIT_KHR, "
+                     "entries in pHitShaderBindingTable accessed as a result "
+                     "of this command in order to "
+                     "execute an intersection shader must not be set to zero.");
+      }
+    }
+    if (pipeline_state->raytracingPipelineCI.flags &
+        VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
+      if (!pHitShaderBindingTable ||
+          pHitShaderBindingTable->deviceAddress == 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03696",
+                         "vkCmdTraceRaysIndirectKHR:If the currently bound ray "
+                         "tracing pipeline was created with "
+                         "flags that included "
+                         "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_"
+                         "SHADERS_BIT_KHR, "
+                         "the deviceAddress member of pHitShaderBindingTable "
+                         "must not be zero.");
+      }
+      if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 ||
+          pHitShaderBindingTable->stride == 0) {
+        skip |=
+            LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03513",
+                     "vkCmdTraceRaysIndirectKHR: If the currently bound ray "
+                     "tracing pipeline was created with "
+                     "flags that included "
+                     "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_"
+                     "SHADERS_BIT_KHR, "
+                     "entries in pHitShaderBindingTable accessed as a result "
+                     "of this command in order to "
+                     "execute a closest hit shader must not be set to zero.");
+      }
+    }
+    if (pipeline_state->raytracingPipelineCI.flags &
+        VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
+      if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 ||
+          pHitShaderBindingTable->stride == 0) {
+        skip |= LogError(
+            device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03512",
+            "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing "
+            "pipeline was created with "
+            "flags that included "
+            "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR, "
+            "entries in pHitShaderBindingTable accessed as a result of this "
+            "command in order to "
+            "execute an any hit shader must not be set to zero.");
+      }
+    }
+  }
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                           uint32_t drawCount, uint32_t stride) const {
-    bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTNV,
-                                    "vkCmdDrawMeshTasksIndirectNV()");
-    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWMESHTASKSINDIRECTNV, "vkCmdDrawMeshTasksIndirectNV()");
-    if (drawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02157", stride,
-                                                "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV),
-                                                drawCount, offset, buffer_state);
-    }
-    return skip;
+bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(
+    VkCommandBuffer commandBuffer, uint32_t taskCount,
+    uint32_t firstTask) const {
+  bool skip =
+      ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          CMD_DRAWMESHTASKSNV, "vkCmdDrawMeshTasksNV()");
+  return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                                uint32_t maxDrawCount, uint32_t stride) const {
-    bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTCOUNTNV,
-                                    "vkCmdDrawMeshTasksIndirectCountNV()");
-    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
-    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWMESHTASKSINDIRECTCOUNTNV, "vkCmdDrawMeshTasksIndirectCountNV()");
-    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
-                                          "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02714");
-    skip |= ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02715",
-                                     "vkCmdDrawMeshTasksIndirectCountNV()", "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
-    skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182", stride,
-                                            "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV));
-    if (maxDrawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxDrawCount-02183", stride,
-                                                "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV),
-                                                maxDrawCount, offset, buffer_state);
-    }
-    return skip;
+bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(
+    VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+    uint32_t drawCount, uint32_t stride) const {
+  bool skip = ValidateCmdDrawType(
+      commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS,
+      CMD_DRAWMESHTASKSINDIRECTNV, "vkCmdDrawMeshTasksIndirectNV()");
+  const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+  skip |=
+      ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWMESHTASKSINDIRECTNV,
+                          "vkCmdDrawMeshTasksIndirectNV()");
+  if (drawCount > 1) {
+    skip |= ValidateCmdDrawStrideWithBuffer(
+        commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02157",
+        stride, "VkDrawMeshTasksIndirectCommandNV",
+        sizeof(VkDrawMeshTasksIndirectCommandNV), drawCount, offset,
+        buffer_state);
+  }
+  return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(
+    VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+    uint32_t stride) const {
+  bool skip = ValidateCmdDrawType(
+      commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS,
+      CMD_DRAWMESHTASKSINDIRECTCOUNTNV, "vkCmdDrawMeshTasksIndirectCountNV()");
+  const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+  const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
+  skip |= ValidateIndirectCmd(commandBuffer, buffer,
+                              CMD_DRAWMESHTASKSINDIRECTCOUNTNV,
+                              "vkCmdDrawMeshTasksIndirectCountNV()");
+  skip |= ValidateMemoryIsBoundToBuffer(
+      count_buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
+      "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02714");
+  skip |= ValidateBufferUsageFlags(
+      count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+      "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02715",
+      "vkCmdDrawMeshTasksIndirectCountNV()",
+      "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+  skip |= ValidateCmdDrawStrideWithStruct(
+      commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182",
+      stride, "VkDrawMeshTasksIndirectCommandNV",
+      sizeof(VkDrawMeshTasksIndirectCommandNV));
+  if (maxDrawCount > 1) {
+    skip |= ValidateCmdDrawStrideWithBuffer(
+        commandBuffer,
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxDrawCount-02183", stride,
+        "VkDrawMeshTasksIndirectCommandNV",
+        sizeof(VkDrawMeshTasksIndirectCommandNV), maxDrawCount, offset,
+        buffer_state);
+  }
+  return skip;
 }
