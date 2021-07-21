@@ -76,6 +76,9 @@ void decoration_set::add(uint32_t decoration, uint32_t value) {
             flags |= builtin_bit;
             builtin = value;
             break;
+        case spv::DecorationNonReadable:
+            flags |= nonreadable_bit;
+            break;
     }
 }
 

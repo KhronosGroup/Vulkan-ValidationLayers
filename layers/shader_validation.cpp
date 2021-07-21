@@ -1065,6 +1065,37 @@ bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *sr
         }
     }
 
+    // Go through all variables for images and check decorations
+    for (auto insn : *src) {
+        if (insn.opcode() != spv::OpVariable)
+            continue;
+
+        uint32_t var = insn.word(2);
+        spirv_inst_iter type_def = src->GetImageFormatInst(loads, insn.word(1));
+        if (type_def == src->end())
+            continue;
+        if (type_def.word(8) != spv::ImageFormatUnknown)
+            continue;
+
+        decoration_set img_decorations = src->get_decorations(var);
+
+        if (!enabled_features.core.shaderStorageImageReadWithoutFormat &&
+            !(img_decorations.flags & decoration_set::nonreadable_bit)) {
+            skip |= LogError(device,
+                             kVUID_Features_shaderStorageImageReadWithoutFormat_NonReadable,
+                             "shaderStorageImageReadWithoutFormat not supported but variable %" PRIu32 " "
+                             " without format not marked a NonReadable", var);
+        }
+
+        if (!enabled_features.core.shaderStorageImageWriteWithoutFormat &&
+            !(img_decorations.flags & decoration_set::nonwritable_bit)) {
+            skip |= LogError(device,
+                             kVUID_Features_shaderStorageImageWriteWithoutFormat_NonWritable,
+                             "shaderStorageImageWriteWithoutFormat not supported but variable %" PRIu32 " "
+                             "without format not marked a NonWritable", var);
+        }
+    }
+
     return skip;
 }
 

@@ -100,6 +100,7 @@ struct decoration_set {
         binding_bit = 1 << 8,
         nonwritable_bit = 1 << 9,
         builtin_bit = 1 << 10,
+        nonreadable_bit = 1 << 11,
     };
     static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
