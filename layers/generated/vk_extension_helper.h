@@ -413,6 +413,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_scalar_block_layout{kNotEnabled};
     ExtEnabled vk_ext_separate_stencil_usage{kNotEnabled};
     ExtEnabled vk_ext_shader_atomic_float{kNotEnabled};
+    ExtEnabled vk_ext_shader_atomic_float2{kNotEnabled};
     ExtEnabled vk_ext_shader_demote_to_helper_invocation{kNotEnabled};
     ExtEnabled vk_ext_shader_image_atomic_int64{kNotEnabled};
     ExtEnabled vk_ext_shader_stencil_export{kNotEnabled};
@@ -439,6 +440,8 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_google_display_timing{kNotEnabled};
     ExtEnabled vk_google_hlsl_functionality1{kNotEnabled};
     ExtEnabled vk_google_user_type{kNotEnabled};
+    ExtEnabled vk_huawei_invocation_mask{kNotEnabled};
+    ExtEnabled vk_huawei_subpass_shading{kNotEnabled};
     ExtEnabled vk_img_filter_cubic{kNotEnabled};
     ExtEnabled vk_img_format_pvrtc{kNotEnabled};
     ExtEnabled vk_intel_performance_query{kNotEnabled};
@@ -480,6 +483,8 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_pipeline_executable_properties{kNotEnabled};
     ExtEnabled vk_khr_pipeline_library{kNotEnabled};
     ExtEnabled vk_khr_portability_subset{kNotEnabled};
+    ExtEnabled vk_khr_present_id{kNotEnabled};
+    ExtEnabled vk_khr_present_wait{kNotEnabled};
     ExtEnabled vk_khr_push_descriptor{kNotEnabled};
     ExtEnabled vk_khr_ray_query{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
@@ -613,7 +618,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_blend_operation_advanced, {})},
             {VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_buffer_device_address, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_calibrated_timestamps, {})},
+            {VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_calibrated_timestamps, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_color_write_enable, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_conditional_rendering, {})},
@@ -704,6 +710,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_separate_stencil_usage, {})},
             {VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_atomic_float, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_atomic_float2, {{
+                           {&DeviceExtensions::vk_ext_shader_atomic_float, VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME}}})},
             {VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_demote_to_helper_invocation, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_image_atomic_int64, {{
@@ -762,6 +770,12 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
             {VK_GOOGLE_HLSL_FUNCTIONALITY1_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_google_hlsl_functionality1, {})},
             {VK_GOOGLE_USER_TYPE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_google_user_type, {})},
+            {VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_huawei_invocation_mask, {{
+                           {&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
+            {VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_huawei_subpass_shading, {{
+                           {&DeviceExtensions::vk_khr_create_renderpass2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
             {VK_IMG_FILTER_CUBIC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_img_filter_cubic, {})},
             {VK_IMG_FORMAT_PVRTC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_img_format_pvrtc, {})},
             {VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_intel_performance_query, {})},
@@ -848,6 +862,11 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_portability_subset, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
 #endif
+            {VK_KHR_PRESENT_ID_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_present_id, {{
+                           {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
+            {VK_KHR_PRESENT_WAIT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_present_wait, {{
+                           {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_present_id, VK_KHR_PRESENT_ID_EXTENSION_NAME}}})},
             {VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_push_descriptor, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_RAY_QUERY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_ray_query, {{
@@ -1192,6 +1211,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME,
     VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME,
     VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME,
+    VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME,
     VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
     VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME,
     VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME,
@@ -1230,6 +1250,8 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME,
     VK_GOOGLE_HLSL_FUNCTIONALITY1_EXTENSION_NAME,
     VK_GOOGLE_USER_TYPE_EXTENSION_NAME,
+    VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME,
+    VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME,
     VK_IMG_FILTER_CUBIC_EXTENSION_NAME,
     VK_IMG_FORMAT_PVRTC_EXTENSION_NAME,
     VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME,
@@ -1279,6 +1301,8 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,
 #endif
+    VK_KHR_PRESENT_ID_EXTENSION_NAME,
+    VK_KHR_PRESENT_WAIT_EXTENSION_NAME,
     VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
     VK_KHR_RAY_QUERY_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,

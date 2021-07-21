@@ -110,6 +110,13 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                     }
                 } break;
 
+            case VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI: {
+                    safe_VkSubpassShadingPipelineCreateInfoHUAWEI *safe_struct = reinterpret_cast<safe_VkSubpassShadingPipelineCreateInfoHUAWEI *>(cur_pnext);
+                    if (safe_struct->renderPass) {
+                        safe_struct->renderPass = layer_data->Unwrap(safe_struct->renderPass);
+                    }
+                } break;
+
             case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_SHADER_GROUPS_CREATE_INFO_NV: {
                     safe_VkGraphicsPipelineShaderGroupsCreateInfoNV *safe_struct = reinterpret_cast<safe_VkGraphicsPipelineShaderGroupsCreateInfoNV *>(cur_pnext);
                     if (safe_struct->pGroups) {
@@ -2247,6 +2254,7 @@ VkResult DispatchCreateComputePipelines(
             local_pCreateInfos = new safe_VkComputePipelineCreateInfo[createInfoCount];
             for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
                 local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
+                WrapPnextChainHandles(layer_data, local_pCreateInfos[index0].pNext);
                 if (pCreateInfos[index0].stage.module) {
                     local_pCreateInfos[index0].stage.module = layer_data->Unwrap(pCreateInfos[index0].stage.module);
                 }
@@ -5623,6 +5631,22 @@ void DispatchCmdSetFragmentShadingRateKHR(
 
 }
 
+VkResult DispatchWaitForPresentKHR(
+    VkDevice                                    device,
+    VkSwapchainKHR                              swapchain,
+    uint64_t                                    presentId,
+    uint64_t                                    timeout)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.WaitForPresentKHR(device, swapchain, presentId, timeout);
+    {
+        swapchain = layer_data->Unwrap(swapchain);
+    }
+    VkResult result = layer_data->device_dispatch_table.WaitForPresentKHR(device, swapchain, presentId, timeout);
+
+    return result;
+}
+
 VkDeviceAddress DispatchGetBufferDeviceAddressKHR(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo)
@@ -8594,25 +8618,62 @@ VkResult DispatchGetSemaphoreZirconHandleFUCHSIA(
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+VkResult DispatchGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(
+    VkDevice                                    device,
+    VkRenderPass                                renderpass,
+    VkExtent2D*                                 pMaxWorkgroupSize)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize);
+    {
+        renderpass = layer_data->Unwrap(renderpass);
+    }
+    VkResult result = layer_data->device_dispatch_table.GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize);
+
+    return result;
+}
+
+void DispatchCmdSubpassShadingHUAWEI(
+    VkCommandBuffer                             commandBuffer)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSubpassShadingHUAWEI(commandBuffer);
+
+}
+
+void DispatchCmdBindInvocationMaskHUAWEI(
+    VkCommandBuffer                             commandBuffer,
+    VkImageView                                 imageView,
+    VkImageLayout                               imageLayout)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout);
+    {
+        imageView = layer_data->Unwrap(imageView);
+    }
+    layer_data->device_dispatch_table.CmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout);
+
+}
+
 VkResult DispatchGetMemoryRemoteAddressNV(
     VkDevice                                    device,
-    const VkMemoryGetRemoteAddressInfoNV*       getMemoryRemoteAddressInfo,
+    const VkMemoryGetRemoteAddressInfoNV*       pMemoryGetRemoteAddressInfo,
     VkRemoteAddressNV*                          pAddress)
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.GetMemoryRemoteAddressNV(device, getMemoryRemoteAddressInfo, pAddress);
-    safe_VkMemoryGetRemoteAddressInfoNV var_local_getMemoryRemoteAddressInfo;
-    safe_VkMemoryGetRemoteAddressInfoNV *local_getMemoryRemoteAddressInfo = NULL;
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress);
+    safe_VkMemoryGetRemoteAddressInfoNV var_local_pMemoryGetRemoteAddressInfo;
+    safe_VkMemoryGetRemoteAddressInfoNV *local_pMemoryGetRemoteAddressInfo = NULL;
     {
-        if (getMemoryRemoteAddressInfo) {
-            local_getMemoryRemoteAddressInfo = &var_local_getMemoryRemoteAddressInfo;
-            local_getMemoryRemoteAddressInfo->initialize(getMemoryRemoteAddressInfo);
-            if (getMemoryRemoteAddressInfo->memory) {
-                local_getMemoryRemoteAddressInfo->memory = layer_data->Unwrap(getMemoryRemoteAddressInfo->memory);
+        if (pMemoryGetRemoteAddressInfo) {
+            local_pMemoryGetRemoteAddressInfo = &var_local_pMemoryGetRemoteAddressInfo;
+            local_pMemoryGetRemoteAddressInfo->initialize(pMemoryGetRemoteAddressInfo);
+            if (pMemoryGetRemoteAddressInfo->memory) {
+                local_pMemoryGetRemoteAddressInfo->memory = layer_data->Unwrap(pMemoryGetRemoteAddressInfo->memory);
             }
         }
     }
-    VkResult result = layer_data->device_dispatch_table.GetMemoryRemoteAddressNV(device, (const VkMemoryGetRemoteAddressInfoNV*)local_getMemoryRemoteAddressInfo, pAddress);
+    VkResult result = layer_data->device_dispatch_table.GetMemoryRemoteAddressNV(device, (const VkMemoryGetRemoteAddressInfoNV*)local_pMemoryGetRemoteAddressInfo, pAddress);
 
     return result;
 }

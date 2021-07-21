@@ -3419,6 +3419,19 @@ void PostCallRecordCmdSetFragmentShadingRateKHR(
     const VkExtent2D*                           pFragmentSize,
     const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) override;
 
+void PreCallRecordWaitForPresentKHR(
+    VkDevice                                    device,
+    VkSwapchainKHR                              swapchain,
+    uint64_t                                    presentId,
+    uint64_t                                    timeout) override;
+
+void PostCallRecordWaitForPresentKHR(
+    VkDevice                                    device,
+    VkSwapchainKHR                              swapchain,
+    uint64_t                                    presentId,
+    uint64_t                                    timeout,
+    VkResult                                    result) override;
+
 void PreCallRecordGetBufferDeviceAddressKHR(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo) override;
@@ -5266,14 +5279,41 @@ void PostCallRecordGetSemaphoreZirconHandleFUCHSIA(
     VkResult                                    result) override;
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+void PreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(
+    VkDevice                                    device,
+    VkRenderPass                                renderpass,
+    VkExtent2D*                                 pMaxWorkgroupSize) override;
+
+void PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(
+    VkDevice                                    device,
+    VkRenderPass                                renderpass,
+    VkExtent2D*                                 pMaxWorkgroupSize,
+    VkResult                                    result) override;
+
+void PreCallRecordCmdSubpassShadingHUAWEI(
+    VkCommandBuffer                             commandBuffer) override;
+
+void PostCallRecordCmdSubpassShadingHUAWEI(
+    VkCommandBuffer                             commandBuffer) override;
+
+void PreCallRecordCmdBindInvocationMaskHUAWEI(
+    VkCommandBuffer                             commandBuffer,
+    VkImageView                                 imageView,
+    VkImageLayout                               imageLayout) override;
+
+void PostCallRecordCmdBindInvocationMaskHUAWEI(
+    VkCommandBuffer                             commandBuffer,
+    VkImageView                                 imageView,
+    VkImageLayout                               imageLayout) override;
+
 void PreCallRecordGetMemoryRemoteAddressNV(
     VkDevice                                    device,
-    const VkMemoryGetRemoteAddressInfoNV*       getMemoryRemoteAddressInfo,
+    const VkMemoryGetRemoteAddressInfoNV*       pMemoryGetRemoteAddressInfo,
     VkRemoteAddressNV*                          pAddress) override;
 
 void PostCallRecordGetMemoryRemoteAddressNV(
     VkDevice                                    device,
-    const VkMemoryGetRemoteAddressInfoNV*       getMemoryRemoteAddressInfo,
+    const VkMemoryGetRemoteAddressInfoNV*       pMemoryGetRemoteAddressInfo,
     VkRemoteAddressNV*                          pAddress,
     VkResult                                    result) override;
 

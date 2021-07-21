@@ -97,7 +97,16 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
         # These 2 arrays SHOULD be empty when possible and when the SPIR-V Headers are updated these
         # should be attempted to be cleared
         self.extensionExcludeList = []
-        self.capabilityExcludeList = ['RayTracingMotionBlurNV']
+        self.capabilityExcludeList = [
+            # Not in SPIRV-Headers yet
+            'RayTracingMotionBlurNV',
+            # vk.xml currently lists the wrong features struct for these capabilities
+            # https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4721
+            'AtomicFloat16AddEXT',
+            'AtomicFloat16MinMaxEXT',
+            'AtomicFloat32MinMaxEXT',
+            'AtomicFloat64MinMaxEXT',
+        ]
 
         # This is a list that maps the Vulkan struct a feature field is with the internal
         # state tracker's enabled features value
@@ -128,6 +137,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             {'vulkan' : 'VkPhysicalDeviceShaderAtomicFloatFeaturesEXT', 'layer' : 'shader_atomic_float_feature'},
             {'vulkan' : 'VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT', 'layer' : 'shader_image_atomic_int64_feature'},
             {'vulkan' : 'VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR', 'layer' : 'workgroup_memory_explicit_layout_features'},
+            {'vulkan' : 'VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT', 'layer' : 'shader_atomic_float2_features'},
         ]
 
         # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs

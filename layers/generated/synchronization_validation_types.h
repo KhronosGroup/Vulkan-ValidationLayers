@@ -120,10 +120,11 @@ enum SyncStageAccessIndex {
     SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE = 74,
     SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ = 75,
     SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE = 76,
-    SYNC_HOST_HOST_READ = 77,
-    SYNC_HOST_HOST_WRITE = 78,
-    SYNC_IMAGE_LAYOUT_TRANSITION = 79,
-    SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER = 80,
+    SYNC_SUBPASS_SHADING_HUAWEI_INPUT_ATTACHMENT_READ = 77,
+    SYNC_HOST_HOST_READ = 78,
+    SYNC_HOST_HOST_WRITE = 79,
+    SYNC_IMAGE_LAYOUT_TRANSITION = 80,
+    SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER = 81,
 };
 
 // Unique bit for each  stage/access combination
@@ -203,6 +204,7 @@ static const SyncStageAccessFlags SYNC_VIDEO_DECODE_VIDEO_DECODE_READ_BIT = (Syn
 static const SyncStageAccessFlags SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE_BIT = (SyncStageAccessFlags(1) << SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
 static const SyncStageAccessFlags SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ_BIT = (SyncStageAccessFlags(1) << SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
 static const SyncStageAccessFlags SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE_BIT = (SyncStageAccessFlags(1) << SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE);
+static const SyncStageAccessFlags SYNC_SUBPASS_SHADING_HUAWEI_INPUT_ATTACHMENT_READ_BIT = (SyncStageAccessFlags(1) << SYNC_SUBPASS_SHADING_HUAWEI_INPUT_ATTACHMENT_READ);
 static const SyncStageAccessFlags SYNC_HOST_HOST_READ_BIT = (SyncStageAccessFlags(1) << SYNC_HOST_HOST_READ);
 static const SyncStageAccessFlags SYNC_HOST_HOST_WRITE_BIT = (SyncStageAccessFlags(1) << SYNC_HOST_HOST_WRITE);
 static const SyncStageAccessFlags SYNC_IMAGE_LAYOUT_TRANSITION_BIT = (SyncStageAccessFlags(1) << SYNC_IMAGE_LAYOUT_TRANSITION);
@@ -220,7 +222,7 @@ struct SyncStageAccessInfoType {
 };
 
 // Array of text names and component masks for each stage/access index
-extern const std::array<SyncStageAccessInfoType, 81> syncStageAccessInfoByStageAccessIndex;
+extern const std::array<SyncStageAccessInfoType, 82> syncStageAccessInfoByStageAccessIndex;
 
 // Constants defining the mask of all read and write stage_access states
 static const SyncStageAccessFlags syncStageAccessReadMask = ( //  Mask of all read StageAccess bits
@@ -277,6 +279,7 @@ static const SyncStageAccessFlags syncStageAccessReadMask = ( //  Mask of all re
     SYNC_ACCELERATION_STRUCTURE_BUILD_UNIFORM_READ_BIT |
     SYNC_VIDEO_DECODE_VIDEO_DECODE_READ_BIT |
     SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ_BIT |
+    SYNC_SUBPASS_SHADING_HUAWEI_INPUT_ATTACHMENT_READ_BIT |
     SYNC_HOST_HOST_READ_BIT
 );
 

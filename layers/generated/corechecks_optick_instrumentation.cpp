@@ -4591,6 +4591,22 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdSetFragmentShadingRateKHR(Vk
     CoreChecks::PostCallRecordCmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps);
 }
 
+bool CoreChecksOptickInstrumented::PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateWaitForPresentKHR(device, swapchain, presentId, timeout);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordWaitForPresentKHR(device, swapchain, presentId, timeout);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordWaitForPresentKHR(device, swapchain, presentId, timeout, result);
+}
+
 bool CoreChecksOptickInstrumented::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetBufferDeviceAddressKHR(device, pInfo);
@@ -7359,20 +7375,68 @@ void CoreChecksOptickInstrumented::PostCallRecordGetSemaphoreZirconHandleFUCHSIA
 }
 
 #endif // VK_USE_PLATFORM_FUCHSIA
-bool CoreChecksOptickInstrumented::PreCallValidateGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* getMemoryRemoteAddressInfo, VkRemoteAddressNV* pAddress) const {
+bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass, VkExtent2D* pMaxWorkgroupSize) const {
     OPTICK_EVENT();
-    auto result = CoreChecks::PreCallValidateGetMemoryRemoteAddressNV(device, getMemoryRemoteAddressInfo, pAddress);
+    auto result = CoreChecks::PreCallValidateGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* getMemoryRemoteAddressInfo, VkRemoteAddressNV* pAddress) {
+void CoreChecksOptickInstrumented::PreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass, VkExtent2D* pMaxWorkgroupSize) {
     OPTICK_EVENT();
-    CoreChecks::PreCallRecordGetMemoryRemoteAddressNV(device, getMemoryRemoteAddressInfo, pAddress);
+    CoreChecks::PreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* getMemoryRemoteAddressInfo, VkRemoteAddressNV* pAddress, VkResult result) {
+void CoreChecksOptickInstrumented::PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass, VkExtent2D* pMaxWorkgroupSize, VkResult result) {
     OPTICK_EVENT();
-    CoreChecks::PostCallRecordGetMemoryRemoteAddressNV(device, getMemoryRemoteAddressInfo, pAddress, result);
+    CoreChecks::PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize, result);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSubpassShadingHUAWEI(commandBuffer);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSubpassShadingHUAWEI(commandBuffer);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSubpassShadingHUAWEI(commandBuffer);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo, VkRemoteAddressNV* pAddress) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo, VkRemoteAddressNV* pAddress) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo, VkRemoteAddressNV* pAddress, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress, result);
 }
 
 bool CoreChecksOptickInstrumented::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) const {
