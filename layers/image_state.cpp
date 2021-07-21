@@ -406,6 +406,11 @@ void SWAPCHAIN_NODE::Destroy() {
         // TODO: imageMap.erase(swapchain_image.image_state->image());
         swapchain_image.image_state = nullptr;
     }
+    images.clear();
+    if (surface) {
+        surface->RemoveParent(this);
+        surface = nullptr;
+    }
     BASE_NODE::Destroy();
 }
 
@@ -422,5 +427,20 @@ void SWAPCHAIN_NODE::NotifyInvalidate(const LogObjectList &invalid_handles, bool
             }
             swapchain_image.bound_images.erase(invalid_image->image());
         }
+        surface = nullptr;
     }
+}
+
+void SURFACE_STATE::Destroy() {
+    if (swapchain) {
+        swapchain = nullptr;
+    }
+    BASE_NODE::Destroy();
+}
+
+void SURFACE_STATE::RemoveParent(BASE_NODE *parent_node) {
+    if (swapchain == parent_node) {
+        swapchain = nullptr;
+    }
+    BASE_NODE::RemoveParent(parent_node);
 }

@@ -31,6 +31,8 @@
 #include "image_layout_map.h"
 #include "vk_format_utils.h"
 
+class SURFACE_STATE;
+
 static inline bool operator==(const VkImageSubresource &lhs, const VkImageSubresource &rhs) {
     bool is_equal = (lhs.aspectMask == rhs.aspectMask) && (lhs.mipLevel == rhs.mipLevel) && (lhs.arrayLayer == rhs.arrayLayer);
     return is_equal;
@@ -178,6 +180,10 @@ struct SWAPCHAIN_IMAGE {
     layer_data::unordered_map<VkImage, std::shared_ptr<IMAGE_STATE>> bound_images;
 };
 
+// State for VkSwapchainKHR objects.
+// Parent -> child relationships in the object usage tree:
+//    SWAPCHAIN_NODE [N] -> [1] SURFACE_STATE
+//    However, only 1 swapchain for each surface can be !retired.
 class SWAPCHAIN_NODE : public BASE_NODE {
   public:
     safe_VkSwapchainCreateInfoKHR createInfo;
@@ -186,6 +192,7 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     const bool shared_presentable;
     uint32_t get_swapchain_image_count;
     const safe_VkImageCreateInfo image_create_info;
+    std::shared_ptr<SURFACE_STATE> surface;
 
     SWAPCHAIN_NODE(const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
 
@@ -225,9 +232,12 @@ struct hash<GpuQueue> {
 };
 }  // namespace std
 
+// State for VkSurfaceKHR objects.
+// Parent -> child relationships in the object usage tree:
+//    SURFACE_STATE -> nothing
 class SURFACE_STATE : public BASE_NODE {
   public:
-    std::shared_ptr<SWAPCHAIN_NODE> swapchain;
+    SWAPCHAIN_NODE *swapchain;
     layer_data::unordered_map<GpuQueue, bool> gpu_queue_support;
 
     SURFACE_STATE(VkSurfaceKHR s) : BASE_NODE(s, kVulkanObjectTypeSurfaceKHR) {}
@@ -240,21 +250,9 @@ class SURFACE_STATE : public BASE_NODE {
 
     VkSurfaceKHR surface() const { return handle_.Cast<VkSurfaceKHR>(); }
 
-    void Destroy() override {
-        if (swapchain) {
-            swapchain->RemoveParent(this);
-            swapchain = nullptr;
-        }
-        BASE_NODE::Destroy();
-    }
+    void Destroy() override;
 
     VkImageCreateInfo GetImageCreateInfo() const;
 
-  protected:
-    void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override {
-        BASE_NODE::NotifyInvalidate(invalid_handles, unlink);
-        if (unlink) {
-            swapchain = nullptr;
-        }
-    }
+    void RemoveParent(BASE_NODE *parent_node) override;
 };
