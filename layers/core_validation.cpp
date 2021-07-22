@@ -11668,6 +11668,15 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         skip |= viewport_scissor_inheritance.VisitPrimary(cb_state);
     }
 
+    bool active_occlusion_query = false;
+    for (const auto& active_query : cb_state->activeQueries) {
+        const auto query_pool_state = Get<QUERY_POOL_STATE>(active_query.pool);
+        if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_OCCLUSION) {
+            active_occlusion_query = true;
+            break;
+        }
+    }
+
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         sub_cb_state = GetCBState(pCommandBuffers[i]);
         assert(sub_cb_state);
@@ -11831,6 +11840,13 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 "vkCmdExecuteCommands(): command buffer %s is unprotected while secondary command buffer %s is a protected",
                 report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
                 report_data->FormatHandle(sub_cb_state->commandBuffer()).c_str());
+        }
+        if (active_occlusion_query && sub_cb_state->inheritanceInfo.occlusionQueryEnable != VK_TRUE) {
+            skip |= LogError(pCommandBuffers[i], "VUID-vkCmdExecuteCommands-commandBuffer-00102",
+                             "vkCmdExecuteCommands(): command buffer %s has an active occlusion query, but secondary command "
+                             "buffer %s was recorded with VkCommandBufferInheritanceInfo::occlusionQueryEnable set to VK_FALSE",
+                             report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
+                             report_data->FormatHandle(sub_cb_state->commandBuffer()).c_str());
         }
     }
 
