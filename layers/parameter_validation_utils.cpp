@@ -3308,6 +3308,35 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                              "VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV.",
                              i, flags);
         }
+        if (flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
+            if (pCreateInfos[i].basePipelineIndex != -1) {
+                if (pCreateInfos[i].basePipelineHandle != VK_NULL_HANDLE) {
+                    skip |= LogError(device, "VUID-VkComputePipelineCreateInfo-flags-00699",
+                                     "vkCreateComputePipelines parameter, pCreateInfos[%" PRIu32
+                                     "]->basePipelineHandle, must be VK_NULL_HANDLE if pCreateInfos->flags contains the "
+                                     "VK_PIPELINE_CREATE_DERIVATIVE_BIT flag and pCreateInfos->basePipelineIndex is not -1.",
+                                     i);
+                }
+            }
+
+            if (pCreateInfos[i].basePipelineHandle != VK_NULL_HANDLE) {
+                if (pCreateInfos[i].basePipelineIndex != -1) {
+                    skip |= LogError(
+                        device, "VUID-VkComputePipelineCreateInfo-flags-00700",
+                        "vkCreateComputePipelines parameter, pCreateInfos[%" PRIu32
+                        "]->basePipelineIndex, must be -1 if pCreateInfos->flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT "
+                        "flag and pCreateInfos->basePipelineHandle is not VK_NULL_HANDLE.",
+                        i);
+                }
+            } else {
+                if (static_cast<uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
+                    skip |= LogError(device, "VUID-VkComputePipelineCreateInfo-flags-00698",
+                                     "vkCreateComputePipelines parameter pCreateInfos[%" PRIu32 "]->basePipelineIndex (%" PRIi32
+                                     ") must be a valid index into the pCreateInfos array, of size %" PRIu32 ".",
+                                     i, pCreateInfos[i].basePipelineIndex, createInfoCount);
+                }
+            }
+        }
 
         std::stringstream msg;
         msg << "pCreateInfos[%" << i << "].stage";
