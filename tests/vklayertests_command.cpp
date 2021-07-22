@@ -9048,3 +9048,61 @@ TEST_F(VkLayerTest, InvalidCmdUpdateBufferDstOffset) {
     m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidDescriptorSetPipelineBindPoint) {
+    TEST_DESCRIPTION(
+        "Attempt to bind descriptor set to a bind point not supported by command pool the command buffer was allocated from");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const uint32_t no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    const uint32_t INVALID_QUEUE = std::numeric_limits<uint32_t>::max();
+    if (INVALID_QUEUE == no_gfx_qfi) {
+        printf("%s No compute and transfer only queue family, skipping bindpoint and queue tests.\n", kSkipPrefix);
+        return;
+    }
+
+    VkCommandPoolObj command_pool(m_device, no_gfx_qfi);
+    ASSERT_TRUE(command_pool.initialized());
+    VkCommandBufferObj command_buffer(m_device, &command_pool);
+
+    VkDescriptorPoolSize ds_type_count = {};
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ds_type_count.descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.flags = 0;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    VkDescriptorPool ds_pool;
+    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &ds_pool);
+
+    VkDescriptorSetLayoutBinding dsl_binding = {};
+    dsl_binding.binding = 0;
+    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    dsl_binding.descriptorCount = 1;
+    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
+    dsl_binding.pImmutableSamplers = nullptr;
+
+    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+
+    VkDescriptorSet descriptorSet;
+    VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.descriptorPool = ds_pool;
+    alloc_info.pSetLayouts = &ds_layout.handle();
+    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
+
+    const VkDescriptorSetLayoutObj descriptor_set_layout(m_device, {dsl_binding});
+    const VkPipelineLayoutObj pipeline_layout(DeviceObj(), {&descriptor_set_layout});
+
+    command_buffer.begin();
+    // Set invalid set
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361");
+    vk::CmdBindDescriptorSets(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptorSet, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    command_buffer.end();
+}
