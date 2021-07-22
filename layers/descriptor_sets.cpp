@@ -353,7 +353,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
             VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     }
 
-    const bool host_only_pool_set = static_cast<bool>(create_info->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE);
+    const bool host_only_pool_set = (create_info->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE) != 0;
     if (push_descriptor_set && host_only_pool_set) {
         skip |= val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04590",
                                   "vkCreateDescriptorSetLayout(): pCreateInfo->flags cannot contain both "
