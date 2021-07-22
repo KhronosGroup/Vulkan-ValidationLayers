@@ -13216,6 +13216,11 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s Test temporarily disabled on S10 device\n", kSkipPrefix);
+        return;
+    }
+
     bool bind_memory2 = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     if (DeviceExtensionSupported(gpu(), nullptr, ext_mem_extension_name)) {
         m_device_extension_names.push_back(ext_mem_extension_name);
@@ -13326,6 +13331,11 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s Test temporarily disabled on S10 device\n", kSkipPrefix);
+        return;
+    }
 
     bool bind_memory2 = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     if (DeviceExtensionSupported(gpu(), nullptr, ext_mem_extension_name)) {
