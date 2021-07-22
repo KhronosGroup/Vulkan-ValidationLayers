@@ -9121,3 +9121,42 @@ TEST_F(VkLayerTest, InvalidDescriptorSetPipelineBindPoint) {
     m_errorMonitor->VerifyFound();
     command_buffer.end();
 }
+
+TEST_F(VkLayerTest, CommandBufferMissingOcclusionQueryEnabled) {
+    TEST_DESCRIPTION(
+        "Test executing secondary command buffer without VkCommandBufferInheritanceInfo::occlusionQueryEnable enabled while "
+        "occlusion query is active.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
+    qpci.queryCount = 1;
+
+    VkQueryPool query_pool;
+    vk::CreateQueryPool(device(), &qpci, nullptr, &query_pool);
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferInheritanceInfo cbii = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    cbii.renderPass = m_renderPass;
+    cbii.framebuffer = m_framebuffer;
+    cbii.occlusionQueryEnable = VK_FALSE;  // Invalid
+
+    VkCommandBufferBeginInfo cbbi = LvlInitStruct<VkCommandBufferBeginInfo>();
+    cbbi.pInheritanceInfo = &cbii;
+
+    VkCommandBuffer secondary_handle = secondary.handle();
+    vk::BeginCommandBuffer(secondary_handle, &cbbi);
+    vk::EndCommandBuffer(secondary_handle);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBuffer-00102");
+    m_commandBuffer->begin();
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_handle);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyQueryPool(device(), query_pool, nullptr);
+}
