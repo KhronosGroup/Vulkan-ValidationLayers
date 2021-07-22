@@ -9861,3 +9861,49 @@ TEST_F(VkLayerTest, InvalidCreateDescriptorPoolAllocateFlags) {
     vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, RenderPassRenderAreaOffset) {
+    TEST_DESCRIPTION("Create renderpass where renderArea.offset.x or renderArea.offset.y is invalid");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    }
+    m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkClearValue clearValue;
+    clearValue.color.int32[0] = 0;
+    clearValue.color.int32[1] = 0;
+    clearValue.color.int32[2] = 0;
+    clearValue.color.int32[3] = 1;
+
+    auto rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    rpbi.framebuffer = m_framebuffer;
+    rpbi.renderPass = m_renderPass;
+    rpbi.renderArea.offset.x = -16;
+    rpbi.renderArea.offset.y = -32;
+    rpbi.renderArea.extent.width = 64;
+    rpbi.renderArea.extent.height = 64;
+    rpbi.clearValueCount = 1;
+    rpbi.pClearValues = &clearValue;
+
+    VkDeviceGroupRenderPassBeginInfo dgrpbi = LvlInitStruct<VkDeviceGroupRenderPassBeginInfo>();
+    dgrpbi.deviceMask = 0x1;
+    dgrpbi.deviceRenderAreaCount = 0;  // Invalid
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02850");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02851");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidRenderArea");
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02850");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02851");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidRenderArea");
+    rpbi.pNext = &dgrpbi;
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyFound();
+}
