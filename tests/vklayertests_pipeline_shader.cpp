@@ -11495,6 +11495,52 @@ TEST_F(VkLayerTest, ValidateTessellationShaderEnabled) {
                             "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430"});
 }
 
+TEST_F(VkLayerTest, CreateComputesPipelineWithBadBasePointer) {
+    TEST_DESCRIPTION("Create Compute Pipeline with bad base pointer");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    char const *csSource = R"glsl(
+        #version 450
+        layout(local_size_x=2, local_size_y=4) in;
+        void main(){
+        }
+    )glsl";
+
+    VkShaderObj cs(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
+    const VkDescriptorSetLayoutObj pipeline_dsl(m_device, bindings);
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&pipeline_dsl});
+
+    VkComputePipelineCreateInfo compute_create_info = LvlInitStruct<VkComputePipelineCreateInfo>();
+    compute_create_info.flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
+    compute_create_info.stage = cs.GetStageCreateInfo();
+    compute_create_info.layout = pipeline_layout.handle();
+
+    VkPipeline test_pipeline;
+    vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_create_info, nullptr, &test_pipeline);
+
+    {
+        compute_create_info.basePipelineHandle = VK_NULL_HANDLE;
+        compute_create_info.basePipelineIndex = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-00698");
+        VkPipeline pipeline;
+        vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_create_info, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (test_pipeline != VK_NULL_HANDLE) {
+        compute_create_info.basePipelineHandle = test_pipeline;
+        compute_create_info.basePipelineIndex = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-00699");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-00700");
+        VkPipeline pipeline;
+        vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_create_info, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(VkLayerTest, CreatePipelineWithDuplicatedSpecializationConstantID) {
     TEST_DESCRIPTION("Create a pipeline with non unique constantID in specialization pMapEntries.");
     ASSERT_NO_FATAL_FAILURE(Init());
