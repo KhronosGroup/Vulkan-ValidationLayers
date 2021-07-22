@@ -7078,6 +7078,11 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBindTransformFeedbackBuffersEXT) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s Test temporarily disabled on S10 device\n", kSkipPrefix);
+        return;
+    }
+
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
         return;
@@ -7264,6 +7269,11 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBeginTransformFeedbackEXT) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s Test temporarily disabled on S10 device\n", kSkipPrefix);
+        return;
+    }
+
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
         return;
@@ -7380,6 +7390,11 @@ TEST_F(VkLayerTest, TransformFeedbackCmdEndTransformFeedbackEXT) {
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s Test temporarily disabled on S10 device\n", kSkipPrefix);
+        return;
+    }
 
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
