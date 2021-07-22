@@ -7087,13 +7087,14 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                 const auto *buffer_descriptor = static_cast<const cvdescriptorset::BufferDescriptor *>(descriptor);
                                 const VkDeviceSize bound_range = buffer_descriptor->GetRange();
                                 const VkDeviceSize bound_offset = buffer_descriptor->GetOffset();
+                                //NOTE: null / invalid buffers may show up here, errors are raised elsewhere for this.
                                 const BUFFER_STATE *buffer_state = buffer_descriptor->GetBufferState();
-                                assert(buffer_state != nullptr);
+
                                 // Validate offset didn't go over buffer
                                 if ((bound_range == VK_WHOLE_SIZE) && (offset > 0)) {
                                     LogObjectList objlist(commandBuffer);
                                     objlist.add(pDescriptorSets[set_idx]);
-                                    objlist.add(buffer_state->buffer());
+                                    objlist.add(buffer_descriptor->GetBuffer());
                                     skip |=
                                         LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979",
                                                  "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is 0x%x, but must be zero since "
@@ -7101,11 +7102,11 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                                  "descriptor[%u].",
                                                  cur_dyn_offset, offset, set_idx, binding_index, j);
 
-                                } else if ((bound_range != VK_WHOLE_SIZE) &&
+                                } else if (buffer_state != nullptr && (bound_range != VK_WHOLE_SIZE) &&
                                            ((offset + bound_range + bound_offset) > buffer_state->createInfo.size)) {
                                     LogObjectList objlist(commandBuffer);
                                     objlist.add(pDescriptorSets[set_idx]);
-                                    objlist.add(buffer_state->buffer());
+                                    objlist.add(buffer_descriptor->GetBuffer());
                                     skip |=
                                         LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979",
                                                  "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is 0x%x which when added to the "
