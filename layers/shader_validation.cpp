@@ -1034,10 +1034,6 @@ bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *sr
                                                "shaderStorageImageReadWithoutFormat",
                                                kVUID_Features_shaderStorageImageReadWithoutFormat);
                     }
-                } else {
-                    skip |= LogWarning(device, kVUIDUndefined,
-                                       "Cannot find image definition (id = %" PRIu32 ")",
-                                       insn.word(3));
                 }
                 break;
             }
@@ -1049,10 +1045,6 @@ bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *sr
                                                "shaderStorageImageWriteWithoutFormat",
                                                kVUID_Features_shaderStorageImageWriteWithoutFormat);
                     }
-                } else {
-                    skip |= LogWarning(device, kVUIDUndefined,
-                                       "Cannot find image definition (id = %" PRIu32 ")",
-                                       insn.word(1));
                 }
                 break;
             }
