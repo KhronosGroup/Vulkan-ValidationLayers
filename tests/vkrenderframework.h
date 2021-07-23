@@ -322,6 +322,7 @@ class VkRenderFramework : public VkTestFramework {
     VkSurfaceCapabilitiesKHR m_surface_capabilities;
     std::vector<VkSurfaceFormatKHR> m_surface_formats;
     std::vector<VkPresentModeKHR> m_surface_present_modes;
+    VkPresentModeKHR m_surface_non_shared_present_mode;
     VkCompositeAlphaFlagBitsKHR m_surface_composite_alpha;
 
     std::vector<VkViewport> m_viewports;

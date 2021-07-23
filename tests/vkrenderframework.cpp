@@ -740,6 +740,17 @@ void VkRenderFramework::InitSwapchainInfo() {
     if (present_mode_count != 0) {
         m_surface_present_modes.resize(present_mode_count);
         vk::GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &present_mode_count, m_surface_present_modes.data());
+
+        // Shared Present mode has different requirements most tests won't actually want
+        // Implementation required to support a non-shared present mode
+        for (size_t i = 0; i < m_surface_present_modes.size(); i++) {
+            const VkPresentModeKHR present_mode = m_surface_present_modes[i];
+            if ((present_mode != VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR) &&
+                (present_mode != VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR)) {
+                m_surface_non_shared_present_mode = present_mode;
+                break;
+            }
+        }
     }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -780,7 +791,7 @@ bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags i
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchain_create_info.preTransform = preTransform;
     swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
-    swapchain_create_info.presentMode = m_surface_present_modes[0];
+    swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 
