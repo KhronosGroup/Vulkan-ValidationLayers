@@ -13462,7 +13462,7 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
     good_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     good_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
     good_create_info.compositeAlpha = m_surface_composite_alpha;
-    good_create_info.presentMode = m_surface_present_modes[0];
+    good_create_info.presentMode = m_surface_non_shared_present_mode;
     good_create_info.clipped = VK_FALSE;
     good_create_info.oldSwapchain = 0;
 
