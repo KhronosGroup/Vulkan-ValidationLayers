@@ -454,7 +454,7 @@ bool CoreChecks::ValidateBuiltinLimits(SHADER_MODULE_STATE const *src, const lay
 }
 
 // Validate that data for each specialization entry is fully contained within the buffer.
-bool CoreChecks::ValidateSpecializationOffsets(VkPipelineShaderStageCreateInfo const *info) const {
+bool CoreChecks::ValidateSpecializations(VkPipelineShaderStageCreateInfo const *info) const {
     bool skip = false;
 
     VkSpecializationInfo const *spec = info->pSpecializationInfo;
@@ -476,6 +476,13 @@ bool CoreChecks::ValidateSpecializationOffsets(VkPipelineShaderStageCreateInfo c
                                  "data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER " bytes provided).",
                                  i, spec->pMapEntries[i].constantID, spec->pMapEntries[i].offset,
                                  spec->pMapEntries[i].offset + spec->pMapEntries[i].size - 1, spec->dataSize);
+            }
+            for (uint32_t j = i + 1; j < spec->mapEntryCount; ++j) {
+                if (spec->pMapEntries[i].constantID == spec->pMapEntries[j].constantID) {
+                    skip |= LogError(device, "VUID-VkSpecializationInfo-constantID-04911",
+                                     "Specialization entry %" PRIu32 " and %" PRIu32 " have the same constantID (%" PRIu32 ").", i,
+                                     j, spec->pMapEntries[i].constantID);
+                }
             }
         }
     }
@@ -1940,7 +1947,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     skip |= ValidateShaderStorageImageFormats(module);
     skip |= ValidateShaderStageMaxResources(pStage->stage, pipeline);
     skip |= ValidateExecutionModes(module, entrypoint);
-    skip |= ValidateSpecializationOffsets(pStage);
+    skip |= ValidateSpecializations(pStage);
     if (check_point_size && !pipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
         skip |= ValidatePointListShaderState(pipeline, module, entrypoint, pStage->stage);
     }
