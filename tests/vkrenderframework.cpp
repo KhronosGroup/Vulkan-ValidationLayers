@@ -443,6 +443,13 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
         }
     };
 
+    static bool driver_printed = false;
+    static bool print_driver_info = GetEnvironment("VK_LAYER_TESTS_PRINT_DRIVER") != "";
+    if (print_driver_info && !driver_printed &&
+        InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        instance_extensions_.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+
     RemoveIf(instance_layers_, LayerNotSupportedWithReporting);
     RemoveIf(instance_extensions_, ExtensionNotSupportedWithReporting);
 
@@ -504,15 +511,13 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
 
     debug_reporter_.Create(instance_);
 
-    static bool driver_printed = false;
-    if (GetEnvironment("VK_LAYER_TESTS_PRINT_DRIVER") != "" && !driver_printed) {
-        if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-            auto driver_properties = LvlInitStruct<VkPhysicalDeviceDriverProperties>();
-            auto physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
-            vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
-            printf("Driver Name = %s\n", driver_properties.driverName);
-            printf("Driver Info = %s\n", driver_properties.driverInfo);
-        }
+    if (print_driver_info && !driver_printed) {
+        auto driver_properties = LvlInitStruct<VkPhysicalDeviceDriverProperties>();
+        auto physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
+        vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
+        printf("Driver Name = %s\n", driver_properties.driverName);
+        printf("Driver Info = %s\n", driver_properties.driverInfo);
+
         driver_printed = true;
     }
 }
