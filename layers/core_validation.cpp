@@ -12831,11 +12831,19 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                                       string_VkSurfaceTransformFlagBitsKHR(current_transform));
     }
 
+    const VkPresentModeKHR present_mode = pCreateInfo->presentMode;
+    const bool shared_present_mode = (VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == present_mode ||
+                                      VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == present_mode);
+
     VkSurfaceCapabilitiesKHR capabilities{};
     DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_state->phys_device, pCreateInfo->surface, &capabilities);
     // Validate pCreateInfo->minImageCount against VkSurfaceCapabilitiesKHR::{min|max}ImageCount:
-    if (pCreateInfo->minImageCount < capabilities.minImageCount) {
-        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-minImageCount-01271",
+    // Shared Present Mode must have a minImageCount of 1
+    if ((pCreateInfo->minImageCount < capabilities.minImageCount) && !shared_present_mode) {
+        const char *vuid = (device_extensions.vk_khr_shared_presentable_image)
+                               ? "VUID-VkSwapchainCreateInfoKHR-presentMode-02839"
+                               : "VUID-VkSwapchainCreateInfoKHR-minImageCount-01271";
+        if (LogError(device, vuid,
                      "%s called with minImageCount = %d, which is outside the bounds returned by "
                      "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
                      func_name, pCreateInfo->minImageCount, capabilities.minImageCount, capabilities.maxImageCount)) {
@@ -12926,9 +12934,8 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     if (pCreateInfo->imageUsage != (pCreateInfo->imageUsage & capabilities.supportedUsageFlags)) {
         const char *validation_error = "VUID-VkSwapchainCreateInfoKHR-imageUsage-01276";
         if ((IsExtEnabled(device_extensions.vk_khr_shared_presentable_image) == true) &&
-            ((pCreateInfo->presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) ||
-             (pCreateInfo->presentMode == VK_PRESENT_MODE_MAILBOX_KHR) || (pCreateInfo->presentMode == VK_PRESENT_MODE_FIFO_KHR) ||
-             (pCreateInfo->presentMode == VK_PRESENT_MODE_FIFO_RELAXED_KHR))) {
+            ((present_mode == VK_PRESENT_MODE_IMMEDIATE_KHR) || (present_mode == VK_PRESENT_MODE_MAILBOX_KHR) ||
+             (present_mode == VK_PRESENT_MODE_FIFO_KHR) || (present_mode == VK_PRESENT_MODE_FIFO_RELAXED_KHR))) {
             validation_error = "VUID-VkSwapchainCreateInfoKHR-presentMode-01427";
         }
         if (LogError(device, validation_error,
@@ -13023,25 +13030,22 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     }
 
     // Validate pCreateInfo->presentMode against vkGetPhysicalDeviceSurfacePresentModesKHR():
-    bool found_match =
-        std::find(present_modes_ref->begin(), present_modes_ref->end(), pCreateInfo->presentMode) != present_modes_ref->end();
+    bool found_match = std::find(present_modes_ref->begin(), present_modes_ref->end(), present_mode) != present_modes_ref->end();
     if (!found_match) {
         if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-presentMode-01281",
-                     "%s called with a non-supported presentMode (i.e. %s).", func_name,
-                     string_VkPresentModeKHR(pCreateInfo->presentMode))) {
+                     "%s called with a non-supported presentMode (i.e. %s).", func_name, string_VkPresentModeKHR(present_mode))) {
             return true;
         }
     }
 
     // Validate state for shared presentable case
-    if (VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
-        VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode) {
+    if (shared_present_mode) {
         if (!device_extensions.vk_khr_shared_presentable_image) {
             if (LogError(
                     device, kVUID_Core_DrawState_ExtensionNotEnabled,
                     "%s called with presentMode %s which requires the VK_KHR_shared_presentable_image extension, which has not "
                     "been enabled.",
-                    func_name, string_VkPresentModeKHR(pCreateInfo->presentMode))) {
+                    func_name, string_VkPresentModeKHR(present_mode))) {
                 return true;
             }
         } else if (pCreateInfo->minImageCount != 1) {
@@ -13049,7 +13053,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                     device, "VUID-VkSwapchainCreateInfoKHR-minImageCount-01383",
                     "%s called with presentMode %s, but minImageCount value is %d. For shared presentable image, minImageCount "
                     "must be 1.",
-                    func_name, string_VkPresentModeKHR(pCreateInfo->presentMode), pCreateInfo->minImageCount)) {
+                    func_name, string_VkPresentModeKHR(present_mode), pCreateInfo->minImageCount)) {
                 return true;
             }
         }
