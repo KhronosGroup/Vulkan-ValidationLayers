@@ -281,6 +281,13 @@ VkRenderFramework::VkRenderFramework()
       m_renderPass(VK_NULL_HANDLE),
       m_framebuffer(VK_NULL_HANDLE),
       m_surface(VK_NULL_HANDLE),
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+      m_surface_dpy(nullptr),
+      m_surface_window(None),
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+      m_surface_xcb_conn(nullptr),
+#endif
       m_swapchain(VK_NULL_HANDLE),
       m_addRenderPassSelfDependency(false),
       m_width(256.0),   // default window width
@@ -537,6 +544,10 @@ void VkRenderFramework::ShutdownFramework() {
     delete m_depthStencil;
     m_depthStencil = nullptr;
 
+    if (m_device && m_device->device() != VK_NULL_HANDLE) {
+        DestroySwapchain();
+    }
+
     // reset the driver
     delete m_device;
     m_device = nullptr;
@@ -677,15 +688,16 @@ bool VkRenderFramework::InitSurface(float width, float height) {
 #endif
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    Display *dpy = XOpenDisplay(NULL);
-    if (dpy) {
-        int s = DefaultScreen(dpy);
-        Window window = XCreateSimpleWindow(dpy, RootWindow(dpy, s), 0, 0, (int)m_width, (int)m_height, 1, BlackPixel(dpy, s),
-                                            WhitePixel(dpy, s));
+    assert(m_surface_dpy == nullptr);
+    m_surface_dpy = XOpenDisplay(NULL);
+    if (m_surface_dpy) {
+        int s = DefaultScreen(m_surface_dpy);
+        m_surface_window = XCreateSimpleWindow(m_surface_dpy, RootWindow(m_surface_dpy, s), 0, 0, (int)m_width, (int)m_height, 1,
+                                               BlackPixel(m_surface_dpy, s), WhitePixel(m_surface_dpy, s));
         VkXlibSurfaceCreateInfoKHR surface_create_info = {};
         surface_create_info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-        surface_create_info.dpy = dpy;
-        surface_create_info.window = window;
+        surface_create_info.dpy = m_surface_dpy;
+        surface_create_info.window = m_surface_window;
         VkResult err = vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
         if (err != VK_SUCCESS) return false;
     }
@@ -693,12 +705,13 @@ bool VkRenderFramework::InitSurface(float width, float height) {
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
     if (m_surface == VK_NULL_HANDLE) {
-        xcb_connection_t *connection = xcb_connect(NULL, NULL);
-        if (connection) {
-            xcb_window_t window = xcb_generate_id(connection);
+        assert(m_surface_xcb_conn == nullptr);
+        m_surface_xcb_conn = xcb_connect(NULL, NULL);
+        if (m_surface_xcb_conn) {
+            xcb_window_t window = xcb_generate_id(m_surface_xcb_conn);
             VkXcbSurfaceCreateInfoKHR surface_create_info = {};
             surface_create_info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-            surface_create_info.connection = connection;
+            surface_create_info.connection = m_surface_xcb_conn;
             surface_create_info.window = window;
             VkResult err = vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
             if (err != VK_SUCCESS) return false;
@@ -783,6 +796,10 @@ bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags i
     return true;
 }
 
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+int IgnoreXErrors(Display *, XErrorEvent *) { return 0; }
+#endif
+
 void VkRenderFramework::DestroySwapchain() {
     if (m_swapchain != VK_NULL_HANDLE) {
         vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);
@@ -792,6 +809,25 @@ void VkRenderFramework::DestroySwapchain() {
         vk::DestroySurfaceKHR(instance(), m_surface, nullptr);
         m_surface = VK_NULL_HANDLE;
     }
+    vk::DeviceWaitIdle(device());
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+    if (m_surface_dpy != nullptr) {
+        // Ignore BadDrawable errors we seem to get during shutdown.
+        // The default error handler will exit() and end the test suite.
+        XSetErrorHandler(IgnoreXErrors);
+        XDestroyWindow(m_surface_dpy, m_surface_window);
+        m_surface_window = None;
+        XCloseDisplay(m_surface_dpy);
+        m_surface_dpy = nullptr;
+        XSetErrorHandler(nullptr);
+    }
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    if (m_surface_xcb_conn != nullptr) {
+        xcb_disconnect(m_surface_xcb_conn);
+        m_surface_xcb_conn = nullptr;
+    }
+#endif
 }
 
 void VkRenderFramework::InitRenderTarget() { InitRenderTarget(1); }
