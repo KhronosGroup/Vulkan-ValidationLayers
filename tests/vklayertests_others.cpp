@@ -2782,6 +2782,23 @@ TEST_F(VkLayerTest, SwapchainMinImageCountShared) {
         return;
     }
 
+    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR =
+        (PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR)vk::GetInstanceProcAddr(instance(),
+                                                                                "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceSurfaceCapabilities2KHR != nullptr);
+
+    VkSharedPresentSurfaceCapabilitiesKHR shared_present_capabilities = LvlInitStruct<VkSharedPresentSurfaceCapabilitiesKHR>();
+    VkSurfaceCapabilities2KHR capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>(&shared_present_capabilities);
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    surface_info.surface = m_surface;
+    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &capabilities);
+
+    // This was recently added to CTS, but some drivers might not correctly advertise the flag
+    if ((shared_present_capabilities.sharedPresentSupportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
+        printf("%s Driver was suppose to support VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, skipping test\n", kSkipPrefix);
+        return;
+    }
+
     VkSwapchainCreateInfoKHR swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
     swapchain_create_info.surface = m_surface;
     swapchain_create_info.minImageCount = 2;  // invalid
