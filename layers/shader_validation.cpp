@@ -1015,24 +1015,12 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
 bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *src) const {
     bool skip = false;
 
-    std::map<uint32_t, uint32_t> loads;
-    for (auto insn : *src) {
-        switch (insn.opcode()) {
-            case spv::OpLoad: {
-                loads.insert(std::make_pair(insn.word(2), insn.word(1)));
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
     // Got through all ImageRead/Write instructions
     for (auto insn : *src) {
         switch (insn.opcode()) {
             case spv::OpImageSparseRead:
             case spv::OpImageRead: {
-                spirv_inst_iter type_def = src->GetImageFormatInst(loads, insn.word(3));
+                spirv_inst_iter type_def = src->GetImageFormatInst(insn.word(3));
                 if (type_def != src->end()) {
                     if (type_def.word(8) == spv::ImageFormatUnknown) {
                         skip |= RequireFeature(enabled_features.core.shaderStorageImageReadWithoutFormat,
@@ -1047,7 +1035,7 @@ bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *sr
                 break;
             }
             case spv::OpImageWrite: {
-                spirv_inst_iter type_def = src->GetImageFormatInst(loads, insn.word(1));
+                spirv_inst_iter type_def = src->GetImageFormatInst(insn.word(1));
                 if (type_def != src->end()) {
                     if (type_def.word(8) == spv::ImageFormatUnknown) {
                         skip |= RequireFeature(enabled_features.core.shaderStorageImageWriteWithoutFormat,
@@ -1071,7 +1059,7 @@ bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *sr
             continue;
 
         uint32_t var = insn.word(2);
-        spirv_inst_iter type_def = src->GetImageFormatInst(loads, insn.word(1));
+        spirv_inst_iter type_def = src->GetImageFormatInst(insn.word(1));
         if (type_def == src->end())
             continue;
         if (type_def.word(8) != spv::ImageFormatUnknown)

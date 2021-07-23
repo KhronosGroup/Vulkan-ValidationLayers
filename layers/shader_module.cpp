@@ -429,6 +429,10 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
                 execution_mode_inst[insn.word(1)].push_back(insn);
             } break;
 
+            case spv::OpLoad: {
+                def_index[insn.word(2)] = insn.offset();
+            } break;
+
             default:
                 // We don't care about any other defs for now.
                 break;
@@ -1709,20 +1713,15 @@ std::vector<std::pair<uint32_t, interface_var>> SHADER_MODULE_STATE::CollectInte
     return out;
 }
 
-spirv_inst_iter SHADER_MODULE_STATE::GetImageFormatInst(const std::map<uint32_t, uint32_t>& loads, uint32_t id) const
+spirv_inst_iter SHADER_MODULE_STATE::GetImageFormatInst(uint32_t id) const
 {
     do {
-        const auto iter = loads.find(id);
-        if (iter != loads.end()) {
-            id = iter->second;
-            continue;
-        }
-
         auto def = get_def(id);
+        if (def == end())
+            return def;
+
         switch (def.opcode()) {
            case spv::OpLoad:
-               return end();
-
            case spv::OpAccessChain:
            case spv::OpCompositeConstruct:
            case spv::OpVariable: {
