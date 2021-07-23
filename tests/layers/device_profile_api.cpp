@@ -168,6 +168,27 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     return result;
 }
 
+VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
+    layer_data *instance_data = GetLayerDataPtr(instance, device_profile_api_dev_data_map);
+    if (!instance_data) {
+        return;
+    }
+
+    uint32_t physical_device_count = 0;
+    instance_data->dispatch_table.EnumeratePhysicalDevices(instance, &physical_device_count, NULL);
+    std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
+    VkResult result =
+        instance_data->dispatch_table.EnumeratePhysicalDevices(instance, &physical_device_count, physical_devices.data());
+    if (result == VK_SUCCESS) {
+        for (VkPhysicalDevice physical_device : physical_devices) {
+            FreeLayerDataPtr(physical_device, device_profile_api_dev_data_map);
+        }
+    }
+
+    instance_data->dispatch_table.DestroyInstance(instance, pAllocator);
+    FreeLayerDataPtr(instance, device_profile_api_dev_data_map);
+}
+
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties *pProperties) {
     std::lock_guard<std::mutex> lock(global_lock);
     layer_data *phy_dev_data = GetLayerDataPtr(physicalDevice, device_profile_api_dev_data_map);
@@ -258,6 +279,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance in
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char *name) {
     if (!strcmp(name, "vkCreateInstance")) return (PFN_vkVoidFunction)CreateInstance;
+    if (!strcmp(name, "vkDestroyInstance")) return (PFN_vkVoidFunction)DestroyInstance;
     if (!strcmp(name, "vkGetPhysicalDeviceProperties")) return (PFN_vkVoidFunction)GetPhysicalDeviceProperties;
     if (!strcmp(name, "vkGetPhysicalDeviceFormatProperties")) return (PFN_vkVoidFunction)GetPhysicalDeviceFormatProperties;
     if (!strcmp(name, "vkGetPhysicalDeviceFormatProperties2")) return (PFN_vkVoidFunction)GetPhysicalDeviceFormatProperties2;
