@@ -1062,6 +1062,8 @@ bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *sr
         spirv_inst_iter type_def = src->GetImageFormatInst(insn.word(1));
         if (type_def == src->end())
             continue;
+        // Only check storage images
+        if (type_def.word(7) != 2) continue;
         if (type_def.word(8) != spv::ImageFormatUnknown)
             continue;
 
