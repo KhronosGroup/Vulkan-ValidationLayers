@@ -11482,3 +11482,40 @@ TEST_F(VkLayerTest, ValidateTessellationShaderEnabled) {
                             "VUID-VkShaderModuleCreateInfo-pCode-01091",
                             "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430"});
 }
+
+TEST_F(VkLayerTest, CreatePipelineWithDuplicatedSpecializationConstantID) {
+    TEST_DESCRIPTION("Create a pipeline with non unique constantID in specialization pMapEntries.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout (constant_id = 0) const float r = 0.0f;
+        layout(location = 0) out vec4 uFragColor;
+        void main(){
+           uFragColor = vec4(r,1,0,1);
+        }
+    )glsl";
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkSpecializationMapEntry entries[2];
+    entries[0].constantID = 0;
+    entries[0].offset = 0;
+    entries[0].size = sizeof(uint32_t);
+    entries[1].constantID = 0;
+    entries[1].offset = 0;
+    entries[1].size = sizeof(uint32_t);
+
+    uint32_t data = 1;
+    VkSpecializationInfo specialization_info;
+    specialization_info.mapEntryCount = 2;
+    specialization_info.pMapEntries = entries;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.shader_stages_[1].pSpecializationInfo = &specialization_info;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationInfo-constantID-04911");
+}
