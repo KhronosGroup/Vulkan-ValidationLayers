@@ -291,7 +291,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAttachmentIndex(
         layer_data::unordered_set<uint32_t> const &accessible_ids) const;
 
-    spirv_inst_iter GetImageFormatInst(const std::map<uint32_t, uint32_t>& loads, uint32_t id) const;
+    // Get the image type from a variable id or load operation that reference an image
+    spirv_inst_iter GetImageFormatInst(uint32_t id) const;
 
 };
 
