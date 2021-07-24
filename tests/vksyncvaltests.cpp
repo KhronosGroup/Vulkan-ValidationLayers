@@ -2639,6 +2639,11 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
+    if (IsPlatform(kPixel3) || IsPlatform(kPixel3aXL)) {
+        printf("%s Temporarily disabling on Pixel 3 and Pixel 3a XL due to driver crash\n", kSkipPrefix);
+        return;
+    }
+
     // overall set up:
     // subpass 0:
     //   write image 0
