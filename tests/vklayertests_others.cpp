@@ -13180,7 +13180,7 @@ TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
     create_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice device;
-    m_errorMonitor->SetUnexpectedError("Failed to create");
+    m_errorMonitor->SetUnexpectedError("VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375");
     vk::CreateDevice(gpu(), &create_info, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
