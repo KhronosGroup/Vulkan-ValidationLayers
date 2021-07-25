@@ -412,40 +412,37 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, SHADE
     return skip;
 }
 
-bool CoreChecks::ValidateBuiltinLimits(SHADER_MODULE_STATE const *src, const layer_data::unordered_set<uint32_t> &accessible_ids,
-                                       VkShaderStageFlagBits stage) const {
+bool CoreChecks::ValidateBuiltinLimits(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint) const {
     bool skip = false;
 
     // Currently all builtin tested are only found in fragment shaders
-    if (stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
+    if (entrypoint.word(1) != spv::ExecutionModelFragment) {
         return skip;
     }
 
-    for (const auto id : accessible_ids) {
+    // Find all builtin from just the interface variables
+    for (uint32_t id : FindEntrypointInterfaces(entrypoint)) {
         auto insn = src->get_def(id);
+        assert(insn.opcode() == spv::OpVariable);
         const decoration_set decorations = src->get_decorations(insn.word(2));
 
-        // Built-ins are obtained from OpVariable
-        if (((decorations.flags & decoration_set::builtin_bit) != 0) && (insn.opcode() == spv::OpVariable)) {
+        // Currently don't need to search in structs
+        if (((decorations.flags & decoration_set::builtin_bit) != 0) && (decorations.builtin == spv::BuiltInSampleMask)) {
             auto type_pointer = src->get_def(insn.word(1));
             assert(type_pointer.opcode() == spv::OpTypePointer);
 
             auto type = src->get_def(type_pointer.word(3));
             if (type.opcode() == spv::OpTypeArray) {
                 uint32_t length = static_cast<uint32_t>(src->GetConstantValueById(type.word(3)));
-
-                switch (decorations.builtin) {
-                    case spv::BuiltInSampleMask:
-                        // Handles both the input and output sampleMask
-                        if (length > phys_dev_props.limits.maxSampleMaskWords) {
-                            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711",
-                                             "vkCreateGraphicsPipelines(): The BuiltIns SampleMask array sizes is %u which exceeds "
-                                             "maxSampleMaskWords of %u in %s.",
-                                             length, phys_dev_props.limits.maxSampleMaskWords,
-                                             report_data->FormatHandle(src->vk_shader_module()).c_str());
-                        }
-                        break;
+                // Handles both the input and output sampleMask
+                if (length > phys_dev_props.limits.maxSampleMaskWords) {
+                    skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711",
+                                     "vkCreateGraphicsPipelines(): The BuiltIns SampleMask array sizes is %u which exceeds "
+                                     "maxSampleMaskWords of %u in %s.",
+                                     length, phys_dev_props.limits.maxSampleMaskWords,
+                                     report_data->FormatHandle(src->vk_shader_module()).c_str());
                 }
+                break;
             }
         }
     }
@@ -1944,7 +1941,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     if (check_point_size && !pipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
         skip |= ValidatePointListShaderState(pipeline, module, entrypoint, pStage->stage);
     }
-    skip |= ValidateBuiltinLimits(module, accessible_ids, pStage->stage);
+    skip |= ValidateBuiltinLimits(module, entrypoint);
     if (enabled_features.cooperative_matrix_features.cooperativeMatrix) {
         skip |= ValidateCooperativeMatrix(module, pStage, pipeline);
     }
