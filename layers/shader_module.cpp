@@ -1614,37 +1614,8 @@ std::map<location_t, interface_var> SHADER_MODULE_STATE::CollectInterfaceByLocat
 }
 
 std::vector<uint32_t> SHADER_MODULE_STATE::CollectBuiltinBlockMembers(spirv_inst_iter entrypoint, uint32_t storageClass) const {
-    std::vector<uint32_t> variables;
-    std::vector<uint32_t> builtin_struct_members;
-    std::vector<uint32_t> builtin_decorations;
-
-    for (auto insn : member_decoration_inst) {
-        if (insn.word(3) == spv::DecorationBuiltIn) {
-            builtin_struct_members.push_back(insn.word(1));
-        }
-    }
-    for (auto insn : decoration_inst) {
-        switch (insn.word(2)) {
-            case spv::DecorationBlock: {
-                uint32_t block_id = insn.word(1);
-                for (auto builtin_block_id : builtin_struct_members) {
-                    // Check if one of the members of the block are built-in -> the block is built-in
-                    if (block_id == builtin_block_id) {
-                        builtin_decorations.push_back(block_id);
-                        break;
-                    }
-                }
-                break;
-            }
-            case spv::DecorationBuiltIn:
-                builtin_decorations.push_back(insn.word(1));
-                break;
-            default:
-                break;
-        }
-    }
-
     // Find all interface variables belonging to the entrypoint and matching the storage class
+    std::vector<uint32_t> variables;
     for (uint32_t id : FindEntrypointInterfaces(entrypoint)) {
         auto def = get_def(id);
         assert(def != end());
@@ -1663,19 +1634,17 @@ std::vector<uint32_t> SHADER_MODULE_STATE::CollectBuiltinBlockMembers(spirv_inst
 
         // Now find all members belonging to the struct defining the IO block
         if (def.opcode() == spv::OpTypeStruct) {
-            for (auto builtin_id : builtin_decorations) {
-                if (builtin_id == def.word(1)) {
-                    for (int i = 2; i < static_cast<int>(def.len()); i++) {
-                        builtin_block_members.push_back(spv::BuiltInMax);  // Start with undefined builtin for each struct member.
+            for (auto set : builtin_decoration_list) {
+                auto insn = at(set.offset);
+                if ((insn.opcode() == spv::OpMemberDecorate) && (def.word(1) == insn.word(1))) {
+                    // Start with undefined builtin for each struct member.
+                    // But only when confirmed the struct is the built-in inteface block (can only be one per shader)
+                    if (builtin_block_members.size() == 0) {
+                        builtin_block_members.resize(def.len() - 2, spv::BuiltInMax);
                     }
-                    // These shouldn't be left after replacing.
-                    for (auto insn : member_decoration_inst) {
-                        if (insn.word(1) == builtin_id && insn.word(3) == spv::DecorationBuiltIn) {
-                            auto struct_index = insn.word(2);
-                            assert(struct_index < builtin_block_members.size());
-                            builtin_block_members[struct_index] = insn.word(4);
-                        }
-                    }
+                    auto struct_index = insn.word(2);
+                    assert(struct_index < builtin_block_members.size());
+                    builtin_block_members[struct_index] = insn.word(4);
                 }
             }
         }
