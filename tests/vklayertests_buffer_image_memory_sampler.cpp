@@ -13895,6 +13895,250 @@ TEST_F(VkLayerTest, CreateImageViewWithInvalidLevelOrLayerCount) {
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01584");
 }
 
+TEST_F(VkLayerTest, CreateVideoDecodeImageViewsIncompatibleWithImageUsage) {
+    TEST_DESCRIPTION("Create video decode ImageViews that are not compatible with with the usage of Image");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Required instance extension %s not supported, skipping test\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = nullptr;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkImageFormatProperties image_format_properties;
+    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_create_info.format,
+                                               image_create_info.imageType, image_create_info.tiling, image_create_info.usage,
+                                               image_create_info.flags, &image_format_properties);
+    if (res != VK_SUCCESS) {
+        printf("%s image format not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    //VkImageObj image_2d(m_device);
+    //image_2d.Init(image_create_info, 0);
+    VkResult err;
+    VkImage image_2d;
+    {
+        err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image_2d);
+        ASSERT_VK_SUCCESS(err);
+
+        VkMemoryRequirements mem_reqs;
+        vk::GetImageMemoryRequirements(m_device->device(), image_2d, &mem_reqs);
+
+        VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+        mem_alloc.allocationSize = mem_reqs.size;
+        mem_alloc.memoryTypeIndex = mem_reqs.memoryTypeBits;
+
+        bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+        if (!pass) {
+            printf("%s Failed to set memory type.\n", kSkipPrefix);
+            return;
+        }
+
+        VkDeviceMemory memory;
+        vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &memory);
+
+        err = vk::BindImageMemory(m_device->device(), image_2d, memory, 0);
+        ASSERT_VK_SUCCESS(err);
+    }
+
+    //VkImageObj image_3d(m_device);
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
+    //image_3d.Init(image_create_info, 0);
+    VkImage image_3d;
+    {
+        err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image_3d);
+        ASSERT_VK_SUCCESS(err);
+
+        VkMemoryRequirements mem_reqs;
+        vk::GetImageMemoryRequirements(m_device->device(), image_3d, &mem_reqs);
+
+        VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+        mem_alloc.allocationSize = mem_reqs.size;
+        mem_alloc.memoryTypeIndex = mem_reqs.memoryTypeBits;
+
+        bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+        if (!pass) {
+            printf("%s Failed to set memory type.\n", kSkipPrefix);
+            return;
+        }
+
+        VkDeviceMemory memory;
+        vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &memory);
+
+        err = vk::BindImageMemory(m_device->device(), image_3d, memory, 0);
+        ASSERT_VK_SUCCESS(err);
+    }
+
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = image_3d;
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.levelCount = 1;
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-04817");
+
+    ivci.image = image_2d;
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.components.g = VK_COMPONENT_SWIZZLE_A;
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-04817");
+}
+
+TEST_F(VkLayerTest, CreateVideoEncodeImageViewsIncompatibleWithImageUsage) {
+    TEST_DESCRIPTION("Create video encode ImageViews that are not compatible with with the usage of Image");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Required instance extension %s not supported, skipping test\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix,
+               VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = nullptr;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkImageFormatProperties image_format_properties;
+    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(
+        m_device->phy().handle(), image_create_info.format, image_create_info.imageType, image_create_info.tiling,
+        image_create_info.usage, image_create_info.flags, &image_format_properties);
+    if (res != VK_SUCCESS) {
+        printf("%s image format not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    //VkImageObj image_2d(m_device);
+    // image_2d.Init(image_create_info, 0);
+    VkResult err;
+    VkImage image_2d;
+    {
+        err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image_2d);
+        ASSERT_VK_SUCCESS(err);
+
+        VkMemoryRequirements mem_reqs;
+        vk::GetImageMemoryRequirements(m_device->device(), image_2d, &mem_reqs);
+
+        VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+        mem_alloc.allocationSize = mem_reqs.size;
+        mem_alloc.memoryTypeIndex = mem_reqs.memoryTypeBits;
+
+        bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+        if (!pass) {
+            printf("%s Failed to set memory type.\n", kSkipPrefix);
+            return;
+        }
+
+        VkDeviceMemory memory;
+        vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &memory);
+
+        err = vk::BindImageMemory(m_device->device(), image_2d, memory, 0);
+        ASSERT_VK_SUCCESS(err);
+    }
+
+    //VkImageObj image_3d(m_device);
+    VkImage image_3d;
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
+    {
+        err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image_3d);
+        ASSERT_VK_SUCCESS(err);
+
+        VkMemoryRequirements mem_reqs;
+        vk::GetImageMemoryRequirements(m_device->device(), image_3d, &mem_reqs);
+
+        VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+        mem_alloc.allocationSize = mem_reqs.size;
+        mem_alloc.memoryTypeIndex = mem_reqs.memoryTypeBits;
+
+        bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+        if (!pass) {
+            printf("%s Failed to set memory type.\n", kSkipPrefix);
+            return;
+        }
+
+        VkDeviceMemory memory;
+        vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &memory);
+
+        err = vk::BindImageMemory(m_device->device(), image_3d, memory, 0);
+        ASSERT_VK_SUCCESS(err);
+    }
+
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = image_3d;
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.levelCount = 1;
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-04818");
+
+    ivci.image = image_2d;
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.components.b = VK_COMPONENT_SWIZZLE_G;
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-04818");
+}
+
 TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
     TEST_DESCRIPTION("Checks for invalid BindIMageMemoryDeviceGroupInfo.");
 
