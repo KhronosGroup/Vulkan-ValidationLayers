@@ -15521,6 +15521,10 @@ bool CoreChecks::ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCo
         vuid = use_rp2 ? "VUID-vkCmdNextSubpass2-None-03102" : "VUID-vkCmdNextSubpass-None-00909";
         skip |= LogError(commandBuffer, vuid, "%s: Attempted to advance beyond final subpass.", function_name);
     }
+    if (cb_state->transform_feedback_active) {
+        vuid = use_rp2 ? "VUID-vkCmdNextSubpass2-None-02350" : "VUID-vkCmdNextSubpass-None-02349";
+        skip |= LogError(commandBuffer, vuid, "%s: transform feedback is active.", function_name);
+    }
     return skip;
 }
 
