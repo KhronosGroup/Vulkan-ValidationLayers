@@ -5941,6 +5941,42 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                              string_VkFormat(image_format));
         }
 
+        if (image_usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
+                           VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR)) {
+            if (pCreateInfo->viewType != VK_IMAGE_VIEW_TYPE_2D && pCreateInfo->viewType != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04817",
+                                 "vkCreateImageView(): Image was created with usage containing "
+                                 "VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR, VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR or "
+                                 "VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR bit, but pCreateInfo->viewType is %s.",
+                                 string_VkImageViewType(view_type));
+            }
+            if (!IsIdentitySwizzle(pCreateInfo->components)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04817",
+                                 "vkCreateImageView(): Image was created with usage containing "
+                                 "VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR, VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR or "
+                                 "VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR bit, but not all members of pCreateInfo->components have "
+                                 "the identity swizzle.");
+            }
+        }
+
+        if (image_usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+                           VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
+            if (pCreateInfo->viewType != VK_IMAGE_VIEW_TYPE_2D && pCreateInfo->viewType != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04818",
+                                 "vkCreateImageView(): Image was created with usage containing "
+                                 "VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR, VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR or "
+                                 "VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR bit, but pCreateInfo->viewType is %s.",
+                                 string_VkImageViewType(view_type));
+            }
+            if (!IsIdentitySwizzle(pCreateInfo->components)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04818",
+                                 "vkCreateImageView(): Image was created with usage containing "
+                                 "VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR, VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR or "
+                                 "VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR bit, but not all members of pCreateInfo->components have "
+                                 "the identity swizzle.");
+            }
+        }
+
         if (pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT) {
             if (!enabled_features.fragment_density_map2_features.fragmentDensityMapDeferred) {
                 skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-flags-03567",
