@@ -4362,7 +4362,8 @@ struct GlobalLayoutUpdater {
 };
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
-bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const GlobalImageLayoutMap &globalImageLayoutMap,
+bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFER_STATE *pCB,
+                                            const GlobalImageLayoutMap &globalImageLayoutMap,
                                             GlobalImageLayoutMap &overlayLayoutMap) const {
     if (disabled[image_layout_validation]) return false;
     bool skip = false;
@@ -4417,8 +4418,9 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
                         const auto subresource = image_state->subresource_encoder.Decode(index);
                         skip |= LogError(
                             pCB->commandBuffer(), kVUID_Core_DrawState_InvalidImageLayout,
-                            "Submitted command buffer expects %s (subresource: aspectMask 0x%X array layer %u, mip level %u) "
+                            "%s command buffer %s expects %s (subresource: aspectMask 0x%X array layer %u, mip level %u) "
                             "to be in layout %s--instead, current layout is %s.",
+                            loc.Message().c_str(), report_data->FormatHandle(pCB->commandBuffer()).c_str(),
                             report_data->FormatHandle(image).c_str(), subresource.aspectMask, subresource.arrayLayer,
                             subresource.mipLevel, string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout));
                     }
