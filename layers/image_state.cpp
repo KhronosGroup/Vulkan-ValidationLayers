@@ -168,7 +168,7 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
         std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
 }
 
-void IMAGE_STATE::Destroy() {
+void IMAGE_STATE::Unlink() {
     for (auto *alias_state : aliasing_images) {
         assert(alias_state);
         alias_state->aliasing_images.erase(this);
@@ -178,17 +178,17 @@ void IMAGE_STATE::Destroy() {
         bind_swapchain->RemoveParent(this);
         bind_swapchain = nullptr;
     }
+}
+
+void IMAGE_STATE::Destroy() {
+    Unlink();
     BINDABLE::Destroy();
 }
 
 void IMAGE_STATE::NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) {
     BINDABLE::NotifyInvalidate(invalid_handles, unlink);
     if (unlink) {
-        aliasing_images.clear();
-        if (bind_swapchain) {
-            bind_swapchain->RemoveParent(this);
-            bind_swapchain = nullptr;
-        }
+        Unlink();
     }
 }
 
