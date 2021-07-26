@@ -125,7 +125,6 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       get_sparse_reqs_called(false),
       sparse_metadata_required(false),
       sparse_metadata_bound(false),
-      is_swapchain_image(GetSwapchain(pCreateInfo) != VK_NULL_HANDLE),
       ahb_format(GetExternalFormat(pCreateInfo)),
       full_range{MakeImageFullRange(*pCreateInfo)},
       create_from_swapchain(GetSwapchain(pCreateInfo)),
@@ -153,7 +152,6 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       get_sparse_reqs_called(false),
       sparse_metadata_required(false),
       sparse_metadata_bound(false),
-      is_swapchain_image(true),
       ahb_format(GetExternalFormat(pCreateInfo)),
       full_range{MakeImageFullRange(*pCreateInfo)},
       create_from_swapchain(swapchain),
@@ -224,7 +222,7 @@ bool IMAGE_STATE::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const V
 }
 
 bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) const {
-    if (!is_swapchain_image && !other_image_state->is_swapchain_image &&
+    if (!IsSwapchainImage() && !other_image_state->IsSwapchainImage() &&
         !(createInfo.flags & other_image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) {
         return false;
     }
@@ -263,7 +261,7 @@ void IMAGE_STATE::SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDev
 }
 
 void IMAGE_STATE::SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint32_t swapchain_index) {
-    assert(is_swapchain_image);
+    assert(IsSwapchainImage());
     bind_swapchain = swapchain;
     swapchain_image_index = swapchain_index;
     bind_swapchain->AddParent(this);
@@ -278,7 +276,7 @@ void IMAGE_STATE::SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint3
 }
 
 VkDeviceSize IMAGE_STATE::GetFakeBaseAddress() const {
-    if (!is_swapchain_image) {
+    if (!IsSwapchainImage()) {
         return BINDABLE::GetFakeBaseAddress();
     }
     if (!bind_swapchain) {

@@ -30,7 +30,7 @@ static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse &&
 
 static bool SimpleBinding(const IMAGE_STATE &image_state) {
     bool simple =
-        SimpleBinding(static_cast<const BINDABLE &>(image_state)) || image_state.is_swapchain_image || image_state.bind_swapchain;
+        SimpleBinding(static_cast<const BINDABLE &>(image_state)) || image_state.IsSwapchainImage() || image_state.bind_swapchain;
 
     // If it's not simple we must have an encoder.
     assert(!simple || image_state.fragment_encoder.get());

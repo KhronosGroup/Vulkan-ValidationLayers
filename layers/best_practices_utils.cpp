@@ -1567,7 +1567,7 @@ void BestPractices::ValidateImageInQueueArm(const char* function_name, IMAGE_STA
                                             uint32_t array_layer, uint32_t mip_level) {
     // Swapchain images are implicitly read so clear after store is expected.
     if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED &&
-        !image->is_swapchain_image) {
+        !image->IsSwapchainImage()) {
         LogPerformanceWarning(
             device, kVUID_BestPractices_RenderPass_RedundantStore,
             "%s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "

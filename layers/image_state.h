@@ -73,7 +73,6 @@ class IMAGE_STATE : public BINDABLE {
     bool get_sparse_reqs_called;         // Track if GetImageSparseMemoryRequirements() has been called for this image
     bool sparse_metadata_required;       // Track if sparse metadata aspect is required for this image
     bool sparse_metadata_bound;          // Track if sparse metadata aspect is bound to this image
-    const bool is_swapchain_image;       // True if image is a swapchain image
     const uint64_t ahb_format;           // External Android format, if provided
     const VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers (slices), and aspects
     const VkSwapchainKHR create_from_swapchain;
@@ -106,6 +105,8 @@ class IMAGE_STATE : public BINDABLE {
 
     bool IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const;
     bool IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_createInfo) const;
+
+    bool IsSwapchainImage() const { return create_from_swapchain != VK_NULL_HANDLE; }
 
     inline bool IsImageTypeEqual(const VkImageCreateInfo &other_createInfo) const {
         return createInfo.imageType == other_createInfo.imageType;
