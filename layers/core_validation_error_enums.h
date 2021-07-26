@@ -79,7 +79,7 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidPipelineCreateSta
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidQuery = "UNASSIGNED-CoreValidation-DrawState-InvalidQuery";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_QueryNotReset = "UNASSIGNED-CoreValidation-DrawState-QueryNotReset";
 // static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidQueueFamily = "UNASSIGNED-CoreValidation-DrawState-InvalidQueueFamily";
-static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidRenderArea = "UNASSIGNED-CoreValidation-DrawState-InvalidRenderArea";
+// static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidRenderArea = "UNASSIGNED-CoreValidation-DrawState-InvalidRenderArea";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidRenderpass = "UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidSecondaryCommandBuffer = "UNASSIGNED-CoreValidation-DrawState-InvalidSecondaryCommandBuffer";
 // static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidSet = "UNASSIGNED-CoreValidation-DrawState-InvalidSet";
