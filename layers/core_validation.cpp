@@ -14812,9 +14812,8 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer 
                                                                 const VkCopyAccelerationStructureInfoKHR *pInfo) const {
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
-    bool skip = false;
-    skip |= ValidateCmd(cb_state, CMD_COPYACCELERATIONSTRUCTUREKHR, "vkCmdCopyAccelerationStructureKHR()");
-    skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCmdCopyAccelerationStructureKHR");
+    ValidateCmd(cb_state, CMD_COPYACCELERATIONSTRUCTUREKHR, "vkCmdCopyAccelerationStructureKHR()");
+    ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCmdCopyAccelerationStructureKHR");
     return false;
 }
 
