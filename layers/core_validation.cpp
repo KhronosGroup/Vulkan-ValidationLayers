@@ -10877,19 +10877,87 @@ bool CoreChecks::ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE *pCB, char 
     return skip;
 }
 
-bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPassBegin) const {
+bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPassBegin, const char *func_name) const {
     bool skip = false;
+
+    bool device_group = false;
+    uint32_t device_group_area_count = 0;
+    if (device_extensions.vk_khr_device_group) {
+        device_group = true;
+        const VkDeviceGroupRenderPassBeginInfo *device_group_render_pass_begin_info =
+            LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
+        if (device_group_render_pass_begin_info) {
+            device_group_area_count = device_group_render_pass_begin_info->deviceRenderAreaCount;
+        }
+    }
+    if (device_group && device_group_area_count > 0) {
+        return skip;
+    }
+
     const safe_VkFramebufferCreateInfo *framebuffer_info = &GetFramebufferState(pRenderPassBegin->framebuffer)->createInfo;
-    if (pRenderPassBegin->renderArea.offset.x < 0 ||
-        (pRenderPassBegin->renderArea.offset.x + pRenderPassBegin->renderArea.extent.width) > framebuffer_info->width ||
-        pRenderPassBegin->renderArea.offset.y < 0 ||
-        (pRenderPassBegin->renderArea.offset.y + pRenderPassBegin->renderArea.extent.height) > framebuffer_info->height) {
-        skip |= static_cast<bool>(LogError(
-            pRenderPassBegin->renderPass, kVUID_Core_DrawState_InvalidRenderArea,
-            "Cannot execute a render pass with renderArea not within the bound of the framebuffer. RenderArea: x %d, y %d, width "
-            "%d, height %d. Framebuffer: width %d, height %d.",
-            pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.offset.y, pRenderPassBegin->renderArea.extent.width,
-            pRenderPassBegin->renderArea.extent.height, framebuffer_info->width, framebuffer_info->height));
+    if (pRenderPassBegin->renderArea.offset.x < 0) {
+        if (device_group) {
+            skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02850",
+                             "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer and pNext "
+                             "of VkRenderPassBeginInfo does not contain VkDeviceGroupRenderPassBeginInfo or its "
+                             "deviceRenderAreaCount is 0, renderArea.offset.x is negative (%" PRIi32 ") .",
+                             func_name, pRenderPassBegin->renderArea.offset.x);
+        } else {
+            skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-renderArea-02846",
+                             "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer, "
+                             "renderArea.offset.x is negative (%" PRIi32 ") .",
+                             func_name, pRenderPassBegin->renderArea.offset.x);
+        }
+    }
+    if (pRenderPassBegin->renderArea.offset.y < 0) {
+        if (device_group) {
+            skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02851",
+                             "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer and pNext "
+                             "of VkRenderPassBeginInfo does not contain VkDeviceGroupRenderPassBeginInfo or its "
+                             "deviceRenderAreaCount is 0, renderArea.offset.y is negative (%" PRIi32 ") .",
+                             func_name, pRenderPassBegin->renderArea.offset.y);
+        } else {
+            skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-renderArea-02847",
+                             "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer, "
+                             "renderArea.offset.y is negative (%" PRIi32 ") .",
+                             func_name, pRenderPassBegin->renderArea.offset.y);
+        }
+    }
+    if ((pRenderPassBegin->renderArea.offset.x + pRenderPassBegin->renderArea.extent.width) > framebuffer_info->width) {
+        if (device_group) {
+            skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02852",
+                             "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer and pNext "
+                             "of VkRenderPassBeginInfo does not contain VkDeviceGroupRenderPassBeginInfo or its "
+                             "deviceRenderAreaCount is 0, renderArea.offset.x (%" PRIi32 ") + renderArea.extent.width (%" PRIi32
+                             ") is greater than framebuffer width (%" PRIi32 ").",
+                             func_name, pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.extent.width,
+                             framebuffer_info->width);
+        } else {
+            skip |= LogError(
+                pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-renderArea-02848",
+                "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer, renderArea.offset.x "
+                "(%" PRIi32 ") + renderArea.extent.width (%" PRIi32 ") is greater than framebuffer width (%" PRIi32 ").",
+                func_name, pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.extent.width,
+                framebuffer_info->width);
+        }
+    }
+    if ((pRenderPassBegin->renderArea.offset.y + pRenderPassBegin->renderArea.extent.height) > framebuffer_info->height) {
+        if (device_group) {
+            skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02853",
+                             "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer and pNext "
+                             "of VkRenderPassBeginInfo does not contain VkDeviceGroupRenderPassBeginInfo or its "
+                             "deviceRenderAreaCount is 0, renderArea.offset.y (%" PRIi32 ") + renderArea.extent.height (%" PRIi32
+                             ") is greater than framebuffer height (%" PRIi32 ").",
+                             func_name, pRenderPassBegin->renderArea.offset.y, pRenderPassBegin->renderArea.extent.height,
+                             framebuffer_info->height);
+        } else {
+            skip |= LogError(
+                pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-renderArea-02849",
+                "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer, renderArea.offset.y "
+                "(%" PRIi32 ") + renderArea.extent.height (%" PRIi32 ") is greater than framebuffer height (%" PRIi32 ").",
+                func_name, pRenderPassBegin->renderArea.offset.y, pRenderPassBegin->renderArea.extent.height,
+                framebuffer_info->height);
+        }
     }
     return skip;
 }
@@ -11142,7 +11210,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
                              report_data->FormatHandle(render_pass_state->renderPass()).c_str(), clear_op_size, clear_op_size - 1);
         }
         skip |= VerifyFramebufferAndRenderPassImageViews(pRenderPassBegin, function_name);
-        skip |= VerifyRenderAreaBounds(pRenderPassBegin);
+        skip |= VerifyRenderAreaBounds(pRenderPassBegin, function_name);
         skip |= VerifyFramebufferAndRenderPassLayouts(rp_version, cb_state, pRenderPassBegin,
                                                       GetFramebufferState(pRenderPassBegin->framebuffer));
         if (framebuffer->rp_state->renderPass() != render_pass_state->renderPass()) {
