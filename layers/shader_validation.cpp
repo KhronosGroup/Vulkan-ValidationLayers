@@ -1022,7 +1022,10 @@ bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *sr
             case spv::OpImageRead: {
                 spirv_inst_iter type_def = src->GetImageFormatInst(insn.word(3));
                 if (type_def != src->end()) {
-                    if (type_def.word(8) == spv::ImageFormatUnknown) {
+                    const auto dim = type_def.word(3);
+                    // If the Image Dim operand is not SubpassData, the Image Format must not be Unknown, unless the
+                    // StorageImageReadWithoutFormat Capability was declared.
+                    if (dim != spv::DimSubpassData && type_def.word(8) == spv::ImageFormatUnknown) {
                         skip |= RequireFeature(enabled_features.core.shaderStorageImageReadWithoutFormat,
                                                "shaderStorageImageReadWithoutFormat",
                                                kVUID_Features_shaderStorageImageReadWithoutFormat);
@@ -1062,10 +1065,12 @@ bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *sr
         spirv_inst_iter type_def = src->GetImageFormatInst(insn.word(1));
         if (type_def == src->end())
             continue;
+        // Only check if the Image Dim operand is not SubpassData
+        const auto dim = type_def.word(3);
+        if (dim == spv::DimSubpassData) continue;
         // Only check storage images
         if (type_def.word(7) != 2) continue;
-        if (type_def.word(8) != spv::ImageFormatUnknown)
-            continue;
+        if (type_def.word(8) != spv::ImageFormatUnknown) continue;
 
         decoration_set img_decorations = src->get_decorations(var);
 
