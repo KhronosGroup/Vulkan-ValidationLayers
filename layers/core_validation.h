@@ -754,8 +754,8 @@ class CoreChecks : public ValidationStateTracker {
 
     void PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo) override;
 
-    bool ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE* pCB, const GlobalImageLayoutMap& globalImageLayoutMap,
-                                    GlobalImageLayoutMap& overlayLayoutMap) const;
+    bool ValidateCmdBufImageLayouts(const Location& loc, const CMD_BUFFER_STATE* pCB,
+                                    const GlobalImageLayoutMap& globalImageLayoutMap, GlobalImageLayoutMap& overlayLayoutMap) const;
 
     void UpdateCmdBufImageLayouts(CMD_BUFFER_STATE* pCB);
 

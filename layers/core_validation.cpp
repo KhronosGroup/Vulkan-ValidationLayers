@@ -3167,7 +3167,7 @@ struct CommandBufferSubmitState {
         if (cb_node == nullptr) {
             return skip;
         }
-        skip |= core->ValidateCmdBufImageLayouts(cb_node, core->imageLayoutMap, overlay_image_layout_map);
+        skip |= core->ValidateCmdBufImageLayouts(loc, cb_node, core->imageLayoutMap, overlay_image_layout_map);
         current_cmds.push_back(cmd);
         skip |= core->ValidatePrimaryCommandBufferState(loc, cb_node,
                                                         static_cast<int>(std::count(current_cmds.begin(), current_cmds.end(), cmd)),
