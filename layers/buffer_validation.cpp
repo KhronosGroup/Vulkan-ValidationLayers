@@ -2194,7 +2194,7 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
     const IMAGE_STATE *image_state = GetImageState(image);
     bool skip = false;
     if (image_state) {
-        if (image_state->is_swapchain_image) {
+        if (image_state->IsSwapchainImage()) {
             skip |= LogError(device, "VUID-vkDestroyImage-image-04882",
                              "vkDestroyImage(): %s is a presentable image and it is controlled by the implementation and is "
                              "destroyed with vkDestroySwapchainKHR.",
