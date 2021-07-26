@@ -2002,17 +2002,24 @@ TEST_F(VkLayerTest, RenderPassBeginInvalidRenderArea) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+    bool device_group_supported = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+        device_group_supported = true;
+    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Framebuffer for render target is 256x256, exceed that for INVALID_RENDER_AREA
     m_renderPassBeginInfo.renderArea.extent.width = 257;
-    m_renderPassBeginInfo.renderArea.extent.height = 257;
+    m_renderPassBeginInfo.renderArea.extent.height = 256;
 
-    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &m_renderPassBeginInfo, rp2Supported,
-                        "Cannot execute a render pass with renderArea not within the bound of the framebuffer.",
-                        "Cannot execute a render pass with renderArea not within the bound of the framebuffer.");
+    const char *vuid =
+        device_group_supported ? "VUID-VkRenderPassBeginInfo-pNext-02852" : "VUID-VkRenderPassBeginInfo-renderArea-02848";
+
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &m_renderPassBeginInfo, rp2Supported, vuid,
+                        vuid);
 }
 
 TEST_F(VkLayerTest, RenderPassBeginWithinRenderPass) {
@@ -9860,4 +9867,71 @@ TEST_F(VkLayerTest, InvalidCreateDescriptorPoolAllocateFlags) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetAllocateInfo-pSetLayouts-04610");
     vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, InvalidRenderArea) {
+    TEST_DESCRIPTION("Begin render pass with render area that is not within the framebuffer.");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    bool device_group_supported = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+        device_group_supported = true;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkRenderPassBeginInfo rpbinfo = LvlInitStruct<VkRenderPassBeginInfo>();
+    rpbinfo.renderPass = m_renderPass;
+    rpbinfo.framebuffer = m_framebuffer;
+    rpbinfo.renderArea.extent.width = m_framebuffer_info.width;
+    rpbinfo.renderArea.extent.height = m_framebuffer_info.height;
+    rpbinfo.renderArea.offset.x = -32;
+    rpbinfo.renderArea.offset.y = 0;
+    rpbinfo.clearValueCount = 1;
+    rpbinfo.pClearValues = m_renderPassClearValues.data();
+
+    m_commandBuffer->begin();
+
+    if (device_group_supported) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02850");
+    } else {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderArea-02846");
+    }
+    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_errorMonitor->VerifyFound();
+
+    rpbinfo.renderArea.offset.x = 0;
+    rpbinfo.renderArea.offset.y = -128;
+
+    if (device_group_supported) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02851");
+    } else {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderArea-02847");
+    }
+    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_errorMonitor->VerifyFound();
+
+    rpbinfo.renderArea.offset.y = 0;
+    rpbinfo.renderArea.extent.width = m_framebuffer_info.width + 128;
+
+    if (device_group_supported) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02852");
+    } else {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderArea-02848");
+    }
+    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_errorMonitor->VerifyFound();
+
+    rpbinfo.renderArea.extent.width = m_framebuffer_info.width;
+    rpbinfo.renderArea.extent.height = m_framebuffer_info.height + 1;
+
+    if (device_group_supported) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02853");
+    } else {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderArea-02849");
+    }
+    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
 }
