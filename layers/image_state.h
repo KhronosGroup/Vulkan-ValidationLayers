@@ -167,6 +167,7 @@ class IMAGE_STATE : public BINDABLE {
 
   protected:
     void AddAliasingImage(IMAGE_STATE *bound_image);
+    void Unlink();
     void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
 };
 
