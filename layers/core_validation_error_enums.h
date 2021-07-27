@@ -285,6 +285,9 @@ static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithout
 static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageReadWithoutFormat_NonReadable = "UNASSIGNED-features-shaderStorageImageReadWithoutFormat-NonReadable";
 static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithoutFormat_NonWritable = "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat-NonWritable";
 
+static const char DECORATE_UNUSED *kVUID_Features_PresentIdKHR = "UNASSIGNED-features-VkPresentIdKHR";
+static const char DECORATE_UNUSED *kVUID_Features_PresentWaitKHR = "UNASSIGNED-features-VkPresentWaitKHR";
+
 // clang-format on
 
 #undef DECORATE_UNUSED

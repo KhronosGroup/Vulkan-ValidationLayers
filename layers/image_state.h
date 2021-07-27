@@ -220,6 +220,7 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     bool retired;
     const bool shared_presentable;
     uint32_t get_swapchain_image_count;
+    uint64_t max_present_id;
     const safe_VkImageCreateInfo image_create_info;
     std::shared_ptr<SURFACE_STATE> surface;
     ValidationStateTracker *dev_data;

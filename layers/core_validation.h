@@ -1350,6 +1350,8 @@ class CoreChecks : public ValidationStateTracker {
                                             VkFence fence, uint32_t* pImageIndex) const override;
     bool PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
                                              uint32_t* pImageIndex) const override;
+    bool PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId,
+                                          uint64_t timeout) const override;
     bool PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                           const VkAllocationCallbacks* pAllocator) const override;
     bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
