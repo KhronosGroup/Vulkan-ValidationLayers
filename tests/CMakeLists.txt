@@ -98,20 +98,34 @@ if(NOT TARGET vulkan)
 endif()
 
 set_source_files_properties(${PROJECT_BINARY_DIR}/vk_safe_struct.cpp PROPERTIES GENERATED TRUE)
-add_executable(vk_layer_validation_tests
-               layer_validation_tests.cpp
-               ../layers/vk_format_utils.cpp
-               ../layers/convert_to_renderpass2.cpp
-               ../layers/generated/vk_safe_struct.cpp
-               ../layers/generated/lvt_function_pointers.cpp
-               ${COMMON_CPP})
-add_test(NAME vk_layer_validation_tests COMMAND vk_layer_validation_tests)
-add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation VkLayer_khronos_validation-json)
-if(NOT GTEST_IS_STATIC_LIB)
-    set_target_properties(vk_layer_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
+if (NOT ANDROID)
+    set(layer_test_target_ vk_layer_validation_tests)
+    add_executable(${layer_test_target_}
+                   layer_validation_tests.cpp
+                   ../layers/vk_format_utils.cpp
+                   ../layers/convert_to_renderpass2.cpp
+                   ../layers/generated/vk_safe_struct.cpp
+                   ../layers/generated/lvt_function_pointers.cpp
+                   ${COMMON_CPP})
+else()
+    set(layer_test_target_ VulkanLayerValidationTests)
+    add_library(${layer_test_target_} SHARED
+                   layer_validation_tests.cpp
+                   ../layers/vk_format_utils.cpp
+                   ../layers/convert_to_renderpass2.cpp
+                   ../layers/generated/vk_safe_struct.cpp
+                   ../layers/generated/lvt_function_pointers.cpp
+                   ${COMMON_CPP})
+endif()
+list(APPEND VVL_COMPILED_TARGETS ${layer_test_target_})
+
+add_test(NAME ${layer_test_target_} COMMAND vk_layer_validation_tests)
+add_dependencies(${layer_test_target_} VkLayer_khronos_validation VkLayer_khronos_validation-json)
+if ((NOT GTEST_IS_STATIC_LIB) AND (NOT ANDROID))
+    set_target_properties(${layer_test_target_} PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 endif()
 # Note that there is no need to add GTEST directories here due to googletest exporting them via the gtest target.
-target_include_directories(vk_layer_validation_tests
+target_include_directories(${layer_test_target_}
                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
                                   ${PROJECT_SOURCE_DIR}/layers
                                   ${PROJECT_SOURCE_DIR}/layers/generated
@@ -124,40 +138,53 @@ target_include_directories(vk_layer_validation_tests
                                   ${VulkanHeaders_INCLUDE_DIR}
                                   ${PROJECT_BINARY_DIR}/layers)
 if (USE_ROBIN_HOOD_HASHING)
-    target_include_directories(vk_layer_validation_tests PUBLIC ${ROBIN_HOOD_HASHING_INCLUDE_DIR})
+    target_include_directories(${layer_test_target_} PUBLIC ${ROBIN_HOOD_HASHING_INCLUDE_DIR})
 endif()
-add_dependencies(vk_layer_validation_tests
+add_dependencies(${layer_test_target_}
                  VkLayer_utils)
 
 option(PORTABILITY_TESTS_USE_DEVSIM "Automatically add the devsim layer for portability tests" OFF)
 if (PORTABILITY_TESTS_USE_DEVSIM)
-    target_compile_definitions(vk_layer_validation_tests PRIVATE PORTABILITY_TESTS_USE_DEVSIM=1)
+    target_compile_definitions(${layer_test_target_} PRIVATE PORTABILITY_TESTS_USE_DEVSIM=1)
 endif()
 
 if (VVL_ENABLE_ASAN)
-    target_compile_options(vk_layer_validation_tests  PRIVATE -fsanitize=address)
+    target_compile_options(${layer_test_target_} PRIVATE -fsanitize=address)
     # NOTE: Use target_link_options when cmake 3.13 is available on CI
-    target_link_libraries(vk_layer_validation_tests  PRIVATE "-fsanitize=address")
+    target_link_libraries(${layer_test_target_} PRIVATE "-fsanitize=address")
 endif()
 
 if (NOT MSVC)
-    target_compile_options(vk_layer_validation_tests PRIVATE "-Wno-sign-compare")
+    target_compile_options(${layer_test_target_} PRIVATE "-Wno-sign-compare")
 endif()
 
 # Specify target_link_libraries
-target_link_libraries(vk_layer_validation_tests
-                      PRIVATE VkLayer_utils
-                              gtest
-                              gtest_main
-                              ${GLSLANG_LIBRARIES}
-                              ${SPIRV_TOOLS_LIBRARIES})
+target_link_libraries(${layer_test_target_}
+                      PRIVATE VkLayer_utils)
 
-if(NOT WIN32)
-    target_link_libraries(vk_layer_validation_tests PRIVATE dl)
+if(WIN32)
+    set_target_properties(gtest PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+    set_target_properties(gtest_main PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+    target_link_libraries(${layer_test_target_}
+                          PRIVATE gtest
+                                  gtest_main
+                                  ${GLSLANG_LIBRARIES})
+else()
+    target_compile_options(${layer_test_target_} PRIVATE "-Wno-sign-compare")
     if(BUILD_WSI_XCB_SUPPORT OR BUILD_WSI_XLIB_SUPPORT)
-        target_link_libraries(vk_layer_validation_tests
+        target_link_libraries(${layer_test_target_}
                               PRIVATE ${XCB_LIBRARIES}
-                                      ${X11_LIBRARIES})
+                                      ${X11_LIBRARIES}
+                                      gtest
+                                      gtest_main
+                                      dl
+                                      ${GLSLANG_LIBRARIES})
+    else()
+        target_link_libraries(${layer_test_target_}
+                              PRIVATE gtest
+                                      gtest_main
+                                      dl
+                                      ${GLSLANG_LIBRARIES})
     endif()
 endif()
 
@@ -166,13 +193,72 @@ if(WIN32)
     if(NOT GTEST_IS_STATIC_LIB)
         file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/googletest/googletest/$<CONFIG>/*.dll SRC_GTEST_DLLS)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> DST_GTEST_DLLS)
-        add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
+        add_custom_command(TARGET ${layer_test_target_} POST_BUILD
                            COMMAND xcopy /Y /I ${SRC_GTEST_DLLS} ${DST_GTEST_DLLS})
     endif()
 endif()
 
 if(INSTALL_TESTS)
-    install(TARGETS vk_layer_validation_tests DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS ${layer_test_target_} DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
-add_subdirectory(layers)
+if (ANDROID)
+    if (NOT ANDROID_SDK_HOME)
+        set(ANDROID_SDK_HOME $ENV{ANDROID_SDK_HOME})
+    endif()
+    if (NOT ANDROID_SDK_HOME)
+        message(FATAL_ERROR "Please specify ANDROID_SDK_HOME")
+    endif()
+
+    if (NOT ANDROID_NDK_HOME)
+        set(ANDROID_NDK_HOME $ENV{ANDROID_NDK_HOME})
+    endif()
+    if (NOT ANDROID_NDK_HOME)
+        message(FATAL_ERROR "Please specify ANDROID_NDK_HOME. This is commonly $ANDROID_SDK_HOME/ndk-bundle.")
+    endif()
+
+    if (NOT ANDROID_BUILD_TOOLS)
+        set(ANDROID_BUILD_TOOLS $ENV{ANDROID_BUILD_TOOLS})
+    endif()
+    if (NOT ANDROID_BUILD_TOOLS)
+        message(FATAL_ERROR "Please specify ANDROID_BUILD_TOOLS version ($ANDROID_SDK_HOME/build-tools/<version>)")
+    endif()
+
+    if (NOT ANDROID_STL)
+        set(ANDROID_STL $ENV{ANDROID_STL})
+    endif()
+    if (NOT ANDROID_STL)
+        set(ANDROID_STL c++_static)
+    endif()
+
+    # Necessary for vulkan_wrapper.h
+    target_include_directories(${layer_test_target_} PRIVATE ${ANDROID_NDK_HOME}/sources/third_party/vulkan/src/common)
+
+    set(_app_glue_dir ${ANDROID_NDK_HOME}/sources/android/native_app_glue)
+    target_sources(${layer_test_target_} PRIVATE ${_app_glue_dir}/android_native_app_glue.c)
+    target_include_directories(${layer_test_target_} PRIVATE ${_app_glue_dir})
+    target_compile_definitions(${layer_test_target_} PRIVATE VALIDATION_APK VK_PROTOTYPES)
+
+    # TODO use target_link_options if using cmake >= 3.13
+    target_link_libraries(${layer_test_target_} PRIVATE "-u ANativeActivity_onCreate")
+
+    target_link_libraries(${layer_test_target_} PRIVATE SPIRV-Tools log android)
+
+    set(_android_jar ${ANDROID_SDK_HOME}/platforms/android-${ANDROID_PLATFORM}/android.jar)
+    set(_aapt ${ANDROID_SDK_HOME}/build-tools/${ANDROID_BUILD_TOOLS}/aapt)
+    set(_zipalign ${ANDROID_SDK_HOME}/build-tools/${ANDROID_BUILD_TOOLS}/zipalign)
+    add_custom_command(TARGET ${layer_test_target_} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_BINARY_DIR}/apk
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/apk/out
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/platforms/android/AndroidManifest.xml ${CMAKE_BINARY_DIR}/apk/AndroidManifest.xml
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:${layer_test_target_}> ${CMAKE_BINARY_DIR}/apk/out/lib/${ANDROID_ABI}/$<TARGET_FILE_NAME:${layer_test_target_}>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:VkLayer_khronos_validation> ${CMAKE_BINARY_DIR}/apk/out/lib/${ANDROID_ABI}/$<TARGET_FILE_NAME:VkLayer_khronos_validation>
+        COMMAND ${_aapt} package -f -M ${CMAKE_BINARY_DIR}/apk/AndroidManifest.xml -I ${_android_jar} -S ${CMAKE_CURRENT_SOURCE_DIR}/platforms/android/res -F ${CMAKE_BINARY_DIR}/apk/out/${layer_test_target_}-unaligned.apk ${CMAKE_BINARY_DIR}/apk/out
+        COMMAND jarsigner -verbose -keystore $ENV{HOME}/.android/debug.keystore -storepass android -keypass android ${CMAKE_BINARY_DIR}/apk/out/${layer_test_target_}-unaligned.apk androiddebugkey
+        COMMAND ${_zipalign} -f 4 ${CMAKE_BINARY_DIR}/apk/out/${layer_test_target_}-unaligned.apk ${CMAKE_BINARY_DIR}/apk/out/${layer_test_target_}.apk
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+endif()
+
+if (NOT ANDROID)
+    add_subdirectory(layers)
+endif()

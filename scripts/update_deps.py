@@ -313,12 +313,14 @@ class GoodRepo(object):
         'json':  A fully populated JSON object describing the repo.
         'args':  Results from ArgumentParser
         """
+        dir_top = os.path.abspath(args.dir)
         self._json = json
         self._args = args
         # Required JSON elements
         self.name = json['name']
         self.url = json['url']
         self.sub_dir = json['sub_dir']
+        self.src_dir = os.path.join(dir_top, os.path.normpath(self.sub_dir))
         self.commit = json['commit']
         # Optional JSON elements
         self.build_dir = None
@@ -341,7 +343,6 @@ class GoodRepo(object):
         self.build_platforms = json['build_platforms'] if ('build_platforms' in json) else []
         self.optional = set(json.get('optional', []))
         # Absolute paths for a repo's directories
-        dir_top = os.path.abspath(args.dir)
         self.repo_dir = os.path.join(dir_top, self.sub_dir)
         if self.build_dir:
             self.build_dir = os.path.join(dir_top, self.build_dir)
@@ -596,6 +597,7 @@ def CreateHelper(args, repos, filename):
     install_names = GetInstallNames(args)
     with open(filename, 'w') as helper_file:
         for repo in repos:
+            helper_file.write(f'set({repo.name.replace("-","_").upper()}_SOURCE_DIR "{escape(repo.src_dir)}" CACHE STRING "" FORCE)\n')
             if install_names and repo.name in install_names and repo.on_build_platform:
                 helper_file.write('set({var} "{dir}" CACHE STRING "" FORCE)\n'
                                   .format(

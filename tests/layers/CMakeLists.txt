@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2016-2019 Valve Corporation
-# Copyright (c) 2016-2019 LunarG, Inc.
+# Copyright (c) 2016-2021 Valve Corporation
+# Copyright (c) 2016-2021 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ if(WIN32)
         set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 
         add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
+        list(APPEND VVL_COMPILED_TARGETS VKLayer_${target})
         add_dependencies(VkLayer_${target} VkLayer_utils)
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
         target_compile_definitions(VkLayer_${target} PRIVATE "_CRT_SECURE_NO_WARNINGS")
@@ -77,14 +78,25 @@ if(WIN32)
 elseif(APPLE)
     macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
+        list(APPEND VVL_COMPILED_TARGETS VKLayer_${target})
         add_dependencies(VkLayer_${target} VkLayer_utils)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl")
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
         target_compile_options(VkLayer_${target} PRIVATE "-Wpointer-arith" "-Wno-unused-function")
     endmacro()
-else(UNIX AND NOT APPLE) # i.e.: Linux
+elseif(ANDROID)
     macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
+        list(APPEND VVL_COMPILED_TARGETS VkLayer_${target})
+        add_dependencies(VkLayer_${target} VkLayer_utils)
+        set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_${target}.map,-Bsymbolic")
+        target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils log)
+        target_compile_options(VkLayer_${target} PRIVATE "-Wpointer-arith" "-Wno-unused-function")
+    endmacro()
+elseif(UNIX) # i.e.: Linux since we know NOT (APPLE OR ANDROID)
+    macro(AddVkLayer target)
+        add_library(VkLayer_${target} SHARED ${ARGN})
+        list(APPEND VVL_COMPILED_TARGETS VKLayer_${target})
         add_dependencies(VkLayer_${target} VkLayer_utils)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_${target}.map,-Bsymbolic")
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)

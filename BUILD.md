@@ -699,118 +699,61 @@ following.
 Note that the minimum supported Android SDK API Level is 26, revision
 level 3.
 
-NDK r20 or greater required
+#### Install the Android SDK and NDK
 
-- Install [Android Studio 2.3](https://developer.android.com/studio/index.html)
-  or later.
-- From the "Welcome to Android Studio" splash screen, add the following
-  components using Configure > SDK Manager:
-  - SDK Platforms > Android 8.0.0 and newer
-  - SDK Tools > Android SDK Build-Tools
-  - SDK Tools > Android SDK Platform-Tools
-  - SDK Tools > Android SDK Tools
-  - SDK Tools > NDK
+- With Android Studio
+  - Install [Android Studio 2.3](https://developer.android.com/studio/index.html)
+    or later.
+  - From the "Welcome to Android Studio" splash screen, add the following
+    components using Configure > SDK Manager:
+    - SDK Platforms > Android 8.0.0 and newer
+    - SDK Tools > Android SDK Build-Tools
+    - SDK Tools > Android SDK Platform-Tools
+    - SDK Tools > Android SDK Tools
+    - SDK Tools > NDK
+- [sdkmanager](https://developer.android.com/studio/command-line/sdkmanager) CLI tool
 
-#### Android Hardware Buffer support
+#### Build using cmake
 
-The Validation Layers by default build and release for Android 26 (Android Oreo). While Vulkan is supported in Android 24 and 25, there is no AHardwareBuffer support. To build a version of the Validation Layers for use with Android that will not require AHB support, simply addjust the `APP_PLATFORM` in [build-android/jni/Application.mk](build-android/jni/Application.mk)
-
-```patch
--APP_PLATFORM := android-26
-+APP_PLATFORM := android-24
+```bash
+cmake -Bbuild-android-cmake \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DUPDATE_DEPS=ON \
+  -DCMAKE_TOOLCHAIN_FILE=<ndk-path>/build/cmake/android.toolchain.cmake \
+  -DANDROID_NDK_HOME=<ndk-path> \
+  -DANDROID_SDK_HOME=<sdk-path> \
+  -DANDROID_PLATFORM=26 \
+  -DANDROID_BUILD_TOOLS=31.0.0-rc1 \
+  -DANDROID_ABI=arm64-v8a \
+  -DANDROID_STL=c++_static
 ```
 
-#### Add Android specifics to environment
-
-For each of the below, you may need to specify a different build-tools
-version, as Android Studio will roll it forward fairly regularly.
+Some common locations for the `ANDROID_SDK_HOME` and `ANDROID_NDK_HOME` are:
 
 On Linux:
 
+```bash
     export ANDROID_SDK_HOME=$HOME/Android/sdk
     export ANDROID_NDK_HOME=$HOME/Android/sdk/ndk-bundle
-    export PATH=$ANDROID_SDK_HOME:$PATH
-    export PATH=$ANDROID_NDK_HOME:$PATH
-    export PATH=$ANDROID_SDK_HOME/build-tools/26.0.3:$PATH
+```
 
 On Windows:
 
+```batch
     set ANDROID_SDK_HOME=%LOCALAPPDATA%\Android\sdk
     set ANDROID_NDK_HOME=%LOCALAPPDATA%\Android\sdk\ndk-bundle
-    set PATH=%LOCALAPPDATA%\Android\sdk\ndk-bundle;%PATH%
+```
 
 On OSX:
 
+```bash
     export ANDROID_SDK_HOME=$HOME/Library/Android/sdk
     export ANDROID_NDK_HOME=$HOME/Library/Android/sdk/ndk-bundle
-    export PATH=$ANDROID_NDK_HOME:$PATH
-    export PATH=$ANDROID_SDK_HOME/build-tools/26.0.3:$PATH
+```
 
-Note: If `jarsigner` is missing from your platform, you can find it in the
-Android Studio install or in your Java installation. If you do not have Java,
-you can get it with something like the following:
+#### Android Hardware Buffer support
 
-  sudo apt-get install openjdk-8-jdk
-
-#### Additional OSX System Requirements
-
-Tested on OSX version 10.13.3
-
-Setup Homebrew and components
-
-- Follow instructions on [brew.sh](http://brew.sh) to get Homebrew installed.
-
-      /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-
-- Ensure Homebrew is at the beginning of your PATH:
-
-      export PATH=/usr/local/bin:$PATH
-
-- Add packages with the following:
-
-      brew install python
-
-### Android Build
-
-There are two options for building the Android layers. Either using the SPIRV
-tools provided as part of the Android NDK, or using upstream sources. To build
-with SPIRV tools from the NDK, remove the build-android/third_party directory
-created by running update_external_sources_android.sh, (or avoid running
-update_external_sources_android.sh). Use the following script to build
-everything in the repository for Android, including validation layers, tests,
-demos, and APK packaging: This script does retrieve and use the upstream SPRIV
-tools.
-
-    cd build-android
-    ./build_all.sh
-
-> **NOTE:** By default, the `build_all.sh` script will build for all Android ABI variations. To **speed up the build time** if you know your target(s), set `APP_ABI` in both [build-android/jni/Application.mk](build-android/jni/Application.mk) and [build-android/jni/shaderc/Application.mk](build-android/jni/shaderc/Application.mk) to the desired [Android ABI](https://developer.android.com/ndk/guides/application_mk#app_abi)
-
-Resulting validation layer binaries will be in build-android/libs. Test and
-demo APKs can be installed on production devices with:
-
-    ./install_all.sh [-s <serial number>]
-
-Note that there are no equivalent scripts on Windows yet, that work needs to
-be completed. The following per platform commands can be used for layer only
-builds:
-
-#### Linux and OSX
-
-Follow the setup steps for Linux or OSX above, then from your terminal:
-
-    cd build-android
-    ./update_external_sources_android.sh --no-build
-    ndk-build -j4
-
-#### Windows
-
-Follow the setup steps for Windows above, then from Developer Command Prompt
-for VS2015:
-
-    cd build-android
-    update_external_sources_android.bat
-    ndk-build
+The Validation Layers by default build and release for Android 26 (Android Oreo). While Vulkan is supported in Android 24 and 25, there is no AHardwareBuffer support. To build a version of the Validation Layers for use with Android that will not require AHB support, simply change `ANDROID_PLATFORM` parameter value in the cmake generate command to 24 or 25.
 
 ### Android Tests and Demos
 
@@ -820,13 +763,13 @@ demo with validation enabled.
 
 #### Run Layer Validation Tests
 
-Use the following steps to build, install, and run the layer validation tests
+Use the following steps to install and run the layer validation tests
 for Android:
 
-    cd build-android
-    ./build_all.sh
-    adb install -r bin/VulkanLayerValidationTests.apk
-    adb shell am start com.example.VulkanLayerValidationTests/android.app.NativeActivity
+```bash
+adb install -r build-android-cmake/apk/out/VulkanLayerValidationTests.apk
+adb shell am start -a android.intent.MAIN -c android-intent.categeory.LAUNCH -n com.example.VulkanLayerValidationTests/android.app.NativeActivity --es args --gtest_catch_exceptions=0
+```
 
 Alternatively, you can use the test_APK script to install and run the layer
 validation tests:

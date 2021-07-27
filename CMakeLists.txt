@@ -144,7 +144,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(LAYERS_HELPER_FOLDER "Helper Targets")
 
 # Options for Linux only
-if(UNIX AND NOT APPLE) # i.e. Linux
+if(UNIX AND (NOT (APPLE OR ANDROID))) # i.e. Linux
     include(FindPkgConfig)
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
@@ -165,72 +165,8 @@ if(UNIX AND NOT APPLE) # i.e. Linux
     endif()
 endif()
 
-# Platform-specific compiler switches
-option(BUILD_WERROR "Treat compiler warnings as errors" ON)
-if(MAKE_C_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wconversion
-
-                        # TODO These warnings also get turned on with -Wconversion in some versions of clang.
-                        #      Leave off until further investigation.
-                        -Wno-sign-conversion
-                        -Wno-shorten-64-to-32
-                        -Wno-string-conversion
-                        -Wno-implicit-int-conversion
-                        -Wno-enum-enum-conversion)
-
-endif()
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wall
-                        -Wextra
-                        -Wno-unused-parameter
-                        -Wno-missing-field-initializers
-                        -fno-strict-aliasing
-                        -fno-builtin-memcmp
-                        -fvisibility=hidden)
-
-    # Treat warnings as errors for versions of GCC and c++11-compliant Clang versions that are shipped on Ubuntu 18.04 or older.
-    if(BUILD_WERROR)
-        if ((CMAKE_COMPILER_IS_GNUCXX AND NOT (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.3.0)) OR
-           (("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0)))
-            add_compile_options(-Werror)
-        endif()
-    endif()
-
-    set(CMAKE_C_STANDARD 99)
-
-    # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
-    # all compilers until they all accept the C++17 standard.
-    if(CMAKE_COMPILER_IS_GNUCC AND NOT (CMAKE_CXX_COMPILER_VERSION LESS 7.1))
-        add_compile_options(-Wimplicit-fallthrough=0)
-    endif()
-elseif(MSVC)
-    if(BUILD_WERROR)
-        # Treat warnings as errors
-        add_compile_options("/WX")
-    endif()
-    # Warn about nested declarations
-    add_compile_options("/w34456")
-    # Warn about potentially uninitialized variables
-    add_compile_options("/w34701")
-    add_compile_options("/w34703")
-    # Warn about different indirection types.
-    add_compile_options("/w34057")
-    # Warn about signed/unsigned mismatch.
-    add_compile_options("/w34245")
-endif()
-
-if(MAKE_C_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wconversion
-
-                        # TODO These warnings also get turned on with -Wconversion in some versions of clang.
-                        #      Leave off until further investigation.
-                        -Wno-sign-conversion
-                        -Wno-shorten-64-to-32
-                        -Wno-string-conversion
-                        -Wno-implicit-int-conversion
-                        -Wno-enum-enum-conversion)
-
-endif()
+# Accumulates built targets for adding common options
+set(VVL_COMPILED_TARGETS)
 
 option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
@@ -243,7 +179,48 @@ if (USE_ROBIN_HOOD_HASHING)
     set(ROBIN_HOOD_HASHING_INCLUDE_DIR "${ROBIN_HOOD_HASHING_INSTALL_DIR}/src/include" PATH "Path to robin-hood-hashing/src/include")
 endif()
 
+if(BUILD_TESTS OR BUILD_LAYERS)
+    # spirv-tools
+    if (NOT TARGET SPIRV-Tools)
+        if(NOT SPIRV_TOOLS_INSTALL_DIR)
+            set(SPIRV_TOOLS_INSTALL_DIR "${GLSLANG_INSTALL_DIR}")
+        endif()
+
+        set(SPIRV_HEADERS_INCLUDE_DIR "${SPIRV_HEADERS_INSTALL_DIR}/include" CACHE PATH "Path to spirv-headers")
+        set(SPIRV_TOOLS_BINARY_ROOT "${SPIRV_TOOLS_INSTALL_DIR}/lib"
+            CACHE PATH "User defined path to the SPIRV-Tools binaries for this project")
+        set(SPIRV_TOOLS_OPT_BINARY_ROOT "${SPIRV_TOOLS_INSTALL_DIR}/lib"
+            CACHE PATH "User defined path to the SPIRV-Tools-opt binaries for this project")
+        set(SPIRV_TOOLS_INCLUDE_DIR "${SPIRV_TOOLS_INSTALL_DIR}/include" CACHE PATH "Path to spirv tools headers")
+        set(SPIRV_TOOLS_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
+        set(SPIRV_TOOLS_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
+        set(SPIRV_TOOLS_OPT_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
+        set(SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
+
+        set(SPIRV_TOOLS_LIBRARIES ${SPIRV_TOOLS_OPT_LIB} ${SPIRV_TOOLS_LIB})
+    else()
+        set(SPIRV_TOOLS_INCLUDE_DIR "${spirv-tools_SOURCE_DIR}/include" CACHE PATH "Path to spirv tools headers")
+    endif()
+    set(SPIRV_TOOLS_LIBRARIES SPIRV-Tools SPIRV-Tools-opt)
+endif()
+
+if (ANDROID)
+    set(SPIRV-Headers_SOURCE_DIR ${SPIRV_HEADERS_SOURCE_DIR})
+    add_subdirectory(${SPIRV_TOOLS_SOURCE_DIR} ${CMAKE_BINARY_DIR}/SPIRV-Tools)
+endif()
+
+if(NOT SPIRV_HEADERS_INSTALL_DIR)
+    message(FATAL_ERROR "Must define location of SPIRV-Headers -- see BUILD.md")
+endif()
+
 if(BUILD_TESTS)
+    if (ANDROID)
+        if (NOT GLSLANG_SOURCE_DIR)
+            message(FATAL_ERROR "GLSLANG_SOURCE_DIR must point to the glslang source directory for Android builds")
+        endif()
+        add_subdirectory(${GLSLANG_SOURCE_DIR} ${CMAKE_BINARY_DIR}/glslang)
+    endif()
+
     set(GLSLANG_INSTALL_DIR "GLSLANG-NOTFOUND" CACHE PATH "Absolute path to a glslang install directory")
     if(NOT GLSLANG_INSTALL_DIR AND NOT DEFINED ENV{GLSLANG_INSTALL_DIR} AND NOT TARGET glslang)
         message(FATAL_ERROR "Must define location of glslang binaries -- see BUILD.md")
@@ -259,14 +236,7 @@ if(BUILD_TESTS)
         set(SPIRV_HEADERS_INSTALL_DIR $ENV{SPIRV_HEADERS_INSTALL_DIR})
     endif()
 
-    if(NOT SPIRV_TOOLS_INSTALL_DIR)
-        set(SPIRV_TOOLS_INSTALL_DIR $ENV{SPIRV_TOOLS_INSTALL_DIR})
-    endif()
-
     if (NOT TARGET glslang)
-        if(NOT SPIRV_HEADERS_INSTALL_DIR)
-            message(FATAL_ERROR "Must define location of SPIRV-Headers -- see BUILD.md")
-        endif()
 
         message(STATUS "Using glslang install located at ${GLSLANG_INSTALL_DIR}")
         set(GLSLANG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
@@ -302,34 +272,6 @@ if(BUILD_TESTS)
     endif()
 endif()
 
-if(BUILD_TESTS OR BUILD_LAYERS)
-    # spirv-tools
-    if (NOT TARGET SPIRV-Tools)
-        if(NOT SPIRV_TOOLS_INSTALL_DIR)
-            set(SPIRV_TOOLS_INSTALL_DIR "${GLSLANG_INSTALL_DIR}")
-        endif()
-
-        set(SPIRV_HEADERS_INCLUDE_DIR "${SPIRV_HEADERS_INSTALL_DIR}/include" CACHE PATH "Path to spirv-headers")
-        set(SPIRV_TOOLS_BINARY_ROOT "${SPIRV_TOOLS_INSTALL_DIR}/lib"
-            CACHE PATH "User defined path to the SPIRV-Tools binaries for this project")
-        set(SPIRV_TOOLS_OPT_BINARY_ROOT "${SPIRV_TOOLS_INSTALL_DIR}/lib"
-            CACHE PATH "User defined path to the SPIRV-Tools-opt binaries for this project")
-        set(SPIRV_TOOLS_INCLUDE_DIR "${SPIRV_TOOLS_INSTALL_DIR}/include" CACHE PATH "Path to spirv tools headers")
-        set(SPIRV_TOOLS_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
-        set(SPIRV_TOOLS_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
-        set(SPIRV_TOOLS_OPT_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
-        set(SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
-
-        find_library(SPIRV_TOOLS_LIB NAMES SPIRV-Tools HINTS ${SPIRV_TOOLS_SEARCH_PATH})
-        find_library(SPIRV_TOOLS_OPT_LIB NAMES SPIRV-Tools-opt HINTS ${SPIRV_TOOLS_OPT_SEARCH_PATH})
-
-        set(SPIRV_TOOLS_LIBRARIES ${SPIRV_TOOLS_OPT_LIB} ${SPIRV_TOOLS_LIB})
-    else()
-        set(SPIRV_TOOLS_LIBRARIES SPIRV-Tools SPIRV-Tools-opt)
-        set(SPIRV_TOOLS_INCLUDE_DIR "${spirv-tools_SOURCE_DIR}/include" CACHE PATH "Path to spirv tools headers")
-    endif()
-endif()
-
 # Generate dependent helper files ------------------------------------------------------------------------------------------------
 
 set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/scripts")
@@ -345,6 +287,7 @@ add_library(VkLayer_utils
             layers/vk_layer_extension_utils.cpp
             layers/vk_layer_utils.cpp
             layers/vk_format_utils.cpp)
+list(APPEND VVL_COMPILED_TARGETS VkLayer_utils)
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
 set_target_properties(VkLayer_utils PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
 if (VVL_ENABLE_ASAN)
@@ -449,3 +392,73 @@ endif()
 if(BUILD_LAYERS OR BUILD_LAYER_SUPPORT_FILES)
     add_subdirectory(layers)
 endif()
+
+# Platform-specific compiler switches
+foreach (_target ${VVL_COMPILED_TARGETS})
+    option(BUILD_WERROR "Treat compiler warnings as errors" ON)
+    if(MAKE_C_COMPILER_ID MATCHES "Clang")
+        target_compile_options(${_target} PRIVATE -Wconversion
+
+                            # TODO These warnings also get turned on with -Wconversion in some versions of clang.
+                            #      Leave off until further investigation.
+                            -Wno-sign-conversion
+                            -Wno-shorten-64-to-32
+                            -Wno-string-conversion
+                            -Wno-implicit-int-conversion
+                            -Wno-enum-enum-conversion)
+
+    endif()
+    if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+        target_compile_options(${_target} PRIVATE -Wall
+                            -Wextra
+                            -Wno-unused-parameter
+                            -Wno-missing-field-initializers
+                            -fno-strict-aliasing
+                            -fno-builtin-memcmp
+                            -fvisibility=hidden)
+
+        # Treat warnings as errors for versions of GCC and c++11-compliant Clang versions that are shipped on Ubuntu 18.04 or older.
+        if(BUILD_WERROR)
+            if ((CMAKE_COMPILER_IS_GNUCXX AND NOT (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.3.0)) OR
+               (("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0)))
+                target_compile_options(${_target} PRIVATE -Werror)
+            endif()
+        endif()
+
+        set(CMAKE_C_STANDARD 99)
+
+        # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
+        # all compilers until they all accept the C++17 standard.
+        if(CMAKE_COMPILER_IS_GNUCC AND NOT (CMAKE_CXX_COMPILER_VERSION LESS 7.1))
+            target_compile_options(${_target} PRIVATE -Wimplicit-fallthrough=0)
+        endif()
+    elseif(MSVC)
+        if(BUILD_WERROR)
+            # Treat warnings as errors
+            target_compile_options(${_target} PRIVATE "/WX")
+        endif()
+        target_compile_options(${_target} PRIVATE
+            # Warn about nested declarations
+            "/w34456"
+            # Warn about potentially uninitialized variables
+            "/w34701"
+            "/w34703"
+            # Warn about different indirection types.
+            "/w34057"
+            # Warn about signed/unsigned mismatch.
+            "/w34245")
+    endif()
+
+    if(MAKE_C_COMPILER_ID MATCHES "Clang")
+        target_compile_options(${_target} PRIVATE -Wconversion
+
+                            # TODO These warnings also get turned on with -Wconversion in some versions of clang.
+                            #      Leave off until further investigation.
+                            -Wno-sign-conversion
+                            -Wno-shorten-64-to-32
+                            -Wno-string-conversion
+                            -Wno-implicit-int-conversion
+                            -Wno-enum-enum-conversion)
+
+    endif()
+endforeach()

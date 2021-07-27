@@ -81,6 +81,7 @@ set(TARGET_NAMES
 # System-specific macro to create a library target.
 macro(AddVkLayer target LAYER_COMPILE_DEFINITIONS)
     add_library(VkLayer_${target} SHARED ${ARGN})
+    list(APPEND VVL_COMPILED_TARGETS VkLayer_${target})
     set_target_properties(VkLayer_${target} PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
     target_compile_definitions(VkLayer_${target} PUBLIC ${LAYER_COMPILE_DEFINITIONS})
     target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
@@ -291,9 +292,6 @@ if(BUILD_LAYERS)
     endif()
 
     # Khronos validation additional dependencies
-    target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_INCLUDE_DIR})
-    target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
-    target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
     if(INSTRUMENT_OPTICK)
         target_include_directories(VkLayer_khronos_validation PRIVATE ${OPTICK_SOURCE_DIR})
     endif()
