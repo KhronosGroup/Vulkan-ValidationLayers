@@ -1360,7 +1360,7 @@ class ValidationStateTracker : public ValidationObject {
         }
 
       private:
-        VkDeviceSize free_ = 0;
+        VkDeviceSize free_ = 1U << 20; // start at 1mb to leave room for a NULL address
     };
     FakeAllocator fake_memory;
 };
