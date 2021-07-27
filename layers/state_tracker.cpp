@@ -1291,6 +1291,16 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.shader_atomic_float2_features = *shader_atomic_float2_features;
     }
 
+    const auto *present_id_features = LvlFindInChain<VkPhysicalDevicePresentIdFeaturesKHR>(pCreateInfo->pNext);
+    if (present_id_features) {
+        state_tracker->enabled_features.present_id_features = *present_id_features;
+    }
+
+    const auto *present_wait_features = LvlFindInChain<VkPhysicalDevicePresentWaitFeaturesKHR>(pCreateInfo->pNext);
+    if (present_wait_features) {
+        state_tracker->enabled_features.present_wait_features = *present_wait_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
@@ -4314,6 +4324,7 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         }
     }
 
+    const auto *present_id_info = LvlFindInChain<VkPresentIdKHR>(pPresentInfo->pNext);
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         // Note: this is imperfect, in that we can get confused about what did or didn't succeed-- but if the app does that, it's
         // confused itself just as much.
@@ -4323,6 +4334,11 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         auto swapchain_data = GetSwapchainState(pPresentInfo->pSwapchains[i]);
         if (swapchain_data) {
             swapchain_data->PresentImage(pPresentInfo->pImageIndices[i]);
+            if (present_id_info) {
+                if (i < present_id_info->swapchainCount && present_id_info->pPresentIds[i] > swapchain_data->max_present_id) {
+                    swapchain_data->max_present_id = present_id_info->pPresentIds[i];
+                }
+            }
         }
     }
     // Note: even though presentation is directed to a queue, there is no direct ordering between QP and subsequent work, so QP (and

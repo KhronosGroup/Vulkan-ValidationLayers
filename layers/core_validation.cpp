@@ -13562,6 +13562,33 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                              present_times_info->swapchainCount, pPresentInfo->swapchainCount);
             }
         }
+
+        const auto *present_id_info = LvlFindInChain<VkPresentIdKHR>(pPresentInfo->pNext);
+        if (present_id_info) {
+            if (!enabled_features.present_id_features.presentId) {
+                skip |= LogError(pPresentInfo->pSwapchains[0], kVUID_Features_PresentIdKHR,
+                    "vkQueuePresentKHR(): VkPresentIdKHR structure in VkPresentInfoKHR structure, but presentId feature is not enabled");
+            }
+            if (pPresentInfo->swapchainCount != present_id_info->swapchainCount) {
+                skip |= LogError(pPresentInfo->pSwapchains[0], "VUID-VkPresentIdKHR-swapchainCount-04998",
+                                 "vkQueuePresentKHR(): VkPresentIdKHR.swapchainCount is %" PRIu32
+                                 " but pPresentInfo->swapchainCount is %" PRIu32
+                                 ". VkPresentIdKHR.swapchainCount must be the same value as VkPresentInfoKHR::swapchainCount",
+                                 present_id_info->swapchainCount, pPresentInfo->swapchainCount);
+            }
+            for (uint32_t i = 0; i < present_id_info->swapchainCount; i++) {
+                const auto swapchain_state = GetSwapchainState(pPresentInfo->pSwapchains[i]);
+                if ((present_id_info->pPresentIds[i] != 0) &&
+                    (present_id_info->pPresentIds[i] <= swapchain_state->max_present_id)) {
+                    skip |= LogError(pPresentInfo->pSwapchains[i], "VUID-VkPresentIdKHR-presentIds-04999",
+                                     "vkQueuePresentKHR(): VkPresentIdKHR.pPresentId[%" PRIu32 "] is %" PRIu64
+                                     " and the largest presentId sent for this swapchain is %" PRIu64
+                                     ". Each presentIds entry must be greater than any previous presentIds entry passed for the "
+                                     "associated pSwapchains entry",
+                                     i, present_id_info->pPresentIds[i], swapchain_state->max_present_id);
+                }
+            }
+        }
     }
 
     return skip;
@@ -13666,6 +13693,22 @@ bool CoreChecks::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAc
     skip |= ValidateAcquireNextImage(device, CMD_VERSION_2, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
                                      pAcquireInfo->fence, pImageIndex, "vkAcquireNextImage2KHR",
                                      "VUID-VkAcquireNextImageInfoKHR-semaphore-03266");
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout) const {
+    bool skip = false;
+    if (!enabled_features.present_wait_features.presentWait) {
+        skip |= LogError(swapchain, kVUID_Features_PresentWaitKHR,
+            "vkWaitForPresentKHR(): VkWaitForPresent called but presentWait feature is not enabled");
+    }
+    const auto swapchain_state = GetSwapchainState(swapchain);
+    if (swapchain_state) {
+        if (swapchain_state->retired) {
+            skip |= LogError(swapchain, "VUID-vkWaitForPresentKHR-swapchain-04997",
+                "vkWaitForPresentKHR() called with a retired swapchain.");
+        }
+    }
     return skip;
 }
 
