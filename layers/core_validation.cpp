@@ -12384,6 +12384,17 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
             }
         }
+
+        const auto bind_image_memory_device_group = LvlFindInChain<VkBindImageMemoryDeviceGroupInfo>(bind_info.pNext);
+        if (bind_image_memory_device_group) {
+            if (bind_image_memory_device_group->deviceIndexCount > 0 &&
+                bind_image_memory_device_group->splitInstanceBindRegionCount > 0) {
+                skip |= LogError(bind_info.image, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01633",
+                                 "%s: VkBindImageMemoryDeviceGroupInfo in pNext of pBindInfos[%" PRIu32
+                                 "] has both deviceIndexCount and splitInstanceBindRegionCount greater than 0.",
+                                 error_prefix, i);
+            }
+        }
     }
 
     // Check to make sure all disjoint planes were bound
