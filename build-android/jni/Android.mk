@@ -99,6 +99,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vklayertests_gpu.cpp \
                    $(SRC_DIR)/tests/vklayertests_best_practices.cpp \
                    $(SRC_DIR)/tests/vklayertests_arm_best_practices.cpp \
+                   $(SRC_DIR)/tests/vklayertests_wsi.cpp \
                    $(SRC_DIR)/tests/vkpositivelayertests.cpp \
                    $(SRC_DIR)/tests/vksyncvaltests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
@@ -135,6 +136,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vklayertests_gpu.cpp \
                    $(SRC_DIR)/tests/vklayertests_best_practices.cpp \
                    $(SRC_DIR)/tests/vklayertests_arm_best_practices.cpp \
+                   $(SRC_DIR)/tests/vklayertests_wsi.cpp \
                    $(SRC_DIR)/tests/vkpositivelayertests.cpp \
                    $(SRC_DIR)/tests/vksyncvaltests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
