@@ -1405,6 +1405,9 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator,
                                                     VkPipelineLayout *pPipelineLayout) const;
+
+    bool ValidatePipelineShaderStageCreateInfo(const char *func_name, const char *msg,
+                                                const VkPipelineShaderStageCreateInfo *pCreateInfo) const;
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) const;
