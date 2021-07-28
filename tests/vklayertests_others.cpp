@@ -10512,12 +10512,19 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers.data(), offsets.data(), 0, strides);
     VkRect2D scissor = {{0, 0}, {1, 1}};
     vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2EXT-pStrides-03363");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-viewportCount-03419");
     vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
+
     VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
     vkCmdSetViewportWithCountEXT(commandBuffer.handle(), 1, &viewport);
+    strides[0] = 1;
+    vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers.data(), offsets.data(), 0, strides);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2EXT-pStrides-06209");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
     strides[0] = 4;
     vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers.data(), offsets.data(), 0, strides);
 

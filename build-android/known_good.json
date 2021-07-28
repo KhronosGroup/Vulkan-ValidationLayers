@@ -16,25 +16,25 @@
       "name" : "Vulkan-Headers",
       "url" : "https://github.com/KhronosGroup/Vulkan-Headers.git",
       "sub_dir" : "Vulkan-Headers",
-      "commit" : "v1.2.185"
+      "commit" : "v1.2.186"
     },
     {
       "name" : "Vulkan-Tools",
       "url" : "https://github.com/KhronosGroup/Vulkan-Tools.git",
       "sub_dir" : "Vulkan-Tools",
-      "commit" : "v1.2.185"
+      "commit" : "v1.2.186"
     },
     {
       "name" : "SPIRV-Tools",
       "url" : "https://github.com/KhronosGroup/SPIRV-Tools.git",
       "sub_dir" : "shaderc/third_party/spirv-tools",
-      "commit" : "5dd2f76918bb2d0d67628e338f60f724f3e02e13"
+      "commit" : "7dadcf9c76a9109a5a493a416ae59c2b3c02070f"
     },
     {
       "name" : "SPIRV-Headers",
       "url" : "https://github.com/KhronosGroup/SPIRV-Headers.git",
       "sub_dir" : "shaderc/third_party/spirv-tools/external/spirv-headers",
-      "commit" : "07f259e68af3a540038fa32df522554e74f53ed5"
+      "commit" : "e7b49d7fb59808a650618e0a4008d4bae927e112"
     },
     {
       "name": "robin-hood-hashing",
