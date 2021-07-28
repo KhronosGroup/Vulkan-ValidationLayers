@@ -4731,9 +4731,10 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
+        const char *vuid = device_extensions.vk_khr_get_physical_device_properties2 ? "VUID-VkBufferCreateInfo-sharingMode-01419"
+                                                                                    : "VUID-VkBufferCreateInfo-sharingMode-01391";
         skip |= ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                                    "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices",
-                                                    "VUID-VkBufferCreateInfo-sharingMode-01419");
+                                                    "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices", vuid);
     }
 
     if ((pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) != 0) {
