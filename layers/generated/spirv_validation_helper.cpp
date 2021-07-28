@@ -100,29 +100,20 @@ struct RequiredSpirvInfo {
 
 // clang-format off
 static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilities = {
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityAtomicFloat16AddEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderBufferFloat16AtomicAdd, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityAtomicFloat16AddEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderSharedFloat16AtomicAdd, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityAtomicFloat16MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderBufferFloat16AtomicMinMax, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityAtomicFloat16MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderSharedFloat16AtomicMinMax, nullptr, ""}},
+    {spv::CapabilityAtomicFloat16AddEXT, {0, &VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderBufferFloat16AtomicAdd, nullptr, ""}},
+    {spv::CapabilityAtomicFloat16AddEXT, {0, &VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderSharedFloat16AtomicAdd, nullptr, ""}},
+    {spv::CapabilityAtomicFloat16MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderBufferFloat16AtomicMinMax, nullptr, ""}},
+    {spv::CapabilityAtomicFloat16MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderSharedFloat16AtomicMinMax, nullptr, ""}},
     {spv::CapabilityAtomicFloat32AddEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderBufferFloat32AtomicAdd, nullptr, ""}},
     {spv::CapabilityAtomicFloat32AddEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderSharedFloat32AtomicAdd, nullptr, ""}},
     {spv::CapabilityAtomicFloat32AddEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderImageFloat32AtomicAdd, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityAtomicFloat32MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderBufferFloat32AtomicMinMax, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityAtomicFloat32MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderSharedFloat32AtomicMinMax, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityAtomicFloat32MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderImageFloat32AtomicMinMax, nullptr, ""}},
+    {spv::CapabilityAtomicFloat32MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderBufferFloat32AtomicMinMax, nullptr, ""}},
+    {spv::CapabilityAtomicFloat32MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderSharedFloat32AtomicMinMax, nullptr, ""}},
+    {spv::CapabilityAtomicFloat32MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderImageFloat32AtomicMinMax, nullptr, ""}},
     {spv::CapabilityAtomicFloat64AddEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderBufferFloat64AtomicAdd, nullptr, ""}},
     {spv::CapabilityAtomicFloat64AddEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderSharedFloat64AtomicAdd, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityAtomicFloat64MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderBufferFloat64AtomicMinMax, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityAtomicFloat64MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderSharedFloat64AtomicMinMax, nullptr, ""}},
+    {spv::CapabilityAtomicFloat64MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderBufferFloat64AtomicMinMax, nullptr, ""}},
+    {spv::CapabilityAtomicFloat64MinMaxEXT, {0, &VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderSharedFloat64AtomicMinMax, nullptr, ""}},
     {spv::CapabilityClipDistance, {0, &VkPhysicalDeviceFeatures::shaderClipDistance, nullptr, ""}},
     {spv::CapabilityComputeDerivativeGroupLinearNV, {0, &VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupLinear, nullptr, ""}},
     {spv::CapabilityComputeDerivativeGroupQuadsNV, {0, &VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads, nullptr, ""}},
@@ -342,10 +333,18 @@ static const std::unordered_multimap<std::string, RequiredSpirvInfo> spirvExtens
 
 static inline const char* string_SpvCapability(uint32_t input_value) {
     switch ((spv::Capability)input_value) {
+         case spv::CapabilityAtomicFloat16AddEXT:
+            return "AtomicFloat16AddEXT";
+         case spv::CapabilityAtomicFloat16MinMaxEXT:
+            return "AtomicFloat16MinMaxEXT";
          case spv::CapabilityAtomicFloat32AddEXT:
             return "AtomicFloat32AddEXT";
+         case spv::CapabilityAtomicFloat32MinMaxEXT:
+            return "AtomicFloat32MinMaxEXT";
          case spv::CapabilityAtomicFloat64AddEXT:
             return "AtomicFloat64AddEXT";
+         case spv::CapabilityAtomicFloat64MinMaxEXT:
+            return "AtomicFloat64MinMaxEXT";
          case spv::CapabilityClipDistance:
             return "ClipDistance";
          case spv::CapabilityComputeDerivativeGroupLinearNV:

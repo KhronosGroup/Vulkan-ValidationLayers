@@ -714,12 +714,11 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     vertex_buffer_stride = static_cast<uint32_t>(current_vtx_bfr_binding_info[vertex_binding].stride);
                     uint32_t attribute_binding_extent =
                         attribute_description.offset + FormatElementSize(attribute_description.format);
-                    if (vertex_buffer_stride < attribute_binding_extent) {
-                        skip |=
-                            LogError(pCB->commandBuffer(), "VUID-vkCmdBindVertexBuffers2EXT-pStrides-03363",
-                                     "The pStrides[%u] (%u) parameter in the last call to vkCmdBindVertexBuffers2EXT is less than "
-                                     "the extent of the binding for attribute %zu (%u).",
-                                     vertex_binding, vertex_buffer_stride, i, attribute_binding_extent);
+                    if (vertex_buffer_stride != 0 && vertex_buffer_stride < attribute_binding_extent) {
+                        skip |= LogError(pCB->commandBuffer(), "VUID-vkCmdBindVertexBuffers2EXT-pStrides-06209",
+                                         "The pStrides[%u] (%u) parameter in the last call to vkCmdBindVertexBuffers2EXT is not 0 "
+                                         "and less than the extent of the binding for attribute %zu (%u).",
+                                         vertex_binding, vertex_buffer_stride, i, attribute_binding_extent);
                     }
                 }
                 const auto vertex_buffer_offset = current_vtx_bfr_binding_info[vertex_binding].offset;

@@ -100,12 +100,6 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
         self.capabilityExcludeList = [
             # Not in SPIRV-Headers yet
             'RayTracingMotionBlurNV',
-            # vk.xml currently lists the wrong features struct for these capabilities
-            # https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4721
-            'AtomicFloat16AddEXT',
-            'AtomicFloat16MinMaxEXT',
-            'AtomicFloat32MinMaxEXT',
-            'AtomicFloat64MinMaxEXT',
         ]
 
         # This is a list that maps the Vulkan struct a feature field is with the internal
