@@ -28,6 +28,7 @@
 
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
+#include "core_validation_error_enums.h"
 
 TEST_F(VkLayerTest, PSOPolygonModeInvalid) {
     TEST_DESCRIPTION("Attempt to use invalid polygon fill modes.");
@@ -11481,4 +11482,111 @@ TEST_F(VkLayerTest, ValidateTessellationShaderEnabled) {
         std::vector<string>{"VUID-VkPipelineShaderStageCreateInfo-stage-00705", "VUID-VkShaderModuleCreateInfo-pCode-01091",
                             "VUID-VkShaderModuleCreateInfo-pCode-01091",
                             "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430"});
+}
+
+TEST_F(VkLayerTest, SubpassInputWithoutFormat) {
+    TEST_DESCRIPTION("Non-InputAttachment shader input with unknown image format");
+
+    // It appears it would be difficult to hit this particular case without also hitting other VUIDs first
+    m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
+    m_errorMonitor->SetUnexpectedError(kVUID_Features_shaderStorageImageReadWithoutFormat_NonReadable);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Features_shaderStorageImageReadWithoutFormat);
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s test requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceFeatures features;
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    features.shaderStorageImageReadWithoutFormat = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+
+    const std::string fsSource = R"(
+               OpCapability Shader
+               OpCapability StorageImageReadWithoutFormat
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %img
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 460
+               OpName %main "main"
+               OpName %color "color"
+               OpName %img "img"
+               OpDecorate %color Location 0
+               OpDecorate %img DescriptorSet 0
+               OpDecorate %img Binding 0
+               OpDecorate %img NonWritable
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+               ;
+               ; Image has unknown format, but dimension != SubpassData and
+               ; shaderStorageImageReadWithoutFormat == VK_FALSE, which is invalid
+               ;
+         %10 = OpTypeImage %float 2D 0 0 0 2 Unknown
+
+%_ptr_UniformConstant_10 = OpTypePointer UniformConstant %10
+        %img = OpVariable %_ptr_UniformConstant_10 UniformConstant
+        %int = OpTypeInt 32 1
+      %v2int = OpTypeVector %int 2
+      %int_0 = OpConstant %int 0
+         %17 = OpConstantComposite %v2int %int_0 %int_0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %13 = OpLoad %10 %img
+         %18 = OpImageRead %v4float %13 %17
+               OpStore %color %18
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main", nullptr, SPV_ENV_UNIVERSAL_1_5);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
+    const VkPipelineLayoutObj pl(m_device, {&dsl});
+
+    VkAttachmentDescription descs[2] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
+         VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
+         VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
+    };
+    VkAttachmentReference color = {
+        0,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+    VkAttachmentReference input = {
+        1,
+        VK_IMAGE_LAYOUT_GENERAL,
+    };
+
+    VkSubpassDescription sd = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &input, 1, &color, nullptr, nullptr, 0, nullptr};
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, descs, 1, &sd, 0, nullptr};
+    VkRenderPass rp;
+    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
+    ASSERT_VK_SUCCESS(err);
+
+    pipe.CreateVKPipeline(pl.handle(), rp);
+
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
