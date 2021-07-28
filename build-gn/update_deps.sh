@@ -19,7 +19,6 @@ cd "$(dirname $0)/.."
 
 # Use update_deps.py to update source dependencies from /scripts/known_good.json
 scripts/update_deps.py --dir="external" --no-build
-(cd external/glslang; ./update_glslang_sources.py)
 
 # Use gclient to update toolchain dependencies from /build-gn/DEPS (from chromium)
 cat << EOF > .gclient

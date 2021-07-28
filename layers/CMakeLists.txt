@@ -291,7 +291,7 @@ if(BUILD_LAYERS)
     endif()
 
     # Khronos validation additional dependencies
-    target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
+    target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_INCLUDE_DIR})
     target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
     target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
     if(INSTRUMENT_OPTICK)

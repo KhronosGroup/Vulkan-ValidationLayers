@@ -116,28 +116,27 @@ the validation layers. You must also take note of the headers' install
 directory and pass it on the CMake command line for building this repository,
 as described below.
 
-#### glslang
-
-This repository has a required dependency on the
-[glslang repository](https://github.com/KhronosGroup/glslang).
-The glslang repository is required because it contains components that are
-required to build the validation layers. You must clone the glslang repository
-and build its `install` target. Follow the build instructions in the glslang
-[README.md](https://github.com/KhronosGroup/glslang/blob/master/README.md)
-file. Ensure that the `update_glslang_sources.py` script has been run as part
-of building glslang. You must also take note of the glslang install directory
-and pass it on the CMake command line for building this repository, as
-described below.
-
 #### SPIRV-Headers
 
 This repository has a required dependency on the
-[SPIRV-headers repository](https://github.com/KhronosGroup/SPIRV-Headers).
-The SPIRV-headers repository is required because it supports components that are
-required to build the validation layers. You must clone the SPIRV-headers repository
-and build its `install` target. Follow the build instructions in the SPIRV-headers
+[SPIRV-Headers repository](https://github.com/KhronosGroup/SPIRV-Headers).
+The SPIRV-Headers repository is required because it supports components that are
+required to build the validation layers. You must clone the SPIRV-Headers repository
+and build its `install` target. Follow the build instructions in the SPIRV-Headers
 [README.md](https://github.com/KhronosGroup/SPIRV-Headers/blob/master/README.md)
 file. You must also take note of the SPIRV-headers install directory
+and pass it on the CMake command line for building this repository, as
+described below.
+
+#### SPIRV-Tools
+
+This repository has a required dependency on the
+[SPIRV-Tools repository](https://github.com/KhronosGroup/SPIRV-Tools).
+The SPIRV-Tools repository is required because it contains components that are
+required to build the validation layers. You must clone the SPIRV-Tools repository
+and build its `install` target. Follow the build instructions in the SPIRV-Tools
+[README.md](https://github.com/KhronosGroup/SPIRV-Tools/blob/master/README.md)
+file. You must also take note of the SPIRV-Tools install directory
 and pass it on the CMake command line for building this repository, as
 described below.
 
@@ -148,6 +147,17 @@ This is a header-only reimplementation of `std::unordered_map` and `std::unorder
 which provides substantial performance improvements on all platforms.
 Since there is nothing to build, the install directory for this repository is the
 directory where the the repository is cloned.
+
+#### glslang
+
+The validation layer tests depend on the
+[glslang repository](https://github.com/KhronosGroup/glslang).
+You must clone the glslang repository
+and build its `install` target. Follow the build instructions in the glslang
+[README.md](https://github.com/KhronosGroup/glslang/blob/master/README.md)
+file. You must also take note of the glslang install directory
+and pass it on the CMake command line for building this repository, as
+described below.
 
 #### Google Test
 
@@ -451,6 +461,7 @@ location of the loader's install directory:
     cmake -A x64 -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
                  -DVULKAN_LOADER_INSTALL_DIR=absolute_path_to_install_dir \
                  -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
+                 -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
                  -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
                  -DROBIN_HOOD_HASHING_INSTALL_DIR=absolute_path_to_install_dir \
                  ..

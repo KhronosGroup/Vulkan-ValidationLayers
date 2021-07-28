@@ -7,9 +7,6 @@
       "build_dir" : "glslang/build",
       "install_dir" : "glslang/build/install",
       "commit" : "ae2a562936cc8504c9ef2757cceaff163147834f",
-      "prebuild" : [
-        "python update_glslang_sources.py"
-      ],
       "cmake_options" : [
         "-DUSE_CCACHE=ON"
       ]
@@ -31,6 +28,17 @@
       "commit": "07f259e68af3a540038fa32df522554e74f53ed5"
     },
     {
+      "name": "SPIRV-Tools",
+      "url": "https://github.com/KhronosGroup/SPIRV-Tools.git",
+      "sub_dir": "SPIRV-Tools",
+      "build_dir": "SPIRV-Tools/build",
+      "install_dir": "SPIRV-Tools/build/install",
+      "cmake_options": [
+        "-DSPIRV-Headers_SOURCE_DIR={repo_dir}/../SPIRV-Headers"
+      ],
+      "commit": "5dd2f76918bb2d0d67628e338f60f724f3e02e13"
+    },
+    {
       "name": "robin-hood-hashing",
       "url": "https://github.com/martinus/robin-hood-hashing.git",
       "sub_dir": "robin-hood-hashing",
@@ -44,6 +52,7 @@
       "glslang" : "GLSLANG_INSTALL_DIR",
       "Vulkan-Headers" : "VULKAN_HEADERS_INSTALL_DIR",
       "SPIRV-Headers" : "SPIRV_HEADERS_INSTALL_DIR",
+      "SPIRV-Tools" : "SPIRV_TOOLS_INSTALL_DIR",
       "robin-hood-hashing" : "ROBIN_HOOD_HASHING_INSTALL_DIR"
   }
 }
