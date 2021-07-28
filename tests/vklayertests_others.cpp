@@ -2204,6 +2204,11 @@ TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
 
 TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
     // Miscellaneous queueFamilyIndex validation tests
+    bool get_physical_device_properties2 = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (get_physical_device_properties2) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     VkBufferCreateInfo buffCI = {};
@@ -2219,12 +2224,14 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
     buffCI.pQueueFamilyIndices = qfi;
     buffCI.sharingMode = VK_SHARING_MODE_CONCURRENT;  // qfi only matters in CONCURRENT mode
 
+    const char *vuid = (get_physical_device_properties2) ? "VUID-VkBufferCreateInfo-sharingMode-01419"
+                                                         : "VUID-VkBufferCreateInfo-sharingMode-01391";
     // Test for queue family index out of range
-    CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-sharingMode-01419");
+    CreateBufferTest(*this, &buffCI, vuid);
 
     // Test for non-unique QFI in array
     qfi[0] = 0;
-    CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-sharingMode-01419");
+    CreateBufferTest(*this, &buffCI, vuid);
 
     if (m_device->queue_props.size() > 2) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pSubmits-04626");
