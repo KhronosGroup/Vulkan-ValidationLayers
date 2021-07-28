@@ -11519,3 +11519,27 @@ TEST_F(VkLayerTest, CreatePipelineWithDuplicatedSpecializationConstantID) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationInfo-constantID-04911");
 }
+
+TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
+    TEST_DESCRIPTION("Test Subgroub Size Control");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto subgroup_size_control = LvlInitStruct<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>();
+
+    CreateComputePipelineHelper cs_pipeline(*this);
+    cs_pipeline.InitInfo();
+    cs_pipeline.InitState();
+    cs_pipeline.LateBindPipelineInfo();
+    cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
+    cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02754");
+    cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+    m_errorMonitor->VerifyFound();
+}
