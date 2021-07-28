@@ -1,4 +1,4 @@
-# Copyright (c) 2019 LunarG, Inc.
+# Copyright (c) 2019,2021 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,4 +17,4 @@ spirv_tools_standalone = false
 
 # Paths to SPIRV-Tools dependencies
 spirv_tools_googletest_dir = "//external/googletest"
-spirv_tools_spirv_headers_dir = "//external/glslang/External/spirv-tools/external/spirv-headers"
+spirv_tools_spirv_headers_dir = "//external/SPIRV-Headers"

@@ -14,7 +14,7 @@
 
 # Paths to validation layer dependencies
 vulkan_headers_dir = "//external/Vulkan-Headers"
-vvl_spirv_tools_dir = "//external/glslang/External/spirv-tools"
+vvl_spirv_tools_dir = "//external/SPIRV-Tools"
 vvl_glslang_dir = "//external/glslang/"
 robin_hood_headers_dir = "//external/robin-hood-hashing/src/include"
 

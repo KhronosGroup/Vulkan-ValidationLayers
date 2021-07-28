@@ -114,7 +114,7 @@ target_include_directories(vk_layer_validation_tests
                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
                                   ${PROJECT_SOURCE_DIR}/layers
                                   ${PROJECT_SOURCE_DIR}/layers/generated
-                                  ${GLSLANG_SPIRV_INCLUDE_DIR}
+                                  ${GLSLANG_INCLUDE_DIR}
                                   ${SPIRV_TOOLS_INCLUDE_DIR}
                                   ${SPIRV_HEADERS_INCLUDE_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}
@@ -149,7 +149,8 @@ if(WIN32)
     target_link_libraries(vk_layer_validation_tests
                           PRIVATE gtest
                                   gtest_main
-                                  ${GLSLANG_LIBRARIES})
+                                  ${GLSLANG_LIBRARIES}
+                                  ${SPIRV_TOOLS_LIBRARIES})
 else()
     target_compile_options(vk_layer_validation_tests PRIVATE "-Wno-sign-compare")
     if(BUILD_WSI_XCB_SUPPORT OR BUILD_WSI_XLIB_SUPPORT)
@@ -159,13 +160,15 @@ else()
                                       gtest
                                       gtest_main
                                       dl
-                                      ${GLSLANG_LIBRARIES})
+                                      ${GLSLANG_LIBRARIES}
+                                      ${SPIRV_TOOLS_LIBRARIES})
     else()
         target_link_libraries(vk_layer_validation_tests
                               PRIVATE gtest
                                       gtest_main
                                       dl
-                                      ${GLSLANG_LIBRARIES})
+                                      ${GLSLANG_LIBRARIES}
+                                      ${SPIRV_TOOLS_LIBRARIES})
     endif()
 endif()
 

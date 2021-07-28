@@ -300,6 +300,9 @@ def command_output(cmd, directory, fail_ok=False):
         print(stdout)
     return stdout
 
+def escape(path):
+    return path.replace('\\', '\\\\')
+
 class GoodRepo(object):
     """Represents a repository at a known-good commit."""
 
@@ -451,7 +454,7 @@ class GoodRepo(object):
 
         # Add any CMake options
         for option in self.cmake_options:
-            cmake_cmd.append(option)
+            cmake_cmd.append(escape(option.format(**self.__dict__)))
 
         # Set build config for single-configuration generators
         if platform.system() == 'Linux' or platform.system() == 'Darwin':
@@ -586,8 +589,6 @@ def CreateHelper(args, repos, filename):
     This information is baked into the CMake files of the home repo and so
     this dictionary is kept with the repo via the json file.
     """
-    def escape(path):
-        return path.replace('\\', '\\\\')
     install_names = GetInstallNames(args)
     with open(filename, 'w') as helper_file:
         for repo in repos:
