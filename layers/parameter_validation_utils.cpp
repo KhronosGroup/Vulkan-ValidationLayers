@@ -1560,6 +1560,26 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice de
     return skip;
 }
 
+bool StatelessValidation::ValidatePipelineShaderStageCreateInfo(const char *func_name, const char *msg,
+                                                                 const VkPipelineShaderStageCreateInfo *pCreateInfo) const {
+    bool skip = false;
+
+    const auto *required_subgroup_size_features =
+        LvlFindInChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(pCreateInfo->pNext);
+
+    if (required_subgroup_size_features) {
+        if ((pCreateInfo->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0) {
+            skip |= LogError(
+                device, "VUID-VkPipelineShaderStageCreateInfo-pNext-02754",
+                "%s(): %s->flags (0x%x) includes VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT while "
+                "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT is included in the pNext chain.",
+                func_name, msg, pCreateInfo->flags);
+        }
+    }
+
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache,
                                                                         uint32_t createInfoCount,
                                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
@@ -1982,6 +2002,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pStages[%i].pName", ParameterName::IndexVector{i, stage_index}),
                         "VUID-VkGraphicsPipelineCreateInfo-pStages-parameter", pCreateInfos[i].pStages[stage_index].pName);
+
+                    std::stringstream msg;
+                    msg << "pCreateInfos[%" << i << "].pStages[%" << stage_index << "]";
+                    ValidatePipelineShaderStageCreateInfo("vkCreateGraphicsPipelines", msg.str().c_str(),
+                                                           &pCreateInfos[i].pStages[stage_index]);
                 }
             }
 
@@ -3214,6 +3239,10 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                              "VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV.",
                              i, flags);
         }
+
+        std::stringstream msg;
+        msg << "pCreateInfos[%" << i << "].stage";
+        ValidatePipelineShaderStageCreateInfo("vkCreateComputePipelines", msg.str().c_str(), &pCreateInfos[i].stage);
     }
     return skip;
 }
@@ -5165,6 +5194,11 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
     bool skip = false;
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
+        for (uint32_t stage_index = 0; stage_index < pCreateInfos[i].stageCount; ++stage_index) {
+            std::stringstream msg;
+            msg << "pCreateInfos[%" << i << "].pStages[%" << stage_index << "]";
+            ValidatePipelineShaderStageCreateInfo("vkCreateRayTracingPipelinesNV", msg.str().c_str(), &pCreateInfos[i].pStages[i]);
+        }
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
             skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02969",
@@ -5289,6 +5323,12 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                          "vkCreateRayTracingPipelinesKHR: The rayTracingPipeline feature must be enabled.");
     }
     for (uint32_t i = 0; i < createInfoCount; i++) {
+        for (uint32_t stage_index = 0; stage_index < pCreateInfos[i].stageCount; ++stage_index) {
+            std::stringstream msg;
+            msg << "pCreateInfos[%" << i << "].pStages[%" << stage_index << "]";
+            ValidatePipelineShaderStageCreateInfo("vkCreateRayTracingPipelinesKHR", msg.str().c_str(),
+                                                   &pCreateInfos[i].pStages[i]);
+        }
         if (!raytracing_features || (raytracing_features && raytracing_features->rayTraversalPrimitiveCulling == VK_FALSE)) {
             if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) {
                 skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-rayTraversalPrimitiveCulling-03596",
