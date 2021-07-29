@@ -3331,6 +3331,11 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
         return true;
     }
 
+    if (!enabled_features.synchronization2_features.synchronization2) {
+        skip |= LogError(queue, "VUID-vkQueueSubmit2KHR-synchronization2-03866",
+                         "vkQueueSubmit2KHR(): Synchronization2 feature is not enabled");
+    }
+
     const auto queue_state = GetQueueState(queue);
     CommandBufferSubmitState cb_submit_state(this, "vkQueueSubmit2KHR()", queue_state);
     SemaphoreSubmitState sem_submit_state(
