@@ -1594,3 +1594,43 @@ TEST_F(VkLayerTest, ImagelessFramebufferRenderPassBeginImageView3D) {
     vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
     vk::DestroyImageView(m_device->device(), imageView3D, nullptr);
 }
+
+TEST_F(VkLayerTest, FramebufferAttachmentImageInfoPNext) {
+    TEST_DESCRIPTION("Begin render pass with missing framebuffer attachment");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) {
+        printf("%s test requires VK_KHR_imageless_framebuffer, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkFormat attachment_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkFramebufferAttachmentImageInfo fb_fdm = LvlInitStruct<VkFramebufferAttachmentImageInfo>();
+    fb_fdm.pNext = &fb_fdm;
+    fb_fdm.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    fb_fdm.width = 64;
+    fb_fdm.height = 64;
+    fb_fdm.layerCount = 1;
+    fb_fdm.viewFormatCount = 1;
+    fb_fdm.pViewFormats = &attachment_format;
+
+    VkFramebufferAttachmentsCreateInfo fb_aci_fdm = LvlInitStruct<VkFramebufferAttachmentsCreateInfo>();
+    fb_aci_fdm.attachmentImageInfoCount = 1;
+    fb_aci_fdm.pAttachmentImageInfos = &fb_fdm;
+
+    VkFramebufferCreateInfo framebufferCreateInfo = LvlInitStruct<VkFramebufferCreateInfo>(&fb_aci_fdm);
+    framebufferCreateInfo.width = 64;
+    framebufferCreateInfo.height = 64;
+    framebufferCreateInfo.layers = 1;
+    framebufferCreateInfo.renderPass = m_renderPass;
+    framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(m_framebuffer_attachments.size());
+    framebufferCreateInfo.pAttachments = m_framebuffer_attachments.data();
+
+    VkFramebuffer framebuffer;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferAttachmentImageInfo-pNext-pNext");
+    vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
+    m_errorMonitor->VerifyFound();
+}
