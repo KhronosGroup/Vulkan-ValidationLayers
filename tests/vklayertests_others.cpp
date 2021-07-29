@@ -12317,6 +12317,29 @@ TEST_F(VkLayerTest, InvalidImageCreateFlagWithPhysicalDeviceCount) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, ValidateGetPhysicalDeviceVideoFormatProperties) {
+    TEST_DESCRIPTION("Validate getting physical device video format properties.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME)) {
+        printf("%s Video queue Extension not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkPhysicalDeviceVideoFormatInfoKHR video_format_info = LvlInitStruct<VkPhysicalDeviceVideoFormatInfoKHR>();
+
+    PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR vkGetPhysicalDeviceVideoFormatPropertiesKHR =
+        (PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR)vk::GetInstanceProcAddr(instance(),
+                                                                                 "vkGetPhysicalDeviceVideoFormatPropertiesKHR");
+
+    uint32_t count;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-imageUsage-04844");
+    vkGetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &video_format_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, QueueSubmitWaitingSameSemaphore) {
     TEST_DESCRIPTION("Submit to queue with waitSemaphore that another queue is already waiting on.");
 
