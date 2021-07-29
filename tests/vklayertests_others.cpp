@@ -12316,3 +12316,22 @@ TEST_F(VkLayerTest, InvalidImageCreateFlagWithPhysicalDeviceCount) {
     vk::CreateImage(device(), &ici, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
+    TEST_DESCRIPTION("Using QueueSubmit2KHR when synchronization2 is not enabled");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    InitState();
+
+    auto fpQueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR");
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo2KHR>();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2KHR-synchronization2-03866");
+    fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+}
