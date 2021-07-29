@@ -50,7 +50,7 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
     return NormalizeSubresourceRange(create_info, init_range);
 }
 
-uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t mip_levels) {
+static uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t mip_levels) {
     // Return correct number of mip levels taking into account VK_REMAINING_MIP_LEVELS
     uint32_t mip_level_count = range->levelCount;
     if (range->levelCount == VK_REMAINING_MIP_LEVELS) {
@@ -59,7 +59,7 @@ uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t m
     return mip_level_count;
 }
 
-uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers) {
+static uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers) {
     // Return correct number of layers taking into account VK_REMAINING_ARRAY_LAYERS
     uint32_t array_layer_count = range->layerCount;
     if (range->layerCount == VK_REMAINING_ARRAY_LAYERS) {
@@ -72,26 +72,46 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image
                                                   const VkImageSubresourceRange &range) {
     VkImageSubresourceRange norm = range;
     norm.levelCount = ResolveRemainingLevels(&range, image_create_info.mipLevels);
-
-    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag bit, where <extent.depth> and
-    // <arrayLayers> can potentially alias.
-    uint32_t layer_limit = (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT))
-                               ? image_create_info.extent.depth
-                               : image_create_info.arrayLayers;
-    norm.layerCount = ResolveRemainingLayers(&range, layer_limit);
+    norm.layerCount = ResolveRemainingLayers(&range, image_create_info.arrayLayers);
 
     // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
-    VkImageAspectFlags &aspect_mask = norm.aspectMask;
     if (FormatIsMultiplane(image_create_info.format)) {
-        if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
-            aspect_mask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
-            aspect_mask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
+        if (norm.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
+            norm.aspectMask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
+            norm.aspectMask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
             if (FormatPlaneCount(image_create_info.format) > 2) {
-                aspect_mask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+                norm.aspectMask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
             }
         }
     }
     return norm;
+}
+
+static bool IsDepthSliced(const VkImageCreateInfo &image_create_info, const VkImageViewCreateInfo &create_info) {
+    return ((image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) &&
+           (create_info.viewType == VK_IMAGE_VIEW_TYPE_2D || create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+}
+
+VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
+                                                  const VkImageViewCreateInfo &create_info) {
+    auto subres_range = create_info.subresourceRange;
+
+    // if we're mapping a 3D image to a 2d image view, convert the view's subresource range to be compatible with the
+    // image's understanding of the world. From the VkImageSubresourceRange section of the Vulkan spec:
+    //
+    //     When the VkImageSubresourceRange structure is used to select a subset of the slices of a 3D image’s mip level in
+    //     order to create a 2D or 2D array image view of a 3D image created with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT,
+    //     baseArrayLayer and layerCount specify the first slice index and the number of slices to include in the created
+    //     image view. Such an image view can be used as a framebuffer attachment that refers only to the specified range
+    //     of slices of the selected mip level. However, any layout transitions performed on such an attachment view during
+    //     a render pass instance still apply to the entire subresource referenced which includes all the slices of the
+    //     selected mip level.
+    //
+    if (IsDepthSliced(image_create_info, create_info)) {
+        subres_range.baseArrayLayer = 0;
+        subres_range.layerCount = 1;
+    }
+    return NormalizeSubresourceRange(image_create_info, subres_range);
 }
 
 static VkExternalMemoryHandleTypeFlags GetExternalHandleType(const VkImageCreateInfo *pCreateInfo) {
@@ -129,7 +149,6 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       full_range{MakeImageFullRange(*pCreateInfo)},
       create_from_swapchain(GetSwapchain(pCreateInfo)),
       swapchain_image_index(0),
-      range_encoder(full_range),
       format_features(ff),
       disjoint((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
       requirements{},
@@ -156,7 +175,6 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       full_range{MakeImageFullRange(*pCreateInfo)},
       create_from_swapchain(swapchain),
       swapchain_image_index(swapchain_index),
-      range_encoder(full_range),
       format_features(ff),
       disjoint((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
       memory_requirements_checked{false, false, false},
@@ -336,7 +354,7 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
                                    VkFormatFeatureFlags ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
     : BASE_NODE(iv, kVulkanObjectTypeImageView),
       create_info(*ci),
-      normalized_subresource_range(::NormalizeSubresourceRange(im->createInfo, ci->subresourceRange)),
+      normalized_subresource_range(::NormalizeSubresourceRange(im->createInfo, *ci)),
       range_generator(im->subresource_encoder, normalized_subresource_range),
       samples(im->createInfo.samples),
       // When the image has a external format the views format must be VK_FORMAT_UNDEFINED and it is required to use a sampler
@@ -358,6 +376,24 @@ void IMAGE_VIEW_STATE::Destroy() {
         image_state = nullptr;
     }
     BASE_NODE::Destroy();
+}
+
+bool IMAGE_VIEW_STATE::IsDepthSliced() const { return ::IsDepthSliced(image_state->createInfo, create_info); }
+
+VkOffset3D IMAGE_VIEW_STATE::GetOffset() const {
+    VkOffset3D result = {0, 0, 0};
+    if (IsDepthSliced()) {
+        result.z = create_info.subresourceRange.baseArrayLayer;
+    }
+    return result;
+}
+
+VkExtent3D IMAGE_VIEW_STATE::GetExtent() const {
+    VkExtent3D result = image_state->createInfo.extent;
+    if (IsDepthSliced()) {
+        result.depth = create_info.subresourceRange.layerCount;
+    }
+    return result;
 }
 
 static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR *pCreateInfo) {

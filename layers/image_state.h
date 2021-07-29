@@ -41,8 +41,8 @@ static inline bool operator==(const VkImageSubresource &lhs, const VkImageSubres
 }
 
 VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info, const VkImageSubresourceRange &range);
-uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t mip_levels);
-uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers);
+VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
+                                                  const VkImageViewCreateInfo &view_create_info);
 
 // Transfer VkImageSubresourceRange into VkImageSubresourceLayers struct
 static inline VkImageSubresourceLayers LayersFromRange(const VkImageSubresourceRange &subresource_range) {
@@ -95,11 +95,10 @@ class IMAGE_STATE : public BINDABLE {
     bool sparse_metadata_required;       // Track if sparse metadata aspect is required for this image
     bool sparse_metadata_bound;          // Track if sparse metadata aspect is bound to this image
     const uint64_t ahb_format;           // External Android format, if provided
-    const VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers (slices), and aspects
+    const VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers, and aspects
     const VkSwapchainKHR create_from_swapchain;
     std::shared_ptr<SWAPCHAIN_NODE> bind_swapchain;
     uint32_t swapchain_image_index;
-    image_layout_map::Encoder range_encoder;
     const VkFormatFeatureFlags format_features;
     // Need to memory requirments for each plane if image is disjoint
     bool disjoint;  // True if image was created with VK_IMAGE_CREATE_DISJOINT_BIT
@@ -223,6 +222,11 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     bool OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) const;
 
     void Destroy() override;
+
+    bool IsDepthSliced() const;
+
+    VkOffset3D GetOffset() const;
+    VkExtent3D GetExtent() const;
 };
 
 struct SWAPCHAIN_IMAGE {

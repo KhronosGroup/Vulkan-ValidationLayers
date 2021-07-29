@@ -2085,8 +2085,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
 
     // KHR_maintenance1 allows rendering into 2D or 2DArray views which slice a 3D image,
     // but not binding them to descriptor sets.
-    if (image_node->createInfo.imageType == VK_IMAGE_TYPE_3D && (iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D ||
-                                                                 iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
+    if (iv_state->IsDepthSliced()) {
         *error_code = "VUID-VkDescriptorImageInfo-imageView-00343";
         *error_msg = "ImageView must not be a 2D or 2DArray view of a 3D image";
         return false;

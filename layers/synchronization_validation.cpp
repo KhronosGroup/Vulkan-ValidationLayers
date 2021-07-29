@@ -1797,6 +1797,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         }
                         if (!img_view_state) continue;
                         HazardResult hazard;
+                        // NOTE: 2D ImageViews of VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT Images are not allowed in
+                        // Descriptors, so we do not have to worry about depth slicing here.
+                        // See: VUID 00343
+                        assert(!img_view_state->IsDepthSliced());
                         const IMAGE_STATE *img_state = img_view_state->image_state.get();
                         const auto &subresource_range = img_view_state->normalized_subresource_range;
 
@@ -1922,6 +1926,10 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                             img_view_state = static_cast<const ImageDescriptor *>(descriptor)->GetImageViewState();
                         }
                         if (!img_view_state) continue;
+                        // NOTE: 2D ImageViews of VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT Images are not allowed in
+                        // Descriptors, so we do not have to worry about depth slicing here.
+                        // See: VUID 00343
+                        assert(!img_view_state->IsDepthSliced());
                         const IMAGE_STATE *img_state = img_view_state->image_state.get();
                         if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
                             const VkExtent3D extent = CastTo3D(cb_state_->activeRenderPassBeginInfo.renderArea.extent);
@@ -5833,8 +5841,9 @@ AttachmentViewGen::AttachmentViewGen(const IMAGE_VIEW_STATE *view, const VkOffse
     const auto base_address = ResourceBaseAddress(image_state);
     const auto *encoder = image_state.fragment_encoder.get();
     if (!encoder) return;
-    const VkOffset3D zero_offset = {0, 0, 0};
-    const VkExtent3D &image_extent = image_state.createInfo.extent;
+    // Get offset and extent for the view, accounting for possible depth slicing
+    const VkOffset3D zero_offset = view->GetOffset();
+    const VkExtent3D &image_extent = view->GetExtent();
     // Intentional copy
     VkImageSubresourceRange subres_range = view_->normalized_subresource_range;
     view_mask_ = subres_range.aspectMask;
