@@ -1303,6 +1303,29 @@ VkBufferTest::~VkBufferTest() {
     }
 }
 
+void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout) {
+    VkCommandPoolObj pool(device, device->graphics_queue_node_index_);
+    VkCommandBufferObj cmd_buf(device, &pool);
+
+    cmd_buf.begin();
+    VkImageMemoryBarrier layout_barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                                        nullptr,
+                                        0,
+                                        VK_ACCESS_MEMORY_READ_BIT,
+                                        VK_IMAGE_LAYOUT_UNDEFINED,
+                                        image_layout,
+                                        VK_QUEUE_FAMILY_IGNORED,
+                                        VK_QUEUE_FAMILY_IGNORED,
+                                        image,
+                                        {aspect, 0, 1, 0, 1} };
+
+    cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1,
+        &layout_barrier);
+    cmd_buf.end();
+
+    cmd_buf.QueueCommandBuffer();
+}
+
 std::unique_ptr<VkImageObj> VkArmBestPracticesLayerTest::CreateImage(VkFormat format, const uint32_t width,
                                                                      const uint32_t height,
                                                                      VkImageUsageFlags attachment_usage) {
