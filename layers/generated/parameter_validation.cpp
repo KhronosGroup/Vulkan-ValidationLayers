@@ -8539,6 +8539,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesK
             skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoFormatPropertiesKHR", ParameterName("pVideoFormatProperties[%i].pNext", ParameterName::IndexVector{ pVideoFormatPropertyIndex }), NULL, pVideoFormatProperties[pVideoFormatPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoFormatPropertiesKHR-pNext-pNext", kVUIDUndefined);
         }
     }
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties);
     return skip;
 }
 

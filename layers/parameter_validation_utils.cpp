@@ -4156,6 +4156,22 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoFormatInfoKHR *pVideoFormatInfo,
+    uint32_t *pVideoFormatPropertyCount, VkVideoFormatPropertiesKHR *pVideoFormatProperties) const {
+    bool skip = false;
+
+    if ((pVideoFormatInfo->imageUsage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
+                                         VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) == 0) {
+        skip |= LogError(physicalDevice, "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-imageUsage-04844",
+                         "vkGetPhysicalDeviceVideoFormatPropertiesKHR(): pVideoFormatInfo->imageUsage does not contain any of "
+                         "VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR, VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR, "
+                         "VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR, or VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR.");
+    }
+
+    return false;
+}
+
 bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                                               uint32_t regionCount, const VkBufferCopy *pRegions) const {
     bool skip = false;

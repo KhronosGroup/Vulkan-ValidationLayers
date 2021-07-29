@@ -1500,6 +1500,11 @@ class StatelessValidation : public ValidationObject {
                                                                       VkImageUsageFlags usage, VkImageCreateFlags flags,
                                                                       VkImageFormatProperties *pImageFormatProperties) const;
 
+    bool manual_PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                                         const VkPhysicalDeviceVideoFormatInfoKHR *pVideoFormatInfo,
+                                                                         uint32_t *pVideoFormatPropertyCount,
+                                                                         VkVideoFormatPropertiesKHR *pVideoFormatProperties) const;
+
     bool manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                              uint32_t regionCount, const VkBufferCopy *pRegions) const;
 
