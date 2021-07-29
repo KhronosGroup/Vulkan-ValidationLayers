@@ -12317,6 +12317,41 @@ TEST_F(VkLayerTest, InvalidImageCreateFlagWithPhysicalDeviceCount) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, QueueSubmitWaitingSameSemaphore) {
+    TEST_DESCRIPTION("Submit to queue with waitSemaphore that another queue is already waiting on.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (m_device->graphics_queues().size() < 2) {
+        printf("%s 2 graphics queues are needed.\n", kSkipPrefix);
+        return;
+    }
+
+    VkSemaphoreCreateInfo sem_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+
+    VkSemaphore semaphore;
+    vk::CreateSemaphore(device(), &sem_info, NULL, &semaphore);
+
+    VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    VkSubmitInfo signalSubmitInfo = LvlInitStruct<VkSubmitInfo>();
+    signalSubmitInfo.signalSemaphoreCount = 1;
+    signalSubmitInfo.pSignalSemaphores = &semaphore;
+
+    VkSubmitInfo waitSubmitInfo = LvlInitStruct<VkSubmitInfo>();
+    waitSubmitInfo.waitSemaphoreCount = 1;
+    waitSubmitInfo.pWaitSemaphores = &semaphore;
+    waitSubmitInfo.pWaitDstStageMask = &stageFlags;
+
+    VkQueue other = m_device->graphics_queues()[1]->handle();
+
+    vk::QueueSubmit(m_device->m_queue, 1, &signalSubmitInfo, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_device->m_queue, 1, &waitSubmitInfo, VK_NULL_HANDLE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pWaitSemaphores-00068");
+    vk::QueueSubmit(other, 1, &waitSubmitInfo, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     TEST_DESCRIPTION("Using QueueSubmit2KHR when synchronization2 is not enabled");
     SetTargetApiVersion(VK_API_VERSION_1_2);
