@@ -8686,6 +8686,14 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
             }
         }
     }
+    if (framebuffer_attachments_create_info) {
+        for (uint32_t i = 0; i < framebuffer_attachments_create_info->attachmentImageInfoCount; ++i) {
+            if (framebuffer_attachments_create_info->pAttachmentImageInfos[i].pNext != nullptr) {
+                skip |= LogError(device, "VUID-VkFramebufferAttachmentImageInfo-pNext-pNext",
+                                 "vkCreateFramebuffer(): VkFramebufferAttachmentsCreateInfo[%" PRIu32 "].pNext is not NULL.", i);
+            }
+        }
+    }
 
     auto rp_state = GetRenderPassState(pCreateInfo->renderPass);
     if (rp_state) {
