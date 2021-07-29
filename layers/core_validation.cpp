@@ -2971,6 +2971,24 @@ struct SemaphoreSubmitState {
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR && pSemaphore->scope == kSyncScopeExternalTemporary) {
             internal_semaphores.insert(semaphore);
         }
+        if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
+            for (const auto &q : core->queueMap) {
+                if (q.first != queue) {
+                    for (const auto &cb : q.second.submissions) {
+                        for (const auto &wait_semaphore : cb.waitSemaphores) {
+                            if (wait_semaphore.semaphore == semaphore) {
+                                const char *vuid = loc.function == core_error::Func::vkQueueSubmit
+                                                       ? "VUID-vkQueueSubmit-pWaitSemaphores-00068"
+                                                       : "VUID-vkQueueSubmit2KHR-semaphore-03871";
+                                skip |= core->LogError(objlist, vuid, "%s Queue %s is already waiting on semaphore (%s).",
+                                                       loc.Message().c_str(), core->report_data->FormatHandle(q.first).c_str(),
+                                                       core->report_data->FormatHandle(semaphore).c_str());
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return skip;
     }
 
