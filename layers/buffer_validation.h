@@ -33,9 +33,6 @@ uint32_t FullMipChainLevels(uint32_t height, uint32_t width = 1, uint32_t depth 
 uint32_t FullMipChainLevels(VkExtent3D);
 uint32_t FullMipChainLevels(VkExtent2D);
 
-uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t mip_levels);
-
-uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers);
 GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const IMAGE_STATE &image_state);
 const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, VkImage image);
 

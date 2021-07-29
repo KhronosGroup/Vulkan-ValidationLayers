@@ -1392,15 +1392,6 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
         }
     }
     auto normalized_isr = image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
-    const auto &image_create_info = image_state->createInfo;
-
-    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag bit, where <extent.depth> and
-    // <arrayLayers> can potentially alias.  When recording layout for the entire image, pre-emptively record layouts
-    // for all (potential) layer sub_resources.
-    if (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT)) {
-        normalized_isr.baseArrayLayer = 0;
-        normalized_isr.layerCount = image_create_info.extent.depth;  // Treat each depth slice as a layer subresource
-    }
 
     VkImageLayout initial_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.oldLayout);
     VkImageLayout new_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.newLayout);

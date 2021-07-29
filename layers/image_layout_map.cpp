@@ -98,7 +98,7 @@ ImageSubresourceLayoutMap::ImageSubresourceLayoutMap(const IMAGE_STATE& image_st
       initial_layout_states_() {}
 
 ImageSubresourceLayoutMap::ConstIterator ImageSubresourceLayoutMap::Begin(bool always_get_initial) const {
-    return Find(image_state_.full_range, /* skip_invalid */ true, always_get_initial);
+    return ConstIterator(layouts_, encoder_, encoder_.FullRange(), true, always_get_initial);
 }
 
 // Use the unwrapped maps from the BothMap in the actual implementation
