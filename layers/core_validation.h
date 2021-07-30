@@ -1542,6 +1542,8 @@ class CoreChecks : public ValidationStateTracker {
                                     VkEvent* pEvent) const override;
     bool PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D* pFragmentSize,
                                                      const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) const override;
+    bool PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                                  const VkBool32* pColorWriteEnables) const override;
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
