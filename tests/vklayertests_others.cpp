@@ -12393,3 +12393,42 @@ TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTRectangleCount) {
+    TEST_DESCRIPTION("Test CmdSetDiscardRectangleEXT with invalid offsets in pDiscardRectangles");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+        return;
+    }
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    InitState();
+
+    VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties =
+        LvlInitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
+
+    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>();
+    phys_dev_props_2.pNext = &discard_rectangle_properties;
+    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+
+    auto fpCmdSetDiscardRectangleEXT =
+        (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
+
+    VkRect2D discard_rectangles = {};
+    discard_rectangles.offset.x = -1;
+    discard_rectangles.offset.y = 0;
+    discard_rectangles.extent.width = 64;
+    discard_rectangles.extent.height = 64;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585");
+    fpCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), discard_rectangle_properties.maxDiscardRectangles, 1,
+                                &discard_rectangles);
+    m_errorMonitor->VerifyFound();
+}
