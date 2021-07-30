@@ -15427,3 +15427,28 @@ bool CoreChecks::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer com
     }
     return skip;
 }
+
+bool CoreChecks::PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                                          const VkBool32 *pColorWriteEnables) const {
+    bool skip = false;
+
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+
+    if (!enabled_features.color_write_features.colorWriteEnable) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetColorWriteEnableEXT-None-04803",
+                         "vkCmdSetColorWriteEnableEXT: color write is not enabled.");
+    }
+    auto graphics_pipeline = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (graphics_pipeline) {
+        uint32_t pipeline_attachment_count = graphics_pipeline->graphicsPipelineCI.pColorBlendState->attachmentCount;
+        if (attachmentCount != pipeline_attachment_count) {
+            skip |= LogError(
+                commandBuffer, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-04804",
+                "vkCmdSetColorWriteEnableEXT: attachment count (%" PRIu32
+                ") is not equal to currenly bound pipelines VkPipelineColorBlendStateCreateInfo::attachmentCount (%" PRIu32 ").",
+                attachmentCount, pipeline_attachment_count);
+        }
+    }
+
+    return skip;
+}
