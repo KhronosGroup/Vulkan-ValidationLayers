@@ -7824,6 +7824,22 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
     skip |=
         ValidateBarriers(loc.dot(Field::pDependencyInfo), cb_state, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
                          bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    for (uint32_t i = 0; i < bufferMemoryBarrierCount; ++i) {
+        if (pBufferMemoryBarriers[i].srcQueueFamilyIndex != pBufferMemoryBarriers[i].dstQueueFamilyIndex) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803",
+                             "vkCmdWaitEvents(): pBufferMemoryBarriers[%" PRIu32 "] has different srcQueueFamilyIndex (%" PRIu32
+                             ") and dstQueueFamilyIndex (%" PRIu32 ").",
+                             i, pBufferMemoryBarriers[i].srcQueueFamilyIndex, pBufferMemoryBarriers[i].dstQueueFamilyIndex);
+        }
+    }
+    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+        if (pImageMemoryBarriers[i].srcQueueFamilyIndex != pImageMemoryBarriers[i].dstQueueFamilyIndex) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803",
+                             "vkCmdWaitEvents(): pImageMemoryBarriers[%" PRIu32 "] has different srcQueueFamilyIndex (%" PRIu32
+                             ") and dstQueueFamilyIndex (%" PRIu32 ").",
+                             i, pImageMemoryBarriers[i].srcQueueFamilyIndex, pImageMemoryBarriers[i].dstQueueFamilyIndex);
+        }
+    }
     return skip;
 }
 
