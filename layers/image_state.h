@@ -272,7 +272,7 @@ class SURFACE_STATE : public BASE_NODE {
     SWAPCHAIN_NODE *swapchain;
     layer_data::unordered_map<GpuQueue, bool> gpu_queue_support;
 
-    SURFACE_STATE(VkSurfaceKHR s) : BASE_NODE(s, kVulkanObjectTypeSurfaceKHR) {}
+    SURFACE_STATE(VkSurfaceKHR s) : BASE_NODE(s, kVulkanObjectTypeSurfaceKHR), swapchain(nullptr), gpu_queue_support() {}
 
     ~SURFACE_STATE() {
         if (!Destroyed()) {
