@@ -12394,6 +12394,46 @@ TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, InvalidColorWriteEnableAttachmentCount) {
+    TEST_DESCRIPTION("Invalid usage of vkCmdSetColorWriteEnableEXT with attachment count 0");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkBool32 colorWriteEnable[2] = {VK_TRUE, VK_FALSE};
+
+    PFN_vkCmdSetColorWriteEnableEXT fpCmdSetColorWriteEnableEXT =
+        (PFN_vkCmdSetColorWriteEnableEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetColorWriteEnableEXT");
+
+    CreatePipelineHelper helper(*this);
+    helper.InitInfo();
+    helper.InitState();
+    helper.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteEnableEXT-None-04803");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-04804");
+    fpCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 2, colorWriteEnable);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTRectangleCount) {
     TEST_DESCRIPTION("Test CmdSetDiscardRectangleEXT with invalid offsets in pDiscardRectangles");
 
