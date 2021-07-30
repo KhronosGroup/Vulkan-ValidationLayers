@@ -14014,7 +14014,28 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
         }
     };
     EndQueryIndexedVuids vuids;
-    return ValidateCmdEndQuery(cb_state, query_obj, index, CMD_ENDQUERYINDEXEDEXT, "vkCmdEndQueryIndexedEXT()", &vuids);
+    bool skip = false;
+    skip |= ValidateCmdEndQuery(cb_state, query_obj, index, CMD_ENDQUERYINDEXEDEXT, "vkCmdEndQueryIndexedEXT()", &vuids);
+
+    // Extension specific VU's
+    const auto &query_pool_ci = GetQueryPoolState(query_obj.pool)->createInfo;
+    if (query_pool_ci.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
+        if (device_extensions.vk_ext_transform_feedback &&
+            (index >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams)) {
+            skip |= LogError(
+                cb_state->commandBuffer(), "VUID-vkCmdEndQueryIndexedEXT-queryType-02346",
+                "vkCmdEndQueryIndexedEXT(): index %" PRIu32
+                " must be less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams %" PRIu32 ".",
+                index, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+        }
+    } else if (index != 0) {
+        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdEndQueryIndexedEXT-queryType-02347",
+                         "vkCmdEndQueryIndexedEXT(): index %" PRIu32
+                         " must be zero if %s was not created with type VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT.",
+                         index, report_data->FormatHandle(queryPool).c_str());
+    }
+
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
