@@ -9162,6 +9162,53 @@ TEST_F(VkLayerTest, CommandBufferMissingOcclusionQueryEnabled) {
     vk::DestroyQueryPool(device(), query_pool, nullptr);
 }
 
+TEST_F(VkLayerTest, RenderPassEndDuringTransformFeedback) {
+    TEST_DESCRIPTION("End render pass while transform feedback is still active.");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
+        printf("%s VK_EXT_transform_feedback extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto vkCmdBeginTransformFeedbackEXT =
+        (PFN_vkCmdBeginTransformFeedbackEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginTransformFeedbackEXT");
+    ASSERT_TRUE(vkCmdBeginTransformFeedbackEXT != nullptr);
+
+    auto vkCmdEndTransformFeedbackEXT =
+        (PFN_vkCmdEndTransformFeedbackEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndTransformFeedbackEXT");
+    ASSERT_TRUE(vkCmdEndTransformFeedbackEXT != nullptr);
+
+    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    rpbi.renderPass = m_renderPass;
+    rpbi.framebuffer = m_framebuffer;
+    rpbi.renderArea.offset.x = 0;
+    rpbi.renderArea.offset.y = 0;
+    rpbi.renderArea.extent.width = 64;
+    rpbi.renderArea.extent.height = 64;
+    rpbi.clearValueCount = static_cast<uint32_t>(m_renderPassClearValues.size());
+    rpbi.pClearValues = m_renderPassClearValues.data();
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndRenderPass-None-02351");
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+    vkCmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, CmdClearColorImageNullColor) {
     TEST_DESCRIPTION("Test invalid null entries for clear color");
 
