@@ -14084,6 +14084,18 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
     skip |= ValidateCmd(cb_state, CMD_SETDISCARDRECTANGLEEXT, "vkCmdSetDiscardRectangleEXT()");
     skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state, "VUID-vkCmdSetDiscardRectangleEXT-viewportScissor2D-04788",
                                            "vkCmdSetDiscardRectangleEXT");
+    for (uint32_t i = 0; i < discardRectangleCount; ++i) {
+        if (pDiscardRectangles[i].offset.x < 0) {
+            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetDiscardRectangleEXT-x-00587",
+                             "vkCmdSetDiscardRectangleEXT(): pDiscardRectangles[%" PRIu32 "].x (%" PRIi32 ") is negative.", i,
+                             pDiscardRectangles[i].offset.x);
+        }
+        if (pDiscardRectangles[i].offset.y < 0) {
+            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetDiscardRectangleEXT-x-00587",
+                             "vkCmdSetDiscardRectangleEXT(): pDiscardRectangles[%" PRIu32 "].y (%" PRIi32 ") is negative.", i,
+                             pDiscardRectangles[i].offset.y);
+        }
+    }
     if (firstDiscardRectangle + discardRectangleCount > phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles) {
         skip |=
             LogError(cb_state->commandBuffer(), "VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585",
