@@ -7833,6 +7833,10 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer,
     assert(cb_state);
 
     bool skip = false;
+    if (!enabled_features.synchronization2_features.synchronization2) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdWaitEvents2KHR-synchronization2-03836",
+                         "vkCmdWaitEvents2KHR(): Synchronization2 feature is not enabled");
+    }
     for (uint32_t i = 0; (i < eventCount) && !skip; i++) {
         LogObjectList objects(commandBuffer);
         objects.add(pEvents[i]);
