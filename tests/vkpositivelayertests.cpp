@@ -8931,6 +8931,28 @@ TEST_F(VkPositiveLayerTest, Vulkan12Features) {
     vk::FreeMemory(m_device->device(), buffer_mem, NULL);
 }
 
+TEST_F(VkPositiveLayerTest, CreateSurface) {
+    TEST_DESCRIPTION("Create and destroy a surface without ever creating a swapchain");
+
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping CreateSurface  test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    m_errorMonitor->ExpectSuccess();
+    if (!InitSurface()) {
+        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
+        return;
+    }
+    DestroySwapchain(); // cleans up both surface and swapchain, if they were created
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
     TEST_DESCRIPTION("Run vkCmdCopyImage with a swapchain image");
 
