@@ -10021,6 +10021,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                     case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
                     case VK_IMAGE_LAYOUT_GENERAL:
                     case VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR:
+                    case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL:
+                    case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL:
                         break;  // valid layouts
                     default:
                         skip |= LogError(device, vuid,
@@ -10028,6 +10030,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                          "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, "
                                          "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, "
                                          "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "
+                                         "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, "
+                                         "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL, "
                                          "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
                                          "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, or "
                                          "VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR",
