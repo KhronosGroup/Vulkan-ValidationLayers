@@ -52,7 +52,11 @@ DEFAULT_ARCH = ARCHS[0]
 def RunShellCmd(command, start_dir = PROJECT_ROOT, env=None, verbose=False):
     if start_dir != PROJECT_ROOT:
         start_dir = RepoRelative(start_dir)
-    cmd_list = command.split(" ")
+    cmd_list = None
+    if type(command) is str:
+        cmd_list = command.split(" ")
+    else:
+        cmd_list = command
     if verbose or ('VVL_CI_VERBOSE' in os.environ and os.environ['VVL_CI_VERBOSE'] != '0'):
         print(f'CICMD({cmd_list}, env={env})')
     subprocess.check_call(cmd_list, cwd=start_dir, env=env)

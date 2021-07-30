@@ -31,25 +31,34 @@ DEFAULT_ABI = SUPPORTED_ABIS[0]
 
 #
 # Fetch Android components, build Android VVL
-def BuildAndroid(target_abi):
-    print("Fetching NDK\n")
-    wget_cmd = 'wget http://dl.google.com/android/repository/android-ndk-r21d-linux-x86_64.zip'
-    common_ci.RunShellCmd(wget_cmd)
+def BuildAndroid(target_abi, ndk_home=None):
+    if ndk_home is None:
+        print("Fetching NDK\n")
+        wget_cmd = 'wget http://dl.google.com/android/repository/android-ndk-r21d-linux-x86_64.zip'
+        common_ci.RunShellCmd(wget_cmd)
 
-    print("Extracting NDK components\n")
-    unzip_cmd = 'unzip -u -q android-ndk-r21d-linux-x86_64.zip'
-    common_ci.RunShellCmd(unzip_cmd)
-    # Add NDK to path
-    os.environ['ANDROID_NDK_HOME'] = common_ci.RepoRelative('android-ndk-r21d')
-    os.environ['PATH'] = os.environ.get('ANDROID_NDK_HOME') + os.pathsep + os.environ.get('PATH')
+        print("Extracting NDK components\n")
+        unzip_cmd = 'unzip -u -q android-ndk-r21d-linux-x86_64.zip'
+        common_ci.RunShellCmd(unzip_cmd)
+        ndk_home = common_ci.RepoRelative('android-ndk-r21d')
 
-    print("Preparing Android Dependencies\n")
-    update_sources_cmd = './update_external_sources_android.sh --abi %s --no-build' % target_abi
-    common_ci.RunShellCmd(update_sources_cmd, "build-android")
+    build_dir = 'build-android-cmake'
+    toolchain_file = os.path.join(ndk_home, 'build', 'cmake', 'android.toolchain.cmake')
+    print('Generating Android project')
+    common_ci.RunShellCmd([
+        'cmake', f'-B{build_dir}',
+        '-DCMAKE_BUILD_TYPE=Release',
+        '-DUPDATE_DEPS=ON',
+        f'-DCMAKE_TOOLCHAIN_FILE={toolchain_file}',
+        '-DANDROID_PLATFORM=26',
+        f'-DANDROID_ABI={target_abi}',
+        '-DANDROID_STL=c++_static',
+        '-DBUILD_TESTS=OFF'
+    ])
 
     print("Building Android Layers and Tests\n")
-    ndk_build_cmd = 'ndk-build APP_ABI=%s -j%s' % (target_abi, os.cpu_count())
-    common_ci.RunShellCmd(ndk_build_cmd, "build-android")
+    ndk_build_cmd = f'make -j{os.cpu_count()}'
+    common_ci.RunShellCmd(ndk_build_cmd, build_dir)
 
 #
 # Module Entrypoint
@@ -61,10 +70,14 @@ def main():
         choices=SUPPORTED_ABIS, default=DEFAULT_ABI,
         help='Build target ABI. Can be one of: {0}'.format(
             ', '.join(SUPPORTED_ABIS)))
+    parser.add_argument(
+        '--ndk', dest='ndk_home',
+        metavar='NDK', action='store',
+        default=None)
     args = parser.parse_args()
 
     try:
-       BuildAndroid(args.target_abi)
+        BuildAndroid(args.target_abi, args.ndk_home)
 
     except subprocess.CalledProcessError as proc_error:
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
