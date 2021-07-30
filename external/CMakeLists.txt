@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2018 Valve Corporation
-# Copyright (c) 2018 LunarG, Inc.
+# Copyright (c) 2018,2021 Valve Corporation
+# Copyright (c) 2018,2021 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,5 +41,10 @@ if(BUILD_TESTS)
     else()
         message(SEND_ERROR "Vulkan-ValidationLayers/external: " "Google Test was not found.  "
                            "Provide Google Test in external/googletest or set BUILD_TESTS=OFF")
+    endif()
+
+    if (WIN32)
+        set_target_properties(gtest PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+        set_target_properties(gtest_main PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     endif()
 endif()
