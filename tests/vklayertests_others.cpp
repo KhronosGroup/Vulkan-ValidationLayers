@@ -12432,3 +12432,54 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTRectangleCount) {
                                 &discard_rectangles);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidCmdEndQueryIndexedEXTIndex) {
+    TEST_DESCRIPTION("Test InvalidCmdEndQueryIndexedEXT with invalid index");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    InitState();
+
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_properties =
+        LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+
+    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_properties);
+    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+
+    auto fpCmdBeginQueryIndexedEXT =
+        (PFN_vkCmdBeginQueryIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginQueryIndexedEXT");
+    auto fpCmdEndQueryIndexedEXT =
+        (PFN_vkCmdEndQueryIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndQueryIndexedEXT");
+
+    VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    qpci.queryType = VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT;
+    qpci.queryCount = 1;
+
+    VkQueryPool tf_query_pool;
+    vk::CreateQueryPool(m_device->device(), &qpci, nullptr, &tf_query_pool);
+
+    VkQueryPool query_pool;
+    qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
+    vk::CreateQueryPool(m_device->device(), &qpci, nullptr, &query_pool);
+
+    m_commandBuffer->begin();
+    fpCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), tf_query_pool, 0, 0, 0);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQueryIndexedEXT-queryType-02346");
+    fpCmdEndQueryIndexedEXT(m_commandBuffer->handle(), tf_query_pool, 0, transform_feedback_properties.maxTransformFeedbackStreams);
+    fpCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool, 0, 0, 0);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQueryIndexedEXT-queryType-02347");
+    fpCmdEndQueryIndexedEXT(m_commandBuffer->handle(), query_pool, 0, 1);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
