@@ -139,36 +139,24 @@ if (VVL_ENABLE_ASAN)
     target_link_libraries(vk_layer_validation_tests  PRIVATE "-fsanitize=address")
 endif()
 
+if (NOT MSVC)
+    target_compile_options(vk_layer_validation_tests PRIVATE "-Wno-sign-compare")
+endif()
+
 # Specify target_link_libraries
 target_link_libraries(vk_layer_validation_tests
-                      PRIVATE VkLayer_utils)
+                      PRIVATE VkLayer_utils
+                              gtest
+                              gtest_main
+                              ${GLSLANG_LIBRARIES}
+                              ${SPIRV_TOOLS_LIBRARIES})
 
-if(WIN32)
-    set_target_properties(gtest PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-    set_target_properties(gtest_main PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-    target_link_libraries(vk_layer_validation_tests
-                          PRIVATE gtest
-                                  gtest_main
-                                  ${GLSLANG_LIBRARIES}
-                                  ${SPIRV_TOOLS_LIBRARIES})
-else()
-    target_compile_options(vk_layer_validation_tests PRIVATE "-Wno-sign-compare")
+if(NOT WIN32)
+    target_link_libraries(vk_layer_validation_tests PRIVATE dl)
     if(BUILD_WSI_XCB_SUPPORT OR BUILD_WSI_XLIB_SUPPORT)
         target_link_libraries(vk_layer_validation_tests
                               PRIVATE ${XCB_LIBRARIES}
-                                      ${X11_LIBRARIES}
-                                      gtest
-                                      gtest_main
-                                      dl
-                                      ${GLSLANG_LIBRARIES}
-                                      ${SPIRV_TOOLS_LIBRARIES})
-    else()
-        target_link_libraries(vk_layer_validation_tests
-                              PRIVATE gtest
-                                      gtest_main
-                                      dl
-                                      ${GLSLANG_LIBRARIES}
-                                      ${SPIRV_TOOLS_LIBRARIES})
+                                      ${X11_LIBRARIES})
     endif()
 endif()
 
