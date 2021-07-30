@@ -14022,6 +14022,13 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
     skip |= ValidateCmd(cb_state, CMD_SETDISCARDRECTANGLEEXT, "vkCmdSetDiscardRectangleEXT()");
     skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state, "VUID-vkCmdSetDiscardRectangleEXT-viewportScissor2D-04788",
                                            "vkCmdSetDiscardRectangleEXT");
+    if (firstDiscardRectangle + discardRectangleCount > phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles) {
+        skip |=
+            LogError(cb_state->commandBuffer(), "VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585",
+                     "vkCmdSetDiscardRectangleEXT(): firstDiscardRectangle (%" PRIu32 ") + discardRectangleCount (%" PRIu32
+                     ") is not less than VkPhysicalDeviceDiscardRectanglePropertiesEXT::maxDiscardRectangles (%" PRIu32 ".",
+                     firstDiscardRectangle, discardRectangleCount, phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles);
+    }
     return skip;
 }
 

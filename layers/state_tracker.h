@@ -1310,6 +1310,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props;
         VkPhysicalDeviceProvokingVertexPropertiesEXT provoking_vertex_props;
         VkPhysicalDeviceMultiDrawPropertiesEXT multi_draw_props;
+        VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
