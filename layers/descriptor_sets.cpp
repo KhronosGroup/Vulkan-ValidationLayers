@@ -1124,7 +1124,8 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                 if (!subpass.used || !view_state || view_state->Destroyed()) {
                     continue;
                 }
-                if (ds_aspect && subpass.usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+                if (ds_aspect && (subpass.usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT ||
+                                  subpass.usage == VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) {
                     if ((image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
                          image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
                          image_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) &&
