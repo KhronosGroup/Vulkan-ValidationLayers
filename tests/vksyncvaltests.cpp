@@ -3334,3 +3334,34 @@ TEST_F(VkSyncValTest, SyncEventsCommandHazards) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
+    TEST_DESCRIPTION("Using CmdWaitEvents2KHR when synchronization2 is not enabled");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    InitState();
+
+    auto fpCmdWaitEvents2KHR = (PFN_vkCmdWaitEvents2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWaitEvents2KHR");
+
+    VkEventObj event;
+    event.init(*m_device, VkEventObj::create_info(0));
+    VkEvent event_handle = event.handle();
+
+    VkDependencyInfoKHR dependency_info = LvlInitStruct<VkDependencyInfoKHR>();
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents2KHR-synchronization2-03836");
+    fpCmdWaitEvents2KHR(m_commandBuffer->handle(), 1, &event_handle, &dependency_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
