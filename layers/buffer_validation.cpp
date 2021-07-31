@@ -5813,6 +5813,23 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                 break;
         }
 
+        if (FormatIs422(pCreateInfo->format) || FormatIs420(pCreateInfo->format)) {
+            if ((image_state->createInfo.extent.width & 1) == 1) {
+                skip |=
+                    LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-format-04714",
+                             "vkCreateImageView(): pCreateInfo->format is %s, but image width (%" PRIu32 ") is not a multiple of 2",
+                             string_VkFormat(pCreateInfo->format), image_state->createInfo.extent.width);
+            }
+        }
+        if (FormatIs420(pCreateInfo->format)) {
+            if ((image_state->createInfo.extent.height & 1) == 1) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-format-04715",
+                                 "vkCreateImageView(): pCreateInfo->format is %s, but image height (%" PRIu32
+                                 ") is not a multiple of 2",
+                                 string_VkFormat(pCreateInfo->format), image_state->createInfo.extent.height);
+            }
+        }
+
         // External format checks needed when VK_ANDROID_external_memory_android_hardware_buffer enabled
         if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
             skip |= ValidateCreateImageViewANDROID(pCreateInfo);
