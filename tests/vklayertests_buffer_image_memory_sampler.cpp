@@ -13969,3 +13969,52 @@ TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
     vkBindImageMemory2Function(m_device->device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidImageViewFormatWithImageExtent) {
+    TEST_DESCRIPTION("Test _422 and _420 ImageView formats with invalid Image extent.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping test\n", kSkipPrefix, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_G8B8G8R8_422_UNORM;
+    image_create_info.extent.width = 65;
+    image_create_info.extent.height = 65;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VkImageObj image_422(m_device);
+    image_422.init(&image_create_info);
+
+    image_create_info.extent.width = 64;
+    image_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    VkImageObj image_420(m_device);
+    image_420.init(&image_create_info);
+
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = image_422.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_G8B8G8R8_422_UNORM;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-format-04714");
+
+    ivci.image = image_420.handle();
+    ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-format-04715");
+}
