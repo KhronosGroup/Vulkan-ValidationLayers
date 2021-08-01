@@ -13433,6 +13433,23 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                         }
                     }
                 }
+                const auto *display_present_info = LvlFindInChain<VkDisplayPresentInfoKHR>(pPresentInfo->pNext);
+                if (display_present_info) {
+                    if (display_present_info->srcRect.offset.x < 0 || display_present_info->srcRect.offset.y < 0 ||
+                        display_present_info->srcRect.offset.x + display_present_info->srcRect.extent.width >
+                            image_state->createInfo.extent.width ||
+                        display_present_info->srcRect.offset.y + display_present_info->srcRect.extent.height >
+                            image_state->createInfo.extent.height) {
+                        skip |= LogError(queue, "VUID-VkDisplayPresentInfoKHR-srcRect-01257",
+                                         "vkQueuePresentKHR(): VkDisplayPresentInfoKHR::srcRect (offset (%" PRIu32 ", %" PRIu32
+                                         "), extent (%" PRIu32 ", %" PRIu32
+                                         ")) in the pNext chain of VkPresentInfoKHR is not a subset of the image begin presented "
+                                         "(extent (%" PRIu32 ", %" PRIu32 ")).",
+                                         display_present_info->srcRect.offset.x, display_present_info->srcRect.offset.y,
+                                         display_present_info->srcRect.extent.width, display_present_info->srcRect.extent.height,
+                                         image_state->createInfo.extent.width, image_state->createInfo.extent.height);
+                    }
+                }
             }
 
             // All physical devices and queue families are required to be able to present to any native window on Android; require
