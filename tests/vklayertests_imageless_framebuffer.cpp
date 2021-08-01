@@ -1634,3 +1634,85 @@ TEST_F(VkLayerTest, FramebufferAttachmentImageInfoPNext) {
     vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, DescriptorUpdateTemplateEntryWithInlineUniformBlock) {
+    TEST_DESCRIPTION("Test VkDescriptorUpdateTemplateEntry with descriptor type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT");
+
+    // GPDDP2 needed for push descriptors support below
+    bool gpdp2_support = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_SPEC_VERSION);
+    if (gpdp2_support) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME)) {
+        printf("%s Descriptor Update Template Extensions not supported, skipped.\n", kSkipPrefix);
+        return;
+    }
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipped.\n", kSkipPrefix, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+
+    // Note: Includes workaround for some implementations which incorrectly return 0 maxPushDescriptors
+    bool push_descriptor_support = gpdp2_support &&
+                                   DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME) &&
+                                   (GetPushDescriptorProperties(instance(), gpu()).maxPushDescriptors > 0);
+    if (push_descriptor_support) {
+        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    } else {
+        printf("%s Push Descriptor Extension not supported, push descriptor cases skipped.\n", kSkipPrefix);
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
+
+    // Create a buffer to be used for invalid updates
+    VkBufferCreateInfo buff_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buff_ci.size = m_device->props.limits.minUniformBufferOffsetAlignment;
+    buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkBufferObj buffer;
+    buffer.init(*m_device, buff_ci);
+
+    // Relying on the "return nullptr for non-enabled extensions
+    auto vkCreateDescriptorUpdateTemplateKHR =
+        (PFN_vkCreateDescriptorUpdateTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateDescriptorUpdateTemplateKHR");
+    auto vkDestroyDescriptorUpdateTemplateKHR =
+        (PFN_vkDestroyDescriptorUpdateTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkDestroyDescriptorUpdateTemplateKHR");
+    auto vkUpdateDescriptorSetWithTemplateKHR =
+        (PFN_vkUpdateDescriptorSetWithTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkUpdateDescriptorSetWithTemplateKHR");
+
+    ASSERT_NE(vkCreateDescriptorUpdateTemplateKHR, nullptr);
+    ASSERT_NE(vkDestroyDescriptorUpdateTemplateKHR, nullptr);
+    ASSERT_NE(vkUpdateDescriptorSetWithTemplateKHR, nullptr);
+
+    struct SimpleTemplateData {
+        VkDescriptorBufferInfo buff_info;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 2;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
+    update_template_entry.stride = sizeof(SimpleTemplateData);
+
+    auto update_template_ci = LvlInitStruct<VkDescriptorUpdateTemplateCreateInfoKHR>();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
+
+    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorUpdateTemplateEntry-descriptor-02226");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorUpdateTemplateEntry-descriptor-02227");
+    vkCreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template);
+    m_errorMonitor->VerifyFound();
+}
