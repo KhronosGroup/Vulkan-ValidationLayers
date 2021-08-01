@@ -12116,6 +12116,11 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
     shader_atomic_float_feature.sparseImageFloat32AtomicAdd = VK_TRUE;
     shader_atomic_float_feature.shaderImageFloat32AtomicAdd = VK_FALSE;
 
+    VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT shader_atomic_float_feature2 =
+        LvlInitStruct<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>();
+    shader_atomic_float_feature2.sparseImageFloat32AtomicMinMax = VK_TRUE;
+    shader_atomic_float_feature2.shaderImageFloat32AtomicMinMax = VK_FALSE;
+
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&shader_image_atomic_int64_feature);
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -12137,6 +12142,14 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
         VkDevice testDevice;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-None-04897");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-None-04898");
+        vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        pd_features2.pNext = &shader_atomic_float_feature2;
+
+        VkDevice testDevice;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-sparseImageFloat32AtomicMinMax-04975");
         vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
         m_errorMonitor->VerifyFound();
     }
