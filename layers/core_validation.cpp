@@ -13693,6 +13693,25 @@ bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
             }
         }
     }
+    for (uint32_t i = 0; i < pCreateInfo->descriptorUpdateEntryCount; ++i) {
+        const auto &descriptor_update = pCreateInfo->pDescriptorUpdateEntries[i];
+        if (descriptor_update.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
+            if (descriptor_update.dstArrayElement & 3) {
+                skip |= LogError(pCreateInfo->pipelineLayout, "VUID-VkDescriptorUpdateTemplateEntry-descriptor-02226",
+                                 "%s: pCreateInfo->pDescriptorUpdateEntries[%" PRIu32
+                                 "] has descriptorType VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, but dstArrayElement (%" PRIu32 ") is not a "
+                                 "multiple of 4).",
+                                 func_name, i, descriptor_update.dstArrayElement);
+            }
+            if (descriptor_update.descriptorCount & 3) {
+                skip |= LogError(pCreateInfo->pipelineLayout, "VUID-VkDescriptorUpdateTemplateEntry-descriptor-02227",
+                                 "%s: pCreateInfo->pDescriptorUpdateEntries[%" PRIu32
+                                 "] has descriptorType VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, but descriptorCount (%" PRIu32 ")is not a "
+                                 "multiple of 4).",
+                                 func_name, i, descriptor_update.descriptorCount);
+            }
+        }
+    }
     return skip;
 }
 
