@@ -13577,7 +13577,9 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
     const auto swapchain_data = GetSwapchainState(swapchain);
     if (swapchain_data) {
         if (swapchain_data->retired) {
-            skip |= LogError(swapchain, "VUID-vkAcquireNextImageKHR-swapchain-01285",
+            const char *vuid = cmd_version == CMD_VERSION_2 ? "VUID-VkAcquireNextImageInfoKHR-swapchain-01675"
+                                                            : "VUID-vkAcquireNextImageKHR-swapchain-01285";
+            skip |= LogError(swapchain, vuid,
                              "%s: This swapchain has been retired. The application can still present any images it "
                              "has acquired, but cannot acquire any more.",
                              func_name);
