@@ -1696,6 +1696,89 @@ TEST_F(VkLayerTest, WarningSwapchainCreateInfoPreTransform) {
     DestroySwapchain();
 }
 
+TEST_F(VkLayerTest, DeviceGroupSubmitInfoSemaphoreCount) {
+    TEST_DESCRIPTION("Test semaphoreCounts in DeviceGroupSubmitInfo");
+
+    if (!InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+
+    uint32_t physical_device_group_count = 0;
+    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
+
+    if (physical_device_group_count == 0) {
+        printf("%s physical_device_group_count is 0, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
+                                                                       {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
+    VkDeviceGroupDeviceCreateInfo create_device_pnext = LvlInitStruct<VkDeviceGroupDeviceCreateInfo>();
+    create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
+    create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    VkDeviceGroupCommandBufferBeginInfo dev_grp_cmd_buf_info = LvlInitStruct<VkDeviceGroupCommandBufferBeginInfo>();
+    dev_grp_cmd_buf_info.deviceMask = 0x00000000;
+    VkCommandBufferBeginInfo cmd_buf_info = LvlInitStruct<VkCommandBufferBeginInfo>(&dev_grp_cmd_buf_info);
+
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+    VkSemaphore semaphore;
+    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+
+    VkDeviceGroupSubmitInfo device_group_submit_info = LvlInitStruct<VkDeviceGroupSubmitInfo>();
+    device_group_submit_info.commandBufferCount = 1;
+    uint32_t command_buffer_device_masks = 0;
+    device_group_submit_info.pCommandBufferDeviceMasks = &command_buffer_device_masks;
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&device_group_submit_info);
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &semaphore;
+
+    m_commandBuffer->reset();
+    vk::BeginCommandBuffer(m_commandBuffer->handle(), &cmd_buf_info);
+    vk::EndCommandBuffer(m_commandBuffer->handle());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceGroupSubmitInfo-signalSemaphoreCount-00084");
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    VkSubmitInfo signal_submit_info = LvlInitStruct<VkSubmitInfo>();
+    signal_submit_info.signalSemaphoreCount = 1;
+    signal_submit_info.pSignalSemaphores = &semaphore;
+    vk::QueueSubmit(m_device->m_queue, 1, &signal_submit_info, VK_NULL_HANDLE);
+
+    VkPipelineStageFlags waitMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    submit_info.pWaitDstStageMask = &waitMask;
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &semaphore;
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = nullptr;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceGroupSubmitInfo-waitSemaphoreCount-00082");
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    submit_info.waitSemaphoreCount = 0;
+    submit_info.commandBufferCount = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceGroupSubmitInfo-commandBufferCount-00083");
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
+}
+
 TEST_F(VkLayerTest, SwapchainAcquireImageWithSignaledSemaphore) {
     TEST_DESCRIPTION("Test vkAcquireNextImageKHR with signaled semaphore");
     SetTargetApiVersion(VK_API_VERSION_1_1);
