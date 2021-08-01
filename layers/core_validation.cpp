@@ -3290,6 +3290,27 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                 skip |= ValidateDeviceMaskToPhysicalDeviceCount(chained_device_group_struct->pCommandBufferDeviceMasks[i], queue,
                                                                 "VUID-VkDeviceGroupSubmitInfo-pCommandBufferDeviceMasks-00086");
             }
+            if (chained_device_group_struct->signalSemaphoreCount != submit->signalSemaphoreCount) {
+                skip |= LogError(queue, "VUID-VkDeviceGroupSubmitInfo-signalSemaphoreCount-00084",
+                                 "pSubmits[%" PRIu32 "] signalSemaphoreCount (%" PRIu32
+                                 ") is different than signalSemaphoreCount (%" PRIu32
+                                 ") of the VkDeviceGroupSubmitInfo in its pNext chain",
+                                 submit_idx, submit->signalSemaphoreCount, chained_device_group_struct->signalSemaphoreCount);
+            }
+            if (chained_device_group_struct->waitSemaphoreCount != submit->waitSemaphoreCount) {
+                skip |=
+                    LogError(queue, "VUID-VkDeviceGroupSubmitInfo-waitSemaphoreCount-00082",
+                             "pSubmits[%" PRIu32 "] waitSemaphoreCount (%" PRIu32 ") is different than waitSemaphoreCount (%" PRIu32
+                             ") of the VkDeviceGroupSubmitInfo in its pNext chain",
+                             submit_idx, submit->waitSemaphoreCount, chained_device_group_struct->waitSemaphoreCount);
+            }
+            if (chained_device_group_struct->commandBufferCount != submit->commandBufferCount) {
+                skip |=
+                    LogError(queue, "VUID-VkDeviceGroupSubmitInfo-commandBufferCount-00083",
+                             "pSubmits[%" PRIu32 "] commandBufferCount (%" PRIu32 ") is different than commandBufferCount (%" PRIu32
+                             ") of the VkDeviceGroupSubmitInfo in its pNext chain",
+                             submit_idx, submit->commandBufferCount, chained_device_group_struct->commandBufferCount);
+            }
         }
 
         auto protected_submit_info = LvlFindInChain<VkProtectedSubmitInfo>(submit->pNext);
