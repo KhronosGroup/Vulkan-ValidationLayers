@@ -523,6 +523,13 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                              VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
             }
         }
+        if (vulkan_12_features->bufferDeviceAddress == VK_TRUE) {
+            if (IsExtEnabledByCreateinfo(extension_state_by_name(device_extensions, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))) {
+                skip |= LogError(instance, "VUID-VkDeviceCreateInfo-pNext-04748",
+                                 "vkCreateDevice(): pNext chain includes VkPhysicalDeviceVulkan12Features with bufferDeviceAddress "
+                                 "set to VK_TRUE and ppEnabledExtensionNames contains VK_EXT_buffer_device_address");
+            }
+        }
     }
 
     // Validate pCreateInfo->pQueueCreateInfos
