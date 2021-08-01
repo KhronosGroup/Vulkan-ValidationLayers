@@ -178,6 +178,7 @@ static const char DECORATE_UNUSED *kVUID_Core_Shader_InconsistentVi = "UNASSIGNE
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InputAttachmentTypeMismatch = "UNASSIGNED-CoreValidation-Shader-InputAttachmentTypeMismatch";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InputNotProduced = "UNASSIGNED-CoreValidation-Shader-InputNotProduced";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InterfaceTypeMismatch = "UNASSIGNED-CoreValidation-Shader-InterfaceTypeMismatch";
+static const char DECORATE_UNUSED *kVUID_Core_Shader_AtomicFeature = "UNASSIGNED-CoreValidation-Shader-AtomicFeature";
 //static const char DECORATE_UNUSED *kVUID_Core_Shader_MissingDescriptor = "UNASSIGNED-CoreValidation-Shader-MissingDescriptor";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_MissingInputAttachment = "UNASSIGNED-CoreValidation-Shader-MissingInputAttachment";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_OutputNotConsumed = "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed";

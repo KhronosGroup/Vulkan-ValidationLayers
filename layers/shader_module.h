@@ -118,6 +118,14 @@ struct decoration_set {
     void add(uint32_t decoration, uint32_t value);
 };
 
+struct atomic_instruction {
+    uint32_t storage_class;
+    uint32_t bit_width;
+    uint32_t type;  // ex. OpTypeInt
+
+    atomic_instruction() : storage_class(0), bit_width(0), type(0) {}
+};
+
 struct function_set {
     unsigned id;
     unsigned offset;
@@ -195,6 +203,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     bool has_valid_spirv;
     bool has_specialization_constants{false};
     uint32_t gpu_validation_shader_id;
+    std::unordered_map<uint32_t, atomic_instruction> atomic_inst;
 
     SHADER_MODULE_STATE(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule, spv_target_env env,
                         uint32_t unique_shader_id)
@@ -300,5 +309,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 //        Stuff like this could be part of a future auto-generated file from the spirv grammar json
 bool AtomicOperation(uint32_t opcode);
 bool GroupOperation(uint32_t opcode);
+char const *StorageClassName(unsigned sc);
 
 #endif  // VULKAN_SHADER_MODULE_H

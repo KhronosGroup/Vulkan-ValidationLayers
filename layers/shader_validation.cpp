@@ -1447,6 +1447,33 @@ bool CoreChecks::ValidateShaderResolveQCOM(SHADER_MODULE_STATE const *src, VkPip
     return skip;
 }
 
+bool CoreChecks::ValidateAtomicsTypes(SHADER_MODULE_STATE const *src) const {
+    bool skip = false;
+
+    for (auto &atomic_inst : src->atomic_inst) {
+        const atomic_instruction &atomic = atomic_inst.second;
+
+        if ((atomic.bit_width == 64) && (atomic.type == spv::OpTypeInt)) {
+            // Validate 64-bit atomics
+            if (((atomic.storage_class == spv::StorageClassStorageBuffer) || (atomic.storage_class == spv::StorageClassUniform)) &&
+                (enabled_features.core12.shaderBufferInt64Atomics == VK_FALSE)) {
+                skip |= LogError(
+                    device, kVUID_Core_Shader_AtomicFeature,
+                    "%s: Can't use 64-bit int atomics operations with %s storage class without shaderBufferInt64Atomics enabled.",
+                    report_data->FormatHandle(src->vk_shader_module()).c_str(), StorageClassName(atomic.storage_class));
+            } else if ((atomic.storage_class == spv::StorageClassWorkgroup) &&
+                       (enabled_features.core12.shaderSharedInt64Atomics == VK_FALSE)) {
+                skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                                 "%s: Can't use 64-bit int atomics operations with Workgroup storage class without "
+                                 "shaderSharedInt64Atomics enabled.",
+                                 report_data->FormatHandle(src->vk_shader_module()).c_str());
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint) const {
     auto entrypoint_id = entrypoint.word(2);
 
@@ -1940,6 +1967,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline, entrypoint);
     skip |= ValidateShaderStorageImageFormats(module);
     skip |= ValidateShaderStageMaxResources(pStage->stage, pipeline);
+    skip |= ValidateAtomicsTypes(module);
     skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializations(pStage);
     if (check_point_size && !pipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
