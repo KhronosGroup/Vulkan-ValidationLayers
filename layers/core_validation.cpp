@@ -2519,6 +2519,17 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
                              "feature must also be enabled.");
             }
         }
+        const auto *shader_atomic_float_feature2 =
+            LvlFindInChain<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(pCreateInfo->pNext);
+        if (shader_atomic_float_feature2) {
+            if (shader_atomic_float_feature2->sparseImageFloat32AtomicMinMax &&
+                !shader_atomic_float_feature2->shaderImageFloat32AtomicMinMax) {
+                skip |= LogError(
+                    pd_state->phys_device, "VUID-VkDeviceCreateInfo-sparseImageFloat32AtomicMinMax-04975",
+                    "vkCreateDevice: if sparseImageFloat32AtomicMinMax feature is enabled then shaderImageFloat32AtomicMinMax "
+                    "feature must also be enabled.");
+            }
+        }
         const auto *device_group_ci = LvlFindInChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
         if (device_group_ci) {
             for (uint32_t i = 0; i < device_group_ci->physicalDeviceCount - 1; ++i) {
