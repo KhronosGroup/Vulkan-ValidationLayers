@@ -13969,3 +13969,41 @@ TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
     vkBindImageMemory2Function(m_device->device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidCreateImageQueueFamilies) {
+    TEST_DESCRIPTION("Checks for invalid queue families in ImageCreateInfo.");
+
+    bool get_physical_device_properties2 = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (get_physical_device_properties2) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    uint32_t queue_families[2] = {0, 0};
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.queueFamilyIndexCount = 2;
+    image_create_info.pQueueFamilyIndices = queue_families;
+    image_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+
+    const char *vuid =
+        (get_physical_device_properties2) ? "VUID-VkImageCreateInfo-sharingMode-01420" : "VUID-VkImageCreateInfo-sharingMode-01392";
+    CreateImageTest(*this, &image_create_info, vuid);
+
+    uint32_t queue_node_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, NULL);
+
+    queue_families[1] = queue_node_count;
+    CreateImageTest(*this, &image_create_info, vuid);
+}
