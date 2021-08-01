@@ -1695,3 +1695,58 @@ TEST_F(VkLayerTest, WarningSwapchainCreateInfoPreTransform) {
     m_errorMonitor->VerifyFound();
     DestroySwapchain();
 }
+
+TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
+    TEST_DESCRIPTION("Test layout tracking on imageless framebuffers");
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
+        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    uint32_t current_buffer;
+    VkSemaphore image_acquired;
+    VkSemaphoreCreateInfo semaphore_create_info = {};
+    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &image_acquired);
+    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, image_acquired, VK_NULL_HANDLE, &current_buffer);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    VkFenceObj fence;
+    fence.init(*m_device, VkFenceObj::create_info());
+    m_commandBuffer->QueueCommandBuffer(fence);
+
+    uint32_t swapchain_width = m_surface_capabilities.minImageExtent.width;
+    uint32_t swapchain_height = m_surface_capabilities.minImageExtent.height;
+
+    VkDisplayPresentInfoKHR display_present_info = LvlInitStruct<VkDisplayPresentInfoKHR>();
+    display_present_info.srcRect.extent.width = swapchain_width + 1;  // Invalid
+    display_present_info.srcRect.extent.height = swapchain_height;
+    display_present_info.dstRect.extent.width = swapchain_width;
+    display_present_info.dstRect.extent.height = swapchain_height;
+
+    VkPresentInfoKHR present = LvlInitStruct<VkPresentInfoKHR>(&display_present_info);
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &current_buffer;
+    present.swapchainCount = 1;
+    vk::QueuePresentKHR(m_device->m_queue, &present);
+}
