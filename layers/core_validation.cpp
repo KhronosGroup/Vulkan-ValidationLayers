@@ -13564,8 +13564,9 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
                          report_data->FormatHandle(semaphore).c_str());
     }
     if (semaphore_state && semaphore_state->scope == kSyncScopeInternal && semaphore_state->signaled) {
-        skip |= LogError(semaphore, "VUID-vkAcquireNextImageKHR-semaphore-01286",
-                         "%s: Semaphore must not be currently signaled or in a wait state.", func_name);
+        const char *vuid = cmd_version == CMD_VERSION_2 ? "VUID-VkAcquireNextImageInfoKHR-semaphore-01288"
+                                                        : "VUID-vkAcquireNextImageKHR-semaphore-01286";
+        skip |= LogError(semaphore, vuid, "%s: Semaphore must not be currently signaled or in a wait state.", func_name);
     }
 
     auto fence_state = GetFenceState(fence);
