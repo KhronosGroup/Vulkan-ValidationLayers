@@ -12311,6 +12311,65 @@ TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
+    TEST_DESCRIPTION("Using CmdWaitEvents with invalid barrier queues");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    if (no_gfx == UINT32_MAX) {
+        printf("%s Required queue families not present (non-graphics capable required).\n", kSkipPrefix);
+        return;
+    }
+
+    VkEvent event;
+    VkEventCreateInfo event_create_info = {};
+    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    buffer.init_as_src_and_dst(*m_device, 256, mem_prop);
+
+    VkBufferMemoryBarrier buffer_memory_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+    buffer_memory_barrier.srcAccessMask = 0;
+    buffer_memory_barrier.dstAccessMask = 0;
+    buffer_memory_barrier.buffer = buffer.handle();
+    buffer_memory_barrier.offset = 0;
+    buffer_memory_barrier.size = 256;
+    buffer_memory_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
+    buffer_memory_barrier.dstQueueFamilyIndex = no_gfx;
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkImageMemoryBarrier image_memory_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    image_memory_barrier.srcAccessMask = 0;
+    image_memory_barrier.dstAccessMask = 0;
+    image_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_memory_barrier.image = image.handle();
+    image_memory_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
+    image_memory_barrier.dstQueueFamilyIndex = no_gfx;
+    image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_memory_barrier.subresourceRange.baseArrayLayer = 0;
+    image_memory_barrier.subresourceRange.baseMipLevel = 0;
+    image_memory_barrier.subresourceRange.layerCount = 1;
+    image_memory_barrier.subresourceRange.levelCount = 1;
+
+    m_commandBuffer->begin();
+    vk::CmdSetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803");
+    vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0,
+                      nullptr, 1, &buffer_memory_barrier, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803");
+    vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0,
+                      nullptr, 0, nullptr, 1, &image_memory_barrier);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, InvalidColorWriteEnableAttachmentCount) {
     TEST_DESCRIPTION("Invalid usage of vkCmdSetColorWriteEnableEXT with attachment count 0");
 
