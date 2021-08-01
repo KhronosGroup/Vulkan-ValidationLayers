@@ -351,8 +351,12 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
                 def_index[insn.word(2)] = insn.offset();
                 break;
 
-                // Variables
+                // Have a result that can be a pointer
             case spv::OpVariable:
+            case spv::OpAccessChain:
+            case spv::OpInBoundsAccessChain:
+            case spv::OpFunctionParameter:
+            case spv::OpImageTexelPointer:
                 def_index[insn.word(2)] = insn.offset();
                 break;
 
@@ -434,6 +438,32 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
             } break;
 
             default:
+                if (AtomicOperation(insn.opcode()) == true) {
+                    // All atomics have a pointer referenced
+                    spirv_inst_iter access;
+                    if (insn.opcode() == spv::OpAtomicStore) {
+                        access = get_def(insn.word(1));
+                    } else {
+                        access = get_def(insn.word(3));
+                        def_index[insn.word(2)] = insn.offset();
+                    }
+
+                    atomic_instruction atomic;
+
+                    auto pointer = get_def(access.word(1));
+                    // spirv-val should catch if not pointer
+                    assert(pointer.opcode() == spv::OpTypePointer);
+                    atomic.storage_class = pointer.word(2);
+
+                    auto data_type = get_def(pointer.word(3));
+                    atomic.type = data_type.opcode();
+
+                    // TODO - Should have a proper GetBitWidth like spirv-val does
+                    assert(data_type.opcode() == spv::OpTypeFloat || data_type.opcode() == spv::OpTypeInt);
+                    atomic.bit_width = data_type.word(2);
+
+                    atomic_inst[insn.offset()] = atomic;
+                }
                 // We don't care about any other defs for now.
                 break;
         }
@@ -491,7 +521,7 @@ std::vector<uint32_t> SHADER_MODULE_STATE::PreprocessShaderBinary(uint32_t *src_
     return src;
 }
 
-static char const *StorageClassName(unsigned sc) {
+char const *StorageClassName(unsigned sc) {
     switch (sc) {
         case spv::StorageClassInput:
             return "input";
