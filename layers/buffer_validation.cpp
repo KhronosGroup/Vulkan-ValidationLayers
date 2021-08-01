@@ -2082,9 +2082,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
+        const char *vuid = device_extensions.vk_khr_get_physical_device_properties2 ? "VUID-VkImageCreateInfo-sharingMode-01420"
+                                                                                    : "VUID-VkImageCreateInfo-sharingMode-01392";
         skip |= ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                                    "vkCreateImage", "pCreateInfo->pQueueFamilyIndices",
-                                                    "VUID-VkImageCreateInfo-sharingMode-01420");
+                                                    "vkCreateImage", "pCreateInfo->pQueueFamilyIndices", vuid);
     }
 
     if (!FormatIsMultiplane(pCreateInfo->format) && !(pCreateInfo->flags & VK_IMAGE_CREATE_ALIAS_BIT) &&
