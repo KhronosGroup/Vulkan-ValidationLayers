@@ -11543,3 +11543,67 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
     cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, CreatePipelineWithInvalidDepthWrite) {
+    TEST_DESCRIPTION(
+        "Test creating a pipeline with subpass that uses a read-only depth/stencil attachment and with depthWriteEnable set to "
+        "VK_TRUE");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // Need to set format framework uses for InitRenderTarget
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    if (m_depth_stencil_fmt == VK_FORMAT_UNDEFINED) {
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkAttachmentDescription description;
+    description.flags = 0;
+    description.format = m_depth_stencil_fmt;
+    description.samples = VK_SAMPLE_COUNT_1_BIT;
+    description.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    description.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    description.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    description.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference depth_stencil_ref;
+    depth_stencil_ref.attachment = 0;
+    depth_stencil_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+    VkSubpassDescription subpass;
+    subpass.flags = 0;
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.inputAttachmentCount = 0;
+    subpass.pInputAttachments = nullptr;
+    subpass.colorAttachmentCount = 0;
+    subpass.pColorAttachments = nullptr;
+    subpass.pResolveAttachments = 0;
+    subpass.pDepthStencilAttachment = &depth_stencil_ref;
+    subpass.preserveAttachmentCount = 0;
+    subpass.pPreserveAttachments = nullptr;
+
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &description;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+
+    VkRenderPass render_pass;
+    vk::CreateRenderPass(device(), &rpci, nullptr, &render_pass);
+
+    VkPipelineDepthStencilStateCreateInfo ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    ds_ci.depthWriteEnable = VK_TRUE;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.renderPass = render_pass;
+    pipe.ds_ci_ = ds_ci;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-subpass-04890");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
