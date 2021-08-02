@@ -5895,6 +5895,17 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                  " the same number of components and bits per component as the Image's format");
             }
         }
+
+        // Tests for "Formats requiring sampler YCBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views"
+        if (FormatRequiresYcbcrConversion(view_format)) {
+            const auto *ycbcr_conv_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
+            if (!ycbcr_conv_info || ycbcr_conv_info->conversion == VK_NULL_HANDLE) {
+                skip |= LogError(device, "VUID-VkImageViewCreateInfo-format-04724",
+                                 "vkCreateImageView(): format %s requires sampler Y'CBCR conversion, but pNext chain does not "
+                                 "include a VkSamplerYcbcrConversionInfo structure with conversion that is not VK_NULL_HANDLE.",
+                                 string_VkFormat(view_format));
+            }
+        }
     }
     return skip;
 }
