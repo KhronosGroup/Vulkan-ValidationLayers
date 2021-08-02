@@ -5047,6 +5047,10 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
                          "VkAccelerationStructureInfoNV: If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV then "
                          "instanceCount must be 0.");
     }
+    if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR) {
+        skip |= LogError(object_handle, "VUID-VkAccelerationStructureInfoNV-type-04623",
+                         "VkAccelerationStructureInfoNV: type is invalid VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR.");
+    }
     if (info.flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV &&
         info.flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_NV) {
         skip |= LogError(object_handle, "VUID-VkAccelerationStructureInfoNV-flags-02592",
