@@ -9161,6 +9161,95 @@ TEST_F(VkLayerTest, CommandBufferMissingOcclusionQueryEnabled) {
     vk::DestroyQueryPool(device(), query_pool, nullptr);
 }
 
+TEST_F(VkLayerTest, BeginQueryInvalidQueryPoolType) {
+    TEST_DESCRIPTION("Test CmdBeginQuery with invalid queryType of queryPool.");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    bool acceleration_structure_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    bool ray_tracing_nv_supported = DeviceExtensionSupported(gpu(), nullptr, VK_NV_RAY_TRACING_EXTENSION_NAME);
+    bool video_queue_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
+    bool transform_feedback_supported = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    
+    if (acceleration_structure_supported) {
+        m_device_extension_names.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    }
+    if (transform_feedback_supported) {
+        m_device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    }
+    if (video_queue_supported) {
+        m_device_extension_names.push_back(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
+    }
+    if (!acceleration_structure_supported && !transform_feedback_supported && !video_queue_supported) {
+        printf("%s None of the needed extensions are supported; skipped.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkQueryPool query_pool_acc = VK_NULL_HANDLE;
+    VkQueryPool query_pool_acc_nv = VK_NULL_HANDLE;
+    VkQueryPool query_pool_video = VK_NULL_HANDLE;
+
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR;
+    query_pool_create_info.queryCount = 1;
+    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool_acc);
+    query_pool_create_info.queryType = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV;
+    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool_acc_nv);
+    if (video_queue_supported) {
+        query_pool_create_info.queryType = VK_QUERY_TYPE_VIDEO_ENCODE_BITSTREAM_BUFFER_RANGE_KHR;
+        vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool_video);
+    }
+
+    auto vkCmdBeginQueryIndexedEXT =
+        (PFN_vkCmdBeginQueryIndexedEXT)vk::GetInstanceProcAddr(instance(), "vkCmdBeginQueryIndexedEXT");
+
+    m_commandBuffer->begin();
+
+    if (acceleration_structure_supported) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-04728");
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool_acc, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        if (transform_feedback_supported) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQueryIndexedEXT-queryType-04728");
+            vkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool_acc, 0, 0, 0);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    if (ray_tracing_nv_supported) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-04729");
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool_acc_nv, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        if (transform_feedback_supported) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQueryIndexedEXT-queryType-04729");
+            vkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool_acc_nv, 0, 0, 0);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    if (video_queue_supported) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-04862");
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool_video, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        if (transform_feedback_supported) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQueryIndexedEXT-queryType-04862");
+            vkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool_video, 0, 0, 0);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, CmdClearColorImageNullColor) {
     TEST_DESCRIPTION("Test invalid null entries for clear color");
 
