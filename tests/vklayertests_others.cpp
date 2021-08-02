@@ -6149,6 +6149,18 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureNV) {
         m_errorMonitor->VerifyFound();
     }
 
+    // Type must not be VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR
+    {
+        VkAccelerationStructureCreateInfoNV bad_bot_level_create_info = as_create_info;
+        bad_bot_level_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR;
+        bad_bot_level_create_info.info.instanceCount = 0;
+        bad_bot_level_create_info.info.geometryCount = 0;
+        bad_bot_level_create_info.info.pGeometries = nullptr;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureInfoNV-type-04623");
+        vkCreateAccelerationStructureNV(m_device->handle(), &bad_bot_level_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
+
     // Can not prefer both fast trace and fast build
     {
         VkAccelerationStructureCreateInfoNV bad_flags_level_create_info = as_create_info;
