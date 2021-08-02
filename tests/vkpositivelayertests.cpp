@@ -13865,3 +13865,119 @@ TEST_F(VkPositiveLayerTest, SpecializationUnused) {
     entries[0].constantID = 100;
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
 }
+
+TEST_F(VkPositiveLayerTest, ShaderAtomicInt64) {
+    TEST_DESCRIPTION("Test VK_KHR_shader_atomic_int64.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto atomic_int64_features = lvl_init_struct<VkPhysicalDeviceShaderAtomicInt64Features>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&atomic_int64_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (features2.features.shaderInt64 == VK_FALSE) {
+        printf("%s shaderInt64 feature not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    // at least shaderBufferInt64Atomics is guaranteed to be supported
+    if (atomic_int64_features.shaderBufferInt64Atomics == VK_FALSE) {
+        printf(
+            "%s shaderBufferInt64Atomics feature is required for VK_KHR_shader_atomic_int64 but not expose, likely driver bug, "
+            "skipping tests\n",
+            kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required for SPIR-V 1.3, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    std::string cs_base = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+        #extension GL_EXT_shader_atomic_int64 : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        shared uint64_t x;
+        layout(set = 0, binding = 0) buffer ssbo { uint64_t y; };
+        layout(set = 0, binding = 1) uniform ubo { uint64_t z; };
+        void main() {
+    )glsl";
+
+    // clang-format off
+    // StorageBuffer storage class
+    std::string cs_storage_buffer = cs_base + R"glsl(
+           atomicAdd(y, 1);
+        }
+    )glsl";
+
+    // StorageBuffer storage class using AtomicStore
+    // atomicStore is slightly different than other atomics, so good edge case
+    std::string cs_store = cs_base + R"glsl(
+           atomicStore(y, z, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+        }
+    )glsl";
+
+    // Uniform storage class
+    std::string cs_uniform = cs_base + R"glsl(
+           uint64_t a = atomicLoad(z, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           barrier();
+           y = a + 1;
+        }
+    )glsl";
+
+    // Workgroup storage class
+    std::string cs_workgroup = cs_base + R"glsl(
+           atomicAdd(x, 1);
+           barrier();
+           y = x + 1;
+        }
+    )glsl";
+    // clang-format on
+
+    const char *current_shader = nullptr;
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
+        helper.cs_.reset(
+            new VkShaderObj(m_device, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr, /*SPIR-V 1.3*/ 3));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    };
+
+    current_shader = cs_storage_buffer.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+
+    current_shader = cs_store.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+
+    current_shader = cs_uniform.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+
+    if (atomic_int64_features.shaderSharedInt64Atomics == VK_TRUE) {
+        current_shader = cs_workgroup.c_str();
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    }
+}
