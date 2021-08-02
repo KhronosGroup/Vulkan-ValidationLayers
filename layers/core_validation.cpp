@@ -12453,6 +12453,19 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                      error_prefix, bind_image_memory_device_group_info->splitInstanceBindRegionCount,
                                      report_data->FormatHandle(image_state->image()).c_str());
                 }
+                uint32_t phy_dev_square = 1;
+                if (device_group_create_info.physicalDeviceCount > 0) {
+                    phy_dev_square = device_group_create_info.physicalDeviceCount * device_group_create_info.physicalDeviceCount;
+                }
+                if (bind_image_memory_device_group_info->splitInstanceBindRegionCount != phy_dev_square) {
+                    skip |= LogError(
+                        bind_info.image, "VUID-VkBindImageMemoryDeviceGroupInfo-splitInstanceBindRegionCount-01636",
+                        "%s: pNext of VkBindImageMemoryInfo contains VkBindImageMemoryDeviceGroupInfo with "
+                        "splitInstanceBindRegionCount (%" PRIi32
+                        ") which is not 0 and different from the number of physical devices in the logical device squared (%" PRIu32
+                        ").",
+                        error_prefix, bind_image_memory_device_group_info->splitInstanceBindRegionCount, phy_dev_square);
+                }
             }
 
             if (plane_info) {
