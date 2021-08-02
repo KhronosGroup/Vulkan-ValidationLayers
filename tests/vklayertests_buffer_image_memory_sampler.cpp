@@ -9025,7 +9025,7 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
         // Try a multiplane imageview
         ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
         ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        CreateImageViewTest(*this, &ivci);
+        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-format-04724");
     }
 
     ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
@@ -14236,6 +14236,50 @@ TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01633");
     vkBindImageMemory2Function(m_device->device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, InvalidImageViewCreateWithYCBCR) {
+    TEST_DESCRIPTION(
+        "Test creating image view with format requiring sampler Y'CBCR conversion, but not including VkSamplerYcbcrConversionInfo "
+        "structure in pNext chain.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
+        printf("%s Did not find required device extension %s; test skipped.\n", kSkipPrefix,
+               VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = mp_format;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.arrayLayers = 1;
+
+    VkImageObj image(m_device);
+    image.init(&image_create_info);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = mp_format;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-format-04724");
 }
 
 TEST_F(VkLayerTest, CreateImageViewWithInvalidViewType) {
