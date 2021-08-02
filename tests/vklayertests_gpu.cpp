@@ -2611,7 +2611,12 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
         m_errorMonitor->VerifyFound();
 
         VkBufferObj buffer;
-        buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+        buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+        uint16_t *ptr = static_cast<uint16_t *>(buffer.memory().map());
+        ptr[0] = 0;
+        ptr[1] = 1;
+        ptr[2] = 2;
+        buffer.memory().unmap();
         m_commandBuffer->begin(&begin_info);
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
