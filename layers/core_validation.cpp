@@ -1602,7 +1602,9 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                         }
                     }
                 }
-                if (subpass_desc->pDepthStencilAttachment->layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
+                if (subpass_desc->pDepthStencilAttachment->layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
+                    subpass_desc->pDepthStencilAttachment->layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
+                    subpass_desc->pDepthStencilAttachment->layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
                     if (pPipeline->graphicsPipelineCI.pDepthStencilState->depthWriteEnable == VK_TRUE) {
                         skip |= LogError(
                             device, "VUID-VkGraphicsPipelineCreateInfo-subpass-04890",
