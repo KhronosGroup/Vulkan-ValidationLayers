@@ -106,6 +106,8 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
     LogMessageTypeFlags report_flags = GetLayerOptionFlags(report_flags_key, log_msg_type_option_definitions, 0);
     VkLayerDbgActionFlags debug_action = GetLayerOptionFlags(debug_action_key, debug_actions_option_definitions, 0);
     // Flag as default if these settings are not from a vk_layer_settings.txt file
+    bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) ? true : false;
+
     auto dbg_create_info = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
     dbg_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
     if (report_flags & kErrorBit) {
@@ -130,7 +132,7 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
         FILE *log_output = getLayerLogOutput(log_filename, layer_identifier);
         dbg_create_info.pfnUserCallback = messenger_log_callback;
         dbg_create_info.pUserData = (void *)log_output;
-        layer_create_messenger_callback(report_data, true, &dbg_create_info, pAllocator, &messenger);
+        layer_create_messenger_callback(report_data, default_layer_callback, &dbg_create_info, pAllocator, &messenger);
     }
 
     messenger = VK_NULL_HANDLE;
@@ -138,7 +140,7 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
     if (debug_action & VK_DBG_LAYER_ACTION_DEBUG_OUTPUT) {
         dbg_create_info.pfnUserCallback = messenger_win32_debug_output_msg;
         dbg_create_info.pUserData = NULL;
-        layer_create_messenger_callback(report_data, true, &dbg_create_info, pAllocator, &messenger);
+        layer_create_messenger_callback(report_data, default_layer_callback, &dbg_create_info, pAllocator, &messenger);
     }
 
     messenger = VK_NULL_HANDLE;
@@ -146,7 +148,7 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
     if (debug_action & VK_DBG_LAYER_ACTION_BREAK) {
         dbg_create_info.pfnUserCallback = MessengerBreakCallback;
         dbg_create_info.pUserData = NULL;
-        layer_create_messenger_callback(report_data, true, &dbg_create_info, pAllocator, &messenger);
+        layer_create_messenger_callback(report_data, default_layer_callback, &dbg_create_info, pAllocator, &messenger);
     }
 }
 
