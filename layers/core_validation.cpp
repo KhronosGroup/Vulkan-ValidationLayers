@@ -8137,6 +8137,30 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
                          "%s: command can't be used in protected command buffers.", cmd_name);
     }
 
+    if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR ||
+        query_pool_state->createInfo.queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR) {
+        const char *vuid = cmd == CMD_BEGINQUERYINDEXEDEXT ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-04728"
+                                                           : "VUID-vkCmdBeginQuery-queryType-04728";
+        skip |= LogError(cb_state->commandBuffer(), vuid,
+                         "%s: queryType of queryPool must not be VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR or "
+                         "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR.",
+                         cmd_name);
+    }
+
+    if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV) {
+        const char *vuid = cmd == CMD_BEGINQUERYINDEXEDEXT ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-04729"
+                                                           : "VUID-vkCmdBeginQuery-queryType-04729";
+        skip |=
+            LogError(cb_state->commandBuffer(), vuid,
+                     "%s: queryType of queryPool must not be VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV.", cmd_name);
+    }
+
+    if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_VIDEO_ENCODE_BITSTREAM_BUFFER_RANGE_KHR) {
+        const char *vuid = cmd == CMD_BEGINQUERYINDEXEDEXT ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-04862"
+                                                           : "VUID-vkCmdBeginQuery-queryType-04862";
+        skip |= ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_VIDEO_ENCODE_BIT_KHR, vuid);
+    }
+
     skip |= ValidateCmd(cb_state, cmd, cmd_name);
     return skip;
 }
