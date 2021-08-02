@@ -4978,6 +4978,16 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
         }
     }
 
+    if (subresourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
+        if (subresourceRange.aspectMask &
+            (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+            skip |= LogError(image, "VUID-VkImageSubresourceRange-aspectMask-01670",
+                             "%s: aspectMask includes both VK_IMAGE_ASPECT_COLOR_BIT and one of VK_IMAGE_ASPECT_PLANE_0_BIT, "
+                             "VK_IMAGE_ASPECT_PLANE_1_BIT, or VK_IMAGE_ASPECT_PLANE_2_BIT.",
+                             cmd_name);
+        }
+    }
+
     return skip;
 }
 
