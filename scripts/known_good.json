@@ -9,7 +9,8 @@
       "commit" : "ae2a562936cc8504c9ef2757cceaff163147834f",
       "cmake_options" : [
         "-DUSE_CCACHE=ON"
-      ]
+      ],
+      "optional": ["tests"]
     },
     {
       "name": "Vulkan-Headers",
@@ -46,6 +47,16 @@
       "install_dir": "robin-hood-hashing",
       "build_step": "skip",
       "commit": "3.11.3"
+    },
+    {
+        "name": "googletest",
+        "url": "https://github.com/google/googletest.git",
+        "sub_dir": "googletest",
+        "build_dir": "googletest",
+        "install_dir": "googletest",
+        "build_step": "skip",
+        "commit": "release-1.8.1",
+        "optional": ["tests"]
     }
   ],
   "install_names" : {
@@ -53,6 +64,7 @@
       "Vulkan-Headers" : "VULKAN_HEADERS_INSTALL_DIR",
       "SPIRV-Headers" : "SPIRV_HEADERS_INSTALL_DIR",
       "SPIRV-Tools" : "SPIRV_TOOLS_INSTALL_DIR",
-      "robin-hood-hashing" : "ROBIN_HOOD_HASHING_INSTALL_DIR"
+      "robin-hood-hashing" : "ROBIN_HOOD_HASHING_INSTALL_DIR",
+      "googletest": "GOOGLETEST_INSTALL_DIR"
   }
 }

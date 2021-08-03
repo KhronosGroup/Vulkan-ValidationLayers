@@ -40,6 +40,8 @@ endif()
 
 option(VVL_ENABLE_ASAN "Use address sanitization (specifically -fsanitize=address)" OFF)
 
+option(BUILD_TESTS "Build the tests" OFF)
+
 # API_NAME allows renaming builds to avoid conflicts with installed SDKs.  It is referenced by layers/vk_loader_platform.h
 set(API_NAME "Vulkan" CACHE STRING "API name to use when building")
 string(TOLOWER ${API_NAME} API_LOWERCASE)
@@ -72,10 +74,15 @@ if (UPDATE_DEPS)
     message("*       dependencies.                                                          *")
     message("********************************************************************************")
 
+    set(_build_tests_arg "")
+    if (NOT BUILD_TESTS)
+        set(_build_tests_arg "--optional=tests")
+    endif()
+
     # Add a target so that update_deps.py will run when necessary
     # NOTE: This is triggered off of the timestamps of known_good.json and helper.cmake
     add_custom_command(OUTPUT ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake
-                       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}"
+                       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_build_tests_arg}
                        DEPENDS ${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json)
 
     add_custom_target(vvl_update_deps DEPENDS ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
@@ -83,7 +90,7 @@ if (UPDATE_DEPS)
     # Check if update_deps.py needs to be run on first cmake run
     if (${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json IS_NEWER_THAN ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
         execute_process(
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}"
+            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_build_tests_arg}
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
             RESULT_VARIABLE _update_deps_result
         )
@@ -226,12 +233,6 @@ if(MAKE_C_COMPILER_ID MATCHES "Clang")
                         -Wno-implicit-int-conversion
                         -Wno-enum-enum-conversion)
 
-endif()
-
-if(TARGET gtest OR IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
-    option(BUILD_TESTS "Build tests" ON)
-else()
-    option(BUILD_TESTS "Build tests" OFF)
 endif()
 
 option(INSTALL_TESTS "Install tests" OFF)
@@ -413,9 +414,39 @@ endif()
 
 # Add subprojects ----------------------------------------------------------------------------------------------------------------
 
-add_subdirectory(external)
 if(BUILD_TESTS)
-    add_subdirectory(tests)
+    # Attempt to enable googletest if available.
+
+    if(TARGET gtest_main)
+        # Already enabled as a target (perhaps by a project enclosing this one)
+        message(STATUS "Vulkan-ValidationLayers/external: " "googletest already configured - using it")
+    elseif(IS_DIRECTORY "${GOOGLETEST_INSTALL_DIR}")
+        # The googletest directory exists, so enable it as a target.
+        message(STATUS "Vulkan-ValidationLayers/external: " "googletest found - configuring it for tests")
+        set(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
+        set(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject")
+        set(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically")
+        set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
+        # EXCLUDE_FROM_ALL keeps the install target from installing GTEST files.
+        add_subdirectory("${GOOGLETEST_INSTALL_DIR}" ${CMAKE_BINARY_DIR}/googletest)
+    else()
+        message(SEND_ERROR "Could not find googletest directory. Be sure to run update_deps.py with the --tests option to download the appropriate version of googletest")
+        set(BUILD_TESTS OFF)
+    endif()
+
+    if (WIN32)
+        set_target_properties(gtest PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+        set_target_properties(gtest_main PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+    endif()
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set_target_properties(gtest PROPERTIES COMPILE_OPTIONS "-w")
+        set_target_properties(gtest_main PROPERTIES COMPILE_OPTIONS "-w")
+    endif()
+
+    if (BUILD_TESTS)
+        add_subdirectory(tests ${CMAKE_BINARY_DIR}/tests)
+    endif()
 endif()
 
 if(BUILD_LAYERS OR BUILD_LAYER_SUPPORT_FILES)
