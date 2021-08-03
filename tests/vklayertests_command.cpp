@@ -9160,3 +9160,26 @@ TEST_F(VkLayerTest, CommandBufferMissingOcclusionQueryEnabled) {
 
     vk::DestroyQueryPool(device(), query_pool, nullptr);
 }
+
+TEST_F(VkLayerTest, CmdClearColorImageNullColor) {
+    TEST_DESCRIPTION("Test invalid null entries for clear color");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkImageSubresourceRange isr = {};
+    isr.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    isr.baseArrayLayer = 0;
+    isr.baseMipLevel = 0;
+    isr.layerCount = 1;
+    isr.levelCount = 1;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-pColor-04961");
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, nullptr, 1, &isr);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
