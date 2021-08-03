@@ -70,7 +70,7 @@ def CheckVVLCodegenConsistency():
 
 #
 # Prepare the Validation Layers for testing
-def BuildVVL(args):
+def BuildVVL(args, build_tests=False):
 
     print("Log CMake version")
     cmake_ver_cmd = 'cmake --version'
@@ -90,6 +90,7 @@ def BuildVVL(args):
     print("Run CMake for Validation Layers")
     cmake_cmd = f'cmake -DUPDATE_DEPS=ON -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
     if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
+    if build_tests: cmake_cmd = cmake_cmd + ' -DBUILD_TESTS=ON'
     RunShellCmd(cmake_cmd, VVL_BUILD_DIR)
 
     print("Build Validation Layers and Tests")

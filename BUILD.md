@@ -162,21 +162,12 @@ described below.
 #### Google Test
 
 The validation layer tests depend on the
-[Google Test](https://github.com/google/googletest)
-framework and do not build unless this framework is downloaded into the
-repository's `external` directory.
-
-To obtain the framework, change your current directory to the top of your
-Vulkan-ValidationLayers repository and run:
-
-    git clone https://github.com/google/googletest.git external/googletest
-    cd external/googletest
-    git checkout tags/release-1.8.1
-
-before configuring your build with CMake.
-
-If you do not need the tests, there is no need to download this
-framework.
+[Google Test](https://github.com/google/googletest). To build the tests, pass the `-DBUILD_TESTS=ON` option when
+generating the project:
+```bash
+cmake ... -DUPDATE_DEPS=ON -DBUILD_TESTS=ON ...
+```
+This will ensure googletest is downloaded and the appropriate version is used.
 
 #### Vulkan-Loader
 

@@ -339,6 +339,7 @@ class GoodRepo(object):
         self.ci_only = json['ci_only'] if ('ci_only' in json) else []
         self.build_step = json['build_step'] if ('build_step' in json) else 'build'
         self.build_platforms = json['build_platforms'] if ('build_platforms' in json) else []
+        self.optional = set(json.get('optional', []))
         # Absolute paths for a repo's directories
         dir_top = os.path.abspath(args.dir)
         self.repo_dir = os.path.join(dir_top, self.sub_dir)
@@ -536,6 +537,9 @@ class GoodRepo(object):
         # Build and execute CMake command for the build
         self.CMakeBuild()
 
+    def IsOptional(self, opts):
+        if len(self.optional.intersection(opts)) > 0: return True
+        else: return False
 
 def GetGoodRepos(args):
     """Returns the latest list of GoodRepo objects.
@@ -666,6 +670,12 @@ def main():
         dest='generator',
         help="Set the CMake generator",
         default=None)
+    parser.add_argument(
+        '--optional',
+        dest='optional',
+        type=lambda a: set(a.lower().split(',')),
+        help="Comma-separated list of 'optional' resources that may be skipped. Only 'tests' is currently supported as 'optional'",
+        default=set())
 
     args = parser.parse_args()
     save_cwd = os.getcwd()
@@ -682,6 +692,10 @@ def main():
         # If the repo has a platform whitelist, skip the repo
         # unless we are building on a whitelisted platform.
         if not repo.on_build_platform:
+            continue
+
+        # Skip test-only repos if the --tests option was not passed in
+        if repo.IsOptional(args.optional):
             continue
 
         field_list = ('url',

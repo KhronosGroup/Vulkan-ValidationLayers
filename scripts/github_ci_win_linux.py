@@ -32,7 +32,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        common_ci.BuildVVL(args)
+        common_ci.BuildVVL(args, True)
         common_ci.BuildLoader(args)
         common_ci.BuildMockICD(args)
         common_ci.RunVVLTests(args)
