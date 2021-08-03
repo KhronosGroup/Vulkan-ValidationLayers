@@ -1759,5 +1759,17 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
                                                    const VkPipelineCache *pSrcCaches) const;
 
+    bool manual_PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                  const VkClearColorValue *pColor, uint32_t rangeCount,
+                                                  const VkImageSubresourceRange *pRanges) const;
+
+    bool ValidateCmdBeginRenderPass(const char *const func_name, const VkRenderPassBeginInfo *const rp_begin) const;
+    bool manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                  VkSubpassContents) const;
+    bool manual_PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                      const VkSubpassBeginInfo *) const;
+    bool manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                   const VkSubpassBeginInfo *) const;
+
 #include "parameter_validation.h"
 };  // Class StatelessValidation
