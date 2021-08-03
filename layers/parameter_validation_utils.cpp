@@ -7340,3 +7340,46 @@ bool StatelessValidation::manual_PreCallValidateMergePipelineCaches(VkDevice dev
     }
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image,
+                                                                   VkImageLayout imageLayout, const VkClearColorValue *pColor,
+                                                                   uint32_t rangeCount,
+                                                                   const VkImageSubresourceRange *pRanges) const {
+    bool skip = false;
+    if (!pColor) {
+        skip |=
+            LogError(commandBuffer, "VUID-vkCmdClearColorImage-pColor-04961", "vkCmdClearColorImage(): pColor must not be null");
+    }
+    return skip;
+}
+
+bool StatelessValidation::ValidateCmdBeginRenderPass(const char *const func_name,
+                                                     const VkRenderPassBeginInfo *const rp_begin) const {
+    bool skip = false;
+    if ((rp_begin->clearValueCount != 0) && !rp_begin->pClearValues) {
+        skip |= LogError(rp_begin->renderPass, "VUID-VkRenderPassBeginInfo-clearValueCount-04962",
+                         "%s: VkRenderPassBeginInfo::clearValueCount != 0 (%" PRIu32
+                         "), but VkRenderPassBeginInfo::pClearValues is not null.",
+                         func_name, rp_begin->clearValueCount);
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                                   VkSubpassContents) const {
+    bool skip = ValidateCmdBeginRenderPass("vkCmdBeginRenderPass", pRenderPassBegin);
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer,
+                                                                       const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                                       const VkSubpassBeginInfo *) const {
+    bool skip = ValidateCmdBeginRenderPass("vkCmdBeginRenderPass2KHR", pRenderPassBegin);
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                                    const VkSubpassBeginInfo *) const {
+    bool skip = ValidateCmdBeginRenderPass("vkCmdBeginRenderPass2", pRenderPassBegin);
+    return skip;
+}

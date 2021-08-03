@@ -6374,6 +6374,7 @@ bool StatelessValidation::PreCallValidateCmdClearColorImage(
             skip |= validate_flags("vkCmdClearColorImage", ParameterName("pRanges[%i].aspectMask", ParameterName::IndexVector{ rangeIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pRanges[rangeIndex].aspectMask, kRequiredFlags, "VUID-VkImageSubresourceRange-aspectMask-parameter", "VUID-VkImageSubresourceRange-aspectMask-requiredbitmask");
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
     return skip;
 }
 
@@ -6694,6 +6695,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass(
         // No xml-driven validation
     }
     skip |= validate_ranged_enum("vkCmdBeginRenderPass", "contents", "VkSubpassContents", AllVkSubpassContentsEnums, contents, "VUID-vkCmdBeginRenderPass-contents-parameter");
+    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
     return skip;
 }
 
@@ -7555,6 +7557,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2(
 
         skip |= validate_ranged_enum("vkCmdBeginRenderPass2", "pSubpassBeginInfo->contents", "VkSubpassContents", AllVkSubpassContentsEnums, pSubpassBeginInfo->contents, "VUID-VkSubpassBeginInfo-contents-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     return skip;
 }
 
@@ -9736,6 +9739,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2KHR(
 
         skip |= validate_ranged_enum("vkCmdBeginRenderPass2KHR", "pSubpassBeginInfo->contents", "VkSubpassContents", AllVkSubpassContentsEnums, pSubpassBeginInfo->contents, "VUID-VkSubpassBeginInfo-contents-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     return skip;
 }
 

@@ -11278,7 +11278,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
                                                      VK_ATTACHMENT_LOAD_OP_CLEAR)) {
                 clear_op_size = static_cast<uint32_t>(i) + 1;
 
-                if (FormatHasDepth(attachment->format)) {
+                if (FormatHasDepth(attachment->format) && pRenderPassBegin->pClearValues) {
                     skip |= ValidateClearDepthStencilValue(commandBuffer, pRenderPassBegin->pClearValues[i].depthStencil,
                                                            function_name);
                 }
