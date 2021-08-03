@@ -3500,7 +3500,7 @@ struct safe_VkVideoProfilesKHR {
 struct safe_VkVideoCapabilitiesKHR {
     VkStructureType sType;
     void* pNext;
-    VkVideoCapabilitiesFlagsKHR capabilityFlags;
+    VkVideoCapabilityFlagsKHR capabilityFlags;
     VkDeviceSize minBitstreamBufferOffsetAlignment;
     VkDeviceSize minBitstreamBufferSizeAlignment;
     VkExtent2D videoPictureExtentGranularity;
@@ -5543,7 +5543,7 @@ struct safe_VkImageViewAddressPropertiesNVX {
 struct safe_VkVideoEncodeH264CapabilitiesEXT {
     VkStructureType sType;
     const void* pNext;
-    VkVideoEncodeH264CapabilitiesFlagsEXT flags;
+    VkVideoEncodeH264CapabilityFlagsEXT flags;
     VkVideoEncodeH264InputModeFlagsEXT inputModeFlags;
     VkVideoEncodeH264OutputModeFlagsEXT outputModeFlags;
     VkExtent2D minPictureSizeInMbs;
@@ -5732,7 +5732,7 @@ struct safe_VkVideoDecodeH264ProfileEXT {
     VkStructureType sType;
     const void* pNext;
     StdVideoH264ProfileIdc stdProfileIdc;
-    VkVideoDecodeH264FieldLayoutFlagsEXT fieldLayout;
+    VkVideoDecodeH264PictureLayoutFlagsEXT pictureLayout;
     safe_VkVideoDecodeH264ProfileEXT(const VkVideoDecodeH264ProfileEXT* in_struct);
     safe_VkVideoDecodeH264ProfileEXT(const safe_VkVideoDecodeH264ProfileEXT& copy_src);
     safe_VkVideoDecodeH264ProfileEXT& operator=(const safe_VkVideoDecodeH264ProfileEXT& copy_src);

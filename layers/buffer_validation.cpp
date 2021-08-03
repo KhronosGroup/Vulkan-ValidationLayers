@@ -67,15 +67,15 @@ static const char *GetBufferImageCopyCommandVUID(std::string id, bool image_to_b
             "VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-01559",
         }},
         {"00197", {
-            "VUID-vkCmdCopyBufferToImage-imageOffset-00197",
-            "VUID-vkCmdCopyImageToBuffer-imageOffset-00197",
-            "VUID-VkCopyBufferToImageInfo2KHR-imageOffset-00197",
+            "VUID-vkCmdCopyBufferToImage-pRegions-06218",
+            "VUID-vkCmdCopyImageToBuffer-pRegions-06221",
+            "VUID-VkCopyBufferToImageInfo2KHR-pRegions-06223",
             "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00197",
         }},
         {"00198", {
-            "VUID-vkCmdCopyBufferToImage-imageOffset-00198",
-            "VUID-vkCmdCopyImageToBuffer-imageOffset-00198",
-            "VUID-VkCopyBufferToImageInfo2KHR-imageOffset-00198",
+            "VUID-vkCmdCopyBufferToImage-pRegions-06219",
+            "VUID-vkCmdCopyImageToBuffer-pRegions-06222",
+            "VUID-VkCopyBufferToImageInfo2KHR-pRegions-06224",
             "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00198",
         }},
         {"00199", {
@@ -6566,7 +6566,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
                          "or transfer capabilities.",
                          func_name);
     }
-    vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-pRegions-00182" : "VUID-vkCmdCopyImageToBuffer-pRegions-00182";
+    vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-pRegions-00182" : "VUID-vkCmdCopyImageToBuffer-pRegions-06220";
     skip |= ValidateImageBounds(src_image_state, regionCount, pRegions, func_name, vuid);
     vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-pRegions-00183" : "VUID-vkCmdCopyImageToBuffer-pRegions-00183";
     skip |= ValidateBufferBounds(src_image_state, dst_buffer_state, regionCount, pRegions, func_name, vuid);
@@ -6692,7 +6692,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
     // Validate command buffer state
     skip |= ValidateCmd(cb_node, cmd_type, func_name);
 
-    vuid = is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-pRegions-00172" : "VUID-vkCmdCopyBufferToImage-pRegions-00172";
+    vuid = is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-pRegions-00172" : "VUID-vkCmdCopyBufferToImage-pRegions-06217";
     skip |= ValidateImageBounds(dst_image_state, regionCount, pRegions, func_name, vuid);
     vuid = is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-pRegions-00171" : "VUID-vkCmdCopyBufferToImage-pRegions-00171";
     skip |= ValidateBufferBounds(dst_image_state, src_buffer_state, regionCount, pRegions, func_name, vuid);
