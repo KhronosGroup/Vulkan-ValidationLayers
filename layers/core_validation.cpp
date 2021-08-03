@@ -1602,15 +1602,6 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                         }
                     }
                 }
-                if (subpass_desc->pDepthStencilAttachment->layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
-                    if (pPipeline->graphicsPipelineCI.pDepthStencilState->depthWriteEnable == VK_TRUE) {
-                        skip |= LogError(
-                            device, "VUID-VkGraphicsPipelineCreateInfo-subpass-04890",
-                            "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                            "]: subpass uses read-only depth aspect layout, but pDepthStencilState->depthWriteEnable is VK_TRUE.",
-                            pipelineIndex);
-                    }
-                }
             }
 
             // If subpass uses color attachments, pColorBlendState must be valid pointer
