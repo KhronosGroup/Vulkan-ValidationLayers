@@ -10006,3 +10006,17 @@ TEST_F(VkLayerTest, SwapchainAcquireImageRetired) {
 
     DestroySwapchain();
 }
+
+TEST_F(VkLayerTest, RenderPassBeginNullValues) {
+    TEST_DESCRIPTION("Test invalid null entries for clear color");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto rpbi = m_renderPassBeginInfo;
+    rpbi.clearValueCount = 1;
+    rpbi.pClearValues = nullptr;  // clearValueCount != 0, but pClearValues = null, leads to 04962
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rpbi, false,
+                        "VUID-VkRenderPassBeginInfo-clearValueCount-04962", nullptr);
+}
