@@ -175,6 +175,7 @@ struct SyncEventState {
     using ScopeMap = sparse_container::range_map<VkDeviceSize, bool>;
     EventPointer event;
     CMD_TYPE last_command;  // Only Event commands are valid here.
+    ResourceUsageTag last_command_tag;  // Needed to filter replay validation
     CMD_TYPE unsynchronized_set;
     VkPipelineStageFlags2KHR barriers;
     SyncExecScope scope;
@@ -185,6 +186,7 @@ struct SyncEventState {
     SyncEventState(EventPointerType &&event_state)
         : event(std::forward<EventPointerType>(event_state)),
           last_command(CMD_NONE),
+          last_command_tag(0),
           unsynchronized_set(CMD_NONE),
           barriers(0U),
           scope(),
@@ -527,7 +529,7 @@ class SyncOpBase {
     virtual bool Validate(const CommandBufferAccessContext &cb_context) const = 0;
     virtual ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const = 0;
     virtual bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                                CommandBufferAccessContext *active_context) const = 0;
+                                ResourceUsageTag base_tag, CommandBufferAccessContext *active_context) const = 0;
     virtual void DoRecord(ResourceUsageTag tag, AccessContext *access_context, SyncEventsContext *events_context) const = 0;
 
   protected:
@@ -594,7 +596,7 @@ class SyncOpPipelineBarrier : public SyncOpBarriers {
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                        CommandBufferAccessContext *active_context) const override;
+                        ResourceUsageTag base_tag, CommandBufferAccessContext *active_context) const override;
     void DoRecord(ResourceUsageTag recorded_tag, AccessContext *access_context, SyncEventsContext *events_context) const override;
 };
 
@@ -613,10 +615,12 @@ class SyncOpWaitEvents : public SyncOpBarriers {
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                        CommandBufferAccessContext *active_context) const override;
+                        ResourceUsageTag base_tag, CommandBufferAccessContext *active_context) const override;
     void DoRecord(ResourceUsageTag recorded_tag, AccessContext *access_context, SyncEventsContext *events_context) const override;
 
   protected:
+    static const char *const kIgnored;
+    bool DoValidate(const CommandBufferAccessContext &cb_context, const ResourceUsageTag base_tag) const;
     // TODO PHASE2 This is the wrong thing to use for "replay".. as the event state will have moved on since the record
     // TODO PHASE2 May need to capture by value w.r.t. "first use" or build up in calling/enqueue context through replay.
     std::vector<std::shared_ptr<const EVENT_STATE>> events_;
@@ -632,7 +636,7 @@ class SyncOpResetEvent : public SyncOpBase {
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                        CommandBufferAccessContext *active_context) const override;
+                        ResourceUsageTag base_tag, CommandBufferAccessContext *active_context) const override;
     void DoRecord(ResourceUsageTag recorded_tag, AccessContext *access_context, SyncEventsContext *events_context) const override;
 
   private:
@@ -651,10 +655,11 @@ class SyncOpSetEvent : public SyncOpBase {
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                        CommandBufferAccessContext *active_context) const override;
-    void DoRecord(ResourceUsageTag recorded_tag, AccessContext *access_context, SyncEventsContext *events_context) const override;
+                        ResourceUsageTag base_tag, CommandBufferAccessContext *active_context) const override;
 
   private:
+    bool DoValidate(const CommandBufferAccessContext &cb_context, const ResourceUsageTag base_tag) const;
+    void DoRecord(ResourceUsageTag recorded_tag, AccessContext *access_context, SyncEventsContext *events_context) const override;
     std::shared_ptr<const EVENT_STATE> event_;
     SyncExecScope src_exec_scope_;
     // Note that the dep info is *not* dehandled, but retained for comparison with a future WaitEvents2
@@ -670,7 +675,7 @@ class SyncOpBeginRenderPass : public SyncOpBase {
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                        CommandBufferAccessContext *active_context) const override;
+                        ResourceUsageTag base_tag, CommandBufferAccessContext *active_context) const override;
     void DoRecord(ResourceUsageTag recorded_tag, AccessContext *access_context, SyncEventsContext *events_context) const override;
 
   protected:
@@ -690,7 +695,7 @@ class SyncOpNextSubpass : public SyncOpBase {
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                        CommandBufferAccessContext *active_context) const override;
+                        ResourceUsageTag base_tag, CommandBufferAccessContext *active_context) const override;
     void DoRecord(ResourceUsageTag recorded_tag, AccessContext *access_context, SyncEventsContext *events_context) const override;
 
   protected:
@@ -706,7 +711,7 @@ class SyncOpEndRenderPass : public SyncOpBase {
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                        CommandBufferAccessContext *active_context) const override;
+                        ResourceUsageTag base_tag, CommandBufferAccessContext *active_context) const override;
     void DoRecord(ResourceUsageTag recorded_tag, AccessContext *access_context, SyncEventsContext *events_context) const override;
 
   protected:
