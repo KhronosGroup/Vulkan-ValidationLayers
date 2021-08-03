@@ -2001,9 +2001,9 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
                                  &region);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-imageOffset-00197");
+        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-pRegions-06218");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-vkCmdCopyBufferToImage-pRegions-00172");  // image too small
+                                             "VUID-vkCmdCopyBufferToImage-pRegions-06217");  // image too small
         vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_64k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                  &region);
         m_errorMonitor->VerifyFound();
@@ -2017,10 +2017,10 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
                                  &region);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-imageOffset-00197");
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-imageOffset-00198");
+        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-pRegions-06218");
+        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-pRegions-06219");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-vkCmdCopyBufferToImage-pRegions-00172");  // image too small
+                                             "VUID-vkCmdCopyBufferToImage-pRegions-06217");  // image too small
         vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_64k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                  &region);
         m_errorMonitor->VerifyFound();
@@ -2037,9 +2037,9 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
 
         region.imageExtent = {64, 65, 1};
         region.bufferOffset = 0;
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImageToBuffer-imageOffset-00198");
+        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImageToBuffer-pRegions-06222");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-vkCmdCopyImageToBuffer-pRegions-00182");  // image too small
+                                             "VUID-vkCmdCopyImageToBuffer-pRegions-06220");  // image too small
         vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_64k.handle(), 1,
                                  &region);
         m_errorMonitor->VerifyFound();
@@ -2090,22 +2090,22 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
         // Out-of-range mip levels should fail
         region.imageSubresource.mipLevel = image_16k.create_info().mipLevels + 1;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-imageSubresource-01703");
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImageToBuffer-imageOffset-00197");
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImageToBuffer-imageOffset-00198");
+        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImageToBuffer-pRegions-06221");
+        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImageToBuffer-pRegions-06222");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImageToBuffer-imageOffset-00200");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit,
-            "VUID-vkCmdCopyImageToBuffer-pRegions-00182");  // unavoidable "region exceeds image bounds" for non-existent mip
+            "VUID-vkCmdCopyImageToBuffer-pRegions-06220");  // unavoidable "region exceeds image bounds" for non-existent mip
         vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
                                  &region);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-imageSubresource-01701");
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-imageOffset-00197");
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-imageOffset-00198");
+        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-pRegions-06218");
+        m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-pRegions-06219");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-imageOffset-00200");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit,
-            "VUID-vkCmdCopyBufferToImage-pRegions-00172");  // unavoidable "region exceeds image bounds" for non-existent mip
+            "VUID-vkCmdCopyBufferToImage-pRegions-06217");  // unavoidable "region exceeds image bounds" for non-existent mip
         vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                  &region);
         m_errorMonitor->VerifyFound();
@@ -2502,7 +2502,7 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     region.imageOffset.z = 4;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-srcImage-00201");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-imageOffset-00200");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-00172");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-06217");
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &region);
     m_errorMonitor->VerifyFound();

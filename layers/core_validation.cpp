@@ -14869,7 +14869,7 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(VkCom
             const ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureStateNV(pAccelerationStructures[i]);
             if (!(as_state->build_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
                 skip |=
-                    LogError(device, "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-accelerationStructures-03431",
+                    LogError(device, "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-pAccelerationStructures-06215",
                              "vkCmdWriteAccelerationStructuresPropertiesNV: All acceleration structures in pAccelerationStructures "
                              "must have been built with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR if queryType is "
                              "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV.");

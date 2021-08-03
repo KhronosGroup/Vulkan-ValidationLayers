@@ -25654,7 +25654,7 @@ void safe_VkVideoEncodeH264ProfileEXT::initialize(const safe_VkVideoEncodeH264Pr
 safe_VkVideoDecodeH264ProfileEXT::safe_VkVideoDecodeH264ProfileEXT(const VkVideoDecodeH264ProfileEXT* in_struct) :
     sType(in_struct->sType),
     stdProfileIdc(in_struct->stdProfileIdc),
-    fieldLayout(in_struct->fieldLayout)
+    pictureLayout(in_struct->pictureLayout)
 {
     pNext = SafePnextCopy(in_struct->pNext);
 }
@@ -25668,7 +25668,7 @@ safe_VkVideoDecodeH264ProfileEXT::safe_VkVideoDecodeH264ProfileEXT(const safe_Vk
 {
     sType = copy_src.sType;
     stdProfileIdc = copy_src.stdProfileIdc;
-    fieldLayout = copy_src.fieldLayout;
+    pictureLayout = copy_src.pictureLayout;
     pNext = SafePnextCopy(copy_src.pNext);
 }
 
@@ -25681,7 +25681,7 @@ safe_VkVideoDecodeH264ProfileEXT& safe_VkVideoDecodeH264ProfileEXT::operator=(co
 
     sType = copy_src.sType;
     stdProfileIdc = copy_src.stdProfileIdc;
-    fieldLayout = copy_src.fieldLayout;
+    pictureLayout = copy_src.pictureLayout;
     pNext = SafePnextCopy(copy_src.pNext);
 
     return *this;
@@ -25697,7 +25697,7 @@ void safe_VkVideoDecodeH264ProfileEXT::initialize(const VkVideoDecodeH264Profile
 {
     sType = in_struct->sType;
     stdProfileIdc = in_struct->stdProfileIdc;
-    fieldLayout = in_struct->fieldLayout;
+    pictureLayout = in_struct->pictureLayout;
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
@@ -25705,7 +25705,7 @@ void safe_VkVideoDecodeH264ProfileEXT::initialize(const safe_VkVideoDecodeH264Pr
 {
     sType = copy_src->sType;
     stdProfileIdc = copy_src->stdProfileIdc;
-    fieldLayout = copy_src->fieldLayout;
+    pictureLayout = copy_src->pictureLayout;
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS

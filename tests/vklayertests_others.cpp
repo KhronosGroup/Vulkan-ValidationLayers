@@ -11825,7 +11825,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-VkVertexInputAttributeDescription2EXT-location-04802
+    // VUID-VkVertexInputAttributeDescription2EXT-location-06228
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
@@ -11835,12 +11835,12 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
                                                            0,
                                                            VK_FORMAT_R32G32B32A32_SFLOAT,
                                                            0};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-location-04802");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-location-06228");
         vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-VkVertexInputAttributeDescription2EXT-binding-04803
+    // VUID-VkVertexInputAttributeDescription2EXT-binding-06229
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
@@ -11850,20 +11850,20 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
                                                            m_device->props.limits.maxVertexInputBindings + 1u,
                                                            VK_FORMAT_R32G32B32A32_SFLOAT,
                                                            0};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-binding-04803");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-binding-06229");
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetVertexInputEXT-binding-04793");
         vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-VkVertexInputAttributeDescription2EXT-offset-04804
+    // VUID-VkVertexInputAttributeDescription2EXT-offset-06230
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
         VkVertexInputAttributeDescription2EXT attribute = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
             m_device->props.limits.maxVertexInputAttributeOffset + 1u};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-offset-04804");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-offset-06230");
         vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
         m_errorMonitor->VerifyFound();
     }
@@ -11935,22 +11935,22 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
 
     m_commandBuffer->begin();
 
-    // VUID-VkVertexInputBindingDescription2EXT-divisor-04800
+    // VUID-VkVertexInputBindingDescription2EXT-divisor-06226
     if (vertex_attribute_divisor_properties.maxVertexAttribDivisor < 0xFFFFFFFFu) {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,       nullptr, 0, 0, VK_VERTEX_INPUT_RATE_INSTANCE,
             vertex_attribute_divisor_properties.maxVertexAttribDivisor + 1u};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription2EXT-divisor-04800");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription2EXT-divisor-06226");
         vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-VkVertexInputBindingDescription2EXT-divisor-04801
+    // VUID-VkVertexInputBindingDescription2EXT-divisor-06227
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,  nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX,
             vertex_attribute_divisor_properties.maxVertexAttribDivisor};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription2EXT-divisor-04801");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription2EXT-divisor-06227");
         vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
         m_errorMonitor->VerifyFound();
     }

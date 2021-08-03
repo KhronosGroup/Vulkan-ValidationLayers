@@ -5206,7 +5206,7 @@ bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPr
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) const {
     bool skip = false;
     if (queryType != VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV) {
-        skip |= LogError(device, "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-queryType-03432",
+        skip |= LogError(device, "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-queryType-06216",
                          "vkCmdWriteAccelerationStructuresPropertiesNV: queryType must be "
                          "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV.");
     }
@@ -7232,19 +7232,19 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
                                  "vertexAttributeInstanceRateDivisor is not enabled",
                                  binding);
             } else {
-                // VUID-VkVertexInputBindingDescription2EXT-divisor-04800
+                // VUID-VkVertexInputBindingDescription2EXT-divisor-06226
                 if (pVertexBindingDescriptions[binding].divisor >
                     phys_dev_ext_props.vertex_attribute_divisor_props.maxVertexAttribDivisor) {
                     skip |= LogError(
-                        device, "VUID-VkVertexInputBindingDescription2EXT-divisor-04800",
+                        device, "VUID-VkVertexInputBindingDescription2EXT-divisor-06226",
                         "vkCmdSetVertexInputEXT(): pVertexBindingDescriptions[%u].divisor is greater than maxVertexAttribDivisor",
                         binding);
                 }
 
-                // VUID-VkVertexInputBindingDescription2EXT-divisor-04801
+                // VUID-VkVertexInputBindingDescription2EXT-divisor-06227
                 if (pVertexBindingDescriptions[binding].inputRate != VK_VERTEX_INPUT_RATE_INSTANCE) {
                     skip |=
-                        LogError(device, "VUID-VkVertexInputBindingDescription2EXT-divisor-04801",
+                        LogError(device, "VUID-VkVertexInputBindingDescription2EXT-divisor-06227",
                                  "vkCmdSetVertexInputEXT(): pVertexBindingDescriptions[%u].divisor is greater than 1 but inputRate "
                                  "is not VK_VERTEX_INPUT_RATE_INSTANCE",
                                  binding);
@@ -7254,26 +7254,26 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
     }
 
     for (uint32_t attribute = 0; attribute < vertexAttributeDescriptionCount; ++attribute) {
-        // VUID-VkVertexInputAttributeDescription2EXT-location-04802
+        // VUID-VkVertexInputAttributeDescription2EXT-location-06228
         if (pVertexAttributeDescriptions[attribute].location > device_limits.maxVertexInputAttributes) {
             skip |= LogError(
-                device, "VUID-VkVertexInputAttributeDescription2EXT-location-04802",
+                device, "VUID-VkVertexInputAttributeDescription2EXT-location-06228",
                 "vkCmdSetVertexInputEXT(): pVertexAttributeDescriptions[%u].location is greater than maxVertexInputAttributes",
                 attribute);
         }
 
-        // VUID-VkVertexInputAttributeDescription2EXT-binding-04803
+        // VUID-VkVertexInputAttributeDescription2EXT-binding-06229
         if (pVertexAttributeDescriptions[attribute].binding > device_limits.maxVertexInputBindings) {
             skip |= LogError(
-                device, "VUID-VkVertexInputAttributeDescription2EXT-binding-04803",
+                device, "VUID-VkVertexInputAttributeDescription2EXT-binding-06229",
                 "vkCmdSetVertexInputEXT(): pVertexAttributeDescriptions[%u].binding is greater than maxVertexInputBindings",
                 attribute);
         }
 
-        // VUID-VkVertexInputAttributeDescription2EXT-offset-04804
+        // VUID-VkVertexInputAttributeDescription2EXT-offset-06230
         if (pVertexAttributeDescriptions[attribute].offset > device_limits.maxVertexInputAttributeOffset) {
             skip |= LogError(
-                device, "VUID-VkVertexInputAttributeDescription2EXT-offset-04804",
+                device, "VUID-VkVertexInputAttributeDescription2EXT-offset-06230",
                 "vkCmdSetVertexInputEXT(): pVertexAttributeDescriptions[%u].offset is greater than maxVertexInputAttributeOffset",
                 attribute);
         }

@@ -5443,32 +5443,32 @@ static inline std::string string_VkVideoComponentBitDepthFlagsKHR(VkVideoCompone
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-static inline const char* string_VkVideoCapabilitiesFlagBitsKHR(VkVideoCapabilitiesFlagBitsKHR input_value)
+static inline const char* string_VkVideoCapabilityFlagBitsKHR(VkVideoCapabilityFlagBitsKHR input_value)
 {
     switch (input_value)
     {
-        case VK_VIDEO_CAPABILITIES_PROTECTED_CONTENT_BIT_KHR:
-            return "VK_VIDEO_CAPABILITIES_PROTECTED_CONTENT_BIT_KHR";
-        case VK_VIDEO_CAPABILITIES_SEPARATE_REFERENCE_IMAGES_BIT_KHR:
-            return "VK_VIDEO_CAPABILITIES_SEPARATE_REFERENCE_IMAGES_BIT_KHR";
+        case VK_VIDEO_CAPABILITY_PROTECTED_CONTENT_BIT_KHR:
+            return "VK_VIDEO_CAPABILITY_PROTECTED_CONTENT_BIT_KHR";
+        case VK_VIDEO_CAPABILITY_SEPARATE_REFERENCE_IMAGES_BIT_KHR:
+            return "VK_VIDEO_CAPABILITY_SEPARATE_REFERENCE_IMAGES_BIT_KHR";
         default:
-            return "Unhandled VkVideoCapabilitiesFlagBitsKHR";
+            return "Unhandled VkVideoCapabilityFlagBitsKHR";
     }
 }
 
-static inline std::string string_VkVideoCapabilitiesFlagsKHR(VkVideoCapabilitiesFlagsKHR input_value)
+static inline std::string string_VkVideoCapabilityFlagsKHR(VkVideoCapabilityFlagsKHR input_value)
 {
     std::string ret;
     int index = 0;
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkVideoCapabilitiesFlagBitsKHR(static_cast<VkVideoCapabilitiesFlagBitsKHR>(1U << index)));
+            ret.append(string_VkVideoCapabilityFlagBitsKHR(static_cast<VkVideoCapabilityFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
     }
-    if( ret.empty()) ret.append(string_VkVideoCapabilitiesFlagBitsKHR(static_cast<VkVideoCapabilitiesFlagBitsKHR>(0)));
+    if( ret.empty()) ret.append(string_VkVideoCapabilityFlagBitsKHR(static_cast<VkVideoCapabilityFlagBitsKHR>(0)));
     return ret;
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -6779,7 +6779,7 @@ static inline const char* string_VkRasterizationOrderAMD(VkRasterizationOrderAMD
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-static inline const char* string_VkVideoEncodeH264CapabilitiesFlagBitsEXT(VkVideoEncodeH264CapabilitiesFlagBitsEXT input_value)
+static inline const char* string_VkVideoEncodeH264CapabilityFlagBitsEXT(VkVideoEncodeH264CapabilityFlagBitsEXT input_value)
 {
     switch (input_value)
     {
@@ -6806,23 +6806,23 @@ static inline const char* string_VkVideoEncodeH264CapabilitiesFlagBitsEXT(VkVide
         case VK_VIDEO_ENCODE_H264_CAPABILITY_WEIGHTED_BI_PRED_IMPLICIT_BIT_EXT:
             return "VK_VIDEO_ENCODE_H264_CAPABILITY_WEIGHTED_BI_PRED_IMPLICIT_BIT_EXT";
         default:
-            return "Unhandled VkVideoEncodeH264CapabilitiesFlagBitsEXT";
+            return "Unhandled VkVideoEncodeH264CapabilityFlagBitsEXT";
     }
 }
 
-static inline std::string string_VkVideoEncodeH264CapabilitiesFlagsEXT(VkVideoEncodeH264CapabilitiesFlagsEXT input_value)
+static inline std::string string_VkVideoEncodeH264CapabilityFlagsEXT(VkVideoEncodeH264CapabilityFlagsEXT input_value)
 {
     std::string ret;
     int index = 0;
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkVideoEncodeH264CapabilitiesFlagBitsEXT(static_cast<VkVideoEncodeH264CapabilitiesFlagBitsEXT>(1U << index)));
+            ret.append(string_VkVideoEncodeH264CapabilityFlagBitsEXT(static_cast<VkVideoEncodeH264CapabilityFlagBitsEXT>(1U << index)));
         }
         ++index;
         input_value >>= 1;
     }
-    if( ret.empty()) ret.append(string_VkVideoEncodeH264CapabilitiesFlagBitsEXT(static_cast<VkVideoEncodeH264CapabilitiesFlagBitsEXT>(0)));
+    if( ret.empty()) ret.append(string_VkVideoEncodeH264CapabilityFlagBitsEXT(static_cast<VkVideoEncodeH264CapabilityFlagBitsEXT>(0)));
     return ret;
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -6933,34 +6933,34 @@ static inline std::string string_VkVideoEncodeH264CreateFlagsEXT(VkVideoEncodeH2
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-static inline const char* string_VkVideoDecodeH264FieldLayoutFlagBitsEXT(VkVideoDecodeH264FieldLayoutFlagBitsEXT input_value)
+static inline const char* string_VkVideoDecodeH264PictureLayoutFlagBitsEXT(VkVideoDecodeH264PictureLayoutFlagBitsEXT input_value)
 {
     switch (input_value)
     {
-        case VK_VIDEO_DECODE_H264_FIELD_LAYOUT_LINE_INTERLACED_PLANE_BIT_EXT:
-            return "VK_VIDEO_DECODE_H264_FIELD_LAYOUT_LINE_INTERLACED_PLANE_BIT_EXT";
-        case VK_VIDEO_DECODE_H264_FIELD_LAYOUT_SEPARATE_INTERLACED_PLANE_BIT_EXT:
-            return "VK_VIDEO_DECODE_H264_FIELD_LAYOUT_SEPARATE_INTERLACED_PLANE_BIT_EXT";
-        case VK_VIDEO_DECODE_H264_PROGRESSIVE_PICTURES_ONLY_EXT:
-            return "VK_VIDEO_DECODE_H264_PROGRESSIVE_PICTURES_ONLY_EXT";
+        case VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_INTERLACED_INTERLEAVED_LINES_BIT_EXT:
+            return "VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_INTERLACED_INTERLEAVED_LINES_BIT_EXT";
+        case VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_INTERLACED_SEPARATE_PLANES_BIT_EXT:
+            return "VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_INTERLACED_SEPARATE_PLANES_BIT_EXT";
+        case VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_PROGRESSIVE_EXT:
+            return "VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_PROGRESSIVE_EXT";
         default:
-            return "Unhandled VkVideoDecodeH264FieldLayoutFlagBitsEXT";
+            return "Unhandled VkVideoDecodeH264PictureLayoutFlagBitsEXT";
     }
 }
 
-static inline std::string string_VkVideoDecodeH264FieldLayoutFlagsEXT(VkVideoDecodeH264FieldLayoutFlagsEXT input_value)
+static inline std::string string_VkVideoDecodeH264PictureLayoutFlagsEXT(VkVideoDecodeH264PictureLayoutFlagsEXT input_value)
 {
     std::string ret;
     int index = 0;
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkVideoDecodeH264FieldLayoutFlagBitsEXT(static_cast<VkVideoDecodeH264FieldLayoutFlagBitsEXT>(1U << index)));
+            ret.append(string_VkVideoDecodeH264PictureLayoutFlagBitsEXT(static_cast<VkVideoDecodeH264PictureLayoutFlagBitsEXT>(1U << index)));
         }
         ++index;
         input_value >>= 1;
     }
-    if( ret.empty()) ret.append(string_VkVideoDecodeH264FieldLayoutFlagBitsEXT(static_cast<VkVideoDecodeH264FieldLayoutFlagBitsEXT>(0)));
+    if( ret.empty()) ret.append(string_VkVideoDecodeH264PictureLayoutFlagBitsEXT(static_cast<VkVideoDecodeH264PictureLayoutFlagBitsEXT>(0)));
     return ret;
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
