@@ -10007,6 +10007,58 @@ TEST_F(VkLayerTest, SwapchainAcquireImageRetired) {
     DestroySwapchain();
 }
 
+TEST_F(VkLayerTest, InvalidDeviceGroupRenderArea) {
+    TEST_DESCRIPTION("Begin render pass with device group render area that is not within the framebuffer.");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+        printf("%s %s extension not supported skipped.\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkRect2D renderArea = {};
+    renderArea.offset.x = -1;
+    renderArea.offset.y = -1;
+    renderArea.extent.width = 64;
+    renderArea.extent.height = 64;
+
+    VkDeviceGroupRenderPassBeginInfo device_group_render_pass_begin_info = LvlInitStruct<VkDeviceGroupRenderPassBeginInfo>();
+    device_group_render_pass_begin_info.deviceMask = 0x1;
+    device_group_render_pass_begin_info.deviceRenderAreaCount = 1;
+    device_group_render_pass_begin_info.pDeviceRenderAreas = &renderArea;
+
+    VkRenderPassBeginInfo rpbinfo = LvlInitStruct<VkRenderPassBeginInfo>(&device_group_render_pass_begin_info);
+    rpbinfo.renderPass = m_renderPass;
+    rpbinfo.framebuffer = m_framebuffer;
+    rpbinfo.renderArea.extent.width = m_framebuffer_info.width;
+    rpbinfo.renderArea.extent.height = m_framebuffer_info.height;
+    rpbinfo.renderArea.offset.x = -32;
+    rpbinfo.renderArea.offset.y = 0;
+    rpbinfo.clearValueCount = 1;
+    rpbinfo.pClearValues = m_renderPassClearValues.data();
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02854");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02855");
+    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_errorMonitor->VerifyFound();
+
+    renderArea.offset.x = 0;
+    renderArea.offset.y = 1;
+    renderArea.extent.width = m_framebuffer_info.width + 1;
+    renderArea.extent.height = m_framebuffer_info.height;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02856");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02857");
+    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, RenderPassBeginNullValues) {
     TEST_DESCRIPTION("Test invalid null entries for clear color");
 
