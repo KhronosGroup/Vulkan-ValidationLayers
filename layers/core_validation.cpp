@@ -2103,6 +2103,20 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
     }
 
+    const auto *discard_rectangle_state =
+        LvlFindInChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pPipeline->graphicsPipelineCI.pNext);
+    if (discard_rectangle_state) {
+        if (discard_rectangle_state->discardRectangleCount > phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles) {
+            skip |= LogError(
+                device, "VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-discardRectangleCount-00582",
+                "vkCreateGraphicsPipelines(): VkPipelineDiscardRectangleStateCreateInfoEXT::discardRectangleCount (%" PRIu32
+                ") in pNext chain of pCreateInfo[%" PRIu32
+                "] is not less than VkPhysicalDeviceDiscardRectanglePropertiesEXT::maxDiscardRectangles (%" PRIu32 ".",
+                discard_rectangle_state->discardRectangleCount, pipelineIndex,
+                phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles);
+        }
+    }
+
     // VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04807
     if (!enabled_features.vertex_input_dynamic_state_features.vertexInputDynamicState &&
         IsDynamic(pPipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
