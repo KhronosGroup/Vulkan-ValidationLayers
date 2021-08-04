@@ -11660,6 +11660,44 @@ TEST_F(VkLayerTest, ShaderAtomicInt64) {
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
 }
 
+TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
+    TEST_DESCRIPTION("Create a graphics pipeline with advanced blend when its disabled");
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced =
+        LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&blend_operation_advanced);
+    vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
+
+    if (blend_operation_advanced.advancedBlendAllOperations == VK_TRUE) {
+        printf("%s blend_operation_advanced.advancedBlendAllOperations is VK_TRUE.\n", kSkipPrefix);
+        return;
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+
+    VkPipelineColorBlendAttachmentState attachment_state = {};
+    attachment_state.blendEnable = VK_TRUE;
+    attachment_state.colorBlendOp = VK_BLEND_OP_XOR_EXT;
+
+    VkPipelineColorBlendStateCreateInfo color_blend_state = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+    color_blend_state.attachmentCount = 1;
+    color_blend_state.pAttachments = &attachment_state;
+    pipe.gp_ci_.pColorBlendState = &color_blend_state;
+
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendAllOperations-01409");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, InvlidPipelineDiscardRectangle) {
     TEST_DESCRIPTION("Create a graphics pipeline invalid VkPipelineDiscardRectangleStateCreateInfoEXT");
 
