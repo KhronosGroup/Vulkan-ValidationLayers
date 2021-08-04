@@ -11757,3 +11757,27 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
                             "VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
 }
+
+TEST_F(VkLayerTest, BindLibraryPipeline) {
+    TEST_DESCRIPTION("Test binding a pipeline that was created with library flag");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME)) {
+        printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    CreateComputePipelineHelper cs_pipeline(*this);
+    cs_pipeline.InitInfo();
+    cs_pipeline.InitState();
+    cs_pipeline.LateBindPipelineInfo();
+    cs_pipeline.cp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-03382");
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
