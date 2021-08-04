@@ -6278,6 +6278,19 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
             skip |= LogError(device, "VUID-vkCmdBindPipeline-commandBuffer-04808",
                 "Graphics pipeline incompatible with viewport/scissor inheritance.");
         }
+        const auto *discard_rectangle_state =
+            LvlFindInChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline_state->graphicsPipelineCI.pNext);
+        if (discard_rectangle_state && discard_rectangle_state->discardRectangleCount != 0) {
+            if (!IsDynamic(pipeline_state, VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
+                skip |= LogError(device, "VUID-vkCmdBindPipeline-commandBuffer-04809",
+                                 "vkCmdBindPipeline(): commandBuffer is a secondary command buffer with "
+                                 "VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D enabled, pipelineBindPoint is "
+                                 "VK_PIPELINE_BIND_POINT_GRAPHICS and pipeline was created with "
+                                 "VkPipelineDiscardRectangleStateCreateInfoEXT::discardRectangleCount = %" PRIu32
+                                 ", but without VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT.",
+                                 discard_rectangle_state->discardRectangleCount);
+            }
+        }
     }
 
     return skip;
