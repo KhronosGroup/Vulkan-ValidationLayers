@@ -13866,6 +13866,44 @@ TEST_F(VkPositiveLayerTest, SpecializationUnused) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
 }
 
+TEST_F(VkPositiveLayerTest, FillBufferCmdPoolTransferQueue) {
+    TEST_DESCRIPTION(
+        "Use a command buffer with vkCmdFillBuffer that was allocated from a command pool that does not support graphics or "
+        "compute opeartions");
+
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (version < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    m_errorMonitor->ExpectSuccess();
+
+    uint32_t transfer = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+    if (transfer == UINT32_MAX) {
+        printf("%s Required queue families not present (non-graphics non-compute capable required).\n", kSkipPrefix);
+        return;
+    }
+    VkQueueObj *queue = m_device->queue_family_queues(transfer)[0].get();
+
+    VkCommandPoolObj pool(m_device, transfer, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandBufferObj cb(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    VkBufferObj buffer;
+    buffer.init_as_dst(*m_device, (VkDeviceSize)20, reqs);
+
+    cb.begin();
+    cb.FillBuffer(buffer.handle(), 0, 12, 0x11111111);
+    cb.end();
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, ShaderAtomicInt64) {
     TEST_DESCRIPTION("Test VK_KHR_shader_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);

@@ -13895,6 +13895,34 @@ TEST_F(VkLayerTest, CreateImageViewWithInvalidLevelOrLayerCount) {
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01584");
 }
 
+TEST_F(VkLayerTest, FillBufferCmdPoolUnsupported) {
+    TEST_DESCRIPTION(
+        "Use a command buffer with vkCmdFillBuffer that was allocated from a command pool that does not support graphics or "
+        "compute opeartions");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    uint32_t transfer = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+    if (transfer == UINT32_MAX) {
+        printf("%s Required queue families not present (non-graphics non-compute capable required).\n", kSkipPrefix);
+        return;
+    }
+    VkQueueObj *queue = m_device->queue_family_queues(transfer)[0].get();
+
+    VkCommandPoolObj pool(m_device, transfer, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandBufferObj cb(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    VkBufferObj buffer;
+    buffer.init_as_dst(*m_device, (VkDeviceSize)20, reqs);
+
+    cb.begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-commandBuffer-00030");
+    cb.FillBuffer(buffer.handle(), 0, 12, 0x11111111);
+    m_errorMonitor->VerifyFound();
+    cb.end();
+}
+
 TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
     TEST_DESCRIPTION("Checks for invalid BindIMageMemoryDeviceGroupInfo.");
 
