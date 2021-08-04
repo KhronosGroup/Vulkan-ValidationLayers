@@ -330,9 +330,10 @@ bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, con
 // Return true if extension name is found and spec value is >= requested spec value
 // WARNING: for simplicity, does not cover layers' extensions
 bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_name, const uint32_t spec_version) {
-    // WARNING: assume debug extensions are always supported, which are usually provided by layers
+    // WARNING: assume debug and validation feature extensions are always supported, which are usually provided by layers
     if (0 == strncmp(extension_name, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
     if (0 == strncmp(extension_name, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
+    if (0 == strncmp(extension_name, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
 
     const auto extensions = vk_testing::GetGlobalExtensions();
 
