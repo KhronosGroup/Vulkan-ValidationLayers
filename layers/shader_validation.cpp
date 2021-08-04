@@ -1450,6 +1450,9 @@ bool CoreChecks::ValidateShaderResolveQCOM(SHADER_MODULE_STATE const *src, VkPip
 bool CoreChecks::ValidateAtomicsTypes(SHADER_MODULE_STATE const *src) const {
     bool skip = false;
 
+    // "If sparseImageInt64Atomics is enabled, shaderImageInt64Atomics must be enabled"
+    const bool valid_image_64_int = enabled_features.shader_image_atomic_int64_feature.shaderImageInt64Atomics == VK_TRUE;
+
     for (auto &atomic_inst : src->atomic_inst) {
         const atomic_instruction &atomic = atomic_inst.second;
 
@@ -1466,6 +1469,11 @@ bool CoreChecks::ValidateAtomicsTypes(SHADER_MODULE_STATE const *src) const {
                 skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
                                  "%s: Can't use 64-bit int atomics operations with Workgroup storage class without "
                                  "shaderSharedInt64Atomics enabled.",
+                                 report_data->FormatHandle(src->vk_shader_module()).c_str());
+            } else if ((atomic.storage_class == spv::StorageClassImage) && (valid_image_64_int == false)) {
+                skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                                 "%s: Can't use 64-bit int atomics operations with Image storage class without "
+                                 "shaderImageInt64Atomics enabled.",
                                  report_data->FormatHandle(src->vk_shader_module()).c_str());
             }
         }
