@@ -6233,6 +6233,11 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                 }
             }
         }
+        if (pipeline_state->getPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
+            skip |= LogError(
+                pipeline, "VUID-vkCmdBindPipeline-pipeline-03382",
+                "vkCmdBindPipeline(): Cannot bind a pipeline that was created with the VK_PIPELINE_CREATE_LIBRARY_BIT_KHR flag.");
+        }
     }
 
     return skip;
