@@ -976,6 +976,74 @@ TEST_F(VkLayerTest, ViewportInheritanceScissorMissingFeature) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, PipelineMissingDynamicStateDiscardRectangle) {
+    TEST_DESCRIPTION("Bind pipeline with missing dynamic state discard rectangle.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    bool has_features = false;
+    const char* missing_feature_string = nullptr;
+    auto self = this;
+    ASSERT_NO_FATAL_FAILURE(has_features = ViewportInheritanceTestData::InitState(
+                                this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
+                                &missing_feature_string, true, false, true));
+    if (!has_features) {
+        printf("%s\n", missing_feature_string);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    ViewportInheritanceTestData test_data(m_device, gpu());
+    if (test_data.FailureReason()) {
+        printf("%s Test internal failure: %s\n", kSkipPrefix, test_data.FailureReason());
+        return;
+    }
+
+    VkCommandBufferInheritanceViewportScissorInfoNV viewport_scissor =
+        LvlInitStruct<VkCommandBufferInheritanceViewportScissorInfoNV>();
+    viewport_scissor.viewportScissor2D = VK_TRUE;
+    viewport_scissor.viewportDepthCount = 1;
+    viewport_scissor.pViewportDepths = test_data.kViewportArray;
+
+    VkCommandBufferInheritanceInfo cbii = LvlInitStruct<VkCommandBufferInheritanceInfo>(&viewport_scissor);
+    cbii.renderPass = m_renderPass;
+
+    VkCommandBufferBeginInfo cbbi = LvlInitStruct<VkCommandBufferBeginInfo>();
+    cbbi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    cbbi.pInheritanceInfo = &cbii;
+
+    VkRect2D discard_rectangle = {};
+    VkPipelineDiscardRectangleStateCreateInfoEXT discard_rectangle_state =
+        LvlInitStruct<VkPipelineDiscardRectangleStateCreateInfoEXT>();
+    discard_rectangle_state.discardRectangleCount = 1;
+    discard_rectangle_state.pDiscardRectangles = &discard_rectangle;
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = 2;
+    dyn_state_ci.pDynamicStates = dyn_states;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pNext = &discard_rectangle_state;
+    pipe.gp_ci_.pDynamicState = &dyn_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    vk::BeginCommandBuffer(secondary.handle(), &cbbi);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commandBuffer-04809");
+    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->VerifyFound();
+}
+
 
 // SPIR-V blobs for graphics pipeline.
 
