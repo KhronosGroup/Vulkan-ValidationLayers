@@ -110,6 +110,7 @@ class StatelessValidation : public ValidationObject {
         VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
         VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vertex_attribute_divisor_props;
+        VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
 

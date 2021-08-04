@@ -309,6 +309,14 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.vertex_attribute_divisor_props = vertex_attribute_divisor_props;
     }
 
+    if (device_extensions.vk_ext_blend_operation_advanced) {
+        // Get the needed vertex attribute divisor limits
+        auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&blend_operation_advanced_props);
+        DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+        phys_dev_ext_props.blend_operation_advanced_props = blend_operation_advanced_props;
+    }
+
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
 
     // Save app-enabled features in this device's validation object
@@ -3004,6 +3012,59 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                                "VkColorComponentFlagBits", AllVkColorComponentFlagBits,
                                                pCreateInfos[i].pColorBlendState->pAttachments[attachment_index].colorWriteMask,
                                                kOptionalFlags, "VUID-VkPipelineColorBlendAttachmentState-colorWriteMask-parameter");
+
+                            if (phys_dev_ext_props.blend_operation_advanced_props.advancedBlendAllOperations == VK_FALSE) {
+                                bool invalid = false;
+                                switch (pCreateInfos[i].pColorBlendState->pAttachments[attachment_index].colorBlendOp) {
+                                    case VK_BLEND_OP_ZERO_EXT:
+                                    case VK_BLEND_OP_SRC_EXT:
+                                    case VK_BLEND_OP_DST_EXT:
+                                    case VK_BLEND_OP_SRC_OVER_EXT:
+                                    case VK_BLEND_OP_DST_OVER_EXT:
+                                    case VK_BLEND_OP_SRC_IN_EXT:
+                                    case VK_BLEND_OP_DST_IN_EXT:
+                                    case VK_BLEND_OP_SRC_OUT_EXT:
+                                    case VK_BLEND_OP_DST_OUT_EXT:
+                                    case VK_BLEND_OP_SRC_ATOP_EXT:
+                                    case VK_BLEND_OP_DST_ATOP_EXT:
+                                    case VK_BLEND_OP_XOR_EXT:
+                                    case VK_BLEND_OP_INVERT_EXT:
+                                    case VK_BLEND_OP_INVERT_RGB_EXT:
+                                    case VK_BLEND_OP_LINEARDODGE_EXT:
+                                    case VK_BLEND_OP_LINEARBURN_EXT:
+                                    case VK_BLEND_OP_VIVIDLIGHT_EXT:
+                                    case VK_BLEND_OP_LINEARLIGHT_EXT:
+                                    case VK_BLEND_OP_PINLIGHT_EXT:
+                                    case VK_BLEND_OP_HARDMIX_EXT:
+                                    case VK_BLEND_OP_PLUS_EXT:
+                                    case VK_BLEND_OP_PLUS_CLAMPED_EXT:
+                                    case VK_BLEND_OP_PLUS_CLAMPED_ALPHA_EXT:
+                                    case VK_BLEND_OP_PLUS_DARKER_EXT:
+                                    case VK_BLEND_OP_MINUS_EXT:
+                                    case VK_BLEND_OP_MINUS_CLAMPED_EXT:
+                                    case VK_BLEND_OP_CONTRAST_EXT:
+                                    case VK_BLEND_OP_INVERT_OVG_EXT:
+                                    case VK_BLEND_OP_RED_EXT:
+                                    case VK_BLEND_OP_GREEN_EXT:
+                                    case VK_BLEND_OP_BLUE_EXT:
+                                        invalid = true;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                if (invalid) {
+                                    skip |= LogError(
+                                        device, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendAllOperations-01409",
+                                        "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                        "].pColorBlendState->pAttachments[%" PRIu32
+                                        "].colorBlendOp (%s) is not valid when "
+                                        "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::advancedBlendAllOperations is "
+                                        "VK_FALSE",
+                                        i, attachment_index,
+                                        string_VkBlendOp(
+                                            pCreateInfos[i].pColorBlendState->pAttachments[attachment_index].colorBlendOp));
+                                }
+                            }
                         }
                     }
 
