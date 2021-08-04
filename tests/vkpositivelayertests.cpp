@@ -13981,3 +13981,101 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicInt64) {
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
     }
 }
+
+TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
+    TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto image_atomic_int64_features = lvl_init_struct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&image_atomic_int64_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (features2.features.shaderInt64 == VK_FALSE) {
+        printf("%s shaderInt64 feature not supported, skipping tests\n", kSkipPrefix);
+        return;
+    } else if (image_atomic_int64_features.shaderImageInt64Atomics == VK_FALSE) {
+        printf("%s shaderImageInt64Atomics feature not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required for SPIR-V 1.3, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    // clang-format off
+    std::string cs_image_base = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+        #extension GL_EXT_shader_image_int64 : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        layout(set = 0, binding = 0) buffer ssbo { uint64_t y; };
+        layout(set = 0, binding = 1, r64ui) uniform u64image2D z;
+        void main() {
+    )glsl";
+
+    std::string cs_image_load = cs_image_base + R"glsl(
+           y = imageAtomicLoad(z, ivec2(1, 1), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+        }
+    )glsl";
+
+    std::string cs_image_store = cs_image_base + R"glsl(
+           imageAtomicStore(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+        }
+    )glsl";
+
+    std::string cs_image_exchange = cs_image_base + R"glsl(
+           imageAtomicExchange(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+        }
+    )glsl";
+
+    std::string cs_image_add = cs_image_base + R"glsl(
+           y = imageAtomicAdd(z, ivec2(1, 1), y);
+        }
+    )glsl";
+    // clang-format on
+
+    const char *current_shader = nullptr;
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
+        helper.cs_.reset(
+            new VkShaderObj(m_device, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr, /*SPIR-V 1.3*/ 3));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    };
+
+    //  shaderImageInt64Atomics
+    current_shader = cs_image_load.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+
+    current_shader = cs_image_store.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+
+    current_shader = cs_image_exchange.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+
+    current_shader = cs_image_add.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+}
