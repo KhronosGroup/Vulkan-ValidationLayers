@@ -2686,8 +2686,8 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
     CoreChecks *core_checks = static_cast<CoreChecks *>(validation_data);
     core_checks->SetSetImageViewInitialLayoutCallback(
-        [core_checks](CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &iv_state, VkImageLayout layout) -> void {
-            core_checks->SetImageViewInitialLayout(cb_node, iv_state, layout);
+        [](CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &iv_state, VkImageLayout layout) -> void {
+            cb_node->SetImageViewInitialLayout(iv_state, layout);
         });
 
     // Allocate shader validation cache

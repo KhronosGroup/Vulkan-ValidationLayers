@@ -44,6 +44,27 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image
 uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t mip_levels);
 uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers);
 
+// Transfer VkImageSubresourceRange into VkImageSubresourceLayers struct
+static inline VkImageSubresourceLayers LayersFromRange(const VkImageSubresourceRange &subresource_range) {
+    VkImageSubresourceLayers subresource_layers;
+    subresource_layers.aspectMask = subresource_range.aspectMask;
+    subresource_layers.baseArrayLayer = subresource_range.baseArrayLayer;
+    subresource_layers.layerCount = subresource_range.layerCount;
+    subresource_layers.mipLevel = subresource_range.baseMipLevel;
+    return subresource_layers;
+}
+
+// Transfer VkImageSubresourceLayers into VkImageSubresourceRange struct
+static inline VkImageSubresourceRange RangeFromLayers(const VkImageSubresourceLayers &subresource_layers) {
+    VkImageSubresourceRange subresource_range;
+    subresource_range.aspectMask = subresource_layers.aspectMask;
+    subresource_range.baseArrayLayer = subresource_layers.baseArrayLayer;
+    subresource_range.layerCount = subresource_layers.layerCount;
+    subresource_range.baseMipLevel = subresource_layers.mipLevel;
+    subresource_range.levelCount = 1;
+    return subresource_range;
+}
+
 // State for VkImage objects.
 // Parent -> child relationships in the object usage tree:
 // 1. Normal images:

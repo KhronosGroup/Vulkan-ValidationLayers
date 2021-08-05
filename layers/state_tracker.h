@@ -1136,22 +1136,16 @@ class ValidationStateTracker : public ValidationObject {
 
     BASE_NODE* GetStateStructPtrFromObject(const VulkanTypedHandle& object_struct);
     VkFormatFeatureFlags GetPotentialFormatFeatures(VkFormat format) const;
-    void IncrementResources(CMD_BUFFER_STATE* cb_node);
     void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
                                        const cvdescriptorset::AllocateDescriptorSetsData*);
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
                                                     const void* pData);
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                      VkFence fence, uint32_t* pImageIndex);
-    void RecordCmdBeginQuery(CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj);
-    void RecordCmdEndQuery(CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj);
     void RecordCmdEndRenderPassState(VkCommandBuffer commandBuffer);
     void RecordCmdBeginRenderPassState(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                        const VkSubpassContents contents);
     void RecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents);
-    void RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
-                                         uint32_t set, uint32_t descriptorWriteCount,
-                                         const VkWriteDescriptorSet* pDescriptorWrites);
     void RecordCreateSamplerYcbcrConversionState(const VkSamplerYcbcrConversionCreateInfo* create_info,
                                                  VkSamplerYcbcrConversion ycbcr_conversion);
     virtual std::shared_ptr<SWAPCHAIN_NODE> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
@@ -1182,29 +1176,15 @@ class ValidationStateTracker : public ValidationObject {
     void RecordPipelineShaderStage(const VkPipelineShaderStageCreateInfo* pStage, PIPELINE_STATE* pipeline,
                                    PipelineStageState* stage_state) const;
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
-    void ResetCommandBufferState(const VkCommandBuffer cb);
     void RetireFence(VkFence fence);
     void RetireTimelineSemaphore(VkSemaphore semaphore, uint64_t until_payload);
     void RecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout, VkResult result);
     void RecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue, VkResult result);
     void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq);
-    void ResetCommandBufferPushConstantDataIfIncompatible(CMD_BUFFER_STATE* cb_state, VkPipelineLayout layout);
-    static bool SetQueryState(QueryObject object, QueryState value, QueryMap* localQueryToStateMap);
-    static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass,
-                                   QueryState value, QueryMap* localQueryToStateMap);
     QueryState GetQueryState(const QueryMap* localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
                              uint32_t perfPass) const;
     void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
     void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bindInfo);
-    void UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint pipeline_bind_point,
-                                       const PIPELINE_LAYOUT_STATE* pipeline_layout, uint32_t first_set, uint32_t set_count,
-                                       const VkDescriptorSet* pDescriptorSets, cvdescriptorset::DescriptorSet* push_descriptor_set,
-                                       uint32_t dynamic_offset_count, const uint32_t* p_dynamic_offsets);
-    void UpdateStateCmdDrawDispatchType(CMD_BUFFER_STATE* cb_state, CMD_TYPE cmd_type, VkPipelineBindPoint bind_point,
-                                        const char* function);
-    void UpdateStateCmdDrawType(CMD_BUFFER_STATE* cb_state, CMD_TYPE cmd_type, VkPipelineBindPoint bind_point,
-                                const char* function);
-    void UpdateDrawState(CMD_BUFFER_STATE* cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point, const char* function);
     void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*) const;
 
     void PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
