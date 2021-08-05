@@ -9183,3 +9183,110 @@ TEST_F(VkLayerTest, CmdClearColorImageNullColor) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, InvalidClearColorAttachmentsWithMultiview) {
+    TEST_DESCRIPTION("Test cmdClearAttachments with active render pass that uses multiview");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkAttachmentDescription attachmentDescription = {};
+    attachmentDescription.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference colorAttachmentReference = {};
+    colorAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
+    colorAttachmentReference.attachment = 0;
+
+    VkSubpassDescription subpassDescription = {};
+    subpassDescription.colorAttachmentCount = 1;
+    subpassDescription.pColorAttachments = &colorAttachmentReference;
+
+    uint32_t viewMask = 0x1u;
+    VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = LvlInitStruct<VkRenderPassMultiviewCreateInfo>();
+    renderPassMultiviewCreateInfo.subpassCount = 1;
+    renderPassMultiviewCreateInfo.pViewMasks = &viewMask;
+
+    VkRenderPassCreateInfo renderPassCreateInfo = LvlInitStruct<VkRenderPassCreateInfo>(&renderPassMultiviewCreateInfo);
+    renderPassCreateInfo.attachmentCount = 1;
+    renderPassCreateInfo.pAttachments = &attachmentDescription;
+    renderPassCreateInfo.subpassCount = 1;
+    renderPassCreateInfo.pSubpasses = &subpassDescription;
+
+    VkRenderPass renderPass;
+    vk::CreateRenderPass(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 4;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_create_info.flags = 0;
+
+    VkImageObj image(m_device);
+    image.Init(image_create_info);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkFramebufferCreateInfo framebufferCreateInfo = LvlInitStruct<VkFramebufferCreateInfo>();
+    framebufferCreateInfo.width = 32;
+    framebufferCreateInfo.height = 32;
+    framebufferCreateInfo.layers = 1;
+    framebufferCreateInfo.renderPass = renderPass;
+    framebufferCreateInfo.attachmentCount = 1;
+    framebufferCreateInfo.pAttachments = &imageView;
+
+    VkFramebuffer framebuffer = VK_NULL_HANDLE;
+    vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
+
+    // Start no RenderPass
+    m_commandBuffer->begin();
+
+    VkClearAttachment color_attachment;
+    color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    color_attachment.clearValue.color.float32[0] = 0;
+    color_attachment.clearValue.color.float32[1] = 0;
+    color_attachment.clearValue.color.float32[2] = 0;
+    color_attachment.clearValue.color.float32[3] = 0;
+    color_attachment.colorAttachment = 0;
+
+    VkClearRect clear_rect = {};
+    clear_rect.rect.extent.width = 32;
+    clear_rect.rect.extent.height = 32;
+
+    VkRenderPassBeginInfo render_pass_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    render_pass_begin_info.renderPass = renderPass;
+    render_pass_begin_info.framebuffer = framebuffer;
+    render_pass_begin_info.renderArea.extent.width = 32;
+    render_pass_begin_info.renderArea.extent.height = 32;
+
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-baseArrayLayer-00018");
+    clear_rect.layerCount = 2;
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-baseArrayLayer-00018");
+    clear_rect.baseArrayLayer = 1;
+    clear_rect.layerCount = 1;
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+}
