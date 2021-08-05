@@ -1883,6 +1883,8 @@ bool AtomicOperation(uint32_t opcode) {
         case spv::OpAtomicOr:
         case spv::OpAtomicXor:
         case spv::OpAtomicFAddEXT:
+        case spv::OpAtomicFMinEXT:
+        case spv::OpAtomicFMaxEXT:
             return true;
         default:
             return false;
