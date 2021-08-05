@@ -3594,6 +3594,18 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 }
             }
         }
+
+        // When a subpass uses a non-zero view mask, multiview functionality is considered to be enabled
+        if (subpass_desc->viewMask > 0) {
+            for (uint32_t i = 0; i < rectCount; ++i) {
+                if (pRects[i].baseArrayLayer != 0 || pRects[i].layerCount != 1) {
+                    skip |= LogError(commandBuffer, "VUID-vkCmdClearAttachments-baseArrayLayer-00018",
+                                     "vkCmdClearAttachments(): pRects[%" PRIu32 "] baseArrayLayer is %" PRIu32
+                                     " and layerCount is %" PRIu32 ", but the render pass instance uses multiview.",
+                                     i, pRects[i].baseArrayLayer, pRects[i].layerCount);
+                }
+            }
+        }
     }
     return skip;
 }
