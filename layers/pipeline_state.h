@@ -122,21 +122,16 @@ using PipelineLayoutCompatId = PipelineLayoutCompatDict::Id;
 // Store layouts and pushconstants for PipelineLayout
 class PIPELINE_LAYOUT_STATE : public BASE_NODE {
   public:
-    std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts;
-    PushConstantRangesId push_constant_ranges;
-    std::vector<PipelineLayoutCompatId> compat_for_set;
+    using SetLayoutVector = std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>>;
+    const SetLayoutVector set_layouts;
+    // canonical form IDs for the "compatible for set" contents
+    const PushConstantRangesId push_constant_ranges;
+    // table of "compatible for set N" cannonical forms for trivial accept validation
+    const std::vector<PipelineLayoutCompatId> compat_for_set;
 
-    PIPELINE_LAYOUT_STATE(VkPipelineLayout l)
-        : BASE_NODE(l, kVulkanObjectTypePipelineLayout), set_layouts{}, push_constant_ranges{}, compat_for_set{} {}
+    PIPELINE_LAYOUT_STATE(ValidationStateTracker *dev_data, VkPipelineLayout l, const VkPipelineLayoutCreateInfo *pCreateInfo);
 
     VkPipelineLayout layout() const { return handle_.Cast<VkPipelineLayout>(); }
-
-    void reset() {
-        handle_.handle = 0;
-        set_layouts.clear();
-        push_constant_ranges.reset();
-        compat_for_set.clear();
-    }
 
     std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDsl(uint32_t set) const {
         std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> dsl = nullptr;
