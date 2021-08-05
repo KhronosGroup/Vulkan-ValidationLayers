@@ -13982,6 +13982,29 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicInt64) {
     }
 }
 
+TEST_F(VkPositiveLayerTest, ValidationInstanceExtensions) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    std::string layer_name = "VK_LAYER_KHRONOS_validation";
+    std::vector<std::string> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
+                                           VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME};
+    uint32_t property_count;
+    vk::EnumerateInstanceExtensionProperties(layer_name.c_str(), &property_count, NULL);
+    std::vector<VkExtensionProperties> properties(property_count);
+    vk::EnumerateInstanceExtensionProperties(layer_name.c_str(), &property_count, properties.data());
+    for (size_t i = 0; i < extensions.size(); i++) {
+        bool found = false;
+        for (auto props : properties) {
+            if (!strcmp(props.extensionName, extensions[i].c_str())) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            FAIL() << "Validation layer is missing extension " << extensions[i].c_str();
+        }
+    }
+}
 TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
