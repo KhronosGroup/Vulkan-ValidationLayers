@@ -533,6 +533,7 @@ struct CreateComputePipelineHelper {
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
     std::unique_ptr<VkShaderObj> cs_;
+    bool override_skip_ = false;
     VkLayerTest &layer_test_;
     CreateComputePipelineHelper(VkLayerTest &test);
     ~CreateComputePipelineHelper();
@@ -559,6 +560,11 @@ struct CreateComputePipelineHelper {
         CreateComputePipelineHelper helper(test);
         helper.InitInfo();
         info_override(helper);
+        // Allow lambda to decide if to skip trying to compile pipeline to prevent crashing
+        if (helper.override_skip_) {
+            helper.override_skip_ = false;  // reset
+            return;
+        }
         helper.InitState();
 
         for (const auto &error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);

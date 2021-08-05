@@ -8041,7 +8041,34 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
         "If storage view use atomic operation, the view's format MUST support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT or "
         "VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT ");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto atomic_float_features = lvl_init_struct<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&atomic_float_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    if (atomic_float_features.shaderImageFloat32Atomics == VK_FALSE) {
+        printf("%s shaderImageFloat32Atomics not supported.  Skipping test.\n", kSkipPrefix);
+        return;
+    }
 
     m_errorMonitor->ExpectSuccess();
     VkImageUsageFlags usage = VK_IMAGE_USAGE_STORAGE_BIT;
