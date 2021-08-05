@@ -11660,6 +11660,51 @@ TEST_F(VkLayerTest, ShaderAtomicInt64) {
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
 }
 
+TEST_F(VkLayerTest, InvlidPipelineDiscardRectangle) {
+    TEST_DESCRIPTION("Create a graphics pipeline invalid VkPipelineDiscardRectangleStateCreateInfoEXT");
+
+    bool inst_ext = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (inst_ext) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s %s not supported, skipping tests\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties =
+        LvlInitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
+
+    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>();
+    phys_dev_props_2.pNext = &discard_rectangle_properties;
+    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+
+    uint32_t count = discard_rectangle_properties.maxDiscardRectangles + 1;
+    std::vector<VkRect2D> discard_rectangles(count);
+
+    VkPipelineDiscardRectangleStateCreateInfoEXT discard_rectangle_state =
+        LvlInitStruct<VkPipelineDiscardRectangleStateCreateInfoEXT>();
+    discard_rectangle_state.discardRectangleCount = count;
+    discard_rectangle_state.pDiscardRectangles = discard_rectangles.data();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pNext = &discard_rectangle_state;
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-discardRectangleCount-00582");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
