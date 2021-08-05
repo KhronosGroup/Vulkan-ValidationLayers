@@ -36,6 +36,8 @@
 #include "descriptor_sets.h"
 #include "qfo_transfer.h"
 
+struct SUBPASS_INFO;
+class FRAMEBUFFER_STATE;
 class RENDER_PASS_STATE;
 class CoreChecks;
 class ValidationStateTracker;
@@ -60,10 +62,10 @@ typedef layer_data::unordered_map<VkEvent, VkPipelineStageFlags2KHR> EventToStag
 // Track command pools and their command buffers
 class COMMAND_POOL_STATE : public BASE_NODE {
   public:
-    VkCommandPoolCreateFlags createFlags;
-    uint32_t queueFamilyIndex;
-    VkQueueFlags queue_flags;
-    bool unprotected;  // can't be used for protected memory
+    const VkCommandPoolCreateFlags createFlags;
+    const uint32_t queueFamilyIndex;
+    const VkQueueFlags queue_flags;
+    const bool unprotected;  // can't be used for protected memory
     // Cmd buffers allocated from this pool
     layer_data::unordered_set<VkCommandBuffer> commandBuffers;
 
@@ -71,7 +73,7 @@ class COMMAND_POOL_STATE : public BASE_NODE {
         : BASE_NODE(cp, kVulkanObjectTypeCommandPool),
           createFlags(pCreateInfo->flags),
           queueFamilyIndex(pCreateInfo->queueFamilyIndex),
-	  queue_flags(flags),
+          queue_flags(flags),
           unprotected((pCreateInfo->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT) == 0) {}
 
     VkCommandPool commandPool() const { return handle_.Cast<VkCommandPool>(); }
@@ -173,8 +175,6 @@ typedef layer_data::unordered_map<VkImage, layer_data::optional<GlobalImageLayou
 
 typedef layer_data::unordered_map<VkImage, layer_data::optional<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
 
-struct SUBPASS_INFO;
-class FRAMEBUFFER_STATE;
 
 class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
   public:
@@ -182,6 +182,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     VkCommandBufferBeginInfo beginInfo;
     VkCommandBufferInheritanceInfo inheritanceInfo;
     std::shared_ptr<const COMMAND_POOL_STATE> command_pool;
+    ValidationStateTracker *dev_data;
     bool hasDrawCmd;
     bool hasTraceRaysCmd;
     bool hasBuildAccelerationStructureCmd;
@@ -319,16 +320,14 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     bool transform_feedback_active{false};
 
-    CMD_BUFFER_STATE(VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo)
-        : REFCOUNTED_NODE(cb, kVulkanObjectTypeCommandBuffer), createInfo(*pCreateInfo) {}
+    CMD_BUFFER_STATE(ValidationStateTracker*, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                     std::shared_ptr<COMMAND_POOL_STATE> &cmd_pool);
 
     ~CMD_BUFFER_STATE() { Destroy(); }
 
     void Destroy() override;
 
     VkCommandBuffer commandBuffer() const { return handle_.Cast<VkCommandBuffer>(); }
-
-    int AddReverseBinding(const VulkanTypedHandle &obj);
 
     IMAGE_VIEW_STATE *GetActiveAttachmentImageViewState(uint32_t index);
     const IMAGE_VIEW_STATE *GetActiveAttachmentImageViewState(uint32_t index) const;
@@ -338,6 +337,10 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void RemoveChild(BASE_NODE *child_node);
 
     void Reset();
+
+    void IncrementResources();
+
+    void ResetPushConstantDataIfIncompatible(const PIPELINE_LAYOUT_STATE *pipeline_layout_state);
 
     ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state);
     const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(VkImage image) const;
@@ -387,8 +390,46 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         return (IsTransferOp(barrier)) && (command_pool->queueFamilyIndex == barrier.dstQueueFamilyIndex);
     }
 
+    void Begin(const VkCommandBufferBeginInfo *pBeginInfo);
+    void End(VkResult result);
+
+    void BeginQuery(const QueryObject &query_obj);
+    void EndQuery(const QueryObject &query_obj);
+    void EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
+    void ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
+
+    void BeginRenderPass(const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents contents);
+    void NextSubpass(VkSubpassContents contents);
+    void EndRenderPass();
+
+    void ExecuteCommands(uint32_t commandBuffersCount, const VkCommandBuffer *pCommandBuffers);
+
+    void UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point, const PIPELINE_LAYOUT_STATE *pipeline_layout,
+                                       uint32_t first_set, uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
+                                       cvdescriptorset::DescriptorSet *push_descriptor_set, uint32_t dynamic_offset_count,
+                                       const uint32_t *p_dynamic_offsets);
+
+    void PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, PIPELINE_LAYOUT_STATE *pipeline_layout, uint32_t set,
+                                uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites);
+
+    void UpdateStateCmdDrawDispatchType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point, const char *function);
+    void UpdateStateCmdDrawType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point, const char *function);
+    void UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point, const char *function);
+
+    void SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, VkImageLayout layout, VkImageLayout layoutStencil);
+    void SetImageViewInitialLayout(const IMAGE_VIEW_STATE &view_state, VkImageLayout layout);
+
+    void SetImageLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &image_subresource_range,
+                        VkImageLayout layout, VkImageLayout expected_layout = kInvalidLayout);
+    void SetImageLayout(const IMAGE_STATE &image_state, const VkImageSubresourceLayers &image_subresource_layers,
+                        VkImageLayout layout);
+    void SetImageInitialLayout(VkImage image, const VkImageSubresourceRange &range, VkImageLayout layout);
+    void SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range, VkImageLayout layout);
+    void SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceLayers &layers, VkImageLayout layout);
+
   protected:
     void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
+    void UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin);
 };
 
 // specializations for barriers that cannot do queue family ownership transfers

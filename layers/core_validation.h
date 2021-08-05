@@ -569,11 +569,6 @@ class CoreChecks : public ValidationStateTracker {
                                        const VkImageSubresourceRange& subresourceRange, const char* cmd_name,
                                        const char* param_name, const char* image_layer_count_var_name, const VkImage image,
                                        const SubresourceRangeErrorCodes& errorCodes) const;
-    void SetImageLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_STATE& image_state,
-                        const VkImageSubresourceRange& image_subresource_range, VkImageLayout layout,
-                        VkImageLayout expected_layout = kInvalidLayout);
-    void SetImageLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_STATE& image_state,
-                        const VkImageSubresourceLayers& image_subresource_layers, VkImageLayout layout);
     bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
                                                               VkImage image, VkImageView image_view, VkFramebuffer framebuffer,
                                                               VkRenderPass renderpass, uint32_t attachment_index,
@@ -658,17 +653,6 @@ class CoreChecks : public ValidationStateTracker {
                                                 const VkImageSubresourceRange* pRanges) override;
 
     bool FindLayouts(const IMAGE_STATE& image_state, std::vector<VkImageLayout>& layouts) const;
-
-    void SetImageViewLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_VIEW_STATE& view_state, VkImageLayout layout,
-                            VkImageLayout layoutStencil);
-    void SetImageViewInitialLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_VIEW_STATE& view_state, VkImageLayout layout);
-
-    void SetImageInitialLayout(CMD_BUFFER_STATE* cb_node, VkImage image, const VkImageSubresourceRange& range,
-                               VkImageLayout layout);
-    void SetImageInitialLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
-                               VkImageLayout layout);
-    void SetImageInitialLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_STATE& image_state, const VkImageSubresourceLayers& layers,
-                               VkImageLayout layout);
 
     bool VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion rp_version, const CMD_BUFFER_STATE* pCB,
                                                const VkRenderPassBeginInfo* pRenderPassBegin,
