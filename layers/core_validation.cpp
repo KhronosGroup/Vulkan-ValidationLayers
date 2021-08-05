@@ -4212,7 +4212,7 @@ bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQ
 
         // Don't double error message if already skipping from ValidateDeviceQueueFamily
         if (!valid_flags && !skip) {
-            skip |= LogError(device, "UNASSIGNED-VkDeviceQueueInfo2",
+            skip |= LogError(device, "VUID-VkDeviceQueueInfo2-flags-06225",
                              "vkGetDeviceQueue2: The combination of queueFamilyIndex (=%" PRIu32
                              ") and flags (%s) were never both set together in any element of "
                              "vkCreateDevice::pCreateInfo->pQueueCreateInfos at device creation time.",

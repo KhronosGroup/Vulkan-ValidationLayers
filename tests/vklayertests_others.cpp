@@ -8998,7 +8998,7 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
         queue_info_2.flags = 0;
         queue_info_2.queueFamilyIndex = queue_family_index;
         queue_info_2.queueIndex = 0;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkDeviceQueueInfo2");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueInfo2-flags-06225");
         vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue);
         m_errorMonitor->VerifyFound();
 
@@ -9053,7 +9053,7 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
 
     // Test device created with no flags and trying to query with flag
     queue_info_2.flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkDeviceQueueInfo2");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueInfo2-flags-06225");
     vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue);
     m_errorMonitor->VerifyFound();
     queue_info_2.flags = 0;  // reset
