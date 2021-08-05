@@ -1412,6 +1412,40 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                 }
             }
         }
+        const auto *color_blend_advanced =
+            LvlFindInChain<VkPipelineColorBlendAdvancedStateCreateInfoEXT>(pPipeline->graphicsPipelineCI.pColorBlendState->pNext);
+        if (color_blend_advanced) {
+            if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendCorrelatedOverlap &&
+                color_blend_advanced->blendOverlap != VK_BLEND_OVERLAP_UNCORRELATED_EXT) {
+                skip |= LogError(
+                    device, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-blendOverlap-01426",
+                    "vkCreateGraphicsPipelines(): pPipelines[%" PRIu32
+                    "].pColorBlendState pNext chain contains VkPipelineColorBlendAdvancedStateCreateInfoEXT structure with "
+                    "blendOverlap equal to %s, but "
+                    "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::advancedBlendCorrelatedOverlap is not supported.",
+                    pipelineIndex, string_VkBlendOverlapEXT(color_blend_advanced->blendOverlap));
+            }
+            if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor &&
+                color_blend_advanced->dstPremultiplied != VK_TRUE) {
+                LogError(
+                    device, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-dstPremultiplied-01425",
+                    "vkCreateGraphicsPipelines(): pPipelines[%" PRIu32
+                    "].pColorBlendState pNext chain contains VkPipelineColorBlendAdvancedStateCreateInfoEXT structure with "
+                    "dstPremultiplied equal to VK_FALSE, but "
+                    "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::advancedBlendNonPremultipliedDstColor is not supported.",
+                    pipelineIndex);
+            }
+            if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor &&
+                color_blend_advanced->srcPremultiplied != VK_TRUE) {
+                LogError(
+                    device, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-srcPremultiplied-01424",
+                    "vkCreateGraphicsPipelines(): pPipelines[%" PRIu32
+                    "].pColorBlendState pNext chain contains VkPipelineColorBlendAdvancedStateCreateInfoEXT structure with "
+                    "srcPremultiplied equal to VK_FALSE, but "
+                    "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::advancedBlendNonPremultipliedSrcColor is not supported.",
+                    pipelineIndex);
+            }
+        }
     }
 
     if (ValidateGraphicsPipelineShaderState(pPipeline)) {

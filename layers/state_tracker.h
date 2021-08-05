@@ -1311,6 +1311,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceProvokingVertexPropertiesEXT provoking_vertex_props;
         VkPhysicalDeviceMultiDrawPropertiesEXT multi_draw_props;
         VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_props;
+        VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
