@@ -2913,7 +2913,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
 
                 const VkStructureType allowed_structs_vk_pipeline_color_blend_state_create_info[] = {
-                    VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_ADVANCED_STATE_CREATE_INFO_EXT};
+                    VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_ADVANCED_STATE_CREATE_INFO_EXT,
+                    VK_STRUCTURE_TYPE_PIPELINE_COLOR_WRITE_CREATE_INFO_EXT};
 
                 if (pCreateInfos[i].pColorBlendState != nullptr && uses_color_attachment) {
                     skip |= validate_struct_type("vkCreateGraphicsPipelines",
@@ -2926,7 +2927,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     skip |= validate_struct_pnext(
                         "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pColorBlendState->pNext", ParameterName::IndexVector{i}),
-                        "VkPipelineColorBlendAdvancedStateCreateInfoEXT", pCreateInfos[i].pColorBlendState->pNext,
+                        "VkPipelineColorBlendAdvancedStateCreateInfoEXT, VkPipelineColorWriteCreateInfoEXT", pCreateInfos[i].pColorBlendState->pNext,
                         ARRAY_SIZE(allowed_structs_vk_pipeline_color_blend_state_create_info),
                         allowed_structs_vk_pipeline_color_blend_state_create_info, GeneratedVulkanHeaderVersion,
                         "VUID-VkPipelineColorBlendStateCreateInfo-pNext-pNext",

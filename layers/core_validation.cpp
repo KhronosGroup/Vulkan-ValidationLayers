@@ -1389,6 +1389,29 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                 }
             }
         }
+        auto color_write =
+            lvl_find_in_chain<VkPipelineColorWriteCreateInfoEXT>(pPipeline->graphicsPipelineCI.pColorBlendState->pNext);
+        if (color_write) {
+            if (color_write->attachmentCount != color_blend_state->attachmentCount) {
+                skip |= LogError(
+                    device, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-04802",
+                    "vkCreateGraphicsPipelines(): VkPipelineColorWriteCreateInfoEXT in the pNext chain of pPipelines[%" PRIu32
+                    "].pColorBlendState has different attachmentCount (%" PRIu32 ") than pColorBlendState.attachmentCount (%" PRIu32
+                    ").",
+                    pipelineIndex, color_write->attachmentCount, color_blend_state->attachmentCount);
+            }
+            if (!enabled_features.color_write_features.colorWriteEnable) {
+                for (uint32_t i = 0; i < color_write->attachmentCount; ++i) {
+                    if (color_write->pColorWriteEnables[i] != VK_TRUE) {
+                        skip |= LogError(device, "VUID-VkPipelineColorWriteCreateInfoEXT-pAttachments-04801",
+                                         "vkCreateGraphicsPipelines(): pPipelines[%" PRIu32
+                                         "].pColorBlendState pNext chain includes VkPipelineColorWriteCreateInfoEXT with "
+                                         "pColorWriteEnables[%" PRIu32 "] = VK_FALSE, but colorWriteEnable is not enabled.",
+                                         pipelineIndex, i);
+                    }
+                }
+            }
+        }
     }
 
     if (ValidateGraphicsPipelineShaderState(pPipeline)) {
