@@ -11894,3 +11894,52 @@ TEST_F(VkLayerTest, TestPipelineColorWriteCreateInfoEXT) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, ColorBlendAdvanced) {
+    TEST_DESCRIPTION("Test VkPipelineColorBlendAdvancedStateCreateInfoEXT with unsupported properties");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME)) {
+        printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props =
+        LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&blend_operation_advanced_props);
+    vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
+
+    VkPipelineColorBlendAdvancedStateCreateInfoEXT color_blend_advanced =
+        LvlInitStruct<VkPipelineColorBlendAdvancedStateCreateInfoEXT>();
+    color_blend_advanced.blendOverlap = VK_BLEND_OVERLAP_DISJOINT_EXT;
+    color_blend_advanced.dstPremultiplied = VK_FALSE;
+    color_blend_advanced.srcPremultiplied = VK_FALSE;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.cb_ci_.pNext = &color_blend_advanced;
+    if (!blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-blendOverlap-01426");
+    }
+    if (!blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-dstPremultiplied-01425");
+    }
+    if (!blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-srcPremultiplied-01424");
+    }
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
