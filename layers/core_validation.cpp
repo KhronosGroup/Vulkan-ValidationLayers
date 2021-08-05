@@ -9100,6 +9100,15 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                         "height: %u, the ceiling value: %u\n",
                                         i, subresource_range.baseMipLevel, i, i, mip_height, ceiling_height);
                                 }
+                                if (view_state->normalized_subresource_range.layerCount != 1) {
+                                    skip |= LogError(device, "VUID-VkFramebufferCreateInfo-pAttachments-02744",
+                                                     "vkCreateFramebuffer(): pCreateInfo->pAttachments[%" PRIu32
+                                                     "] is referenced by "
+                                                     "VkRenderPassFragmentDensityMapCreateInfoEXT::fragmentDensityMapAttachment in "
+                                                     "the pNext chain, but it was create with subresourceRange.layerCount (%" PRIu32
+                                                     ") different from 1.",
+                                                     i, view_state->normalized_subresource_range.layerCount);
+                                }
                             }
                         }
 
