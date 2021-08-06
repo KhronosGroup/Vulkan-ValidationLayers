@@ -12328,7 +12328,18 @@ TEST_F(VkLayerTest, ValidateGetPhysicalDeviceVideoFormatProperties) {
     m_device_extension_names.push_back(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
+    VkVideoProfileKHR video_profile = LvlInitStruct<VkVideoProfileKHR>();
+    video_profile.videoCodecOperation = VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_EXT;
+    video_profile.chromaSubsampling = VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR;
+    video_profile.lumaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
+    video_profile.chromaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
+
+    VkVideoProfilesKHR video_profiles = LvlInitStruct<VkVideoProfilesKHR>();
+    video_profiles.profileCount = 1;
+    video_profiles.pProfiles = &video_profile;
+
     VkPhysicalDeviceVideoFormatInfoKHR video_format_info = LvlInitStruct<VkPhysicalDeviceVideoFormatInfoKHR>();
+    video_format_info.pVideoProfiles = &video_profiles;
 
     PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR vkGetPhysicalDeviceVideoFormatPropertiesKHR =
         (PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR)vk::GetInstanceProcAddr(instance(),
