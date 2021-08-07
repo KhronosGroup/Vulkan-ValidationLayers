@@ -10032,6 +10032,78 @@ TEST_F(VkLayerTest, RenderPassBeginNullValues) {
                         "VUID-VkRenderPassBeginInfo-clearValueCount-04962", nullptr);
 }
 
+TEST_F(VkLayerTest, DepthStencilResolveAttachmentInvalidFormat) {
+    TEST_DESCRIPTION("Create subpass with VkSubpassDescriptionDepthStencilResolve that has an ");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+    if (!rp2Supported) {
+        printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        return;
+    }
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) {
+        printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    if (ds_format == VK_FORMAT_UNDEFINED) {
+        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkAttachmentDescription2KHR attachmentDescriptions[2] = {};
+    // Depth/stencil attachment
+    attachmentDescriptions[0].sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR;
+    attachmentDescriptions[0].format = VK_FORMAT_R8_UNORM;
+    attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachmentDescriptions[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    // Depth/stencil resolve attachment
+    attachmentDescriptions[1].sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR;
+    attachmentDescriptions[1].format = ds_format;
+    attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_4_BIT;
+    attachmentDescriptions[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference2KHR depthStencilAttachmentReference = LvlInitStruct<VkAttachmentReference2KHR>();
+    depthStencilAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
+    depthStencilAttachmentReference.attachment = 1;
+
+    VkAttachmentReference2KHR depthStencilResolveAttachmentReference = LvlInitStruct<VkAttachmentReference2KHR>();
+    depthStencilResolveAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
+    depthStencilResolveAttachmentReference.attachment = 0;
+
+    VkSubpassDescriptionDepthStencilResolveKHR subpassDescriptionDepthStencilResolve =
+        LvlInitStruct<VkSubpassDescriptionDepthStencilResolveKHR>();
+    subpassDescriptionDepthStencilResolve.pDepthStencilResolveAttachment = &depthStencilResolveAttachmentReference;
+    subpassDescriptionDepthStencilResolve.depthResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+    subpassDescriptionDepthStencilResolve.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+
+    VkSubpassDescription2 subpassDescription = LvlInitStruct<VkSubpassDescription2>(&subpassDescriptionDepthStencilResolve);
+    subpassDescription.pDepthStencilAttachment = &depthStencilAttachmentReference;
+
+    VkRenderPassCreateInfo2 rpci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpassDescription;
+    rpci.attachmentCount = 2;
+    rpci.pAttachments = attachmentDescriptions;
+
+    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+
+    VkRenderPass render_pass;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651");
+    vkCreateRenderPass2KHR(m_device->device(), &rpci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ValidateDescriptorBindingUpdateAfterBindWithAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure descriptor writing.");
 
