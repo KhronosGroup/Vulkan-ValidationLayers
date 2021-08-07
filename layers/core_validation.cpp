@@ -10824,6 +10824,20 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
                              function_name, i, resolve->pDepthStencilResolveAttachment->attachment);
         }
 
+        if (resolve_attachment_not_unused) {
+            VkFormat resolve_format = pCreateInfo->pAttachments[resolve->pDepthStencilResolveAttachment->attachment].format;
+            const VkFormatFeatureFlags potential_format_features = GetPotentialFormatFeatures(resolve_format); 
+            if ((potential_format_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                skip |= LogError(
+                    device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651",
+                    "%s: Subpass %" PRIu32
+                    " includes a VkSubpassDescriptionDepthStencilResolve "
+                    "structure with resolve attachment %" PRIu32
+                    " with a format (%s) whose features do not contain VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                    function_name, i, resolve->pDepthStencilResolveAttachment->attachment, string_VkFormat(resolve_format));
+            }
+        }
+
         VkFormat depth_stencil_attachment_format =
             (valid_ds_attachment_index ? pCreateInfo->pAttachments[subpass.pDepthStencilAttachment->attachment].format
                                        : VK_FORMAT_UNDEFINED);
