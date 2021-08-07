@@ -2067,3 +2067,57 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
 
     DestroySwapchain();
 }
+
+TEST_F(VkLayerTest, GetSwapchainImagesCountButNotImages) {
+    TEST_DESCRIPTION("Test for getting swapchain images count and presenting before getting swapchain images.");
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_TRUE(InitSurface());
+
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    if (!supported) {
+        printf("%s graphics queue does not support present, skipping test\n", kSkipPrefix);
+        return;
+    }
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
+    swapchain_info.surface = m_surface;
+    swapchain_info.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_info.imageFormat = m_surface_formats[0].format;
+    swapchain_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_info.imageExtent = m_surface_capabilities.currentExtent;
+    swapchain_info.imageArrayLayers = 1;
+    swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_info.queueFamilyIndexCount = 0;
+    swapchain_info.pQueueFamilyIndices = nullptr;
+    swapchain_info.preTransform = m_surface_capabilities.currentTransform;
+    swapchain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swapchain_info.presentMode = m_surface_present_modes[0];
+    swapchain_info.clipped = VK_FALSE;
+
+    vk::CreateSwapchainKHR(device(), &swapchain_info, nullptr, &m_swapchain);
+
+    uint32_t imageCount;
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &imageCount, nullptr);
+
+    const uint32_t image_index = 0;
+    VkPresentInfoKHR present_info = LvlInitStruct<VkPresentInfoKHR>();
+    present_info.pImageIndices = &image_index;
+    present_info.pSwapchains = &m_swapchain;
+    present_info.swapchainCount = 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-pImageIndices-01296");
+    vk::QueuePresentKHR(m_device->m_queue, &present_info);
+    m_errorMonitor->VerifyFound();
+}
