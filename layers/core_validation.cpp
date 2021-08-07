@@ -13616,6 +13616,12 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                     pPresentInfo->pSwapchains[i], validation_error,
                     "vkQueuePresentKHR: pSwapchains[%u] image index is too large (%u). There are only %u images in this swapchain.",
                     i, pPresentInfo->pImageIndices[i], static_cast<uint32_t>(swapchain_data->images.size()));
+            } else if (!swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state ||
+                       !swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state->acquired) {
+                skip |= LogError(pPresentInfo->pSwapchains[i], validation_error,
+                                 "vkQueuePresentKHR: pSwapchains[%" PRIu32 "] image at index %" PRIu32
+                                 " was not acquired from the swapchain.",
+                                 i, pPresentInfo->pImageIndices[i]);
             } else {
                 const auto *image_state = swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state;
                 assert(image_state);
