@@ -2335,6 +2335,23 @@ bool CoreChecks::ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSa
     return skip;
 }
 
+bool CoreChecks::MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSampleLocationsInfo1,
+                                          const VkSampleLocationsInfoEXT *pSampleLocationsInfo2) const {
+    if (pSampleLocationsInfo1->sampleLocationsPerPixel != pSampleLocationsInfo2->sampleLocationsPerPixel ||
+        pSampleLocationsInfo1->sampleLocationGridSize.width != pSampleLocationsInfo2->sampleLocationGridSize.width ||
+        pSampleLocationsInfo1->sampleLocationGridSize.height != pSampleLocationsInfo2->sampleLocationGridSize.height ||
+        pSampleLocationsInfo1->sampleLocationsCount != pSampleLocationsInfo2->sampleLocationsCount) {
+        return false;
+    }
+    for (uint32_t i = 0; i < pSampleLocationsInfo1->sampleLocationsCount; ++i) {
+        if (pSampleLocationsInfo1->pSampleLocations[i].x != pSampleLocationsInfo2->pSampleLocations[i].x ||
+            pSampleLocationsInfo1->pSampleLocations[i].y != pSampleLocationsInfo2->pSampleLocations[i].y) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static char const *GetCauseStr(VulkanTypedHandle obj) {
     if (obj.type == kVulkanObjectTypeDescriptorSet) return "destroyed or updated";
     if (obj.type == kVulkanObjectTypeCommandBuffer) return "destroyed or rerecorded";
@@ -6375,6 +6392,42 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                      string_VkProvokingVertexModeEXT(current_provoking_vertex_state_ci->provokingVertexMode),
                                      report_data->FormatHandle(last_bound_it.pipeline_state->pipeline()).c_str(),
                                      string_VkProvokingVertexModeEXT(last_bound_provoking_vertex_state_ci->provokingVertexMode));
+                    }
+                }
+            }
+
+            if (cb_state->activeRenderPass && phys_dev_ext_props.sample_locations_props.variableSampleLocations == VK_FALSE) {
+                const auto *sample_locations =
+                    LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(pipeline_state->graphicsPipelineCI.pNext);
+                if (sample_locations && sample_locations->sampleLocationsEnable == VK_TRUE &&
+                    !IsDynamic(pipeline_state, VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
+                    const VkRenderPassSampleLocationsBeginInfoEXT *sample_locations_begin_info =
+                        LvlFindInChain<VkRenderPassSampleLocationsBeginInfoEXT>(cb_state->activeRenderPassBeginInfo.pNext);
+                    bool found = false;
+                    if (sample_locations_begin_info) {
+                        for (uint32_t i = 0; i < sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {
+                            if (sample_locations_begin_info->pPostSubpassSampleLocations[i].subpassIndex ==
+                                cb_state->activeSubpass) {
+                                if (MatchSampleLocationsInfo(
+                                        &sample_locations_begin_info->pPostSubpassSampleLocations[i].sampleLocationsInfo,
+                                        &sample_locations->sampleLocationsInfo)) {
+                                    found = true;
+                                }
+                            }
+                        }
+                    }
+                    if (!found) {
+                        skip |=
+                            LogError(pipeline, "VUID-vkCmdBindPipeline-variableSampleLocations-01525",
+                                     "vkCmdBindPipeline(): VkPhysicalDeviceSampleLocationsPropertiesEXT::variableSampleLocations "
+                                     "is false, pipeline is a graphics pipeline with "
+                                     "VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable equal to true and without "
+                                     "VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, but the current render pass (%" PRIu32
+                                     ") was not begun with any element of "
+                                     "VkRenderPassSampleLocationsBeginInfoEXT::pPostSubpassSampleLocations subpassIndex "
+                                     "matching the current subpass index and sampleLocationsInfo matching sampleLocationsInfo of "
+                                     "VkPipelineSampleLocationsStateCreateInfoEXT the pipeline was created with.",
+                                     cb_state->activeSubpass);
                     }
                 }
             }
