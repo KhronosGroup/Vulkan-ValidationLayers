@@ -11943,3 +11943,32 @@ TEST_F(VkLayerTest, ColorBlendAdvanced) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, ValidateComputeShaderSharedMemoryOverLimits) {
+    TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const auto max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const auto max_shared_ints = max_shared_memory_size / 4;
+
+    std::stringstream csSource;
+    // Make sure compute pipeline has a compute shader stage set
+    csSource << R"(
+        #version 450
+        shared int a[)";
+    csSource << (max_shared_ints + 16);
+    csSource << R"(];
+        void main(){
+        }
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(m_device, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "UNASSIGNED-CoreValidation-Shader-MaxComputeSharedMemorySize");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}

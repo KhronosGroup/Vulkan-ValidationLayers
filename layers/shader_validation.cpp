@@ -1974,8 +1974,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
 
     if (total_shared_size > phys_dev_props.limits.maxComputeSharedMemorySize) {
         skip |= LogError(device, kVUID_Core_Shader_MaxComputeSharedMemorySize,
-                         "Shared uses more shared memory " PRIu32
-                         " than allowed by physicalDeviceLimits::maxComputeSharedMemorySize (" PRIu32 ")",
+                         "Shader uses %" PRIu32 " bytes of shared memory, more than allowed by physicalDeviceLimits::maxComputeSharedMemorySize (%" PRIu32 ")",
                          total_shared_size, phys_dev_props.limits.maxComputeSharedMemorySize);
     }
 

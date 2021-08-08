@@ -14102,3 +14102,35 @@ TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
     current_shader = cs_image_add.c_str();
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
 }
+
+TEST_F(VkPositiveLayerTest, ValidateComputeShaderSharedMemory) {
+    TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // Make sure compute pipeline has a compute shader stage set
+    char const *csSource = R"glsl(
+        #version 450
+        shared uint a;
+        shared float b;
+        shared vec2 c;
+        shared mat3 d;
+        shared mat4 e[3];
+        struct A {
+            int f;
+            float g;
+            uint h;
+        };
+        shared A f;
+        void main(){
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.InitState();
+    m_errorMonitor->ExpectSuccess();
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyNotFound();
+}
