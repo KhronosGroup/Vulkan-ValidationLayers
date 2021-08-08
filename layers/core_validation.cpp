@@ -6790,6 +6790,15 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
             }
         }
     }
+
+    const auto itr = buffer_address_map_.find(info.scratchData.deviceAddress);
+    if (itr != buffer_address_map_.cend() && !(itr->second->createInfo.usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
+        skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
+                         "vkBuildAccelerationStructuresKHR(): The buffer associated with pInfos[%" PRIu32
+                         "].scratchData.deviceAddress was not created with VK_BUFFER_USAGE_STORAGE_BUFFER_BIT bit.",
+                         info_index);
+    }
+
     return skip;
 }
 
