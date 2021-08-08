@@ -9792,7 +9792,7 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     VkBufferObj bot_level_as_scratch;
     VkBufferCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
+    create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     create_info.size = acc_struct_properties.minAccelerationStructureScratchOffsetAlignment;
     bot_level_as.create_scratch_buffer(*m_device, &bot_level_as_scratch, &create_info);
     VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL,
@@ -9931,6 +9931,24 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
         vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &pBuildRangeInfos);
         m_errorMonitor->VerifyFound();
     }
+
+    // Scratch data buffer is missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT usage flag
+    {
+        VkBufferObj bad_scratch;
+        VkBufferCreateInfo bad_create_info = LvlInitStruct<VkBufferCreateInfo>();
+        bad_create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
+        bad_create_info.size = acc_struct_properties.minAccelerationStructureScratchOffsetAlignment;
+        bot_level_as.create_scratch_buffer(*m_device, &bad_scratch, &bad_create_info);
+        VkBufferDeviceAddressInfo bad_device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
+        bad_device_address_info.buffer = bad_scratch.handle();
+        VkDeviceAddress bad_device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &bad_device_address_info);
+
+        build_info_khr.scratchData.deviceAddress = bad_device_address;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674");
+        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &pBuildRangeInfos);
+        m_errorMonitor->VerifyFound();
+    }
+
     delete[] pGeometry;
 }
 
