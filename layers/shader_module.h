@@ -303,6 +303,10 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // Get the image type from a variable id or load operation that reference an image
     spirv_inst_iter GetImageFormatInst(uint32_t id) const;
 
+    uint32_t GetTypeBitsSize(const spirv_inst_iter &iter) const;
+    uint32_t GetTypeBytesSize(const spirv_inst_iter &iter) const;
+    uint32_t CalcComputeSharedMemory(VkShaderStageFlagBits stage,
+                                     const spirv_inst_iter &insn) const;
 };
 
 // TODO - Most things below are agnostic of even the shader module and more of pure SPIR-V utils

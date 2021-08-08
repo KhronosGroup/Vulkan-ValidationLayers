@@ -1964,10 +1964,19 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
 
     // The following tries to limit the number of passes through the shader module. The validation passes in here are "stateless"
     // and mainly only checking the instruction in detail for a single operation
+    uint32_t total_shared_size = 0;
     for (auto insn : *module) {
         skip |= ValidateShaderCapabilitiesAndExtensions(module, insn);
         skip |= ValidatePropertiesAndFeatures(module, insn);
         skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage, insn);
+        total_shared_size += module->CalcComputeSharedMemory(pStage->stage, insn);
+    }
+
+    if (total_shared_size > phys_dev_props.limits.maxComputeSharedMemorySize) {
+        skip |= LogError(device, kVUID_Core_Shader_MaxComputeSharedMemorySize,
+                         "Shared uses more shared memory " PRIu32
+                         " than allowed by physicalDeviceLimits::maxComputeSharedMemorySize (" PRIu32 ")",
+                         total_shared_size, phys_dev_props.limits.maxComputeSharedMemorySize);
     }
 
     skip |=

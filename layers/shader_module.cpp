@@ -1746,6 +1746,53 @@ spirv_inst_iter SHADER_MODULE_STATE::GetImageFormatInst(uint32_t id) const
     } while (true);
 }
 
+uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const spirv_inst_iter &iter) const {
+    const uint32_t opcode = iter.opcode();
+    if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt) {
+        return iter.word(2);
+    } else if (opcode == spv::OpTypeVector) {
+        const auto component_type = get_def(iter.word(2));
+        uint32_t scalar_width = GetTypeBitsSize(component_type);
+        uint32_t component_count = iter.word(3);
+        return scalar_width * component_count;
+    } else if (opcode == spv::OpTypeMatrix) {
+        const auto column_type = get_def(iter.word(2));
+        uint32_t vector_width = GetTypeBitsSize(column_type);
+        uint32_t column_count = iter.word(3);
+        return vector_width * column_count;
+    } else if (opcode == spv::OpTypeArray) {
+        const auto element_type = get_def(iter.word(2));
+        uint32_t element_width = GetTypeBitsSize(element_type);
+        const auto length_type = get_def(iter.word(3));
+        uint32_t length = GetConstantValue(length_type);
+        return element_width * length;
+    } else if (opcode == spv::OpTypeStruct) {
+        uint32_t total_size = 0;
+        for (uint32_t i = 2; i < iter.len(); ++i) {
+            total_size += GetTypeBitsSize(get_def(iter.word(i)));
+        }
+        return total_size;
+    }
+    return 0;
+}
+
+uint32_t SHADER_MODULE_STATE::GetTypeBytesSize(const spirv_inst_iter &iter) const { return GetTypeBitsSize(iter) / 8; }
+
+uint32_t SHADER_MODULE_STATE::CalcComputeSharedMemory(VkShaderStageFlagBits stage,
+                                                      const spirv_inst_iter &insn) const {
+    if (stage == VK_SHADER_STAGE_COMPUTE_BIT && insn.opcode() == spv::OpVariable) {
+        uint32_t storage_class = insn.word(3);
+        if (storage_class == spv::StorageClassWorkgroup) {  // StorageClass Workgroup is shared memory
+            uint32_t result_type_id = insn.word(1);
+            auto result_type = get_def(result_type_id);
+            auto type = get_def(result_type.word(3));
+            return GetTypeBytesSize(type);
+        }
+    }
+
+    return 0;
+}
+
 // Assumes itr points to an OpConstant instruction
 uint32_t GetConstantValue(const spirv_inst_iter &itr) { return itr.word(3); }
 
