@@ -12474,17 +12474,19 @@ TEST_F(VkLayerTest, InvalidColorWriteEnableAttachmentCount) {
 TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTRectangleCount) {
     TEST_DESCRIPTION("Test CmdSetDiscardRectangleEXT with invalid offsets in pDiscardRectangles");
 
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME)) {
         printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
         return;
     }
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
     m_device_extension_names.push_back(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     InitState();
 
     VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties =
@@ -12498,7 +12500,7 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTRectangleCount) {
         (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
 
     VkRect2D discard_rectangles = {};
-    discard_rectangles.offset.x = -1;
+    discard_rectangles.offset.x = 0;
     discard_rectangles.offset.y = 0;
     discard_rectangles.extent.width = 64;
     discard_rectangles.extent.height = 64;
@@ -12608,21 +12610,34 @@ TEST_F(VkLayerTest, Features12AndppEnabledExtensionNames) {
 TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTOffsets) {
     TEST_DESCRIPTION("Test CmdSetDiscardRectangleEXT with invalid offsets in pDiscardRectangles");
 
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME)) {
         printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
         return;
     }
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
     m_device_extension_names.push_back(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     InitState();
+
+    VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties =
+        LvlInitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
+
+    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>();
+    phys_dev_props_2.pNext = &discard_rectangle_properties;
+    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
 
     auto fpCmdSetDiscardRectangleEXT =
         (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
+
+    if (discard_rectangle_properties.maxDiscardRectangles == 0) {
+        printf("%s Discard rectangles are not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
 
     VkRect2D discard_rectangles = {};
     discard_rectangles.offset.x = -1;
