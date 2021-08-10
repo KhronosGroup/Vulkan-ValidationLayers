@@ -253,6 +253,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdBeginRenderPass',
             'vkCmdBeginRenderPass2KHR',
             'vkCmdBeginRenderPass2',
+            'vkCmdSetDiscardRectangleEXT',
             ]
 
         # Commands to ignore

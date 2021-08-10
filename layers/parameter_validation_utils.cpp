@@ -7445,3 +7445,34 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuf
     bool skip = ValidateCmdBeginRenderPass("vkCmdBeginRenderPass2", pRenderPassBegin);
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer,
+                                                                          uint32_t firstDiscardRectangle,
+                                                                          uint32_t discardRectangleCount,
+                                                                          const VkRect2D *pDiscardRectangles) const {
+    bool skip = false;
+
+    if (pDiscardRectangles) {
+        for (uint32_t i = 0; i < discardRectangleCount; ++i) {
+            const int64_t x_sum =
+                static_cast<int64_t>(pDiscardRectangles[i].offset.x) + static_cast<int64_t>(pDiscardRectangles[i].extent.width);
+            if (x_sum > std::numeric_limits<int32_t>::max()) {
+                skip |= LogError(device, "VUID-vkCmdSetDiscardRectangleEXT-offset-00588",
+                                 "vkCmdSetDiscardRectangleEXT(): offset.x + extent.width (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
+                                 ") of pDiscardRectangles[%" PRIu32 "] will overflow int32_t.",
+                                 pDiscardRectangles[i].offset.x, pDiscardRectangles[i].extent.width, x_sum, i);
+            }
+
+            const int64_t y_sum =
+                static_cast<int64_t>(pDiscardRectangles[i].offset.y) + static_cast<int64_t>(pDiscardRectangles[i].extent.height);
+            if (y_sum > std::numeric_limits<int32_t>::max()) {
+                skip |= LogError(device, "VUID-vkCmdSetDiscardRectangleEXT-offset-00589",
+                                 "vkCmdSetDiscardRectangleEXT(): offset.y + extent.height (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
+                                 ") of pDiscardRectangles[%" PRIu32 "] will overflow int32_t.",
+                                 pDiscardRectangles[i].offset.y, pDiscardRectangles[i].extent.height, y_sum, i);
+            }
+        }
+    }
+
+    return skip;
+}

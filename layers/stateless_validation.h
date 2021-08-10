@@ -1772,5 +1772,8 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                    const VkSubpassBeginInfo *) const;
 
+    bool manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
+                                                         uint32_t discardRectangleCount, const VkRect2D *pDiscardRectangles) const;
+
 #include "parameter_validation.h"
 };  // Class StatelessValidation
