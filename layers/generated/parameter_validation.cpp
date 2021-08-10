@@ -12443,6 +12443,7 @@ bool StatelessValidation::PreCallValidateCmdSetDiscardRectangleEXT(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdSetDiscardRectangleEXT(commandBuffer, firstDiscardRectangle, discardRectangleCount, pDiscardRectangles);
     return skip;
 }
 
