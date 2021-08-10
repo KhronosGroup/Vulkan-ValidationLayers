@@ -513,7 +513,7 @@
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",
                             "label": "ARM-specific best practices",
-                            "description": "Enables processing of debug printf instructions in shaders and sending debug strings to the debug callback",
+                            "description": "Activating this feature enables the output of warnings related to ARM-specific misuse of the API, but which are not explicitly prohibited by the specification.",
                             "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         }
                     ],
