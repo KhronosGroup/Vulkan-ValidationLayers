@@ -190,6 +190,10 @@
                                 "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",
                                 "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT"
                             ]
+                        },
+                        {
+                            "key": "enable_message_limit",
+                            "value": false
                         }
                     ]
                 }
@@ -234,7 +238,7 @@
                             "key": "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT",
                             "label": "Debug Output",
                             "description": "Log a txt message using the Windows OutputDebugString function.",
-                            "platforms": [ "WINDOWS"]
+                            "platforms": [ "WINDOWS" ]
                         },
                         {
                             "key": "VK_DBG_LAYER_ACTION_BREAK",
@@ -284,15 +288,33 @@
                     ]
                 },
                 {
-                    "key": "duplicate_message_limit",
-                    "label": "Duplicated Messages Limit",
-                    "description": "Limit the number of times any single validation message would be reported. 0 is unlimited.",
-                    "type": "INT",
-                    "env": "VK_LAYER_DUPLICATE_MESSAGE_LIMIT",
-                    "default": 10,
-                    "range": {
-                        "min": 0
-                    }
+                    "key": "enable_message_limit",
+                    "label": "Limit Duplicated Messages",
+                    "description": "Enable limitation of duplicate messages.",
+                    "type": "BOOL",
+                    "default": true,
+                    "settings": [
+                        {
+                            "key": "duplicate_message_limit",
+                            "env": "VK_LAYER_DUPLICATE_MESSAGE_LIMIT",
+                            "label": "Max Duplicated Messages",
+                            "description": "Maximum number of times any single validation message would be reported.",
+                            "type": "INT",
+                            "default": 10,
+                            "range": {
+                                "min": 1
+                            },
+                            "dependence": {
+                                "mode": "ALL",
+                                "settings": [
+                                    {
+                                        "key": "enable_message_limit",
+                                        "value": true
+                                    }
+                                ]
+                            }
+                        }
+                    ]
                 },
                 {
                     "key": "message_id_filter",
