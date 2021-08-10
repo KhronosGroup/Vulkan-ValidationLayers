@@ -12686,3 +12686,45 @@ TEST_F(VkLayerTest, BeginQueryTypeTransformFeedbackStream) {
 
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
+
+TEST_F(VkLayerTest, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
+    TEST_DESCRIPTION("Test CmdSetDiscardRectangleEXT with invalid offsets in pDiscardRectangles");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    InitState();
+
+    auto vkCmdSetDiscardRectangleEXT =
+        (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
+
+    VkRect2D discard_rectangles = {};
+    discard_rectangles.offset.x = 1;
+    discard_rectangles.offset.y = 0;
+    discard_rectangles.extent.width = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
+    discard_rectangles.extent.height = 64;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDiscardRectangleEXT-offset-00588");
+    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
+    m_errorMonitor->VerifyFound();
+
+    discard_rectangles.offset.x = 0;
+    discard_rectangles.offset.y = std::numeric_limits<int32_t>::max();
+    discard_rectangles.extent.width = 64;
+    discard_rectangles.extent.height = 1;
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDiscardRectangleEXT-offset-00589");
+    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
+    m_errorMonitor->VerifyFound();
+}
