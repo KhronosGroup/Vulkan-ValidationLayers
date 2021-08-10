@@ -4080,6 +4080,8 @@ static inline const char* string_VkAttachmentLoadOp(VkAttachmentLoadOp input_val
             return "VK_ATTACHMENT_LOAD_OP_DONT_CARE";
         case VK_ATTACHMENT_LOAD_OP_LOAD:
             return "VK_ATTACHMENT_LOAD_OP_LOAD";
+        case VK_ATTACHMENT_LOAD_OP_NONE_EXT:
+            return "VK_ATTACHMENT_LOAD_OP_NONE_EXT";
         default:
             return "Unhandled VkAttachmentLoadOp";
     }
@@ -4091,8 +4093,8 @@ static inline const char* string_VkAttachmentStoreOp(VkAttachmentStoreOp input_v
     {
         case VK_ATTACHMENT_STORE_OP_DONT_CARE:
             return "VK_ATTACHMENT_STORE_OP_DONT_CARE";
-        case VK_ATTACHMENT_STORE_OP_NONE_QCOM:
-            return "VK_ATTACHMENT_STORE_OP_NONE_QCOM";
+        case VK_ATTACHMENT_STORE_OP_NONE_EXT:
+            return "VK_ATTACHMENT_STORE_OP_NONE_EXT";
         case VK_ATTACHMENT_STORE_OP_STORE:
             return "VK_ATTACHMENT_STORE_OP_STORE";
         default:
@@ -4943,6 +4945,8 @@ static inline const char* string_VkDriverId(VkDriverId input_value)
             return "VK_DRIVER_ID_NVIDIA_PROPRIETARY";
         case VK_DRIVER_ID_QUALCOMM_PROPRIETARY:
             return "VK_DRIVER_ID_QUALCOMM_PROPRIETARY";
+        case VK_DRIVER_ID_VERISILICON_PROPRIETARY:
+            return "VK_DRIVER_ID_VERISILICON_PROPRIETARY";
         default:
             return "Unhandled VkDriverId";
     }
@@ -6172,6 +6176,8 @@ static inline const char* string_VkDriverIdKHR(VkDriverIdKHR input_value)
             return "VK_DRIVER_ID_NVIDIA_PROPRIETARY";
         case VK_DRIVER_ID_QUALCOMM_PROPRIETARY:
             return "VK_DRIVER_ID_QUALCOMM_PROPRIETARY";
+        case VK_DRIVER_ID_VERISILICON_PROPRIETARY:
+            return "VK_DRIVER_ID_VERISILICON_PROPRIETARY";
         default:
             return "Unhandled VkDriverIdKHR";
     }
@@ -7564,8 +7570,8 @@ static inline const char* string_VkGeometryInstanceFlagBitsKHR(VkGeometryInstanc
             return "VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR";
         case VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR:
             return "VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR";
-        case VK_GEOMETRY_INSTANCE_TRIANGLE_FRONT_COUNTERCLOCKWISE_BIT_KHR:
-            return "VK_GEOMETRY_INSTANCE_TRIANGLE_FRONT_COUNTERCLOCKWISE_BIT_KHR";
+        case VK_GEOMETRY_INSTANCE_TRIANGLE_FLIP_FACING_BIT_KHR:
+            return "VK_GEOMETRY_INSTANCE_TRIANGLE_FLIP_FACING_BIT_KHR";
         default:
             return "Unhandled VkGeometryInstanceFlagBitsKHR";
     }
@@ -7597,8 +7603,8 @@ static inline const char* string_VkGeometryInstanceFlagBitsNV(VkGeometryInstance
             return "VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR";
         case VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR:
             return "VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR";
-        case VK_GEOMETRY_INSTANCE_TRIANGLE_FRONT_COUNTERCLOCKWISE_BIT_KHR:
-            return "VK_GEOMETRY_INSTANCE_TRIANGLE_FRONT_COUNTERCLOCKWISE_BIT_KHR";
+        case VK_GEOMETRY_INSTANCE_TRIANGLE_FLIP_FACING_BIT_KHR:
+            return "VK_GEOMETRY_INSTANCE_TRIANGLE_FLIP_FACING_BIT_KHR";
         default:
             return "Unhandled VkGeometryInstanceFlagBitsNV";
     }

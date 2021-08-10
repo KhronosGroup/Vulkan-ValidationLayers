@@ -11597,6 +11597,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiIndexedEXT(
 }
 
 
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
