@@ -170,7 +170,7 @@
                     ]
                 },
                 {
-                    "label": "Shader Printf",
+                    "label": "Debug Printf",
                     "description": "Debug shader code by \"printing\" any values of interest to the debug callback or stdout.",
                     "platforms": [ "WINDOWS", "LINUX" ],
                     "status": "STABLE",
@@ -420,7 +420,7 @@
                             "settings": [
                                 {
                                     "key": "printf_to_stdout",
-                                    "label": "Printf to stdout",
+                                    "label": "Redirect Printf messages to stdout",
                                     "description": "To redirect Debug Printf messages from the debug callback to stdout",
                                     "type": "BOOL",
                                     "default": true,
