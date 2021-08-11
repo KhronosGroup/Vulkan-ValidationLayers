@@ -29,15 +29,7 @@
 #include "layer_validation_tests.h"
 
 TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
-    SetTargetApiVersion(VK_API_VERSION_1_2);  // Needed for IsDriver.
-
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-
-    if (IsDriver(VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA)) {
-        printf("%s This test should not be run on the Intel Mesa driver\n", kSkipPrefix);
-        return;
-    }
-
     if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_BUFFER_MARKER_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
     }

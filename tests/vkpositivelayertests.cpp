@@ -44,14 +44,7 @@
 TEST_F(VkPositiveLayerTest, TwoInstances) {
     TEST_DESCRIPTION("Create two instances before destroy");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);  // Needed for IsDriver.
-
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (IsDriver(VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA)) {
-        printf("%s This test should not be run on the Intel Mesa driver\n", kSkipPrefix);
-        return;
-    }
 
     VkInstance i1, i2, i3;
 

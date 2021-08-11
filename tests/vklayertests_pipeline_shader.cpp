@@ -31,19 +31,10 @@
 
 TEST_F(VkLayerTest, PSOPolygonModeInvalid) {
     TEST_DESCRIPTION("Attempt to use invalid polygon fill modes.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_2);  // Needed for IsDriver.
-
     VkPhysicalDeviceFeatures device_features = {};
     device_features.fillModeNonSolid = VK_FALSE;
     // The sacrificial device object
     ASSERT_NO_FATAL_FAILURE(Init(&device_features));
-
-    if (IsDriver(VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA)) {
-        printf("%s This test should not be run on the Intel Mesa driver\n", kSkipPrefix);
-        return;
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPipelineRasterizationStateCreateInfo rs_ci = {};
