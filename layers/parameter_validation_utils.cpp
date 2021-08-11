@@ -4193,6 +4193,35 @@ bool StatelessValidation::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhys
                 }
             }
         }
+        const auto image_drm_format = LvlFindInChain<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(pImageFormatInfo->pNext);
+        if (image_drm_format) {
+            if (pImageFormatInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+                skip |= LogError(
+                    physicalDevice, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249",
+                    "%s(): pNext chain of VkPhysicalDeviceImageFormatInfo2 includes VkPhysicalDeviceImageDrmFormatModifierInfoEXT, "
+                    "but tiling (%s) is not VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.",
+                    apiName, string_VkImageTiling(pImageFormatInfo->tiling));
+            }
+        } else {
+            if (pImageFormatInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+                skip |= LogError(
+                    physicalDevice, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249",
+                    "%s(): pNext chain of VkPhysicalDeviceImageFormatInfo2 does not include "
+                    "VkPhysicalDeviceImageDrmFormatModifierInfoEXT, but tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.",
+                    apiName);
+            }
+        }
+        if (pImageFormatInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+            (pImageFormatInfo->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
+            const auto format_list = LvlFindInChain<VkImageFormatListCreateInfo>(pImageFormatInfo->pNext);
+            if (!format_list || format_list->viewFormatCount == 0) {
+                skip |= LogError(
+                    physicalDevice, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02313",
+                    "%s(): tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and flags contain VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT "
+                    "bit, but the pNext chain does not include VkImageFormatListCreateInfo with non-zero viewFormatCount.",
+                    apiName);
+            }
+        }
     }
 
     return skip;
