@@ -321,10 +321,10 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool transform_feedback_active{false};
     bool conditional_rendering_active{false};
 
-    CMD_BUFFER_STATE(ValidationStateTracker*, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+    CMD_BUFFER_STATE(ValidationStateTracker *, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                      std::shared_ptr<COMMAND_POOL_STATE> &cmd_pool);
 
-    ~CMD_BUFFER_STATE() { Destroy(); }
+    virtual ~CMD_BUFFER_STATE() { Destroy(); }
 
     void Destroy() override;
 
@@ -337,7 +337,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     void RemoveChild(BASE_NODE *child_node);
 
-    void Reset();
+    virtual void Reset();
 
     void IncrementResources();
 

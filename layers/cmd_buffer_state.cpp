@@ -697,7 +697,7 @@ void CMD_BUFFER_STATE::End(VkResult result) {
 void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCommandBuffer *pCommandBuffers) {
     CMD_BUFFER_STATE *sub_cb_state = NULL;
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
-        sub_cb_state = dev_data->GetCBState(pCommandBuffers[i]);
+        sub_cb_state = dev_data->Get<CMD_BUFFER_STATE>(pCommandBuffers[i]);
         assert(sub_cb_state);
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
             if (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
