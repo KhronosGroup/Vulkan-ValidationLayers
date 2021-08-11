@@ -67,11 +67,20 @@ struct DPFOutputRecord {
     uint32_t values;
 };
 
+class CMD_BUFFER_STATE_PRINTF : public CMD_BUFFER_STATE {
+  public:
+    std::vector<DPFBufferInfo> buffer_infos;
+
+    CMD_BUFFER_STATE_PRINTF(DebugPrintf* dp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
+                            std::shared_ptr<COMMAND_POOL_STATE>& pool);
+
+    void Reset() final;
+};
+
 class DebugPrintf : public ValidationStateTracker {
     VkPhysicalDeviceFeatures supported_features;
 
     uint32_t unique_shader_module_id = 0;
-    layer_data::unordered_map<VkCommandBuffer, std::vector<DPFBufferInfo>> command_buffer_map;
     uint32_t output_buffer_size;
 
     bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer);
@@ -94,15 +103,6 @@ class DebugPrintf : public ValidationStateTracker {
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     VmaAllocator vmaAllocator = {};
     std::map<VkQueue, UtilQueueBarrierCommandInfo> queue_barrier_command_infos;
-    std::vector<DPFBufferInfo>& GetBufferInfo(const VkCommandBuffer command_buffer) {
-        auto buffer_list = command_buffer_map.find(command_buffer);
-        if (buffer_list == command_buffer_map.end()) {
-            std::vector<DPFBufferInfo> new_list{};
-            command_buffer_map[command_buffer] = new_list;
-            return command_buffer_map[command_buffer];
-        }
-        return buffer_list->second;
-    }
 
     template <typename T>
     void ReportSetupProblem(T object, const char* const specific_message) const;
@@ -117,7 +117,6 @@ class DebugPrintf : public ValidationStateTracker {
     void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
                                             VkResult result) override;
-    void ResetCommandBuffer(VkCommandBuffer commandBuffer);
     bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                       VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                       uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
@@ -257,6 +256,24 @@ class DebugPrintf : public ValidationStateTracker {
                                        VkResult result) override;
     void AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point);
 
-    const CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) const { return Get<CMD_BUFFER_STATE>(cb); }
-    CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) { return Get<CMD_BUFFER_STATE>(cb); }
+    CMD_BUFFER_STATE_PRINTF* GetCBState(VkCommandBuffer commandBuffer) {
+        return static_cast<CMD_BUFFER_STATE_PRINTF*>(Get<CMD_BUFFER_STATE>(commandBuffer));
+    }
+    const CMD_BUFFER_STATE_PRINTF* GetCBState(VkCommandBuffer commandBuffer) const {
+        return static_cast<const CMD_BUFFER_STATE_PRINTF*>(Get<CMD_BUFFER_STATE>(commandBuffer));
+    }
+    const std::vector<DPFBufferInfo>& GetBufferInfo(const CMD_BUFFER_STATE* cb_node) const {
+        assert(cb_node);
+        return static_cast<const CMD_BUFFER_STATE_PRINTF*>(cb_node)->buffer_infos;
+    }
+
+    std::vector<DPFBufferInfo>& GetBufferInfo(CMD_BUFFER_STATE* cb_node) {
+        assert(cb_node);
+        return static_cast<CMD_BUFFER_STATE_PRINTF*>(cb_node)->buffer_infos;
+    }
+
+    std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
+                                                           std::shared_ptr<COMMAND_POOL_STATE>& pool) final;
+
+    void DestroyBuffer(DPFBufferInfo& buffer_info);
 };

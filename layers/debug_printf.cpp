@@ -145,18 +145,11 @@ void DebugPrintf::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPi
 }
 
 // Free the device memory and descriptor set associated with a command buffer.
-void DebugPrintf::ResetCommandBuffer(VkCommandBuffer commandBuffer) {
-    if (aborted) {
-        return;
+void DebugPrintf::DestroyBuffer(DPFBufferInfo &buffer_info) {
+    vmaDestroyBuffer(vmaAllocator, buffer_info.output_mem_block.buffer, buffer_info.output_mem_block.allocation);
+    if (buffer_info.desc_set != VK_NULL_HANDLE) {
+        desc_set_manager->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
     }
-    auto debug_printf_buffer_list = GetBufferInfo(commandBuffer);
-    for (const auto &buffer_info : debug_printf_buffer_list) {
-        vmaDestroyBuffer(vmaAllocator, buffer_info.output_mem_block.buffer, buffer_info.output_mem_block.allocation);
-        if (buffer_info.desc_set != VK_NULL_HANDLE) {
-            desc_set_manager->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
-        }
-    }
-    command_buffer_map.erase(commandBuffer);
 }
 
 // Just gives a warning about a possible deadlock.
@@ -647,11 +640,11 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
 bool DebugPrintf::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
     bool buffers_present = false;
     auto cb_node = GetCBState(command_buffer);
-    if (GetBufferInfo(cb_node->commandBuffer()).size()) {
+    if (GetBufferInfo(cb_node).size()) {
         buffers_present = true;
     }
     for (const auto *secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
-        if (GetBufferInfo(secondaryCmdBuffer->commandBuffer()).size()) {
+        if (GetBufferInfo(secondaryCmdBuffer).size()) {
             buffers_present = true;
         }
     }
@@ -971,11 +964,35 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
                                           desc_sets.data(), 0, nullptr);
         }
         // Record buffer and memory info in CB state tracking
-        GetBufferInfo(cmd_buffer).emplace_back(output_block, desc_sets[0], desc_pool, bind_point);
+        cb_node->buffer_infos.emplace_back(output_block, desc_sets[0], desc_pool, bind_point);
     } else {
         ReportSetupProblem(device, "Unable to find pipeline state");
         vmaDestroyBuffer(vmaAllocator, output_block.buffer, output_block.allocation);
         aborted = true;
         return;
     }
+}
+
+std::shared_ptr<CMD_BUFFER_STATE> DebugPrintf::CreateCmdBufferState(VkCommandBuffer cb,
+                                                                    const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                                    std::shared_ptr<COMMAND_POOL_STATE> &pool) {
+    return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<CMD_BUFFER_STATE_PRINTF>(this, cb, pCreateInfo, pool));
+}
+
+CMD_BUFFER_STATE_PRINTF::CMD_BUFFER_STATE_PRINTF(DebugPrintf *dp, VkCommandBuffer cb,
+                                                 const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                 std::shared_ptr<COMMAND_POOL_STATE> &pool)
+    : CMD_BUFFER_STATE(dp, cb, pCreateInfo, pool) {}
+
+void CMD_BUFFER_STATE_PRINTF::Reset() {
+    CMD_BUFFER_STATE::Reset();
+    auto debug_printf = static_cast<DebugPrintf *>(dev_data);
+    // Free the device memory and descriptor set(s) associated with a command buffer.
+    if (debug_printf->aborted) {
+        return;
+    }
+    for (auto &buffer_info : buffer_infos) {
+        debug_printf->DestroyBuffer(buffer_info);
+    }
+    buffer_infos.clear();
 }
