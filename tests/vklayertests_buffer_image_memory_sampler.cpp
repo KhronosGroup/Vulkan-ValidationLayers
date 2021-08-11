@@ -14128,3 +14128,57 @@ TEST_F(VkLayerTest, InvalidCreateImageQueueFamilies) {
     queue_families[1] = queue_node_count;
     CreateImageTest(*this, &image_create_info, vuid);
 }
+
+TEST_F(VkLayerTest, ImageFormatInfoDrmFormatModifier) {
+    TEST_DESCRIPTION("Validate VkPhysicalDeviceImageFormatInfo2.");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping tests\n", kSkipPrefix, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto vkGetPhysicalDeviceImageFormatProperties2KHR = (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(
+        instance(), "vkGetPhysicalDeviceImageFormatProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceImageFormatProperties2KHR != nullptr);
+
+    VkPhysicalDeviceImageDrmFormatModifierInfoEXT image_drm_format_modifier =
+        LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+
+    VkPhysicalDeviceImageFormatInfo2 image_format_info =
+        LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&image_drm_format_modifier);
+    image_format_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_format_info.type = VK_IMAGE_TYPE_2D;
+    image_format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_format_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_format_info.flags = 0;
+
+    VkImageFormatProperties2 image_format_properties = LvlInitStruct<VkImageFormatProperties2>();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249");
+    vkGetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+    m_errorMonitor->VerifyFound();
+
+    image_format_info.pNext = nullptr;
+    image_format_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249");
+    vkGetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+    m_errorMonitor->VerifyFound();
+
+    VkImageFormatListCreateInfo format_list = LvlInitStruct<VkImageFormatListCreateInfo>(&image_drm_format_modifier);
+    format_list.viewFormatCount = 0; // Invalid
+    image_format_info.pNext = &format_list;
+    image_format_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02313");
+    vkGetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+    m_errorMonitor->VerifyFound();
+}
