@@ -176,26 +176,24 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
             DispatchGetImageMemoryRequirements(device, *pImage, &is_node->requirements[0]);
         } else {
             uint32_t plane_count = FormatPlaneCount(pCreateInfo->format);
+            static const std::array<VkImageAspectFlagBits, 3> aspects{VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT,
+                                                                      VK_IMAGE_ASPECT_PLANE_2_BIT};
+            assert(plane_count <= aspects.size());
             VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO, nullptr};
-            VkMemoryRequirements2 mem_reqs2 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, nullptr};
-            VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2};
-            mem_req_info2.pNext = &image_plane_req;
-            mem_req_info2.image = *pImage;
+            VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, &image_plane_req,
+                                                            *pImage};
 
-            assert(plane_count != 0);  // assumes each format has at least first plane
-            image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
-            DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
-            is_node->requirements[0] = mem_reqs2.memoryRequirements;
+            for (uint32_t i = 0; i < plane_count; i++) {
+                VkMemoryRequirements2 mem_reqs2 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, nullptr};
 
-            if (plane_count >= 2) {
-                image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
-                DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
-                is_node->requirements[1] = mem_reqs2.memoryRequirements;
-            }
-            if (plane_count >= 3) {
-                image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
-                DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
-                is_node->requirements[2] = mem_reqs2.memoryRequirements;
+                image_plane_req.planeAspect = aspects[i];
+
+                if (device_extensions.vk_khr_get_memory_requirements2) {
+                    DispatchGetImageMemoryRequirements2KHR(device, &mem_req_info2, &mem_reqs2);
+                } else {
+                    DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
+                }
+                is_node->requirements[i] = mem_reqs2.memoryRequirements;
             }
         }
     }
