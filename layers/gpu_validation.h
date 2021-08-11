@@ -25,6 +25,7 @@
 #include "vk_mem_alloc.h"
 #include "gpu_utils.h"
 class GpuAssisted;
+class CMD_BUFFER_STATE_GPUAV;
 
 struct GpuAssistedDeviceMemoryBlock {
     VkBuffer buffer;
@@ -103,8 +104,6 @@ struct GpuAssistedAccelerationStructureBuildValidationState {
     VmaAllocation replacement_as_allocation = VK_NULL_HANDLE;
     uint64_t replacement_as_handle = 0;
 
-    layer_data::unordered_map<VkCommandBuffer, std::vector<GpuAssistedAccelerationStructureBuildValidationBufferInfo>>
-        validation_buffers;
 };
 
 struct GpuAssistedPreDrawValidationState {
@@ -124,11 +123,21 @@ struct GpuAssistedCmdDrawIndirectState {
     VkDeviceSize count_buffer_offset;
 };
 
+class CMD_BUFFER_STATE_GPUAV : public CMD_BUFFER_STATE {
+  public:
+    std::vector<GpuAssistedBufferInfo> gpuav_buffer_list;
+    std::vector<GpuAssistedAccelerationStructureBuildValidationBufferInfo> as_validation_buffers;
+
+    CMD_BUFFER_STATE_GPUAV(GpuAssisted* ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
+                           std::shared_ptr<COMMAND_POOL_STATE>& pool);
+
+    void Reset() final;
+};
+
 class GpuAssisted : public ValidationStateTracker {
     VkPhysicalDeviceFeatures supported_features;
     VkBool32 shaderInt64;
     uint32_t unique_shader_module_id = 0;
-    layer_data::unordered_map<VkCommandBuffer, std::vector<GpuAssistedBufferInfo>> command_buffer_map;  // gpu_buffer_list;
     uint32_t output_buffer_size;
     bool buffer_oob_enabled;
     bool validate_draw_indirect;
@@ -156,16 +165,6 @@ class GpuAssisted : public ValidationStateTracker {
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     VmaAllocator vmaAllocator = {};
     std::map<VkQueue, UtilQueueBarrierCommandInfo> queue_barrier_command_infos;
-    std::vector<GpuAssistedBufferInfo>& GetBufferInfo(const VkCommandBuffer command_buffer) {
-        auto buffer_list = command_buffer_map.find(command_buffer);
-        if (buffer_list == command_buffer_map.end()) {
-            std::vector<GpuAssistedBufferInfo> new_list{};
-            command_buffer_map[command_buffer] = new_list;
-            return command_buffer_map[command_buffer];
-        }
-        return buffer_list->second;
-    }
-
   public:
     template <typename T>
     void ReportSetupProblem(T object, const char* const specific_message) const;
@@ -191,7 +190,6 @@ class GpuAssisted : public ValidationStateTracker {
     void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
                                             VkResult result) override;
-    void ResetCommandBuffer(VkCommandBuffer commandBuffer);
     bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                       VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                       uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
@@ -209,7 +207,7 @@ class GpuAssisted : public ValidationStateTracker {
                                                       VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
                                                       VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
                                                       VkBuffer scratch, VkDeviceSize scratchOffset) override;
-    void ProcessAccelerationStructureBuildValidationBuffer(VkQueue queue, CMD_BUFFER_STATE* cb_node);
+    void ProcessAccelerationStructureBuildValidationBuffer(VkQueue queue, CMD_BUFFER_STATE_GPUAV* cb_node);
     void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                               const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -255,7 +253,7 @@ class GpuAssisted : public ValidationStateTracker {
         uint32_t operation_index, uint32_t* const debug_output_buffer);
  
     void SetDescriptorInitialized(uint32_t* pData, uint32_t index, const cvdescriptorset::Descriptor* descriptor);
-    void UpdateInstrumentationBuffer(CMD_BUFFER_STATE* cb_node);
+    void UpdateInstrumentationBuffer(CMD_BUFFER_STATE_GPUAV* cb_node);
     const GpuVuid& GetGpuVuid(CMD_TYPE cmd_type) const;
     void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) override;
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
@@ -351,6 +349,25 @@ class GpuAssisted : public ValidationStateTracker {
     void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                     VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2) override;
 
-    const CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) const { return Get<CMD_BUFFER_STATE>(cb); }
-    CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) { return Get<CMD_BUFFER_STATE>(cb); }
+    CMD_BUFFER_STATE_GPUAV* GetCBState(VkCommandBuffer commandBuffer) {
+        return static_cast<CMD_BUFFER_STATE_GPUAV*>(Get<CMD_BUFFER_STATE>(commandBuffer));
+    }
+    const CMD_BUFFER_STATE_GPUAV* GetCBState(VkCommandBuffer commandBuffer) const {
+        return static_cast<const CMD_BUFFER_STATE_GPUAV*>(Get<CMD_BUFFER_STATE>(commandBuffer));
+    }
+    const std::vector<GpuAssistedBufferInfo>& GetBufferInfo(const CMD_BUFFER_STATE* cb_node) const {
+        assert(cb_node);
+        return static_cast<const CMD_BUFFER_STATE_GPUAV*>(cb_node)->gpuav_buffer_list;
+    }
+
+    std::vector<GpuAssistedBufferInfo>& GetBufferInfo(CMD_BUFFER_STATE* cb_node) {
+        assert(cb_node);
+        return static_cast<CMD_BUFFER_STATE_GPUAV*>(cb_node)->gpuav_buffer_list;
+    }
+
+    std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
+                                                           std::shared_ptr<COMMAND_POOL_STATE>& pool) final;
+
+    void DestroyBuffer(GpuAssistedBufferInfo& buffer_info);
+    void DestroyBuffer(GpuAssistedAccelerationStructureBuildValidationBufferInfo& buffer_info);
 };

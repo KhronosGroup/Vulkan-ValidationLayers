@@ -102,10 +102,6 @@ void UtilPostCallRecordCreateDevice(const VkDeviceCreateInfo *pCreateInfo, std::
         return;
     }
     object_ptr->desc_set_manager = std::move(desc_set_manager);
-
-    // Register callback to be called at any ResetCommandBuffer time
-    object_ptr->SetCommandBufferResetCallback(
-        [object_ptr](VkCommandBuffer command_buffer) -> void { object_ptr->ResetCommandBuffer(command_buffer); });
 }
 template <typename ObjectType>
 void UtilPreCallRecordDestroyDevice(ObjectType *object_ptr) {
@@ -346,7 +342,7 @@ template <typename ObjectType>
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void UtilProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node, ObjectType *object_ptr) {
     if (cb_node && (cb_node->hasDrawCmd || cb_node->hasTraceRaysCmd || cb_node->hasDispatchCmd)) {
-        auto gpu_buffer_list = object_ptr->GetBufferInfo(cb_node->commandBuffer());
+        auto gpu_buffer_list = object_ptr->GetBufferInfo(cb_node);
         uint32_t draw_index = 0;
         uint32_t compute_index = 0;
         uint32_t ray_trace_index = 0;
