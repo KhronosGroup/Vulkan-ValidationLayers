@@ -350,4 +350,7 @@ class GpuAssisted : public ValidationStateTracker {
                                                    VkPhysicalDeviceProperties* pPhysicalDeviceProperties) override;
     void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                     VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2) override;
+
+    const CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) const { return Get<CMD_BUFFER_STATE>(cb); }
+    CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) { return Get<CMD_BUFFER_STATE>(cb); }
 };

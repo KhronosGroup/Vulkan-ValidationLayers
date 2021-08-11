@@ -8385,7 +8385,7 @@ bool CoreChecks::ValidatePerformanceQuery(const ValidationStateTracker *state_da
 
     if (query_pool_ci.queryType != VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) return false;
 
-    const CMD_BUFFER_STATE *cb_state = state_data->GetCBState(commandBuffer);
+    const auto *cb_state = state_data->Get<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
 
     if (perfPass >= query_pool_state->n_performance_passes) {
@@ -8460,7 +8460,7 @@ void CoreChecks::EnqueueVerifyEndQuery(VkCommandBuffer command_buffer, const Que
                                                                     QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
         bool skip = false;
-        const CMD_BUFFER_STATE *cb_state = device_data->GetCBState(command_buffer);
+        const CMD_BUFFER_STATE *cb_state = device_data->Get<CMD_BUFFER_STATE>(command_buffer);
         const auto *query_pool_state = device_data->GetQueryPoolState(query_obj.pool);
         if (query_pool_state->has_perf_scope_command_buffer && (cb_state->commandCount - 1) != query_obj.endCommandIndex) {
             skip |= device_data->LogError(command_buffer, "VUID-vkCmdEndQuery-queryPool-03227",

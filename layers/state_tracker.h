@@ -411,8 +411,6 @@ class ValidationStateTracker : public ValidationObject {
     DESCRIPTOR_POOL_STATE* GetDescriptorPoolState(const VkDescriptorPool pool) { return Get<DESCRIPTOR_POOL_STATE>(pool); }
     const cvdescriptorset::DescriptorSet* GetSetNode(VkDescriptorSet set) const { return Get<cvdescriptorset::DescriptorSet>(set); }
     cvdescriptorset::DescriptorSet* GetSetNode(VkDescriptorSet set) { return Get<cvdescriptorset::DescriptorSet>(set); }
-    const CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) const { return Get<CMD_BUFFER_STATE>(cb); }
-    CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) { return Get<CMD_BUFFER_STATE>(cb); }
 
     std::shared_ptr<const COMMAND_POOL_STATE> GetCommandPoolShared(VkCommandPool pool) const {
         return GetShared<COMMAND_POOL_STATE>(pool);
@@ -846,6 +844,9 @@ class ValidationStateTracker : public ValidationObject {
                                                VkResult result) override;
     void PostCallRecordReleaseProfilingLockKHR(VkDevice device) override;
 
+    virtual std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb,
+                                                                   const VkCommandBufferAllocateInfo* create_info,
+                                                                   std::shared_ptr<COMMAND_POOL_STATE>& pool);
     // Allocate/Free
     void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
                                               VkCommandBuffer* pCommandBuffer, VkResult result) override;
