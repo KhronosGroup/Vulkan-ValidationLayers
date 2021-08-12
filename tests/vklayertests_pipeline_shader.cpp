@@ -12471,3 +12471,46 @@ TEST_F(VkLayerTest, SpecializationInvalidSizeMismatch) {
         }
     }
 }
+
+TEST_F(VkLayerTest, ValidateComputeShaderLocalSize) {
+    TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // Make sure compute pipeline has a compute shader stage set
+    char const *csSource = R"glsl(
+        #version 450
+
+        layout(local_size_x_id = 3, local_size_y_id = 4) in;
+
+        void main(){
+        }
+    )glsl";
+
+    VkSpecializationMapEntry entries[2];
+    entries[0].constantID = 3;
+    entries[0].offset = 0;
+    entries[0].size = sizeof(uint32_t);
+    entries[1].constantID = 4;
+    entries[1].offset = sizeof(uint32_t);
+    entries[1].size = sizeof(uint32_t);
+
+    uint32_t data[2] = {
+        m_device->phy().properties().limits.maxComputeWorkGroupSize[0],
+        m_device->phy().properties().limits.maxComputeWorkGroupSize[1] + 1,  // Invalid
+    };
+
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 2;
+    specialization_info.pMapEntries = entries;
+    specialization_info.dataSize = sizeof(uint32_t) * 2;
+    specialization_info.pData = data;
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, &specialization_info));
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-MaxComputeWorkGroupSize");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
