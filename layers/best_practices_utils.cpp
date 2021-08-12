@@ -975,14 +975,13 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
 
         auto& create_info = cgpl_state->pCreateInfos[i];
 
-        cis.colorBlendStateCI =
-            create_info.pColorBlendState
-                ? new safe_VkPipelineColorBlendStateCreateInfo(create_info.pColorBlendState)
-                : nullptr;
-        cis.depthStencilStateCI =
-            cgpl_state->pCreateInfos[i].pDepthStencilState
-                ? new safe_VkPipelineDepthStencilStateCreateInfo(create_info.pDepthStencilState)
-                : nullptr;
+        if (create_info.pColorBlendState) {
+            cis.colorBlendStateCI.emplace(create_info.pColorBlendState);
+        }
+
+        if (create_info.pDepthStencilState) {
+            cis.depthStencilStateCI.emplace(create_info.pDepthStencilState);
+        }
 
         // Record which frame buffer attachments we should consider to be accessed when a draw call is performed.
         RENDER_PASS_STATE* rp = GetRenderPassState(create_info.renderPass);
@@ -1370,8 +1369,8 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
             render_pass_state.nextDrawTouchesAttachments = gp_cis->second.accessFramebufferAttachments;
             render_pass_state.drawTouchAttachments = true;
 
-            const auto* blend_state = gp_cis->second.colorBlendStateCI;
-            const auto* stencil_state = gp_cis->second.depthStencilStateCI;
+            const auto& blend_state = gp_cis->second.colorBlendStateCI;
+            const auto& stencil_state = gp_cis->second.depthStencilStateCI;
 
             if (blend_state) {
                 // assume the pipeline is depth-only unless any of the attachments have color writes enabled
