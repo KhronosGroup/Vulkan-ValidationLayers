@@ -89,11 +89,25 @@ void PIPELINE_STATE::initGraphicsPipeline(const ValidationStateTracker *state_da
     }
 
     stage_state.resize(pCreateInfo->stageCount);
+    // Graphics pipeline shader stages need to be recorded in order
+    for (uint32_t stage_idx = 0; stage_idx < 5; ++stage_idx) {
+        for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
+            const VkPipelineShaderStageCreateInfo &pssci = pCreateInfo->pStages[i];
+            if (pssci.stage == (1 << stage_idx)) {
+                this->duplicate_shaders |= this->active_shaders & pssci.stage;
+                this->active_shaders |= pssci.stage;
+                state_data->RecordPipelineShaderStage(&pssci, this, &stage_state[i]);
+            }
+        }
+    }
+    // Record non-graphics pipeline stages
     for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
-        const VkPipelineShaderStageCreateInfo *pssci = &pCreateInfo->pStages[i];
-        this->duplicate_shaders |= this->active_shaders & pssci->stage;
-        this->active_shaders |= pssci->stage;
-        state_data->RecordPipelineShaderStage(pssci, this, &stage_state[i]);
+        const VkPipelineShaderStageCreateInfo &pssci = pCreateInfo->pStages[i];
+        if ((pssci.stage & VK_SHADER_STAGE_ALL_GRAPHICS) == 0) {
+            this->duplicate_shaders |= this->active_shaders & pssci.stage;
+            this->active_shaders |= pssci.stage;
+            state_data->RecordPipelineShaderStage(&pssci, this, &stage_state[i]);
+        }
     }
 
     if (graphicsPipelineCI.pVertexInputState) {
