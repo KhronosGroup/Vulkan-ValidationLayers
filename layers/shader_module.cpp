@@ -1756,6 +1756,47 @@ spirv_inst_iter SHADER_MODULE_STATE::GetImageFormatInst(uint32_t id) const
     } while (true);
 }
 
+std::array<uint32_t, 3> SHADER_MODULE_STATE::GetWorkgroupSize(
+    VkPipelineShaderStageCreateInfo const *pStage, const std::unordered_map<uint32_t, std::vector<uint32_t>>& id_value_map) const {
+    std::array<uint32_t, 3> work_group_size = {1, 1, 1};
+
+    uint32_t work_group_size_id = std::numeric_limits<uint32_t>::max();
+
+    for (const auto &builtin : builtin_decoration_list) {
+        if (builtin.builtin == spv::BuiltInWorkgroupSize) {
+            work_group_size_id = at(builtin.offset).word(1);
+            break;
+        }
+    }
+    for (auto insn : *this) {
+        uint32_t opcode = insn.opcode();
+        if (opcode == spv::OpSpecConstantComposite) { // WorkGroupSize must be a composite
+            uint32_t result_id = insn.word(2);
+            if (result_id == work_group_size_id) {
+                uint32_t result_type_id = insn.word(1);
+                auto result_type = get_def(result_type_id);
+                if (result_type.opcode() == spv::OpTypeVector) {
+                    uint32_t component_count = result_type.word(3);
+                    for (uint32_t i = 0; i < component_count; ++i) {
+                        auto constituent = get_def(insn.word(3 + i));
+                        for (const auto &sc : spec_const_map) {
+                            if (sc.second == constituent.word(2)) {
+                                const auto iter = id_value_map.find(sc.first);
+                                if (iter != id_value_map.cend()) {
+                                    work_group_size[i] = *iter->second.begin();
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return work_group_size;
+}
+
 uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const spirv_inst_iter &iter) const {
     const uint32_t opcode = iter.opcode();
     if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt) {
