@@ -528,8 +528,8 @@ class BestPractices : public ValidationStateTracker {
     };
 
     struct GraphicsPipelineCIs {
-        const safe_VkPipelineDepthStencilStateCreateInfo* depthStencilStateCI;
-        const safe_VkPipelineColorBlendStateCreateInfo* colorBlendStateCI;
+        layer_data::optional<safe_VkPipelineDepthStencilStateCreateInfo> depthStencilStateCI;
+        layer_data::optional<safe_VkPipelineColorBlendStateCreateInfo> colorBlendStateCI;
         std::vector<AttachmentInfo> accessFramebufferAttachments;
     };
 
