@@ -4234,17 +4234,16 @@ TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
 TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkImage image;
-    VkDeviceMemory image_mem;
+    vk_testing::Image image;
+    vk_testing::DeviceMemory image_mem;
     VkMemoryRequirements mem_reqs;
 
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                                                   VK_IMAGE_TILING_OPTIMAL);
 
-    auto err = vk::CreateImage(device(), &image_ci, nullptr, &image);
-    ASSERT_VK_SUCCESS(err);
+    image.init_no_mem(*m_device, image_ci);
 
-    vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
+    vk::GetImageMemoryRequirements(device(), image.handle(), &mem_reqs);
 
     auto alloc_info = lvl_init_struct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = mem_reqs.size;
@@ -4252,15 +4251,14 @@ TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
     ASSERT_TRUE(pass);
 
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &image_mem);
-    ASSERT_VK_SUCCESS(err);
+    image_mem.init(*m_device, alloc_info);
 
-    err = vk::BindImageMemory(m_device->device(), image, image_mem, 0);
+    auto err = vk::BindImageMemory(m_device->device(), image.handle(), image_mem.handle(), 0);
     ASSERT_VK_SUCCESS(err);
 
     m_commandBuffer->begin();
     auto img_barrier = lvl_init_struct<VkImageMemoryBarrier>();
-    img_barrier.image = image;
+    img_barrier.image = image.handle();
     img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
@@ -4273,12 +4271,10 @@ TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeMemory-memory-00677");
-    vk::FreeMemory(m_device->handle(), image_mem, NULL);
+    vk::FreeMemory(m_device->handle(), image_mem.handle(), NULL);
     m_errorMonitor->VerifyFound();
 
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroyImage(m_device->handle(), image, NULL);
 }
 
 TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
@@ -13679,7 +13675,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
     VkImageObj image(m_device);
     image.init_no_mem(*m_device, image_create_info);
 
-    VkDeviceMemory image_mem;
+    vk_testing::DeviceMemory image_mem;
     VkMemoryRequirements mem_reqs;
     vk::GetImageMemoryRequirements(m_device->device(), image.handle(), &mem_reqs);
     VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>(nullptr);
@@ -13692,7 +13688,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
         }
     }
 
-    vk::AllocateMemory(device(), &mem_alloc, NULL, &image_mem);
+    image_mem.init(*m_device, mem_alloc);
 
     std::array<uint32_t, 2> deviceIndices = {{0, 0}};
     VkRect2D splitInstanceBindregion = {{0, 0}, {16, 16}};
@@ -13705,7 +13701,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
     VkBindImageMemoryInfo bindInfo = LvlInitStruct<VkBindImageMemoryInfo>();
     bindInfo.pNext = &bind_devicegroup_info;
     bindInfo.image = image.handle();
-    bindInfo.memory = image_mem;
+    bindInfo.memory = image_mem.handle();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01627");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01633");
@@ -14008,8 +14004,8 @@ TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
         return;
     }
 
-    VkDeviceMemory memory;
-    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &memory);
+    vk_testing::DeviceMemory memory;
+    memory.init(*m_device, mem_alloc);
 
     uint32_t deviceIndex = 0;
 
@@ -14027,7 +14023,7 @@ TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
 
     VkBindImageMemoryInfo bind_info = LvlInitStruct<VkBindImageMemoryInfo>(&bimdgi);
     bind_info.image = image.handle();
-    bind_info.memory = memory;
+    bind_info.memory = memory.handle();
     bind_info.memoryOffset = 0;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01633");
