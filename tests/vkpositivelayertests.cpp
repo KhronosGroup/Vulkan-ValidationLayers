@@ -14134,3 +14134,88 @@ TEST_F(VkPositiveLayerTest, ValidateComputeShaderSharedMemory) {
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
+    TEST_DESCRIPTION("Test topology set when creating a pipeline with tessellation and geometry shader.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!m_device->phy().features().tessellationShader) {
+        printf("%s Device does not support tessellation shaders; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    m_errorMonitor->ExpectSuccess();
+
+    char const *tcsSource = R"glsl(
+        #version 450
+        layout(vertices = 3) out;
+        void main(){
+           gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;
+           gl_TessLevelInner[0] = 1;
+        }
+    )glsl";
+    char const *tesSource = R"glsl(
+        #version 450
+        layout(isolines, equal_spacing, cw) in;
+        void main(){
+           gl_Position.xyz = gl_TessCoord;
+           gl_Position.w = 1.0f;
+        }
+    )glsl";
+    static char const *gsSource = R"glsl(
+        #version 450
+        layout (triangles) in;
+        layout (triangle_strip) out;
+        layout (max_vertices = 1) out;
+        void main() {
+           gl_Position = vec4(1.0, 0.5, 0.5, 0.0);
+           EmitVertex();
+        }
+    )glsl";
+    VkShaderObj tcs(m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+    VkShaderObj tes(m_device, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+    VkShaderObj gs(m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, this);
+
+    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                 VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+
+    VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+
+    VkDynamicState dyn_state = VK_DYNAMIC_STATE_LINE_WIDTH;
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dyn_state_ci.dynamicStateCount = 1;
+    dyn_state_ci.pDynamicStates = &dyn_state;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pTessellationState = &tsci;
+    pipe.gp_ci_.pInputAssemblyState = &iasci;
+    pipe.shader_stages_.emplace_back(gs.GetStageCreateInfo());
+    pipe.shader_stages_.emplace_back(tcs.GetStageCreateInfo());
+    pipe.shader_stages_.emplace_back(tes.GetStageCreateInfo());
+    pipe.InitState();
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    rpbi.renderPass = m_renderPass;
+    rpbi.framebuffer = m_framebuffer;
+    rpbi.renderArea.offset.x = 0;
+    rpbi.renderArea.offset.y = 0;
+    rpbi.renderArea.extent.width = 32;
+    rpbi.renderArea.extent.height = 32;
+    rpbi.clearValueCount = static_cast<uint32_t>(m_renderPassClearValues.size());
+    rpbi.pClearValues = m_renderPassClearValues.data();
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyNotFound();
+}
