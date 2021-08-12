@@ -712,6 +712,24 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *m
     return skip;
 }
 
+bool CoreChecks::ValidateWorkgroupSize(SHADER_MODULE_STATE const *src, VkPipelineShaderStageCreateInfo const *pStage,
+                                       const std::unordered_map<uint32_t, std::vector<uint32_t>>& id_value_map) const {
+    bool skip = false;
+
+    std::array<uint32_t, 3> work_group_size = src->GetWorkgroupSize(pStage, id_value_map);
+
+    for (uint32_t i = 0; i < 3; ++i) {
+        if (work_group_size[i] > phys_dev_props.limits.maxComputeWorkGroupSize[i]) {
+            const char member = 'x' + static_cast<int8_t>(i);
+            skip |= LogError(device, kVUID_Core_Shader_MaxComputeWorkGroupSize,
+                             "Specialization constant is being used to specialize WorkGroupSize.%c, but value (%" PRIu32
+                             ") is greater than VkPhysicalDeviceLimits::maxComputeWorkGroupSize[%" PRIu32 "] = %" PRIu32 ".",
+                             member, work_group_size[i], i, phys_dev_props.limits.maxComputeWorkGroupSize[i]);
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const *src, VkPipelineShaderStageCreateInfo const *pStage,
                                                       const PIPELINE_STATE *pipeline, spirv_inst_iter entrypoint) const {
     if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT || pStage->stage == VK_SHADER_STAGE_ALL_GRAPHICS ||
@@ -1950,6 +1968,8 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
             spvDiagnosticDestroy(diag);
             spvContextDestroy(ctx);
         }
+
+        skip |= ValidateWorkgroupSize(module, pStage, id_value_map);
     }
 
     // Check the entrypoint
