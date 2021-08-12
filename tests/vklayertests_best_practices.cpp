@@ -126,13 +126,13 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     // Create a 1.0 vulkan instance and request an extension promoted to core in 1.1
     m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT);
     m_errorMonitor->SetUnexpectedError("UNASSIGNED-khronos-Validation-debug-build-warning-message");
-    VkApplicationInfo* new_info = new VkApplicationInfo;
-    new_info->apiVersion = VK_API_VERSION_1_0;
-    new_info->pApplicationName = ici.pApplicationInfo->pApplicationName;
-    new_info->applicationVersion = ici.pApplicationInfo->applicationVersion;
-    new_info->pEngineName = ici.pApplicationInfo->pEngineName;
-    new_info->engineVersion = ici.pApplicationInfo->engineVersion;
-    ici.pApplicationInfo = new_info;
+    VkApplicationInfo new_info{};
+    new_info.apiVersion = VK_API_VERSION_1_0;
+    new_info.pApplicationName = ici.pApplicationInfo->pApplicationName;
+    new_info.applicationVersion = ici.pApplicationInfo->applicationVersion;
+    new_info.pEngineName = ici.pApplicationInfo->pEngineName;
+    new_info.engineVersion = ici.pApplicationInfo->engineVersion;
+    ici.pApplicationInfo = &new_info;
     vk::CreateInstance(&ici, nullptr, &dummy);
     vk::DestroyInstance(dummy, nullptr);
     m_errorMonitor->VerifyNotFound();
@@ -654,6 +654,9 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     vk::CreateFramebuffer(m_device->device(), &fb_info, nullptr, &fb);
 
     m_errorMonitor->VerifyFound();
+    vk::DestroyImageView(m_device->device(), image_view, nullptr);
+    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
+    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
 TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
