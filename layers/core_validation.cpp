@@ -8272,6 +8272,20 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
                              cmd_name, report_data->FormatHandle(query_obj.pool).c_str(), cmd_name);
         }
     }
+    if (query_pool_ci.queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR ||
+        query_pool_ci.queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR) {
+        const char *vuid = cmd == CMD_BEGINQUERYINDEXEDEXT ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-04728"
+                                                           : "VUID-vkCmdBeginQuery-queryType-04728";
+        skip |= LogError(cb_state->commandBuffer(), vuid, "%s: QueryPool was created with queryType %s.", cmd_name,
+                         string_VkQueryType(query_pool_ci.queryType));
+    }
+    if (query_pool_ci.queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV) {
+        const char *vuid = cmd == CMD_BEGINQUERYINDEXEDEXT ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-04729"
+                                                           : "VUID-vkCmdBeginQuery-queryType-04729";
+        skip |=
+            LogError(cb_state->commandBuffer(), vuid,
+                     "%s: QueryPool was created with queryType VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV.", cmd_name);
+    }
 
     skip |= ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuids->vuid_queue_flags);
 
