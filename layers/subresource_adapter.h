@@ -842,6 +842,15 @@ class BothRangeMap {
     BothRangeMap() = delete;
     BothRangeMap(index_type limit) : mode_(ComputeMode(limit)), big_map_(MakeBigMap()), small_map_(MakeSmallMap(limit)) {}
 
+    ~BothRangeMap() {
+        if (big_map_) {
+            big_map_->~BigMap();
+        }
+        if (small_map_) {
+            small_map_->~SmallMap();
+        }
+    }
+
     inline bool empty() const {
         if (SmallMode()) {
             return small_map_->empty();
