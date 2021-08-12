@@ -41,7 +41,7 @@
       "url": "https://github.com/martinus/robin-hood-hashing.git",
       "sub_dir": "robin-hood-hashing",
       "build_step": "skip",
-      "commit": "3.11.2"
+      "commit": "3.11.3"
     }
   ]
 }

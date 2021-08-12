@@ -45,7 +45,7 @@
       "build_dir": "robin-hood-hashing",
       "install_dir": "robin-hood-hashing",
       "build_step": "skip",
-      "commit": "3.11.2"
+      "commit": "3.11.3"
     }
   ],
   "install_names" : {
