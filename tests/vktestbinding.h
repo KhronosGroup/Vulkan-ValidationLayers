@@ -836,6 +836,23 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     VkCommandPool cmd_pool_;
 };
 
+class RenderPass : public internal::NonDispHandle<VkRenderPass> {
+  public:
+    ~RenderPass() NOEXCEPT;
+
+    // vkCreateRenderPass()
+    void init(const Device &dev, const VkRenderPassCreateInfo &info);
+};
+
+
+class Framebuffer : public internal::NonDispHandle<VkFramebuffer> {
+  public:
+    ~Framebuffer() NOEXCEPT;
+
+    // vkCreateFramebuffer()
+    void init(const Device &dev, const VkFramebufferCreateInfo &info);
+};
+
 inline VkMemoryAllocateInfo DeviceMemory::alloc_info(VkDeviceSize size, uint32_t memory_type_index) {
     VkMemoryAllocateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -905,4 +905,15 @@ void CommandBuffer::end() { EXPECT(vk::EndCommandBuffer(handle()) == VK_SUCCESS)
 
 void CommandBuffer::reset(VkCommandBufferResetFlags flags) { EXPECT(vk::ResetCommandBuffer(handle(), flags) == VK_SUCCESS); }
 
+void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo &info) {
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass, dev, &info);
+}
+
+NON_DISPATCHABLE_HANDLE_DTOR(RenderPass, vk::DestroyRenderPass)
+
+void Framebuffer::init(const Device &dev, const VkFramebufferCreateInfo &info) {
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateFramebuffer, dev, &info);
+}
+
+NON_DISPATCHABLE_HANDLE_DTOR(Framebuffer, vk::DestroyFramebuffer)
 }  // namespace vk_testing
