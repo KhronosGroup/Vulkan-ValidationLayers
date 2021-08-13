@@ -920,13 +920,18 @@ AccessAddressType AccessContext::ImageAddressType(const IMAGE_STATE &image) {
 }
 
 static SyncStageAccessIndex ColorLoadUsage(VkAttachmentLoadOp load_op) {
-    const auto stage_access = (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ
-                                                                      : SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
+    const auto stage_access = (load_op == VK_ATTACHMENT_LOAD_OP_NONE_EXT)
+                                  ? SYNC_ACCESS_INDEX_NONE
+                                  : ((load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ
+                                                                             : SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE);
     return stage_access;
 }
 static SyncStageAccessIndex DepthStencilLoadUsage(VkAttachmentLoadOp load_op) {
-    const auto stage_access = (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ
-                                                                      : SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE;
+    const auto stage_access =
+        (load_op == VK_ATTACHMENT_LOAD_OP_NONE_EXT)
+            ? SYNC_ACCESS_INDEX_NONE
+            : ((load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ
+                                                       : SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE);
     return stage_access;
 }
 
@@ -1025,16 +1030,16 @@ bool AccessContext::ValidateLoadOperation(const CommandExecutionContext &ex_cont
             const char *aspect = nullptr;
 
             bool checked_stencil = false;
-            if (is_color) {
+            if (is_color && (load_index != SYNC_ACCESS_INDEX_NONE)) {
                 hazard = DetectHazard(view_gen, AttachmentViewGen::Gen::kRenderArea, load_index, SyncOrdering::kColorAttachment);
                 aspect = "color";
             } else {
-                if (has_depth) {
+                if (has_depth && (load_index != SYNC_ACCESS_INDEX_NONE)) {
                     hazard = DetectHazard(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea, load_index,
                                           SyncOrdering::kDepthStencilAttachment);
                     aspect = "depth";
                 }
-                if (!hazard.hazard && has_stencil) {
+                if (!hazard.hazard && has_stencil && (stencil_load_index != SYNC_ACCESS_INDEX_NONE)) {
                     hazard = DetectHazard(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea, stencil_load_index,
                                           SyncOrdering::kDepthStencilAttachment);
                     aspect = "stencil";
@@ -1086,7 +1091,7 @@ bool AccessContext::ValidateStoreOperation(const CommandExecutionContext &ex_con
             const bool has_depth = FormatHasDepth(ci.format);
             const bool has_stencil = FormatHasStencil(ci.format);
             const bool is_color = !(has_depth || has_stencil);
-            const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE_QCOM;
+            const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE_EXT;
             if (!has_stencil && !store_op_stores) continue;
 
             HazardResult hazard;
@@ -1097,7 +1102,7 @@ bool AccessContext::ValidateStoreOperation(const CommandExecutionContext &ex_con
                                       SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kRaster);
                 aspect = "color";
             } else {
-                const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE_QCOM;
+                const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE_EXT;
                 if (has_depth && store_op_stores) {
                     hazard = DetectHazard(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea,
                                           SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, SyncOrdering::kRaster);
@@ -1640,7 +1645,7 @@ void AccessContext::UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_stat
             const bool has_depth = FormatHasDepth(ci.format);
             const bool has_stencil = FormatHasStencil(ci.format);
             const bool is_color = !(has_depth || has_stencil);
-            const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE_QCOM;
+            const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE_EXT;
 
             if (is_color && store_op_stores) {
                 UpdateAccessState(view_gen, AttachmentViewGen::Gen::kRenderArea,
@@ -1650,7 +1655,7 @@ void AccessContext::UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_stat
                     UpdateAccessState(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea,
                                       SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, SyncOrdering::kRaster, tag);
                 }
-                const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE_QCOM;
+                const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE_EXT;
                 if (has_stencil && stencil_op_stores) {
                     UpdateAccessState(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea,
                                       SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, SyncOrdering::kRaster, tag);
@@ -2360,17 +2365,25 @@ void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag &tag) 
             const bool is_color = !(has_depth || has_stencil);
 
             if (is_color) {
-                subpass_context.UpdateAccessState(view_gen, AttachmentViewGen::Gen::kRenderArea, ColorLoadUsage(ci.loadOp),
-                                                  SyncOrdering::kColorAttachment, tag);
+                const SyncStageAccessIndex load_op = ColorLoadUsage(ci.loadOp);
+                if (load_op != SYNC_ACCESS_INDEX_NONE) {
+                    subpass_context.UpdateAccessState(view_gen, AttachmentViewGen::Gen::kRenderArea, load_op,
+                                                      SyncOrdering::kColorAttachment, tag);
+                }
             } else {
                 if (has_depth) {
-                    subpass_context.UpdateAccessState(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea,
-                                                      DepthStencilLoadUsage(ci.loadOp), SyncOrdering::kDepthStencilAttachment, tag);
+                    const SyncStageAccessIndex load_op = DepthStencilLoadUsage(ci.loadOp);
+                    if (load_op != SYNC_ACCESS_INDEX_NONE) {
+                        subpass_context.UpdateAccessState(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea, load_op,
+                                                          SyncOrdering::kDepthStencilAttachment, tag);
+                    }
                 }
                 if (has_stencil) {
-                    subpass_context.UpdateAccessState(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea,
-                                                      DepthStencilLoadUsage(ci.stencilLoadOp),
-                                                      SyncOrdering::kDepthStencilAttachment, tag);
+                    const SyncStageAccessIndex load_op = DepthStencilLoadUsage(ci.stencilLoadOp);
+                    if (load_op != SYNC_ACCESS_INDEX_NONE) {
+                        subpass_context.UpdateAccessState(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea, load_op,
+                                                          SyncOrdering::kDepthStencilAttachment, tag);
+                    }
                 }
             }
         }
