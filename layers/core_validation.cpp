@@ -15905,3 +15905,22 @@ bool CoreChecks::PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer comman
 
     return skip;
 }
+
+bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
+    VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin) const {
+    bool skip = false;
+
+    if (pConditionalRenderingBegin) {
+        const BUFFER_STATE *buffer_state = GetBufferState(pConditionalRenderingBegin->buffer);
+        if (buffer_state) {
+            if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT) == 0) {
+                skip |= LogError(commandBuffer, "VUID-VkConditionalRenderingBeginInfoEXT-buffer-01982",
+                                 "vkCmdBeginConditionalRenderingEXT(): pConditionalRenderingBegin->buffer (%s) was not create with "
+                                 "VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT bit.",
+                                 report_data->FormatHandle(pConditionalRenderingBegin->buffer).c_str());
+            }
+        }
+    }
+
+    return skip;
+}
