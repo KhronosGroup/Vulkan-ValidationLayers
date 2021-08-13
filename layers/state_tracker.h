@@ -1333,12 +1333,14 @@ class ValidationStateTracker : public ValidationObject {
         assert(ext_prop);
         if (enabled) {
             *ext_prop = LvlInitStruct<ExtProp>();
-            if (api_version < VK_API_VERSION_1_1) {
+            if (device_extensions.vk_khr_get_physical_device_properties2) {
                 auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
                 DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
-            } else {
+            } else if (api_version >= VK_API_VERSION_1_1) {
                 auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
                 DispatchGetPhysicalDeviceProperties2(gpu, &prop2);
+            } else {
+              // Probably leaves *ext_prop default initialized?
             }
         }
     }
