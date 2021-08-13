@@ -1224,8 +1224,7 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, const VkFormat format) {
     rpci.pAttachments = &attach_desc;
     rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 
-    device = dev->device();
-    vk::CreateRenderPass(device, &rpci, NULL, &m_renderpass);
+    init(*dev, rpci);
 }
 
 VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, VkFormat format, bool depthStencil) {
@@ -1253,12 +1252,9 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, VkFormat format, bool depthSt
         rpci.pAttachments = &attach_desc;
         rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 
-        device = dev->device();
-        vk::CreateRenderPass(device, &rpci, NULL, &m_renderpass);
+        init(*dev, rpci);
     }
 }
-
-VkRenderpassObj::~VkRenderpassObj() NOEXCEPT { vk::DestroyRenderPass(device, m_renderpass, NULL); }
 
 VkImageObj::VkImageObj(VkDeviceObj *dev) {
     m_device = dev;
