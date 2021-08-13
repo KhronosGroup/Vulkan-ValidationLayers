@@ -13866,8 +13866,15 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         const auto *present_id_info = LvlFindInChain<VkPresentIdKHR>(pPresentInfo->pNext);
         if (present_id_info) {
             if (!enabled_features.present_id_features.presentId) {
-                skip |= LogError(pPresentInfo->pSwapchains[0], kVUID_Features_PresentIdKHR,
-                    "vkQueuePresentKHR(): VkPresentIdKHR structure in VkPresentInfoKHR structure, but presentId feature is not enabled");
+                for (uint32_t i = 0; i < present_id_info->swapchainCount; i++) {
+                    if (present_id_info->pPresentIds[i] != 0) {
+                        skip |=
+                            LogError(pPresentInfo->pSwapchains[0], "VUID-VkPresentInfoKHR-pNext-06235",
+                                     "vkQueuePresentKHR(): presentId feature is not enabled and VkPresentIdKHR::pPresentId[%" PRIu32
+                                     "] = %" PRIu64 " when only NULL values are allowed",
+                                     i, present_id_info->pPresentIds[i]);
+                    }
+                }
             }
             if (pPresentInfo->swapchainCount != present_id_info->swapchainCount) {
                 skip |= LogError(pPresentInfo->pSwapchains[0], "VUID-VkPresentIdKHR-swapchainCount-04998",
@@ -13999,7 +14006,7 @@ bool CoreChecks::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAc
 bool CoreChecks::PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout) const {
     bool skip = false;
     if (!enabled_features.present_wait_features.presentWait) {
-        skip |= LogError(swapchain, kVUID_Features_PresentWaitKHR,
+        skip |= LogError(swapchain, "VUID-vkWaitForPresentKHR-presentWait-06234",
             "vkWaitForPresentKHR(): VkWaitForPresent called but presentWait feature is not enabled");
     }
     const auto swapchain_state = GetSwapchainState(swapchain);

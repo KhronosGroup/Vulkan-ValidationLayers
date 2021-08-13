@@ -2057,11 +2057,11 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
     present.pImageIndices = &image_index;
     present.swapchainCount = 1;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-features-VkPresentIdKHR");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-pNext-06235");
     vk::QueuePresentKHR(m_device->m_queue, &present);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-features-VkPresentWaitKHR");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWaitForPresentKHR-presentWait-06234");
     vkWaitForPresentKHR(device(), m_swapchain, 1, UINT64_MAX);
     m_errorMonitor->VerifyFound();
 
