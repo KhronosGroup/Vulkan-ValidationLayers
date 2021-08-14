@@ -3528,6 +3528,20 @@ void ValidationStateTracker::PostCallRecordCmdEndTransformFeedbackEXT(VkCommandB
     cb_state->transform_feedback_active = false;
 }
 
+void ValidationStateTracker::PostCallRecordCmdBeginConditionalRenderingEXT(
+    VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+
+    cb_state->conditional_rendering_active = true;
+}
+
+void ValidationStateTracker::PostCallRecordCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+
+    cb_state->conditional_rendering_active = false;
+
+}
+
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
                                                               const VkRenderPassBeginInfo *pRenderPassBegin,
                                                               const VkSubpassBeginInfo *pSubpassBeginInfo) {

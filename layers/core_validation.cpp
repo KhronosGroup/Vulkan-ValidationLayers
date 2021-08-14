@@ -6202,6 +6202,10 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
                          "vkEndCommandBuffer(): Ending command buffer with in progress query: %s, query %d.",
                          report_data->FormatHandle(query.pool).c_str(), query.query);
     }
+    if (cb_state->conditional_rendering_active) {
+        skip |= LogError(commandBuffer, "VUID-vkEndCommandBuffer-None-01978",
+                         "vkEndCommandBuffer(): Ending command buffer with active conditional rendering.");
+    }
     return skip;
 }
 
