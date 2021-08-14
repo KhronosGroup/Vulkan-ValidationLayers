@@ -9131,12 +9131,13 @@ TEST_F(VkLayerTest, CommandBufferMissingOcclusionQueryEnabled) {
 
     VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
     qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
-    qpci.queryCount = 1;
+    qpci.queryCount = 2;
 
     VkQueryPool query_pool;
     vk::CreateQueryPool(device(), &qpci, nullptr, &query_pool);
 
-    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferObj secondary_one(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferObj secondary_two(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo cbii = LvlInitStruct<VkCommandBufferInheritanceInfo>();
     cbii.renderPass = m_renderPass;
@@ -9146,17 +9147,31 @@ TEST_F(VkLayerTest, CommandBufferMissingOcclusionQueryEnabled) {
     VkCommandBufferBeginInfo cbbi = LvlInitStruct<VkCommandBufferBeginInfo>();
     cbbi.pInheritanceInfo = &cbii;
 
-    VkCommandBuffer secondary_handle = secondary.handle();
-    vk::BeginCommandBuffer(secondary_handle, &cbbi);
-    vk::EndCommandBuffer(secondary_handle);
+    VkCommandBuffer secondary_one_handle = secondary_one.handle();
+    VkCommandBuffer secondary_two_handle = secondary_two.handle();
+    vk::BeginCommandBuffer(secondary_one_handle, &cbbi);
+    vk::EndCommandBuffer(secondary_one_handle);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBuffer-00102");
+    cbii.occlusionQueryEnable = VK_TRUE;
+    vk::BeginCommandBuffer(secondary_two_handle, &cbbi);
+    vk::EndCommandBuffer(secondary_two_handle);
+
     m_commandBuffer->begin();
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
-    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_handle);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
-    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBuffer-00102");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_one_handle);
     m_errorMonitor->VerifyFound();
+
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 1, VK_QUERY_CONTROL_PRECISE_BIT);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBuffer-00103");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_two_handle);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 1);
+    m_commandBuffer->end();
 
     vk::DestroyQueryPool(device(), query_pool, nullptr);
 }
