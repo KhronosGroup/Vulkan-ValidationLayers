@@ -3368,7 +3368,7 @@ QueryState ValidationStateTracker::GetQueryState(const QueryMap *localQueryToSta
 }
 
 void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
-                                                         VkFlags flags) {
+                                                         VkQueryControlFlags flags) {
     if (disabled[query_validation]) return;
 
     QueryObject query = {queryPool, slot};
@@ -3379,6 +3379,7 @@ void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer command
     if (!disabled[command_buffer_state]) {
         auto pool_state = GetQueryPoolState(query.pool);
         cb_state->AddChild(pool_state);
+        pool_state->control_flags = flags;
     }
 }
 
@@ -4387,6 +4388,8 @@ void ValidationStateTracker::PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuff
     QueryObject query_obj = {queryPool, query, index};
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->BeginQuery(query_obj);
+    QUERY_POOL_STATE* qp_state = GetQueryPoolState(queryPool);
+    qp_state->control_flags = flags;
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool,

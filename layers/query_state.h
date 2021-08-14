@@ -36,6 +36,7 @@ class QUERY_POOL_STATE : public BASE_NODE {
     bool has_perf_scope_render_pass;
     uint32_t n_performance_passes;
     uint32_t perf_counter_index_count;
+    VkQueryControlFlags control_flags;
 
     QUERY_POOL_STATE(VkQueryPool qp, const VkQueryPoolCreateInfo *pCreateInfo, uint32_t index_count, uint32_t n_perf_pass,
                      bool has_cb, bool has_rb)

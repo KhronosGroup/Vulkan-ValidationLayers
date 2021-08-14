@@ -12045,10 +12045,12 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     }
 
     bool active_occlusion_query = false;
+    VkQueryControlFlags occlusion_query_control_flags = 0;
     for (const auto& active_query : cb_state->activeQueries) {
         const auto query_pool_state = Get<QUERY_POOL_STATE>(active_query.pool);
         if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_OCCLUSION) {
             active_occlusion_query = true;
+            occlusion_query_control_flags = query_pool_state->control_flags;
             break;
         }
     }
@@ -12217,12 +12219,23 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
                 report_data->FormatHandle(sub_cb_state->commandBuffer()).c_str());
         }
-        if (active_occlusion_query && sub_cb_state->inheritanceInfo.occlusionQueryEnable != VK_TRUE) {
-            skip |= LogError(pCommandBuffers[i], "VUID-vkCmdExecuteCommands-commandBuffer-00102",
-                             "vkCmdExecuteCommands(): command buffer %s has an active occlusion query, but secondary command "
-                             "buffer %s was recorded with VkCommandBufferInheritanceInfo::occlusionQueryEnable set to VK_FALSE",
-                             report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
-                             report_data->FormatHandle(sub_cb_state->commandBuffer()).c_str());
+        if (active_occlusion_query) {
+            if (sub_cb_state->inheritanceInfo.occlusionQueryEnable != VK_TRUE) {
+                skip |= LogError(pCommandBuffers[i], "VUID-vkCmdExecuteCommands-commandBuffer-00102",
+                                 "vkCmdExecuteCommands(): command buffer %s has an active occlusion query, but secondary command "
+                                 "buffer %s was recorded with VkCommandBufferInheritanceInfo::occlusionQueryEnable set to VK_FALSE",
+                                 report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
+                                 report_data->FormatHandle(sub_cb_state->commandBuffer()).c_str());
+            }
+            if ((sub_cb_state->inheritanceInfo.queryFlags & occlusion_query_control_flags) != occlusion_query_control_flags) {
+                skip |= LogError(pCommandBuffers[i], "VUID-vkCmdExecuteCommands-commandBuffer-00103",
+                                 "vkCmdExecuteCommands(): command buffer %s has an active occlusion query, but secondary command "
+                                 "buffer %s inheritanceInfo.queryFlags (%s) do not have all bits set, that the query has (%s).",
+                                 report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
+                                 report_data->FormatHandle(sub_cb_state->commandBuffer()).c_str(),
+                                 string_VkQueryControlFlags(sub_cb_state->inheritanceInfo.queryFlags).c_str(),
+                                 string_VkQueryControlFlags(occlusion_query_control_flags).c_str());
+            }
         }
     }
 
