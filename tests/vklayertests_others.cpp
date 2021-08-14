@@ -12849,3 +12849,35 @@ TEST_F(VkLayerTest, ValidateBeginQueryQueryPoolType) {
         m_commandBuffer->end();
     }
 }
+
+TEST_F(VkLayerTest, InvalidD3D12FenceSubmitInfo) {
+    TEST_DESCRIPTION("Test invalid D3D12FenceSubmitInfo");
+#ifndef _WIN32
+    printf("%s Test only runs on Win32, skipping test\n", kSkipPrefix);
+    return;
+#else
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkSemaphoreCreateInfo sem_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+    VkSemaphore semaphore;
+    vk::CreateSemaphore(device(), &sem_info, nullptr, &semaphore);
+
+    VkD3D12FenceSubmitInfoKHR d3d12_fence_submit_info = LvlInitStruct<VkD3D12FenceSubmitInfoKHR>();
+    d3d12_fence_submit_info.signalSemaphoreValuesCount = 0;  // Invalid, different from submitInfo.signalSemaphoreCount
+
+    VkSubmitInfo submitInfo = LvlInitStruct<VkSubmitInfo>(&d3d12_fence_submit_info);
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &semaphore;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkD3D12FenceSubmitInfoKHR-signalSemaphoreValuesCount-00080");
+    vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    uint64_t waitSemaphoreValues = 0;
+    d3d12_fence_submit_info.waitSemaphoreValuesCount = 1;
+    d3d12_fence_submit_info.pWaitSemaphoreValues = &waitSemaphoreValues;
+    submitInfo.signalSemaphoreCount = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkD3D12FenceSubmitInfoKHR-waitSemaphoreValuesCount-00079");
+    vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+#endif
+}
