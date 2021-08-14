@@ -3467,6 +3467,28 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                 }
             }
         }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+        const auto d3d12_fence_submit_info = LvlFindInChain<VkD3D12FenceSubmitInfoKHR>(submit->pNext);
+        if (d3d12_fence_submit_info) {
+            if (d3d12_fence_submit_info->signalSemaphoreValuesCount != submit->signalSemaphoreCount) {
+                skip |= LogError(queue, "VUID-VkD3D12FenceSubmitInfoKHR-signalSemaphoreValuesCount-00080",
+                                 "vkQueueSubmit(): signalSemaphoreValuesCount (%" PRIu32
+                                 ") of VkD3D12FenceSubmitInfoKHR in the pNext chain of pSubmits[%" PRIu32
+                                 "] is not equal to pSubmits[%" PRIu32 "].signalSemaphoreCount (%" PRIu32 ")",
+                                 d3d12_fence_submit_info->signalSemaphoreValuesCount, submit_idx, submit_idx,
+                                 submit->signalSemaphoreCount);
+            }
+            if (d3d12_fence_submit_info->waitSemaphoreValuesCount != submit->waitSemaphoreCount) {
+                skip |=
+                    LogError(queue, "VUID-VkD3D12FenceSubmitInfoKHR-waitSemaphoreValuesCount-00079",
+                             "vkQueueSubmit(): waitSemaphoreValuesCount (%" PRIu32
+                             ") of VkD3D12FenceSubmitInfoKHR in the pNext chain of pSubmits[%" PRIu32
+                             "] is not equal to pSubmits[%" PRIu32 "].waitSemaphoreCount (%" PRIu32 ")",
+                             d3d12_fence_submit_info->waitSemaphoreValuesCount, submit_idx, submit_idx, submit->waitSemaphoreCount);
+            }
+        }
+#endif
     }
 
     if (skip) return skip;
