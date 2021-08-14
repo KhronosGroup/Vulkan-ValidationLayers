@@ -9290,3 +9290,34 @@ TEST_F(VkLayerTest, InvalidClearColorAttachmentsWithMultiview) {
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TestEndCommandBufferWithConditionalRendering) {
+    TEST_DESCRIPTION("Call EndCommandBuffer when conditional rendering is active");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
+    } else {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkCmdBeginConditionalRenderingEXT vkCmdBeginConditionalRenderingEXT =
+        (PFN_vkCmdBeginConditionalRenderingEXT)vk::GetInstanceProcAddr(instance(), "vkCmdBeginConditionalRenderingEXT");
+
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags reqs = 0;
+    buffer.init_as_storage(*m_device, 32, reqs);
+
+    VkConditionalRenderingBeginInfoEXT conditional_rendering_begin = LvlInitStruct<VkConditionalRenderingBeginInfoEXT>();
+    conditional_rendering_begin.buffer = buffer.handle();
+
+    VkCommandBufferBeginInfo command_buffer_begin = LvlInitStruct<VkCommandBufferBeginInfo>();
+
+    vk::BeginCommandBuffer(m_commandBuffer->handle(), &command_buffer_begin);
+    vkCmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-None-01978");
+    vk::EndCommandBuffer(m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+}
