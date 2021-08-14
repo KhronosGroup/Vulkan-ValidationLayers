@@ -319,6 +319,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     uint32_t small_indexed_draw_call_count;
 
     bool transform_feedback_active{false};
+    bool conditional_rendering_active{false};
 
     CMD_BUFFER_STATE(ValidationStateTracker*, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                      std::shared_ptr<COMMAND_POOL_STATE> &cmd_pool);
