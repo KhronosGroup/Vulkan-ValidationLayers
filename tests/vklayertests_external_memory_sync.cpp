@@ -1439,3 +1439,40 @@ TEST_F(VkLayerTest, ValidateExternalMemoryImageLayout) {
         }
     }
 }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(VkLayerTest, InvalidD3D12FenceSubmitInfo) {
+    TEST_DESCRIPTION("Test invalid D3D12FenceSubmitInfo");
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    vk_testing::Semaphore semaphore(*m_device);
+
+    // VkD3D12FenceSubmitInfoKHR::waitSemaphoreValuesCount == 1 is different from VkSubmitInfo::waitSemaphoreCount == 0
+    {
+        const uint64_t waitSemaphoreValues = 0;
+        auto d3d12_fence_submit_info = LvlInitStruct<VkD3D12FenceSubmitInfoKHR>();
+        d3d12_fence_submit_info.waitSemaphoreValuesCount = 1;
+        d3d12_fence_submit_info.pWaitSemaphoreValues = &waitSemaphoreValues;
+        const auto submit_info = LvlInitStruct<VkSubmitInfo>(&d3d12_fence_submit_info);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkD3D12FenceSubmitInfoKHR-waitSemaphoreValuesCount-00079");
+        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
+    // VkD3D12FenceSubmitInfoKHR::signalSemaphoreCount == 0 is different from VkSubmitInfo::signalSemaphoreCount == 1
+    {
+        auto d3d12_fence_submit_info = LvlInitStruct<VkD3D12FenceSubmitInfoKHR>();
+        auto submit_info = LvlInitStruct<VkSubmitInfo>(&d3d12_fence_submit_info);
+        submit_info.signalSemaphoreCount = 1;
+        submit_info.pSignalSemaphores = &semaphore.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkD3D12FenceSubmitInfoKHR-signalSemaphoreValuesCount-00080");
+        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
