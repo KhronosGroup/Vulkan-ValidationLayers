@@ -228,6 +228,24 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const core_error::Location &l
 bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const VkSubmitInfo &submit,
                                              const Location &outer_loc) const {
     bool skip = false;
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    if (const auto d3d12_fence_submit_info = LvlFindInChain<VkD3D12FenceSubmitInfoKHR>(submit.pNext)) {
+        if (d3d12_fence_submit_info->waitSemaphoreValuesCount != submit.waitSemaphoreCount) {
+            skip |= LogError(state.queue, "VUID-VkD3D12FenceSubmitInfoKHR-waitSemaphoreValuesCount-00079",
+                             "%s contains an instance of VkD3D12FenceSubmitInfoKHR, but its waitSemaphoreValuesCount (%" PRIu32
+                             ") is different than %s.waitSemaphoreCount (%" PRIu32 ").",
+                             outer_loc.Message().c_str(), d3d12_fence_submit_info->waitSemaphoreValuesCount,
+                             outer_loc.Fields().c_str(), submit.waitSemaphoreCount);
+        }
+        if (d3d12_fence_submit_info->signalSemaphoreValuesCount != submit.signalSemaphoreCount) {
+            skip |= LogError(state.queue, "VUID-VkD3D12FenceSubmitInfoKHR-signalSemaphoreValuesCount-00080",
+                             "%s contains an instance of VkD3D12FenceSubmitInfoKHR, but its signalSemaphoreValuesCount (%" PRIu32
+                             ") is different than %s.signalSemaphoreCount (%" PRIu32 ").",
+                             outer_loc.Message().c_str(), d3d12_fence_submit_info->signalSemaphoreValuesCount,
+                             outer_loc.Fields().c_str(), submit.signalSemaphoreCount);
+        }
+    }
+#endif
     auto *timeline_semaphore_submit_info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit.pNext);
     for (uint32_t i = 0; i < submit.waitSemaphoreCount; ++i) {
         uint64_t value = 0;

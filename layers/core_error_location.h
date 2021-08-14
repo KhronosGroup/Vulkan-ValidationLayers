@@ -147,6 +147,11 @@ struct Location {
         : function(prev_loc.function), structure(s), field(f), index(i), prev(&prev_loc) {}
 
     void AppendFields(std::ostream &out) const;
+    std::string Fields() const {
+        std::stringstream out;
+        AppendFields(out);
+        return out.str();
+    }
     std::string Message() const {
         std::stringstream out;
         out << StringFunc() << "(): ";
