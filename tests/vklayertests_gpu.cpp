@@ -947,7 +947,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 
     VkPhysicalDeviceFeatures2KHR features2 = {};
-    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&mesh_shader_features);
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
@@ -961,7 +962,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         return;
     }
 
-    bool mesh_shader_supported = DeviceExtensionSupported(gpu(), nullptr, VK_NV_MESH_SHADER_EXTENSION_NAME);
+    VkBool32 mesh_shader_supported = mesh_shader_features.meshShader;
+    mesh_shader_supported &= DeviceExtensionSupported(gpu(), nullptr, VK_NV_MESH_SHADER_EXTENSION_NAME) ? VK_TRUE : VK_FALSE;
     if (mesh_shader_supported) {
         m_device_extension_names.push_back(VK_NV_MESH_SHADER_EXTENSION_NAME);
     }
@@ -1116,7 +1118,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     if (mesh_shader_supported) {
         const unsigned push_constant_range_count = 1;
         VkPushConstantRange push_constant_ranges[push_constant_range_count] = {};
-        push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_MESH_BIT_NV;
         push_constant_ranges[0].offset = 0;
         push_constant_ranges[0].size = 2 * sizeof(VkDeviceAddress);
 
@@ -1167,7 +1169,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         VkDeviceAddress pushConstants[2] = {};
         pushConstants[0] = pBuffer;
         pushConstants[1] = 5;
-        vk::CmdPushConstants(m_commandBuffer->handle(), mesh_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pushConstants),
+        vk::CmdPushConstants(m_commandBuffer->handle(), mesh_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_NV, 0, sizeof(pushConstants),
                              pushConstants);
         vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
         vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
@@ -1181,6 +1183,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         err = vk::QueueWaitIdle(m_device->m_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
+        vk::DestroyPipelineLayout(m_device->handle(), mesh_pipeline_layout, nullptr);
     }
 
     vk::DestroyBuffer(m_device->handle(), buffer1, NULL);
