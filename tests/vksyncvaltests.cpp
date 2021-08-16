@@ -2000,8 +2000,15 @@ TEST_F(VkSyncValTest, SyncCmdDrawDepthStencil) {
     m_commandBuffer->end();
 }
 
+
 TEST_F(VkSyncValTest, RenderPassLoadHazardVsInitialLayout) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    bool do_none_load_op_test = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+        do_none_load_op_test = true;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -2015,7 +2022,7 @@ TEST_F(VkSyncValTest, RenderPassLoadHazardVsInitialLayout) {
     image_input.Init(image_ci);
     VkImageView attachments[] = {image_color.targetView(format), image_input.targetView(format)};
 
-    const VkAttachmentDescription attachmentDescriptions[] = {
+    VkAttachmentDescription attachmentDescriptions[] = {
         // Result attachment
         {(VkAttachmentDescriptionFlags)0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR,
          VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -2078,6 +2085,22 @@ TEST_F(VkSyncValTest, RenderPassLoadHazardVsInitialLayout) {
     // Even though we have no accesses prior, the layout transition *is* an access, so load can be validated vs. layout transition
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
+
+    vk_testing::RenderPass rp_no_load_store;
+    if (do_none_load_op_test) {
+        m_errorMonitor->ExpectSuccess();
+        attachmentDescriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
+        attachmentDescriptions[0].storeOp = VK_ATTACHMENT_STORE_OP_NONE_EXT;
+        attachmentDescriptions[1].loadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
+        attachmentDescriptions[1].storeOp = VK_ATTACHMENT_STORE_OP_NONE_EXT;
+        rp_no_load_store.init(*m_device, renderPassInfo);
+        m_renderPassBeginInfo.renderPass = rp_no_load_store.handle();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        m_commandBuffer->EndRenderPass();
+        m_errorMonitor->VerifyNotFound();
+    } else {
+        printf("%s VK_EXT_load_store_op_none not supported, skipping sub-test\n", kSkipPrefix);
+    }
 }
 
 TEST_F(VkSyncValTest, SyncRenderPassWithWrongDepthStencilInitialLayout) {
