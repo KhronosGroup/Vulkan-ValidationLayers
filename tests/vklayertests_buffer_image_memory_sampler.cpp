@@ -14215,3 +14215,101 @@ TEST_F(VkLayerTest, ImageFormatInfoDrmFormatModifier) {
     vkGetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidQueueBindSparseMemoryType) {
+    TEST_DESCRIPTION("Test QueueBindSparse with lazily allocated memory");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!m_device->phy().features().sparseResidencyBuffer) {
+        printf("%s Test requires unsupported sparseResidencyBuffer feature. Skipped.\n", kSkipPrefix);
+        return;
+    } else if (!m_device->phy().features().sparseResidencyImage2D) {
+        printf("%s Test requires unsupported sparseResidencyImage2D feature. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceMemoryProperties memory_info;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
+    uint32_t lazily_allocated_index = memory_info.memoryTypeCount;  // Set to an invalid value just in case
+    for (uint32_t i = 0; i < memory_info.memoryTypeCount; ++i) {
+        if ((memory_info.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0) {
+            lazily_allocated_index = i;
+            break;
+        }
+    }
+    if (lazily_allocated_index == memory_info.memoryTypeCount) {
+        printf("%s Did not find memory with VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    buffer_create_info.size = 1024;
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(nullptr);
+    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+    VkBufferObj buffer;
+    buffer.init_no_mem(*m_device, buffer_create_info);
+
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_create_info);
+
+    VkMemoryRequirements buffer_mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_mem_alloc = vk_testing::DeviceMemory::alloc_info(buffer_mem_reqs.size, 0);
+    buffer_mem_alloc.memoryTypeIndex = lazily_allocated_index;
+
+    VkMemoryRequirements image_mem_reqs;
+    vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
+    VkMemoryAllocateInfo image_mem_alloc = vk_testing::DeviceMemory::alloc_info(image_mem_reqs.size, 0);
+    image_mem_alloc.memoryTypeIndex = lazily_allocated_index;
+
+    vk_testing::DeviceMemory buffer_mem;
+    buffer_mem.init(*m_device, buffer_mem_alloc);
+
+    vk_testing::DeviceMemory image_mem;
+    image_mem.init(*m_device, image_mem_alloc);
+
+    VkSparseMemoryBind buffer_memory_bind = {};
+    buffer_memory_bind.size = buffer_mem_reqs.size;
+    buffer_memory_bind.memory = buffer_mem.handle();
+
+    VkSparseMemoryBind image_memory_bind = {};
+    image_memory_bind.size = image_mem_reqs.size;
+    image_memory_bind.memory = image_mem.handle();
+
+    VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
+    buffer_memory_bind_info.buffer = buffer.handle();
+    buffer_memory_bind_info.bindCount = 1;
+    buffer_memory_bind_info.pBinds = &buffer_memory_bind;
+
+    VkSparseImageOpaqueMemoryBindInfo image_opaque_memory_bind_info = {};
+    image_opaque_memory_bind_info.image = image.handle();
+    image_opaque_memory_bind_info.bindCount = 1;
+    image_opaque_memory_bind_info.pBinds = &image_memory_bind;
+
+    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    bind_info.bufferBindCount = 1;
+    bind_info.pBufferBinds = &buffer_memory_bind_info;
+    bind_info.imageOpaqueBindCount = 1;
+    bind_info.pImageOpaqueBinds = &image_opaque_memory_bind_info;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+    vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+}
