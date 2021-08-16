@@ -3536,13 +3536,13 @@ void ValidationStateTracker::PostCallRecordCmdEndTransformFeedbackEXT(VkCommandB
 
 void ValidationStateTracker::PostCallRecordCmdBeginConditionalRenderingEXT(
     VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
 
     cb_state->conditional_rendering_active = true;
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
 
     cb_state->conditional_rendering_active = false;
 
