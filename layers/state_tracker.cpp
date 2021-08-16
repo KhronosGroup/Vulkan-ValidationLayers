@@ -187,11 +187,17 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
                 VkMemoryRequirements2 mem_reqs2 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, nullptr};
 
                 image_plane_req.planeAspect = aspects[i];
-
-                if (device_extensions.vk_khr_get_memory_requirements2) {
-                    DispatchGetImageMemoryRequirements2KHR(device, &mem_req_info2, &mem_reqs2);
-                } else {
-                    DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
+                switch (device_extensions.vk_khr_get_memory_requirements2) {
+                    case kEnabledByApiLevel:
+                        DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
+                        break;
+                    case kEnabledByCreateinfo:
+                        DispatchGetImageMemoryRequirements2KHR(device, &mem_req_info2, &mem_reqs2);
+                        break;
+                    default:
+                        // The VK_KHR_sampler_ycbcr_conversion extension requires VK_KHR_get_memory_requirements2,
+                        // so validation of this vkCreateImage call should have already failed.
+                        assert(false);
                 }
                 is_node->requirements[i] = mem_reqs2.memoryRequirements;
             }
