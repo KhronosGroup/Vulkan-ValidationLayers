@@ -337,7 +337,7 @@ void CMD_BUFFER_STATE::IncrementResources() {
     //  all the corresponding cases are verified to cause CB_INVALID state and the CB_INVALID state
     //  should then be flagged prior to calling this function
     for (auto event : writeEventsBeforeWait) {
-        auto event_state = dev_data->GetEventState(event);
+        auto event_state = dev_data->Get(event);
         if (event_state) event_state->write_in_use++;
     }
 }
@@ -551,7 +551,7 @@ void CMD_BUFFER_STATE::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRende
         if (imageless) {
             if (attachment_info_struct && i < attachment_info_struct->attachmentCount) {
                 auto res =
-                    attachments_view_states.insert(dev_data->GetShared<IMAGE_VIEW_STATE>(attachment_info_struct->pAttachments[i]));
+                    attachments_view_states.insert(dev_data->GetShared(attachment_info_struct->pAttachments[i]));
                 attachments[i] = res.first->get();
             }
         } else {
@@ -562,8 +562,8 @@ void CMD_BUFFER_STATE::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRende
 }
 
 void CMD_BUFFER_STATE::BeginRenderPass(const VkRenderPassBeginInfo *pRenderPassBegin, const VkSubpassContents contents) {
-    activeFramebuffer = dev_data->GetShared<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
-    activeRenderPass = dev_data->GetShared<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
+    activeFramebuffer = dev_data->GetShared(pRenderPassBegin->framebuffer);
+    activeRenderPass = dev_data->GetShared(pRenderPassBegin->renderPass);
     activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo(pRenderPassBegin);
     activeSubpass = 0;
     activeSubpassContents = contents;
@@ -635,11 +635,11 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
         // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
         if ((createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) &&
             (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-            activeRenderPass = dev_data->GetShared<RENDER_PASS_STATE>(beginInfo.pInheritanceInfo->renderPass);
+            activeRenderPass = dev_data->GetShared(beginInfo.pInheritanceInfo->renderPass);
             activeSubpass = beginInfo.pInheritanceInfo->subpass;
 
             if (beginInfo.pInheritanceInfo->framebuffer) {
-                activeFramebuffer = dev_data->GetShared<FRAMEBUFFER_STATE>(beginInfo.pInheritanceInfo->framebuffer);
+                activeFramebuffer = dev_data->GetShared(beginInfo.pInheritanceInfo->framebuffer);
                 active_subpasses = nullptr;
                 active_attachments = nullptr;
 
@@ -697,7 +697,7 @@ void CMD_BUFFER_STATE::End(VkResult result) {
 void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCommandBuffer *pCommandBuffers) {
     CMD_BUFFER_STATE *sub_cb_state = NULL;
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
-        sub_cb_state = dev_data->GetCBState(pCommandBuffers[i]);
+        sub_cb_state = dev_data->Get(pCommandBuffers[i]);
         assert(sub_cb_state);
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
             if (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
@@ -713,7 +713,7 @@ void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCom
         // for those other classes.
         for (const auto &sub_layout_map_entry : sub_cb_state->image_layout_map) {
             const auto image = sub_layout_map_entry.first;
-            const IMAGE_STATE *image_state = dev_data->GetImageState(image);
+            const IMAGE_STATE *image_state = dev_data->Get(image);
             if (!image_state) continue;                // Can't set layouts of a dead image
 
             auto *cb_subres_map = GetImageSubresourceLayoutMap(*image_state);
@@ -923,7 +923,7 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
     for (uint32_t input_idx = 0; input_idx < set_count; input_idx++) {
         auto set_idx = input_idx + first_set;  // set_idx is index within layout, input_idx is index within input descriptor sets
         cvdescriptorset::DescriptorSet *descriptor_set =
-            push_descriptor_set ? push_descriptor_set : dev_data->GetSetNode(pDescriptorSets[input_idx]);
+            push_descriptor_set ? push_descriptor_set : dev_data->Get(pDescriptorSets[input_idx]);
 
         // Record binding (or push)
         if (descriptor_set != last_bound.push_descriptor_set.get()) {
@@ -999,7 +999,7 @@ void CMD_BUFFER_STATE::SetImageInitialLayout(const IMAGE_STATE &image_state, con
 }
 
 void CMD_BUFFER_STATE::SetImageInitialLayout(VkImage image, const VkImageSubresourceRange &range, VkImageLayout layout) {
-    const IMAGE_STATE *image_state = dev_data->GetImageState(image);
+    const IMAGE_STATE *image_state = dev_data->Get(image);
     if (!image_state) return;
     SetImageInitialLayout(*image_state, range, layout);
 }

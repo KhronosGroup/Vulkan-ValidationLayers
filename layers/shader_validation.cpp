@@ -2202,7 +2202,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     for (uint32_t i = 0; i < create_info->stageCount; i++) {
         auto stage = &create_info->pStages[i];
         auto stage_id = GetShaderStageId(stage->stage);
-        shaders[stage_id] = GetShaderModuleState(stage->module);
+        shaders[stage_id] = Get(stage->module);
         entrypoints[stage_id] = shaders[stage_id]->FindEntrypoint(stage->pName, stage->stage);
         skip |= ValidatePipelineShaderStage(stage, pipeline, pipeline->stage_state[i], shaders[stage_id], entrypoints[stage_id],
                                             (pointlist_stage_mask == stage->stage));
@@ -2265,7 +2265,7 @@ void CoreChecks::RecordGraphicsPipelineShaderDynamicState(PIPELINE_STATE *pipeli
     for (uint32_t i = 0; i < create_info->stageCount; i++) {
         auto stage = &create_info->pStages[i];
         auto stage_id = GetShaderStageId(stage->stage);
-        shaders[stage_id] = GetShaderModuleState(stage->module);
+        shaders[stage_id] = Get(stage->module);
         entrypoints[stage_id] = shaders[stage_id]->FindEntrypoint(stage->pName, stage->stage);
 
         if (stage->stage == VK_SHADER_STAGE_VERTEX_BIT || stage->stage == VK_SHADER_STAGE_GEOMETRY_BIT ||
@@ -2318,7 +2318,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
 bool CoreChecks::ValidateComputePipelineShaderState(PIPELINE_STATE *pipeline) const {
     const auto &stage = *pipeline->computePipelineCI.stage.ptr();
 
-    const SHADER_MODULE_STATE *module = GetShaderModuleState(stage.module);
+    const SHADER_MODULE_STATE *module = Get(stage.module);
     const spirv_inst_iter entrypoint = module->FindEntrypoint(stage.pName, stage.stage);
 
     return ValidatePipelineShaderStage(&stage, pipeline, pipeline->stage_state[0], module, entrypoint, false);
@@ -2336,7 +2336,7 @@ uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE *pipeline, VkShad
 
     if (pipeline->raytracingPipelineCI.pLibraryInfo) {
         for (uint32_t i = 0; i < pipeline->raytracingPipelineCI.pLibraryInfo->libraryCount; ++i) {
-            const PIPELINE_STATE *library_pipeline = GetPipelineState(pipeline->raytracingPipelineCI.pLibraryInfo->pLibraries[i]);
+            const PIPELINE_STATE *library_pipeline = Get(pipeline->raytracingPipelineCI.pLibraryInfo->pLibraries[i]);
             total += CalcShaderStageCount(library_pipeline, stageBit);
         }
     }
@@ -2359,7 +2359,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
         if (pipeline->raytracingPipelineCI.pLibraryInfo) {
             for (uint32_t i = 0; i < pipeline->raytracingPipelineCI.pLibraryInfo->libraryCount; ++i) {
                 const PIPELINE_STATE *library_pipelinestate =
-                    GetPipelineState(pipeline->raytracingPipelineCI.pLibraryInfo->pLibraries[i]);
+                    Get(pipeline->raytracingPipelineCI.pLibraryInfo->pLibraries[i]);
                 if (library_pipelinestate->raytracingPipelineCI.maxPipelineRayRecursionDepth !=
                     pipeline->raytracingPipelineCI.maxPipelineRayRecursionDepth) {
                     skip |= LogError(
@@ -2405,7 +2405,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
     for (uint32_t stage_index = 0; stage_index < pipeline->raytracingPipelineCI.stageCount; stage_index++) {
         const auto &stage = stages[stage_index];
 
-        const SHADER_MODULE_STATE *module = GetShaderModuleState(stage.module);
+        const SHADER_MODULE_STATE *module = Get(stage.module);
         const spirv_inst_iter entrypoint = module->FindEntrypoint(stage.pName, stage.stage);
 
         skip |= ValidatePipelineShaderStage(&stage, pipeline, pipeline->stage_state[stage_index], module, entrypoint, false);

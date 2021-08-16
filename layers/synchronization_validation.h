@@ -1007,7 +1007,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
         if (found_it == cb_access_state.end()) {
             if (!do_insert) return CommandBufferAccessContextShared();
             // If we don't have one, make it.
-            auto cb_state = GetShared<CMD_BUFFER_STATE>(command_buffer);
+            auto cb_state = GetShared(command_buffer);
             assert(cb_state.get());
             auto queue_flags = cb_state->GetQueueFlags();
             std::shared_ptr<CommandBufferAccessContext> context(new CommandBufferAccessContext(*this, cb_state, queue_flags));

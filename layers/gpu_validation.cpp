@@ -319,7 +319,7 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
 
 void GpuAssisted::PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
                                                        VkDeviceAddress address) {
-    BUFFER_STATE *buffer_state = GetBufferState(pInfo->buffer);
+    BUFFER_STATE *buffer_state = Get(pInfo->buffer);
     // Validate against the size requested when the buffer was created
     if (buffer_state) {
         buffer_map[address] = buffer_state->createInfo.size;
@@ -337,7 +337,7 @@ void GpuAssisted::PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const
 }
 
 void GpuAssisted::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
-    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    BUFFER_STATE *buffer_state = Get(buffer);
     if (buffer_state) buffer_map.erase(buffer_state->deviceAddress);
     ValidationStateTracker::PreCallRecordDestroyBuffer(device, buffer, pAllocator);
 }
@@ -800,7 +800,7 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
         return;
     }
 
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = Get(commandBuffer);
     assert(cb_state != nullptr);
 
     std::vector<uint64_t> current_valid_handles;
@@ -983,7 +983,7 @@ void GpuAssisted::PostCallRecordBindAccelerationStructureMemoryNV(VkDevice devic
     ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, result);
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
-        ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureStateNV(info.accelerationStructure);
+        ACCELERATION_STRUCTURE_STATE *as_state = Get(info.accelerationStructure);
         if (as_state) {
             DispatchGetAccelerationStructureHandleNV(device, info.accelerationStructure, 8, &as_state->opaque_handle);
         }
@@ -1512,7 +1512,7 @@ void GpuAssisted::UpdateInstrumentationBuffer(CMD_BUFFER_STATE *cb_node) {
 }
 
 void GpuAssisted::PreRecordCommandBuffer(VkCommandBuffer command_buffer) {
-    auto cb_node = GetCBState(command_buffer);
+    auto cb_node = Get(command_buffer);
     UpdateInstrumentationBuffer(cb_node);
     for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
         UpdateInstrumentationBuffer(secondary_cmd_buffer);
@@ -1539,7 +1539,7 @@ void GpuAssisted::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCou
 
 bool GpuAssisted::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
     bool buffers_present = false;
-    auto cb_node = GetCBState(command_buffer);
+    auto cb_node = Get(command_buffer);
 
     if (GetBufferInfo(cb_node->commandBuffer()).size() || cb_node->hasBuildAccelerationStructureCmd) {
         buffers_present = true;
@@ -1553,7 +1553,7 @@ bool GpuAssisted::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
 }
 
 void GpuAssisted::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) {
-    auto cb_node = GetCBState(command_buffer);
+    auto cb_node = Get(command_buffer);
 
     UtilProcessInstrumentationBuffer(queue, cb_node, this);
     ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
@@ -1760,7 +1760,7 @@ void GpuAssisted::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                                                VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                                VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
                                                uint32_t width, uint32_t height, uint32_t depth) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = Get(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
@@ -1779,7 +1779,7 @@ void GpuAssisted::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                 const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
                                                 uint32_t height, uint32_t depth) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = Get(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
@@ -1798,7 +1798,7 @@ void GpuAssisted::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
                                                         const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                         const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
                                                         VkDeviceAddress indirectDeviceAddress) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = Get(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
@@ -1960,7 +1960,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     VkDescriptorBufferInfo output_desc_buffer_info = {};
     output_desc_buffer_info.range = output_buffer_size;
 
-    auto cb_node = GetCBState(cmd_buffer);
+    auto cb_node = Get(cmd_buffer);
     if (!cb_node) {
         ReportSetupProblem(device, "Unrecognized command buffer");
         aborted = true;
@@ -2039,7 +2039,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
                 assert(cmd_type == CMD_DRAWINDEXEDINDIRECTCOUNT);
                 struct_size = sizeof(VkDrawIndexedIndirectCommand);
             }
-            BUFFER_STATE *buffer_state = GetBufferState(cdi_state->buffer);
+            BUFFER_STATE *buffer_state = Get(cdi_state->buffer);
             uint32_t max_count;
             uint64_t bufsize = buffer_state->createInfo.size;
             uint64_t first_command_bytes = struct_size + cdi_state->offset;

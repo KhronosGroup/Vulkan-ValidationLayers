@@ -236,7 +236,7 @@ void UtilPreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreat
         if (replace_shaders) {
             for (uint32_t stage = 0; stage < stageCount; ++stage) {
                 const SHADER_MODULE_STATE *shader =
-                    object_ptr->GetShaderModuleState(Accessor::GetShaderModule(pCreateInfos[pipeline], stage));
+                    object_ptr->Get(Accessor::GetShaderModule(pCreateInfos[pipeline], stage));
 
                 VkShaderModule shader_module;
                 auto create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
@@ -270,7 +270,7 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
         return;
     }
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
-        auto pipeline_state = object_ptr->ValidationStateTracker::GetPipelineState(pPipelines[pipeline]);
+        auto pipeline_state = object_ptr->ValidationStateTracker::Get(pPipelines[pipeline]);
         if (nullptr == pipeline_state) continue;
 
         uint32_t stageCount = 0;
@@ -292,12 +292,12 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
 
             const SHADER_MODULE_STATE *shader_state = nullptr;
             if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                shader_state = object_ptr->GetShaderModuleState(pipeline_state->graphicsPipelineCI.pStages[stage].module);
+                shader_state = object_ptr->Get(pipeline_state->graphicsPipelineCI.pStages[stage].module);
             } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
                 assert(stage == 0);
-                shader_state = object_ptr->GetShaderModuleState(pipeline_state->computePipelineCI.stage.module);
+                shader_state = object_ptr->Get(pipeline_state->computePipelineCI.stage.module);
             } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-                shader_state = object_ptr->GetShaderModuleState(pipeline_state->raytracingPipelineCI.pStages[stage].module);
+                shader_state = object_ptr->Get(pipeline_state->raytracingPipelineCI.pStages[stage].module);
             } else {
                 assert(false);
             }
