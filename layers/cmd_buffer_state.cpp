@@ -1055,104 +1055,101 @@ static bool SetEventStageMask(VkEvent event, VkPipelineStageFlags2KHR stageMask,
     return false;
 }
 
-void ValidationStateTracker::RecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
-    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    if (!disabled[command_buffer_state]) {
-        auto event_state = GetEventState(event);
+void CMD_BUFFER_STATE::RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
+    RecordCmd(cmd_type);
+    if (!dev_data->disabled[command_buffer_state]) {
+        auto event_state = dev_data->GetEventState(event);
         if (event_state) {
-            cb_state->AddChild(event_state);
+            AddChild(event_state);
         }
     }
-    cb_state->events.push_back(event);
-    if (!cb_state->waitedEvents.count(event)) {
-        cb_state->writeEventsBeforeWait.push_back(event);
+    events.push_back(event);
+    if (!waitedEvents.count(event)) {
+        writeEventsBeforeWait.push_back(event);
     }
-    cb_state->eventUpdates.emplace_back(
+    eventUpdates.emplace_back(
         [event, stageMask](const ValidationStateTracker *device_data, bool do_validate, EventToStageMap *localEventToStageMap) {
             return SetEventStageMask(event, stageMask, localEventToStageMap);
         });
 }
 
-void ValidationStateTracker::RecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
-    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    if (!disabled[command_buffer_state]) {
-        auto event_state = GetEventState(event);
+void CMD_BUFFER_STATE::RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
+    RecordCmd(cmd_type);
+    if (!dev_data->disabled[command_buffer_state]) {
+        auto event_state = dev_data->GetEventState(event);
         if (event_state) {
-            cb_state->AddChild(event_state);
+            AddChild(event_state);
         }
     }
-    cb_state->events.push_back(event);
-    if (!cb_state->waitedEvents.count(event)) {
-        cb_state->writeEventsBeforeWait.push_back(event);
+    events.push_back(event);
+    if (!waitedEvents.count(event)) {
+        writeEventsBeforeWait.push_back(event);
     }
 
-    cb_state->eventUpdates.emplace_back(
-        [event](const ValidationStateTracker *, bool do_validate, EventToStageMap *localEventToStageMap) {
-            return SetEventStageMask(event, VkPipelineStageFlags2KHR(0), localEventToStageMap);
-        });
+    eventUpdates.emplace_back([event](const ValidationStateTracker *, bool do_validate, EventToStageMap *localEventToStageMap) {
+        return SetEventStageMask(event, VkPipelineStageFlags2KHR(0), localEventToStageMap);
+    });
 }
 
-void ValidationStateTracker::RecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents) {
-    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+void CMD_BUFFER_STATE::RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, const VkEvent *pEvents) {
+    RecordCmd(cmd_type);
     for (uint32_t i = 0; i < eventCount; ++i) {
-        if (!disabled[command_buffer_state]) {
-            auto event_state = GetEventState(pEvents[i]);
+        if (!dev_data->disabled[command_buffer_state]) {
+            auto event_state = dev_data->GetEventState(pEvents[i]);
             if (event_state) {
-                cb_state->AddChild(event_state);
+                AddChild(event_state);
             }
         }
-        cb_state->waitedEvents.insert(pEvents[i]);
-        cb_state->events.push_back(pEvents[i]);
+        waitedEvents.insert(pEvents[i]);
+        events.push_back(pEvents[i]);
     }
 }
 
-void ValidationStateTracker::RecordBarriers(VkCommandBuffer commandBuffer, uint32_t memoryBarrierCount,
-                                            const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                                            const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                            const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    if (disabled[command_buffer_state]) return;
+void CMD_BUFFER_STATE::RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                      uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                      uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    if (dev_data->disabled[command_buffer_state]) return;
 
-    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     for (uint32_t i = 0; i < bufferMemoryBarrierCount; i++) {
-        auto buffer_state = GetBufferState(pBufferMemoryBarriers[i].buffer);
+        auto buffer_state = dev_data->GetBufferState(pBufferMemoryBarriers[i].buffer);
         if (buffer_state) {
-            cb_state->AddChild(buffer_state);
+            AddChild(buffer_state);
         }
     }
     for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
-        auto image_state = GetImageState(pImageMemoryBarriers[i].image);
+        auto image_state = dev_data->GetImageState(pImageMemoryBarriers[i].image);
         if (image_state) {
-            cb_state->AddChild(image_state);
+            AddChild(image_state);
         }
     }
 }
 
-void ValidationStateTracker::RecordBarriers(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo) {
-    if (disabled[command_buffer_state]) return;
+void CMD_BUFFER_STATE::RecordBarriers(const VkDependencyInfoKHR &dep_info) {
+    if (dev_data->disabled[command_buffer_state]) return;
 
-    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    for (uint32_t i = 0; i < pDependencyInfo->bufferMemoryBarrierCount; i++) {
-        auto buffer_state = GetBufferState(pDependencyInfo->pBufferMemoryBarriers[i].buffer);
+    for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
+        auto buffer_state = dev_data->GetBufferState(dep_info.pBufferMemoryBarriers[i].buffer);
         if (buffer_state) {
-            cb_state->AddChild(buffer_state);
+            AddChild(buffer_state);
         }
     }
-    for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; i++) {
-        auto image_state = GetImageState(pDependencyInfo->pImageMemoryBarriers[i].image);
+    for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
+        auto image_state = dev_data->GetImageState(dep_info.pImageMemoryBarriers[i].image);
         if (image_state) {
-            cb_state->AddChild(image_state);
+            AddChild(image_state);
         }
     }
 }
 
-void ValidationStateTracker::RecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
-                                                     VkQueryPool queryPool, uint32_t slot) {
-    if (disabled[query_validation]) return;
-    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    if (!disabled[command_buffer_state]) {
-        auto pool_state = GetQueryPoolState(queryPool);
-        cb_state->AddChild(pool_state);
+void CMD_BUFFER_STATE::RecordWriteTimestamp(CMD_TYPE cmd_type, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool,
+                                            uint32_t slot) {
+    RecordCmd(cmd_type);
+    if (dev_data->disabled[query_validation]) return;
+
+    if (!dev_data->disabled[command_buffer_state]) {
+        auto pool_state = dev_data->GetQueryPoolState(queryPool);
+        AddChild(pool_state);
     }
     QueryObject query = {queryPool, slot};
-    cb_state->EndQuery(query);
+    EndQuery(query);
 }
