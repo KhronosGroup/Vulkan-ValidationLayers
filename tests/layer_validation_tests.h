@@ -262,6 +262,8 @@ class VkLayerTest : public VkRenderFramework {
     bool AddSwapchainDeviceExtension();
     VkCommandBufferObj *CommandBuffer();
     void OOBRayTracingShadersTestBody(bool gpu_assisted);
+    bool AddYCbCrDeviceExtensions();
+    bool AddImageDrmFormatModifierDeviceExtensions();
 
   protected:
     uint32_t m_instance_api_version = 0;
@@ -506,7 +508,7 @@ struct CreatePipelineHelper {
         for (const auto &error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
         helper.CreateGraphicsPipeline();
 
-        if (positive_test) {
+        if (positive_test || (errors.size() == 0)) {
             test.Monitor().VerifyNotFound();
         } else {
             test.Monitor().VerifyFound();

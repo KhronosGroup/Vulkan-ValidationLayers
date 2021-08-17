@@ -93,7 +93,12 @@ class VkDeviceObj : public vk_testing::Device {
 // failure was encountered.
 class ErrorMonitor {
   public:
-    ErrorMonitor();
+    enum Behavior {
+        DefaultSuccess = 0,
+        DefaultIgnore,
+    };
+
+    ErrorMonitor(Behavior = Behavior::DefaultIgnore);
 
     ~ErrorMonitor() NOEXCEPT;
 
@@ -129,6 +134,13 @@ class ErrorMonitor {
 
     // ExpectSuccess now takes an optional argument allowing a custom combination of debug flags
     void ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask = kErrorBit);
+    bool ExpectingSuccess() const {
+        return (desired_message_strings_.size() == 1) &&
+               (desired_message_strings_.count("") == 1 && ignore_message_strings_.size() == 0);
+    }
+    bool NeedCheckSuccess() const {
+        return (behavior_ == Behavior::DefaultSuccess) && ExpectingSuccess();
+    }
 
     void VerifyFound();
     void VerifyNotFound();
@@ -152,6 +164,7 @@ class ErrorMonitor {
     test_platform_thread_mutex mutex_;
     bool *bailout_;
     bool message_found_;
+    Behavior behavior_;
 };
 
 struct DebugReporter {
@@ -611,7 +624,8 @@ class VkShaderObj : public vk_testing::ShaderModule {
     VkResult InitFromGLSLTry(VkRenderFramework &framework, const char *shader_code, bool debug = false,
                              uint32_t spirv_minor_version = 0);
     bool InitFromASM(VkRenderFramework &framework, const std::string &spv_source, const spv_target_env env = SPV_ENV_VULKAN_1_0);
-    VkResult InitFromASMTry(VkRenderFramework &framework, const std::string &spv_source);
+    VkResult InitFromASMTry(VkRenderFramework &framework, const std::string &spv_source,
+                            const spv_target_env env = SPV_ENV_VULKAN_1_0);
 
   protected:
     VkPipelineShaderStageCreateInfo m_stage_info;
