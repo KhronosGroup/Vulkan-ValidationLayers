@@ -1739,13 +1739,6 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                              "vkCreateImage(): Image type must be VK_IMAGE_TYPE_2D when VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT "
                              "flag bit is set");
         }
-
-        if ((pCreateInfo->extent.width != pCreateInfo->extent.height) || (pCreateInfo->arrayLayers < 6)) {
-            skip |= LogError(device, "VUID-VkImageCreateInfo-imageType-00954",
-                             "vkCreateImage(): If VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT flag bit is set, width (%d) must equal "
-                             "height (%d) and arrayLayers (%d) must be >= 6.",
-                             pCreateInfo->extent.width, pCreateInfo->extent.height, pCreateInfo->arrayLayers);
-        }
     }
 
     const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
