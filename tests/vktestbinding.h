@@ -838,6 +838,8 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
 
 class RenderPass : public internal::NonDispHandle<VkRenderPass> {
   public:
+    RenderPass() = default;
+    RenderPass(const Device &dev, const VkRenderPassCreateInfo &info) { init(dev, info); }
     ~RenderPass() NOEXCEPT;
 
     // vkCreateRenderPass()
@@ -847,6 +849,8 @@ class RenderPass : public internal::NonDispHandle<VkRenderPass> {
 
 class Framebuffer : public internal::NonDispHandle<VkFramebuffer> {
   public:
+    Framebuffer() = default;
+    Framebuffer(const Device &dev, const VkFramebufferCreateInfo &info) { init(dev, info); }
     ~Framebuffer() NOEXCEPT;
 
     // vkCreateFramebuffer()

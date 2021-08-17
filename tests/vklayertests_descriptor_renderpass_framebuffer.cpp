@@ -2201,114 +2201,73 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, descriptions, 1, &subpass, 0, nullptr};
 
-    VkRenderPass rp;
-
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
-
     // Create a framebuffer
 
     VkImageView views[] = {iav, cav};
 
-    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 2, views, 128, 128, 1};
-    VkFramebuffer fb;
+    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, VK_NULL_HANDLE, 2, views, 128, 128, 1};
 
-    vk::CreateFramebuffer(m_device->handle(), &fbci, nullptr, &fb);
+    VkClearValue clearValues[2];
+    clearValues[0].color = {{0, 0, 0, 0}};
+    clearValues[1].color = {{0, 0, 0, 0}};
+    VkRenderPassBeginInfo rp_begin = {
+        VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, VK_NULL_HANDLE, VK_NULL_HANDLE, {{0, 0}, {128, 128}}, 2, clearValues};
 
-    VkRenderPassBeginInfo rp_begin = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp, fb, {{0, 0}, {128, 128}}, 0, nullptr};
-
-    VkRenderPass rp_invalid;
+    auto test_layout_helper = [this, &rpci, &rp_begin, rp2Supported, &fbci](const char *rp1_vuid, const char *rp2_vuid) {
+        vk_testing::RenderPass rp_invalid(*m_device, rpci);
+        fbci.renderPass = rp_invalid.handle();
+        vk_testing::Framebuffer fb_invalid(*m_device, fbci);
+        rp_begin.renderPass = rp_invalid.handle();
+        rp_begin.framebuffer = fb_invalid.handle();
+        TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported, rp1_vuid,
+                            rp2_vuid);
+    };
 
     // Initial layout is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but attachment doesn't support IMAGE_USAGE_COLOR_ATTACHMENT_BIT
     descriptions[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
-    rp_begin.renderPass = rp_invalid;
-    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
-                        "VUID-vkCmdBeginRenderPass-initialLayout-00895", "VUID-vkCmdBeginRenderPass2-initialLayout-03094");
-
-    vk::DestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
+    test_layout_helper("VUID-vkCmdBeginRenderPass-initialLayout-00895", "VUID-vkCmdBeginRenderPass2-initialLayout-03094");
 
     // Initial layout is VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL but attachment doesn't support VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
     // / VK_IMAGE_USAGE_SAMPLED_BIT
     descriptions[0].initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     descriptions[1].initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
-    rp_begin.renderPass = rp_invalid;
+    test_layout_helper("VUID-vkCmdBeginRenderPass-initialLayout-00897", "VUID-vkCmdBeginRenderPass2-initialLayout-03097");
 
-    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
-                        "VUID-vkCmdBeginRenderPass-initialLayout-00897", "VUID-vkCmdBeginRenderPass2-initialLayout-03097");
-
-    vk::DestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
     descriptions[1].initialLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     // Initial layout is VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL but attachment doesn't support VK_IMAGE_USAGE_TRANSFER_SRC_BIT
     descriptions[0].initialLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
-    rp_begin.renderPass = rp_invalid;
-
-    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
-                        "VUID-vkCmdBeginRenderPass-initialLayout-00898", "VUID-vkCmdBeginRenderPass2-initialLayout-03098");
-
-    vk::DestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
+    test_layout_helper("VUID-vkCmdBeginRenderPass-initialLayout-00898", "VUID-vkCmdBeginRenderPass2-initialLayout-03098");
 
     // Initial layout is VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL but attachment doesn't support VK_IMAGE_USAGE_TRANSFER_DST_BIT
     descriptions[0].initialLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
-    rp_begin.renderPass = rp_invalid;
-
-    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
-                        "VUID-vkCmdBeginRenderPass-initialLayout-00899", "VUID-vkCmdBeginRenderPass2-initialLayout-03099");
-
-    vk::DestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
+    test_layout_helper("VUID-vkCmdBeginRenderPass-initialLayout-00899", "VUID-vkCmdBeginRenderPass2-initialLayout-03099");
 
     // Initial layout is VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL but attachment doesn't support
     // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
     descriptions[0].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
-    rp_begin.renderPass = rp_invalid;
+    descriptions[0].format = FindSupportedDepthStencilFormat(gpu());
     const char *initial_layout_vuid_rp1 =
         maintenance2Supported ? "VUID-vkCmdBeginRenderPass-initialLayout-01758" : "VUID-vkCmdBeginRenderPass-initialLayout-00896";
-    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
-                        initial_layout_vuid_rp1, "VUID-vkCmdBeginRenderPass2-initialLayout-03096");
-
-    vk::DestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
+    test_layout_helper(initial_layout_vuid_rp1, "VUID-vkCmdBeginRenderPass2-initialLayout-03096");
 
     // Initial layout is VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL but attachment doesn't support
     // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
     descriptions[0].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
-    rp_begin.renderPass = rp_invalid;
-
-    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
-                        initial_layout_vuid_rp1, "VUID-vkCmdBeginRenderPass2-initialLayout-03096");
-
-    vk::DestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
+    test_layout_helper(initial_layout_vuid_rp1, "VUID-vkCmdBeginRenderPass2-initialLayout-03096");
 
     if (maintenance2Supported || rp2Supported) {
         // Initial layout is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL but attachment doesn't support
         // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
         descriptions[0].initialLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
-        vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
-        rp_begin.renderPass = rp_invalid;
-
-        TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
-                            "VUID-vkCmdBeginRenderPass-initialLayout-01758", "VUID-vkCmdBeginRenderPass2-initialLayout-03096");
-
-        vk::DestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
+        test_layout_helper("VUID-vkCmdBeginRenderPass-initialLayout-01758", "VUID-vkCmdBeginRenderPass2-initialLayout-03096");
 
         // Initial layout is VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL but attachment doesn't support
         // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
         descriptions[0].initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
-        vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
-        rp_begin.renderPass = rp_invalid;
-
-        TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
-                            "VUID-vkCmdBeginRenderPass-initialLayout-01758", "VUID-vkCmdBeginRenderPass2-initialLayout-03096");
-
-        vk::DestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
+        test_layout_helper("VUID-vkCmdBeginRenderPass-initialLayout-01758", "VUID-vkCmdBeginRenderPass2-initialLayout-03096");
     }
 
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
     vk::DestroyImageView(m_device->device(), iav, nullptr);
     vk::DestroyImageView(m_device->device(), cav, nullptr);
 }

@@ -1587,6 +1587,20 @@ void VkImageObj::init(const VkImageCreateInfo *create_info) {
     SetLayout(image_aspect, VK_IMAGE_LAYOUT_GENERAL);
 }
 
+bool VkImageObj::IsCompatibleCheck(const VkImageCreateInfo &create_info) {
+    VkFormatProperties image_fmt;
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), create_info.format, &image_fmt);
+
+    switch (create_info.tiling) {
+        case VK_IMAGE_TILING_OPTIMAL:
+            return IsCompatible(create_info.usage, image_fmt.optimalTilingFeatures);
+        case VK_IMAGE_TILING_LINEAR:
+            return IsCompatible(create_info.usage, image_fmt.linearTilingFeatures);
+        default:
+            return true;
+    }
+}
+
 VkResult VkImageObj::CopyImage(VkImageObj &src_image) {
     VkImageLayout src_image_layout, dest_image_layout;
 
