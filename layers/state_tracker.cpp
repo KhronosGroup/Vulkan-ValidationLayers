@@ -223,9 +223,8 @@ void ValidationStateTracker::PreCallRecordCmdClearColorImage(VkCommandBuffer com
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto image_state = GetImageState(image);
-    if (cb_node && image_state) {
-        cb_node->AddChild(image_state);
+    if (cb_node) {
+        cb_node->RecordTransferCmd(CMD_CLEARCOLORIMAGE, GetImageState(image));
     }
 }
 
@@ -236,9 +235,8 @@ void ValidationStateTracker::PreCallRecordCmdClearDepthStencilImage(VkCommandBuf
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto image_state = GetImageState(image);
-    if (cb_node && image_state) {
-        cb_node->AddChild(image_state);
+    if (cb_node) {
+        cb_node->RecordTransferCmd(CMD_CLEARDEPTHSTENCILIMAGE, GetImageState(image));
     }
 }
 
@@ -248,12 +246,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyImage(VkCommandBuffer commandBu
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_image_state = GetImageState(srcImage);
-    auto dst_image_state = GetImageState(dstImage);
-
-    // Update bindings between images and cmd buffer
-    cb_node->AddChild(src_image_state);
-    cb_node->AddChild(dst_image_state);
+    cb_node->RecordTransferCmd(CMD_COPYIMAGE, GetImageState(srcImage), GetImageState(dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer,
@@ -261,11 +254,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer comma
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_image_state = GetImageState(pCopyImageInfo->srcImage);
-    auto dst_image_state = GetImageState(pCopyImageInfo->dstImage);
-
-    cb_node->AddChild(src_image_state);
-    cb_node->AddChild(dst_image_state);
+    cb_node->RecordTransferCmd(CMD_COPYIMAGE2KHR, GetImageState(pCopyImageInfo->srcImage), GetImageState(pCopyImageInfo->dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage,
@@ -275,12 +264,7 @@ void ValidationStateTracker::PreCallRecordCmdResolveImage(VkCommandBuffer comman
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_image_state = GetImageState(srcImage);
-    auto dst_image_state = GetImageState(dstImage);
-
-    // Update bindings between images and cmd buffer
-    cb_node->AddChild(src_image_state);
-    cb_node->AddChild(dst_image_state);
+    cb_node->RecordTransferCmd(CMD_RESOLVEIMAGE, GetImageState(srcImage), GetImageState(dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
@@ -288,12 +272,8 @@ void ValidationStateTracker::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer co
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_image_state = GetImageState(pResolveImageInfo->srcImage);
-    auto dst_image_state = GetImageState(pResolveImageInfo->dstImage);
-
-    // Update bindings between images and cmd buffer
-    cb_node->AddChild(src_image_state);
-    cb_node->AddChild(dst_image_state);
+    cb_node->RecordTransferCmd(CMD_RESOLVEIMAGE2KHR, GetImageState(pResolveImageInfo->srcImage),
+                               GetImageState(pResolveImageInfo->dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage,
@@ -302,12 +282,7 @@ void ValidationStateTracker::PreCallRecordCmdBlitImage(VkCommandBuffer commandBu
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_image_state = GetImageState(srcImage);
-    auto dst_image_state = GetImageState(dstImage);
-
-    // Update bindings between images and cmd buffer
-    cb_node->AddChild(src_image_state);
-    cb_node->AddChild(dst_image_state);
+    cb_node->RecordTransferCmd(CMD_BLITIMAGE, GetImageState(srcImage), GetImageState(dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer,
@@ -315,12 +290,7 @@ void ValidationStateTracker::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer comma
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_image_state = GetImageState(pBlitImageInfo->srcImage);
-    auto dst_image_state = GetImageState(pBlitImageInfo->dstImage);
-
-    // Update bindings between images and cmd buffer
-    cb_node->AddChild(src_image_state);
-    cb_node->AddChild(dst_image_state);
+    cb_node->RecordTransferCmd(CMD_BLITIMAGE2KHR, GetImageState(pBlitImageInfo->srcImage), GetImageState(pBlitImageInfo->dstImage));
 }
 
 void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
@@ -401,25 +371,16 @@ void ValidationStateTracker::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandB
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_buffer_state = GetBufferState(srcBuffer);
-    auto dst_buffer_state = GetBufferState(dstBuffer);
-
-    // Update bindings between buffers and cmd buffer
-    cb_node->AddChild(src_buffer_state);
-    cb_node->AddChild(dst_buffer_state);
+    cb_node->RecordTransferCmd(CMD_COPYBUFFER, GetBufferState(srcBuffer), GetBufferState(dstBuffer));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer,
-                                                            const VkCopyBufferInfo2KHR *pCopyBufferInfos) {
+                                                            const VkCopyBufferInfo2KHR *pCopyBufferInfo) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_buffer_state = GetBufferState(pCopyBufferInfos->srcBuffer);
-    auto dst_buffer_state = GetBufferState(pCopyBufferInfos->dstBuffer);
-
-    // Update bindings between buffers and cmd buffer
-    cb_node->AddChild(src_buffer_state);
-    cb_node->AddChild(dst_buffer_state);
+    cb_node->RecordTransferCmd(CMD_COPYBUFFER2KHR, GetBufferState(pCopyBufferInfo->srcBuffer),
+                               GetBufferState(pCopyBufferInfo->dstBuffer));
 }
 
 void ValidationStateTracker::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView,
@@ -455,9 +416,7 @@ void ValidationStateTracker::PreCallRecordCmdFillBuffer(VkCommandBuffer commandB
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto buffer_state = GetBufferState(dstBuffer);
-    // Update bindings between buffer and cmd buffer
-    cb_node->AddChild(buffer_state);
+    cb_node->RecordTransferCmd(CMD_FILLBUFFER, GetBufferState(dstBuffer));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage,
@@ -466,12 +425,8 @@ void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer c
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_image_state = GetImageState(srcImage);
-    auto dst_buffer_state = GetBufferState(dstBuffer);
 
-    // Update bindings between buffer/image and cmd buffer
-    cb_node->AddChild(src_image_state);
-    cb_node->AddChild(dst_buffer_state);
+    cb_node->RecordTransferCmd(CMD_COPYIMAGETOBUFFER, GetImageState(srcImage), GetBufferState(dstBuffer));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
@@ -479,12 +434,8 @@ void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuff
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_image_state = GetImageState(pCopyImageToBufferInfo->srcImage);
-    auto dst_buffer_state = GetBufferState(pCopyImageToBufferInfo->dstBuffer);
-
-    // Update bindings between buffer/image and cmd buffer
-    cb_node->AddChild(src_image_state);
-    cb_node->AddChild(dst_buffer_state);
+    cb_node->RecordTransferCmd(CMD_COPYIMAGETOBUFFER2KHR, GetImageState(pCopyImageToBufferInfo->srcImage),
+                               GetBufferState(pCopyImageToBufferInfo->dstBuffer));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
@@ -493,11 +444,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer c
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_buffer_state = GetBufferState(srcBuffer);
-    auto dst_image_state = GetImageState(dstImage);
-
-    cb_node->AddChild(src_buffer_state);
-    cb_node->AddChild(dst_image_state);
+    cb_node->RecordTransferCmd(CMD_COPYBUFFERTOIMAGE, GetBufferState(srcBuffer), GetImageState(dstImage));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
@@ -506,11 +453,8 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuff
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto src_buffer_state = GetBufferState(pCopyBufferToImageInfo->srcBuffer);
-    auto dst_image_state = GetImageState(pCopyBufferToImageInfo->dstImage);
-
-    cb_node->AddChild(src_buffer_state);
-    cb_node->AddChild(dst_image_state);
+    cb_node->RecordTransferCmd(CMD_COPYBUFFERTOIMAGE2KHR, GetBufferState(pCopyBufferToImageInfo->srcBuffer),
+                               GetImageState(pCopyBufferToImageInfo->dstImage));
 }
 
 QUEUE_STATE *ValidationStateTracker::GetQueueState(VkQueue queue) {
@@ -2718,6 +2662,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
                                                           VkPipeline pipeline) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
+    cb_state->RecordCmd(CMD_BINDPIPELINE);
 
     auto pipe_state = GetPipelineState(pipeline);
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
@@ -2779,11 +2724,10 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
 void ValidationStateTracker::PreCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                          uint32_t viewportCount, const VkViewport *pViewports) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordStateCmd(CMD_SETVIEWPORT, CBSTATUS_VIEWPORT_SET);
     uint32_t bits = ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->viewportMask |= bits;
     cb_state->trashedViewportMask &= ~bits;
-    cb_state->status |= CBSTATUS_VIEWPORT_SET;
-    cb_state->static_status &= ~CBSTATUS_VIEWPORT_SET;
 
     cb_state->dynamicViewports.resize(std::max(size_t(firstViewport + viewportCount), cb_state->dynamicViewports.size()));
     for (size_t i = 0; i < viewportCount; ++i) {
@@ -2795,10 +2739,9 @@ void ValidationStateTracker::PreCallRecordCmdSetExclusiveScissorNV(VkCommandBuff
                                                                    uint32_t exclusiveScissorCount,
                                                                    const VkRect2D *pExclusiveScissors) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordStateCmd(CMD_SETEXCLUSIVESCISSORNV, CBSTATUS_EXCLUSIVE_SCISSOR_SET);
     // TODO: We don't have VUIDs for validating that all exclusive scissors have been set.
     // cb_state->exclusiveScissorMask |= ((1u << exclusiveScissorCount) - 1u) << firstExclusiveScissor;
-    cb_state->status |= CBSTATUS_EXCLUSIVE_SCISSOR_SET;
-    cb_state->static_status &= ~CBSTATUS_EXCLUSIVE_SCISSOR_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
@@ -2806,6 +2749,7 @@ void ValidationStateTracker::PreCallRecordCmdBindShadingRateImageNV(VkCommandBuf
     if (disabled[command_buffer_state]) return;
 
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_BINDSHADINGRATEIMAGENV);
 
     if (imageView != VK_NULL_HANDLE) {
         auto view_state = GetImageViewState(imageView);
@@ -2817,10 +2761,9 @@ void ValidationStateTracker::PreCallRecordCmdSetViewportShadingRatePaletteNV(VkC
                                                                              uint32_t viewportCount,
                                                                              const VkShadingRatePaletteNV *pShadingRatePalettes) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordStateCmd(CMD_SETVIEWPORTSHADINGRATEPALETTENV, CBSTATUS_SHADING_RATE_PALETTE_SET);
     // TODO: We don't have VUIDs for validating that all shading rate palettes have been set.
     // cb_state->shadingRatePaletteMask |= ((1u << viewportCount) - 1u) << firstViewport;
-    cb_state->status |= CBSTATUS_SHADING_RATE_PALETTE_SET;
-    cb_state->static_status &= ~CBSTATUS_SHADING_RATE_PALETTE_SET;
 }
 
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
@@ -2870,6 +2813,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresKHR(
     if (cb_state == nullptr) {
         return;
     }
+    cb_state->RecordCmd(CMD_BUILDACCELERATIONSTRUCTURESKHR);
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto *dst_as_state = GetAccelerationStructureStateKHR(pInfos[i].dstAccelerationStructure);
         if (dst_as_state != nullptr) {
@@ -2897,6 +2841,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresIndirec
     if (cb_state == nullptr) {
         return;
     }
+    cb_state->RecordCmd(CMD_BUILDACCELERATIONSTRUCTURESINDIRECTKHR);
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto *dst_as_state = GetAccelerationStructureStateKHR(pInfos[i].dstAccelerationStructure);
         if (dst_as_state != nullptr) {
@@ -2962,6 +2907,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
     if (cb_state == nullptr) {
         return;
     }
+    cb_state->RecordCmd(CMD_BUILDACCELERATIONSTRUCTURENV);
 
     auto *dst_as_state = GetAccelerationStructureStateNV(dst);
     if (dst_as_state != nullptr) {
@@ -2988,13 +2934,12 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureNV(VkComm
     if (cb_state) {
         ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureStateNV(src);
         ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureStateNV(dst);
+        if (!disabled[command_buffer_state]) {
+            cb_state->RecordTransferCmd(CMD_COPYACCELERATIONSTRUCTURENV, src_as_state, dst_as_state);
+        }
         if (dst_as_state != nullptr && src_as_state != nullptr) {
             dst_as_state->built = true;
             dst_as_state->build_info = src_as_state->build_info;
-            if (!disabled[command_buffer_state]) {
-                cb_state->AddChild(dst_as_state);
-                cb_state->AddChild(src_as_state);
-            }
         }
     }
 }
@@ -3025,72 +2970,62 @@ void ValidationStateTracker::PreCallRecordCmdSetViewportWScalingNV(VkCommandBuff
                                                                    uint32_t viewportCount,
                                                                    const VkViewportWScalingNV *pViewportWScalings) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_VIEWPORT_W_SCALING_SET;
-    cb_state->static_status &= ~CBSTATUS_VIEWPORT_W_SCALING_SET;
+    cb_state->RecordStateCmd(CMD_SETVIEWPORTWSCALINGNV, CBSTATUS_VIEWPORT_W_SCALING_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_LINE_WIDTH_SET;
-    cb_state->static_status &= ~CBSTATUS_LINE_WIDTH_SET;
+    cb_state->RecordStateCmd(CMD_SETLINEWIDTH, CBSTATUS_LINE_WIDTH_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                                uint16_t lineStipplePattern) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_LINE_STIPPLE_SET;
-    cb_state->static_status &= ~CBSTATUS_LINE_STIPPLE_SET;
+    cb_state->RecordStateCmd(CMD_SETLINESTIPPLEEXT, CBSTATUS_LINE_STIPPLE_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor,
                                                           float depthBiasClamp, float depthBiasSlopeFactor) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_DEPTH_BIAS_SET;
-    cb_state->static_status &= ~CBSTATUS_DEPTH_BIAS_SET;
+    cb_state->RecordStateCmd(CMD_SETDEPTHBIAS, CBSTATUS_DEPTH_BIAS_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
                                                         const VkRect2D *pScissors) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordStateCmd(CMD_SETSCISSOR, CBSTATUS_SCISSOR_SET);
     uint32_t bits = ((1u << scissorCount) - 1u) << firstScissor;
     cb_state->scissorMask |= bits;
     cb_state->trashedScissorMask &= ~bits;
-    cb_state->status |= CBSTATUS_SCISSOR_SET;
-    cb_state->static_status &= ~CBSTATUS_SCISSOR_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_BLEND_CONSTANTS_SET;
-    cb_state->static_status &= ~CBSTATUS_BLEND_CONSTANTS_SET;
+    cb_state->RecordStateCmd(CMD_SETBLENDCONSTANTS, CBSTATUS_BLEND_CONSTANTS_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds,
                                                             float maxDepthBounds) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_DEPTH_BOUNDS_SET;
-    cb_state->static_status &= ~CBSTATUS_DEPTH_BOUNDS_SET;
+    cb_state->RecordStateCmd(CMD_SETDEPTHBOUNDS, CBSTATUS_DEPTH_BOUNDS_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                                    uint32_t compareMask) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_STENCIL_READ_MASK_SET;
-    cb_state->static_status &= ~CBSTATUS_STENCIL_READ_MASK_SET;
+    cb_state->RecordStateCmd(CMD_SETSTENCILCOMPAREMASK, CBSTATUS_STENCIL_READ_MASK_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                                  uint32_t writeMask) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_STENCIL_WRITE_MASK_SET;
-    cb_state->static_status &= ~CBSTATUS_STENCIL_WRITE_MASK_SET;
+    cb_state->RecordStateCmd(CMD_SETSTENCILWRITEMASK, CBSTATUS_STENCIL_WRITE_MASK_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                                  uint32_t reference) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_STENCIL_REFERENCE_SET;
-    cb_state->static_status &= ~CBSTATUS_STENCIL_REFERENCE_SET;
+    cb_state->RecordStateCmd(CMD_SETSTENCILREFERENCE, CBSTATUS_STENCIL_REFERENCE_SET);
 }
 
 
@@ -3101,6 +3036,7 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
                                                                 const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
                                                                 const uint32_t *pDynamicOffsets) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_BINDDESCRIPTORSETS);
     auto pipeline_layout = GetPipelineLayout(layout);
 
     // Resize binding arrays
@@ -3130,6 +3066,7 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
                                                             const void *pValues) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_state != nullptr) {
+        cb_state->RecordCmd(CMD_PUSHCONSTANTS);
         cb_state->ResetPushConstantDataIfIncompatible(GetPipelineLayout(layout));
 
         auto &push_constant_data = cb_state->push_constant_data;
@@ -3158,8 +3095,7 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer com
                                                              VkIndexType indexType) {
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
 
-    cb_state->status |= CBSTATUS_INDEX_BUFFER_BOUND;
-    cb_state->static_status &= ~CBSTATUS_INDEX_BUFFER_BOUND;
+    cb_state->RecordStateCmd(CMD_BINDINDEXBUFFER, CBSTATUS_INDEX_BUFFER_BOUND);
     cb_state->index_buffer_binding.buffer_state = GetShared<BUFFER_STATE>(buffer);
     cb_state->index_buffer_binding.size = cb_state->index_buffer_binding.buffer_state->createInfo.size;
     cb_state->index_buffer_binding.offset = offset;
@@ -3174,6 +3110,7 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer c
                                                                uint32_t bindingCount, const VkBuffer *pBuffers,
                                                                const VkDeviceSize *pOffsets) {
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_BINDVERTEXBUFFERS);
 
     uint32_t end = firstBinding + bindingCount;
     if (cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings.size() < end) {
@@ -3198,12 +3135,7 @@ void ValidationStateTracker::PostCallRecordCmdUpdateBuffer(VkCommandBuffer comma
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    auto dst_buffer_state = GetBufferState(dstBuffer);
-
-    // Update bindings between buffer and cmd buffer
-    if (cb_state && dst_buffer_state) {
-        cb_state->AddChild(dst_buffer_state);
-    }
+    cb_state->RecordTransferCmd(CMD_UPDATEBUFFER, GetBufferState(dstBuffer));
 }
 
 static bool SetEventStageMask(VkEvent event, VkPipelineStageFlags2KHR stageMask,
@@ -3379,6 +3311,7 @@ void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer command
 
     QueryObject query = {queryPool, slot};
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_BEGINQUERY);
     if (!disabled[query_validation]) {
         cb_state->BeginQuery(query);
     }
@@ -3392,6 +3325,7 @@ void ValidationStateTracker::PostCallRecordCmdEndQuery(VkCommandBuffer commandBu
     if (disabled[query_validation]) return;
     QueryObject query_obj = {queryPool, slot};
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_ENDQUERY);
     if (!disabled[query_validation]) {
         cb_state->EndQuery(query_obj);
     }
@@ -3406,6 +3340,7 @@ void ValidationStateTracker::PostCallRecordCmdResetQueryPool(VkCommandBuffer com
     if (disabled[query_validation]) return;
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
 
+    cb_state->RecordCmd(CMD_RESETQUERYPOOL);
     cb_state->ResetQueryPool(queryPool, firstQuery, queryCount);
 
     if (!disabled[command_buffer_state]) {
@@ -3421,6 +3356,7 @@ void ValidationStateTracker::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuff
     if (disabled[query_validation] || disabled[command_buffer_state]) return;
 
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_COPYQUERYPOOLRESULTS);
     auto dst_buff_state = GetBufferState(dstBuffer);
     cb_state->AddChild(dst_buff_state);
     auto pool_state = GetQueryPoolState(queryPool);
@@ -3450,6 +3386,7 @@ void ValidationStateTracker::PostCallRecordCmdWriteAccelerationStructuresPropert
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) {
     if (disabled[query_validation]) return;
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_WRITEACCELERATIONSTRUCTURESPROPERTIESKHR);
     if (!disabled[command_buffer_state]) {
         auto pool_state = GetQueryPoolState(queryPool);
         cb_state->AddChild(pool_state);
@@ -3498,23 +3435,18 @@ void ValidationStateTracker::PostCallRecordCreateRenderPass2(VkDevice device, co
     renderPassMap[*pRenderPass] = std::make_shared<RENDER_PASS_STATE>(*pRenderPass, pCreateInfo);
 }
 
-void ValidationStateTracker::RecordCmdBeginRenderPassState(VkCommandBuffer commandBuffer,
-                                                           const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                           const VkSubpassContents contents) {
-    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->BeginRenderPass(pRenderPassBegin, contents);
-}
-
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer,
                                                              const VkRenderPassBeginInfo *pRenderPassBegin,
                                                              VkSubpassContents contents) {
-    RecordCmdBeginRenderPassState(commandBuffer, pRenderPassBegin, contents);
+    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->BeginRenderPass(CMD_BEGINRENDERPASS, pRenderPassBegin, contents);
 }
 
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                                  const VkRenderPassBeginInfo *pRenderPassBegin,
                                                                  const VkSubpassBeginInfo *pSubpassBeginInfo) {
-    RecordCmdBeginRenderPassState(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
+    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->BeginRenderPass(CMD_BEGINRENDERPASS2, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
 
 void ValidationStateTracker::PostCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
@@ -3523,6 +3455,7 @@ void ValidationStateTracker::PostCallRecordCmdBeginTransformFeedbackEXT(VkComman
                                                                         const VkDeviceSize *pCounterBufferOffsets) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
 
+    cb_state->RecordCmd(CMD_BEGINTRANSFORMFEEDBACKEXT);
     cb_state->transform_feedback_active = true;
 }
 
@@ -3531,6 +3464,7 @@ void ValidationStateTracker::PostCallRecordCmdEndTransformFeedbackEXT(VkCommandB
                                                                       const VkDeviceSize *pCounterBufferOffsets) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
 
+    cb_state->RecordCmd(CMD_ENDTRANSFORMFEEDBACKEXT);
     cb_state->transform_feedback_active = false;
 }
 
@@ -3538,12 +3472,14 @@ void ValidationStateTracker::PostCallRecordCmdBeginConditionalRenderingEXT(
     VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin) {
     auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
 
+    cb_state->RecordCmd(CMD_BEGINCONDITIONALRENDERINGEXT);
     cb_state->conditional_rendering_active = true;
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer) {
     auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
 
+    cb_state->RecordCmd(CMD_ENDCONDITIONALRENDERINGEXT);
     cb_state->conditional_rendering_active = false;
 
 }
@@ -3551,47 +3487,45 @@ void ValidationStateTracker::PostCallRecordCmdEndConditionalRenderingEXT(VkComma
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
                                                               const VkRenderPassBeginInfo *pRenderPassBegin,
                                                               const VkSubpassBeginInfo *pSubpassBeginInfo) {
-    RecordCmdBeginRenderPassState(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
+    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->BeginRenderPass(CMD_BEGINRENDERPASS2, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
 
-void ValidationStateTracker::RecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->NextSubpass(contents);
-}
 
 void ValidationStateTracker::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    RecordCmdNextSubpass(commandBuffer, contents);
+    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->NextSubpass(CMD_NEXTSUBPASS, contents);
 }
 
 void ValidationStateTracker::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer,
                                                               const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                               const VkSubpassEndInfo *pSubpassEndInfo) {
-    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo->contents);
+    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->NextSubpass(CMD_NEXTSUBPASS2, pSubpassBeginInfo->contents);
 }
 
 void ValidationStateTracker::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer,
                                                            const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                            const VkSubpassEndInfo *pSubpassEndInfo) {
-    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo->contents);
-}
-
-void ValidationStateTracker::RecordCmdEndRenderPassState(VkCommandBuffer commandBuffer) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->EndRenderPass();
+    cb_state->NextSubpass(CMD_NEXTSUBPASS2, pSubpassBeginInfo->contents);
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
-    RecordCmdEndRenderPassState(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->EndRenderPass(CMD_ENDRENDERPASS);
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                                 const VkSubpassEndInfo *pSubpassEndInfo) {
-    RecordCmdEndRenderPassState(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->EndRenderPass(CMD_ENDRENDERPASS2);
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer,
                                                              const VkSubpassEndInfo *pSubpassEndInfo) {
-    RecordCmdEndRenderPassState(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->EndRenderPass(CMD_ENDRENDERPASS2);
 }
 
 void ValidationStateTracker::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
@@ -4207,10 +4141,14 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(V
 
 void ValidationStateTracker::PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer,
                                                                      const VkDebugUtilsLabelEXT *pLabelInfo) {
+    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_BEGINDEBUGUTILSLABELEXT);
     BeginCmdDebugUtilsLabel(report_data, commandBuffer, pLabelInfo);
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) {
+    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_ENDDEBUGUTILSLABELEXT);
     EndCmdDebugUtilsLabel(report_data, commandBuffer);
 }
 
@@ -4218,8 +4156,9 @@ void ValidationStateTracker::PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandB
                                                                       const VkDebugUtilsLabelEXT *pLabelInfo) {
     InsertCmdDebugUtilsLabel(report_data, commandBuffer, pLabelInfo);
 
-    // Squirrel away an easily accessible copy.
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_INSERTDEBUGUTILSLABELEXT);
+    // Squirrel away an easily accessible copy.
     cb_state->debug_label = LoggingLabel(pLabelInfo);
 }
 
@@ -4361,6 +4300,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
                                                                               const void *pData) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
 
+    cb_state->RecordCmd(CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR);
     const auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
     if (template_state) {
         auto layout_data = GetPipelineLayout(layout);
@@ -4406,6 +4346,7 @@ void ValidationStateTracker::PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuff
                                                                    uint32_t query, VkQueryControlFlags flags, uint32_t index) {
     QueryObject query_obj = {queryPool, query, index};
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_BEGINQUERYINDEXEDEXT);
     cb_state->BeginQuery(query_obj);
 }
 
@@ -4413,6 +4354,7 @@ void ValidationStateTracker::PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer
                                                                  uint32_t query, uint32_t index) {
     QueryObject query_obj = {queryPool, query, index};
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_ENDQUERYINDEXEDEXT);
     cb_state->EndQuery(query_obj);
 }
 
@@ -4852,6 +4794,7 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureKHR(VkCom
                                                                            const VkCopyAccelerationStructureInfoKHR *pInfo) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_state) {
+        cb_state->RecordCmd(CMD_COPYACCELERATIONSTRUCTUREKHR);
         ACCELERATION_STRUCTURE_STATE_KHR *src_as_state = GetAccelerationStructureStateKHR(pInfo->src);
         ACCELERATION_STRUCTURE_STATE_KHR *dst_as_state = GetAccelerationStructureStateKHR(pInfo->dst);
         if (dst_as_state != nullptr && src_as_state != nullptr) {
@@ -4867,34 +4810,30 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureKHR(VkCom
 
 void ValidationStateTracker::PreCallRecordCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_CULL_MODE_SET;
-    cb_state->static_status &= ~CBSTATUS_CULL_MODE_SET;
+    cb_state->RecordStateCmd(CMD_SETCULLMODEEXT, CBSTATUS_CULL_MODE_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_FRONT_FACE_SET;
-    cb_state->static_status &= ~CBSTATUS_FRONT_FACE_SET;
+    cb_state->RecordStateCmd(CMD_SETFRONTFACEEXT, CBSTATUS_FRONT_FACE_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer,
                                                                      VkPrimitiveTopology primitiveTopology) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordStateCmd(CMD_SETPRIMITIVETOPOLOGYEXT, CBSTATUS_PRIMITIVE_TOPOLOGY_SET);
     cb_state->primitiveTopology = primitiveTopology;
-    cb_state->status |= CBSTATUS_PRIMITIVE_TOPOLOGY_SET;
-    cb_state->static_status &= ~CBSTATUS_PRIMITIVE_TOPOLOGY_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                                      const VkViewport *pViewports) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordStateCmd(CMD_SETVIEWPORTWITHCOUNTEXT, CBSTATUS_VIEWPORT_WITH_COUNT_SET);
     uint32_t bits = (1u << viewportCount) - 1u;
     cb_state->viewportWithCountMask |= bits;
     cb_state->trashedViewportMask &= ~bits;
     cb_state->viewportWithCountCount = viewportCount;
     cb_state->trashedViewportCount = false;
-    cb_state->status |= CBSTATUS_VIEWPORT_WITH_COUNT_SET;
-    cb_state->static_status &= ~CBSTATUS_VIEWPORT_WITH_COUNT_SET;
 
     cb_state->dynamicViewports.resize(std::max(size_t(viewportCount), cb_state->dynamicViewports.size()));
     for (size_t i = 0; i < viewportCount; ++i) {
@@ -4905,13 +4844,12 @@ void ValidationStateTracker::PreCallRecordCmdSetViewportWithCountEXT(VkCommandBu
 void ValidationStateTracker::PreCallRecordCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
                                                                     const VkRect2D *pScissors) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordStateCmd(CMD_SETSCISSORWITHCOUNTEXT, CBSTATUS_SCISSOR_WITH_COUNT_SET);
     uint32_t bits = (1u << scissorCount) - 1u;
     cb_state->scissorWithCountMask |= bits;
     cb_state->trashedScissorMask &= ~bits;
     cb_state->scissorWithCountCount = scissorCount;
     cb_state->trashedScissorCount = false;
-    cb_state->status |= CBSTATUS_SCISSOR_WITH_COUNT_SET;
-    cb_state->static_status &= ~CBSTATUS_SCISSOR_WITH_COUNT_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
@@ -4919,10 +4857,7 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers2EXT(VkCommandBuff
                                                                    const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
                                                                    const VkDeviceSize *pStrides) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    if (pStrides) {
-        cb_state->status |= CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET;
-        cb_state->static_status &= ~CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET;
-    }
+    cb_state->RecordStateCmd(CMD_BINDVERTEXBUFFERS2EXT, pStrides ? CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET : CBSTATUS_NONE);
 
     uint32_t end = firstBinding + bindingCount;
     if (cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings.size() < end) {
@@ -4944,55 +4879,47 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers2EXT(VkCommandBuff
 
 void ValidationStateTracker::PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_DEPTH_TEST_ENABLE_SET;
-    cb_state->static_status &= ~CBSTATUS_DEPTH_TEST_ENABLE_SET;
+    cb_state->RecordStateCmd(CMD_SETDEPTHTESTENABLEEXT, CBSTATUS_DEPTH_TEST_ENABLE_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_DEPTH_WRITE_ENABLE_SET;
-    cb_state->static_status &= ~CBSTATUS_DEPTH_WRITE_ENABLE_SET;
+    cb_state->RecordStateCmd(CMD_SETDEPTHWRITEENABLEEXT, CBSTATUS_DEPTH_WRITE_ENABLE_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_DEPTH_COMPARE_OP_SET;
-    cb_state->static_status &= ~CBSTATUS_DEPTH_COMPARE_OP_SET;
+    cb_state->RecordStateCmd(CMD_SETDEPTHCOMPAREOPEXT, CBSTATUS_DEPTH_COMPARE_OP_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer,
                                                                          VkBool32 depthBoundsTestEnable) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET;
-    cb_state->static_status &= ~CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET;
+    cb_state->RecordStateCmd(CMD_SETDEPTHBOUNDSTESTENABLEEXT, CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET);
 }
 void ValidationStateTracker::PreCallRecordCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_STENCIL_TEST_ENABLE_SET;
-    cb_state->static_status &= ~CBSTATUS_STENCIL_TEST_ENABLE_SET;
+    cb_state->RecordStateCmd(CMD_SETSTENCILTESTENABLEEXT, CBSTATUS_STENCIL_TEST_ENABLE_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                              VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp,
                                                              VkCompareOp compareOp) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_STENCIL_OP_SET;
-    cb_state->static_status &= ~CBSTATUS_STENCIL_OP_SET;
+    cb_state->RecordStateCmd(CMD_SETSTENCILOPEXT, CBSTATUS_STENCIL_OP_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                                     uint32_t discardRectangleCount,
                                                                     const VkRect2D *pDiscardRectangles) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_DISCARD_RECTANGLE_SET;
-    cb_state->static_status &= ~CBSTATUS_DISCARD_RECTANGLE_SET;
+    cb_state->RecordStateCmd(CMD_SETDISCARDRECTANGLEEXT, CBSTATUS_DISCARD_RECTANGLE_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                                    const VkSampleLocationsInfoEXT *pSampleLocationsInfo) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_SAMPLE_LOCATIONS_SET;
-    cb_state->static_status &= ~CBSTATUS_SAMPLE_LOCATIONS_SET;
+    cb_state->RecordStateCmd(CMD_SETSAMPLELOCATIONSEXT, CBSTATUS_SAMPLE_LOCATIONS_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer,
@@ -5000,40 +4927,34 @@ void ValidationStateTracker::PreCallRecordCmdSetCoarseSampleOrderNV(VkCommandBuf
                                                                     uint32_t customSampleOrderCount,
                                                                     const VkCoarseSampleOrderCustomNV *pCustomSampleOrders) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_COARSE_SAMPLE_ORDER_SET;
-    cb_state->static_status &= ~CBSTATUS_COARSE_SAMPLE_ORDER_SET;
+    cb_state->RecordStateCmd(CMD_SETCOARSESAMPLEORDERNV, CBSTATUS_COARSE_SAMPLE_ORDER_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_PATCH_CONTROL_POINTS_SET;
-    cb_state->static_status &= ~CBSTATUS_PATCH_CONTROL_POINTS_SET;
+    cb_state->RecordStateCmd(CMD_SETPATCHCONTROLPOINTSEXT, CBSTATUS_PATCH_CONTROL_POINTS_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_LOGIC_OP_SET;
-    cb_state->static_status &= ~CBSTATUS_LOGIC_OP_SET;
+    cb_state->RecordStateCmd(CMD_SETLOGICOPEXT, CBSTATUS_LOGIC_OP_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer,
                                                                            VkBool32 rasterizerDiscardEnable) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET;
-    cb_state->static_status &= ~CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET;
+    cb_state->RecordStateCmd(CMD_SETRASTERIZERDISCARDENABLEEXT, CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_DEPTH_BIAS_ENABLE_SET;
-    cb_state->static_status &= ~CBSTATUS_DEPTH_BIAS_ENABLE_SET;
+    cb_state->RecordStateCmd(CMD_SETDEPTHBIASENABLEEXT, CBSTATUS_DEPTH_BIAS_ENABLE_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer,
                                                                           VkBool32 primitiveRestartEnable) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET;
-    cb_state->static_status &= ~CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET;
+    cb_state->RecordStateCmd(CMD_SETPRIMITIVERESTARTENABLEEXT, CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetVertexInputEXT(
@@ -5041,8 +4962,7 @@ void ValidationStateTracker::PreCallRecordCmdSetVertexInputEXT(
     const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
     const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->status |= CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET | CBSTATUS_VERTEX_INPUT_SET;
-    cb_state->static_status &= ~(CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET | CBSTATUS_VERTEX_INPUT_SET);
+    cb_state->RecordStateCmd(CMD_SETVERTEXINPUTEXT, CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET | CBSTATUS_VERTEX_INPUT_SET);
 }
 
 void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAddressInfo *pInfo, VkDeviceAddress address) {

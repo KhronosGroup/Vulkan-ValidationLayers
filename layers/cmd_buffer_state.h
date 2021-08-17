@@ -399,9 +399,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
     void ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
 
-    void BeginRenderPass(const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents contents);
-    void NextSubpass(VkSubpassContents contents);
-    void EndRenderPass();
+    void BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents contents);
+    void NextSubpass(CMD_TYPE cmd_type, VkSubpassContents contents);
+    void EndRenderPass(CMD_TYPE cmd_type);
 
     void ExecuteCommands(uint32_t commandBuffersCount, const VkCommandBuffer *pCommandBuffers);
 
@@ -416,6 +416,10 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void UpdateStateCmdDrawDispatchType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point, const char *function);
     void UpdateStateCmdDrawType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point, const char *function);
     void UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point, const char *function);
+
+    virtual void RecordCmd(CMD_TYPE cmd_type);
+    void RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits);
+    void RecordTransferCmd(CMD_TYPE cmd_type, BINDABLE *buf1, BINDABLE *buf2 = nullptr);
 
     void SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, VkImageLayout layout, VkImageLayout layoutStencil);
     void SetImageViewInitialLayout(const IMAGE_VIEW_STATE &view_state, VkImageLayout layout);

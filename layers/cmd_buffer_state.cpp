@@ -561,7 +561,9 @@ void CMD_BUFFER_STATE::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRende
     }
 }
 
-void CMD_BUFFER_STATE::BeginRenderPass(const VkRenderPassBeginInfo *pRenderPassBegin, const VkSubpassContents contents) {
+void CMD_BUFFER_STATE::BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                       const VkSubpassContents contents) {
+    RecordCmd(cmd_type);
     activeFramebuffer = dev_data->GetShared<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
     activeRenderPass = dev_data->GetShared<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo(pRenderPassBegin);
@@ -600,7 +602,8 @@ void CMD_BUFFER_STATE::BeginRenderPass(const VkRenderPassBeginInfo *pRenderPassB
     }
 }
 
-void CMD_BUFFER_STATE::NextSubpass(VkSubpassContents contents) {
+void CMD_BUFFER_STATE::NextSubpass(CMD_TYPE cmd_type, VkSubpassContents contents) {
+    RecordCmd(cmd_type);
     activeSubpass++;
     activeSubpassContents = contents;
 
@@ -614,7 +617,8 @@ void CMD_BUFFER_STATE::NextSubpass(VkSubpassContents contents) {
     }
 }
 
-void CMD_BUFFER_STATE::EndRenderPass() {
+void CMD_BUFFER_STATE::EndRenderPass(CMD_TYPE cmd_type) {
+    RecordCmd(cmd_type);
     activeRenderPass = nullptr;
     active_attachments = nullptr;
     active_subpasses = nullptr;
@@ -695,6 +699,7 @@ void CMD_BUFFER_STATE::End(VkResult result) {
 }
 
 void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCommandBuffer *pCommandBuffers) {
+    RecordCmd(CMD_EXECUTECOMMANDS);
     CMD_BUFFER_STATE *sub_cb_state = NULL;
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         sub_cb_state = dev_data->Get<CMD_BUFFER_STATE>(pCommandBuffers[i]);
@@ -787,6 +792,8 @@ void CMD_BUFFER_STATE::UpdateStateCmdDrawType(CMD_TYPE cmd_type, VkPipelineBindP
 }
 
 void CMD_BUFFER_STATE::UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point, const char *function) {
+    RecordCmd(cmd_type);
+
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     auto &state = lastBound[lv_bind_point];
     PIPELINE_STATE *pipe = state.pipeline_state;
@@ -1022,5 +1029,23 @@ void CMD_BUFFER_STATE::SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, Vk
         SetImageLayout(*image_state, sub_range, layoutStencil);
     } else {
         SetImageLayout(*image_state, sub_range, layout);
+    }
+}
+
+void CMD_BUFFER_STATE::RecordCmd(CMD_TYPE cmd_type) { commandCount++; }
+
+void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits) {
+    RecordCmd(cmd_type);
+    status |= state_bits;
+    static_status &= ~state_bits;
+}
+
+void CMD_BUFFER_STATE::RecordTransferCmd(CMD_TYPE cmd_type, BINDABLE *buf1, BINDABLE *buf2) {
+    RecordCmd(cmd_type);
+    if (buf1) {
+        AddChild(buf1);
+    }
+    if (buf2) {
+        AddChild(buf2);
     }
 }
