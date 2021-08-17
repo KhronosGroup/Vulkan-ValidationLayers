@@ -1146,10 +1146,6 @@ class ValidationStateTracker : public ValidationObject {
                                                     const void* pData);
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                      VkFence fence, uint32_t* pImageIndex);
-    void RecordCmdEndRenderPassState(VkCommandBuffer commandBuffer);
-    void RecordCmdBeginRenderPassState(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                       const VkSubpassContents contents);
-    void RecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents);
     void RecordCreateSamplerYcbcrConversionState(const VkSamplerYcbcrConversionCreateInfo* create_info,
                                                  VkSamplerYcbcrConversion ycbcr_conversion);
     virtual std::shared_ptr<SWAPCHAIN_NODE> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
