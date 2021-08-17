@@ -448,6 +448,7 @@ class VkImageObj : public vk_testing::Image {
   public:
     VkImageObj(VkDeviceObj *dev);
     bool IsCompatible(VkImageUsageFlags usages, VkFormatFeatureFlags features);
+    bool IsCompatibleCheck(const VkImageCreateInfo &create_info);
 
   public:
     static VkImageCreateInfo ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mipLevels,

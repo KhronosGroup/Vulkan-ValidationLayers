@@ -868,6 +868,14 @@ TEST_F(VkLayerTest, ReservedParameter) {
 TEST_F(VkLayerTest, DebugMarkerNameTest) {
     TEST_DESCRIPTION("Ensure debug marker object names are printed in debug report output");
 
+    if (InstanceExtensionSupported(VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), kValidationLayerName, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
@@ -10885,8 +10893,13 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
 TEST_F(VkLayerTest, InvalidSpirvExtension) {
     TEST_DESCRIPTION("Use an invalid SPIR-V extension in OpExtension.");
 
-    app_info_.apiVersion = VK_API_VERSION_1_2;
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Vulkan >= 1.2 required\n", kSkipPrefix);
+        return;
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -10911,7 +10924,12 @@ TEST_F(VkLayerTest, InvalidSpirvExtension) {
                OpReturn
                OpFunctionEnd
         )spirv";
-    const VkShaderObj vs(m_device, vertex_source, VK_SHADER_STAGE_VERTEX_BIT, this, "main", nullptr, SPV_ENV_UNIVERSAL_1_5);
+    VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
+    m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+    if (!vs.InitFromASMTry(*this, vertex_source.c_str(), SPV_ENV_UNIVERSAL_1_5)) {
+        printf("%s Failed to compile shader\n", kSkipPrefix);
+        return;
+    }
     const VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_Shader_InvalidExtension);
@@ -12104,6 +12122,13 @@ TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
 
 TEST_F(VkLayerTest, ValidateColorWriteDynamicStateDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_color_write_enable VUs when disabled");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME)) {
