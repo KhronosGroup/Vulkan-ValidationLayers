@@ -5826,7 +5826,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             }
         }
 
-        if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT && !FormatIsCompressed(image_format) &&
+        if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT && !FormatIsCompressed(view_format) &&
             pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_3D) {
             skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04739",
                              "vkCreateImageView(): Image was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit and "
