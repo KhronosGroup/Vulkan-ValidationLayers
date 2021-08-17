@@ -1592,6 +1592,64 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
     return skip;
 }
 
+// Used by VK_EXT_blend_operation_advanced
+bool StatelessValidation::IsAdvancedBlendOp(VkBlendOp blend_op) const {
+    bool advanced_blend = false;
+    switch (blend_op) {
+        case VK_BLEND_OP_ZERO_EXT:
+        case VK_BLEND_OP_SRC_EXT:
+        case VK_BLEND_OP_DST_EXT:
+        case VK_BLEND_OP_SRC_OVER_EXT:
+        case VK_BLEND_OP_DST_OVER_EXT:
+        case VK_BLEND_OP_SRC_IN_EXT:
+        case VK_BLEND_OP_DST_IN_EXT:
+        case VK_BLEND_OP_SRC_OUT_EXT:
+        case VK_BLEND_OP_DST_OUT_EXT:
+        case VK_BLEND_OP_SRC_ATOP_EXT:
+        case VK_BLEND_OP_DST_ATOP_EXT:
+        case VK_BLEND_OP_XOR_EXT:
+        case VK_BLEND_OP_MULTIPLY_EXT:
+        case VK_BLEND_OP_SCREEN_EXT:
+        case VK_BLEND_OP_OVERLAY_EXT:
+        case VK_BLEND_OP_DARKEN_EXT:
+        case VK_BLEND_OP_LIGHTEN_EXT:
+        case VK_BLEND_OP_COLORDODGE_EXT:
+        case VK_BLEND_OP_COLORBURN_EXT:
+        case VK_BLEND_OP_HARDLIGHT_EXT:
+        case VK_BLEND_OP_SOFTLIGHT_EXT:
+        case VK_BLEND_OP_DIFFERENCE_EXT:
+        case VK_BLEND_OP_EXCLUSION_EXT:
+        case VK_BLEND_OP_INVERT_EXT:
+        case VK_BLEND_OP_INVERT_RGB_EXT:
+        case VK_BLEND_OP_LINEARDODGE_EXT:
+        case VK_BLEND_OP_LINEARBURN_EXT:
+        case VK_BLEND_OP_VIVIDLIGHT_EXT:
+        case VK_BLEND_OP_LINEARLIGHT_EXT:
+        case VK_BLEND_OP_PINLIGHT_EXT:
+        case VK_BLEND_OP_HARDMIX_EXT:
+        case VK_BLEND_OP_HSL_HUE_EXT:
+        case VK_BLEND_OP_HSL_SATURATION_EXT:
+        case VK_BLEND_OP_HSL_COLOR_EXT:
+        case VK_BLEND_OP_HSL_LUMINOSITY_EXT:
+        case VK_BLEND_OP_PLUS_EXT:
+        case VK_BLEND_OP_PLUS_CLAMPED_EXT:
+        case VK_BLEND_OP_PLUS_CLAMPED_ALPHA_EXT:
+        case VK_BLEND_OP_PLUS_DARKER_EXT:
+        case VK_BLEND_OP_MINUS_EXT:
+        case VK_BLEND_OP_MINUS_CLAMPED_EXT:
+        case VK_BLEND_OP_CONTRAST_EXT:
+        case VK_BLEND_OP_INVERT_OVG_EXT:
+        case VK_BLEND_OP_RED_EXT:
+        case VK_BLEND_OP_GREEN_EXT:
+        case VK_BLEND_OP_BLUE_EXT:
+            advanced_blend = true;
+            break;
+        default:
+            break;
+    }
+    return advanced_blend;
+}
+
 bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkPipelineLayout *pPipelineLayout) const {
@@ -3439,6 +3497,51 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                         i, attachment_index,
                                         string_VkBlendOp(
                                             create_info.pColorBlendState->pAttachments[attachment_index].colorBlendOp));
+                                }
+                            }
+                        }
+                        if (phys_dev_ext_props.blend_operation_advanced_props.advancedBlendIndependentBlend == VK_FALSE) {
+                            for (uint32_t attachment_index = 0;
+                                 attachment_index < pCreateInfos[i].pColorBlendState->attachmentCount - 1; ++attachment_index) {
+                                for (uint32_t j = attachment_index + 1; j < pCreateInfos[i].pColorBlendState->attachmentCount;
+                                     ++j) {
+                                    auto first_color =
+                                        pCreateInfos[i].pColorBlendState->pAttachments[attachment_index].colorBlendOp;
+                                    auto second_color = pCreateInfos[i].pColorBlendState->pAttachments[j].colorBlendOp;
+                                    if (first_color != second_color &&
+                                        (IsAdvancedBlendOp(first_color) || IsAdvancedBlendOp(second_color))) {
+                                        skip |= LogError(
+                                            device, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01407",
+                                            "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                            "] contains VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT in the pNext chain "
+                                            "with advancedBlendIndependentBlend = VK_FALSE and has at least one attachment "
+                                            "with an advanced color blend operation, but "
+                                            "pColorBlendState->pAttachments[%" PRIu32
+                                            "].colorBlendOp (%s) is different from pColorBlendState->pAttachments[%" PRIu32
+                                            "].colorBlendOp (%s)",
+                                            i, attachment_index,
+                                            string_VkBlendOp(
+                                                pCreateInfos[i].pColorBlendState->pAttachments[attachment_index].colorBlendOp),
+                                            j, string_VkBlendOp(pCreateInfos[i].pColorBlendState->pAttachments[j].colorBlendOp));
+                                    }
+                                    auto first_alpha =
+                                        pCreateInfos[i].pColorBlendState->pAttachments[attachment_index].alphaBlendOp;
+                                    auto second_alpha = pCreateInfos[i].pColorBlendState->pAttachments[j].alphaBlendOp;
+                                    if (first_alpha != second_alpha &&
+                                        (IsAdvancedBlendOp(first_alpha) || IsAdvancedBlendOp(second_alpha))) {
+                                        skip |= LogError(
+                                            device, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01408",
+                                            "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                            "] contains VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT in the pNext chain "
+                                            "with advancedBlendIndependentBlend = VK_FALSE and has at least one attachment "
+                                            "with an advanced alpha blend operation, but "
+                                            "pColorBlendState->pAttachments[%" PRIu32
+                                            "].alphaBlendOp (%s) is different from pColorBlendState->pAttachments[%" PRIu32
+                                            "].alphaBlendOp (%s)",
+                                            i, attachment_index,
+                                            string_VkBlendOp(pCreateInfos[i].pColorBlendState->pAttachments[j].alphaBlendOp), j,
+                                            string_VkBlendOp(pCreateInfos[i].pColorBlendState->pAttachments[j].alphaBlendOp));
+                                    }
                                 }
                             }
                         }

@@ -1461,6 +1461,7 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name, const ParameterName &parameter_name,
                                         VkCommandBuffer object) const;
 
+    bool IsAdvancedBlendOp(VkBlendOp blend_op) const;
     bool manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator,
                                                     VkPipelineLayout *pPipelineLayout) const;
