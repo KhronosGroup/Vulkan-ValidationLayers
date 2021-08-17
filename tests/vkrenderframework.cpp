@@ -40,9 +40,12 @@ typename C::iterator RemoveIf(C &container, F &&fn) {
     return container.erase(std::remove_if(container.begin(), container.end(), std::forward<F>(fn)), container.end());
 }
 
-ErrorMonitor::ErrorMonitor() {
+ErrorMonitor::ErrorMonitor(Behavior behavior) : behavior_(behavior) {
     test_platform_thread_create_mutex(&mutex_);
     MonitorReset();
+    if (behavior_ == Behavior::DefaultSuccess) {
+        ExpectSuccess(kErrorBit);
+    }
 }
 
 ErrorMonitor::~ErrorMonitor() NOEXCEPT { test_platform_thread_delete_mutex(&mutex_); }
@@ -67,6 +70,10 @@ void ErrorMonitor::Reset() {
 void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const string msg) { SetDesiredFailureMsg(msgFlags, msg.c_str()); }
 
 void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString) {
+    if (NeedCheckSuccess()) {
+        VerifyNotFound();
+    }
+
     test_platform_thread_lock_mutex(&mutex_);
     desired_message_strings_.insert(msgString);
     message_flags_ |= msgFlags;
@@ -80,6 +87,9 @@ void ErrorMonitor::SetAllowedFailureMsg(const char *const msg) {
 }
 
 void ErrorMonitor::SetUnexpectedError(const char *const msg) {
+    if (NeedCheckSuccess()) {
+        VerifyNotFound();
+    }
     test_platform_thread_lock_mutex(&mutex_);
     ignore_message_strings_.emplace_back(msg);
     test_platform_thread_unlock_mutex(&mutex_);
@@ -197,6 +207,10 @@ void ErrorMonitor::VerifyFound() {
     }
     MonitorReset();
     test_platform_thread_unlock_mutex(&mutex_);
+
+    if (behavior_ == Behavior::DefaultSuccess) {
+        ExpectSuccess();
+    }
 }
 
 void ErrorMonitor::VerifyNotFound() {
@@ -1875,9 +1889,9 @@ bool VkShaderObj::InitFromASM(VkRenderFramework &framework, const std::string &s
     return VK_NULL_HANDLE != handle();
 }
 
-VkResult VkShaderObj::InitFromASMTry(VkRenderFramework &framework, const std::string &spv_source) {
+VkResult VkShaderObj::InitFromASMTry(VkRenderFramework &framework, const std::string &spv_source, const spv_target_env env) {
     vector<unsigned int> spv;
-    framework.ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
+    framework.ASMtoSPV(env, 0, spv_source.data(), spv);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
