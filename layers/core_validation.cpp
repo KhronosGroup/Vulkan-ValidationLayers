@@ -15923,6 +15923,12 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
     VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin) const {
     bool skip = false;
 
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    if (cb_state && cb_state->conditional_rendering_active) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBeginConditionalRenderingEXT-None-01980",
+                         "vkCmdBeginConditionalRenderingEXT(): Conditional rendering is already active.");
+    }
+
     if (pConditionalRenderingBegin) {
         const BUFFER_STATE *buffer_state = GetBufferState(pConditionalRenderingBegin->buffer);
         if (buffer_state) {
