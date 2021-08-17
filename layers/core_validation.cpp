@@ -13019,66 +13019,82 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
             }
         }
 
-        for (uint32_t buffer_idx = 0; buffer_idx < bind_info.bufferBindCount; ++buffer_idx) {
-            const VkSparseBufferMemoryBindInfo &buffer_bind = bind_info.pBufferBinds[buffer_idx];
-            for (uint32_t buffer_bind_idx = 0; buffer_bind_idx < buffer_bind.bindCount; ++buffer_bind_idx) {
-                const VkSparseMemoryBind &memory_bind = buffer_bind.pBinds[buffer_bind_idx];
-                std::stringstream parameter_name;
-                parameter_name << "pBindInfo[" << bind_idx << "].pBufferBinds[" << buffer_idx << " ].pBinds[" << buffer_bind_idx
-                               << "]";
-                ValidateSparseMemoryBind(&memory_bind, "vkQueueBindSparse()", parameter_name.str().c_str());
-                const auto *mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
-                if (mem_info) {
-                    if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
-                        skip |= LogError(
-                            buffer_bind.buffer, "VUID-VkSparseMemoryBind-memoryOffset-01101",
-                            "vkQueueBindSparse(): pBindInfo[%u].pBufferBinds[%u]: memoryOffset is not less than the size of memory",
-                            bind_idx, buffer_idx);
+        if (bind_info.pBufferBinds) {
+            for (uint32_t buffer_idx = 0; buffer_idx < bind_info.bufferBindCount; ++buffer_idx) {
+                const VkSparseBufferMemoryBindInfo &buffer_bind = bind_info.pBufferBinds[buffer_idx];
+                if (buffer_bind.pBinds) {
+                    for (uint32_t buffer_bind_idx = 0; buffer_bind_idx < buffer_bind.bindCount; ++buffer_bind_idx) {
+                        const VkSparseMemoryBind &memory_bind = buffer_bind.pBinds[buffer_bind_idx];
+                        std::stringstream parameter_name;
+                        parameter_name << "pBindInfo[" << bind_idx << "].pBufferBinds[" << buffer_idx << " ].pBinds["
+                                       << buffer_bind_idx << "]";
+                        ValidateSparseMemoryBind(&memory_bind, "vkQueueBindSparse()", parameter_name.str().c_str());
+                        const auto *mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
+                        if (mem_info) {
+                            if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
+                                skip |=
+                                    LogError(buffer_bind.buffer, "VUID-VkSparseMemoryBind-memoryOffset-01101",
+                                             "vkQueueBindSparse(): pBindInfo[%u].pBufferBinds[%u]: memoryOffset is not less than "
+                                             "the size of memory",
+                                             bind_idx, buffer_idx);
+                            }
+                        }
                     }
                 }
             }
         }
 
-        for (uint32_t image_opaque_idx = 0; image_opaque_idx < bind_info.bufferBindCount; ++image_opaque_idx) {
-            const VkSparseImageOpaqueMemoryBindInfo &image_opaque_bind = bind_info.pImageOpaqueBinds[image_opaque_idx];
-            for (uint32_t image_opaque_bind_idx = 0; image_opaque_bind_idx < image_opaque_bind.bindCount; ++image_opaque_bind_idx) {
-                const VkSparseMemoryBind &memory_bind = image_opaque_bind.pBinds[image_opaque_bind_idx];
-                std::stringstream parameter_name;
-                parameter_name << "pBindInfo[" << bind_idx << "].pImageOpaqueBinds[" << image_opaque_idx << " ].pBinds["
-                               << image_opaque_bind_idx << "]";
-                ValidateSparseMemoryBind(&memory_bind, "vkQueueBindSparse()", parameter_name.str().c_str());
-                const auto *mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
-                if (mem_info) {
-                    if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
-                        skip |= LogError(image_opaque_bind.image, "VUID-VkSparseMemoryBind-memoryOffset-01101",
-                                         "vkQueueBindSparse(): pBindInfo[%u].pImageOpaqueBinds[%u]: memoryOffset is not less than "
-                                         "the size of memory",
-                                         bind_idx, image_opaque_idx);
+        if (bind_info.pImageOpaqueBinds) {
+            for (uint32_t image_opaque_idx = 0; image_opaque_idx < bind_info.bufferBindCount; ++image_opaque_idx) {
+                const VkSparseImageOpaqueMemoryBindInfo &image_opaque_bind = bind_info.pImageOpaqueBinds[image_opaque_idx];
+                if (image_opaque_bind.pBinds) {
+                    for (uint32_t image_opaque_bind_idx = 0; image_opaque_bind_idx < image_opaque_bind.bindCount;
+                         ++image_opaque_bind_idx) {
+                        const VkSparseMemoryBind &memory_bind = image_opaque_bind.pBinds[image_opaque_bind_idx];
+                        std::stringstream parameter_name;
+                        parameter_name << "pBindInfo[" << bind_idx << "].pImageOpaqueBinds[" << image_opaque_idx << " ].pBinds["
+                                       << image_opaque_bind_idx << "]";
+                        ValidateSparseMemoryBind(&memory_bind, "vkQueueBindSparse()", parameter_name.str().c_str());
+                        const auto *mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
+                        if (mem_info) {
+                            if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
+                                skip |= LogError(
+                                    image_opaque_bind.image, "VUID-VkSparseMemoryBind-memoryOffset-01101",
+                                    "vkQueueBindSparse(): pBindInfo[%u].pImageOpaqueBinds[%u]: memoryOffset is not less than "
+                                    "the size of memory",
+                                    bind_idx, image_opaque_idx);
+                            }
+                        }
                     }
                 }
             }
         }
 
-        for (uint32_t image_idx = 0; image_idx < bind_info.imageBindCount; ++image_idx) {
-            const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_idx];
-            const auto image_state = Get<IMAGE_STATE>(image_bind.image);
+        if (bind_info.pImageBinds) {
+            for (uint32_t image_idx = 0; image_idx < bind_info.imageBindCount; ++image_idx) {
+                const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_idx];
+                const auto image_state = Get<IMAGE_STATE>(image_bind.image);
 
-            if (image_state && !(image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT)) {
-                skip |= LogError(image_bind.image, "VUID-VkSparseImageMemoryBindInfo-image-02901",
-                                 "vkQueueBindSparse(): pBindInfo[%u].pImageBinds[%u]: image must have been created with "
-                                 "VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set",
-                                 bind_idx, image_idx);
-            }
+                if (image_state && !(image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT)) {
+                    skip |= LogError(image_bind.image, "VUID-VkSparseImageMemoryBindInfo-image-02901",
+                                     "vkQueueBindSparse(): pBindInfo[%u].pImageBinds[%u]: image must have been created with "
+                                     "VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set",
+                                     bind_idx, image_idx);
+                }
 
-            for (uint32_t image_bind_idx = 0; image_bind_idx < image_bind.bindCount; ++image_bind_idx) {
-                const VkSparseImageMemoryBind &memory_bind = image_bind.pBinds[image_bind_idx];
-                const auto *mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
-                if (mem_info) {
-                    if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
-                        skip |= LogError(
-                            image_bind.image, "VUID-VkSparseMemoryBind-memoryOffset-01101",
-                            "vkQueueBindSparse(): pBindInfo[%u].pImageBinds[%u]: memoryOffset is not less than the size of memory",
-                            bind_idx, image_idx);
+                if (image_bind.pBinds) {
+                    for (uint32_t image_bind_idx = 0; image_bind_idx < image_bind.bindCount; ++image_bind_idx) {
+                        const VkSparseImageMemoryBind &memory_bind = image_bind.pBinds[image_bind_idx];
+                        const auto *mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
+                        if (mem_info) {
+                            if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
+                                skip |=
+                                    LogError(image_bind.image, "VUID-VkSparseMemoryBind-memoryOffset-01101",
+                                             "vkQueueBindSparse(): pBindInfo[%u].pImageBinds[%u]: memoryOffset is not less than "
+                                             "the size of memory",
+                                             bind_idx, image_idx);
+                            }
+                        }
                     }
                 }
             }
