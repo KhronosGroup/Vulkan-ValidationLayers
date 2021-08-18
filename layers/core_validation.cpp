@@ -16216,6 +16216,12 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
                                  "VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT bit.",
                                  report_data->FormatHandle(pConditionalRenderingBegin->buffer).c_str());
             }
+            if (pConditionalRenderingBegin->offset + 4 > buffer_state->createInfo.size) {
+                skip |= LogError(commandBuffer, "VUID-VkConditionalRenderingBeginInfoEXT-offset-01983",
+                                 "vkCmdBeginConditionalRenderingEXT(): pConditionalRenderingBegin->offset (%" PRIu64
+                                 ") + 4 bytes is not less than the size of pConditionalRenderingBegin->buffer (%" PRIu64 ").",
+                                 pConditionalRenderingBegin->offset, buffer_state->createInfo.size);
+            }
         }
     }
 
