@@ -1107,8 +1107,17 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_
         while (!init_complete && (insn.opcode() != spv::OpFunction)) {
             switch (insn.opcode()) {
                 case spv::OpTypePointer:
-                    if ((insn.word(3) == target_id) && (insn.word(2) == spv::StorageClassOutput)) {
-                        target_id = insn.word(1);
+                    if (insn.word(2) == spv::StorageClassOutput) {
+                        const auto type_id = insn.word(3);
+                        if (type_id == target_id) {
+                            target_id = insn.word(1);
+                        } else {
+                            // If the output is an array, check if the element type is what we're looking for
+                            const auto type_insn = get_def(type_id);
+                            if ((type_insn.opcode() == spv::OpTypeArray) && (type_insn.word(2) == target_id)) {
+                                target_id = insn.word(1);
+                            }
+                        }
                     }
                     break;
                 case spv::OpVariable:
@@ -1141,12 +1150,13 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_
 
         if (insn.opcode() == spv::OpFunction) {
             // Scan body of function looking for other function calls or items in our ID chain
-            while (++insn, insn.opcode() != spv::OpFunctionEnd) {
+            while (++insn, (insn.opcode() != spv::OpFunctionEnd) && !found_write) {
                 switch (insn.opcode()) {
                     case spv::OpAccessChain:
                         if (insn.word(3) == target_id) {
                             if (type == spv::OpMemberDecorate) {
-                                auto value = GetConstantValueById(insn.word(4));
+                                // The last member offset in the chain should match the decorator offset
+                                auto value = GetConstantValueById(insn.word(insn.len() - 1));
                                 if (value == builtin_instr.word(2)) {
                                     target_id = insn.word(2);
                                 }
