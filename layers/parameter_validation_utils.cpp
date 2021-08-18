@@ -7547,3 +7547,17 @@ bool StatelessValidation::manual_PreCallValidateGetQueryPoolResults(VkDevice dev
 
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
+    VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin) const {
+    bool skip = false;
+
+    if ((pConditionalRenderingBegin->offset & 3) != 0) {
+        skip |= LogError(commandBuffer, "VUID-VkConditionalRenderingBeginInfoEXT-offset-01984",
+                         "vkCmdBeginConditionalRenderingEXT(): pConditionalRenderingBegin->offset (%" PRIu64
+                         ") is not a multiple of 4.",
+                         pConditionalRenderingBegin->offset);
+    }
+
+    return skip;
+}

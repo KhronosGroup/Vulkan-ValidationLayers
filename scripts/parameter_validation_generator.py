@@ -255,6 +255,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdBeginRenderPass2',
             'vkCmdSetDiscardRectangleEXT',
             'vkGetQueryPoolResults',
+            'vkCmdBeginConditionalRenderingEXT',
             ]
 
         # Commands to ignore

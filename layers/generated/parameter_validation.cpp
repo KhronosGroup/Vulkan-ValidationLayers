@@ -12247,6 +12247,7 @@ bool StatelessValidation::PreCallValidateCmdBeginConditionalRenderingEXT(
 
         skip |= validate_flags("vkCmdBeginConditionalRenderingEXT", "pConditionalRenderingBegin->flags", "VkConditionalRenderingFlagBitsEXT", AllVkConditionalRenderingFlagBitsEXT, pConditionalRenderingBegin->flags, kOptionalFlags, "VUID-VkConditionalRenderingBeginInfoEXT-flags-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin);
     return skip;
 }
 
