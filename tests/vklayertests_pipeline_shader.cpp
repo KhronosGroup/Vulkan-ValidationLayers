@@ -10605,7 +10605,7 @@ TEST_F(VkLayerTest, ShaderDrawParametersNotEnabled11) {
     VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
     // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
-    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, 3)) {
+    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, SPV_ENV_UNIVERSAL_1_3)) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
@@ -11838,7 +11838,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     // capability requirements with other features, but this is simpler
     current_shader = layer_data::make_unique<VkShaderObj>(*m_device, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
-    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_load.c_str(), false, /*SPIR-V 1.3*/ 3)) {
+    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_load.c_str(), false, SPV_ENV_UNIVERSAL_1_3)) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
@@ -11848,7 +11848,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     // glslang doesn't omit Int64Atomics for store currently
     current_shader = layer_data::make_unique<VkShaderObj>(*m_device, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
-    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_store.c_str(), false, /*SPIR-V 1.3*/ 3)) {
+    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_store.c_str(), false, SPV_ENV_UNIVERSAL_1_3)) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-04147",
@@ -11857,7 +11857,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
 
     current_shader = layer_data::make_unique<VkShaderObj>(*m_device, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
-    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_exchange.c_str(), false, /*SPIR-V 1.3*/ 3)) {
+    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_exchange.c_str(), false, SPV_ENV_UNIVERSAL_1_3)) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
@@ -11866,7 +11866,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
 
     current_shader = layer_data::make_unique<VkShaderObj>(*m_device, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
-    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_add.c_str(), false, /*SPIR-V 1.3*/ 3)) {
+    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_add.c_str(), false, SPV_ENV_UNIVERSAL_1_3)) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
@@ -12104,45 +12104,58 @@ TEST_F(VkLayerTest, SpecializationInvalidSizeMismatch) {
         data.data(),
     };
 
-    const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(m_device, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", &specialization_info));
-    };
+    std::unique_ptr<VkShaderObj> cs;
+    const auto set_info = [&cs](CreateComputePipelineHelper &helper) { helper.cs_ = std::move(cs); };
 
     // Sanity check
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+    if (cs) {
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
 
-    // signed int mismatch
-    entries[0].size = 0;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-    entries[0].size = 2;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-    entries[0].size = 8;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-    entries[0].size = 4;  // reset
+        // signed int mismatch
+        entries[0].size = 0;
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        entries[0].size = 2;
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        entries[0].size = 8;
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        entries[0].size = 4;  // reset
 
-    // unsigned int mismatch
-    entries[1].size = 1;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-    entries[1].size = 8;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-    entries[1].size = 3;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-    entries[1].size = 4;  // reset
+        // unsigned int mismatch
+        entries[1].size = 1;
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        entries[1].size = 8;
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        entries[1].size = 3;
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        entries[1].size = 4;  // reset
 
-    // float mismatch
-    entries[2].size = 0;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-    entries[2].size = 8;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-    entries[2].size = 7;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-    entries[2].size = 4;  // reset
+        // float mismatch
+        entries[2].size = 0;
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        entries[2].size = 8;
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        entries[2].size = 7;
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        entries[2].size = 4;  // reset
 
-    // bool mismatch
-    entries[3].size = sizeof(VkBool32) / 2;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-    entries[3].size = sizeof(VkBool32) + 1;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        // bool mismatch
+        entries[3].size = sizeof(VkBool32) / 2;
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        entries[3].size = sizeof(VkBool32) + 1;
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+    }
 
     if (int8_support == true) {
         // #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
@@ -12174,25 +12187,34 @@ TEST_F(VkLayerTest, SpecializationInvalidSizeMismatch) {
         entries[0] = {0, 0, 1};  // OpTypeInt 8
         entries[1] = {1, 0, 1};  // OpTypeInt 8
 
-        // Sanity check
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        if (cs) {
+            // Sanity check
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
 
-        // signed int 8 mismatch
-        entries[0].size = 0;
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-        entries[0].size = 2;
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-        entries[0].size = 4;
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-        entries[0].size = 1;  // reset
+            // signed int 8 mismatch
+            entries[0].size = 0;
+            cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+            entries[0].size = 2;
+            cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+            entries[0].size = 4;
+            cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+            entries[0].size = 1;  // reset
 
-        // unsigned int 8 mismatch
-        entries[1].size = 0;
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-        entries[1].size = 2;
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-        entries[1].size = 4;
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+            // unsigned int 8 mismatch
+            entries[1].size = 0;
+            cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+            entries[1].size = 2;
+            cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+            entries[1].size = 4;
+            cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        }
     }
 
     if (float64_support == true) {
@@ -12220,17 +12242,24 @@ TEST_F(VkLayerTest, SpecializationInvalidSizeMismatch) {
         specialization_info.mapEntryCount = 1;
         entries[0] = {0, 0, 8};  // OpTypeFloat 64
 
-        // Sanity check
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+        cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        if (cs) {
+            // Sanity check
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
 
-        // float 64 mismatch
-        entries[0].size = 1;
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-        entries[0].size = 2;
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-        entries[0].size = 4;
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
-        entries[0].size = 16;
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+            // float 64 mismatch
+            entries[0].size = 1;
+            cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+            entries[0].size = 2;
+            cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+            entries[0].size = 4;
+            cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+            entries[0].size = 16;
+            cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+        }
     }
 }
