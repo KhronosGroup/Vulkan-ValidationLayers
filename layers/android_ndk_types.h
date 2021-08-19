@@ -1,7 +1,7 @@
-/* Copyright (c) 2018-2020 The Khronos Group Inc.
- * Copyright (c) 2018-2020 Valve Corporation
- * Copyright (c) 2018-2020 LunarG, Inc.
- * Copyright (C) 2018-2020 Google Inc.
+/* Copyright (c) 2018-2021 The Khronos Group Inc.
+ * Copyright (c) 2018-2021 Valve Corporation
+ * Copyright (c) 2018-2021 LunarG, Inc.
+ * Copyright (C) 2018-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,11 @@
 #define AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT
 #endif  // AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER
 
+// not public, but NDK will allow it for usage of camera apps
+#define AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED 0x22
+#define AHARDWAREBUFFER_USAGE_CAMERA_WRITE 0x20000
+#define AHARDWAREBUFFER_USAGE_CAMERA_READ 0x40000
+
 #else  // Not __ANDROID__, but VK_USE_PLATFORM_ANDROID_KHR
 // This combination should not be seen in the wild, but can be used to allow testing
 // of the AHB extension validation on other platforms using MockICD
@@ -93,16 +98,34 @@ typedef enum AHardwareBufferFormat {
     AHARDWAREBUFFER_FORMAT_D32_FLOAT = 0x33,
     AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT = 0x34,
     AHARDWAREBUFFER_FORMAT_S8_UINT = 0x35,
-    AHARDWAREBUFFER_FORMAT_BLOB = 0x21
+    AHARDWAREBUFFER_FORMAT_BLOB = 0x21,
+    AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED = 0x22,
 } AHardwareBufferFormat;
 
 typedef enum AHardwareBufferUsage {
+    // CPU read/write usages
+    AHARDWAREBUFFER_USAGE_CPU_READ_RARELY = 0x2,
+    AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN = 0x3,
+    AHARDWAREBUFFER_USAGE_CPU_WRITE_RARELY = 0x20,
+    AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN = 0x30,
+
+    // GPU usages, all are listed in the Vulkan Spec
     AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE = 0x100,
     AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER = 0x200,
     AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP = 0x2000000,
     AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE = 0x4000000,
     AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT = 0x4000,
-    AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER = 0x1000000
+    AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER = 0x1000000,
+
+    // Found in public NDK docs, but not in Vulkan spec
+    AHARDWAREBUFFER_USAGE_COMPOSER_OVERLAY = 0x800,
+    AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT = 0x4000,
+    AHARDWAREBUFFER_USAGE_VIDEO_ENCODE = 0x10000,
+    AHARDWAREBUFFER_USAGE_SENSOR_DIRECT_DATA = 0x800000,
+
+    // Camera usage used for external formats, only found in VNDK
+    AHARDWAREBUFFER_USAGE_CAMERA_WRITE = 0x20000,
+    AHARDWAREBUFFER_USAGE_CAMERA_READ = 0x40000
 } AHardwareBufferUsage;
 
 typedef struct AHardwareBuffer_Desc {
