@@ -12616,6 +12616,135 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalImage) {
     vk::FreeMemory(m_device->device(), memory, nullptr);
 }
 
+TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalCameraFormat) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer can import AHB with external format");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
+        return;
+    }
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
+        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(m_device->device(),
+                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
+    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
+
+    m_errorMonitor->ExpectSuccess();
+
+    // Simulate camera usage of AHB
+    AHardwareBuffer *ahb;
+    AHardwareBuffer_Desc ahb_desc = {};
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED;
+    ahb_desc.usage =
+        AHARDWAREBUFFER_USAGE_CAMERA_WRITE | AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN;
+    ahb_desc.width = 64;
+    ahb_desc.height = 64;
+    ahb_desc.layers = 1;
+    ahb_desc.stride = 1;
+    int result = AHardwareBuffer_allocate(&ahb_desc, &ahb);
+    if (result != 0) {
+        printf("%s could not allocate AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
+
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
+    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+
+    // The spec says the driver must not return zero, even if a VkFormat is returned with it, some older drivers do as a driver bug
+    if (ahb_fmt_props.externalFormat == 0) {
+        printf("%s externalFormat was zero which is not valid, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    // Create an image w/ external format
+    VkExternalFormatANDROID ext_format = LvlInitStruct<VkExternalFormatANDROID>();
+    ext_format.externalFormat = ahb_fmt_props.externalFormat;
+
+    VkExternalMemoryImageCreateInfo ext_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>(&ext_format);
+    ext_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+
+    VkImage image = VK_NULL_HANDLE;
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(&ext_image_info);
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_UNDEFINED;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
+    if (image == VK_NULL_HANDLE) {
+        printf("%s could not create image with external format, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    VkMemoryDedicatedAllocateInfo memory_dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
+    memory_dedicated_info.image = image;
+    memory_dedicated_info.buffer = VK_NULL_HANDLE;
+
+    VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info =
+        LvlInitStruct<VkImportAndroidHardwareBufferInfoANDROID>(&memory_dedicated_info);
+    import_ahb_Info.buffer = ahb;
+
+    VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
+    memory_allocate_info.allocationSize = ahb_props.allocationSize;
+
+    // Set index to match one of the bits in ahb_props that is also only Device Local
+    // Android implemenetations "should have" a DEVICE_LOCAL only index designed for AHB
+    VkMemoryPropertyFlagBits property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    VkPhysicalDeviceMemoryProperties gpu_memory_props;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &gpu_memory_props);
+    memory_allocate_info.memoryTypeIndex = gpu_memory_props.memoryTypeCount + 1;
+    for (uint32_t i = 0; i < gpu_memory_props.memoryTypeCount; i++) {
+        if ((ahb_props.memoryTypeBits & (1 << i)) && ((gpu_memory_props.memoryTypes[i].propertyFlags & property) == property)) {
+            memory_allocate_info.memoryTypeIndex = i;
+            break;
+        }
+    }
+
+    if (memory_allocate_info.memoryTypeIndex >= gpu_memory_props.memoryTypeCount) {
+        printf("%s No invalid memory type index could be found; skipped.\n", kSkipPrefix);
+        AHardwareBuffer_release(ahb);
+        vk::DestroyImage(m_device->device(), image, nullptr);
+        return;
+    }
+
+    VkDeviceMemory memory;
+    vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &memory);
+    vk::BindImageMemory(m_device->device(), image, memory, 0);
+    m_errorMonitor->VerifyNotFound();
+
+    vk::DestroyImage(m_device->device(), image, nullptr);
+    vk::FreeMemory(m_device->device(), memory, nullptr);
+}
+
 #endif  // AHB_VALIDATION_SUPPORT
 
 TEST_F(VkPositiveLayerTest, PhysicalStorageBuffer) {
