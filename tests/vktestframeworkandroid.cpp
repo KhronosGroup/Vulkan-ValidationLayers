@@ -18,6 +18,7 @@
 // limitations under the License.
 
 #include "vktestframeworkandroid.h"
+#include "vkrenderframework.h"
 #include "shaderc/shaderc.hpp"
 #include <android/log.h>
 
@@ -84,7 +85,7 @@ shaderc_shader_kind MapShadercType(VkShaderStageFlagBits vkShader) {
 // Compile a given string containing GLSL into SPIR-V
 // Return value of false means an error was encountered
 bool VkTestFramework::GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limits, const VkShaderStageFlagBits shader_type,
-                                const char *pshader, std::vector<unsigned int> &spirv, bool debug, uint32_t spirv_minor_version) {
+                                const char *pshader, std::vector<unsigned int> &spirv, bool debug, const spv_target_env spv_env) {
     // On Android, use shaderc instead.
     shaderc::Compiler compiler;
     shaderc::CompileOptions options;
@@ -93,7 +94,7 @@ bool VkTestFramework::GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limit
         options.SetGenerateDebugInfo();
     }
 
-    switch (spirv_minor_version) {
+    switch (VkShaderObj::FromSpvTargetEnv(spv_env)) {
         default:
         case 0:
             options.SetTargetSpirv(shaderc_spirv_version_1_0);

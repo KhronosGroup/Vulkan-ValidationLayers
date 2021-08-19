@@ -623,10 +623,91 @@ class VkShaderObj : public vk_testing::ShaderModule {
 
     bool InitFromGLSL(VkRenderFramework &framework, const char *shader_code, bool debug = false, uint32_t spirv_minor_version = 0);
     VkResult InitFromGLSLTry(VkRenderFramework &framework, const char *shader_code, bool debug = false,
-                             uint32_t spirv_minor_version = 0);
+                             const spv_target_env env = SPV_ENV_VULKAN_1_0);
     bool InitFromASM(VkRenderFramework &framework, const std::string &spv_source, const spv_target_env env = SPV_ENV_VULKAN_1_0);
-    VkResult InitFromASMTry(VkRenderFramework &framework, const std::string &spv_source,
-                            const spv_target_env env = SPV_ENV_VULKAN_1_0);
+    VkResult InitFromASMTry(VkRenderFramework &framework, const std::string &spv_source, const spv_target_env = SPV_ENV_VULKAN_1_0);
+
+    // These functions return a pointer to a newly created _and initialized_ VkShaderObj if initialization was successful.
+    // Otherwise, {} is returned.
+    static std::unique_ptr<VkShaderObj> CreateFromGLSL(VkDeviceObj &dev, VkRenderFramework &framework, VkShaderStageFlagBits stage,
+                                                       const std::string &code, const char *entry_point = "main",
+                                                       const VkSpecializationInfo *spec_info = nullptr,
+                                                       const spv_target_env = SPV_ENV_UNIVERSAL_1_0, bool debug = false);
+    static std::unique_ptr<VkShaderObj> CreateFromASM(VkDeviceObj &dev, VkRenderFramework &framework, VkShaderStageFlagBits stage,
+                                                      const std::string &code, const char *entry_point = "main",
+                                                      const VkSpecializationInfo *spec_info = nullptr,
+                                                      const spv_target_env spv_env = SPV_ENV_UNIVERSAL_1_0);
+
+    static spv_target_env ToSpvTargetEnv(const uint32_t v) {
+        switch (v) {
+            case 1:
+                return SPV_ENV_UNIVERSAL_1_1;
+            case 2:
+                return SPV_ENV_UNIVERSAL_1_2;
+            case 3:
+                return SPV_ENV_UNIVERSAL_1_3;
+            case 4:
+                return SPV_ENV_UNIVERSAL_1_4;
+            case 5:
+                return SPV_ENV_UNIVERSAL_1_5;
+            default:
+                return SPV_ENV_UNIVERSAL_1_0;
+        }
+    }
+
+    static uint32_t FromSpvTargetEnv(const spv_target_env env) {
+        switch (env) {
+            case SPV_ENV_UNIVERSAL_1_1:
+                return 1;
+            case SPV_ENV_UNIVERSAL_1_2:
+                return 2;
+            case SPV_ENV_UNIVERSAL_1_3:
+                return 3;
+            case SPV_ENV_UNIVERSAL_1_4:
+                return 4;
+            case SPV_ENV_UNIVERSAL_1_5:
+                return 5;
+            default:
+                return 0;
+        }
+    }
+
+    // TODO (ncesario) remove ifndef once android build consoldiation changes go in
+#ifndef __ANDROID__
+    static glslang::EShTargetLanguageVersion ToGlslangTargetEnv(const uint32_t v) {
+        switch (v) {
+            case 1:
+                return glslang::EShTargetSpv_1_1;
+            case 2:
+                return glslang::EShTargetSpv_1_2;
+            case 3:
+                return glslang::EShTargetSpv_1_3;
+            case 4:
+                return glslang::EShTargetSpv_1_4;
+            case 5:
+                return glslang::EShTargetSpv_1_5;
+            default:
+                return glslang::EShTargetSpv_1_0;
+        }
+    }
+
+    static glslang::EShTargetLanguageVersion ToGlslangTargetEnv(const spv_target_env v) {
+        switch (v) {
+            case SPV_ENV_UNIVERSAL_1_1:
+                return glslang::EShTargetSpv_1_1;
+            case SPV_ENV_UNIVERSAL_1_2:
+                return glslang::EShTargetSpv_1_2;
+            case SPV_ENV_UNIVERSAL_1_3:
+                return glslang::EShTargetSpv_1_3;
+            case SPV_ENV_UNIVERSAL_1_4:
+                return glslang::EShTargetSpv_1_4;
+            case SPV_ENV_UNIVERSAL_1_5:
+                return glslang::EShTargetSpv_1_5;
+            default:
+                return glslang::EShTargetSpv_1_0;
+        }
+    }
+#endif
 
   protected:
     VkPipelineShaderStageCreateInfo m_stage_info;

@@ -3492,7 +3492,7 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature11) {
     VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
     // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
-    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, 3)) {
+    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, SPV_ENV_UNIVERSAL_1_3)) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
@@ -3546,7 +3546,7 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithFeature) {
     VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
     // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
-    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, 3)) {
+    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, SPV_ENV_UNIVERSAL_1_3)) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
