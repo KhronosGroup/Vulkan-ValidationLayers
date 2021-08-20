@@ -771,7 +771,9 @@ bool VkTestFramework::GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limit
 
     EShLanguage stage = FindLanguage(shader_type);
     glslang::TShader *shader = new glslang::TShader(stage);
-    shader->setEnvTarget(glslang::EshTargetSpv, VkShaderObj::ToGlslangTargetEnv(spv_env));
+    VkShaderObj::GlslangTargetEnv glslang_env(spv_env);
+    shader->setEnvTarget(glslang::EshTargetSpv, glslang_env);
+    shader->setEnvClient(glslang::EShClientVulkan, glslang_env);
 
     shaderStrings[0] = pshader;
     shader->setStrings(shaderStrings, 1);

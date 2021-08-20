@@ -672,41 +672,57 @@ class VkShaderObj : public vk_testing::ShaderModule {
         }
     }
 
-    // TODO (ncesario) remove ifndef once android build consoldiation changes go in
+    // TODO (ncesario) remove ifndef once android build consolidation changes go in
 #ifndef __ANDROID__
-    static glslang::EShTargetLanguageVersion ToGlslangTargetEnv(const uint32_t v) {
-        switch (v) {
-            case 1:
-                return glslang::EShTargetSpv_1_1;
-            case 2:
-                return glslang::EShTargetSpv_1_2;
-            case 3:
-                return glslang::EShTargetSpv_1_3;
-            case 4:
-                return glslang::EShTargetSpv_1_4;
-            case 5:
-                return glslang::EShTargetSpv_1_5;
-            default:
-                return glslang::EShTargetSpv_1_0;
+    struct GlslangTargetEnv {
+        GlslangTargetEnv(const spv_target_env env) {
+            switch (env) {
+                case SPV_ENV_UNIVERSAL_1_0:
+                    language_version = glslang::EShTargetSpv_1_0;
+                    break;
+                case SPV_ENV_UNIVERSAL_1_1:
+                    language_version = glslang::EShTargetSpv_1_1;
+                    break;
+                case SPV_ENV_UNIVERSAL_1_2:
+                    language_version = glslang::EShTargetSpv_1_2;
+                    break;
+                case SPV_ENV_UNIVERSAL_1_3:
+                    language_version = glslang::EShTargetSpv_1_3;
+                    break;
+                case SPV_ENV_UNIVERSAL_1_4:
+                    language_version = glslang::EShTargetSpv_1_4;
+                    break;
+                case SPV_ENV_UNIVERSAL_1_5:
+                    language_version = glslang::EShTargetSpv_1_5;
+                    break;
+                case SPV_ENV_VULKAN_1_0:
+                    client_version = glslang::EShTargetVulkan_1_0;
+                    break;
+                case SPV_ENV_VULKAN_1_1:
+                    client_version = glslang::EShTargetVulkan_1_1;
+                    language_version = glslang::EShTargetSpv_1_3;
+                    break;
+                case SPV_ENV_VULKAN_1_2:
+                    client_version = glslang::EShTargetVulkan_1_2;
+                    language_version = glslang::EShTargetSpv_1_5;
+                    break;
+                default:
+                    break;
+            }
         }
-    }
 
-    static glslang::EShTargetLanguageVersion ToGlslangTargetEnv(const spv_target_env v) {
-        switch (v) {
-            case SPV_ENV_UNIVERSAL_1_1:
-                return glslang::EShTargetSpv_1_1;
-            case SPV_ENV_UNIVERSAL_1_2:
-                return glslang::EShTargetSpv_1_2;
-            case SPV_ENV_UNIVERSAL_1_3:
-                return glslang::EShTargetSpv_1_3;
-            case SPV_ENV_UNIVERSAL_1_4:
-                return glslang::EShTargetSpv_1_4;
-            case SPV_ENV_UNIVERSAL_1_5:
-                return glslang::EShTargetSpv_1_5;
-            default:
-                return glslang::EShTargetSpv_1_0;
+        operator glslang::EShTargetLanguageVersion() const {
+            return language_version;
         }
-    }
+
+        operator glslang::EShTargetClientVersion() const {
+            return client_version;
+        }
+
+      private:
+        glslang::EShTargetLanguageVersion language_version = glslang::EShTargetSpv_1_0;
+        glslang::EShTargetClientVersion client_version = glslang::EShTargetVulkan_1_0;
+    };
 #endif
 
   protected:
