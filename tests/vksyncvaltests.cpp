@@ -3508,6 +3508,55 @@ TEST_F(VkSyncValTest, SyncEventsCommandHazards) {
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
+
+    // Secondary command buffer events tests
+    const auto cb = m_commandBuffer->handle();
+    VkBufferObj buffer_a;
+    VkBufferObj buffer_b;
+    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    buffer_a.init_as_src_and_dst(*m_device, 256, mem_prop);
+    buffer_b.init_as_src_and_dst(*m_device, 256, mem_prop);
+
+    VkBufferCopy front2front = {0, 0, 128};
+
+    // Barrier range check for WAW
+    auto buffer_barrier_front_waw = LvlInitStruct<VkBufferMemoryBarrier>();
+    buffer_barrier_front_waw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    buffer_barrier_front_waw.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    buffer_barrier_front_waw.buffer = buffer_b.handle();
+    buffer_barrier_front_waw.offset = front2front.dstOffset;
+    buffer_barrier_front_waw.size = front2front.size;
+
+    m_errorMonitor->ExpectSuccess();
+    VkCommandBufferObj secondary_cb1(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBuffer scb1 = secondary_cb1.handle();
+    secondary_cb1.begin();
+    secondary_cb1.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 1,
+                             &buffer_barrier_front_waw, 0, nullptr);
+    vk::CmdCopyBuffer(scb1, buffer_a.handle(), buffer_b.handle(), 1, &front2front);
+    secondary_cb1.end();
+    m_errorMonitor->VerifyNotFound();
+
+    // One secondary cb hazarding with primary
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->reset();
+    m_commandBuffer->begin();
+    vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_b.handle(), 1, &front2front);
+    m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    vk::CmdExecuteCommands(cb, 1, &scb1);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+
+    // One secondary cb sharing event with primary
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->reset();
+    m_commandBuffer->begin();
+    vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_b.handle(), 1, &front2front);
+    m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    vk::CmdExecuteCommands(cb, 1, &scb1);
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
