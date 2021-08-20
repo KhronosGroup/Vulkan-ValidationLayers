@@ -3492,7 +3492,7 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature11) {
     VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
     // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
-    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, SPV_ENV_UNIVERSAL_1_3)) {
+    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, SPV_ENV_VULKAN_1_1)) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
@@ -3546,7 +3546,7 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithFeature) {
     VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
     // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
-    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, SPV_ENV_UNIVERSAL_1_3)) {
+    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, SPV_ENV_VULKAN_1_1)) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
@@ -12895,7 +12895,7 @@ void main() {
 }
 
     )glsl";
-    const VkShaderObj fs(m_device, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main", false, nullptr, 5);
+    const VkShaderObj fs(m_device, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main", false, nullptr, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -14154,8 +14154,8 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicInt64) {
     const char *current_shader = nullptr;
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
         // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
-        helper.cs_.reset(
-            new VkShaderObj(m_device, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr, /*SPIR-V 1.3*/ 3));
+        helper.cs_.reset(new VkShaderObj(m_device, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr,
+                                         SPV_ENV_VULKAN_1_1));
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                 {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
@@ -14276,8 +14276,8 @@ TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
     const char *current_shader = nullptr;
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
         // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
-        helper.cs_.reset(
-            new VkShaderObj(m_device, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr, /*SPIR-V 1.3*/ 3));
+        helper.cs_.reset(new VkShaderObj(m_device, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr,
+                                         SPV_ENV_VULKAN_1_1));
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                 {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
