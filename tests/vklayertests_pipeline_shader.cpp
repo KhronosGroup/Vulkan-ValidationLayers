@@ -12514,3 +12514,96 @@ TEST_F(VkLayerTest, ValidateComputeShaderLocalSize) {
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, UsingRasterizationStateStreamExtWithoutEnabled) {
+    TEST_DESCRIPTION("Test using TestRasterizationStateStreamCreateInfoEXT but it doesn't enable geometryStreams.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
+        printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
+        LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    transform_feedback_features.geometryStreams = VK_FALSE; // Invalid
+
+    VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>(&transform_feedback_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    auto rasterization_state_stream_ci = LvlInitStruct<VkPipelineRasterizationStateStreamCreateInfoEXT>();
+    pipe.rs_state_ci_.pNext = &rasterization_state_stream_ci;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-geometryStreams-02324");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, TestPipelineRasterizationStateStreamCreateInfoEXT) {
+    TEST_DESCRIPTION("Test using TestRasterizationStateStreamCreateInfoEXT with invalid rasterizationStream.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
+        printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
+        LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    transform_feedback_features.geometryStreams = VK_TRUE;
+
+    VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>(&transform_feedback_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT transfer_feedback_props =
+        LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+
+    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transfer_feedback_props);
+    vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
+
+    if (!transfer_feedback_props.transformFeedbackRasterizationStreamSelect &&
+        transfer_feedback_props.maxTransformFeedbackStreams == 0) {
+        printf("%s VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackRasterizationStreamSelect is 0; skipped.\n",
+               kSkipPrefix);
+        return;
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    auto rasterization_state_stream_ci = LvlInitStruct<VkPipelineRasterizationStateStreamCreateInfoEXT>();
+    rasterization_state_stream_ci.rasterizationStream = transfer_feedback_props.maxTransformFeedbackStreams;
+    pipe.rs_state_ci_.pNext = &rasterization_state_stream_ci;
+    pipe.InitState();
+
+    if (transfer_feedback_props.transformFeedbackRasterizationStreamSelect) {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02325");
+    } else {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02326");
+    }
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
