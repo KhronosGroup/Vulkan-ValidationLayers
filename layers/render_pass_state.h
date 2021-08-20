@@ -103,6 +103,9 @@ class RENDER_PASS_STATE : public BASE_NODE {
     RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo const *pCreateInfo);
 
     VkRenderPass renderPass() const { return handle_.Cast<VkRenderPass>(); }
+
+    bool UsesColorAttachment(uint32_t subpass) const;
+    bool UsesDepthStencilAttachment(uint32_t subpass) const;
 };
 
 class FRAMEBUFFER_STATE : public BASE_NODE {

@@ -255,6 +255,33 @@ RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo con
     InitRenderPassState(this);
 }
 
+bool RENDER_PASS_STATE::UsesColorAttachment(uint32_t subpass_num) const {
+    bool result = false;
+
+    if (subpass_num < createInfo.subpassCount) {
+        const auto &subpass = createInfo.pSubpasses[subpass_num];
+
+        for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+            if (subpass.pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
+                result = true;
+                break;
+            }
+        }
+    }
+    return result;
+}
+
+bool RENDER_PASS_STATE::UsesDepthStencilAttachment(uint32_t subpass_num) const {
+    bool result = false;
+    if (subpass_num < createInfo.subpassCount) {
+        const auto &subpass = createInfo.pSubpasses[subpass_num];
+        if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+            result = true;
+        }
+    }
+    return result;
+}
+
 FRAMEBUFFER_STATE::FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo,
                                      std::shared_ptr<RENDER_PASS_STATE> &&rpstate,
                                      std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> &&attachments)

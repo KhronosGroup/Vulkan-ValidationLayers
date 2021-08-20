@@ -23,6 +23,7 @@
  * Author: Dave Houlton <daveh@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
  * Author: Tobias Hector <tobias.hector@amd.com>
+ * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
 #include "pipeline_state.h"
 #include "descriptor_sets.h"
@@ -146,35 +147,119 @@ PIPELINE_LAYOUT_STATE::PIPELINE_LAYOUT_STATE(ValidationStateTracker *dev_data, V
       push_constant_ranges(GetCanonicalId(pCreateInfo)),
       compat_for_set(GetCompatForSet(set_layouts, push_constant_ranges)) {}
 
-void PIPELINE_STATE::initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                                          std::shared_ptr<const RENDER_PASS_STATE> &&rpstate) {
-    reset();
-    bool uses_color_attachment = false;
-    bool uses_depthstencil_attachment = false;
-    if (pCreateInfo->subpass < rpstate->createInfo.subpassCount) {
-        const auto &subpass = rpstate->createInfo.pSubpasses[pCreateInfo->subpass];
+static PIPELINE_STATE::VertexBindingVector GetVertexBindingDescriptions(const safe_VkGraphicsPipelineCreateInfo &create_info) {
+    PIPELINE_STATE::VertexBindingVector result;
+    if (create_info.pVertexInputState) {
+        const auto vici = create_info.pVertexInputState;
+        if (vici->vertexBindingDescriptionCount) {
+            result.reserve(vici->vertexBindingDescriptionCount);
+            std::copy(vici->pVertexBindingDescriptions, vici->pVertexBindingDescriptions + vici->vertexBindingDescriptionCount,
+                      std::back_inserter(result));
+        }
+    }
+    return result;
+}
 
-        for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
-            if (subpass.pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
-                uses_color_attachment = true;
+static PIPELINE_STATE::VertexBindingIndexMap GetVertexBindingMap(const PIPELINE_STATE::VertexBindingVector &bindings) {
+    PIPELINE_STATE::VertexBindingIndexMap result;
+    for (uint32_t i = 0; i < bindings.size(); i++) {
+        result[bindings[i].binding] = i;
+    }
+    return result;
+}
+
+static PIPELINE_STATE::VertexAttrVector GetVertexAttributeDescriptions(const safe_VkGraphicsPipelineCreateInfo &create_info) {
+    PIPELINE_STATE::VertexAttrVector result;
+    if (create_info.pVertexInputState) {
+        const auto vici = create_info.pVertexInputState;
+        if (vici->vertexAttributeDescriptionCount) {
+            result.reserve(vici->vertexAttributeDescriptionCount);
+            std::copy(vici->pVertexAttributeDescriptions,
+                      vici->pVertexAttributeDescriptions + vici->vertexAttributeDescriptionCount, std::back_inserter(result));
+        }
+    }
+    return result;
+}
+
+static PIPELINE_STATE::VertexAttrAlignmentVector GetAttributeAlignments(const PIPELINE_STATE::VertexAttrVector &attributes) {
+    PIPELINE_STATE::VertexAttrAlignmentVector result;
+    result.reserve(attributes.size());
+    for (const auto &attr : attributes) {
+        VkDeviceSize vtx_attrib_req_alignment = FormatElementSize(attr.format);
+        if (FormatElementIsTexel(attr.format)) {
+            vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, FormatChannelCount(attr.format));
+        }
+        result.push_back(vtx_attrib_req_alignment);
+    }
+    return result;
+}
+
+static PIPELINE_STATE::AttachmentVector GetAttachments(const safe_VkGraphicsPipelineCreateInfo &create_info) {
+    PIPELINE_STATE::AttachmentVector result;
+    if (create_info.pColorBlendState) {
+        const auto cbci = create_info.pColorBlendState;
+        if (cbci->attachmentCount) {
+            result.reserve(cbci->attachmentCount);
+            std::copy(cbci->pAttachments, cbci->pAttachments + cbci->attachmentCount, std::back_inserter(result));
+        }
+    }
+    return result;
+}
+
+static bool IsBlendConstantsEnabled(const PIPELINE_STATE::AttachmentVector &attachments) {
+    bool result = false;
+    for (const auto &attachment : attachments) {
+        if (VK_TRUE == attachment.blendEnable) {
+            if (((attachment.dstAlphaBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
+                 (attachment.dstAlphaBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) ||
+                ((attachment.dstColorBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
+                 (attachment.dstColorBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) ||
+                ((attachment.srcAlphaBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
+                 (attachment.srcAlphaBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) ||
+                ((attachment.srcColorBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
+                 (attachment.srcColorBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA))) {
+                result = true;
                 break;
             }
         }
+    }
+    return result;
+}
 
-        if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-            uses_depthstencil_attachment = true;
+static bool IsSampleLocationEnabled(const safe_VkGraphicsPipelineCreateInfo &create_info) {
+    bool result = false;
+    if (create_info.pMultisampleState) {
+        const auto *sample_location_state =
+            LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(create_info.pMultisampleState->pNext);
+        if (sample_location_state != nullptr) {
+            result = (sample_location_state->sampleLocationsEnable != 0);
         }
     }
-    graphicsPipelineCI.initialize(pCreateInfo, uses_color_attachment, uses_depthstencil_attachment);
-    if (graphicsPipelineCI.pInputAssemblyState) {
-        topology_at_rasterizer = graphicsPipelineCI.pInputAssemblyState->topology;
-    }
+    return result;
+}
 
-    stage_state.resize(pCreateInfo->stageCount);
+PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
+                               std::shared_ptr<const RENDER_PASS_STATE> &&rpstate,
+                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
+    : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
+      create_info(pCreateInfo, rpstate->UsesColorAttachment(pCreateInfo->subpass),
+                  rpstate->UsesDepthStencilAttachment(pCreateInfo->subpass)),
+      pipeline_layout(std::move(layout)),
+      rp_state(rpstate),
+      vertex_binding_descriptions_(GetVertexBindingDescriptions(create_info.graphics)),
+      vertex_attribute_descriptions_(GetVertexAttributeDescriptions(create_info.graphics)),
+      vertex_attribute_alignments_(GetAttributeAlignments(vertex_attribute_descriptions_)),
+      vertex_binding_to_index_map_(GetVertexBindingMap(vertex_binding_descriptions_)),
+      attachments(GetAttachments(create_info.graphics)),
+      blend_constants_enabled(IsBlendConstantsEnabled(attachments)),
+      sample_location_enabled(IsSampleLocationEnabled(create_info.graphics)),
+      topology_at_rasterizer{create_info.graphics.pInputAssemblyState ? create_info.graphics.pInputAssemblyState->topology
+                                                                      : static_cast<VkPrimitiveTopology>(0)} {
+    stage_state.resize(create_info.graphics.stageCount);
     // Graphics pipeline shader stages need to be recorded in order
     for (uint32_t stage_idx = 0; stage_idx < 5; ++stage_idx) {
-        for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
-            const VkPipelineShaderStageCreateInfo &pssci = pCreateInfo->pStages[i];
+        for (uint32_t i = 0; i < create_info.graphics.stageCount; i++) {
+            const VkPipelineShaderStageCreateInfo &pssci = *create_info.graphics.pStages[i].ptr();
             if (pssci.stage == (1 << stage_idx)) {
                 this->duplicate_shaders |= this->active_shaders & pssci.stage;
                 this->active_shaders |= pssci.stage;
@@ -183,53 +268,25 @@ void PIPELINE_STATE::initGraphicsPipeline(const ValidationStateTracker *state_da
         }
     }
     // Record non-graphics pipeline stages
-    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
-        const VkPipelineShaderStageCreateInfo &pssci = pCreateInfo->pStages[i];
+    for (uint32_t i = 0; i < create_info.graphics.stageCount; i++) {
+        const VkPipelineShaderStageCreateInfo &pssci = *create_info.graphics.pStages[i].ptr();
         if ((pssci.stage & VK_SHADER_STAGE_ALL_GRAPHICS) == 0) {
             this->duplicate_shaders |= this->active_shaders & pssci.stage;
             this->active_shaders |= pssci.stage;
             state_data->RecordPipelineShaderStage(&pssci, this, &stage_state[i]);
         }
     }
-
-    if (graphicsPipelineCI.pVertexInputState) {
-        const auto vici = graphicsPipelineCI.pVertexInputState;
-        if (vici->vertexBindingDescriptionCount) {
-            this->vertex_binding_descriptions_ = std::vector<VkVertexInputBindingDescription>(
-                vici->pVertexBindingDescriptions, vici->pVertexBindingDescriptions + vici->vertexBindingDescriptionCount);
-
-            this->vertex_binding_to_index_map_.reserve(vici->vertexBindingDescriptionCount);
-            for (uint32_t i = 0; i < vici->vertexBindingDescriptionCount; ++i) {
-                this->vertex_binding_to_index_map_[vici->pVertexBindingDescriptions[i].binding] = i;
-            }
-        }
-        if (vici->vertexAttributeDescriptionCount) {
-            this->vertex_attribute_descriptions_ = std::vector<VkVertexInputAttributeDescription>(
-                vici->pVertexAttributeDescriptions, vici->pVertexAttributeDescriptions + vici->vertexAttributeDescriptionCount);
-            for (uint32_t i = 0; i < vici->vertexAttributeDescriptionCount; ++i) {
-                const auto attribute_format = vici->pVertexAttributeDescriptions[i].format;
-                VkDeviceSize vtx_attrib_req_alignment = FormatElementSize(attribute_format);
-                if (FormatElementIsTexel(attribute_format)) {
-                    vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, FormatChannelCount(attribute_format));
-                }
-                this->vertex_attribute_alignments_.push_back(vtx_attrib_req_alignment);
-            }
-        }
-    }
-    if (graphicsPipelineCI.pColorBlendState) {
-        const auto cbci = graphicsPipelineCI.pColorBlendState;
-        if (cbci->attachmentCount) {
-            this->attachments =
-                std::vector<VkPipelineColorBlendAttachmentState>(cbci->pAttachments, cbci->pAttachments + cbci->attachmentCount);
-        }
-    }
-    rp_state = rpstate;
 }
 
-void PIPELINE_STATE::initComputePipeline(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo) {
-    reset();
-    computePipelineCI.initialize(pCreateInfo);
-    switch (computePipelineCI.stage.stage) {
+PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
+                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
+    : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
+      create_info(pCreateInfo),
+      pipeline_layout(std::move(layout)),
+      blend_constants_enabled(false),
+      sample_location_enabled(false),
+      topology_at_rasterizer{} {
+    switch (pCreateInfo->stage.stage) {
         case VK_SHADER_STAGE_COMPUTE_BIT:
             this->active_shaders |= VK_SHADER_STAGE_COMPUTE_BIT;
             stage_state.resize(1);
@@ -241,11 +298,15 @@ void PIPELINE_STATE::initComputePipeline(const ValidationStateTracker *state_dat
     }
 }
 
-template <typename CreateInfo>
-void PIPELINE_STATE::initRayTracingPipeline(const ValidationStateTracker *state_data, const CreateInfo *pCreateInfo) {
-    reset();
-    raytracingPipelineCI.initialize(pCreateInfo);
-
+template <typename CreateInfoStruct>
+PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const CreateInfoStruct *pCreateInfo,
+                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
+    : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
+      create_info(pCreateInfo),
+      pipeline_layout(std::move(layout)),
+      blend_constants_enabled(false),
+      sample_location_enabled(false),
+      topology_at_rasterizer{} {
     stage_state.resize(pCreateInfo->stageCount);
     for (uint32_t stage_index = 0; stage_index < pCreateInfo->stageCount; stage_index++) {
         const auto &shader_stage = pCreateInfo->pStages[stage_index];
@@ -276,10 +337,10 @@ void PIPELINE_STATE::initRayTracingPipeline(const ValidationStateTracker *state_
     }
 }
 
-template void PIPELINE_STATE::initRayTracingPipeline(const ValidationStateTracker *state_data,
-                                                     const VkRayTracingPipelineCreateInfoNV *pCreateInfo);
-template void PIPELINE_STATE::initRayTracingPipeline(const ValidationStateTracker *state_data,
-                                                     const VkRayTracingPipelineCreateInfoKHR *pCreateInfo);
+template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const VkRayTracingPipelineCreateInfoNV *,
+                                        std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&);
+template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const VkRayTracingPipelineCreateInfoKHR *,
+                                        std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&);
 
 void LAST_BOUND_STATE::UpdateSamplerDescriptorsUsedByImage() {
     if (!pipeline_state) return;

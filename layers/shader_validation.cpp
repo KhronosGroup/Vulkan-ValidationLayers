@@ -270,8 +270,8 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
         location_map[location].output = &output_it.second;
     }
 
-    const bool alpha_to_coverage_enabled = pipeline->graphicsPipelineCI.pMultisampleState != NULL &&
-                                           pipeline->graphicsPipelineCI.pMultisampleState->alphaToCoverageEnable == VK_TRUE;
+    const bool alpha_to_coverage_enabled = pipeline->create_info.graphics.pMultisampleState != NULL &&
+                                           pipeline->create_info.graphics.pMultisampleState->alphaToCoverageEnable == VK_TRUE;
 
     for (const auto &location_it : location_map) {
         const auto reference = location_it.second.reference;
@@ -1120,7 +1120,7 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
 
     if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         // "For the fragment shader stage the framebuffer color attachments also count against this limit"
-        total_resources += pipeline->rp_state->createInfo.pSubpasses[pipeline->graphicsPipelineCI.subpass].colorAttachmentCount;
+        total_resources += pipeline->rp_state->createInfo.pSubpasses[pipeline->create_info.graphics.subpass].colorAttachmentCount;
     }
 
     // TODO: This reuses a lot of GetDescriptorCountMaxPerStage but currently would need to make it agnostic in a way to handle
@@ -1447,7 +1447,7 @@ bool CoreChecks::ValidateShaderResolveQCOM(SHADER_MODULE_STATE const *src, VkPip
                         auto subpass_flags =
                             (pipeline->rp_state == nullptr)
                                 ? 0
-                                : pipeline->rp_state->createInfo.pSubpasses[pipeline->graphicsPipelineCI.subpass].flags;
+                                : pipeline->rp_state->createInfo.pSubpasses[pipeline->create_info.graphics.subpass].flags;
                         if ((subpass_flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM) != 0) {
                             skip |=
                                 LogError(pipeline->pipeline(), kVUID_Core_Shader_ResolveQCOM_InvalidCapability,
@@ -2033,9 +2033,9 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
     }
 
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
-        pipeline->graphicsPipelineCI.pViewportState) {
+        (pipeline->GetPipelineType() == VK_PIPELINE_BIND_POINT_GRAPHICS) && pipeline->create_info.graphics.pViewportState) {
         if (!IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) &&
-            pipeline->graphicsPipelineCI.pViewportState->viewportCount > 1 && primitiverate_written) {
+            pipeline->create_info.graphics.pViewportState->viewportCount > 1 && primitiverate_written) {
             skip |= LogError(pipeline->pipeline(),
                              "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04503",
                              "vkCreateGraphicsPipelines: %s shader statically writes to PrimitiveShadingRateKHR built-in, but "
@@ -2234,7 +2234,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     skip |= ValidateAtomicsTypes(module);
     skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializations(pStage);
-    if (check_point_size && !pipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
+    if (check_point_size && !pipeline->create_info.graphics.pRasterizationState->rasterizerDiscardEnable) {
         skip |= ValidatePointListShaderState(pipeline, module, entrypoint, pStage->stage);
     }
     skip |= ValidateBuiltinLimits(module, entrypoint);
@@ -2251,14 +2251,22 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     // "layout must be consistent with the layout of the * shader"
     // 'consistent' -> #descriptorsets-pipelinelayout-consistency
     std::string vuid_layout_mismatch;
-    if (pipeline->graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO) {
-        vuid_layout_mismatch = "VUID-VkGraphicsPipelineCreateInfo-layout-00756";
-    } else if (pipeline->computePipelineCI.sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO) {
-        vuid_layout_mismatch = "VUID-VkComputePipelineCreateInfo-layout-00703";
-    } else if (pipeline->raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR) {
-        vuid_layout_mismatch = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-03427";
-    } else if (pipeline->raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV) {
-        vuid_layout_mismatch = "VUID-VkRayTracingPipelineCreateInfoNV-layout-03427";
+    switch (pipeline->create_info.graphics.sType) {
+        case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
+            vuid_layout_mismatch = "VUID-VkGraphicsPipelineCreateInfo-layout-00756";
+            break;
+        case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
+            vuid_layout_mismatch = "VUID-VkComputePipelineCreateInfo-layout-00703";
+            break;
+        case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
+            vuid_layout_mismatch = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-03427";
+            break;
+        case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
+            vuid_layout_mismatch = "VUID-VkRayTracingPipelineCreateInfoNV-layout-03427";
+            break;
+        default:
+            assert(false);
+            break;
     }
 
     // Validate Push Constants use
@@ -2299,7 +2307,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         auto input_attachment_uses = module->CollectInterfaceByInputAttachmentIndex(accessible_ids);
 
         auto rpci = pipeline->rp_state->createInfo.ptr();
-        auto subpass = pipeline->graphicsPipelineCI.subpass;
+        auto subpass = pipeline->create_info.graphics.subpass;
 
         for (auto use : input_attachment_uses) {
             auto input_attachments = rpci->pSubpasses[subpass].pInputAttachments;
@@ -2436,7 +2444,7 @@ static inline uint32_t DetermineFinalGeomStage(const PIPELINE_STATE *pipeline, c
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
 bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipeline) const {
-    auto create_info = pipeline->graphicsPipelineCI.ptr();
+    const auto create_info = pipeline->create_info.graphics.ptr();
     int vertex_stage = GetShaderStageId(VK_SHADER_STAGE_VERTEX_BIT);
     int fragment_stage = GetShaderStageId(VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -2499,7 +2507,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
 }
 
 void CoreChecks::RecordGraphicsPipelineShaderDynamicState(PIPELINE_STATE *pipeline_state) {
-    auto create_info = pipeline_state->graphicsPipelineCI.ptr();
+    const auto create_info = pipeline_state->create_info.graphics.ptr();
 
     if (phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports ||
         !IsDynamic(pipeline_state, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT)) {
@@ -2539,7 +2547,7 @@ void CoreChecks::RecordGraphicsPipelineShaderDynamicState(PIPELINE_STATE *pipeli
 
 bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE *pipeline, const CMD_BUFFER_STATE *pCB,
                                                             const char *caller, const DrawDispatchVuid &vuid) const {
-    auto create_info = pipeline->graphicsPipelineCI.ptr();
+    const auto create_info = pipeline->create_info.graphics.ptr();
     bool skip = false;
 
     for (uint32_t i = 0; i < create_info->stageCount; i++) {
@@ -2564,7 +2572,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
 }
 
 bool CoreChecks::ValidateComputePipelineShaderState(PIPELINE_STATE *pipeline) const {
-    const auto &stage = *pipeline->computePipelineCI.stage.ptr();
+    const auto &stage = *pipeline->create_info.compute.stage.ptr();
 
     const SHADER_MODULE_STATE *module = GetShaderModuleState(stage.module);
     const spirv_inst_iter entrypoint = module->FindEntrypoint(stage.pName, stage.stage);
@@ -2574,17 +2582,17 @@ bool CoreChecks::ValidateComputePipelineShaderState(PIPELINE_STATE *pipeline) co
 
 uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE *pipeline, VkShaderStageFlagBits stageBit) const {
     uint32_t total = 0;
-
-    const auto *stages = pipeline->raytracingPipelineCI.ptr()->pStages;
-    for (uint32_t stage_index = 0; stage_index < pipeline->raytracingPipelineCI.stageCount; stage_index++) {
+    const auto &create_info = pipeline->create_info.raytracing;
+    const auto *stages = create_info.ptr()->pStages;
+    for (uint32_t stage_index = 0; stage_index < create_info.stageCount; stage_index++) {
         if (stages[stage_index].stage == stageBit) {
             total++;
         }
     }
 
-    if (pipeline->raytracingPipelineCI.pLibraryInfo) {
-        for (uint32_t i = 0; i < pipeline->raytracingPipelineCI.pLibraryInfo->libraryCount; ++i) {
-            const PIPELINE_STATE *library_pipeline = GetPipelineState(pipeline->raytracingPipelineCI.pLibraryInfo->pLibraries[i]);
+    if (create_info.pLibraryInfo) {
+        for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
+            const PIPELINE_STATE *library_pipeline = GetPipelineState(create_info.pLibraryInfo->pLibraries[i]);
             total += CalcShaderStageCount(library_pipeline, stageBit);
         }
     }
@@ -2595,41 +2603,37 @@ uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE *pipeline, VkShad
 bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipelineCreateFlags flags, bool isKHR) const {
     bool skip = false;
 
+    const auto &create_info = pipeline->create_info.raytracing;
     if (isKHR) {
-        if (pipeline->raytracingPipelineCI.maxPipelineRayRecursionDepth >
-            phys_dev_ext_props.ray_tracing_propsKHR.maxRayRecursionDepth) {
-            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-maxPipelineRayRecursionDepth-03589",
-                             "vkCreateRayTracingPipelinesKHR: maxPipelineRayRecursionDepth (%d ) must be less than or equal to "
-                             "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayRecursionDepth %d",
-                             pipeline->raytracingPipelineCI.maxPipelineRayRecursionDepth,
-                             phys_dev_ext_props.ray_tracing_propsKHR.maxRayRecursionDepth);
+        if (create_info.maxPipelineRayRecursionDepth > phys_dev_ext_props.ray_tracing_propsKHR.maxRayRecursionDepth) {
+            skip |=
+                LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-maxPipelineRayRecursionDepth-03589",
+                         "vkCreateRayTracingPipelinesKHR: maxPipelineRayRecursionDepth (%d ) must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayRecursionDepth %d",
+                         create_info.maxPipelineRayRecursionDepth, phys_dev_ext_props.ray_tracing_propsKHR.maxRayRecursionDepth);
         }
-        if (pipeline->raytracingPipelineCI.pLibraryInfo) {
-            for (uint32_t i = 0; i < pipeline->raytracingPipelineCI.pLibraryInfo->libraryCount; ++i) {
-                const PIPELINE_STATE *library_pipelinestate =
-                    GetPipelineState(pipeline->raytracingPipelineCI.pLibraryInfo->pLibraries[i]);
-                if (library_pipelinestate->raytracingPipelineCI.maxPipelineRayRecursionDepth !=
-                    pipeline->raytracingPipelineCI.maxPipelineRayRecursionDepth) {
+        if (create_info.pLibraryInfo) {
+            for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
+                const PIPELINE_STATE *library_pipelinestate = GetPipelineState(create_info.pLibraryInfo->pLibraries[i]);
+                const auto &library_create_info = library_pipelinestate->create_info.raytracing;
+                if (library_create_info.maxPipelineRayRecursionDepth != create_info.maxPipelineRayRecursionDepth) {
                     skip |= LogError(
                         device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraries-03591",
                         "vkCreateRayTracingPipelinesKHR: Each element  (%d) of the pLibraries member of libraries must have been"
                         "created with the value of maxPipelineRayRecursionDepth (%d) equal to that in this pipeline (%d) .",
-                        i, library_pipelinestate->raytracingPipelineCI.maxPipelineRayRecursionDepth,
-                        pipeline->raytracingPipelineCI.maxPipelineRayRecursionDepth);
+                        i, library_create_info.maxPipelineRayRecursionDepth, create_info.maxPipelineRayRecursionDepth);
                 }
-                if (library_pipelinestate->raytracingPipelineCI.pLibraryInfo &&
-                    (library_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxPipelineRayHitAttributeSize !=
-                         pipeline->raytracingPipelineCI.pLibraryInterface->maxPipelineRayHitAttributeSize ||
-                     library_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxPipelineRayPayloadSize !=
-                         pipeline->raytracingPipelineCI.pLibraryInterface->maxPipelineRayPayloadSize)) {
+                if (library_create_info.pLibraryInfo && (library_create_info.pLibraryInterface->maxPipelineRayHitAttributeSize !=
+                                                             create_info.pLibraryInterface->maxPipelineRayHitAttributeSize ||
+                                                         library_create_info.pLibraryInterface->maxPipelineRayPayloadSize !=
+                                                             create_info.pLibraryInterface->maxPipelineRayPayloadSize)) {
                     skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03593",
                                      "vkCreateRayTracingPipelinesKHR: If pLibraryInfo is not NULL, each element of its pLibraries "
                                      "member must have been created with values of the maxPipelineRayPayloadSize and "
                                      "maxPipelineRayHitAttributeSize members of pLibraryInterface equal to those in this pipeline");
                 }
                 if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR) &&
-                    !(library_pipelinestate->raytracingPipelineCI.flags &
-                      VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR)) {
+                    !(library_create_info.flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR)) {
                     skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03594",
                                      "vkCreateRayTracingPipelinesKHR: If flags includes "
                                      "VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR, each element of "
@@ -2639,18 +2643,17 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
             }
         }
     } else {
-        if (pipeline->raytracingPipelineCI.maxRecursionDepth > phys_dev_ext_props.ray_tracing_propsNV.maxRecursionDepth) {
+        if (create_info.maxRecursionDepth > phys_dev_ext_props.ray_tracing_propsNV.maxRecursionDepth) {
             skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-maxRecursionDepth-03457",
                              "vkCreateRayTracingPipelinesNV: maxRecursionDepth (%d) must be less than or equal to "
                              "VkPhysicalDeviceRayTracingPropertiesNV::maxRecursionDepth (%d)",
-                             pipeline->raytracingPipelineCI.maxRecursionDepth,
-                             phys_dev_ext_props.ray_tracing_propsNV.maxRecursionDepth);
+                             create_info.maxRecursionDepth, phys_dev_ext_props.ray_tracing_propsNV.maxRecursionDepth);
         }
     }
-    const auto *stages = pipeline->raytracingPipelineCI.ptr()->pStages;
-    const auto *groups = pipeline->raytracingPipelineCI.ptr()->pGroups;
+    const auto *stages = create_info.ptr()->pStages;
+    const auto *groups = create_info.ptr()->pGroups;
 
-    for (uint32_t stage_index = 0; stage_index < pipeline->raytracingPipelineCI.stageCount; stage_index++) {
+    for (uint32_t stage_index = 0; stage_index < create_info.stageCount; stage_index++) {
         const auto &stage = stages[stage_index];
 
         const SHADER_MODULE_STATE *module = GetShaderModuleState(stage.module);
@@ -2659,7 +2662,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
         skip |= ValidatePipelineShaderStage(&stage, pipeline, pipeline->stage_state[stage_index], module, entrypoint, false);
     }
 
-    if ((pipeline->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
+    if ((create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
         const uint32_t raygen_stages_count = CalcShaderStageCount(pipeline, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
         if (raygen_stages_count == 0) {
             skip |= LogError(
@@ -2669,11 +2672,11 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
         }
     }
 
-    for (uint32_t group_index = 0; group_index < pipeline->raytracingPipelineCI.groupCount; group_index++) {
+    for (uint32_t group_index = 0; group_index < create_info.groupCount; group_index++) {
         const auto &group = groups[group_index];
 
         if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV) {
-            if (group.generalShader >= pipeline->raytracingPipelineCI.stageCount ||
+            if (group.generalShader >= create_info.stageCount ||
                 (stages[group.generalShader].stage != VK_SHADER_STAGE_RAYGEN_BIT_NV &&
                  stages[group.generalShader].stage != VK_SHADER_STAGE_MISS_BIT_NV &&
                  stages[group.generalShader].stage != VK_SHADER_STAGE_CALLABLE_BIT_NV)) {
@@ -2690,7 +2693,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
                                  ": pGroups[%d]", group_index);
             }
         } else if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV) {
-            if (group.intersectionShader >= pipeline->raytracingPipelineCI.stageCount ||
+            if (group.intersectionShader >= create_info.stageCount ||
                 stages[group.intersectionShader].stage != VK_SHADER_STAGE_INTERSECTION_BIT_NV) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03476"
@@ -2708,7 +2711,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
 
         if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV ||
             group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV) {
-            if (group.anyHitShader != VK_SHADER_UNUSED_NV && (group.anyHitShader >= pipeline->raytracingPipelineCI.stageCount ||
+            if (group.anyHitShader != VK_SHADER_UNUSED_NV && (group.anyHitShader >= create_info.stageCount ||
                                                               stages[group.anyHitShader].stage != VK_SHADER_STAGE_ANY_HIT_BIT_NV)) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-anyHitShader-03479"
@@ -2716,7 +2719,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
                                  ": pGroups[%d]", group_index);
             }
             if (group.closestHitShader != VK_SHADER_UNUSED_NV &&
-                (group.closestHitShader >= pipeline->raytracingPipelineCI.stageCount ||
+                (group.closestHitShader >= create_info.stageCount ||
                  stages[group.closestHitShader].stage != VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-closestHitShader-03478"

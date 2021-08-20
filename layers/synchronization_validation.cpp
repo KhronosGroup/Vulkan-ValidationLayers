@@ -1765,8 +1765,8 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
     for (const auto &stage_state : pipe->stage_state) {
-        if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && pipe->graphicsPipelineCI.pRasterizationState &&
-            pipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
+        if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && pipe->create_info.graphics.pRasterizationState &&
+            pipe->create_info.graphics.pRasterizationState->rasterizerDiscardEnable) {
             continue;
         }
         for (const auto &set_binding : stage_state.descriptor_uses) {
@@ -1901,8 +1901,8 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
     for (const auto &stage_state : pipe->stage_state) {
-        if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && pipe->graphicsPipelineCI.pRasterizationState &&
-            pipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
+        if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && pipe->create_info.graphics.pRasterizationState &&
+            pipe->create_info.graphics.pRasterizationState->rasterizerDiscardEnable) {
             continue;
         }
         for (const auto &set_binding : stage_state.descriptor_uses) {
@@ -2120,8 +2120,12 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
     bool skip = false;
     const auto &sync_state = ex_context.GetSyncState();
     const auto *pipe = cmd.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (!pipe ||
-        (pipe->graphicsPipelineCI.pRasterizationState && pipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)) {
+    if (!pipe) {
+        return skip;
+    }
+
+    const auto &create_info = pipe->create_info.graphics;
+    if (create_info.pRasterizationState && create_info.pRasterizationState->rasterizerDiscardEnable) {
         return skip;
     }
     const auto &list = pipe->fragmentShader_writable_output_location_list;
@@ -2155,7 +2159,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
     // PHASE1 TODO: Add layout based read/vs. write selection.
     // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
     const uint32_t depth_stencil_attachment =
-        GetSubpassDepthStencilAttachmentIndex(pipe->graphicsPipelineCI.pDepthStencilState, subpass.pDepthStencilAttachment);
+        GetSubpassDepthStencilAttachmentIndex(pipe->create_info.graphics.pDepthStencilState, subpass.pDepthStencilAttachment);
 
     if ((depth_stencil_attachment != VK_ATTACHMENT_UNUSED) && attachment_views_[depth_stencil_attachment].IsValid()) {
         const AttachmentViewGen &view_gen = attachment_views_[depth_stencil_attachment];
@@ -2163,8 +2167,8 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
         bool depth_write = false, stencil_write = false;
 
         // PHASE1 TODO: These validation should be in core_checks.
-        if (!FormatIsStencilOnly(view_state.create_info.format) && pipe->graphicsPipelineCI.pDepthStencilState->depthTestEnable &&
-            pipe->graphicsPipelineCI.pDepthStencilState->depthWriteEnable &&
+        if (!FormatIsStencilOnly(view_state.create_info.format) && create_info.pDepthStencilState->depthTestEnable &&
+            create_info.pDepthStencilState->depthWriteEnable &&
             IsImageLayoutDepthWritable(subpass.pDepthStencilAttachment->layout)) {
             depth_write = true;
         }
@@ -2172,7 +2176,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
         //              If failOp, passOp, or depthFailOp are not KEEP, and writeMask isn't 0, it's writable.
         //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
         // PHASE1 TODO: These validation should be in core_checks.
-        if (!FormatIsDepthOnly(view_state.create_info.format) && pipe->graphicsPipelineCI.pDepthStencilState->stencilTestEnable &&
+        if (!FormatIsDepthOnly(view_state.create_info.format) && create_info.pDepthStencilState->stencilTestEnable &&
             IsImageLayoutStencilWritable(subpass.pDepthStencilAttachment->layout)) {
             stencil_write = true;
         }
@@ -2212,8 +2216,12 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
 
 void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd, const ResourceUsageTag &tag) {
     const auto *pipe = cmd.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (!pipe ||
-        (pipe->graphicsPipelineCI.pRasterizationState && pipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)) {
+    if (!pipe) {
+        return;
+    }
+
+    const auto &create_info = pipe->create_info.graphics;
+    if (create_info.pRasterizationState && create_info.pRasterizationState->rasterizerDiscardEnable) {
         return;
     }
     const auto &list = pipe->fragmentShader_writable_output_location_list;
@@ -2237,7 +2245,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
     // PHASE1 TODO: Add layout based read/vs. write selection.
     // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
     const uint32_t depth_stencil_attachment =
-        GetSubpassDepthStencilAttachmentIndex(pipe->graphicsPipelineCI.pDepthStencilState, subpass.pDepthStencilAttachment);
+        GetSubpassDepthStencilAttachmentIndex(create_info.pDepthStencilState, subpass.pDepthStencilAttachment);
     if ((depth_stencil_attachment != VK_ATTACHMENT_UNUSED) && attachment_views_[depth_stencil_attachment].IsValid()) {
         const AttachmentViewGen &view_gen = attachment_views_[depth_stencil_attachment];
         const IMAGE_VIEW_STATE &view_state = *view_gen.GetViewState();
@@ -2246,9 +2254,8 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
         const bool has_stencil = 0 != (view_state.normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT);
 
         // PHASE1 TODO: These validation should be in core_checks.
-        if (has_depth && !FormatIsStencilOnly(view_state.create_info.format) &&
-            pipe->graphicsPipelineCI.pDepthStencilState->depthTestEnable &&
-            pipe->graphicsPipelineCI.pDepthStencilState->depthWriteEnable &&
+        if (has_depth && !FormatIsStencilOnly(view_state.create_info.format) && create_info.pDepthStencilState->depthTestEnable &&
+            create_info.pDepthStencilState->depthWriteEnable &&
             IsImageLayoutDepthWritable(subpass.pDepthStencilAttachment->layout)) {
             depth_write = true;
         }
@@ -2256,8 +2263,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
         //              If failOp, passOp, or depthFailOp are not KEEP, and writeMask isn't 0, it's writable.
         //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
         // PHASE1 TODO: These validation should be in core_checks.
-        if (has_stencil && !FormatIsDepthOnly(view_state.create_info.format) &&
-            pipe->graphicsPipelineCI.pDepthStencilState->stencilTestEnable &&
+        if (has_stencil && !FormatIsDepthOnly(view_state.create_info.format) && create_info.pDepthStencilState->stencilTestEnable &&
             IsImageLayoutStencilWritable(subpass.pDepthStencilAttachment->layout)) {
             stencil_write = true;
         }
