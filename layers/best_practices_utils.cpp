@@ -1984,10 +1984,11 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* 
             if (rp_state) {
                 for (uint32_t i = 0; i < rp_state->createInfo.subpassCount; ++i) {
                     const auto& subpass = rp_state->createInfo.pSubpasses[i];
-                    const uint32_t depth_stencil_attachment = GetSubpassDepthStencilAttachmentIndex(
-                        pipe->graphicsPipelineCI.pDepthStencilState, subpass.pDepthStencilAttachment);
-                    if ((depth_stencil_attachment == VK_ATTACHMENT_UNUSED) && pipe->graphicsPipelineCI.pRasterizationState &&
-                        pipe->graphicsPipelineCI.pRasterizationState->depthBiasEnable == VK_TRUE) {
+                    const auto& create_info = pipe->create_info.graphics;
+                    const uint32_t depth_stencil_attachment =
+                        GetSubpassDepthStencilAttachmentIndex(create_info.pDepthStencilState, subpass.pDepthStencilAttachment);
+                    if ((depth_stencil_attachment == VK_ATTACHMENT_UNUSED) && create_info.pRasterizationState &&
+                        create_info.pRasterizationState->depthBiasEnable == VK_TRUE) {
                         skip |= LogWarning(cb_state->commandBuffer(), kVUID_BestPractices_DepthBiasNoAttachment,
                                            "%s: depthBiasEnable == VK_TRUE without a depth-stencil attachment.", caller);
                     }
@@ -2092,8 +2093,8 @@ bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32
     const auto& pipeline_binding_iter = cmd_state->lastBound[lv_bind_point];
     const auto* pipeline_state = pipeline_binding_iter.pipeline_state;
 
-    if (pipeline_state != nullptr && pipeline_state->graphicsPipelineCI.pInputAssemblyState != nullptr) {
-        primitive_restart_enable = pipeline_state->graphicsPipelineCI.pInputAssemblyState->primitiveRestartEnable == VK_TRUE;
+    if (pipeline_state != nullptr && pipeline_state->create_info.graphics.pInputAssemblyState != nullptr) {
+        primitive_restart_enable = pipeline_state->create_info.graphics.pInputAssemblyState->primitiveRestartEnable == VK_TRUE;
     }
 
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB

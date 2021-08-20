@@ -90,6 +90,9 @@ class safe_VkRayTracingPipelineCreateInfoCommon : public safe_VkRayTracingPipeli
         : safe_VkRayTracingPipelineCreateInfoKHR() {
         initialize(pCreateInfo);
     }
+    safe_VkRayTracingPipelineCreateInfoCommon(const VkRayTracingPipelineCreateInfoKHR *pCreateInfo)
+        : safe_VkRayTracingPipelineCreateInfoKHR(pCreateInfo) {}
+
     void initialize(const VkRayTracingPipelineCreateInfoNV *pCreateInfo) {
         safe_VkRayTracingPipelineCreateInfoNV nvStruct;
         nvStruct.initialize(pCreateInfo);
@@ -131,5 +134,5 @@ class safe_VkRayTracingPipelineCreateInfoCommon : public safe_VkRayTracingPipeli
     void initialize(const VkRayTracingPipelineCreateInfoKHR *pCreateInfo) {
         safe_VkRayTracingPipelineCreateInfoKHR::initialize(pCreateInfo);
     }
-    uint32_t maxRecursionDepth;  // NV specific
+    uint32_t maxRecursionDepth = 0;  // NV specific
 };

@@ -39,6 +39,11 @@
 #include "cmd_buffer_state.h"
 #include "render_pass_state.h"
 
+extern template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const VkRayTracingPipelineCreateInfoKHR *,
+                                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&);
+extern template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const VkRayTracingPipelineCreateInfoNV *,
+                                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&);
+
 void ValidationStateTracker::InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
     if (add_obj) {
         instance_state = reinterpret_cast<ValidationStateTracker *>(GetValidationObject(inst_obj->object_dispatch, container_type));
@@ -2358,9 +2363,9 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
     cgpl_state->pCreateInfos = pCreateInfos;  // GPU validation can alter this, so we have to set a default value for the Chassis
     cgpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
-        cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>());
-        (cgpl_state->pipe_state)[i]->initGraphicsPipeline(this, &pCreateInfos[i], GetRenderPassShared(pCreateInfos[i].renderPass));
-        (cgpl_state->pipe_state)[i]->pipeline_layout = GetPipelineLayoutShared(pCreateInfos[i].layout);
+        cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i],
+                                                                          GetRenderPassShared(pCreateInfos[i].renderPass),
+                                                                          GetPipelineLayoutShared(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -2389,9 +2394,8 @@ bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice devi
     ccpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        ccpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>());
-        ccpl_state->pipe_state.back()->initComputePipeline(this, &pCreateInfos[i]);
-        ccpl_state->pipe_state.back()->pipeline_layout = GetPipelineLayoutShared(pCreateInfos[i].layout);
+        ccpl_state->pipe_state.push_back(
+            std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], GetPipelineLayoutShared(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -2421,9 +2425,8 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(VkDevice
     crtpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        crtpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>());
-        crtpl_state->pipe_state.back()->initRayTracingPipeline(this, &pCreateInfos[i]);
-        crtpl_state->pipe_state.back()->pipeline_layout = GetPipelineLayoutShared(pCreateInfos[i].layout);
+        crtpl_state->pipe_state.push_back(
+            std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], GetPipelineLayoutShared(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -2451,9 +2454,8 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevic
     crtpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        crtpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>());
-        crtpl_state->pipe_state.back()->initRayTracingPipeline(this, &pCreateInfos[i]);
-        crtpl_state->pipe_state.back()->pipeline_layout = GetPipelineLayoutShared(pCreateInfos[i].layout);
+        crtpl_state->pipe_state.push_back(
+            std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], GetPipelineLayoutShared(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -2627,34 +2629,6 @@ CBStatusFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *ds) {
 
 // Validation cache:
 // CV is the bottommost implementor of this extension. Don't pass calls down.
-// utility function to set collective state for pipeline
-void SetPipelineState(PIPELINE_STATE *pPipe) {
-    // If any attachment used by this pipeline has blendEnable, set top-level blendEnable
-    if (pPipe->graphicsPipelineCI.pColorBlendState) {
-        for (size_t i = 0; i < pPipe->attachments.size(); ++i) {
-            if (VK_TRUE == pPipe->attachments[i].blendEnable) {
-                if (((pPipe->attachments[i].dstAlphaBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
-                     (pPipe->attachments[i].dstAlphaBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) ||
-                    ((pPipe->attachments[i].dstColorBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
-                     (pPipe->attachments[i].dstColorBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) ||
-                    ((pPipe->attachments[i].srcAlphaBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
-                     (pPipe->attachments[i].srcAlphaBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) ||
-                    ((pPipe->attachments[i].srcColorBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
-                     (pPipe->attachments[i].srcColorBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA))) {
-                    pPipe->blendConstantsEnabled = true;
-                }
-            }
-        }
-    }
-    // Check if sample location is enabled
-    if (pPipe->graphicsPipelineCI.pMultisampleState) {
-        const VkPipelineSampleLocationsStateCreateInfoEXT *sample_location_state =
-            LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(pPipe->graphicsPipelineCI.pMultisampleState->pNext);
-        if (sample_location_state != nullptr) {
-            pPipe->sample_location_enabled = sample_location_state->sampleLocationsEnable;
-        }
-    }
-}
 
 void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                           VkPipeline pipeline) {
@@ -2664,11 +2638,12 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
 
     auto pipe_state = GetPipelineState(pipeline);
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
-        bool rasterization_enabled = VK_FALSE == pipe_state->graphicsPipelineCI.ptr()->pRasterizationState->rasterizerDiscardEnable;
-        const auto* viewport_state = pipe_state->graphicsPipelineCI.ptr()->pViewportState;
-        const auto* dynamic_state = pipe_state->graphicsPipelineCI.ptr()->pDynamicState;
+        const auto &create_info = pipe_state->create_info.graphics;
+        bool rasterization_enabled = VK_FALSE == create_info.pRasterizationState->rasterizerDiscardEnable;
+        const auto *viewport_state = create_info.pViewportState;
+        const auto *dynamic_state = create_info.pDynamicState;
         cb_state->status &= ~cb_state->static_status;
-        cb_state->static_status = MakeStaticStateMask(dynamic_state);
+        cb_state->static_status = MakeStaticStateMask(dynamic_state->ptr());
         cb_state->status |= cb_state->static_status;
         cb_state->dynamic_status = CBSTATUS_ALL_STATE_SET & (~cb_state->static_status);
 
@@ -2703,7 +2678,6 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
     }
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     cb_state->lastBound[lv_bind_point].pipeline_state = pipe_state;
-    SetPipelineState(pipe_state);
     if (!disabled[command_buffer_state]) {
         cb_state->AddChild(pipe_state);
     }
@@ -4872,9 +4846,9 @@ void ValidationStateTracker::PreCallRecordCmdSetVertexInputEXT(
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
     if (pipeline_state) {
-        if (pipeline_state->graphicsPipelineCI.pDynamicState) {
-            for (uint32_t i = 0; i < pipeline_state->graphicsPipelineCI.pDynamicState->dynamicStateCount; ++i) {
-                if (pipeline_state->graphicsPipelineCI.pDynamicState->pDynamicStates[i] ==
+        if (pipeline_state->create_info.graphics.pDynamicState) {
+            for (uint32_t i = 0; i < pipeline_state->create_info.graphics.pDynamicState->dynamicStateCount; ++i) {
+                if (pipeline_state->create_info.graphics.pDynamicState->pDynamicStates[i] ==
                     VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT) {
                     status_flags |= CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET;
                     break;
