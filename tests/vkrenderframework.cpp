@@ -1846,15 +1846,14 @@ VkShaderObj::VkShaderObj(VkDeviceObj &device, VkShaderStageFlagBits stage, char 
 }
 
 VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                         char const *name, bool debug, const VkSpecializationInfo *specInfo, uint32_t spirv_minor_version)
+                         char const *name, bool debug, const VkSpecializationInfo *specInfo, const spv_target_env env)
     : VkShaderObj(*device, stage, name, specInfo) {
-    InitFromGLSL(*framework, shader_code, debug, spirv_minor_version);
+    InitFromGLSL(*framework, shader_code, debug, env);
 }
 
-bool VkShaderObj::InitFromGLSL(VkRenderFramework &framework, const char *shader_code, bool debug, uint32_t spirv_minor_version) {
+bool VkShaderObj::InitFromGLSL(VkRenderFramework &framework, const char *shader_code, bool debug, const spv_target_env env) {
     std::vector<unsigned int> spv;
-    framework.GLSLtoSPV(&m_device.props.limits, m_stage_info.stage, shader_code, spv, debug,
-                        VkShaderObj::ToSpvTargetEnv(spirv_minor_version));
+    framework.GLSLtoSPV(&m_device.props.limits, m_stage_info.stage, shader_code, spv, debug, env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -1869,10 +1868,9 @@ bool VkShaderObj::InitFromGLSL(VkRenderFramework &framework, const char *shader_
 // Because shaders are currently validated at pipeline creation time, there are test cases that might fail shader module creation
 // due to supplying an invalid/unknown SPIR-V capability/operation. This is called after VkShaderObj creation when tests are found
 // to crash on a CI device
-VkResult VkShaderObj::InitFromGLSLTry(VkRenderFramework &framework, const char *shader_code, bool debug,
-                                      const spv_target_env spirv_minor_version) {
+VkResult VkShaderObj::InitFromGLSLTry(VkRenderFramework &framework, const char *shader_code, bool debug, const spv_target_env env) {
     std::vector<unsigned int> spv;
-    framework.GLSLtoSPV(&m_device.props.limits, m_stage_info.stage, shader_code, spv, debug, spirv_minor_version);
+    framework.GLSLtoSPV(&m_device.props.limits, m_stage_info.stage, shader_code, spv, debug, env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

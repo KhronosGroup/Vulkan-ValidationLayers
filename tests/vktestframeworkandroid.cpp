@@ -94,22 +94,28 @@ bool VkTestFramework::GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limit
         options.SetGenerateDebugInfo();
     }
 
-    switch (VkShaderObj::FromSpvTargetEnv(spv_env)) {
+    switch (spv_env) {
         default:
-        case 0:
+        case SPV_ENV_VULKAN_1_0:
+        case SPV_ENV_UNIVERSAL_1_0:
             options.SetTargetSpirv(shaderc_spirv_version_1_0);
             break;
-        case 1:
+        case SPV_ENV_UNIVERSAL_1_1:
             options.SetTargetSpirv(shaderc_spirv_version_1_1);
             break;
-        case 2:
+        case SPV_ENV_UNIVERSAL_1_2:
             options.SetTargetSpirv(shaderc_spirv_version_1_2);
             break;
-        case 3:
+        case SPV_ENV_VULKAN_1_1:
+        case SPV_ENV_UNIVERSAL_1_3:
             options.SetTargetSpirv(shaderc_spirv_version_1_3);
             break;
-        case 4:
+        case SPV_ENV_UNIVERSAL_1_4:
             options.SetTargetSpirv(shaderc_spirv_version_1_4);
+            break;
+        case SPV_ENV_VULKAN_1_2:
+        case SPV_ENV_UNIVERSAL_1_5:
+            options.SetTargetSpirv(shaderc_spirv_version_1_5);
             break;
     }
 

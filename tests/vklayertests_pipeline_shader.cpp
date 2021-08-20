@@ -6871,7 +6871,7 @@ TEST_F(VkLayerTest, SubgroupSupportedProperties) {
     // Same pipeline creation for each subgroup test
     auto info_override = [&](CreatePipelineHelper &info) {
         info.vs_.reset(new VkShaderObj(m_device, vsSource.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this, "main", false, nullptr,
-                                       /*SPIR-V 1.3*/ 3));
+                                       SPV_ENV_VULKAN_1_1));
         info.shader_stages_ = {info.vs_->GetStageCreateInfo(), info.fs_->GetStageCreateInfo()};
         info.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
@@ -7178,7 +7178,7 @@ TEST_F(VkLayerTest, SubgroupExtendedTypesEnabled) {
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.cs_.reset(
-        new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr, /*SPIR-V 1.3*/ 3));
+        new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr, SPV_ENV_VULKAN_1_1));
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
     pipe.CreateComputePipeline();
@@ -7247,7 +7247,7 @@ TEST_F(VkLayerTest, SubgroupExtendedTypesDisabled) {
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.cs_.reset(
-        new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr, /*SPIR-V 1.3*/ 3));
+        new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr, SPV_ENV_VULKAN_1_1));
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
@@ -8819,12 +8819,18 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
         void main() {}
     )glsl";
 
-    VkShaderObj rgen_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_RAYGEN_BIT_KHR, this, "main", false, nullptr, 4);
-    VkShaderObj ahit_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_ANY_HIT_BIT_KHR, this, "main", false, nullptr, 4);
-    VkShaderObj chit_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, this, "main", false, nullptr, 4);
-    VkShaderObj miss_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_MISS_BIT_KHR, this, "main", false, nullptr, 4);
-    VkShaderObj intr_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_INTERSECTION_BIT_KHR, this, "main", false, nullptr, 4);
-    VkShaderObj call_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_CALLABLE_BIT_KHR, this, "main", false, nullptr, 4);
+    VkShaderObj rgen_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_RAYGEN_BIT_KHR, this, "main", false, nullptr,
+                            SPV_ENV_VULKAN_1_2);
+    VkShaderObj ahit_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_ANY_HIT_BIT_KHR, this, "main", false, nullptr,
+                            SPV_ENV_VULKAN_1_2);
+    VkShaderObj chit_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, this, "main", false, nullptr,
+                            SPV_ENV_VULKAN_1_2);
+    VkShaderObj miss_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_MISS_BIT_KHR, this, "main", false, nullptr,
+                            SPV_ENV_VULKAN_1_2);
+    VkShaderObj intr_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_INTERSECTION_BIT_KHR, this, "main", false, nullptr,
+                            SPV_ENV_VULKAN_1_2);
+    VkShaderObj call_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_CALLABLE_BIT_KHR, this, "main", false, nullptr,
+                            SPV_ENV_VULKAN_1_2);
 
     m_errorMonitor->VerifyNotFound();
 
@@ -10605,7 +10611,7 @@ TEST_F(VkLayerTest, ShaderDrawParametersNotEnabled11) {
     VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
     // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
-    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, SPV_ENV_UNIVERSAL_1_3)) {
+    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, SPV_ENV_VULKAN_1_1)) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
@@ -11652,8 +11658,8 @@ TEST_F(VkLayerTest, ShaderAtomicInt64) {
     const char *current_shader = nullptr;
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
         // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
-        helper.cs_.reset(
-            new VkShaderObj(m_device, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr, /*SPIR-V 1.3*/ 3));
+        helper.cs_.reset(new VkShaderObj(m_device, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr,
+                                         SPV_ENV_VULKAN_1_1));
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                 {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
@@ -11838,7 +11844,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     // capability requirements with other features, but this is simpler
     current_shader = layer_data::make_unique<VkShaderObj>(*m_device, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
-    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_load.c_str(), false, SPV_ENV_UNIVERSAL_1_3)) {
+    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_load.c_str(), false, SPV_ENV_VULKAN_1_1)) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
@@ -11848,7 +11854,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     // glslang doesn't omit Int64Atomics for store currently
     current_shader = layer_data::make_unique<VkShaderObj>(*m_device, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
-    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_store.c_str(), false, SPV_ENV_UNIVERSAL_1_3)) {
+    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_store.c_str(), false, SPV_ENV_VULKAN_1_1)) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-04147",
@@ -11857,7 +11863,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
 
     current_shader = layer_data::make_unique<VkShaderObj>(*m_device, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
-    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_exchange.c_str(), false, SPV_ENV_UNIVERSAL_1_3)) {
+    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_exchange.c_str(), false, SPV_ENV_VULKAN_1_1)) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
@@ -11866,7 +11872,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
 
     current_shader = layer_data::make_unique<VkShaderObj>(*m_device, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
-    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_add.c_str(), false, SPV_ENV_UNIVERSAL_1_3)) {
+    if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_add.c_str(), false, SPV_ENV_VULKAN_1_1)) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
