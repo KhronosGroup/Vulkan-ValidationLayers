@@ -10926,7 +10926,7 @@ TEST_F(VkLayerTest, InvalidSpirvExtension) {
         )spirv";
     VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
     m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
-    if (!vs.InitFromASMTry(*this, vertex_source.c_str(), SPV_ENV_UNIVERSAL_1_5)) {
+    if (!vs.InitFromASMTry(*this, vertex_source.c_str(), SPV_ENV_VULKAN_1_2)) {
         printf("%s Failed to compile shader\n", kSkipPrefix);
         return;
     }
