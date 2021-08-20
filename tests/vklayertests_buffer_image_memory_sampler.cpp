@@ -13598,20 +13598,18 @@ TEST_F(VkLayerTest, SparseMemoryBindOffset) {
     VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>(nullptr);
     mem_alloc.allocationSize = 1024;
 
-    VkDeviceMemory mem;
-    VkResult err;
-    err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::DeviceMemory mem;
+    mem.init(*m_device, mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
-    buffer_memory_bind.size = 1024;
-    buffer_memory_bind.memory = mem;
+    buffer_memory_bind.size = mem_alloc.allocationSize;
+    buffer_memory_bind.memory = mem.handle();
     buffer_memory_bind.memoryOffset = 2048;
 
     VkSparseImageMemoryBind image_memory_bind = {};
     image_memory_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     image_memory_bind.memoryOffset = 4096;
-    image_memory_bind.memory = mem;
+    image_memory_bind.memory = mem.handle();
 
     VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
     buffer_memory_bind_info.buffer = buffer.handle();
@@ -13639,6 +13637,15 @@ TEST_F(VkLayerTest, SparseMemoryBindOffset) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
+    vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    buffer_memory_bind.memoryOffset = 0;
+    image_memory_bind.memoryOffset = 0;
+    image_memory_bind.subresource.mipLevel = 1;
+    image_memory_bind.subresource.arrayLayer = 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBindInfo-subresource-01722");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBindInfo-subresource-01723");
     vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
