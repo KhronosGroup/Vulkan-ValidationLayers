@@ -18,21 +18,30 @@
  * Author: Dave Houlton <daveh@lunarg.com>
  */
 
+// Overview of Android NDK headers:
+//
+// <android/hardware_buffer.h>
+//    - All enums referenced by VK_ANDROID_external_memory_android_hardware_buffer
+// <android/api-level.h>
+//     - __ANDROID_API_
+//     - The version of android compiling **for**
+//     - Currently there is no need for the VVL to build for anything greater than android-26
+// <android/ndk-version.h>
+//     - __NDK_MAJOR__
+//     - Is the version of NDK compiling **with**
+//     - r16 has a subset of needed hardware_buffer.h enums value
+//     - r18 proper ANDROID_API checking added
+//     - r20 YCbCr was added
+//     - r23 (current) no differences from r20 being used
+
 #ifndef ANDROID_NDK_TYPES_H_
 #define ANDROID_NDK_TYPES_H_
 
 // Everyone should be able to include this file and ignore it if not building for Android
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
-// All eums referenced by VK_ANDROID_external_memory_android_hardware_buffer are present in
-// the platform-29 (Android Q) versions of the header files.  A partial set exists in the
-// platform-26 (O) headers, where hardware_buffer.h first appears in the NDK.
-//
-// Decoder ring for Android compile symbols found here: https://github.com/android-ndk/ndk/issues/407
-
 #ifdef __ANDROID__  // Compiling for Android
-#include <android/api-level.h>
-#include <android/hardware_buffer.h>  // First appearance in Android O (platform-26)
+#include <android/hardware_buffer.h>
 
 // Building Vulkan validation with NDK header files prior to platform-26 is supported, but will remove
 // all validation checks for Android Hardware Buffers.
@@ -49,116 +58,20 @@
 #define AHB_VALIDATION_SUPPORT
 #endif  // __ANDROID_API__
 
-// If NDK is O (platform-26 or -27), supplement the missing enums with pre-processor defined literals
-// If Android P or later, then all required enums are already defined
-#if defined(__ANDROID_API_O__) && !defined(__ANDROID_API_P__)
-// Formats
-#define AHARDWAREBUFFER_FORMAT_D16_UNORM 0x30
-#define AHARDWAREBUFFER_FORMAT_D24_UNORM 0x31
-#define AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT 0x32
-#define AHARDWAREBUFFER_FORMAT_D32_FLOAT 0x33
-#define AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT 0x34
-#define AHARDWAREBUFFER_FORMAT_S8_UINT 0x35
-// Usage bits
-#define AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP 0x2000000
-#define AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE 0x4000000
-#endif  // __ANDROID_API_O__ && !_P__
+// Require at least NDK 20 to build Validation Layers. Makes everything simpler to just have people building the layers to use a
+// recent (over 2 years old) version of the NDK.
+#if __NDK_MAJOR__ < 20
+#error "Validation Layers require at least NDK r20 or greater to build"
+#endif  // __NDK_MAJOR__
 
-// GPU_FRAMEBUFFER was added as the desired alias for GPU_COLOR_OUTPUT starting in NDK r20
-// GPU_COLOR_OUTPUT was removed from the spec, so to prevent confusion, all aspect of the layers
-// should use GPU_FRAMEBUFFER, but need to define here for older NDK versions
-#ifndef AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER
-#define AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT
-#endif  // AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER
-
-// not public, but NDK will allow it for usage of camera apps
-#define AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED 0x22
-#define AHARDWAREBUFFER_USAGE_CAMERA_WRITE 0x20000
-#define AHARDWAREBUFFER_USAGE_CAMERA_READ 0x40000
+// Not in public NDK headers, only AOSP headers, but NDK will allow it for usage of camera apps and we use for AHB tests
+constexpr uint32_t AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED = 0x22;
+constexpr uint64_t AHARDWAREBUFFER_USAGE_CAMERA_WRITE = 0x20000;
+constexpr uint64_t AHARDWAREBUFFER_USAGE_CAMERA_READ = 0x40000;
 
 #else  // Not __ANDROID__, but VK_USE_PLATFORM_ANDROID_KHR
-// This combination should not be seen in the wild, but can be used to allow testing
-// of the AHB extension validation on other platforms using MockICD
-//
-// Define the minimal set of NDK enums and structs needed to compile
-// VK_ANDROID_external_memory_android_hardware_buffer validation without an NDK present
-struct AHardwareBuffer {};
-
-// Enumerations of format and usage flags for Android opaque external memory blobs
-typedef enum AHardwareBufferFormat {
-    AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM = 1,
-    AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM = 2,
-    AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM = 3,
-    AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM = 4,
-    AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT = 0x16,
-    AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM = 0x2b,
-    AHARDWAREBUFFER_FORMAT_D16_UNORM = 0x30,
-    AHARDWAREBUFFER_FORMAT_D24_UNORM = 0x31,
-    AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT = 0x32,
-    AHARDWAREBUFFER_FORMAT_D32_FLOAT = 0x33,
-    AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT = 0x34,
-    AHARDWAREBUFFER_FORMAT_S8_UINT = 0x35,
-    AHARDWAREBUFFER_FORMAT_BLOB = 0x21,
-    AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED = 0x22,
-} AHardwareBufferFormat;
-
-typedef enum AHardwareBufferUsage {
-    // CPU read/write usages
-    AHARDWAREBUFFER_USAGE_CPU_READ_RARELY = 0x2,
-    AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN = 0x3,
-    AHARDWAREBUFFER_USAGE_CPU_WRITE_RARELY = 0x20,
-    AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN = 0x30,
-
-    // GPU usages, all are listed in the Vulkan Spec
-    AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE = 0x100,
-    AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER = 0x200,
-    AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP = 0x2000000,
-    AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE = 0x4000000,
-    AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT = 0x4000,
-    AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER = 0x1000000,
-
-    // Found in public NDK docs, but not in Vulkan spec
-    AHARDWAREBUFFER_USAGE_COMPOSER_OVERLAY = 0x800,
-    AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT = 0x4000,
-    AHARDWAREBUFFER_USAGE_VIDEO_ENCODE = 0x10000,
-    AHARDWAREBUFFER_USAGE_SENSOR_DIRECT_DATA = 0x800000,
-
-    // Camera usage used for external formats, only found in VNDK
-    AHARDWAREBUFFER_USAGE_CAMERA_WRITE = 0x20000,
-    AHARDWAREBUFFER_USAGE_CAMERA_READ = 0x40000
-} AHardwareBufferUsage;
-
-typedef struct AHardwareBuffer_Desc {
-    uint32_t format;  //	   One of AHARDWAREBUFFER_FORMAT_*.
-    uint32_t height;  //	   Height in pixels.
-    uint32_t layers;  //	   Number of images in an image array.
-    uint32_t rfu0;    //	   Initialize to zero, reserved for future use.
-    uint64_t rfu1;    //	   Initialize to zero, reserved for future use.
-    uint32_t stride;  //	   Row stride in pixels, ignored for AHardwareBuffer_allocate()
-    uint64_t usage;   //	   Combination of AHARDWAREBUFFER_USAGE_*.
-    uint32_t width;   //	   Width in pixels.
-} AHardwareBuffer_Desc;
-
-// Minimal NDK fxn stubs to allow testing on ndk-less platform
-static inline int AHardwareBuffer_allocate(const AHardwareBuffer_Desc *ahbDesc, AHardwareBuffer **buffer) {
-    size_t size = ahbDesc->height * ahbDesc->width * 8;  // Alloc for largest (64 bpp) format
-    if (size < sizeof(AHardwareBuffer_Desc)) size = sizeof(AHardwareBuffer_Desc);
-    *buffer = (AHardwareBuffer *)malloc(size);
-    memcpy((void *)(*buffer), (void *)ahbDesc, sizeof(AHardwareBuffer_Desc));
-    return 0;
-}
-
-static inline void AHardwareBuffer_release(AHardwareBuffer *buffer) {
-    if (buffer) free(buffer);
-}
-
-static inline void AHardwareBuffer_describe(const AHardwareBuffer *buffer, AHardwareBuffer_Desc *outDesc) {
-    if (buffer && outDesc) {
-        memcpy((void *)outDesc, (void *)buffer, sizeof(AHardwareBuffer_Desc));
-    }
-    return;
-}
-
+// This combination should not be seen in the wild
+// There use to be a mock set of enums and functions to use, but it was not maintained and seems no one was in need of it anyways
 #endif  // __ANDROID__
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR

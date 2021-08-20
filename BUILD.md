@@ -708,6 +708,8 @@ following.
 Note that the minimum supported Android SDK API Level is 26, revision
 level 3.
 
+NDK r20 or greater required
+
 - Install [Android Studio 2.3](https://developer.android.com/studio/index.html)
   or later.
 - From the "Welcome to Android Studio" splash screen, add the following
