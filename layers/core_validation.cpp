@@ -1703,6 +1703,36 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                 device, "VUID-VkPipelineRasterizationProvokingVertexStateCreateInfoEXT-provokingVertexMode-04883",
                 "provokingVertexLast feature is not enabled.");
         }
+
+        const auto rasterization_state_stream_ci = LvlFindInChain<VkPipelineRasterizationStateStreamCreateInfoEXT>(
+            pPipeline->graphicsPipelineCI.pRasterizationState->pNext);
+        if (rasterization_state_stream_ci) {
+            if (!enabled_features.transform_feedback_features.geometryStreams) {
+                skip |= LogError(device, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-geometryStreams-02324",
+                                 "pCreateInfos[%" PRIu32
+                                 "].pRasterizationState pNext chain includes VkPipelineRasterizationStateStreamCreateInfoEXT, but "
+                                 "geometryStreams feature is not enabled.",
+                                 pipelineIndex);
+            } else if (phys_dev_ext_props.transform_feedback_props.transformFeedbackRasterizationStreamSelect == VK_FALSE &&
+                rasterization_state_stream_ci->rasterizationStream != 0) {
+                skip |= LogError(device, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02326",
+                                 "VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackRasterizationStreamSelect is "
+                                 "VK_FALSE, but pCreateInfos[%" PRIu32
+                                 "].pRasterizationState pNext chain includes VkPipelineRasterizationStateStreamCreateInfoEXT with "
+                                 "rasterizationStream (%" PRIu32 ") not equal to 0.",
+                                 pipelineIndex, rasterization_state_stream_ci->rasterizationStream);
+            } else if (rasterization_state_stream_ci->rasterizationStream >=
+                       phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
+                skip |= LogError(
+                    device, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02325",
+                    "pCreateInfos[%" PRIu32
+                    "].pRasterizationState pNext chain includes VkPipelineRasterizationStateStreamCreateInfoEXT with "
+                    "rasterizationStream (%" PRIu32
+                    ") not less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32 ").",
+                    pipelineIndex, rasterization_state_stream_ci->rasterizationStream,
+                    phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+            }
+        }
     }
 
     if ((pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT) && !pPipeline->graphicsPipelineCI.pVertexInputState) {
