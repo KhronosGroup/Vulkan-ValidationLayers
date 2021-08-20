@@ -13166,6 +13166,26 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                                              bind_idx, image_idx);
                             }
                         }
+
+                        if (image_state) {
+                            if (memory_bind.subresource.mipLevel >= image_state->createInfo.mipLevels) {
+                                skip |= LogError(image_bind.image, "VUID-VkSparseImageMemoryBindInfo-subresource-01722",
+                                         "vkQueueBindSparse(): pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32
+                                         "].subresource.mipLevel (%" PRIu32 ") is not less than mipLevels (%" PRIu32
+                                         ") of image pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "].image.",
+                                         bind_idx, image_idx, memory_bind.subresource.mipLevel, image_state->createInfo.mipLevels,
+                                         bind_idx, image_idx);
+                            }
+                            if (memory_bind.subresource.arrayLayer >= image_state->createInfo.arrayLayers) {
+                                skip |= LogError(image_bind.image, "VUID-VkSparseImageMemoryBindInfo-subresource-01723",
+                                         "vkQueueBindSparse(): pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32
+                                         "].subresource.arrayLayer (%" PRIu32 ") is not less than arrayLayers (%" PRIu32
+                                         ") of image pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "].image.",
+                                         bind_idx, image_idx, memory_bind.subresource.arrayLayer,
+                                         image_state->createInfo.arrayLayers,
+                                         bind_idx, image_idx);
+                            }
+                        }
                     }
                 }
             }
