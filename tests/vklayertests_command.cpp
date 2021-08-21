@@ -9322,3 +9322,52 @@ TEST_F(VkLayerTest, TestEndCommandBufferWithConditionalRendering) {
     vk::EndCommandBuffer(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, BindPipelineDuringTransformFeedback) {
+    TEST_DESCRIPTION("Call CmdBindPipeline when transform feedback is active");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    } else {
+        printf("%s VK_EXT_transform_feedback extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe_one(*this);
+    pipe_one.InitInfo();
+    pipe_one.InitState();
+    pipe_one.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_two(*this);
+    pipe_two.InitInfo();
+    pipe_two.InitState();
+    pipe_two.CreateGraphicsPipeline();
+
+    auto vkCmdBeginTransformFeedbackEXT =
+        (PFN_vkCmdBeginTransformFeedbackEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginTransformFeedbackEXT");
+    ASSERT_TRUE(vkCmdBeginTransformFeedbackEXT != nullptr);
+    auto vkCmdEndTransformFeedbackEXT =
+        (PFN_vkCmdEndTransformFeedbackEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndTransformFeedbackEXT");
+    ASSERT_TRUE(vkCmdEndTransformFeedbackEXT != nullptr);
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_one.pipeline_);
+    vkCmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-None-02323");
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_two.pipeline_);
+    m_errorMonitor->VerifyFound();
+    vkCmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+    m_commandBuffer->end();
+}
