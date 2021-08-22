@@ -47,93 +47,44 @@ static shader_stage_attributes shader_stage_attribs[] = {
     {"fragment shader", false, false, VK_SHADER_STAGE_FRAGMENT_BIT},
 };
 
-static bool IsNarrowNumericType(spirv_inst_iter type) {
-    if (type.opcode() != spv::OpTypeInt && type.opcode() != spv::OpTypeFloat) return false;
-    return type.word(2) < 64;
+static bool BaseTypesMatch(SHADER_MODULE_STATE const *a, SHADER_MODULE_STATE const *b, const spirv_inst_iter &a_base_insn,
+                           const spirv_inst_iter &b_base_insn) {
+    const uint32_t a_opcode = a_base_insn.opcode();
+    const uint32_t b_opcode = b_base_insn.opcode();
+    if (a_opcode == b_opcode) {
+        if (a_opcode == spv::OpTypeInt) {
+            // Match width and signedness
+            return a_base_insn.word(2) == b_base_insn.word(2) && a_base_insn.word(3) == b_base_insn.word(3);
+        } else if (a_opcode == spv::OpTypeFloat) {
+            // Match width
+            return a_base_insn.word(2) == b_base_insn.word(2);
+        } else if (a_opcode == spv::OpTypeStruct) {
+            // Match on all element types
+            if (a_base_insn.len() != b_base_insn.len()) {
+                return false;  // Structs cannot match if member counts differ
+            }
+
+            for (unsigned i = 2; i < a_base_insn.len(); i++) {
+                if (!BaseTypesMatch(a, b, a->get_def(a_base_insn.word(i)), b->get_def(b_base_insn.word(i)))) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+    return false;
 }
 
-static bool TypesMatch(SHADER_MODULE_STATE const *a, SHADER_MODULE_STATE const *b, unsigned a_type, unsigned b_type, bool a_arrayed,
-                       bool b_arrayed, bool relaxed) {
-    // Walk two type trees together, and complain about differences
-    auto a_insn = a->get_def(a_type);
-    auto b_insn = b->get_def(b_type);
-    assert(a_insn != a->end());
-    assert(b_insn != b->end());
+static bool TypesMatch(SHADER_MODULE_STATE const *a, SHADER_MODULE_STATE const *b, unsigned a_type, unsigned b_type) {
+    const auto &a_insn = a->get_def(a_type);
+    const auto &b_insn = b->get_def(b_type);
+    const uint32_t a_base_insn_id = a->GetBaseType(a_insn);
+    const uint32_t b_base_insn_id = b->GetBaseType(b_insn);
+    const auto &a_base_insn = a->get_def(a_base_insn_id);
+    const auto &b_base_insn = b->get_def(b_base_insn_id);
 
-    // Ignore runtime-sized arrays-- they cannot appear in these interfaces.
-
-    if (a_arrayed && a_insn.opcode() == spv::OpTypeArray) {
-        return TypesMatch(a, b, a_insn.word(2), b_type, false, b_arrayed, relaxed);
-    }
-
-    if (b_arrayed && b_insn.opcode() == spv::OpTypeArray) {
-        // We probably just found the extra level of arrayness in b_type: compare the type inside it to a_type
-        return TypesMatch(a, b, a_type, b_insn.word(2), a_arrayed, false, relaxed);
-    }
-
-    if (a_insn.opcode() == spv::OpTypeVector && relaxed && IsNarrowNumericType(b_insn)) {
-        return TypesMatch(a, b, a_insn.word(2), b_type, a_arrayed, b_arrayed, false);
-    }
-
-    if (a_insn.opcode() != b_insn.opcode()) {
-        return false;
-    }
-
-    if (a_insn.opcode() == spv::OpTypePointer) {
-        // Match on pointee type. storage class is expected to differ
-        return TypesMatch(a, b, a_insn.word(3), b_insn.word(3), a_arrayed, b_arrayed, relaxed);
-    }
-
-    if (a_arrayed || b_arrayed) {
-        // If we havent resolved array-of-verts by here, we're not going to.
-        return false;
-    }
-
-    switch (a_insn.opcode()) {
-        case spv::OpTypeBool:
-            return true;
-        case spv::OpTypeInt:
-            // Match on width, signedness
-            return a_insn.word(2) == b_insn.word(2) && a_insn.word(3) == b_insn.word(3);
-        case spv::OpTypeFloat:
-            // Match on width
-            return a_insn.word(2) == b_insn.word(2);
-        case spv::OpTypeVector:
-            // Match on element type, count.
-            if (!TypesMatch(a, b, a_insn.word(2), b_insn.word(2), a_arrayed, b_arrayed, false)) return false;
-            if (relaxed && IsNarrowNumericType(a->get_def(a_insn.word(2)))) {
-                return a_insn.word(3) >= b_insn.word(3);
-            } else {
-                return a_insn.word(3) == b_insn.word(3);
-            }
-        case spv::OpTypeMatrix:
-            // Match on element type, count.
-            return TypesMatch(a, b, a_insn.word(2), b_insn.word(2), a_arrayed, b_arrayed, false) &&
-                   a_insn.word(3) == b_insn.word(3);
-        case spv::OpTypeArray:
-            // Match on element type, count. these all have the same layout. we don't get here if b_arrayed. This differs from
-            // vector & matrix types in that the array size is the id of a constant instruction, * not a literal within OpTypeArray
-            return TypesMatch(a, b, a_insn.word(2), b_insn.word(2), a_arrayed, b_arrayed, false) &&
-                   a->GetConstantValueById(a_insn.word(3)) == b->GetConstantValueById(b_insn.word(3));
-        case spv::OpTypeStruct:
-            // Match on all element types
-            {
-                if (a_insn.len() != b_insn.len()) {
-                    return false;  // Structs cannot match if member counts differ
-                }
-
-                for (unsigned i = 2; i < a_insn.len(); i++) {
-                    if (!TypesMatch(a, b, a_insn.word(i), b_insn.word(i), a_arrayed, b_arrayed, false)) {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-        default:
-            // Remaining types are CLisms, or may not appear in the interfaces we are interested in. Just claim no match.
-            return false;
-    }
+    return BaseTypesMatch(a, b, a_base_insn, b_base_insn);
 }
 
 static unsigned GetLocationsConsumedByFormat(VkFormat format) {
@@ -2337,6 +2288,9 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
     auto a_it = outputs.begin();
     auto b_it = inputs.begin();
 
+    uint32_t a_component = 0;
+    uint32_t b_component = 0;
+
     // Maps sorted by key (location); walk them together to find mismatches
     while ((outputs.size() > 0 && a_it != outputs.end()) || (inputs.size() && b_it != inputs.end())) {
         bool a_at_end = outputs.size() == 0 || a_it == outputs.end();
@@ -2344,28 +2298,47 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
         auto a_first = a_at_end ? std::make_pair(0u, 0u) : a_it->first;
         auto b_first = b_at_end ? std::make_pair(0u, 0u) : b_it->first;
 
+        a_first.second += a_component;
+        b_first.second += b_component;
+
+        const auto a_length = a_at_end ? 0 : producer->GetNumComponentsInBaseType(producer->get_def(a_it->second.type_id));
+        const auto b_length = b_at_end ? 0 : consumer->GetNumComponentsInBaseType(consumer->get_def(b_it->second.type_id));
+        assert(a_at_end || a_component < a_length);
+        assert(b_at_end || b_component < b_length);
+
         if (b_at_end || ((!a_at_end) && (a_first < b_first))) {
             skip |= LogPerformanceWarning(producer->vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
-                                          "%s writes to output location %u.%u which is not consumed by %s", producer_stage->name,
-                                          a_first.first, a_first.second, consumer_stage->name);
-            a_it++;
+                                          "%s writes to output location %" PRIu32 ".%" PRIu32 " which is not consumed by %s",
+                                          producer_stage->name, a_first.first, a_first.second, consumer_stage->name);
+            if ((b_first.first > a_first.first) || b_at_end || (a_component + 1 == a_length)) {
+                a_it++;
+                a_component = 0;
+            } else {
+                a_component++;
+            }
         } else if (a_at_end || a_first > b_first) {
             skip |= LogError(consumer->vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
-                             "%s consumes input location %u.%u which is not written by %s", consumer_stage->name, b_first.first,
-                             b_first.second, producer_stage->name);
-            b_it++;
+                             "%s consumes input location %" PRIu32 ".%" PRIu32 " which is not written by %s", consumer_stage->name,
+                             b_first.first, b_first.second, producer_stage->name);
+            if ((a_first.first > b_first.first) || a_at_end || (b_component + 1 == b_length)) {
+                b_it++;
+                b_component = 0;
+            } else {
+                b_component++;
+            }
         } else {
             // subtleties of arrayed interfaces:
             // - if is_patch, then the member is not arrayed, even though the interface may be.
             // - if is_block_member, then the extra array level of an arrayed interface is not
             //   expressed in the member type -- it's expressed in the block type.
-            if (!TypesMatch(producer, consumer, a_it->second.type_id, b_it->second.type_id,
-                            producer_stage->arrayed_output && !a_it->second.is_patch && !a_it->second.is_block_member,
-                            consumer_stage->arrayed_input && !b_it->second.is_patch && !b_it->second.is_block_member, true)) {
+            if (!TypesMatch(producer, consumer, a_it->second.type_id, b_it->second.type_id)) {
                 skip |= LogError(producer->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
-                                 "Type mismatch on location %u.%u: '%s' vs '%s'", a_first.first, a_first.second,
+                                 "Type mismatch on location %" PRIu32 ".%" PRIu32 ": '%s' vs '%s'", a_first.first, a_first.second,
                                  producer->DescribeType(a_it->second.type_id).c_str(),
                                  consumer->DescribeType(b_it->second.type_id).c_str());
+                a_it++;
+                b_it++;
+                continue;
             }
             if (a_it->second.is_patch != b_it->second.is_patch) {
                 skip |= LogError(producer->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
@@ -2375,11 +2348,25 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
             }
             if (a_it->second.is_relaxed_precision != b_it->second.is_relaxed_precision) {
                 skip |= LogError(producer->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
-                                 "Decoration mismatch on location %u.%u: %s and %s stages differ in precision", a_first.first,
-                                 a_first.second, producer_stage->name, consumer_stage->name);
+                                 "Decoration mismatch on location %" PRIu32 ".%" PRIu32 ": %s and %s stages differ in precision",
+                                 a_first.first, a_first.second, producer_stage->name, consumer_stage->name);
             }
-            a_it++;
-            b_it++;
+            uint32_t a_remaining = a_length - a_component;
+            uint32_t b_remaining = b_length - b_component;
+            if (a_remaining == b_remaining) {  // Sizes match so we can advance both a_it and b_it
+                a_it++;
+                b_it++;
+                a_component = 0;
+                b_component = 0;
+            } else if (a_remaining > b_remaining) {  // a has more components remaining
+                a_component += b_remaining;
+                b_component = 0;
+                b_it++;
+            } else if (b_remaining > a_remaining) {  // b has more components remaining
+                b_component += a_remaining;
+                a_component = 0;
+                a_it++;
+            }
         }
     }
 

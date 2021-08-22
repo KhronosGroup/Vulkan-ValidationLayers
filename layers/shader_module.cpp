@@ -1756,6 +1756,35 @@ spirv_inst_iter SHADER_MODULE_STATE::GetImageFormatInst(uint32_t id) const
     } while (true);
 }
 
+uint32_t SHADER_MODULE_STATE::GetNumComponentsInBaseType(const spirv_inst_iter &iter) const {
+    const uint32_t opcode = iter.opcode();
+    if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt) {
+        return 1;
+    } else if (opcode == spv::OpTypeVector) {
+        const uint32_t component_count = iter.word(3);
+        return component_count;
+    } else if (opcode == spv::OpTypeMatrix) {
+        const auto column_type = get_def(iter.word(2));
+        const uint32_t vector_length = GetNumComponentsInBaseType(column_type);
+        const uint32_t column_count = iter.word(3);
+        return vector_length * column_count;
+    } else if (opcode == spv::OpTypeArray) {
+        const auto element_type = get_def(iter.word(2));
+        const uint32_t element_length = GetNumComponentsInBaseType(element_type);
+        return element_length;
+    } else if (opcode == spv::OpTypeStruct) {
+        uint32_t total_size = 0;
+        for (uint32_t i = 2; i < iter.len(); ++i) {
+            total_size += GetNumComponentsInBaseType(get_def(iter.word(i)));
+        }
+        return total_size;
+    } else if (opcode == spv::OpTypePointer) {
+        const auto type = get_def(iter.word(3));
+        return GetNumComponentsInBaseType(type);
+    }
+    return 0;
+}
+
 std::array<uint32_t, 3> SHADER_MODULE_STATE::GetWorkgroupSize(
     VkPipelineShaderStageCreateInfo const *pStage, const std::unordered_map<uint32_t, std::vector<uint32_t>>& id_value_map) const {
     std::array<uint32_t, 3> work_group_size = {1, 1, 1};
@@ -1823,11 +1852,34 @@ uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const spirv_inst_iter &iter) const
             total_size += GetTypeBitsSize(get_def(iter.word(i)));
         }
         return total_size;
+    } else if (opcode == spv::OpTypePointer) {
+        const auto type = get_def(iter.word(3));
+        return GetTypeBitsSize(type);
     }
     return 0;
 }
 
 uint32_t SHADER_MODULE_STATE::GetTypeBytesSize(const spirv_inst_iter &iter) const { return GetTypeBitsSize(iter) / 8; }
+
+uint32_t SHADER_MODULE_STATE::GetBaseType(const spirv_inst_iter &iter) const {
+    const uint32_t opcode = iter.opcode();
+    if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt || opcode == spv::OpTypeStruct) {
+        return iter.word(1);
+    } else if (opcode == spv::OpTypeVector) {
+        const auto& component_type = get_def(iter.word(2));
+        return GetBaseType(component_type);
+    } else if (opcode == spv::OpTypeMatrix) {
+        const auto& column_type = get_def(iter.word(2));
+        return GetBaseType(column_type);
+    } else if (opcode == spv::OpTypeArray) {
+        const auto& element_type = get_def(iter.word(2));
+        return GetBaseType(element_type);
+    } else if (opcode == spv::OpTypePointer) {
+        const auto& type = get_def(iter.word(3));
+        return GetBaseType(type);
+    }
+    return 0;
+}
 
 uint32_t SHADER_MODULE_STATE::CalcComputeSharedMemory(VkShaderStageFlagBits stage,
                                                       const spirv_inst_iter &insn) const {
