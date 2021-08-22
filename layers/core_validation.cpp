@@ -16658,6 +16658,11 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         }
     }
 
+    if (cb_state->transform_feedback_active) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdExecuteCommands-None-02286",
+                         "vkCmdExecuteCommands(): transform feedback is active.");
+    }
+
     skip |= ValidateCmd(cb_state.get(), CMD_EXECUTECOMMANDS);
     return skip;
 }
