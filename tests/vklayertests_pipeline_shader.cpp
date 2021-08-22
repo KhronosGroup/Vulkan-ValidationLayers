@@ -4397,40 +4397,6 @@ TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvidedInBlock) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "not written by vertex shader");
 }
 
-TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
-    TEST_DESCRIPTION("Test that an error is produced for mismatched array sizes across the vertex->fragment shader interface");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    char const *vsSource = R"glsl(
-        #version 450
-        layout(location=0) out float x[2];
-        void main(){
-           x[0] = 0; x[1] = 0;
-           gl_Position = vec4(1);
-        }
-    )glsl";
-    char const *fsSource = R"glsl(
-        #version 450
-        layout(location=0) in float x[1];
-        layout(location=0) out vec4 color;
-        void main(){
-           color = vec4(x[0]);
-        }
-    )glsl";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    };
-    CreatePipelineHelper::OneshotTest(
-        *this, set_info, kErrorBit,
-        "Type mismatch on location 0.0: 'ptr to output arr[2] of float32' vs 'ptr to input arr[1] of float32'");
-}
-
 TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatch) {
     TEST_DESCRIPTION("Test that an error is produced for mismatched types across the vertex->fragment shader interface");
 
