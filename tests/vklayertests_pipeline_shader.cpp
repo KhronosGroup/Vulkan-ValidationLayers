@@ -12774,6 +12774,79 @@ TEST_F(VkLayerTest, ValidateComputeShaderSharedMemoryOverLimits) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, TestInvalidShaderInputAndOutputComponents) {
+    TEST_DESCRIPTION("Test invalid shader layout in and out with different components.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    {
+        char const *vsSource = R"glsl(
+                #version 450
+
+                layout(location = 0, component = 0) out float r;
+                layout(location = 0, component = 2) out float b;
+
+                void main() {
+                    r = 0.25f;
+                    b = 0.75f;
+                }
+            )glsl";
+        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+        char const *fsSource = R"glsl(
+                #version 450
+
+                layout(location = 0, component = 0) in vec3 rgb;
+
+                layout (location = 0) out vec4 color;
+
+                void main() {
+                    color = vec4(rgb, 1.0f);
+                }
+            )glsl";
+        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit,
+                                          "UNASSIGNED-CoreValidation-Shader-InputNotProduced");
+    }
+
+    {
+        char const *vsSource = R"glsl(
+                #version 450
+
+                layout(location = 0, component = 0) out vec3 v;
+
+                void main() {
+                }
+            )glsl";
+        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+        char const *fsSource = R"glsl(
+                #version 450
+
+                layout(location = 0, component = 0) in float a;
+                layout(location = 0, component = 2) in float b;
+
+                layout (location = 0) out vec4 color;
+
+                void main() {
+                    color = vec4(1.0f);
+                }
+            )glsl";
+        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit,
+                                          "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
+    }
+}
+
 TEST_F(VkLayerTest, SpecializationInvalidSizeMismatch) {
     TEST_DESCRIPTION("Make sure an error is logged when a specialization map entry's size is not correct with type");
 

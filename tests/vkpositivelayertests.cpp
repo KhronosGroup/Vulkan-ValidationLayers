@@ -14963,6 +14963,114 @@ TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
+    TEST_DESCRIPTION("Test shader layout in and out with different components.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+                #version 450
+
+                layout(location = 0, component = 0) out vec2 rg;
+                layout(location = 0, component = 2) out float b;
+
+                layout(location = 1, component = 0) out float r;
+                layout(location = 1, component = 1) out vec3 gba;
+
+                layout(location = 2) out vec4 out_color_0;
+                layout(location = 3) out vec4 out_color_1;
+
+                layout(location = 4, component = 0) out float x;
+                layout(location = 4, component = 1) out vec2 yz;
+                layout(location = 4, component = 3) out float w;
+
+                layout(location = 5, component = 0) out vec3 stp;
+                layout(location = 5, component = 3) out float q;
+
+                layout(location = 6, component = 0) out vec2 cd;
+                layout(location = 6, component = 2) out float e;
+                layout(location = 6, component = 3) out float f;
+
+                layout(location = 7, component = 0) out float ar1;
+                layout(location = 7, component = 1) out float ar2[2];
+                layout(location = 7, component = 3) out float ar3;
+
+                void main() {
+	                    vec2 xy = vec2((gl_VertexIndex >> 1u) & 1u, gl_VertexIndex & 1u);
+                        gl_Position = vec4(xy, 0.0f, 1.0f);
+                        out_color_0 = vec4(1.0f, 0.0f, 1.0f, 0.0f);
+                        out_color_1 = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+                        rg = vec2(0.25f, 0.75f);
+                        b = 0.5f;
+                        r = 0.75f;
+                        gba = vec3(1.0f);
+                        x = 1.0f;
+                        yz = vec2(0.25f);
+                        w = 0.5f;
+                        stp = vec3(1.0f);
+                        q = 0.1f;
+                        ar1 = 1.0f;
+                        ar2[0] = 0.5f;
+                        ar2[1] = 0.75f;
+                        ar3 = 1.0f;
+                }
+            )glsl";
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    char const *fsSource = R"glsl(
+                #version 450
+
+                layout(location = 0, component = 0) in float r;
+                layout(location = 0, component = 1) in vec2 gb;
+
+                layout(location = 1, component = 0) in float r1;
+                layout(location = 1, component = 1) in float g1;
+                layout(location = 1, component = 2) in float b1;
+                layout(location = 1, component = 3) in float a1;
+
+                layout(location = 2) in InputBlock {
+                    layout(location = 3, component = 3) float one_alpha;
+                    layout(location = 2, component = 3) float zero_alpha;
+                    layout(location = 3, component = 2) float one_blue;
+                    layout(location = 2, component = 2) float zero_blue;
+                    layout(location = 3, component = 1) float one_green;
+                    layout(location = 2, component = 1) float zero_green;
+                    layout(location = 3, component = 0) float one_red;
+                    layout(location = 2, component = 0) float zero_red;
+                } inBlock;
+
+                layout(location = 4, component = 0) in vec2 xy;
+                layout(location = 4, component = 2) in vec2 zw;
+
+                layout(location = 5, component = 0) in vec2 st;
+                layout(location = 5, component = 2) in vec2 pq;
+                
+                layout(location = 6, component = 0) in vec4 cdef;
+
+                layout(location = 7, component = 0) in float ar1;
+                layout(location = 7, component = 1) in float ar2;
+                layout(location = 8, component = 1) in float ar3;
+                layout(location = 7, component = 3) in float ar4;
+
+                layout (location = 0) out vec4 color;
+
+                void main() {
+                    color = vec4(r, gb, 1.0f) *
+                            vec4(r1, g1, 1.0f, a1) *
+                            vec4(inBlock.zero_red, inBlock.zero_green, inBlock.zero_blue, inBlock.zero_alpha) *
+                            vec4(inBlock.one_red, inBlock.one_green, inBlock.one_blue, inBlock.one_alpha) *
+                            vec4(xy, zw) * vec4(st, pq) * cdef * vec4(ar1, ar2, ar3, ar4);
+                }
+            )glsl";
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit, "", true);
+}
+
 TEST_F(VkPositiveLayerTest, MeshShaderPointSize) {
     TEST_DESCRIPTION("Test writing point size in a mesh shader.");
 
