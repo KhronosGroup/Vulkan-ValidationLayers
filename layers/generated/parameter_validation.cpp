@@ -215,8 +215,8 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice 
             skip = LogError(instance,
                             kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %s, "
                             "which is the minimum of version requested in pApplicationInfo (%s) and supported by this physical device (%s), "
-                            "but this API was not promoted until version %s.", api_name, StringAPIVersion(api_version).c_str(),
-                            StringAPIVersion(target_pdev->second->apiVersion).c_str(), StringAPIVersion(effective_api_version).c_str(),
+                            "but this API was not promoted until version %s.", api_name, StringAPIVersion(effective_api_version).c_str(),
+                            StringAPIVersion(api_version).c_str(), StringAPIVersion(target_pdev->second->apiVersion).c_str(),
                             StringAPIVersion(promoted_version).c_str());
         }
     }
