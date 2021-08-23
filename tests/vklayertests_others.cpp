@@ -12908,3 +12908,39 @@ TEST_F(VkLayerTest, GetQueryPoolResultsFlags) {
     vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, out_data_size, data + 1, 4, flags);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, QueryPoolResultStatusOnly) {
+    TEST_DESCRIPTION("Request result status only query result.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Test does not run on Vulkan 1.0, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME)) {
+        printf("%s Video queue Extension not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkQueryPool query_pool;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_ci.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
+    query_pool_ci.queryCount = 1;
+    VkResult err = vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+    if (err != VK_SUCCESS) {
+        printf("%s Required query not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    const size_t out_data_size = 16;
+    uint8_t data[out_data_size];
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-04810");
+    vk::GetQueryPoolResults(m_device->device(), query_pool, 0, 1, out_data_size, &data, sizeof(uint32_t), 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
+}
