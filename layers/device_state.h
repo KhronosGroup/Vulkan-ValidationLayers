@@ -33,13 +33,13 @@ struct DeviceFeatures {
     VkPhysicalDeviceVulkan11Features core11;
     VkPhysicalDeviceVulkan12Features core12;
 
-    VkPhysicalDeviceExclusiveScissorFeaturesNV exclusive_scissor;
-    VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image;
-    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader;
-    VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block;
+    VkPhysicalDeviceExclusiveScissorFeaturesNV exclusive_scissor_features;
+    VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_features;
+    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features;
+    VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block_features;
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features;
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vtx_attrib_divisor_features;
-    VkPhysicalDeviceBufferDeviceAddressFeaturesEXT buffer_device_address_ext;
+    VkPhysicalDeviceBufferDeviceAddressFeaturesEXT buffer_device_address_ext_features;
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features;
     VkPhysicalDeviceComputeShaderDerivativesFeaturesNV compute_shader_derivatives_features;
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features;
@@ -66,11 +66,11 @@ struct DeviceFeatures {
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features;
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features;
     VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL shader_integer_functions2_features;
-    VkPhysicalDeviceShaderSMBuiltinsFeaturesNV shader_sm_builtins_feature;
-    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shader_atomic_float_feature;
-    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT shader_image_atomic_int64_feature;
-    VkPhysicalDeviceShaderClockFeaturesKHR shader_clock_feature;
-    VkPhysicalDeviceConditionalRenderingFeaturesEXT conditional_rendering;
+    VkPhysicalDeviceShaderSMBuiltinsFeaturesNV shader_sm_builtins_features;
+    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shader_atomic_float_features;
+    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT shader_image_atomic_int64_features;
+    VkPhysicalDeviceShaderClockFeaturesKHR shader_clock_features;
+    VkPhysicalDeviceConditionalRenderingFeaturesEXT conditional_rendering_features;
     VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR workgroup_memory_explicit_layout_features;
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2_features;
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features;

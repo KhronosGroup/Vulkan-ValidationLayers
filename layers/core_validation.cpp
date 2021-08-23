@@ -1498,12 +1498,12 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
     }
 
-    if (!enabled_features.mesh_shader.meshShader && (pPipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV)) {
+    if (!enabled_features.mesh_shader_features.meshShader && (pPipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV)) {
         skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-stage-02091",
                          "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Mesh Shader not supported.", pipelineIndex);
     }
 
-    if (!enabled_features.mesh_shader.taskShader && (pPipeline->active_shaders & VK_SHADER_STAGE_TASK_BIT_NV)) {
+    if (!enabled_features.mesh_shader_features.taskShader && (pPipeline->active_shaders & VK_SHADER_STAGE_TASK_BIT_NV)) {
         skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-stage-02092",
                          "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Task Shader not supported.", pipelineIndex);
     }
@@ -2621,36 +2621,37 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
             }
         }
 
-        const auto *shader_image_atomic_int64_feature =
+        const auto *shader_image_atomic_int64_features =
             LvlFindInChain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(pCreateInfo->pNext);
-        if (shader_image_atomic_int64_feature) {
-            if (shader_image_atomic_int64_feature->sparseImageInt64Atomics &&
-                !shader_image_atomic_int64_feature->shaderImageInt64Atomics) {
+        if (shader_image_atomic_int64_features) {
+            if (shader_image_atomic_int64_features->sparseImageInt64Atomics &&
+                !shader_image_atomic_int64_features->shaderImageInt64Atomics) {
                 skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-None-04896",
                                  "vkCreateDevice: if shaderImageInt64Atomics feature is enabled then sparseImageInt64Atomics "
                                  "feature must also be enabled.");
             }
         }
-        const auto *shader_atomic_float_feature = LvlFindInChain<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>(pCreateInfo->pNext);
-        if (shader_atomic_float_feature) {
-            if (shader_atomic_float_feature->sparseImageFloat32Atomics && !shader_atomic_float_feature->shaderImageFloat32Atomics) {
+        const auto *shader_atomic_float_features = LvlFindInChain<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>(pCreateInfo->pNext);
+        if (shader_atomic_float_features) {
+            if (shader_atomic_float_features->sparseImageFloat32Atomics &&
+                !shader_atomic_float_features->shaderImageFloat32Atomics) {
                 skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-None-04897",
                                  "vkCreateDevice: if sparseImageFloat32Atomics feature is enabled then shaderImageFloat32Atomics "
                                  "feature must also be enabled.");
             }
-            if (shader_atomic_float_feature->sparseImageFloat32AtomicAdd &&
-                !shader_atomic_float_feature->shaderImageFloat32AtomicAdd) {
+            if (shader_atomic_float_features->sparseImageFloat32AtomicAdd &&
+                !shader_atomic_float_features->shaderImageFloat32AtomicAdd) {
                 skip |=
                     LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-None-04898",
                              "vkCreateDevice: if sparseImageFloat32AtomicAdd feature is enabled then shaderImageFloat32AtomicAdd "
                              "feature must also be enabled.");
             }
         }
-        const auto *shader_atomic_float_feature2 =
+        const auto *shader_atomic_float2_features =
             LvlFindInChain<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(pCreateInfo->pNext);
-        if (shader_atomic_float_feature2) {
-            if (shader_atomic_float_feature2->sparseImageFloat32AtomicMinMax &&
-                !shader_atomic_float_feature2->shaderImageFloat32AtomicMinMax) {
+        if (shader_atomic_float2_features) {
+            if (shader_atomic_float2_features->sparseImageFloat32AtomicMinMax &&
+                !shader_atomic_float2_features->shaderImageFloat32AtomicMinMax) {
                 skip |= LogError(
                     pd_state->phys_device, "VUID-VkDeviceCreateInfo-sparseImageFloat32AtomicMinMax-04975",
                     "vkCreateDevice: if sparseImageFloat32AtomicMinMax feature is enabled then shaderImageFloat32AtomicMinMax "
@@ -5467,9 +5468,9 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
                                                           const VkAllocationCallbacks *pAllocator,
                                                           VkDescriptorSetLayout *pSetLayout) const {
     return cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
-        this, pCreateInfo, IsExtEnabled(device_extensions.vk_khr_push_descriptor), phys_dev_ext_props.max_push_descriptors,
-        IsExtEnabled(device_extensions.vk_ext_descriptor_indexing), &enabled_features.core12,
-        &enabled_features.inline_uniform_block, &phys_dev_ext_props.inline_uniform_block_props,
+        this, pCreateInfo, IsExtEnabled(device_extensions.vk_khr_push_descriptor),
+        phys_dev_ext_props.push_descriptor_props.maxPushDescriptors, IsExtEnabled(device_extensions.vk_ext_descriptor_indexing),
+        &enabled_features.core12, &enabled_features.inline_uniform_block_features, &phys_dev_ext_props.inline_uniform_block_props,
         &enabled_features.ray_tracing_acceleration_structure_features, &device_extensions);
 }
 
@@ -6428,7 +6429,7 @@ bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer command
     assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(cb_state, CMD_SETEXCLUSIVESCISSORNV, "vkCmdSetExclusiveScissorNV()");
-    if (!enabled_features.exclusive_scissor.exclusiveScissor) {
+    if (!enabled_features.exclusive_scissor_features.exclusiveScissor) {
         skip |= LogError(commandBuffer, "VUID-vkCmdSetExclusiveScissorNV-None-02031",
                          "vkCmdSetExclusiveScissorNV: The exclusiveScissor feature is disabled.");
     }
@@ -6443,7 +6444,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
 
     skip |= ValidateCmd(cb_state, CMD_BINDSHADINGRATEIMAGENV, "vkCmdBindShadingRateImageNV()");
 
-    if (!enabled_features.shading_rate_image.shadingRateImage) {
+    if (!enabled_features.shading_rate_image_features.shadingRateImage) {
         skip |= LogError(commandBuffer, "VUID-vkCmdBindShadingRateImageNV-None-02058",
                          "vkCmdBindShadingRateImageNV: The shadingRateImage feature is disabled.");
     }
@@ -6501,7 +6502,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
 
     skip |= ValidateCmd(cb_state, CMD_SETVIEWPORTSHADINGRATEPALETTENV, "vkCmdSetViewportShadingRatePaletteNV()");
 
-    if (!enabled_features.shading_rate_image.shadingRateImage) {
+    if (!enabled_features.shading_rate_image_features.shadingRateImage) {
         skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportShadingRatePaletteNV-None-02064",
                          "vkCmdSetViewportShadingRatePaletteNV: The shadingRateImage feature is disabled.");
     }
@@ -14783,13 +14784,13 @@ bool CoreChecks::ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferD
                                                 const char *apiName) const {
     bool skip = false;
 
-    if (!enabled_features.core12.bufferDeviceAddress && !enabled_features.buffer_device_address_ext.bufferDeviceAddress) {
+    if (!enabled_features.core12.bufferDeviceAddress && !enabled_features.buffer_device_address_ext_features.bufferDeviceAddress) {
         skip |= LogError(pInfo->buffer, "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324",
                          "%s: The bufferDeviceAddress feature must: be enabled.", apiName);
     }
 
     if (physical_device_count > 1 && !enabled_features.core12.bufferDeviceAddressMultiDevice &&
-        !enabled_features.buffer_device_address_ext.bufferDeviceAddressMultiDevice) {
+        !enabled_features.buffer_device_address_ext_features.bufferDeviceAddressMultiDevice) {
         skip |= LogError(pInfo->buffer, "VUID-vkGetBufferDeviceAddress-device-03325",
                          "%s: If device was created with multiple physical devices, then the "
                          "bufferDeviceAddressMultiDevice feature must: be enabled.",

@@ -71,19 +71,19 @@ struct FeaturePointer {
     FeaturePointer(VkBool32 VkPhysicalDeviceFragmentDensityMapFeaturesEXT::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.fragment_density_map_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::*ptr)
-        : IsEnabled([=](const DeviceFeatures &features) { return features.buffer_device_address_ext.*ptr; }) {}
+        : IsEnabled([=](const DeviceFeatures &features) { return features.buffer_device_address_ext_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceFragmentShadingRateFeaturesKHR::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.fragment_shading_rate_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.shader_integer_functions2_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::*ptr)
-        : IsEnabled([=](const DeviceFeatures &features) { return features.shader_sm_builtins_feature.*ptr; }) {}
+        : IsEnabled([=](const DeviceFeatures &features) { return features.shader_sm_builtins_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceShadingRateImageFeaturesNV::*ptr)
-        : IsEnabled([=](const DeviceFeatures &features) { return features.shading_rate_image.*ptr; }) {}
+        : IsEnabled([=](const DeviceFeatures &features) { return features.shading_rate_image_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::*ptr)
-        : IsEnabled([=](const DeviceFeatures &features) { return features.shader_atomic_float_feature.*ptr; }) {}
+        : IsEnabled([=](const DeviceFeatures &features) { return features.shader_atomic_float_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::*ptr)
-        : IsEnabled([=](const DeviceFeatures &features) { return features.shader_image_atomic_int64_feature.*ptr; }) {}
+        : IsEnabled([=](const DeviceFeatures &features) { return features.shader_image_atomic_int64_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.workgroup_memory_explicit_layout_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::*ptr)
