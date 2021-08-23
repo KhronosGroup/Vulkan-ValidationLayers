@@ -154,6 +154,9 @@ static unsigned ExecutionModelToShaderStageFlagBits(unsigned mode) {
 // converting parts of this to be generated from the machine-readable spec instead.
 layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::MarkAccessibleIds(spirv_inst_iter entrypoint) const {
     layer_data::unordered_set<uint32_t> ids;
+    if (entrypoint == end() || !has_valid_spirv) {
+        return ids;
+    }
     layer_data::unordered_set<uint32_t> worklist;
     worklist.insert(entrypoint.word(2));
 
@@ -258,7 +261,9 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::MarkAccessibleIds(spirv
     return ids;
 }
 
-void SHADER_MODULE_STATE::ProcessExecutionModes(const spirv_inst_iter &entrypoint, PIPELINE_STATE *pipeline) const {
+layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const spirv_inst_iter &entrypoint) const {
+    layer_data::optional<VkPrimitiveTopology> result;
+
     auto entrypoint_id = entrypoint.word(2);
     bool is_point_mode = false;
 
@@ -272,25 +277,29 @@ void SHADER_MODULE_STATE::ProcessExecutionModes(const spirv_inst_iter &entrypoin
                     break;
 
                 case spv::ExecutionModeOutputPoints:
-                    pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+                    result.emplace(VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
                     break;
 
                 case spv::ExecutionModeIsolines:
                 case spv::ExecutionModeOutputLineStrip:
-                    pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+                    result.emplace(VK_PRIMITIVE_TOPOLOGY_LINE_STRIP);
                     break;
 
                 case spv::ExecutionModeTriangles:
                 case spv::ExecutionModeQuads:
                 case spv::ExecutionModeOutputTriangleStrip:
                 case spv::ExecutionModeOutputTrianglesNV:
-                    pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+                    result.emplace(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
                     break;
             }
         }
     }
 
-    if (is_point_mode) pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    if (is_point_mode) {
+        result.emplace(VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+    }
+
+    return result;
 }
 
 void SHADER_MODULE_STATE::BuildDefIndex() {
@@ -1457,7 +1466,7 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
 }
 
 std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::CollectInterfaceByDescriptorSlot(
-    layer_data::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor, bool *has_atomic_descriptor) const {
+    layer_data::unordered_set<uint32_t> const &accessible_ids) const {
     std::vector<std::pair<DescriptorSlot, interface_var>> out;
     shader_module_used_operators operators;
 
@@ -1478,9 +1487,7 @@ std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::Colle
 
             IsSpecificDescriptorType(insn, insn.word(3) == spv::StorageClassStorageBuffer,
                                      !(d.flags & decoration_set::nonwritable_bit), v, operators);
-            if (v.is_writable) *has_writable_descriptor = true;
-            if (v.is_atomic_operation) *has_atomic_descriptor = true;
-            out.emplace_back(DescriptorSlot(set, binding), v);
+            out.emplace_back(DescriptorSlot{set, binding}, v);
         }
     }
 
@@ -1488,10 +1495,8 @@ std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::Colle
 }
 
 layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLocationinFS(
-    const VkPipelineShaderStageCreateInfo &stage_info) const {
+    const spirv_inst_iter &entrypoint) const {
     layer_data::unordered_set<uint32_t> location_list;
-    if (stage_info.stage != VK_SHADER_STAGE_FRAGMENT_BIT) return location_list;
-    const auto entrypoint = FindEntrypoint(stage_info.pName, stage_info.stage);
     const auto outputs = CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, false);
     layer_data::unordered_set<unsigned> store_members;
     layer_data::unordered_map<unsigned, unsigned> accesschain_members;

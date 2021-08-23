@@ -4582,58 +4582,6 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
     shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
 }
 
-void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCreateInfo const *pStage, PIPELINE_STATE *pipeline,
-                                                       PipelineStageState *stage_state) const {
-    // Validation shouldn't rely on anything in stage state being valid if the spirv isn't
-    stage_state->entry_point_name = pStage->pName;
-    stage_state->shader_state = GetShared<SHADER_MODULE_STATE>(pStage->module);
-    auto module = stage_state->shader_state.get();
-    if (!module->has_valid_spirv) return;
-
-    // Validation shouldn't rely on anything in stage state being valid if the entrypoint isn't present
-    auto entrypoint = module->FindEntrypoint(pStage->pName, pStage->stage);
-    if (entrypoint == module->end()) return;
-
-    stage_state->stage_flag = pStage->stage;
-
-    // Mark accessible ids
-    stage_state->accessible_ids = module->MarkAccessibleIds(entrypoint);
-    module->ProcessExecutionModes(entrypoint, pipeline);
-
-    stage_state->descriptor_uses = module->CollectInterfaceByDescriptorSlot(
-        stage_state->accessible_ids, &stage_state->has_writable_descriptor, &stage_state->has_atomic_descriptor);
-    // Capture descriptor uses for the pipeline
-    for (const auto &use : stage_state->descriptor_uses) {
-        // While validating shaders capture which slots are used by the pipeline
-        const uint32_t slot = use.first.set;
-        pipeline->active_slots[slot][use.first.binding].is_writable |= use.second.is_writable;
-        auto &reqs = pipeline->active_slots[slot][use.first.binding].reqs;
-        reqs |= module->DescriptorTypeToReqs(use.second.type_id);
-        if (use.second.is_atomic_operation) reqs |= DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION;
-        if (use.second.is_sampler_implicitLod_dref_proj) reqs |= DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ;
-        if (use.second.is_sampler_bias_offset) reqs |= DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET;
-
-        pipeline->max_active_slot = std::max(pipeline->max_active_slot, slot);
-        if (use.second.samplers_used_by_image.size()) {
-            auto &samplers_used_by_image = pipeline->active_slots[slot][use.first.binding].samplers_used_by_image;
-            if (use.second.samplers_used_by_image.size() > samplers_used_by_image.size()) {
-                samplers_used_by_image.resize(use.second.samplers_used_by_image.size());
-            }
-            uint32_t image_index = 0;
-            for (const auto &samplers : use.second.samplers_used_by_image) {
-                for (const auto &sampler : samplers) {
-                    samplers_used_by_image[image_index].emplace(sampler, nullptr);
-                }
-                ++image_index;
-            }
-        }
-    }
-
-    if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-        pipeline->fragmentShader_writable_output_location_list = module->CollectWritableOutputLocationinFS(*pStage);
-    }
-}
-
 void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                                  uint32_t *pSwapchainImageCount, VkImage *pSwapchainImages,
                                                                  VkResult result) {

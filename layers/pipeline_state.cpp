@@ -30,6 +30,7 @@
 #include "cmd_buffer_state.h"
 #include "render_pass_state.h"
 #include "state_tracker.h"
+#include "shader_module.h"
 
 // Dictionary of canonical form of the pipeline set layout of descriptor set layouts
 static PipelineLayoutSetLayoutsDict pipeline_layout_set_layouts_dict;
@@ -238,6 +239,123 @@ static bool IsSampleLocationEnabled(const safe_VkGraphicsPipelineCreateInfo &cre
     return result;
 }
 
+static bool HasWriteableDescriptor(const std::vector<PipelineStageState::DescriptorUse> &descriptor_uses) {
+    return std::any_of(descriptor_uses.begin(), descriptor_uses.end(),
+                       [](const PipelineStageState::DescriptorUse &use) { return use.second.is_atomic_operation; });
+}
+
+static bool HasAtomicDescriptor(const std::vector<PipelineStageState::DescriptorUse> &descriptor_uses) {
+    return std::any_of(descriptor_uses.begin(), descriptor_uses.end(),
+                       [](const PipelineStageState::DescriptorUse &use) { return use.second.is_writable; });
+}
+
+PipelineStageState::PipelineStageState(const VkPipelineShaderStageCreateInfo *stage,
+                                       std::shared_ptr<const SHADER_MODULE_STATE> &module_)
+    : module(module_),
+      create_info(stage),
+      stage_flag(stage->stage),
+      entrypoint(module->FindEntrypoint(stage->pName, stage->stage)),
+      accessible_ids(module->MarkAccessibleIds(entrypoint)),
+      descriptor_uses(module->CollectInterfaceByDescriptorSlot(accessible_ids)),
+      has_writable_descriptor(HasWriteableDescriptor(descriptor_uses)),
+      has_atomic_descriptor(HasAtomicDescriptor(descriptor_uses)) {}
+
+static PIPELINE_STATE::StageStateVec GetStageStates(const ValidationStateTracker *state_data,
+                                                    const safe_VkPipelineShaderStageCreateInfo *stages, uint32_t stage_count) {
+    PIPELINE_STATE::StageStateVec stage_states;
+    stage_states.reserve(stage_count);
+    // shader stages need to be recorded in pipeline order
+    for (uint32_t stage_idx = 0; stage_idx < 32; ++stage_idx) {
+        for (uint32_t i = 0; i < stage_count; i++) {
+            if (stages[i].stage == (1 << stage_idx)) {
+                auto module = state_data->GetShared<SHADER_MODULE_STATE>(stages[i].module);
+                stage_states.emplace_back(stages[i].ptr(), module);
+            }
+        }
+    }
+    return stage_states;
+}
+
+static PIPELINE_STATE::ActiveSlotMap GetActiveSlots(const PIPELINE_STATE::StageStateVec &stage_states) {
+    PIPELINE_STATE::ActiveSlotMap active_slots;
+    for (const auto &stage : stage_states) {
+        if (stage.entrypoint == stage.module->end()) {
+            continue;
+        }
+        // Capture descriptor uses for the pipeline
+        for (const auto &use : stage.descriptor_uses) {
+            // While validating shaders capture which slots are used by the pipeline
+            auto &entry = active_slots[use.first.set][use.first.binding];
+            entry.is_writable |= use.second.is_writable;
+
+            auto &reqs = entry.reqs;
+            reqs |= stage.module->DescriptorTypeToReqs(use.second.type_id);
+            if (use.second.is_atomic_operation) reqs |= DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION;
+            if (use.second.is_sampler_implicitLod_dref_proj) reqs |= DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ;
+            if (use.second.is_sampler_bias_offset) reqs |= DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET;
+
+            if (use.second.samplers_used_by_image.size()) {
+                if (use.second.samplers_used_by_image.size() > entry.samplers_used_by_image.size()) {
+                    entry.samplers_used_by_image.resize(use.second.samplers_used_by_image.size());
+                }
+                uint32_t image_index = 0;
+                for (const auto &samplers : use.second.samplers_used_by_image) {
+                    for (const auto &sampler : samplers) {
+                        entry.samplers_used_by_image[image_index].emplace(sampler, nullptr);
+                    }
+                    ++image_index;
+                }
+            }
+        }
+    }
+    return active_slots;
+}
+
+static uint32_t GetMaxActiveSlot(const PIPELINE_STATE::ActiveSlotMap &active_slots) {
+    uint32_t max_active_slot = 0;
+    for (const auto &entry : active_slots) {
+        max_active_slot = std::max(max_active_slot, entry.first);
+    }
+    return max_active_slot;
+}
+
+static uint32_t GetActiveShaders(const VkPipelineShaderStageCreateInfo *stages, uint32_t stage_count) {
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < stage_count; i++) {
+        result |= stages[i].stage;
+    }
+    return result;
+}
+
+static layer_data::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_STATE::StageStateVec &stage_states) {
+    layer_data::unordered_set<uint32_t> result;
+    for (const auto &stage : stage_states) {
+        if (stage.entrypoint == stage.module->end()) {
+            continue;
+        }
+        if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT) {
+            result = stage.module->CollectWritableOutputLocationinFS(stage.entrypoint);
+            break;
+        }
+    }
+    return result;
+}
+
+static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE::StageStateVec &stage_states,
+                                                   const safe_VkPipelineInputAssemblyStateCreateInfo *assembly_state) {
+    VkPrimitiveTopology result = assembly_state ? assembly_state->topology : static_cast<VkPrimitiveTopology>(0);
+    for (const auto &stage : stage_states) {
+        if (stage.entrypoint == stage.module->end()) {
+            continue;
+        }
+        auto stage_topo = stage.module->GetTopology(stage.entrypoint);
+        if (stage_topo) {
+            result = *stage_topo;
+        }
+    }
+    return result;
+}
+
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                                std::shared_ptr<const RENDER_PASS_STATE> &&rpstate,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
@@ -246,6 +364,10 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
                   rpstate->UsesDepthStencilAttachment(pCreateInfo->subpass)),
       pipeline_layout(std::move(layout)),
       rp_state(rpstate),
+      stage_state(GetStageStates(state_data, create_info.graphics.pStages, create_info.graphics.stageCount)),
+      active_slots(GetActiveSlots(stage_state)),
+      max_active_slot(GetMaxActiveSlot(active_slots)),
+      fragmentShader_writable_output_location_list(GetFSOutputLocations(stage_state)),
       vertex_binding_descriptions_(GetVertexBindingDescriptions(create_info.graphics)),
       vertex_attribute_descriptions_(GetVertexAttributeDescriptions(create_info.graphics)),
       vertex_attribute_alignments_(GetAttributeAlignments(vertex_attribute_descriptions_)),
@@ -253,49 +375,21 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       attachments(GetAttachments(create_info.graphics)),
       blend_constants_enabled(IsBlendConstantsEnabled(attachments)),
       sample_location_enabled(IsSampleLocationEnabled(create_info.graphics)),
-      topology_at_rasterizer{create_info.graphics.pInputAssemblyState ? create_info.graphics.pInputAssemblyState->topology
-                                                                      : static_cast<VkPrimitiveTopology>(0)} {
-    stage_state.resize(create_info.graphics.stageCount);
-    // Graphics pipeline shader stages need to be recorded in order
-    for (uint32_t stage_idx = 0; stage_idx < 5; ++stage_idx) {
-        for (uint32_t i = 0; i < create_info.graphics.stageCount; i++) {
-            const VkPipelineShaderStageCreateInfo &pssci = *create_info.graphics.pStages[i].ptr();
-            if (pssci.stage == (1 << stage_idx)) {
-                this->duplicate_shaders |= this->active_shaders & pssci.stage;
-                this->active_shaders |= pssci.stage;
-                state_data->RecordPipelineShaderStage(&pssci, this, &stage_state[i]);
-            }
-        }
-    }
-    // Record non-graphics pipeline stages
-    for (uint32_t i = 0; i < create_info.graphics.stageCount; i++) {
-        const VkPipelineShaderStageCreateInfo &pssci = *create_info.graphics.pStages[i].ptr();
-        if ((pssci.stage & VK_SHADER_STAGE_ALL_GRAPHICS) == 0) {
-            this->duplicate_shaders |= this->active_shaders & pssci.stage;
-            this->active_shaders |= pssci.stage;
-            state_data->RecordPipelineShaderStage(&pssci, this, &stage_state[i]);
-        }
-    }
-}
+      active_shaders(GetActiveShaders(pCreateInfo->pStages, pCreateInfo->stageCount)),
+      topology_at_rasterizer(GetTopologyAtRasterizer(stage_state, create_info.graphics.pInputAssemblyState)) {}
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       pipeline_layout(std::move(layout)),
+      stage_state(GetStageStates(state_data, &create_info.compute.stage, 1)),
+      active_slots(GetActiveSlots(stage_state)),
       blend_constants_enabled(false),
       sample_location_enabled(false),
+      active_shaders(GetActiveShaders(&pCreateInfo->stage, 1)),
       topology_at_rasterizer{} {
-    switch (pCreateInfo->stage.stage) {
-        case VK_SHADER_STAGE_COMPUTE_BIT:
-            this->active_shaders |= VK_SHADER_STAGE_COMPUTE_BIT;
-            stage_state.resize(1);
-            state_data->RecordPipelineShaderStage(&pCreateInfo->stage, this, &stage_state[0]);
-            break;
-        default:
-            // TODO : Flag error
-            break;
-    }
+    assert(active_shaders == VK_SHADER_STAGE_COMPUTE_BIT);
 }
 
 template <typename CreateInfoStruct>
@@ -304,37 +398,15 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const C
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       pipeline_layout(std::move(layout)),
+      stage_state(GetStageStates(state_data, create_info.raytracing.pStages, create_info.raytracing.stageCount)),
+      active_slots(GetActiveSlots(stage_state)),
       blend_constants_enabled(false),
       sample_location_enabled(false),
+      active_shaders(GetActiveShaders(pCreateInfo->pStages, pCreateInfo->stageCount)),
       topology_at_rasterizer{} {
-    stage_state.resize(pCreateInfo->stageCount);
-    for (uint32_t stage_index = 0; stage_index < pCreateInfo->stageCount; stage_index++) {
-        const auto &shader_stage = pCreateInfo->pStages[stage_index];
-        switch (shader_stage.stage) {
-            case VK_SHADER_STAGE_RAYGEN_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_ANY_HIT_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_MISS_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_MISS_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_INTERSECTION_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_CALLABLE_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_CALLABLE_BIT_NV;
-                break;
-            default:
-                // TODO : Flag error
-                break;
-        }
-        state_data->RecordPipelineShaderStage(&shader_stage, this, &stage_state[stage_index]);
-    }
+    assert(0 == (active_shaders &
+                 ~(VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
+                   VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)));
 }
 
 template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const VkRayTracingPipelineCreateInfoNV *,

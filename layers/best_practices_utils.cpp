@@ -1178,11 +1178,8 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
                                       kThreadGroupDispatchCountAlignmentArm);
     }
 
-    bool has_writeable_descriptors = false;
-    bool has_atomic_descriptors = false;
     auto accessible_ids = module->MarkAccessibleIds(entrypoint);
-    auto descriptor_uses =
-        module->CollectInterfaceByDescriptorSlot(accessible_ids, &has_writeable_descriptors, &has_atomic_descriptors);
+    auto descriptor_uses = module->CollectInterfaceByDescriptorSlot(accessible_ids);
 
     unsigned dimensions = 0;
     if (x > 1) dimensions++;

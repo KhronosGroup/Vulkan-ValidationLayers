@@ -1173,8 +1173,6 @@ class ValidationStateTracker : public ValidationObject {
     void RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
                                                    VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate);
     void RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
-    void RecordPipelineShaderStage(const VkPipelineShaderStageCreateInfo* pStage, PIPELINE_STATE* pipeline,
-                                   PipelineStageState* stage_state) const;
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
     void RetireFence(VkFence fence);
     void RetireTimelineSemaphore(VkSemaphore semaphore, uint64_t until_payload);
