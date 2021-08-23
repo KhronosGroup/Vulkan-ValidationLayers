@@ -45,6 +45,7 @@ class ValidationStateTracker;
 class CMD_BUFFER_STATE;
 class RENDER_PASS_STATE;
 struct SHADER_MODULE_STATE;
+class PIPELINE_STATE;
 
 // Flags describing requirements imposed by the pipeline on a descriptor. These
 // can't be checked at pipeline creation time as they depend on the Image or
@@ -146,13 +147,17 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
 };
 
 struct PipelineStageState {
+    std::shared_ptr<const SHADER_MODULE_STATE> module;
+    const VkPipelineShaderStageCreateInfo *create_info;
+    VkShaderStageFlagBits stage_flag;
+    spirv_inst_iter entrypoint;
     layer_data::unordered_set<uint32_t> accessible_ids;
-    std::vector<std::pair<DescriptorSlot, interface_var>> descriptor_uses;
+    using DescriptorUse = std::pair<DescriptorSlot, interface_var>;
+    std::vector<DescriptorUse> descriptor_uses;
     bool has_writable_descriptor;
     bool has_atomic_descriptor;
-    VkShaderStageFlagBits stage_flag;
-    std::string entry_point_name;
-    std::shared_ptr<const SHADER_MODULE_STATE> shader_state;
+
+    PipelineStageState(const VkPipelineShaderStageCreateInfo *stage, std::shared_ptr<const SHADER_MODULE_STATE> &module);
 };
 
 class PIPELINE_STATE : public BASE_NODE {
@@ -189,12 +194,19 @@ class PIPELINE_STATE : public BASE_NODE {
     const CreateInfo create_info;
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> pipeline_layout;
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
-    // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
-    layer_data::unordered_map<uint32_t, BindingReqMap> active_slots;
-    uint32_t max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
     // Additional metadata needed by pipeline_state initialization and validation
-    std::vector<PipelineStageState> stage_state;
-    layer_data::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
+    using StageStateVec = std::vector<PipelineStageState>;
+    const StageStateVec stage_state;
+
+    // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
+    using ActiveSlotMap = layer_data::unordered_map<uint32_t, BindingReqMap>;
+    // NOTE: this map is 'almost' const and used in performance critical code paths.
+    // The values of existing entries in the DescriptorRequirement::samplers_used_by_image map
+    // are updated at various times. Locking requirements are TBD.
+    ActiveSlotMap active_slots;
+    const uint32_t max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
+
+    const layer_data::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
     // Vtx input info (if any)
     using VertexBindingVector = std::vector<VkVertexInputBindingDescription>;
     const VertexBindingVector vertex_binding_descriptions_;
@@ -211,14 +223,14 @@ class PIPELINE_STATE : public BASE_NODE {
     using AttachmentVector = std::vector<VkPipelineColorBlendAttachmentState>;
     const AttachmentVector attachments;
 
-    layer_data::unordered_set<VkShaderStageFlagBits, hash_util::HashCombiner::WrappedHash<VkShaderStageFlagBits>>
-        wrote_primitive_shading_rate;
     const bool blend_constants_enabled;  // Blend constants enabled for any attachments
     const bool sample_location_enabled;
     // Flag of which shader stages are active for this pipeline
-    uint32_t active_shaders = 0;
-    uint32_t duplicate_shaders = 0;
-    VkPrimitiveTopology topology_at_rasterizer;
+    const uint32_t active_shaders = 0;
+    const VkPrimitiveTopology topology_at_rasterizer;
+
+    layer_data::unordered_set<VkShaderStageFlagBits, hash_util::HashCombiner::WrappedHash<VkShaderStageFlagBits>>
+        wrote_primitive_shading_rate;
 
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const RENDER_PASS_STATE> &&rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);

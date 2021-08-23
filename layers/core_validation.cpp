@@ -1180,8 +1180,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     //       Discussion on validity of these checks can be found at https://gitlab.khronos.org/vulkan/vulkan/-/issues/2602.
     if (!cb_node->push_constant_data_ranges || (pipeline_layout->push_constant_ranges == cb_node->push_constant_data_ranges)) {
         for (const auto &stage : pipe->stage_state) {
-            const auto *entrypoint =
-                stage.shader_state.get()->FindEntrypointStruct(stage.entry_point_name.c_str(), stage.stage_flag);
+            const auto *entrypoint = stage.module->FindEntrypointStruct(stage.create_info->pName, stage.create_info->stage);
             if (!entrypoint || !entrypoint->push_constant_used_in_shader.IsUsed()) {
                 continue;
             }
@@ -1492,9 +1491,11 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
     }
     skip |= ValidateGraphicsPipelineBlendEnable(pPipeline);
     // Each shader's stage must be unique
-    if (pPipeline->duplicate_shaders) {
-        for (uint32_t stage = VK_SHADER_STAGE_VERTEX_BIT; stage & VK_SHADER_STAGE_ALL_GRAPHICS; stage <<= 1) {
-            if (pPipeline->duplicate_shaders & stage) {
+    for (uint32_t stage = VK_SHADER_STAGE_VERTEX_BIT; stage & VK_SHADER_STAGE_ALL_GRAPHICS; stage <<= 1) {
+        if (pPipeline->active_shaders & stage) {
+            const auto &states = pPipeline->stage_state;
+            if (std::count_if(states.begin(), states.end(),
+                              [stage](const PipelineStageState &pss) { return stage == pss.stage_flag; }) > 1) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stage-00726",
                                  "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Multiple shaders provided for stage %s",
                                  pipelineIndex, string_VkShaderStageFlagBits(VkShaderStageFlagBits(stage)));

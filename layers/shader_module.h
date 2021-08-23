@@ -286,7 +286,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     std::string DescribeType(unsigned type) const;
 
     layer_data::unordered_set<uint32_t> MarkAccessibleIds(spirv_inst_iter entrypoint) const;
-    void ProcessExecutionModes(const spirv_inst_iter &entrypoint, PIPELINE_STATE *pipeline) const;
+    layer_data::optional<VkPrimitiveTopology> GetTopology(const spirv_inst_iter &entrypoint) const;
 
     const EntryPoint *FindEntrypointStruct(char const *name, VkShaderStageFlagBits stageBits) const;
     spirv_inst_iter FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
@@ -321,9 +321,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     void IsSpecificDescriptorType(const spirv_inst_iter &id_it, bool is_storage_buffer, bool is_check_writable,
                                   interface_var &out_interface_var, shader_module_used_operators &used_operators) const;
     std::vector<std::pair<DescriptorSlot, interface_var>> CollectInterfaceByDescriptorSlot(
-        layer_data::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor,
-        bool *has_atomic_descriptor) const;
-    layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const VkPipelineShaderStageCreateInfo &stage_info) const;
+        layer_data::unordered_set<uint32_t> const &accessible_ids) const;
+    layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const spirv_inst_iter &entrypoint) const;
     bool CollectInterfaceBlockMembers(std::map<location_t, interface_var> *out, bool is_array_of_verts, uint32_t id,
                                       uint32_t type_id, bool is_patch, int first_location) const;
     std::map<location_t, interface_var> CollectInterfaceByLocation(spirv_inst_iter entrypoint, spv::StorageClass sinterface,
