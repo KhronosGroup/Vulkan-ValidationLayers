@@ -4617,6 +4617,13 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                                  report_data->FormatHandle(queryPool).c_str(), dataSize);
             }
         }
+        if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR &&
+            (flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) == 0) {
+            skip |= LogError(queryPool, "VUID-vkGetQueryPoolResults-queryType-04810",
+                             "vkGetQueryPoolResults(): querypool %s was created with VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR "
+                             "queryType, but flags do not contain VK_QUERY_RESULT_WITH_STATUS_BIT_KHR bit.",
+                             report_data->FormatHandle(queryPool).c_str());
+        }
     }
 
     return skip;
