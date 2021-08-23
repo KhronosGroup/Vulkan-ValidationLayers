@@ -1469,7 +1469,7 @@ bool CoreChecks::ValidateAtomicsTypes(SHADER_MODULE_STATE const *src) const {
     bool skip = false;
 
     // "If sparseImageInt64Atomics is enabled, shaderImageInt64Atomics must be enabled"
-    const bool valid_image_64_int = enabled_features.shader_image_atomic_int64_feature.shaderImageInt64Atomics == VK_TRUE;
+    const bool valid_image_64_int = enabled_features.shader_image_atomic_int64_features.shaderImageInt64Atomics == VK_TRUE;
 
     for (auto &atomic_inst : src->atomic_inst) {
         const atomic_instruction &atomic = atomic_inst.second;
@@ -1851,11 +1851,11 @@ bool CoreChecks::ValidatePropertiesAndFeatures(SHADER_MODULE_STATE const *module
             auto scope_id = module->get_def(insn.word(3));
             auto scope_type = scope_id.word(3);
             // if scope isn't Subgroup or Device, spirv-val will catch
-            if ((scope_type == spv::ScopeSubgroup) && (enabled_features.shader_clock_feature.shaderSubgroupClock == VK_FALSE)) {
+            if ((scope_type == spv::ScopeSubgroup) && (enabled_features.shader_clock_features.shaderSubgroupClock == VK_FALSE)) {
                 skip |= LogError(device, "UNASSIGNED-spirv-shaderClock-shaderSubgroupClock",
                                  "%s: OpReadClockKHR is used with a Subgroup scope but shaderSubgroupClock was not enabled.",
                                  report_data->FormatHandle(module->vk_shader_module()).c_str());
-            } else if ((scope_type == spv::ScopeDevice) && (enabled_features.shader_clock_feature.shaderDeviceClock == VK_FALSE)) {
+            } else if ((scope_type == spv::ScopeDevice) && (enabled_features.shader_clock_features.shaderDeviceClock == VK_FALSE)) {
                 skip |= LogError(device, "UNASSIGNED-spirv-shaderClock-shaderDeviceClock",
                                  "%s: OpReadClockKHR is used with a Device scope but shaderDeviceClock was not enabled.",
                                  report_data->FormatHandle(module->vk_shader_module()).c_str());

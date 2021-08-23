@@ -4617,7 +4617,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
 
     if ((pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
         !enabled_features.core12.bufferDeviceAddressCaptureReplay &&
-        !enabled_features.buffer_device_address_ext.bufferDeviceAddressCaptureReplay) {
+        !enabled_features.buffer_device_address_ext_features.bufferDeviceAddressCaptureReplay) {
         skip |= LogError(
             device, "VUID-VkBufferCreateInfo-flags-03338",
             "vkCreateBuffer(): the bufferDeviceAddressCaptureReplay device feature is disabled: Buffers cannot be created with "
@@ -5724,7 +5724,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
         skip |= ValidateImageViewFormatFeatures(image_state, view_format, image_usage);
 
-        if (enabled_features.shading_rate_image.shadingRateImage) {
+        if (enabled_features.shading_rate_image_features.shadingRateImage) {
             if (image_usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV) {
                 if (view_format != VK_FORMAT_R8_UINT) {
                     skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-02087",
@@ -5734,7 +5734,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             }
         }
 
-        if (enabled_features.shading_rate_image.shadingRateImage ||
+        if (enabled_features.shading_rate_image_features.shadingRateImage ||
             enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
             if (image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) {
                 if (view_type != VK_IMAGE_VIEW_TYPE_2D && view_type != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
