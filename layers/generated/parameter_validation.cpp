@@ -4486,6 +4486,7 @@ bool StatelessValidation::PreCallValidateGetQueryPoolResults(
     skip |= validate_required_handle("vkGetQueryPoolResults", "queryPool", queryPool);
     skip |= validate_array("vkGetQueryPoolResults", "dataSize", "pData", dataSize, &pData, true, true, "VUID-vkGetQueryPoolResults-dataSize-arraylength", "VUID-vkGetQueryPoolResults-pData-parameter");
     skip |= validate_flags("vkGetQueryPoolResults", "flags", "VkQueryResultFlagBits", AllVkQueryResultFlagBits, flags, kOptionalFlags, "VUID-vkGetQueryPoolResults-flags-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags);
     return skip;
 }
 

@@ -7534,3 +7534,16 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkComm
 
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
+                                                                    uint32_t queryCount, size_t dataSize, void *pData,
+                                                                    VkDeviceSize stride, VkQueryResultFlags flags) const {
+    bool skip = false;
+
+    if ((flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) && (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
+        skip |= LogError(device, "VUID-vkGetQueryPoolResults-flags-04811",
+                         "vkGetQueryPoolResults(): flags include both VK_QUERY_RESULT_WITH_STATUS_BIT_KHR bit and VK_QUERY_RESULT_WITH_AVAILABILITY_BIT bit.");
+    }
+
+    return skip;
+}
