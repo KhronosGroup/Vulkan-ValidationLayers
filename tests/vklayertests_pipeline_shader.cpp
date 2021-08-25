@@ -11749,7 +11749,12 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
         return;
     }
     m_device_extension_names.push_back(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
+    sscf.subgroupSizeControl = VK_TRUE;
+
+    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sscf);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
     auto subgroup_properties = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
     auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_properties);
@@ -11765,6 +11770,39 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
     cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02754");
     cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, SubgroupSizeControlFeaturesNotEnabled) {
+    TEST_DESCRIPTION("Use subgroup size control features when they are not enabled");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+
+    VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
+    sscf.subgroupSizeControl = VK_FALSE;
+    sscf.computeFullSubgroups = VK_FALSE;
+
+    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sscf);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.LateBindPipelineInfo();
+    pipe.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-flags-02784");
+    pipe.CreateComputePipeline(true, false);
+    m_errorMonitor->VerifyFound();
+
+    pipe.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-flags-02785");
+    pipe.CreateComputePipeline(true, false);
     m_errorMonitor->VerifyFound();
 }
 
