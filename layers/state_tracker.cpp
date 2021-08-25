@@ -4634,10 +4634,10 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
         const uint32_t slot = use.first.set;
         pipeline->active_slots[slot][use.first.binding].is_writable |= use.second.is_writable;
         auto &reqs = pipeline->active_slots[slot][use.first.binding].reqs;
-        reqs = descriptor_req(reqs | module->DescriptorTypeToReqs(use.second.type_id));
-        if (use.second.is_atomic_operation) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION);
-        if (use.second.is_sampler_implicitLod_dref_proj) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ);
-        if (use.second.is_sampler_bias_offset) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET);
+        reqs |= module->DescriptorTypeToReqs(use.second.type_id);
+        if (use.second.is_atomic_operation) reqs |= DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION;
+        if (use.second.is_sampler_implicitLod_dref_proj) reqs |= DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ;
+        if (use.second.is_sampler_bias_offset) reqs |= DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET;
 
         pipeline->max_active_slot = std::max(pipeline->max_active_slot, slot);
         if (use.second.samplers_used_by_image.size()) {

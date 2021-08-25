@@ -47,7 +47,7 @@ struct SHADER_MODULE_STATE;
 // Flags describing requirements imposed by the pipeline on a descriptor. These
 // can't be checked at pipeline creation time as they depend on the Image or
 // ImageView bound.
-enum descriptor_req {
+enum DescriptorReqBits {
     DESCRIPTOR_REQ_VIEW_TYPE_1D = 1 << VK_IMAGE_VIEW_TYPE_1D,
     DESCRIPTOR_REQ_VIEW_TYPE_1D_ARRAY = 1 << VK_IMAGE_VIEW_TYPE_1D_ARRAY,
     DESCRIPTOR_REQ_VIEW_TYPE_2D = 1 << VK_IMAGE_VIEW_TYPE_2D,
@@ -70,17 +70,18 @@ enum descriptor_req {
     DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET = DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ << 1,
 
 };
+typedef uint32_t DescriptorReqFlags;
 
-extern unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt);
+extern DescriptorReqFlags DescriptorRequirementsBitsFromFormat(VkFormat fmt);
 
 struct DescriptorRequirement {
-    descriptor_req reqs;
+    DescriptorReqFlags reqs;
     bool is_writable;
     std::vector<std::map<SamplerUsedByImage, const cvdescriptorset::Descriptor *>>
         samplers_used_by_image;  // Copy from StageState.interface_var. It combines from plural shader stages.
                                  // The index of array is index of image.
 
-    DescriptorRequirement() : reqs(descriptor_req(0)), is_writable(false) {}
+    DescriptorRequirement() : reqs(0), is_writable(false) {}
 };
 
 inline bool operator==(const DescriptorRequirement &a, const DescriptorRequirement &b) NOEXCEPT { return a.reqs == b.reqs; }
