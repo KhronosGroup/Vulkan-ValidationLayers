@@ -4296,7 +4296,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceVideoFormatProp
                          "VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR, or VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR.");
     }
 
-    return false;
+    return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
