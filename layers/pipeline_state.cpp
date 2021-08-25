@@ -289,10 +289,10 @@ void LAST_BOUND_STATE::UpdateSamplerDescriptorsUsedByImage() {
         for (auto &req : slot.second) {
             for (auto &samplers : req.second.samplers_used_by_image) {
                 for (auto &sampler : samplers) {
-                    if (sampler.first.sampler_slot.first < per_set.size() &&
-                        per_set[sampler.first.sampler_slot.first].bound_descriptor_set) {
-                        sampler.second = per_set[sampler.first.sampler_slot.first].bound_descriptor_set->GetDescriptorFromBinding(
-                            sampler.first.sampler_slot.second, sampler.first.sampler_index);
+                    if (sampler.first.sampler_slot.set < per_set.size() &&
+                        per_set[sampler.first.sampler_slot.set].bound_descriptor_set) {
+                        sampler.second = per_set[sampler.first.sampler_slot.set].bound_descriptor_set->GetDescriptorFromBinding(
+                            sampler.first.sampler_slot.binding, sampler.first.sampler_index);
                     }
                 }
             }

@@ -175,7 +175,7 @@ struct interface_var {
 
 struct PipelineStageState {
     layer_data::unordered_set<uint32_t> accessible_ids;
-    std::vector<std::pair<descriptor_slot_t, interface_var>> descriptor_uses;
+    std::vector<std::pair<DescriptorSlot, interface_var>> descriptor_uses;
     bool has_writable_descriptor;
     bool has_atomic_descriptor;
     VkShaderStageFlagBits stage_flag;

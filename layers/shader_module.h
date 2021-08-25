@@ -288,7 +288,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // State tracking helpers for collecting interface information
     void IsSpecificDescriptorType(const spirv_inst_iter &id_it, bool is_storage_buffer, bool is_check_writable,
                                   interface_var &out_interface_var, shader_module_used_operators &used_operators) const;
-    std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
+    std::vector<std::pair<DescriptorSlot, interface_var>> CollectInterfaceByDescriptorSlot(
         layer_data::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor,
         bool *has_atomic_descriptor) const;
     layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const VkPipelineShaderStageCreateInfo &stage_info) const;
