@@ -16173,3 +16173,174 @@ bool CoreChecks::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice devic
     return skip;
 }
 #endif
+
+bool CoreChecks::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const char *vuid,
+                                                      const char *func_name) const {
+    bool skip = false;
+
+    const auto *pd_state = GetPhysicalDeviceState(physicalDevice);
+    if (pd_state) {
+        const auto *surface_state = GetSurfaceState(surface);
+        VkBool32 supported = VK_FALSE;
+        for (uint32_t i = 0; i < pd_state->queue_family_known_count; ++i) {
+            bool checked = false;
+            if (surface_state) {
+                const auto support_it = surface_state->gpu_queue_support.find({physical_device, i});
+                if (support_it == surface_state->gpu_queue_support.end()) {
+                    supported = support_it->second;
+                    checked = true;
+                }
+            }
+            if (!checked) {
+                DispatchGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &supported);
+            }
+            if (supported) {
+                break;
+            }
+        }
+        if (!supported) {
+            skip |= LogError(physicalDevice, vuid, "%s(): surface is not supported by the physicalDevice.", func_name);
+        }
+    }
+
+    return skip;
+}
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
+bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
+                                                                      const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                      VkDeviceGroupPresentModeFlagsKHR *pModes) const {
+    bool skip = false;
+
+    if (physical_device_count == 1) {
+        ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+        skip |= ValidatePhysicalDeviceSurfaceSupport(device_object->physical_device, pSurfaceInfo->surface,
+                                                     "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213",
+                                                     "vkGetDeviceGroupSurfacePresentModes2EXT");
+    } else {
+        for (uint32_t i = 0; i < physical_device_count; ++i) {
+            skip |= ValidatePhysicalDeviceSurfaceSupport(device_group_create_info.pPhysicalDevices[i], pSurfaceInfo->surface,
+                                                         "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213",
+                                                         "vkGetDeviceGroupSurfacePresentModes2EXT");
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
+                                                                         const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                         uint32_t *pPresentModeCount,
+                                                                         VkPresentModeKHR *pPresentModes) const {
+    bool skip = false;
+
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface,
+                                                 "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06210",
+                                                 "vkGetPhysicalDeviceSurfacePresentModes2EXT");
+
+    return skip;
+}
+
+#endif
+
+bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfaceKHR surface,
+                                                                     VkDeviceGroupPresentModeFlagsKHR *pModes) const {
+    bool skip = false;
+
+    if (physical_device_count == 1) {
+        ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+        skip |= ValidatePhysicalDeviceSurfaceSupport(device_object->physical_device, surface,
+                                                     "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212",
+                                                     "vkGetDeviceGroupSurfacePresentModesKHR");
+    } else {
+        for (uint32_t i = 0; i < physical_device_count; ++i) {
+            skip |= ValidatePhysicalDeviceSurfaceSupport(device_group_create_info.pPhysicalDevices[i], surface,
+                                                         "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212",
+                                                         "vkGetDeviceGroupSurfacePresentModesKHR");
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                      uint32_t *pRectCount, VkRect2D *pRects) const {
+    bool skip = false;
+
+    skip |=
+        ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface, "VUID-vkGetPhysicalDevicePresentRectanglesKHR-surface-06211",
+                                             "vkGetPhysicalDevicePresentRectanglesKHR");
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                         VkSurfaceCapabilities2EXT *pSurfaceCapabilities) const {
+    bool skip = false;
+
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface,
+                                                 "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-surface-02611",
+                                                 "vkGetPhysicalDeviceSurfaceCapabilities2EXT");
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                         const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                         VkSurfaceCapabilities2KHR *pSurfaceCapabilities) const {
+    bool skip = false;
+
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface,
+                                                 "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-06210",
+                                                 "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                        VkSurfaceCapabilitiesKHR *pSurfaceCapabilities) const {
+    bool skip = false;
+
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface,
+                                                 "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-surface-06211",
+                                                 "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                                    const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                    uint32_t *pSurfaceFormatCount,
+                                                                    VkSurfaceFormat2KHR *pSurfaceFormats) const {
+    bool skip = false;
+
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface,
+                                                 "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceInfo-06210",
+                                                 "vkGetPhysicalDeviceSurfaceFormats2KHR");
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                   uint32_t *pSurfaceFormatCount,
+                                                                   VkSurfaceFormatKHR *pSurfaceFormats) const {
+    bool skip = false;
+
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface, "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-06211",
+                                                 "vkGetPhysicalDeviceSurfaceFormatsKHR");
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                        uint32_t *pPresentModeCount,
+                                                                        VkPresentModeKHR *pPresentModes) const {
+    bool skip = false;
+
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface,
+                                                 "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-surface-06211",
+                                                 "vkGetPhysicalDeviceSurfacePresentModesKHR");
+
+    return skip;
+}

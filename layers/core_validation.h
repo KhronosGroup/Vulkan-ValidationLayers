@@ -1546,6 +1546,38 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) const override;
 #endif
 
+    bool ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const char* vuid,
+                                         const char* func_name) const;
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                              VkDeviceGroupPresentModeFlagsKHR* pModes) const override;
+    bool PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
+                                                                 const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                 uint32_t* pPresentModeCount,
+                                                                 VkPresentModeKHR* pPresentModes) const override;
+#endif
+    bool PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfaceKHR surface,
+                                                             VkDeviceGroupPresentModeFlagsKHR* pModes) const override;
+    bool PreCallValidateGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                              uint32_t* pRectCount, VkRect2D* pRects) const override;
+    bool PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                 VkSurfaceCapabilities2EXT* pSurfaceCapabilities) const override;
+    bool PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                 const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                 VkSurfaceCapabilities2KHR* pSurfaceCapabilities) const override;
+    bool PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                VkSurfaceCapabilitiesKHR* pSurfaceCapabilities) const override;
+    bool PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                            const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                            uint32_t* pSurfaceFormatCount,
+                                                            VkSurfaceFormat2KHR* pSurfaceFormats) const override;
+    bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                           uint32_t* pSurfaceFormatCount,
+                                                           VkSurfaceFormatKHR* pSurfaceFormats) const override;
+    bool PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                uint32_t* pPresentModeCount,
+                                                                VkPresentModeKHR* pPresentModes) const override;
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
         VkDevice device, const struct AHardwareBuffer* buffer,
