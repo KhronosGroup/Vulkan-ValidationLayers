@@ -785,7 +785,7 @@ void cvdescriptorset::DescriptorSet::Destroy() {
     BASE_NODE::Destroy();
 }
 
-static std::string StringDescriptorReqViewType(descriptor_req req) {
+static std::string StringDescriptorReqViewType(DescriptorReqFlags req) {
     std::string result("");
     for (unsigned i = 0; i <= VK_IMAGE_VIEW_TYPE_CUBE_ARRAY; i++) {
         if (req & (1 << i)) {
@@ -799,7 +799,7 @@ static std::string StringDescriptorReqViewType(descriptor_req req) {
     return result;
 }
 
-static char const *StringDescriptorReqComponentType(descriptor_req req) {
+static char const *StringDescriptorReqComponentType(DescriptorReqFlags req) {
     if (req & DESCRIPTOR_REQ_COMPONENT_TYPE_SINT) return "SINT";
     if (req & DESCRIPTOR_REQ_COMPONENT_TYPE_UINT) return "UINT";
     if (req & DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT) return "FLOAT";
