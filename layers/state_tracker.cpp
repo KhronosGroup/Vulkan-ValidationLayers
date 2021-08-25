@@ -1170,6 +1170,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         if (present_wait_features) {
             state_tracker->enabled_features.present_wait_features = *present_wait_features;
         }
+
+        const auto *ray_tracing_motion_blur_features =
+            LvlFindInChain<VkPhysicalDeviceRayTracingMotionBlurFeaturesNV>(pCreateInfo->pNext);
+        if (ray_tracing_motion_blur_features) {
+            state_tracker->enabled_features.ray_tracing_motion_blur_features = *ray_tracing_motion_blur_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
