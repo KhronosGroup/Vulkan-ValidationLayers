@@ -1423,6 +1423,28 @@ bool CoreChecks::ValidateShaderResolveQCOM(SHADER_MODULE_STATE const *src, VkPip
     return skip;
 }
 
+bool CoreChecks::ValidateShaderSubgroupSizeControl(VkPipelineShaderStageCreateInfo const *pStage) const {
+    bool skip = false;
+
+    if ((pStage->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0 &&
+        !enabled_features.subgroup_size_control_features.subgroupSizeControl) {
+        skip |= LogError(
+            device, "VUID-VkPipelineShaderStageCreateInfo-flags-02784",
+            "VkPipelineShaderStageCreateInfo flags contain VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT, "
+            "but the VkPhysicalDeviceSubgroupSizeControlFeaturesEXT::subgroupSizeControl feature is not enabled.");
+    }
+
+    if ((pStage->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0 &&
+        !enabled_features.subgroup_size_control_features.computeFullSubgroups) {
+        skip |= LogError(
+            device, "VUID-VkPipelineShaderStageCreateInfo-flags-02785",
+            "VkPipelineShaderStageCreateInfo flags contain VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but the "
+            "VkPhysicalDeviceSubgroupSizeControlFeaturesEXT::computeFullSubgroups feature is not enabled");
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateAtomicsTypes(SHADER_MODULE_STATE const *src) const {
     bool skip = false;
 
@@ -2286,6 +2308,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     if (IsExtEnabled(device_extensions.vk_qcom_render_pass_shader_resolve)) {
         skip |= ValidateShaderResolveQCOM(module, pStage, pipeline);
     }
+    if (IsExtEnabled(device_extensions.vk_ext_subgroup_size_control)) {
+        skip |= ValidateShaderSubgroupSizeControl(pStage);
+    }
 
     // "layout must be consistent with the layout of the * shader"
     // 'consistent' -> #descriptorsets-pipelinelayout-consistency
@@ -2368,6 +2393,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT) {
         skip |= ValidateComputeWorkGroupSizes(module, entrypoint, stage_state);
     }
+
     return skip;
 }
 
