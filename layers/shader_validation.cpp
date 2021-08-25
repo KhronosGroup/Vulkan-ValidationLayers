@@ -1959,12 +1959,12 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
 // For given pipelineLayout verify that the set_layout_node at slot.first
 //  has the requested binding at slot.second and return ptr to that binding
 static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_STATE const *pipelineLayout,
-                                                                descriptor_slot_t slot) {
+                                                                DescriptorSlot slot) {
     if (!pipelineLayout) return nullptr;
 
-    if (slot.first >= pipelineLayout->set_layouts.size()) return nullptr;
+    if (slot.set >= pipelineLayout->set_layouts.size()) return nullptr;
 
-    return pipelineLayout->set_layouts[slot.first]->GetDescriptorSetLayoutBindingPtrFromBinding(slot.second);
+    return pipelineLayout->set_layouts[slot.set]->GetDescriptorSetLayoutBindingPtrFromBinding(slot.binding);
 }
 
 // If PointList topology is specified in the pipeline, verify that a shader geometry stage writes PointSize
@@ -2276,21 +2276,21 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         if (!binding) {
             skip |= LogError(device, vuid_layout_mismatch,
                              "Shader uses descriptor slot %u.%u (expected `%s`) but not declared in pipeline layout",
-                             use.first.first, use.first.second, string_descriptorTypes(descriptor_types).c_str());
+                             use.first.set, use.first.binding, string_descriptorTypes(descriptor_types).c_str());
         } else if (~binding->stageFlags & pStage->stage) {
             skip |= LogError(device, vuid_layout_mismatch,
-                             "Shader uses descriptor slot %u.%u but descriptor not accessible from stage %s", use.first.first,
-                             use.first.second, string_VkShaderStageFlagBits(pStage->stage));
+                             "Shader uses descriptor slot %u.%u but descriptor not accessible from stage %s", use.first.set,
+                             use.first.binding, string_VkShaderStageFlagBits(pStage->stage));
         } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) &&
                    (descriptor_types.find(binding->descriptorType) == descriptor_types.end())) {
             skip |= LogError(device, vuid_layout_mismatch,
-                             "Type mismatch on descriptor slot %u.%u (expected `%s`) but descriptor of type %s", use.first.first,
-                             use.first.second, string_descriptorTypes(descriptor_types).c_str(),
+                             "Type mismatch on descriptor slot %u.%u (expected `%s`) but descriptor of type %s", use.first.set,
+                             use.first.binding, string_descriptorTypes(descriptor_types).c_str(),
                              string_VkDescriptorType(binding->descriptorType));
         } else if (binding->descriptorCount < required_descriptor_count) {
             skip |= LogError(device, vuid_layout_mismatch,
                              "Shader expects at least %u descriptors for binding %u.%u but only %u provided",
-                             required_descriptor_count, use.first.first, use.first.second, binding->descriptorCount);
+                             required_descriptor_count, use.first.set, use.first.binding, binding->descriptorCount);
         }
     }
 

@@ -1770,9 +1770,9 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
             continue;
         }
         for (const auto &set_binding : stage_state.descriptor_uses) {
-            cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.first].bound_descriptor_set;
+            cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.set].bound_descriptor_set;
             cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
-                                                                                  set_binding.first.second);
+                                                                                  set_binding.first.binding);
             const auto descriptor_type = binding_it.GetType();
             cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
             auto array_idx = 0;
@@ -1830,7 +1830,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->report_data->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
                                 string_VkDescriptorType(descriptor_type), string_VkImageLayout(image_layout),
-                                set_binding.first.second, index, FormatUsage(hazard).c_str());
+                                set_binding.first.binding, index, FormatUsage(hazard).c_str());
                         }
                         break;
                     }
@@ -1849,7 +1849,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->report_data->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
-                                string_VkDescriptorType(descriptor_type), set_binding.first.second, index,
+                                string_VkDescriptorType(descriptor_type), set_binding.first.binding, index,
                                 FormatUsage(hazard).c_str());
                         }
                         break;
@@ -1870,7 +1870,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->report_data->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
-                                string_VkDescriptorType(descriptor_type), set_binding.first.second, index,
+                                string_VkDescriptorType(descriptor_type), set_binding.first.binding, index,
                                 FormatUsage(hazard).c_str());
                         }
                         break;
@@ -1906,9 +1906,9 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
             continue;
         }
         for (const auto &set_binding : stage_state.descriptor_uses) {
-            cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.first].bound_descriptor_set;
+            cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.set].bound_descriptor_set;
             cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
-                                                                                  set_binding.first.second);
+                                                                                  set_binding.first.binding);
             const auto descriptor_type = binding_it.GetType();
             cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
             auto array_idx = 0;

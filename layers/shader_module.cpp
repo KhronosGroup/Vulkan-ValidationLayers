@@ -1411,7 +1411,7 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
                             out_interface_var.samplers_used_by_image.resize(image_index + 1);
                         }
                         out_interface_var.samplers_used_by_image[image_index].emplace(
-                            SamplerUsedByImage{descriptor_slot_t{sampler_dec.descriptor_set, sampler_dec.binding}, sampler_index});
+                            SamplerUsedByImage{DescriptorSlot{sampler_dec.descriptor_set, sampler_dec.binding}, sampler_index});
                     }
                 }
             }
@@ -1456,9 +1456,9 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
     }
 }
 
-std::vector<std::pair<descriptor_slot_t, interface_var>> SHADER_MODULE_STATE::CollectInterfaceByDescriptorSlot(
+std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::CollectInterfaceByDescriptorSlot(
     layer_data::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor, bool *has_atomic_descriptor) const {
-    std::vector<std::pair<descriptor_slot_t, interface_var>> out;
+    std::vector<std::pair<DescriptorSlot, interface_var>> out;
     shader_module_used_operators operators;
 
     for (auto id : accessible_ids) {
@@ -1480,7 +1480,7 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> SHADER_MODULE_STATE::Co
                                      !(d.flags & decoration_set::nonwritable_bit), v, operators);
             if (v.is_writable) *has_writable_descriptor = true;
             if (v.is_atomic_operation) *has_atomic_descriptor = true;
-            out.emplace_back(std::make_pair(set, binding), v);
+            out.emplace_back(DescriptorSlot(set, binding), v);
         }
     }
 

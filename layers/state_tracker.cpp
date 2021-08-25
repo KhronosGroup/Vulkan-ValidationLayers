@@ -4631,9 +4631,9 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
     // Capture descriptor uses for the pipeline
     for (const auto &use : stage_state->descriptor_uses) {
         // While validating shaders capture which slots are used by the pipeline
-        const uint32_t slot = use.first.first;
-        pipeline->active_slots[slot][use.first.second].is_writable |= use.second.is_writable;
-        auto &reqs = pipeline->active_slots[slot][use.first.second].reqs;
+        const uint32_t slot = use.first.set;
+        pipeline->active_slots[slot][use.first.binding].is_writable |= use.second.is_writable;
+        auto &reqs = pipeline->active_slots[slot][use.first.binding].reqs;
         reqs = descriptor_req(reqs | module->DescriptorTypeToReqs(use.second.type_id));
         if (use.second.is_atomic_operation) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION);
         if (use.second.is_sampler_implicitLod_dref_proj) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ);
@@ -4641,7 +4641,7 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
 
         pipeline->max_active_slot = std::max(pipeline->max_active_slot, slot);
         if (use.second.samplers_used_by_image.size()) {
-            auto &samplers_used_by_image = pipeline->active_slots[slot][use.first.second].samplers_used_by_image;
+            auto &samplers_used_by_image = pipeline->active_slots[slot][use.first.binding].samplers_used_by_image;
             if (use.second.samplers_used_by_image.size() > samplers_used_by_image.size()) {
                 samplers_used_by_image.resize(use.second.samplers_used_by_image.size());
             }
