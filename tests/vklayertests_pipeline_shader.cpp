@@ -11653,9 +11653,8 @@ TEST_F(VkLayerTest, ShaderAtomicInt64) {
         #extension GL_KHR_memory_scope_semantics : enable
         shared uint64_t x;
         layout(set = 0, binding = 0) buffer ssbo { uint64_t y; };
-        layout(set = 0, binding = 1) uniform ubo { uint64_t z; };
         void main() {
-           y = z + 1;
+           y = x + 1;
         }
     )glsl";
 
@@ -11666,7 +11665,6 @@ TEST_F(VkLayerTest, ShaderAtomicInt64) {
         #extension GL_KHR_memory_scope_semantics : enable
         shared uint64_t x;
         layout(set = 0, binding = 0) buffer ssbo { uint64_t y; };
-        layout(set = 0, binding = 1) uniform ubo { uint64_t z; };
         void main() {
     )glsl";
 
@@ -11680,15 +11678,7 @@ TEST_F(VkLayerTest, ShaderAtomicInt64) {
     // StorageBuffer storage class using AtomicStore
     // atomicStore is slightly different than other atomics, so good edge case
     std::string cs_store = cs_base + R"glsl(
-           atomicStore(y, z, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
-        }
-    )glsl";
-
-    // Uniform storage class
-    std::string cs_uniform = cs_base + R"glsl(
-           uint64_t a = atomicLoad(z, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
-           barrier();
-           y = a + 1;
+           atomicStore(y, 1ul, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
         }
     )glsl";
 
@@ -11706,8 +11696,7 @@ TEST_F(VkLayerTest, ShaderAtomicInt64) {
         // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
         helper.cs_.reset(new VkShaderObj(m_device, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr,
                                          SPV_ENV_VULKAN_1_1));
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
 
     current_shader = cs_positive.c_str();
@@ -11719,10 +11708,6 @@ TEST_F(VkLayerTest, ShaderAtomicInt64) {
         *this, set_info, kErrorBit,
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
     current_shader = cs_store.c_str();
-    CreateComputePipelineHelper::OneshotTest(
-        *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
-    current_shader = cs_uniform.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
