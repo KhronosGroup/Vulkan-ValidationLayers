@@ -3374,3 +3374,83 @@ TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, Sync2FeatureDisabled) {
+    TEST_DESCRIPTION("Call sync2 functions when the feature is disabled");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    } else {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    synchronization2.synchronization2 = VK_FALSE;  // Invalid
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&synchronization2);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    auto vkCmdPipelineBarrier2KHR =
+        (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
+    auto vkCmdResetEvent2KHR = (PFN_vkCmdResetEvent2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdResetEvent2KHR");
+    auto vkCmdSetEvent2KHR = (PFN_vkCmdSetEvent2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetEvent2KHR");
+    auto vkCmdWriteTimestamp2KHR =
+        (PFN_vkCmdWriteTimestamp2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteTimestamp2KHR");
+
+    bool timestamp = false;
+
+    uint32_t queue_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
+    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits > 0) {
+        timestamp = true;
+    }
+
+    m_commandBuffer->begin();
+
+    VkDependencyInfoKHR dependency_info = LvlInitStruct<VkDependencyInfoKHR>();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier2KHR-synchronization2-03848");
+    vkCmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    VkEventCreateInfo eci = LvlInitStruct<VkEventCreateInfo>();
+    vk_testing::Event event;
+    event.init(*m_device, eci);
+
+    VkPipelineStageFlagBits2KHR stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent2KHR-synchronization2-03829");
+    vkCmdResetEvent2KHR(m_commandBuffer->handle(), event.handle(), stage);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent2KHR-synchronization2-03824");
+    vkCmdSetEvent2KHR(m_commandBuffer->handle(), event.handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    if (timestamp) {
+        VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
+        qpci.queryType = VK_QUERY_TYPE_TIMESTAMP;
+        qpci.queryCount = 1;
+
+        vk_testing::QueryPool query_pool;
+        query_pool.init(*m_device, qpci);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2KHR-synchronization2-03858");
+        vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), stage, query_pool.handle(), 0);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_commandBuffer->end();
+}
