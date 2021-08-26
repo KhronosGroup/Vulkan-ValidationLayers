@@ -7657,6 +7657,10 @@ bool CoreChecks::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, V
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     bool skip = false;
+    if (!enabled_features.synchronization2_features.synchronization2) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetEvent2KHR-synchronization2-03824",
+                         "vkCmdSetEvent2KHR(): Synchronization2 feature is not enabled");
+    }
     skip |= ValidateCmd(cb_state, CMD_SETEVENT, func);
     Location loc(Func::vkCmdSetEvent2KHR, Field::pDependencyInfo);
     if (pDependencyInfo->dependencyFlags != 0) {
@@ -7690,6 +7694,10 @@ bool CoreChecks::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer,
     Location loc(Func::vkCmdResetEvent2KHR, Field::stageMask);
 
     bool skip = false;
+    if (!enabled_features.synchronization2_features.synchronization2) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdResetEvent2KHR-synchronization2-03829",
+                         "vkCmdResetEvent2KHR(): Synchronization2 feature is not enabled");
+    }
     skip |= ValidateCmd(cb_state, CMD_RESETEVENT, func);
     skip |= ValidatePipelineStage(objects, loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(loc, stageMask);
@@ -8261,6 +8269,10 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBu
     LogObjectList objects(commandBuffer);
 
     Location loc(Func::vkCmdPipelineBarrier2KHR, Field::pDependencyInfo);
+    if (!enabled_features.synchronization2_features.synchronization2) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier2KHR-synchronization2-03848",
+                         "vkCmdPipelineBarrier2KHR(): Synchronization2 feature is not enabled");
+    }
     skip |= ValidateCmd(cb_state, CMD_PIPELINEBARRIER, "vkCmdPipelineBarrier()");
     if (cb_state->activeRenderPass) {
         skip |= ValidateRenderPassPipelineBarriers(loc, cb_state, pDependencyInfo);
@@ -8878,6 +8890,10 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     bool skip = false;
+    if (!enabled_features.synchronization2_features.synchronization2) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdWriteTimestamp2KHR-synchronization2-03858",
+                         "vkCmdWriteTimestamp2KHR(): Synchronization2 feature is not enabled");
+    }
     skip |= ValidateCmd(cb_state, CMD_WRITETIMESTAMP, "vkCmdWriteTimestamp2KHR()");
 
     Location loc(Func::vkCmdWriteTimestamp2KHR, Field::stage);
