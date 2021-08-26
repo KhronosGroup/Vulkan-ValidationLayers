@@ -29,6 +29,7 @@
 #include "base_node.h"
 #include "sampler_state.h"
 #include "ray_tracing_state.h"
+#include "shader_module.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace cvdescriptorset {
@@ -141,37 +142,6 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
         }
         return dsl;
     }
-};
-
-// Shader typedefs needed to store StageStage below
-struct interface_var {
-    uint32_t id;
-    uint32_t type_id;
-    uint32_t offset;
-
-    std::vector<std::set<SamplerUsedByImage>> samplers_used_by_image;  // List of samplers that sample a given image.
-                                                                       // The index of array is index of image.
-
-    bool is_patch;
-    bool is_block_member;
-    bool is_relaxed_precision;
-    bool is_writable;
-    bool is_atomic_operation;
-    bool is_sampler_implicitLod_dref_proj;
-    bool is_sampler_bias_offset;
-    // TODO: collect the name, too? Isn't required to be present.
-
-    interface_var()
-        : id(0),
-          type_id(0),
-          offset(0),
-          is_patch(false),
-          is_block_member(false),
-          is_relaxed_precision(false),
-          is_writable(false),
-          is_atomic_operation(false),
-          is_sampler_implicitLod_dref_proj(false),
-          is_sampler_bias_offset(false) {}
 };
 
 struct PipelineStageState {

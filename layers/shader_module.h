@@ -26,9 +26,11 @@
 #include <vector>
 
 #include "base_node.h"
-#include "pipeline_state.h"
+#include "sampler_state.h"
 #include <spirv/unified1/spirv.hpp>
 #include "spirv-tools/optimizer.hpp"
+
+class PIPELINE_STATE;
 
 // A forward iterator over spirv instructions. Provides easy access to len, opcode, and content words
 // without the caller needing to care too much about the physical SPIRV module layout.
@@ -73,6 +75,36 @@ struct spirv_inst_iter {
     // The iterator and the value are the same thing.
     spirv_inst_iter &operator*() { return *this; }
     spirv_inst_iter const &operator*() const { return *this; }
+};
+
+struct interface_var {
+    uint32_t id;
+    uint32_t type_id;
+    uint32_t offset;
+
+    std::vector<std::set<SamplerUsedByImage>> samplers_used_by_image;  // List of samplers that sample a given image.
+                                                                       // The index of array is index of image.
+
+    bool is_patch;
+    bool is_block_member;
+    bool is_relaxed_precision;
+    bool is_writable;
+    bool is_atomic_operation;
+    bool is_sampler_implicitLod_dref_proj;
+    bool is_sampler_bias_offset;
+    // TODO: collect the name, too? Isn't required to be present.
+
+    interface_var()
+        : id(0),
+          type_id(0),
+          offset(0),
+          is_patch(false),
+          is_block_member(false),
+          is_relaxed_precision(false),
+          is_writable(false),
+          is_atomic_operation(false),
+          is_sampler_implicitLod_dref_proj(false),
+          is_sampler_bias_offset(false) {}
 };
 
 // Utils taking a spirv_inst_iter
