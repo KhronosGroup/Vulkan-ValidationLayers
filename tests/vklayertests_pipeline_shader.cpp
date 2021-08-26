@@ -484,6 +484,50 @@ TEST_F(VkLayerTest, InvalidTopology) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
 }
 
+TEST_F(VkLayerTest, PrimitiveTopologyListRestart) {
+    TEST_DESCRIPTION("Test VK_EXT_primitive_topology_list_restart");
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (version < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    auto ptl_restart_features = LvlInitStruct<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ptl_restart_features);
+    m_device_extension_names.push_back(VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME);
+    bool retval = InitFrameworkAndRetrieveFeatures(features2);
+    if (!retval) {
+        printf("%s Error initializing extensions or retrieving features, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!ptl_restart_features.primitiveTopologyListRestart) {
+        printf("%s primitive topology list restart feature is not available, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ptl_restart_features.primitiveTopologyListRestart = false;
+    ptl_restart_features.primitiveTopologyPatchListRestart = false;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkShaderObj vs(m_device, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    VkPrimitiveTopology topology;
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = topology;
+        helper.ia_ci_.primitiveRestartEnable = VK_TRUE;
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
+    };
+
+    topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
+    topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      std::vector<string>{"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
+                                                          "VUID-VkGraphicsPipelineCreateInfo-topology-00737"});
+}
+
 TEST_F(VkLayerTest, PointSizeGeomShaderFailure) {
     TEST_DESCRIPTION(
         "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, but not in the final geometry stage.");
