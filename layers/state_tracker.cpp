@@ -4915,7 +4915,22 @@ void ValidationStateTracker::PreCallRecordCmdSetVertexInputEXT(
     const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
     const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordStateCmd(CMD_SETVERTEXINPUTEXT, CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET | CBSTATUS_VERTEX_INPUT_SET);
+    CBStatusFlags status_flags = CBSTATUS_VERTEX_INPUT_SET;
+
+    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
+    if (pipeline_state) {
+        if (pipeline_state->graphicsPipelineCI.pDynamicState) {
+            for (uint32_t i = 0; i < pipeline_state->graphicsPipelineCI.pDynamicState->dynamicStateCount; ++i) {
+                if (pipeline_state->graphicsPipelineCI.pDynamicState->pDynamicStates[i] ==
+                    VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT) {
+                    status_flags |= CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET;
+                    break;
+                }
+            }
+        }
+    }
+    cb_state->RecordStateCmd(CMD_SETVERTEXINPUTEXT, status_flags);
 }
 
 void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAddressInfo *pInfo, VkDeviceAddress address) {
