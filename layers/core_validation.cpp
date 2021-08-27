@@ -633,7 +633,7 @@ std::string DynamicStateString(CBStatusFlags input_value) {
     while (input_value) {
         if (input_value & 1) {
             if (!ret.empty()) ret.append("|");
-            ret.append(string_VkDynamicState(ConvertToDynamicState(static_cast<CBStatusFlagBits>(1 << index))));
+            ret.append(string_VkDynamicState(ConvertToDynamicState(static_cast<CBStatusFlagBits>(1llu << index))));
         }
         ++index;
         input_value >>= 1;
@@ -1735,7 +1735,8 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
     }
 
-    if ((pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT) && !pPipeline->graphicsPipelineCI.pVertexInputState) {
+    if ((pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT) && !pPipeline->graphicsPipelineCI.pVertexInputState &&
+        !IsDynamic(pPipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
                          "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Missing pVertexInputState.", pipelineIndex);
     }
