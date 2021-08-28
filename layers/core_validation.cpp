@@ -16111,3 +16111,28 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
 
     return skip;
 }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+bool CoreChecks::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) const {
+    bool skip = false;
+
+    const auto swapchain_state = GetSwapchainState(swapchain);
+    if (swapchain_state) {
+        if (swapchain_state->retired) {
+            skip |= LogError(device, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02674",
+                             "vkAcquireFullScreenExclusiveModeEXT(): swapchain %s is retired.",
+                             report_data->FormatHandle(swapchain).c_str());
+        }
+        const auto *surface_full_screen_exclusive_info = LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(swapchain_state->createInfo.pNext);
+        if (!surface_full_screen_exclusive_info ||
+            surface_full_screen_exclusive_info->fullScreenExclusive != VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT) {
+            skip |= LogError(device, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02675",
+                "vkAcquireFullScreenExclusiveModeEXT(): swapchain %s was not created with VkSurfaceFullScreenExclusiveInfoEXT in "
+                "the pNext chain with fullScreenExclusive equal to VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT.",
+                report_data->FormatHandle(swapchain).c_str());
+        }
+    }
+
+    return skip;
+}
+#endif
