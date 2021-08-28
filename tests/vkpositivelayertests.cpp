@@ -15215,3 +15215,40 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXTStride) {
     m_commandBuffer->end();
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, TestFormatCompatibility) {
+    TEST_DESCRIPTION("Test format compatibility");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkFormat format = VK_FORMAT_R12X4G12X4_UNORM_2PACK16;
+
+    VkImageFormatListCreateInfo format_list = LvlInitStruct<VkImageFormatListCreateInfo>();
+    format_list.viewFormatCount = 1;
+    format_list.pViewFormats = &format;
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(&format_list);
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.flags = 0;
+
+    m_errorMonitor->ExpectSuccess();
+    VkImage image;
+    vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
+    m_errorMonitor->VerifyNotFound();
+}
