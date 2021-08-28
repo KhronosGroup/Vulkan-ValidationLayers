@@ -1541,6 +1541,9 @@ class CoreChecks : public ValidationStateTracker {
                                                   const VkBool32* pColorWriteEnables) const override;
     bool PreCallValidateCmdBeginConditionalRenderingEXT(
         VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin) const override;
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    bool PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) const override;
+#endif
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
