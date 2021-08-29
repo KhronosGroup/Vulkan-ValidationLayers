@@ -5640,6 +5640,13 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             }
         }
 
+        if (image_state->createInfo.samples != VK_SAMPLE_COUNT_1_BIT && view_type != VK_IMAGE_VIEW_TYPE_2D &&
+            view_type != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04972",
+                             "vkCreateImageView(): image was created with sample count %s, but pCreateInfo->viewType is %s.",
+                             string_VkSampleCountFlagBits(image_state->createInfo.samples), string_VkImageViewType(view_type));
+        }
+
         // Validate correct image aspect bits for desired formats and format consistency
         skip |= ValidateImageAspectMask(image_state->image(), image_format, aspect_mask, "vkCreateImageView()");
 
