@@ -842,6 +842,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     }
 
     // Verify that any MSAA request in PSO matches sample# in bound FB
+    // Verify that blend is enabled only if supported by subpasses image views format features
     // Skip the check if rasterization is disabled.
     if (!pPipeline->graphicsPipelineCI.pRasterizationState ||
         (pPipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable == VK_FALSE)) {
@@ -856,6 +857,18 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 const auto attachment = subpass_desc->pColorAttachments[i].attachment;
                 if (attachment != VK_ATTACHMENT_UNUSED) {
                     subpass_num_samples |= static_cast<unsigned>(render_pass_info->pAttachments[attachment].samples);
+
+                    const auto *imageview_state = pCB->GetActiveAttachmentImageViewState(attachment);
+                    if (imageview_state != nullptr) {
+                        if ((imageview_state->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0 &&
+                            pPipeline->graphicsPipelineCI.pColorBlendState->pAttachments[attachment].blendEnable != VK_FALSE) {
+                            skip |= LogError(pPipeline->pipeline(), vuid.blend_enable,
+                                             "%s: Image view's format features of the color attachment (%" PRIu32
+                                             ") of the active subpass do not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT "
+                                             "bit, but active pipeline's pAttachments[%" PRIu32 "].blendEnable is not VK_FALSE.",
+                                             caller, attachment, attachment);
+                        }
+                    }
                 }
             }
 
@@ -1198,6 +1211,35 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     return result;
 }
 
+bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE *pPipeline) const {
+    bool skip = false;
+
+    if (pPipeline->graphicsPipelineCI.pColorBlendState) {
+        const auto *subpass_desc = &pPipeline->rp_state->createInfo.pSubpasses[pPipeline->graphicsPipelineCI.subpass];
+
+        for (uint32_t i = 0; i < pPipeline->attachments.size() && i < subpass_desc->colorAttachmentCount; ++i) {
+            const auto attachment = subpass_desc->pColorAttachments[i].attachment;
+            if (attachment == VK_ATTACHMENT_UNUSED) continue;
+
+            const auto attachment_desc = pPipeline->rp_state->createInfo.pAttachments[attachment];
+            const VkFormatFeatureFlags format_features = GetPotentialFormatFeatures(attachment_desc.format);
+
+            if (pPipeline->graphicsPipelineCI.pRasterizationState &&
+                !pPipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable &&
+                pPipeline->attachments[i].blendEnable && !(format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
+                skip |=
+                    LogError(device, "VUID-VkGraphicsPipelineCreateInfo-blendEnable-04717",
+                             "vkCreateGraphicsPipelines(): pipeline.pColorBlendState.pAttachments[%" PRIu32
+                             "].blendEnable is VK_TRUE but format %s of the corresponding attachment description (subpass %" PRIu32
+                             ", attachment %" PRIu32 ") does not support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.",
+                             i, string_VkFormat(attachment_desc.format), pPipeline->graphicsPipelineCI.subpass, attachment);
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STATE>> const &pPipelines, int pipelineIndex) const {
     bool skip = false;
 
@@ -1453,6 +1495,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
     if (ValidateGraphicsPipelineShaderState(pPipeline)) {
         skip = true;
     }
+    skip |= ValidateGraphicsPipelineBlendEnable(pPipeline);
     // Each shader's stage must be unique
     if (pPipeline->duplicate_shaders) {
         for (uint32_t stage = VK_SHADER_STAGE_VERTEX_BIT; stage & VK_SHADER_STAGE_ALL_GRAPHICS; stage <<= 1) {
@@ -6300,35 +6343,6 @@ static const char *GetPipelineTypeName(VkPipelineBindPoint pipelineBindPoint) {
 
 bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_state, const PIPELINE_STATE *pipeline_state) const {
     bool skip = false;
-    const FRAMEBUFFER_STATE *fb_state = cb_state->activeFramebuffer.get();
-
-    if (fb_state) {
-        auto subpass_desc = &pipeline_state->rp_state->createInfo.pSubpasses[pipeline_state->graphicsPipelineCI.subpass];
-
-        for (size_t i = 0; i < pipeline_state->attachments.size() && i < subpass_desc->colorAttachmentCount; i++) {
-            const auto attachment = subpass_desc->pColorAttachments[i].attachment;
-            if (attachment == VK_ATTACHMENT_UNUSED) continue;
-
-            const auto *imageview_state = cb_state->GetActiveAttachmentImageViewState(attachment);
-            if (!imageview_state) continue;
-
-            const IMAGE_STATE *image_state = GetImageState(imageview_state->create_info.image);
-            if (!image_state) continue;
-
-            const VkFormat format = pipeline_state->rp_state->createInfo.pAttachments[attachment].format;
-            const VkFormatFeatureFlags format_features = GetPotentialFormatFeatures(format);
-
-            if (pipeline_state->graphicsPipelineCI.pRasterizationState &&
-                !pipeline_state->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable &&
-                pipeline_state->attachments[i].blendEnable && !(format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-blendEnable-04717",
-                                 "vkCreateGraphicsPipelines(): pipeline.pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
-                                 "].blendEnable is VK_TRUE but format %s associated with this attached image (%s) does "
-                                 "not support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.",
-                                 i, report_data->FormatHandle(image_state->image()).c_str(), string_VkFormat(format));
-            }
-        }
-    }
 
     if (cb_state->inheritedViewportDepths.size() != 0) {
         bool dyn_viewport = IsDynamic(pipeline_state, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT)

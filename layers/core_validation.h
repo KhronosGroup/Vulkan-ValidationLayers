@@ -83,6 +83,7 @@ struct DrawDispatchVuid {
     const char* primitive_restart_enable = kVUIDUndefined;
     const char* vertex_input_binding_stride = kVUIDUndefined;
     const char* vertex_input = kVUIDUndefined;
+    const char* blend_enable = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
@@ -513,6 +514,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE* pPipeline) const;
     bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE* pPipeline, const CMD_BUFFER_STATE* pCB,
                                                     const char* caller, const DrawDispatchVuid& vuid) const;
+    bool ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE* pPipeline) const;
     void RecordGraphicsPipelineShaderDynamicState(PIPELINE_STATE *pipeline);
     bool ValidateComputePipelineShaderState(PIPELINE_STATE* pPipeline) const;
     uint32_t CalcShaderStageCount(const PIPELINE_STATE* pipeline, VkShaderStageFlagBits stageBit) const;
