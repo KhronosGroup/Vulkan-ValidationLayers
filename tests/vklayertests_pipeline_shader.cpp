@@ -347,35 +347,8 @@ TEST_F(VkLayerTest, BlendingOnFormatWithoutBlendingSupport) {
     pipeline.AddColorAttachment(0, att_state);
     pipeline.CreateVKPipeline(descriptorSet.GetPipelineLayout(), rp);
 
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, non_blending_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    VkImageView imageView = image.targetView(non_blending_format);
-
-    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &imageView, 32, 32, 1};
-    VkFramebuffer fb;
-    vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &fb);
-
-    VkRenderPassBeginInfo rpbi = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                                  nullptr,
-                                  rp,
-                                  fb,
-                                  {{
-                                       0,
-                                       0,
-                                   },
-                                   {32, 32}},
-                                  0,
-                                  nullptr};
-
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(rpbi);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
-
     m_errorMonitor->VerifyFound();
     vk::DestroyRenderPass(m_device->device(), rp, NULL);
-    vk::DestroyFramebuffer(m_device->device(), fb, NULL);
 }
 
 // Is the Pipeline compatible with the expectations of the Renderpass/subpasses?
