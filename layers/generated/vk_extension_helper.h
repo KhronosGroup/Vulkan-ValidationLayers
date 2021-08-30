@@ -410,6 +410,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_pipeline_creation_cache_control{kNotEnabled};
     ExtEnabled vk_ext_pipeline_creation_feedback{kNotEnabled};
     ExtEnabled vk_ext_post_depth_coverage{kNotEnabled};
+    ExtEnabled vk_ext_primitive_topology_list_restart{kNotEnabled};
     ExtEnabled vk_ext_private_data{kNotEnabled};
     ExtEnabled vk_ext_provoking_vertex{kNotEnabled};
     ExtEnabled vk_ext_queue_family_foreign{kNotEnabled};
@@ -503,6 +504,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_shader_draw_parameters{kNotEnabled};
     ExtEnabled vk_khr_shader_float16_int8{kNotEnabled};
     ExtEnabled vk_khr_shader_float_controls{kNotEnabled};
+    ExtEnabled vk_khr_shader_integer_dot_product{kNotEnabled};
     ExtEnabled vk_khr_shader_non_semantic_info{kNotEnabled};
     ExtEnabled vk_khr_shader_subgroup_extended_types{kNotEnabled};
     ExtEnabled vk_khr_shader_subgroup_uniform_control_flow{kNotEnabled};
@@ -702,6 +704,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_cache_control, {})},
             {VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_feedback, {})},
             {VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_post_depth_coverage, {})},
+            {VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_primitive_topology_list_restart, {})},
             {VK_EXT_PRIVATE_DATA_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_private_data, {})},
             {VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_provoking_vertex, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -902,6 +905,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_float16_int8, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_float_controls, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_integer_dot_product, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_non_semantic_info, {})},
             {VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_extended_types, {{
@@ -1210,6 +1215,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME,
     VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME,
     VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME,
+    VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME,
     VK_EXT_PRIVATE_DATA_EXTENSION_NAME,
     VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME,
     VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME,
@@ -1323,6 +1329,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
     VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME,
     VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+    VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME,
     VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
     VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME,
     VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME,

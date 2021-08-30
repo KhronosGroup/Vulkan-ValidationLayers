@@ -20958,6 +20958,257 @@ void safe_VkPipelineExecutableInternalRepresentationKHR::initialize(const safe_V
     }
 }
 
+safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR(const VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    shaderIntegerDotProduct(in_struct->shaderIntegerDotProduct)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR(const safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    shaderIntegerDotProduct = copy_src.shaderIntegerDotProduct;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR& safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::operator=(const safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderIntegerDotProduct = copy_src.shaderIntegerDotProduct;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::~safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::initialize(const VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    shaderIntegerDotProduct = in_struct->shaderIntegerDotProduct;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::initialize(const safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    shaderIntegerDotProduct = copy_src->shaderIntegerDotProduct;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR::safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR(const VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR* in_struct) :
+    sType(in_struct->sType),
+    integerDotProduct8BitUnsignedAccelerated(in_struct->integerDotProduct8BitUnsignedAccelerated),
+    integerDotProduct8BitSignedAccelerated(in_struct->integerDotProduct8BitSignedAccelerated),
+    integerDotProduct8BitMixedSignednessAccelerated(in_struct->integerDotProduct8BitMixedSignednessAccelerated),
+    integerDotProduct4x8BitPackedUnsignedAccelerated(in_struct->integerDotProduct4x8BitPackedUnsignedAccelerated),
+    integerDotProduct4x8BitPackedSignedAccelerated(in_struct->integerDotProduct4x8BitPackedSignedAccelerated),
+    integerDotProduct4x8BitPackedMixedSignednessAccelerated(in_struct->integerDotProduct4x8BitPackedMixedSignednessAccelerated),
+    integerDotProduct16BitUnsignedAccelerated(in_struct->integerDotProduct16BitUnsignedAccelerated),
+    integerDotProduct16BitSignedAccelerated(in_struct->integerDotProduct16BitSignedAccelerated),
+    integerDotProduct16BitMixedSignednessAccelerated(in_struct->integerDotProduct16BitMixedSignednessAccelerated),
+    integerDotProduct32BitUnsignedAccelerated(in_struct->integerDotProduct32BitUnsignedAccelerated),
+    integerDotProduct32BitSignedAccelerated(in_struct->integerDotProduct32BitSignedAccelerated),
+    integerDotProduct32BitMixedSignednessAccelerated(in_struct->integerDotProduct32BitMixedSignednessAccelerated),
+    integerDotProduct64BitUnsignedAccelerated(in_struct->integerDotProduct64BitUnsignedAccelerated),
+    integerDotProduct64BitSignedAccelerated(in_struct->integerDotProduct64BitSignedAccelerated),
+    integerDotProduct64BitMixedSignednessAccelerated(in_struct->integerDotProduct64BitMixedSignednessAccelerated),
+    integerDotProductAccumulatingSaturating8BitUnsignedAccelerated(in_struct->integerDotProductAccumulatingSaturating8BitUnsignedAccelerated),
+    integerDotProductAccumulatingSaturating8BitSignedAccelerated(in_struct->integerDotProductAccumulatingSaturating8BitSignedAccelerated),
+    integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated(in_struct->integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated),
+    integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated(in_struct->integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated),
+    integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated(in_struct->integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated),
+    integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated(in_struct->integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated),
+    integerDotProductAccumulatingSaturating16BitUnsignedAccelerated(in_struct->integerDotProductAccumulatingSaturating16BitUnsignedAccelerated),
+    integerDotProductAccumulatingSaturating16BitSignedAccelerated(in_struct->integerDotProductAccumulatingSaturating16BitSignedAccelerated),
+    integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated(in_struct->integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated),
+    integerDotProductAccumulatingSaturating32BitUnsignedAccelerated(in_struct->integerDotProductAccumulatingSaturating32BitUnsignedAccelerated),
+    integerDotProductAccumulatingSaturating32BitSignedAccelerated(in_struct->integerDotProductAccumulatingSaturating32BitSignedAccelerated),
+    integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated(in_struct->integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated),
+    integerDotProductAccumulatingSaturating64BitUnsignedAccelerated(in_struct->integerDotProductAccumulatingSaturating64BitUnsignedAccelerated),
+    integerDotProductAccumulatingSaturating64BitSignedAccelerated(in_struct->integerDotProductAccumulatingSaturating64BitSignedAccelerated),
+    integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated(in_struct->integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR::safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR::safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR(const safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    integerDotProduct8BitUnsignedAccelerated = copy_src.integerDotProduct8BitUnsignedAccelerated;
+    integerDotProduct8BitSignedAccelerated = copy_src.integerDotProduct8BitSignedAccelerated;
+    integerDotProduct8BitMixedSignednessAccelerated = copy_src.integerDotProduct8BitMixedSignednessAccelerated;
+    integerDotProduct4x8BitPackedUnsignedAccelerated = copy_src.integerDotProduct4x8BitPackedUnsignedAccelerated;
+    integerDotProduct4x8BitPackedSignedAccelerated = copy_src.integerDotProduct4x8BitPackedSignedAccelerated;
+    integerDotProduct4x8BitPackedMixedSignednessAccelerated = copy_src.integerDotProduct4x8BitPackedMixedSignednessAccelerated;
+    integerDotProduct16BitUnsignedAccelerated = copy_src.integerDotProduct16BitUnsignedAccelerated;
+    integerDotProduct16BitSignedAccelerated = copy_src.integerDotProduct16BitSignedAccelerated;
+    integerDotProduct16BitMixedSignednessAccelerated = copy_src.integerDotProduct16BitMixedSignednessAccelerated;
+    integerDotProduct32BitUnsignedAccelerated = copy_src.integerDotProduct32BitUnsignedAccelerated;
+    integerDotProduct32BitSignedAccelerated = copy_src.integerDotProduct32BitSignedAccelerated;
+    integerDotProduct32BitMixedSignednessAccelerated = copy_src.integerDotProduct32BitMixedSignednessAccelerated;
+    integerDotProduct64BitUnsignedAccelerated = copy_src.integerDotProduct64BitUnsignedAccelerated;
+    integerDotProduct64BitSignedAccelerated = copy_src.integerDotProduct64BitSignedAccelerated;
+    integerDotProduct64BitMixedSignednessAccelerated = copy_src.integerDotProduct64BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating8BitUnsignedAccelerated = copy_src.integerDotProductAccumulatingSaturating8BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating8BitSignedAccelerated = copy_src.integerDotProductAccumulatingSaturating8BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated = copy_src.integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated = copy_src.integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated = copy_src.integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated;
+    integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated = copy_src.integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating16BitUnsignedAccelerated = copy_src.integerDotProductAccumulatingSaturating16BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating16BitSignedAccelerated = copy_src.integerDotProductAccumulatingSaturating16BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated = copy_src.integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating32BitUnsignedAccelerated = copy_src.integerDotProductAccumulatingSaturating32BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating32BitSignedAccelerated = copy_src.integerDotProductAccumulatingSaturating32BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated = copy_src.integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating64BitUnsignedAccelerated = copy_src.integerDotProductAccumulatingSaturating64BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating64BitSignedAccelerated = copy_src.integerDotProductAccumulatingSaturating64BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated = copy_src.integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR& safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR::operator=(const safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    integerDotProduct8BitUnsignedAccelerated = copy_src.integerDotProduct8BitUnsignedAccelerated;
+    integerDotProduct8BitSignedAccelerated = copy_src.integerDotProduct8BitSignedAccelerated;
+    integerDotProduct8BitMixedSignednessAccelerated = copy_src.integerDotProduct8BitMixedSignednessAccelerated;
+    integerDotProduct4x8BitPackedUnsignedAccelerated = copy_src.integerDotProduct4x8BitPackedUnsignedAccelerated;
+    integerDotProduct4x8BitPackedSignedAccelerated = copy_src.integerDotProduct4x8BitPackedSignedAccelerated;
+    integerDotProduct4x8BitPackedMixedSignednessAccelerated = copy_src.integerDotProduct4x8BitPackedMixedSignednessAccelerated;
+    integerDotProduct16BitUnsignedAccelerated = copy_src.integerDotProduct16BitUnsignedAccelerated;
+    integerDotProduct16BitSignedAccelerated = copy_src.integerDotProduct16BitSignedAccelerated;
+    integerDotProduct16BitMixedSignednessAccelerated = copy_src.integerDotProduct16BitMixedSignednessAccelerated;
+    integerDotProduct32BitUnsignedAccelerated = copy_src.integerDotProduct32BitUnsignedAccelerated;
+    integerDotProduct32BitSignedAccelerated = copy_src.integerDotProduct32BitSignedAccelerated;
+    integerDotProduct32BitMixedSignednessAccelerated = copy_src.integerDotProduct32BitMixedSignednessAccelerated;
+    integerDotProduct64BitUnsignedAccelerated = copy_src.integerDotProduct64BitUnsignedAccelerated;
+    integerDotProduct64BitSignedAccelerated = copy_src.integerDotProduct64BitSignedAccelerated;
+    integerDotProduct64BitMixedSignednessAccelerated = copy_src.integerDotProduct64BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating8BitUnsignedAccelerated = copy_src.integerDotProductAccumulatingSaturating8BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating8BitSignedAccelerated = copy_src.integerDotProductAccumulatingSaturating8BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated = copy_src.integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated = copy_src.integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated = copy_src.integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated;
+    integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated = copy_src.integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating16BitUnsignedAccelerated = copy_src.integerDotProductAccumulatingSaturating16BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating16BitSignedAccelerated = copy_src.integerDotProductAccumulatingSaturating16BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated = copy_src.integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating32BitUnsignedAccelerated = copy_src.integerDotProductAccumulatingSaturating32BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating32BitSignedAccelerated = copy_src.integerDotProductAccumulatingSaturating32BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated = copy_src.integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating64BitUnsignedAccelerated = copy_src.integerDotProductAccumulatingSaturating64BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating64BitSignedAccelerated = copy_src.integerDotProductAccumulatingSaturating64BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated = copy_src.integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR::~safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR::initialize(const VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    integerDotProduct8BitUnsignedAccelerated = in_struct->integerDotProduct8BitUnsignedAccelerated;
+    integerDotProduct8BitSignedAccelerated = in_struct->integerDotProduct8BitSignedAccelerated;
+    integerDotProduct8BitMixedSignednessAccelerated = in_struct->integerDotProduct8BitMixedSignednessAccelerated;
+    integerDotProduct4x8BitPackedUnsignedAccelerated = in_struct->integerDotProduct4x8BitPackedUnsignedAccelerated;
+    integerDotProduct4x8BitPackedSignedAccelerated = in_struct->integerDotProduct4x8BitPackedSignedAccelerated;
+    integerDotProduct4x8BitPackedMixedSignednessAccelerated = in_struct->integerDotProduct4x8BitPackedMixedSignednessAccelerated;
+    integerDotProduct16BitUnsignedAccelerated = in_struct->integerDotProduct16BitUnsignedAccelerated;
+    integerDotProduct16BitSignedAccelerated = in_struct->integerDotProduct16BitSignedAccelerated;
+    integerDotProduct16BitMixedSignednessAccelerated = in_struct->integerDotProduct16BitMixedSignednessAccelerated;
+    integerDotProduct32BitUnsignedAccelerated = in_struct->integerDotProduct32BitUnsignedAccelerated;
+    integerDotProduct32BitSignedAccelerated = in_struct->integerDotProduct32BitSignedAccelerated;
+    integerDotProduct32BitMixedSignednessAccelerated = in_struct->integerDotProduct32BitMixedSignednessAccelerated;
+    integerDotProduct64BitUnsignedAccelerated = in_struct->integerDotProduct64BitUnsignedAccelerated;
+    integerDotProduct64BitSignedAccelerated = in_struct->integerDotProduct64BitSignedAccelerated;
+    integerDotProduct64BitMixedSignednessAccelerated = in_struct->integerDotProduct64BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating8BitUnsignedAccelerated = in_struct->integerDotProductAccumulatingSaturating8BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating8BitSignedAccelerated = in_struct->integerDotProductAccumulatingSaturating8BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated = in_struct->integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated = in_struct->integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated = in_struct->integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated;
+    integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated = in_struct->integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating16BitUnsignedAccelerated = in_struct->integerDotProductAccumulatingSaturating16BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating16BitSignedAccelerated = in_struct->integerDotProductAccumulatingSaturating16BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated = in_struct->integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating32BitUnsignedAccelerated = in_struct->integerDotProductAccumulatingSaturating32BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating32BitSignedAccelerated = in_struct->integerDotProductAccumulatingSaturating32BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated = in_struct->integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating64BitUnsignedAccelerated = in_struct->integerDotProductAccumulatingSaturating64BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating64BitSignedAccelerated = in_struct->integerDotProductAccumulatingSaturating64BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated = in_struct->integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR::initialize(const safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    integerDotProduct8BitUnsignedAccelerated = copy_src->integerDotProduct8BitUnsignedAccelerated;
+    integerDotProduct8BitSignedAccelerated = copy_src->integerDotProduct8BitSignedAccelerated;
+    integerDotProduct8BitMixedSignednessAccelerated = copy_src->integerDotProduct8BitMixedSignednessAccelerated;
+    integerDotProduct4x8BitPackedUnsignedAccelerated = copy_src->integerDotProduct4x8BitPackedUnsignedAccelerated;
+    integerDotProduct4x8BitPackedSignedAccelerated = copy_src->integerDotProduct4x8BitPackedSignedAccelerated;
+    integerDotProduct4x8BitPackedMixedSignednessAccelerated = copy_src->integerDotProduct4x8BitPackedMixedSignednessAccelerated;
+    integerDotProduct16BitUnsignedAccelerated = copy_src->integerDotProduct16BitUnsignedAccelerated;
+    integerDotProduct16BitSignedAccelerated = copy_src->integerDotProduct16BitSignedAccelerated;
+    integerDotProduct16BitMixedSignednessAccelerated = copy_src->integerDotProduct16BitMixedSignednessAccelerated;
+    integerDotProduct32BitUnsignedAccelerated = copy_src->integerDotProduct32BitUnsignedAccelerated;
+    integerDotProduct32BitSignedAccelerated = copy_src->integerDotProduct32BitSignedAccelerated;
+    integerDotProduct32BitMixedSignednessAccelerated = copy_src->integerDotProduct32BitMixedSignednessAccelerated;
+    integerDotProduct64BitUnsignedAccelerated = copy_src->integerDotProduct64BitUnsignedAccelerated;
+    integerDotProduct64BitSignedAccelerated = copy_src->integerDotProduct64BitSignedAccelerated;
+    integerDotProduct64BitMixedSignednessAccelerated = copy_src->integerDotProduct64BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating8BitUnsignedAccelerated = copy_src->integerDotProductAccumulatingSaturating8BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating8BitSignedAccelerated = copy_src->integerDotProductAccumulatingSaturating8BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated = copy_src->integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated = copy_src->integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated = copy_src->integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated;
+    integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated = copy_src->integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating16BitUnsignedAccelerated = copy_src->integerDotProductAccumulatingSaturating16BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating16BitSignedAccelerated = copy_src->integerDotProductAccumulatingSaturating16BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated = copy_src->integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating32BitUnsignedAccelerated = copy_src->integerDotProductAccumulatingSaturating32BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating32BitSignedAccelerated = copy_src->integerDotProductAccumulatingSaturating32BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated = copy_src->integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated;
+    integerDotProductAccumulatingSaturating64BitUnsignedAccelerated = copy_src->integerDotProductAccumulatingSaturating64BitUnsignedAccelerated;
+    integerDotProductAccumulatingSaturating64BitSignedAccelerated = copy_src->integerDotProductAccumulatingSaturating64BitSignedAccelerated;
+    integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated = copy_src->integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPipelineLibraryCreateInfoKHR::safe_VkPipelineLibraryCreateInfoKHR(const VkPipelineLibraryCreateInfoKHR* in_struct) :
     sType(in_struct->sType),
     libraryCount(in_struct->libraryCount),
@@ -41478,6 +41729,64 @@ void safe_VkPhysicalDeviceDrmPropertiesEXT::initialize(const safe_VkPhysicalDevi
     renderMinor = copy_src->renderMinor;
     pNext = SafePnextCopy(copy_src->pNext);
 }
+
+safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT::safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT(const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    primitiveTopologyListRestart(in_struct->primitiveTopologyListRestart),
+    primitiveTopologyPatchListRestart(in_struct->primitiveTopologyPatchListRestart)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT::safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT::safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT(const safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    primitiveTopologyListRestart = copy_src.primitiveTopologyListRestart;
+    primitiveTopologyPatchListRestart = copy_src.primitiveTopologyPatchListRestart;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT& safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT::operator=(const safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    primitiveTopologyListRestart = copy_src.primitiveTopologyListRestart;
+    primitiveTopologyPatchListRestart = copy_src.primitiveTopologyPatchListRestart;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT::~safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT::initialize(const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    primitiveTopologyListRestart = in_struct->primitiveTopologyListRestart;
+    primitiveTopologyPatchListRestart = in_struct->primitiveTopologyPatchListRestart;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT::initialize(const safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    primitiveTopologyListRestart = copy_src->primitiveTopologyListRestart;
+    primitiveTopologyPatchListRestart = copy_src->primitiveTopologyPatchListRestart;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
 
@@ -44749,6 +45058,12 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR(reinterpret_cast<const VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR(reinterpret_cast<const VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PRESENT_ID_KHR:
             safe_pNext = new safe_VkPresentIdKHR(reinterpret_cast<const VkPresentIdKHR *>(pNext));
             break;
@@ -45231,6 +45546,9 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceDrmPropertiesEXT(reinterpret_cast<const VkPhysicalDeviceDrmPropertiesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI:
             safe_pNext = new safe_VkSubpassShadingPipelineCreateInfoHUAWEI(reinterpret_cast<const VkSubpassShadingPipelineCreateInfoHUAWEI *>(pNext));
@@ -45769,6 +46087,12 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PRESENT_ID_KHR:
             delete reinterpret_cast<const safe_VkPresentIdKHR *>(header);
             break;
@@ -46251,6 +46575,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceDrmPropertiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI:
             delete reinterpret_cast<const safe_VkSubpassShadingPipelineCreateInfoHUAWEI *>(header);

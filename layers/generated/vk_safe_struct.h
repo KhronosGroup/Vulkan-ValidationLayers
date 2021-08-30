@@ -4721,6 +4721,65 @@ struct safe_VkPipelineExecutableInternalRepresentationKHR {
     VkPipelineExecutableInternalRepresentationKHR const *ptr() const { return reinterpret_cast<VkPipelineExecutableInternalRepresentationKHR const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 shaderIntegerDotProduct;
+    safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR(const VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR(const safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR& operator=(const safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR();
+    ~safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR();
+    void initialize(const VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR* copy_src);
+    VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR *>(this); }
+    VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 integerDotProduct8BitUnsignedAccelerated;
+    VkBool32 integerDotProduct8BitSignedAccelerated;
+    VkBool32 integerDotProduct8BitMixedSignednessAccelerated;
+    VkBool32 integerDotProduct4x8BitPackedUnsignedAccelerated;
+    VkBool32 integerDotProduct4x8BitPackedSignedAccelerated;
+    VkBool32 integerDotProduct4x8BitPackedMixedSignednessAccelerated;
+    VkBool32 integerDotProduct16BitUnsignedAccelerated;
+    VkBool32 integerDotProduct16BitSignedAccelerated;
+    VkBool32 integerDotProduct16BitMixedSignednessAccelerated;
+    VkBool32 integerDotProduct32BitUnsignedAccelerated;
+    VkBool32 integerDotProduct32BitSignedAccelerated;
+    VkBool32 integerDotProduct32BitMixedSignednessAccelerated;
+    VkBool32 integerDotProduct64BitUnsignedAccelerated;
+    VkBool32 integerDotProduct64BitSignedAccelerated;
+    VkBool32 integerDotProduct64BitMixedSignednessAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating8BitUnsignedAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating8BitSignedAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating16BitUnsignedAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating16BitSignedAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating32BitUnsignedAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating32BitSignedAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating64BitUnsignedAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating64BitSignedAccelerated;
+    VkBool32 integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated;
+    safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR(const VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR* in_struct);
+    safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR(const safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR& copy_src);
+    safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR& operator=(const safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR& copy_src);
+    safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR();
+    ~safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR();
+    void initialize(const VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR* copy_src);
+    VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR *>(this); }
+    VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR const *>(this); }
+};
+
 struct safe_VkPipelineLibraryCreateInfoKHR {
     VkStructureType sType;
     const void* pNext;
@@ -9604,6 +9663,22 @@ struct safe_VkPhysicalDeviceDrmPropertiesEXT {
     void initialize(const safe_VkPhysicalDeviceDrmPropertiesEXT* copy_src);
     VkPhysicalDeviceDrmPropertiesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceDrmPropertiesEXT *>(this); }
     VkPhysicalDeviceDrmPropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDrmPropertiesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 primitiveTopologyListRestart;
+    VkBool32 primitiveTopologyPatchListRestart;
+    safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT(const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT* in_struct);
+    safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT(const safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT& copy_src);
+    safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT& operator=(const safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT& copy_src);
+    safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT();
+    ~safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT();
+    void initialize(const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT* copy_src);
+    VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *>(this); }
+    VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT const *>(this); }
 };
 
 #ifdef VK_USE_PLATFORM_FUCHSIA

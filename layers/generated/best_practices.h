@@ -1884,6 +1884,7 @@ const layer_data::unordered_map<std::string, std::string> special_use_extensions
     {"VK_EXT_device_memory_report", "devtools"},
     {"VK_EXT_line_rasterization", "cadsupport"},
     {"VK_EXT_pipeline_creation_feedback", "devtools"},
+    {"VK_EXT_primitive_topology_list_restart", "glemulation"},
     {"VK_EXT_provoking_vertex", "glemulation"},
     {"VK_EXT_transform_feedback", "glemulation, d3demulation, devtools"},
     {"VK_EXT_validation_features", "debugging"},
