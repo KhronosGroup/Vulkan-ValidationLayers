@@ -1564,11 +1564,31 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
              pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
              pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY ||
              pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
-            skip |=
-                LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
-                         "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                         "]: topology is %s and primitiveRestartEnable is VK_TRUE. It is invalid.",
-                         pipelineIndex, string_VkPrimitiveTopology(pPipeline->graphicsPipelineCI.pInputAssemblyState->topology));
+            if (device_extensions.vk_ext_primitive_topology_list_restart) {
+                if (pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+                    if (!enabled_features.primitive_topology_list_restart_features.primitiveTopologyPatchListRestart) {
+                        skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
+                                         "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                                         "]: topology is %s and primitiveRestartEnable is VK_TRUE and the "
+                                         "primitiveTopologyPatchListRestart feature is not enabled.",
+                                         pipelineIndex,
+                                         string_VkPrimitiveTopology(pPipeline->graphicsPipelineCI.pInputAssemblyState->topology));
+                    }
+                } else if (!enabled_features.primitive_topology_list_restart_features.primitiveTopologyListRestart) {
+                    skip |= LogError(
+                        device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252",
+                        "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                        "]: topology is %s and primitiveRestartEnable is VK_TRUE and the primitiveTopologyListRestart feature "
+                        "is not enabled.",
+                        pipelineIndex, string_VkPrimitiveTopology(pPipeline->graphicsPipelineCI.pInputAssemblyState->topology));
+                }
+            } else {
+                skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
+                                 "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                                 "]: topology is %s and primitiveRestartEnable is VK_TRUE. It is invalid.",
+                                 pipelineIndex,
+                                 string_VkPrimitiveTopology(pPipeline->graphicsPipelineCI.pInputAssemblyState->topology));
+            }
         }
         if ((enabled_features.core.geometryShader == VK_FALSE) &&
             (pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
