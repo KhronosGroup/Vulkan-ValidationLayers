@@ -9398,3 +9398,53 @@ TEST_F(VkLayerTest, BindPipelineDuringTransformFeedback) {
     vkCmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, DrawBlendEnabledFormatFeatures) {
+    TEST_DESCRIPTION("Test pipeline blend enabled with missing image views format features");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
+
+    // Load required functions
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        printf("%s Failed to device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    VkFormat render_format = VkTestFramework::GetFormat(instance_, m_device);
+
+    // Set format features from being found
+    VkFormatProperties formatProps;
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), render_format, &formatProps);
+    if ((formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) == 0) {
+        printf("%s Required linear tiling features not supported.\n", kSkipPrefix);
+        return;
+    }
+    // Gets pass pipeline creation but not the actual tiling used
+    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT;
+    // will be caught at draw time that feature for optimal image is not set
+    // InitRenderTarget() should be setting color attachment as VK_IMAGE_TILING_LINEAR
+    formatProps.linearTilingFeatures &= ~VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), render_format, formatProps);
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.cb_attachments_.blendEnable = VK_TRUE;
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-blendEnable-04727");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
