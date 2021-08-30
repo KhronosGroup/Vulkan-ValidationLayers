@@ -1182,6 +1182,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         if (shader_integer_dot_product_features) {
             state_tracker->enabled_features.shader_integer_dot_product_features = *shader_integer_dot_product_features;
         }
+
+        const auto *primitive_topology_list_restart_features =
+            LvlFindInChain<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT>(pCreateInfo->pNext);
+        if (primitive_topology_list_restart_features) {
+            state_tracker->enabled_features.primitive_topology_list_restart_features = *primitive_topology_list_restart_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
