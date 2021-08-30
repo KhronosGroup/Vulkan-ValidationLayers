@@ -2865,7 +2865,7 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
     if (device_extensions.vk_khr_uniform_buffer_standard_layout && enabled_features.core12.uniformBufferStandardLayout == VK_TRUE) {
         options.SetUniformBufferStandardLayout(true);
     }
-    if (device_extensions.vk_ext_scalar_block_layout && enabled_features.core12.scalarBlockLayout == VK_TRUE) {
+    if (device_extensions.vk_ext_scalar_block_layout || enabled_features.core12.scalarBlockLayout == VK_TRUE) {
         options.SetScalarBlockLayout(true);
     }
     if (device_extensions.vk_khr_workgroup_memory_explicit_layout &&
