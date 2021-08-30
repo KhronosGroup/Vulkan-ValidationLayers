@@ -7461,6 +7461,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
 
 
 
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(
@@ -11174,6 +11175,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetVertexInputEXT(
         intercept->PostCallRecordCmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions, vertexAttributeDescriptionCount, pVertexAttributeDescriptions);
     }
 }
+
 
 
 #ifdef VK_USE_PLATFORM_FUCHSIA

@@ -2352,6 +2352,24 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INTERNAL_RE
     typedef VkPipelineExecutableInternalRepresentationKHR Type;
 };
 
+// Map type VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES_KHR> {
+    typedef VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR Type;
+};
+
+// Map type VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES_KHR> {
+    typedef VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR Type;
+};
+
 // Map type VkPipelineLibraryCreateInfoKHR to id VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR
 template <> struct LvlTypeMap<VkPipelineLibraryCreateInfoKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
@@ -4935,6 +4953,15 @@ template <> struct LvlTypeMap<VkPhysicalDeviceDrmPropertiesEXT> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT> {
     typedef VkPhysicalDeviceDrmPropertiesEXT Type;
+};
+
+// Map type VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT> {
+    typedef VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT Type;
 };
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
