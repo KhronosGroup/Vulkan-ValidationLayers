@@ -1023,7 +1023,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                           VendorSpecificTag(kBPVendorAMD));
         }
 
-        if (pCreateInfos->pInputAssemblyState->primitiveRestartEnable) {
+        if (pCreateInfos->pInputAssemblyState && pCreateInfos->pInputAssemblyState->primitiveRestartEnable) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_AvoidPrimitiveRestart,
                                           "%s Performance warning: Use of primitive restart is not recommended",
                                           VendorSpecificTag(kBPVendorAMD));
