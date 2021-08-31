@@ -20665,6 +20665,36 @@ bool CoreChecks::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice devic
                 "the pNext chain with fullScreenExclusive equal to VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT.",
                 report_data->FormatHandle(swapchain).c_str());
         }
+        if (swapchain_state->exclusive_full_screen_access) {
+            skip |= LogError(device, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02676",
+                             "vkAcquireFullScreenExclusiveModeEXT(): swapchain %s already has exclusive full-screen access.",
+                             report_data->FormatHandle(swapchain).c_str());
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) const {
+    bool skip = false;
+
+    const auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+    if (swapchain_state) {
+        if (swapchain_state->retired) {
+            skip |= LogError(device, "VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02677",
+                             "vkReleaseFullScreenExclusiveModeEXT(): swapchain %s is retired.",
+                             report_data->FormatHandle(swapchain).c_str());
+        }
+        const auto *surface_full_screen_exclusive_info =
+            LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(swapchain_state->createInfo.pNext);
+        if (!surface_full_screen_exclusive_info ||
+            surface_full_screen_exclusive_info->fullScreenExclusive != VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT) {
+            skip |= LogError(
+                device, "VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02678",
+                "vkReleaseFullScreenExclusiveModeEXT(): swapchain %s was not created with VkSurfaceFullScreenExclusiveInfoEXT in "
+                "the pNext chain with fullScreenExclusive equal to VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT.",
+                report_data->FormatHandle(swapchain).c_str());
+        }
     }
 
     return skip;
