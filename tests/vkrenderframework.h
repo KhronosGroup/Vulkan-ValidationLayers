@@ -352,6 +352,13 @@ class VkRenderFramework : public VkTestFramework {
 
     // WSI items
     VkSurfaceKHR m_surface;
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+    Display *m_surface_dpy;
+    Window m_surface_window;
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    xcb_connection_t *m_surface_xcb_conn;
+#endif
     VkSwapchainKHR m_swapchain;
     VkSurfaceCapabilitiesKHR m_surface_capabilities;
     std::vector<VkSurfaceFormatKHR> m_surface_formats;
