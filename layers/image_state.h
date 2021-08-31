@@ -284,6 +284,7 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     const safe_VkSwapchainCreateInfoKHR createInfo;
     std::vector<SWAPCHAIN_IMAGE> images;
     bool retired = false;
+    bool exclusive_full_screen_access;
     const bool shared_presentable;
     uint32_t get_swapchain_image_count = 0;
     uint64_t max_present_id = 0;
