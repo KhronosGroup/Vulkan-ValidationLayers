@@ -91,12 +91,13 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     alloc_info.memoryTypeIndex = 0;
     alloc_info.allocationSize = mem_reqs.size;
 
+    VkDeviceMemory mem = VK_NULL_HANDLE;
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
-    ASSERT_TRUE(pass);
-
-    VkDeviceMemory mem;
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
-    ASSERT_VK_SUCCESS(err);
+    // some devices don't give us good memory requirements for the swapchain image
+    if (pass) {
+        err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+        ASSERT_VK_SUCCESS(err);
+    }
 
     auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>();
     bind_info.image = image_from_swapchain;
@@ -121,13 +122,17 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     bind_swapchain_info.swapchain = m_swapchain;
     bind_swapchain_info.imageIndex = UINT32_MAX;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01631");
+    if (mem) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01631");
+    }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemorySwapchainInfoKHR-imageIndex-01644");
     vk::BindImageMemory2(m_device->device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyImage(m_device->device(), image_from_swapchain, NULL);
-    vk::FreeMemory(m_device->device(), mem, NULL);
+    if (mem) {
+        vk::FreeMemory(m_device->device(), mem, NULL);
+    }
     DestroySwapchain();
 }
 
