@@ -3834,14 +3834,6 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kPixel3)) {
-        printf("%s This test should not run on Pixel 3\n", kSkipPrefix);
-        return;
-    }
-    if (IsPlatform(kPixel3aXL)) {
-        printf("%s This test should not run on Pixel 3a XL\n", kSkipPrefix);
-        return;
-    }
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 

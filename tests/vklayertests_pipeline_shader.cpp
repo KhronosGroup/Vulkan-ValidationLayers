@@ -5615,14 +5615,6 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
         "limit");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kPixel3)) {
-        printf("%s This test should not run on Pixel 3\n", kSkipPrefix);
-        return;
-    }
-    if (IsPlatform(kPixel3aXL)) {
-        printf("%s This test should not run on Pixel 3a XL\n", kSkipPrefix);
-        return;
-    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
