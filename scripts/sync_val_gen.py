@@ -86,6 +86,9 @@ def ParseAccessMasks(valid_usage_path, all_stages):
                 print('extension_combo: ', extension_combo)
             if 'VK_KHR_synchronization2' not in extension_combo:
                 continue
+            # skip ray-query off VUIDs so we get the maximum set of pipeline stages allowed.
+            if '!(VK_KHR_ray_query)' in extension_combo:
+                continue
             if vuid['vuid'].startswith(vuid_prefix) and vuid['text'].startswith(text_prefix):
                 matches = re.findall('<code>(.*?)</code>', vuid['text'], re.DOTALL)
                 access_bits = expand_access_bits.get(matches[0], [matches[0]])
