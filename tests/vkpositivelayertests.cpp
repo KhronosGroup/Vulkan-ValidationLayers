@@ -15252,3 +15252,58 @@ TEST_F(VkPositiveLayerTest, TestFormatCompatibility) {
     vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, TestCreatingFramebufferFrom3DImage) {
+    TEST_DESCRIPTION("Validate creating a framebuffer from a 3D image.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s not supported, skipping tests\n", kSkipPrefix, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->ExpectSuccess();
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_ci.extent.width = 32;
+    image_ci.extent.height = 32;
+    image_ci.extent.depth = 4;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageObj image(m_device);
+    image.init(&image_ci);
+
+    VkImageViewCreateInfo dsvci = LvlInitStruct<VkImageViewCreateInfo>();
+    dsvci.image = image.handle();
+    dsvci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    dsvci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    dsvci.subresourceRange.baseMipLevel = 0;
+    dsvci.subresourceRange.layerCount = 4;
+    dsvci.subresourceRange.baseArrayLayer = 0;
+    dsvci.subresourceRange.levelCount = 1;
+    VkImageView view;
+    vk::CreateImageView(m_device->device(), &dsvci, nullptr, &view);
+
+    VkFramebufferCreateInfo fci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fci.renderPass = m_renderPass;
+    fci.attachmentCount = 1;
+    fci.pAttachments = &view;
+    fci.width = 32;
+    fci.height = 32;
+    fci.layers = 4;
+    VkFramebuffer framebuffer;
+    vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &framebuffer);
+    m_errorMonitor->VerifyNotFound();
+}
