@@ -9835,7 +9835,7 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
     bool skip = false;
     auto const framebuffer_info = framebuffer->createInfo.ptr();
     auto const create_info = renderPass->createInfo.ptr();
-    auto const &subpass_to_node = renderPass->subpassToNode;
+    auto const &subpass_to_node = renderPass->subpass_to_node;
 
     struct Attachment {
         std::vector<SubpassLayout> outputs;
