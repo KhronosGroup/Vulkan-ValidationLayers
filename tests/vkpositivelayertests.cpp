@@ -15435,5 +15435,40 @@ TEST_F(VkPositiveLayerTest, TestPhysicalDeviceSurfaceSupport) {
         uint32_t count;
         vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &count, nullptr);
     }
+}
+
+TEST_F(VkPositiveLayerTest, ModifyPnext) {
+    TEST_DESCRIPTION("Make sure invalid values in pNext structures are ignored at query time");
+    m_errorMonitor->ExpectSuccess();
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s test requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME);
+    } else {
+        printf("%s test requires %s", kSkipPrefix, VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME);
+    }
+
+    auto shading = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV>();
+    shading.maxFragmentShadingRateInvocationCount = static_cast<VkSampleCountFlagBits>(0);
+    auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&shading);
+
+    vk::GetPhysicalDeviceProperties2(gpu(), &props);
     m_errorMonitor->VerifyNotFound();
 }
