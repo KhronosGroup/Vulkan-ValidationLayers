@@ -483,7 +483,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             write(api_func, file=self.outFile)
 
             pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,\n'
-            pnext_handler += '                                                      const VkBaseOutStructure* header, const char *pnext_vuid) const {\n'
+            pnext_handler += '                                                      const VkBaseOutStructure* header, const char *pnext_vuid, bool is_physdev_api) const {\n'
             pnext_handler += '    bool skip = false;\n'
             pnext_handler += '    switch(header->sType) {\n'
 
@@ -536,7 +536,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         else:
                             print("Error in parameter_validation_generator.py CodeGen.")
                         if table_type == 'device':
-                            pnext_check += '            if ((!SupportedByPdev(physical_device, %s)) && !%s_extensions.%s) {\n' % (ext_name_define, table_type, ext_name.lower())
+                            pnext_check += f'            if ((is_physdev_api && !SupportedByPdev(physical_device, {ext_name_define})) || (!is_physdev_api && !{table_type}_extensions.{ext_name.lower()})) {{\n'
                         else:
                             pnext_check += '            if (!%s_extensions.%s) {\n' % (table_type, ext_name.lower())
                         pnext_check += '                skip |= LogError(\n'
@@ -1326,7 +1326,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         return expr
     #
     # Generate the parameter checking code
-    def genFuncBody(self, funcName, values, valuePrefix, displayNamePrefix, structTypeName):
+    def genFuncBody(self, funcName, values, valuePrefix, displayNamePrefix, structTypeName, is_phys_device = False):
         lines = []    # Generated lines of code
         unused = []   # Unused variable names
         duplicateCountVuid = [] # prevent duplicate VUs being generated
@@ -1423,6 +1423,21 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                             usedLines.append(self.expandStructPointerCode(valuePrefix, value, lenParam, funcName, valueDisplayName, postProcSpec))
                         elif value.type in self.returnedonly_structs:
                             usedLines.append(self.expandStructPointerCode(valuePrefix, value, lenParam, funcName, valueDisplayName, postProcSpec))
+
+                    if is_phys_device:
+                        # TODO Using a regex in this context is not ideal. Would be nicer if usedLines were a list of objects with "settings" (such as "is_phys_device")
+                        rx = re.compile(r'(.*validate_struct_pnext\(.*)(\).*\n*)', re.M)
+                        for i, ul in enumerate(usedLines):
+                            if isinstance(ul, str):
+                                m = rx.match(ul)
+                                if m is not None:
+                                    usedLines[i] = f'{m.group(1)}, true{m.group(2)}'
+                            elif isinstance(ul, list):
+                                for j, l in enumerate(usedLines[i]):
+                                    m = rx.match(l)
+                                    if m is not None:
+                                        usedLines[i][j] = f'{m.group(1)}, true{m.group(2)}'
+
             # Non-pointer types
             else:
                 # The parameter will not be processes when tagged as 'noautovalidity'
@@ -1503,7 +1518,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         for command in self.commands:
             # Skip first parameter if it is a dispatch handle (everything except vkCreateInstance)
             startIndex = 0 if command.name == 'vkCreateInstance' else 1
-            lines, unused = self.genFuncBody(command.name, command.params[startIndex:], '', '', None)
+            lines, unused = self.genFuncBody(command.name, command.params[startIndex:], '', '', None, is_phys_device = command.params[0].type == 'VkPhysicalDevice')
             # Cannot validate extension dependencies for device extension APIs having a physical device as their dispatchable object
             if (command.name in self.required_extensions) and (self.extension_type != 'device' or command.params[0].type != 'VkPhysicalDevice'):
                 ext_test = ''
