@@ -1852,12 +1852,12 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderS
 }
 
 bool VkShaderObj::InitFromGLSL(VkRenderFramework &framework, const char *shader_code, bool debug, const spv_target_env env) {
-    std::vector<unsigned int> spv;
+    std::vector<uint32_t> spv;
     framework.GLSLtoSPV(&m_device.props.limits, m_stage_info.stage, shader_code, spv, debug, env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
+    moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
     init(m_device, moduleCreateInfo);
@@ -1869,12 +1869,12 @@ bool VkShaderObj::InitFromGLSL(VkRenderFramework &framework, const char *shader_
 // due to supplying an invalid/unknown SPIR-V capability/operation. This is called after VkShaderObj creation when tests are found
 // to crash on a CI device
 VkResult VkShaderObj::InitFromGLSLTry(VkRenderFramework &framework, const char *shader_code, bool debug, const spv_target_env env) {
-    std::vector<unsigned int> spv;
+    std::vector<uint32_t> spv;
     framework.GLSLtoSPV(&m_device.props.limits, m_stage_info.stage, shader_code, spv, debug, env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
+    moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
     const auto result = init_try(m_device, moduleCreateInfo);
@@ -1889,12 +1889,12 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const string spv_source, VkShaderS
 }
 
 bool VkShaderObj::InitFromASM(VkRenderFramework &framework, const std::string &spv_source, const spv_target_env env) {
-    vector<unsigned int> spv;
+    vector<uint32_t> spv;
     framework.ASMtoSPV(env, 0, spv_source.data(), spv);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
+    moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
     init(m_device, moduleCreateInfo);
@@ -1903,12 +1903,12 @@ bool VkShaderObj::InitFromASM(VkRenderFramework &framework, const std::string &s
 }
 
 VkResult VkShaderObj::InitFromASMTry(VkRenderFramework &framework, const std::string &spv_source, const spv_target_env spv_env) {
-    vector<unsigned int> spv;
+    vector<uint32_t> spv;
     framework.ASMtoSPV(spv_env, 0, spv_source.data(), spv);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
+    moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
     const auto result = init_try(m_device, moduleCreateInfo);
