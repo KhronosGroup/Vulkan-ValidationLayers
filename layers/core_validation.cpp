@@ -16185,8 +16185,8 @@ bool CoreChecks::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalD
         for (uint32_t i = 0; i < pd_state->queue_family_known_count; ++i) {
             bool checked = false;
             if (surface_state) {
-                const auto support_it = surface_state->gpu_queue_support.find({physical_device, i});
-                if (support_it == surface_state->gpu_queue_support.end()) {
+                const auto support_it = surface_state->gpu_queue_support.find({physicalDevice, i});
+                if (support_it != surface_state->gpu_queue_support.end()) {
                     supported = support_it->second;
                     checked = true;
                 }
