@@ -640,6 +640,7 @@ class SyncOpResetEvent : public SyncOpBase {
     void DoRecord(ResourceUsageTag recorded_tag, AccessContext *access_context, SyncEventsContext *events_context) const override;
 
   private:
+    bool DoValidate(const CommandBufferAccessContext& cb_context, const ResourceUsageTag base_tag) const;
     std::shared_ptr<const EVENT_STATE> event_;
     SyncExecScope exec_scope_;
 };
@@ -1084,9 +1085,16 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         return *(cb_state_.get());
     }
 
-    void AddSyncOp(ResourceUsageTag tag, SyncOpPointer &&sync_op) { sync_ops_.emplace_back(tag, std::move(sync_op)); }
+    template <class T, class... Args>
+    void RecordSyncOp(Args &&...args) {
+        // T must be as derived from SyncOpBase or the compiler will flag the next line as an error.
+        SyncOpPointer sync_op(std::make_shared<T>(std::forward<Args>(args)...));
+        auto tag = sync_op->Record(this);
+        AddSyncOp(tag, std::move(sync_op));
+    }
 
   private:
+    void AddSyncOp(ResourceUsageTag tag, SyncOpPointer &&sync_op) { sync_ops_.emplace_back(tag, std::move(sync_op)); }
     std::shared_ptr<CMD_BUFFER_STATE> cb_state_;
     VkQueueFlags queue_flags_;
     bool destroyed_;
