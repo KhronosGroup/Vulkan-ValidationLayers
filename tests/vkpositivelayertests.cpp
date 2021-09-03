@@ -1658,9 +1658,13 @@ TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
         (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
 
     auto scalar_block_features = LvlInitStruct<VkPhysicalDeviceScalarBlockLayoutFeaturesEXT>(NULL);
-    scalar_block_features.scalarBlockLayout = VK_TRUE;
     auto query_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&scalar_block_features);
     vkGetPhysicalDeviceFeatures2(gpu(), &query_features2);
+
+    if (scalar_block_features.scalarBlockLayout != VK_TRUE) {
+        printf("%s scalarBlockLayout feature not supported\n", kSkipPrefix);
+        return;
+    }
 
     auto set_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&scalar_block_features);
 
