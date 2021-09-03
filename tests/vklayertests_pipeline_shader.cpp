@@ -3832,7 +3832,7 @@ TEST_F(VkLayerTest, InvalidSPIRVCodeSize) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01376");
-    std::vector<unsigned int> shader;
+    std::vector<uint32_t> shader;
     VkShaderModuleCreateInfo module_create_info;
     VkShaderModule shader_module;
     module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -3840,7 +3840,7 @@ TEST_F(VkLayerTest, InvalidSPIRVCodeSize) {
     this->GLSLtoSPV(&m_device->props.limits, VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText, shader);
     module_create_info.pCode = shader.data();
     // Introduce failure by making codeSize a non-multiple of 4
-    module_create_info.codeSize = shader.size() * sizeof(unsigned int) - 1;
+    module_create_info.codeSize = shader.size() * sizeof(uint32_t) - 1;
     module_create_info.flags = 0;
     vk::CreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
 
@@ -4345,22 +4345,8 @@ TEST_F(VkLayerTest, CreateShaderModuleCheckBadCapability) {
         )";
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Capability ImageRect is not allowed by Vulkan");
-
-    std::vector<unsigned int> spv;
-    VkShaderModuleCreateInfo module_create_info;
-    VkShaderModule shader_module;
-    module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    module_create_info.pNext = NULL;
-    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
-    module_create_info.pCode = spv.data();
-    module_create_info.codeSize = spv.size() * sizeof(unsigned int);
-    module_create_info.flags = 0;
-
-    VkResult err = vk::CreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
+    VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
     m_errorMonitor->VerifyFound();
-    if (err == VK_SUCCESS) {
-        vk::DestroyShaderModule(m_device->handle(), shader_module, NULL);
-    }
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvided) {

@@ -1616,22 +1616,9 @@ TEST_F(VkPositiveLayerTest, ShaderUboStd430Layout) {
                OpFunctionEnd
         )";
 
-    std::vector<unsigned int> spv;
-    VkShaderModuleCreateInfo module_create_info;
-    VkShaderModule shader_module;
-    module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    module_create_info.pNext = NULL;
-    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
-    module_create_info.pCode = spv.data();
-    module_create_info.codeSize = spv.size() * sizeof(unsigned int);
-    module_create_info.flags = 0;
-
     m_errorMonitor->ExpectSuccess();
-    VkResult err = vk::CreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
+    VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
     m_errorMonitor->VerifyNotFound();
-    if (err == VK_SUCCESS) {
-        vk::DestroyShaderModule(m_device->handle(), shader_module, NULL);
-    }
 }
 
 TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {

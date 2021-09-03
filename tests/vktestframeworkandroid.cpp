@@ -85,7 +85,7 @@ shaderc_shader_kind MapShadercType(VkShaderStageFlagBits vkShader) {
 // Compile a given string containing GLSL into SPIR-V
 // Return value of false means an error was encountered
 bool VkTestFramework::GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limits, const VkShaderStageFlagBits shader_type,
-                                const char *pshader, std::vector<unsigned int> &spirv, bool debug, const spv_target_env spv_env) {
+                                const char *pshader, std::vector<uint32_t> &spirv, bool debug, const spv_target_env spv_env) {
     // On Android, use shaderc instead.
     shaderc::Compiler compiler;
     shaderc::CompileOptions options;
@@ -156,7 +156,7 @@ bool VkTestFramework::GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limit
 // Return value of false means an error was encountered.
 //
 bool VkTestFramework::ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm,
-                               std::vector<unsigned int> &spv) {
+                               std::vector<uint32_t> &spv) {
     spv_binary binary;
     spv_diagnostic diagnostic = nullptr;
     spv_context context = spvContextCreate(target_env);
