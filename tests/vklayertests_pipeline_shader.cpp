@@ -13194,3 +13194,180 @@ TEST_F(VkLayerTest, TestPipelineRasterizationStateStreamCreateInfoEXT) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, NoUniformBufferStandardLayout10) {
+    TEST_DESCRIPTION("Don't enable uniformBufferStandardLayout in Vulkan 1.0 and have spirv-val catch invalid shader");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() > VK_API_VERSION_1_0) {
+        printf("%s Tests requires Vulkan 1.0 only, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // layout(std430, set = 0, binding = 0) uniform ubo430 {
+    //     float floatArray430[8];
+    // };
+    const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpDecorate %_arr_float_uint_8 ArrayStride 4
+               OpMemberDecorate %ubo430 0 Offset 0
+               OpDecorate %ubo430 Block
+               OpDecorate %_ DescriptorSet 0
+               OpDecorate %_ Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+     %uint_8 = OpConstant %uint 8
+%_arr_float_uint_8 = OpTypeArray %float %uint_8
+     %ubo430 = OpTypeStruct %_arr_float_uint_8
+%_ptr_Uniform_ubo430 = OpTypePointer Uniform %ubo430
+          %_ = OpVariable %_ptr_Uniform_ubo430 Uniform
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv");
+    VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, NoUniformBufferStandardLayout12) {
+    TEST_DESCRIPTION(
+        "Don't enable uniformBufferStandardLayout in Vulkan1.2 when VK_KHR_uniform_buffer_standard_layout was promoted");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Tests requires Vulkan 1.2+ only, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // layout(std430, set = 0, binding = 0) uniform ubo430 {
+    //     float floatArray430[8];
+    // };
+    const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpDecorate %_arr_float_uint_8 ArrayStride 4
+               OpMemberDecorate %ubo430 0 Offset 0
+               OpDecorate %ubo430 Block
+               OpDecorate %_ DescriptorSet 0
+               OpDecorate %_ Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+     %uint_8 = OpConstant %uint 8
+%_arr_float_uint_8 = OpTypeArray %float %uint_8
+     %ubo430 = OpTypeStruct %_arr_float_uint_8
+%_ptr_Uniform_ubo430 = OpTypePointer Uniform %ubo430
+          %_ = OpVariable %_ptr_Uniform_ubo430 Uniform
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv");
+    VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_2);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, NoScalarBlockLayout10) {
+    TEST_DESCRIPTION("Don't enable scalarBlockLayout in Vulkan 1.0 and have spirv-val catch invalid shader");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() > VK_API_VERSION_1_0) {
+        printf("%s Tests requires Vulkan 1.0 only, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // layout (scalar, set = 0, binding = 0) buffer ssbo {
+    //     layout(offset = 4) vec3 x;
+    // };
+    //
+    // Note: using BufferBlock for Vulkan 1.0
+    // Note: Relaxed Block Layout would also make this valid if enabled
+    const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpMemberDecorate %ssbo 0 Offset 4
+               OpDecorate %ssbo BufferBlock
+               OpDecorate %_ DescriptorSet 0
+               OpDecorate %_ Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v3float = OpTypeVector %float 3
+       %ssbo = OpTypeStruct %v3float
+%_ptr_Uniform_ssbo = OpTypePointer Uniform %ssbo
+          %_ = OpVariable %_ptr_Uniform_ssbo Uniform
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv");
+    VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, NoScalarBlockLayout12) {
+    TEST_DESCRIPTION("Don't enable scalarBlockLayout in Vulkan1.2 when VK_EXT_scalar_block_layout was promoted");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Tests requires Vulkan 1.2+ only, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // layout (scalar, set = 0, binding = 0) buffer ssbo {
+    //     layout(offset = 0) vec3 a;
+    //     layout(offset = 12) vec2 b;
+    // };
+    const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpMemberDecorate %ssbo 0 Offset 0
+               OpMemberDecorate %ssbo 1 Offset 12
+               OpDecorate %ssbo Block
+               OpDecorate %_ DescriptorSet 0
+               OpDecorate %_ Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v3float = OpTypeVector %float 3
+    %v2float = OpTypeVector %float 2
+       %ssbo = OpTypeStruct %v3float %v2float
+%_ptr_StorageBuffer_ssbo = OpTypePointer StorageBuffer %ssbo
+          %_ = OpVariable %_ptr_StorageBuffer_ssbo StorageBuffer
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv");
+    VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_2);
+    m_errorMonitor->VerifyFound();
+}
