@@ -7479,7 +7479,7 @@ bool StatelessValidation::ValidateCmdBeginRenderPass(const char *const func_name
     if ((rp_begin->clearValueCount != 0) && !rp_begin->pClearValues) {
         skip |= LogError(rp_begin->renderPass, "VUID-VkRenderPassBeginInfo-clearValueCount-04962",
                          "%s: VkRenderPassBeginInfo::clearValueCount != 0 (%" PRIu32
-                         "), but VkRenderPassBeginInfo::pClearValues is not null.",
+                         "), but VkRenderPassBeginInfo::pClearValues is null.",
                          func_name, rp_begin->clearValueCount);
     }
     return skip;
