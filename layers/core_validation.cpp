@@ -16141,6 +16141,32 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer) const {
+    bool skip = false;
+
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    if (cb_state) {
+        if (!cb_state->conditional_rendering_active) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdEndConditionalRenderingEXT-None-01985",
+                             "vkCmdBeginConditionalRenderingEXT(): Conditional rendering is not active.");
+        }
+        if (!cb_state->conditional_rendering_inside_render_pass && cb_state->activeRenderPass != nullptr) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdEndConditionalRenderingEXT-None-01986",
+                             "vkCmdBeginConditionalRenderingEXT(): Conditional rendering was begun outside outside of a render "
+                             "pass instance, but a render pass instance is currently active in the command buffer.");
+        }
+        if (cb_state->conditional_rendering_inside_render_pass && cb_state->activeRenderPass != nullptr &&
+            cb_state->conditional_rendering_subpass != cb_state->activeSubpass) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdEndConditionalRenderingEXT-None-01987",
+                             "vkCmdBeginConditionalRenderingEXT(): Conditional rendering was begun in subpass %" PRIu32
+                             ", but the current subpass is %" PRIu32 ".",
+                             cb_state->conditional_rendering_subpass, cb_state->activeSubpass);
+        }
+    }
+
+    return skip;
+}
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool CoreChecks::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) const {
     bool skip = false;
