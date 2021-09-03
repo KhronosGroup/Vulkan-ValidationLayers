@@ -15307,3 +15307,34 @@ TEST_F(VkPositiveLayerTest, TestCreatingFramebufferFrom3DImage) {
     vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &framebuffer);
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, TestPhysicalDeviceSurfaceSupport) {
+    TEST_DESCRIPTION("Test if physical device supports surface.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Test requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSurface()) {
+        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    m_errorMonitor->ExpectSuccess();
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), 0, m_surface, &supported);
+
+    if (supported) {
+        uint32_t count;
+        vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &count, nullptr);
+    }
+    m_errorMonitor->VerifyNotFound();
+}
