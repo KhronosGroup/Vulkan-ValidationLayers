@@ -3641,12 +3641,10 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffe
     assert(cb_access_context);
     if (!cb_access_context) return;
 
-    CommandBufferAccessContext::SyncOpPointer sync_op(
-        new SyncOpPipelineBarrier(CMD_PIPELINEBARRIER, *this, cb_access_context->GetQueueFlags(), srcStageMask, dstStageMask,
-                                  dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
-                                  pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers));
-    const auto tag = sync_op->Record(cb_access_context);
-    cb_access_context->AddSyncOp(tag, std::move(sync_op));
+    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(CMD_PIPELINEBARRIER, *this, cb_access_context->GetQueueFlags(),
+                                                           srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
+                                                           pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                                           imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
 bool SyncValidator::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
@@ -3666,10 +3664,8 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandB
     assert(cb_access_context);
     if (!cb_access_context) return;
 
-    CommandBufferAccessContext::SyncOpPointer sync_op(
-        new SyncOpPipelineBarrier(CMD_PIPELINEBARRIER2KHR, *this, cb_access_context->GetQueueFlags(), *pDependencyInfo));
-    const auto tag = sync_op->Record(cb_access_context);
-    cb_access_context->AddSyncOp(tag, std::move(sync_op));
+    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(CMD_PIPELINEBARRIER2KHR, *this, cb_access_context->GetQueueFlags(),
+                                                           *pDependencyInfo);
 }
 
 void SyncValidator::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
@@ -5125,8 +5121,7 @@ void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkE
     auto *cb_context = GetAccessContext(commandBuffer);
     assert(cb_context);
     if (!cb_context) return;
-    SyncOpSetEvent set_event_op(CMD_SETEVENT, *this, cb_context->GetQueueFlags(), event, stageMask);
-    set_event_op.Record(cb_context);
+    cb_context->RecordSyncOp<SyncOpSetEvent>(CMD_SETEVENT, *this, cb_context->GetQueueFlags(), event, stageMask);
 }
 
 bool SyncValidator::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -5147,8 +5142,7 @@ void SyncValidator::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer,
     assert(cb_context);
     if (!cb_context || !pDependencyInfo) return;
 
-    SyncOpSetEvent set_event_op(CMD_SETEVENT2KHR, *this, cb_context->GetQueueFlags(), event, *pDependencyInfo);
-    set_event_op.Record(cb_context);
+    cb_context->RecordSyncOp<SyncOpSetEvent>(CMD_SETEVENT2KHR, *this, cb_context->GetQueueFlags(), event, *pDependencyInfo);
 }
 
 bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event,
@@ -5168,8 +5162,7 @@ void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, V
     assert(cb_context);
     if (!cb_context) return;
 
-    SyncOpResetEvent reset_event_op(CMD_RESETEVENT, *this, cb_context->GetQueueFlags(), event, stageMask);
-    reset_event_op.Record(cb_context);
+    cb_context->RecordSyncOp<SyncOpResetEvent>(CMD_RESETEVENT, *this, cb_context->GetQueueFlags(), event, stageMask);
 }
 
 bool SyncValidator::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -5190,8 +5183,7 @@ void SyncValidator::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffe
     assert(cb_context);
     if (!cb_context) return;
 
-    SyncOpResetEvent reset_event_op(CMD_RESETEVENT2KHR, *this, cb_context->GetQueueFlags(), event, stageMask);
-    reset_event_op.Record(cb_context);
+    cb_context->RecordSyncOp<SyncOpResetEvent>(CMD_RESETEVENT2KHR, *this, cb_context->GetQueueFlags(), event, stageMask);
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -5227,11 +5219,9 @@ void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, u
     assert(cb_context);
     if (!cb_context) return;
 
-    CommandBufferAccessContext::SyncOpPointer wait_events_op(new SyncOpWaitEvents(
+    cb_context->RecordSyncOp<SyncOpWaitEvents>(
         CMD_WAITEVENTS, *this, cb_context->GetQueueFlags(), eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount,
-        pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers));
-    const auto tag = wait_events_op->Record(cb_context);
-    cb_context->AddSyncOp(tag, std::move(wait_events_op));
+        pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -5254,10 +5244,8 @@ void SyncValidator::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffe
     assert(cb_context);
     if (!cb_context) return;
 
-    CommandBufferAccessContext::SyncOpPointer wait_events_op(
-        new SyncOpWaitEvents(CMD_WAITEVENTS2KHR, *this, cb_context->GetQueueFlags(), eventCount, pEvents, pDependencyInfos));
-    const auto tag = wait_events_op->Record(cb_context);
-    cb_context->AddSyncOp(tag, std::move(wait_events_op));
+    cb_context->RecordSyncOp<SyncOpWaitEvents>(CMD_WAITEVENTS2KHR, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
+                                               pDependencyInfos);
 }
 
 void SyncEventState::ResetFirstScope() {
@@ -5914,7 +5902,11 @@ SyncOpResetEvent::SyncOpResetEvent(CMD_TYPE cmd, const SyncValidator &sync_state
       event_(sync_state.GetShared<EVENT_STATE>(event)),
       exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
 
-bool SyncOpResetEvent::Validate(const CommandBufferAccessContext &cb_context) const {
+bool SyncOpResetEvent::Validate(const CommandBufferAccessContext& cb_context) const {
+    return DoValidate(cb_context, ResourceUsageRecord::kMaxIndex);
+}
+
+bool SyncOpResetEvent::DoValidate(const CommandBufferAccessContext & cb_context, const ResourceUsageTag base_tag) const {
     auto *events_context = cb_context.GetCurrentEventsContext();
     assert(events_context);
     bool skip = false;
@@ -5923,6 +5915,8 @@ bool SyncOpResetEvent::Validate(const CommandBufferAccessContext &cb_context) co
     const auto &sync_state = cb_context.GetSyncState();
     const auto *sync_event = events_context->Get(event_);
     if (!sync_event) return skip;  // Core, Lifetimes, or Param check needs to catch invalid events.
+
+    if (sync_event->last_command_tag > base_tag) return skip;  // if we validated this in recording of the secondary, don't repeat
 
     const char *const set_wait =
         "%s: %s %s operation following %s without intervening execution barrier, is a race condition and may result in data "
@@ -5978,7 +5972,7 @@ ResourceUsageTag SyncOpResetEvent::Record(CommandBufferAccessContext *cb_context
 
 bool SyncOpResetEvent::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
                                       ResourceUsageTag base_tag, CommandBufferAccessContext *active_context) const {
-    return false;
+    return DoValidate(*active_context, base_tag);
 }
 
 void SyncOpResetEvent::DoRecord(ResourceUsageTag tag, AccessContext *access_context, SyncEventsContext *events_context) const {}
