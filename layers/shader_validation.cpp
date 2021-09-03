@@ -2832,19 +2832,29 @@ spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4) {
     return SPV_ENV_VULKAN_1_0;
 }
 
+// Some Vulkan extensions/features are just all done in spirv-val behind optional settings
 void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
                             spvtools::ValidatorOptions &options) {
+    // VK_KHR_relaxed_block_layout never had a feature bit so just enabling the extension allows relaxed layout
+    // Was promotoed in Vulkan 1.1 so anyone using Vulkan 1.1 also gets this for free
     if (device_extensions.vk_khr_relaxed_block_layout) {
+        // --relax-block-layout
         options.SetRelaxBlockLayout(true);
     }
-    if (device_extensions.vk_khr_uniform_buffer_standard_layout && enabled_features.core12.uniformBufferStandardLayout == VK_TRUE) {
+
+    // The rest of the settings are controlled from a feature bit, which are set correctly in the state tracking. Regardless of
+    // Vulkan version used, the feature bit is needed (also described in the spec).
+
+    if (enabled_features.core12.uniformBufferStandardLayout == VK_TRUE) {
+        // --uniform-buffer-standard-layout
         options.SetUniformBufferStandardLayout(true);
     }
-    if (device_extensions.vk_ext_scalar_block_layout && enabled_features.core12.scalarBlockLayout == VK_TRUE) {
+    if (enabled_features.core12.scalarBlockLayout == VK_TRUE) {
+        // --scalar-block-layout
         options.SetScalarBlockLayout(true);
     }
-    if (device_extensions.vk_khr_workgroup_memory_explicit_layout &&
-        enabled_features.workgroup_memory_explicit_layout_features.workgroupMemoryExplicitLayoutScalarBlockLayout) {
+    if (enabled_features.workgroup_memory_explicit_layout_features.workgroupMemoryExplicitLayoutScalarBlockLayout) {
+        // --workgroup-scalar-block-layout
         options.SetWorkgroupScalarBlockLayout(true);
     }
 }
