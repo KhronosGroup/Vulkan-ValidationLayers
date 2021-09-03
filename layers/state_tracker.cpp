@@ -3353,6 +3353,8 @@ void ValidationStateTracker::PostCallRecordCmdBeginConditionalRenderingEXT(
 
     cb_state->RecordCmd(CMD_BEGINCONDITIONALRENDERINGEXT);
     cb_state->conditional_rendering_active = true;
+    cb_state->conditional_rendering_inside_render_pass = cb_state->activeRenderPass != nullptr;
+    cb_state->conditional_rendering_subpass = cb_state->activeSubpass;
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer) {
@@ -3360,7 +3362,8 @@ void ValidationStateTracker::PostCallRecordCmdEndConditionalRenderingEXT(VkComma
 
     cb_state->RecordCmd(CMD_ENDCONDITIONALRENDERINGEXT);
     cb_state->conditional_rendering_active = false;
-
+    cb_state->conditional_rendering_inside_render_pass = false;
+    cb_state->conditional_rendering_subpass = 0;
 }
 
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
