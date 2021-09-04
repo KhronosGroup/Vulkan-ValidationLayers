@@ -6347,6 +6347,8 @@ static const char *GetPipelineTypeName(VkPipelineBindPoint pipelineBindPoint) {
             return "compute";
         case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
             return "ray-tracing";
+        case VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI:
+            return "subpass-shading";
         default:
             return "unknown";
     }
@@ -15986,10 +15988,17 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice de
                                                                      VkShaderGroupShaderKHR groupShader) const {
     bool skip = false;
     const PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
-    if (group >= pipeline_state->create_info.raytracing.groupCount) {
-        skip |= LogError(device, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-group-03608",
+    if (pipeline_state) {
+        if (pipeline_state->GetPipelineType() != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+            skip |= LogError(device, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622",
+                             "vkGetRayTracingShaderGroupStackSizeKHR: Pipeline must be a ray-tracing pipeline, but is a %s pipeline.",
+                             GetPipelineTypeName(pipeline_state->GetPipelineType()));
+        } else if (group >= pipeline_state->create_info.raytracing.groupCount) {
+            skip |=
+                LogError(device, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-group-03608",
                          "vkGetRayTracingShaderGroupStackSizeKHR: The value of group must be less than the number of shader groups "
                          "in pipeline.");
+        }
     }
     return skip;
 }
