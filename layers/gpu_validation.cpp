@@ -734,12 +734,13 @@ struct GPUAV_RESTORABLE_PIPELINE_STATE {
             descriptor_sets.reserve(last_bound.per_set.size());
             for (std::size_t i = 0; i < last_bound.per_set.size(); i++) {
                 const auto *bound_descriptor_set = last_bound.per_set[i].bound_descriptor_set;
-
-                descriptor_sets.push_back(bound_descriptor_set->GetSet());
-                if (bound_descriptor_set->IsPushDescriptor()) {
-                    push_descriptor_set_index = static_cast<uint32_t>(i);
+                if (bound_descriptor_set) {
+                    descriptor_sets.push_back(bound_descriptor_set->GetSet());
+                    if (bound_descriptor_set->IsPushDescriptor()) {
+                        push_descriptor_set_index = static_cast<uint32_t>(i);
+                    }
+                    dynamic_offsets.push_back(last_bound.per_set[i].dynamicOffsets);
                 }
-                dynamic_offsets.push_back(last_bound.per_set[i].dynamicOffsets);
             }
 
             if (last_bound.push_descriptor_set) {
