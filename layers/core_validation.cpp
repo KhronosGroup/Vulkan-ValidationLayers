@@ -1465,7 +1465,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             }
             if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor &&
                 color_blend_advanced->dstPremultiplied != VK_TRUE) {
-                LogError(
+                skip |= LogError(
                     device, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-dstPremultiplied-01425",
                     "vkCreateGraphicsPipelines(): pPipelines[%" PRIu32
                     "].pColorBlendState pNext chain contains VkPipelineColorBlendAdvancedStateCreateInfoEXT structure with "
@@ -1475,7 +1475,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             }
             if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor &&
                 color_blend_advanced->srcPremultiplied != VK_TRUE) {
-                LogError(
+                skip |= LogError(
                     device, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-srcPremultiplied-01424",
                     "vkCreateGraphicsPipelines(): pPipelines[%" PRIu32
                     "].pColorBlendState pNext chain contains VkPipelineColorBlendAdvancedStateCreateInfoEXT structure with "
@@ -11144,7 +11144,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
                         }
                         if (fragment_shading_rate_attachment->shadingRateAttachmentTexelSize.width <
                             phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width) {
-                            LogError(
+                            skip |= LogError(
                                 device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04526",
                                 "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a texel width of %u which "
                                 "is lower than the advertised minimum width %u.",
@@ -11153,7 +11153,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
                         }
                         if (fragment_shading_rate_attachment->shadingRateAttachmentTexelSize.width >
                             phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width) {
-                            LogError(
+                            skip |= LogError(
                                 device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527",
                                 "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a texel width of %u which "
                                 "is higher than the advertised maximum width %u.",
@@ -11169,7 +11169,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
                         }
                         if (fragment_shading_rate_attachment->shadingRateAttachmentTexelSize.height <
                             phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height) {
-                            LogError(
+                            skip |= LogError(
                                 device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04529",
                                 "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a texel height of %u "
                                 "which is lower than the advertised minimum height %u.",
@@ -11178,7 +11178,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
                         }
                         if (fragment_shading_rate_attachment->shadingRateAttachmentTexelSize.height >
                             phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height) {
-                            LogError(
+                            skip |= LogError(
                                 device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530",
                                 "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a texel height of %u "
                                 "which is higher than the advertised maximum height %u.",
@@ -11191,7 +11191,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
                                                         fragment_shading_rate_attachment->shadingRateAttachmentTexelSize.width;
                         if (aspect_ratio >
                             phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
-                            LogError(
+                            skip |= LogError(
                                 device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04531",
                                 "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a texel size of %u by %u, "
                                 "which has an aspect ratio %u, which is higher than the advertised maximum aspect ratio %u.",
@@ -11202,7 +11202,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
                         }
                         if (inverse_aspect_ratio >
                             phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
-                            LogError(
+                            skip |= LogError(
                                 device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04532",
                                 "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a texel size of %u by %u, "
                                 "which has an inverse aspect ratio of %u, which is higher than the advertised maximum aspect ratio "
