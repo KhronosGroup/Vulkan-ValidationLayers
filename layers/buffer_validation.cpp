@@ -6787,7 +6787,7 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
             }
         } else if (FormatIsColor(img_format)) {
             if (sub_aspect != VK_IMAGE_ASPECT_COLOR_BIT) {
-                skip |= LogError(image, kVUID_Core_DrawState_InvalidImageAspect,
+                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04461",
                                  "vkGetImageSubresourceLayout(): For color formats, VkImageSubresource.aspectMask must be "
                                  "VK_IMAGE_ASPECT_COLOR.");
             }
