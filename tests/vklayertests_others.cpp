@@ -6327,6 +6327,49 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
     }
 }
 
+TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHRReplayFeature) {
+    TEST_DESCRIPTION("Validate acceleration structure creation replay feature.");
+    if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
+                                        false, true)) {
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto acc_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&acc_struct_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    acc_struct_features.accelerationStructureCaptureReplay = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_struct_features));
+    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
+    assert(vkCreateAccelerationStructureKHR != nullptr);
+    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
+        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    assert(vkGetBufferDeviceAddressKHR != nullptr);
+
+    VkBufferObj buffer;
+    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+
+    VkBufferDeviceAddressInfo device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
+    device_address_info.buffer = buffer.handle();
+    VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
+
+    VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
+    as_create_info.buffer = buffer.handle();
+    as_create_info.createFlags = VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR;
+    as_create_info.offset = 0;
+    as_create_info.size = 0;
+    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    as_create_info.deviceAddress = device_address;
+
+    VkAccelerationStructureKHR as;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureCreateInfoKHR-createFlags-03613");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateAccelerationStructureKHR-deviceAddress-03488");
+    vkCreateAccelerationStructureKHR(m_device->handle(), &as_create_info, nullptr, &as);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
     TEST_DESCRIPTION("Validate acceleration structure binding.");
     if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
