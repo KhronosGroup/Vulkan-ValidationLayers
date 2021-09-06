@@ -12096,7 +12096,25 @@ TEST_F(VkLayerTest, ValidateViewportStateScissorNegative) {
 TEST_F(VkLayerTest, WriteTimeStampInvalidQuery) {
     TEST_DESCRIPTION("Test for invalid query slot in query pool.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    bool sync2 = false;
+    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    synchronization2.synchronization2 = VK_TRUE;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+        features2.pNext = &synchronization2;
+        sync2 = true;
+    }
+    InitState(nullptr, &features2);
+    sync2 &= (synchronization2.synchronization2 == VK_TRUE);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t queue_count;
@@ -12109,17 +12127,24 @@ TEST_F(VkLayerTest, WriteTimeStampInvalidQuery) {
     }
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_ci{};
-    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_ci.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-query-04904");
     m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-query-04904");
     vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 1);
-    m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
+    if (sync2) {
+        auto vkCmdWriteTimestamp2KHR =
+            (PFN_vkCmdWriteTimestamp2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteTimestamp2KHR");
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2KHR-query-04903");
+        vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 1);
+        m_errorMonitor->VerifyFound();
+    }
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
