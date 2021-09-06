@@ -8972,6 +8972,13 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
                          report_data->FormatHandle(queryPool).c_str());
     }
 
+    if ((query_pool_state != nullptr) && (slot >= query_pool_state->createInfo.queryCount)) {
+        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2KHR-query-04903",
+                         "vkCmdWriteTimestamp2KHR(): query (%" PRIu32 ") is not lower than the number of queries (%" PRIu32
+                         ") in Query pool %s.",
+                         slot, query_pool_state->createInfo.queryCount, report_data->FormatHandle(queryPool).c_str());
+    }
+
     const uint32_t timestampValidBits =
         GetPhysicalDeviceState()->queue_family_properties[cb_state->command_pool->queueFamilyIndex].timestampValidBits;
     if (timestampValidBits == 0) {
