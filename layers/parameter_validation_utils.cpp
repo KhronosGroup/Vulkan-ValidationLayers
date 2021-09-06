@@ -5302,9 +5302,18 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
                              "vkCreateAccelerationStructureKHR(): If deviceAddress is not zero, createFlags must include "
                              "VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR");
         }
+        if (pCreateInfo->deviceAddress && (!acceleration_structure_features ||
+                                           (acceleration_structure_features &&
+                                            acceleration_structure_features->accelerationStructureCaptureReplay == VK_FALSE))) {
+            skip |= LogError(
+                device, "VUID-vkCreateAccelerationStructureKHR-deviceAddress-03488",
+                "VkAccelerationStructureCreateInfoKHR(): VkAccelerationStructureCreateInfoKHR::deviceAddress is not zero, but "
+                "VkPhysicalDeviceAccelerationStructureFeaturesKHR::accelerationStructureCaptureReplay is not enabled.");
+        }
         if (SafeModulo(pCreateInfo->offset, 256) != 0) {
             skip |= LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-offset-03734",
-                             "vkCreateAccelerationStructureKHR(): offset %" PRIu64 " must be a multiple of 256 bytes", pCreateInfo->offset);
+                             "vkCreateAccelerationStructureKHR(): offset %" PRIu64 " must be a multiple of 256 bytes",
+                             pCreateInfo->offset);
         }
     }
     return skip;
