@@ -392,7 +392,7 @@ void UtilSubmitBarrier(VkQueue queue, ObjectType *object_ptr) {
 
         auto queue_state_it = object_ptr->queueMap.find(queue);
         if (queue_state_it != object_ptr->queueMap.end()) {
-            queue_family_index = queue_state_it->second.queueFamilyIndex;
+            queue_family_index = queue_state_it->second->queueFamilyIndex;
         }
 
         VkResult result = VK_SUCCESS;

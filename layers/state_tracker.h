@@ -210,12 +210,7 @@ struct SHADER_MODULE_STATE;
 
 class ValidationStateTracker : public ValidationObject {
   public:
-    //  TODO -- move to private
-    //  TODO -- make consistent with traits approach below.
-    layer_data::unordered_map<VkQueue, QUEUE_STATE> queueMap;
-
     QueryMap queryToStateMap;
-    layer_data::unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
     layer_data::unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
 
     // Traits for State function resolution.  Specializations defined in the macro.
@@ -240,6 +235,7 @@ class ValidationStateTracker : public ValidationObject {
     // Override base class, we have some extra work to do here
     void InitDeviceValidationObject(bool add_obj, ValidationObject* inst_obj, ValidationObject* dev_obj) override;
 
+    VALSTATETRACK_MAP_AND_TRAITS(VkQueue, QUEUE_STATE, queueMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkRenderPass, RENDER_PASS_STATE, renderPassMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSetLayout, cvdescriptorset::DescriptorSetLayout, descriptorSetLayoutMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkSampler, SAMPLER_STATE, samplerMap)
@@ -465,8 +461,8 @@ class ValidationStateTracker : public ValidationObject {
     // Class Declarations for helper functions
     const EVENT_STATE* GetEventState(VkEvent event) const { return Get<EVENT_STATE>(event); }
     EVENT_STATE* GetEventState(VkEvent event) { return Get<EVENT_STATE>(event); }
-    const QUEUE_STATE* GetQueueState(VkQueue queue) const;
-    QUEUE_STATE* GetQueueState(VkQueue queue);
+    const QUEUE_STATE* GetQueueState(VkQueue queue) const { return Get<QUEUE_STATE>(queue); }
+    QUEUE_STATE* GetQueueState(VkQueue queue) { return Get<QUEUE_STATE>(queue); }
     const BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle) const;
     BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle);
 

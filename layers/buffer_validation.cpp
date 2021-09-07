@@ -5006,7 +5006,7 @@ class ValidatorState {
             const char *src_annotation = val.GetFamilyAnnotation(src_family);
             const char *dst_annotation = val.GetFamilyAnnotation(dst_family);
             return device_data->LogError(
-                queue_state->queue, val_code,
+                queue_state->Handle(), val_code,
                 "%s Barrier submitted to queue with family index %u, using %s %s created with sharingMode %s, has "
                 "srcQueueFamilyIndex %u%s and dstQueueFamilyIndex %u%s. %s",
                 val.loc_.Message().c_str(), queue_family, val.GetTypeString(),
