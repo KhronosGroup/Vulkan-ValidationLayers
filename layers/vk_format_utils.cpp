@@ -30,14 +30,14 @@
 
 struct VULKAN_FORMAT_INFO {
     uint32_t size;
-    uint32_t channel_count;
+    uint32_t component_count;
     VkFormatCompatibilityClass format_class;
 };
 
 // Disable auto-formatting for this large table
 // clang-format off
 
-// Set up data structure with size(bytes) and number of channels for each Vulkan format
+// Set up data structure with size(bytes) and number of components for each Vulkan format
 // For compressed and multi-plane formats, size is bytes per compressed or shared block
 const std::map<VkFormat, VULKAN_FORMAT_INFO> kVkFormatTable = {
     {VK_FORMAT_UNDEFINED,                   {0, 0, VK_FORMAT_COMPATIBILITY_CLASS_NONE_BIT }},
@@ -938,7 +938,7 @@ VK_LAYER_EXPORT bool FormatIsSampledFloat(VkFormat format) {
 // Return texel block sizes for all formats
 // Uncompressed formats return {1, 1, 1}
 // Compressed formats return the compression block extents
-// Multiplane formats return the 'shared' extent of their low-res channel(s)
+// Multiplane formats return the 'shared' extent of their low-res component(s)
 VK_LAYER_EXPORT VkExtent3D FormatTexelBlockExtent(VkFormat format) {
     VkExtent3D block_size = {1, 1, 1};
     switch (format) {
@@ -1256,30 +1256,13 @@ VK_LAYER_EXPORT double FormatTexelSize(VkFormat format, VkImageAspectFlags aspec
     return texel_size;
 }
 
-// Return the number of channels for a given format
-uint32_t FormatChannelCount(VkFormat format) {
+// Return the number of components for a given format
+uint32_t FormatComponentCount(VkFormat format) {
     auto item = kVkFormatTable.find(format);
     if (item != kVkFormatTable.end()) {
-        return item->second.channel_count;
+        return item->second.component_count;
     }
     return 0;
-}
-
-// Perform a zero-tolerant modulo operation
-VK_LAYER_EXPORT VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor) {
-    VkDeviceSize result = 0;
-    if (divisor != 0) {
-        result = dividend % divisor;
-    }
-    return result;
-}
-
-VK_LAYER_EXPORT VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divisor) {
-    VkDeviceSize result = 0;
-    if (divisor != 0) {
-        result = dividend / divisor;
-    }
-    return result;
 }
 
 struct VULKAN_PER_PLANE_COMPATIBILITY {
@@ -1410,34 +1393,6 @@ VK_LAYER_EXPORT VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImage
     divisors.width = it->second.per_plane[plane_idx].width_divisor;
     divisors.height = it->second.per_plane[plane_idx].height_divisor;
     return divisors;
-}
-
-VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat, uint32_t region_count,
-                                         const VkImageCopy *regions) {
-    size_t src_size = 0, dst_size = 0;
-
-    if (FormatIsMultiplane(srcFormat) || FormatIsMultiplane(dstFormat)) {
-        for (uint32_t i = 0; i < region_count; i++) {
-            if (FormatIsMultiplane(srcFormat)) {
-                VkFormat plane_format = FindMultiplaneCompatibleFormat(srcFormat, regions[i].srcSubresource.aspectMask);
-                src_size = FormatElementSize(plane_format);
-            } else {
-                src_size = FormatElementSize(srcFormat);
-            }
-            if (FormatIsMultiplane(dstFormat)) {
-                VkFormat plane_format = FindMultiplaneCompatibleFormat(dstFormat, regions[i].dstSubresource.aspectMask);
-                dst_size = FormatElementSize(plane_format);
-            } else {
-                dst_size = FormatElementSize(dstFormat);
-            }
-            if (dst_size != src_size) return false;
-        }
-        return true;
-    } else {
-        src_size = FormatElementSize(srcFormat);
-        dst_size = FormatElementSize(dstFormat);
-        return (dst_size == src_size);
-    }
 }
 
 // Source: Vulkan spec Table 69. Formats requiring sampler YCBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views
