@@ -5896,7 +5896,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             if ((VK_FALSE == enabled_features.portability_subset_features.imageViewFormatReinterpretation) &&
                 ((FormatElementSize(pCreateInfo->format, VK_IMAGE_ASPECT_COLOR_BIT) !=
                   FormatElementSize(image_state->createInfo.format, VK_IMAGE_ASPECT_COLOR_BIT)) ||
-                 (FormatChannelCount(pCreateInfo->format) != FormatChannelCount(image_state->createInfo.format)))) {
+                 (FormatComponentCount(pCreateInfo->format) != FormatComponentCount(image_state->createInfo.format)))) {
                 skip |= LogError(device, "VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466",
                                  "vkCreateImageView (portability error): ImageView format must have"
                                  " the same number of components and bits per component as the Image's format");

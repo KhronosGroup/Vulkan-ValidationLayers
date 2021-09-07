@@ -188,7 +188,7 @@ static PIPELINE_STATE::VertexAttrAlignmentVector GetAttributeAlignments(const PI
     for (const auto &attr : attributes) {
         VkDeviceSize vtx_attrib_req_alignment = FormatElementSize(attr.format);
         if (FormatElementIsTexel(attr.format)) {
-            vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, FormatChannelCount(attr.format));
+            vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, FormatComponentCount(attr.format));
         }
         result.push_back(vtx_attrib_req_alignment);
     }

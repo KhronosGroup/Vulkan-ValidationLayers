@@ -213,6 +213,23 @@ static inline VkDeviceSize GetIndexAlignment(VkIndexType indexType) {
     }
 }
 
+// Perform a zero-tolerant modulo operation
+static inline VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor) {
+    VkDeviceSize result = 0;
+    if (divisor != 0) {
+        result = dividend % divisor;
+    }
+    return result;
+}
+
+static inline VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divisor) {
+    VkDeviceSize result = 0;
+    if (divisor != 0) {
+        result = dividend / divisor;
+    }
+    return result;
+}
+
 extern "C" {
 #endif
 

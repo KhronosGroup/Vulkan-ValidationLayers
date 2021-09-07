@@ -5018,7 +5018,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentNoOutputLocation0ButAlphaToCoverageEna
 
 TEST_F(VkLayerTest, CreatePipelineFragmentNoAlphaLocation0ButAlphaToCoverageEnabled) {
     TEST_DESCRIPTION(
-        "Test that an error is produced when alpha to coverage is enabled but output at location 0 doesn't have alpha channel.");
+        "Test that an error is produced when alpha to coverage is enabled but output at location 0 doesn't have alpha component.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(0u));
