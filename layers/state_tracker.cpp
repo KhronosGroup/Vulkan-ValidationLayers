@@ -462,22 +462,6 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuff
                                GetImageState(pCopyBufferToImageInfo->dstImage));
 }
 
-QUEUE_STATE *ValidationStateTracker::GetQueueState(VkQueue queue) {
-    auto it = queueMap.find(queue);
-    if (it == queueMap.end()) {
-        return nullptr;
-    }
-    return &it->second;
-}
-
-const QUEUE_STATE *ValidationStateTracker::GetQueueState(VkQueue queue) const {
-    auto it = queueMap.find(queue);
-    if (it == queueMap.cend()) {
-        return nullptr;
-    }
-    return &it->second;
-}
-
 // Return ptr to memory binding for given handle of specified type
 template <typename State, typename Result>
 static Result GetObjectMemBindingImpl(State state, const VulkanTypedHandle &typed_handle) {
@@ -1495,7 +1479,7 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
 // work by it.
 static void SubmitFence(QUEUE_STATE *pQueue, FENCE_STATE *pFence, uint64_t submitCount) {
     pFence->state = FENCE_INFLIGHT;
-    pFence->signaler.first = pQueue->queue;
+    pFence->signaler.first = pQueue->Queue();
     pFence->signaler.second = pQueue->seq + pQueue->submissions.size() + submitCount;
 }
 
@@ -1881,10 +1865,10 @@ void ValidationStateTracker::PostCallRecordWaitForFences(VkDevice device, uint32
 void ValidationStateTracker::RetireTimelineSemaphore(VkSemaphore semaphore, uint64_t until_payload) {
     auto semaphore_state = GetSemaphoreState(semaphore);
     if (semaphore_state) {
-        for (auto &pair : queueMap) {
-            QUEUE_STATE &queue_state = pair.second;
+        for (const auto &pair : queueMap) {
+            const auto &queue_state = pair.second;
             uint64_t max_seq = 0;
-            for (const auto &submission : queue_state.submissions) {
+            for (const auto &submission : queue_state->submissions) {
                 for (const auto &signal_semaphore : submission.signalSemaphores) {
                     if (signal_semaphore.semaphore == semaphore && signal_semaphore.payload <= until_payload) {
                         if (signal_semaphore.seq > max_seq) {
@@ -1894,7 +1878,7 @@ void ValidationStateTracker::RetireTimelineSemaphore(VkSemaphore semaphore, uint
                 }
             }
             if (max_seq) {
-                RetireWorkOnQueue(&queue_state, max_seq);
+                RetireWorkOnQueue(queue_state.get(), max_seq);
             }
         }
     }
@@ -1941,7 +1925,7 @@ void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFen
 }
 
 void ValidationStateTracker::RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue) {
-    queueMap.emplace(queue, QUEUE_STATE(queue, queue_family_index));
+    queueMap.emplace(queue, std::make_shared<QUEUE_STATE>(queue, queue_family_index));
 }
 
 void ValidationStateTracker::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
@@ -1962,7 +1946,7 @@ void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult
 void ValidationStateTracker::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (auto &queue : queueMap) {
-        RetireWorkOnQueue(&queue.second, queue.second.seq + queue.second.submissions.size());
+        RetireWorkOnQueue(queue.second.get(), queue.second->seq + queue.second->submissions.size());
     }
 }
 

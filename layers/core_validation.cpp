@@ -3162,8 +3162,8 @@ void CoreChecks::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCou
 
 bool CoreChecks::SemaphoreWasSignaled(VkSemaphore semaphore) const {
     for (auto &pair : queueMap) {
-        const QUEUE_STATE &queue_state = pair.second;
-        for (const auto &submission : queue_state.submissions) {
+        const auto &queue_state = pair.second;
+        for (const auto &submission : queue_state->submissions) {
             for (const auto &signal_semaphore : submission.signalSemaphores) {
                 if (signal_semaphore.semaphore == semaphore) {
                     return true;
@@ -3214,7 +3214,7 @@ struct SemaphoreSubmitState {
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
             for (const auto &q : core->queueMap) {
                 if (q.first != queue) {
-                    for (const auto &cb : q.second.submissions) {
+                    for (const auto &cb : q.second->submissions) {
                         for (const auto &wait_semaphore : cb.waitSemaphores) {
                             if (wait_semaphore.semaphore == semaphore) {
                                 const char *vuid = loc.function == core_error::Func::vkQueueSubmit
@@ -3379,8 +3379,8 @@ bool CoreChecks::ValidateMaxTimelineSemaphoreValueDifference(const Location &loc
     }
 
     for (auto &pair : queueMap) {
-        const QUEUE_STATE &queue_state = pair.second;
-        for (const auto &submission : queue_state.submissions) {
+        const auto &queue_state = pair.second;
+        for (const auto &submission : queue_state->submissions) {
             for (const auto &signal_semaphore : submission.signalSemaphores) {
                 if (signal_semaphore.semaphore == semaphore) {
                     diff = value > signal_semaphore.payload ? value - signal_semaphore.payload : signal_semaphore.payload - value;
@@ -3430,7 +3430,7 @@ struct CommandBufferSubmitState {
         skip |= core->ValidatePrimaryCommandBufferState(loc, cb_node,
                                                         static_cast<int>(std::count(current_cmds.begin(), current_cmds.end(), cmd)),
                                                         &qfo_image_scoreboards, &qfo_buffer_scoreboards);
-        skip |= core->ValidateQueueFamilyIndices(loc, cb_node, queue_state->queue);
+        skip |= core->ValidateQueueFamilyIndices(loc, cb_node, queue_state->Queue());
 
         for (const auto &descriptor_set : cb_node->validate_descriptorsets_in_queuesubmit) {
             const cvdescriptorset::DescriptorSet *set_node = core->GetSetNode(descriptor_set.first);
@@ -4459,9 +4459,8 @@ bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) const {
 
 bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) const {
     bool skip = false;
-    const auto &const_queue_map = queueMap;
-    for (auto &queue : const_queue_map) {
-        skip |= VerifyQueueStateToSeq(&queue.second, queue.second.seq + queue.second.submissions.size());
+    for (const auto &queue : queueMap) {
+        skip |= VerifyQueueStateToSeq(queue.second.get(), queue.second->seq + queue.second->submissions.size());
     }
     return skip;
 }
@@ -13330,8 +13329,8 @@ bool CoreChecks::ValidateSignalSemaphore(VkDevice device, const VkSemaphoreSigna
                          report_data->FormatHandle(pSignalInfo->semaphore).c_str());
     }
     for (auto &pair : queueMap) {
-        const QUEUE_STATE &queue_state = pair.second;
-        for (const auto &submission : queue_state.submissions) {
+        const auto &queue_state = pair.second;
+        for (const auto &submission : queue_state->submissions) {
             for (const auto &signal_semaphore : submission.signalSemaphores) {
                 if (signal_semaphore.semaphore == pSignalInfo->semaphore && pSignalInfo->value >= signal_semaphore.payload) {
                     skip |= LogError(pSignalInfo->semaphore, "VUID-VkSemaphoreSignalInfo-value-03259",
@@ -13888,7 +13887,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
 
 bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) const {
     bool skip = false;
-    const auto queue_state = GetQueueState(queue);
+    const auto queue_state = Get<QUEUE_STATE>(queue);
 
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         const auto semaphore_state = GetSemaphoreState(pPresentInfo->pWaitSemaphores[i]);

@@ -99,13 +99,14 @@ struct CB_SUBMISSION {
     uint32_t perf_submit_pass;
 };
 
-class QUEUE_STATE {
+class QUEUE_STATE : public BASE_NODE {
   public:
-    VkQueue queue;
-    uint32_t queueFamilyIndex;
+    const uint32_t queueFamilyIndex;
 
     uint64_t seq;
     std::deque<CB_SUBMISSION> submissions;
 
-    QUEUE_STATE(VkQueue q, uint32_t index) : queue(q), queueFamilyIndex(index), seq(0) {}
+    QUEUE_STATE(VkQueue q, uint32_t index) : BASE_NODE(q, kVulkanObjectTypeQueue), queueFamilyIndex(index), seq(0) {}
+
+    VkQueue Queue() const { return handle_.Cast<VkQueue>(); }
 };
