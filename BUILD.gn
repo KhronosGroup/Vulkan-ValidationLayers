@@ -103,6 +103,7 @@ core_validation_sources = [
   "layers/pipeline_state.cpp",
   "layers/qfo_transfer.h",
   "layers/query_state.h",
+  "layers/queue_state.cpp",
   "layers/queue_state.h",
   "layers/ray_tracing_state.h",
   "layers/render_pass_state.h",
