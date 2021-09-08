@@ -1866,6 +1866,7 @@ uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const spirv_inst_iter &iter) const
 
 uint32_t SHADER_MODULE_STATE::GetTypeBytesSize(const spirv_inst_iter &iter) const { return GetTypeBitsSize(iter) / 8; }
 
+// Returns the base type (float, int or unsigned int) or struct (can have multiple different base types inside)
 uint32_t SHADER_MODULE_STATE::GetBaseType(const spirv_inst_iter &iter) const {
     const uint32_t opcode = iter.opcode();
     if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt || opcode == spv::OpTypeStruct) {
