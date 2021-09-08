@@ -26,6 +26,7 @@
  */
 #pragma once
 #include "base_node.h"
+#include "layer_chassis_dispatch.h"
 #include <vector>
 
 struct DeviceFeatures {
@@ -94,12 +95,10 @@ class QUEUE_FAMILY_PERF_COUNTERS {
     std::vector<VkPerformanceCounterKHR> counters;
 };
 
-class PHYSICAL_DEVICE_STATE {
+class PHYSICAL_DEVICE_STATE : public BASE_NODE {
   public:
-    safe_VkPhysicalDeviceFeatures2 features2 = {};
-    VkPhysicalDevice phys_device = VK_NULL_HANDLE;
     uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
-    std::vector<VkQueueFamilyProperties> queue_family_properties;
+    const std::vector<VkQueueFamilyProperties> queue_family_properties;
     VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
     std::vector<VkPresentModeKHR> present_modes;
     std::vector<VkSurfaceFormatKHR> surface_formats;
@@ -111,11 +110,26 @@ class PHYSICAL_DEVICE_STATE {
     // TODO These are currently used by CoreChecks, but should probably be refactored
     bool vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = false;
     bool vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
+
+    PHYSICAL_DEVICE_STATE(VkPhysicalDevice phys_dev)
+        : BASE_NODE(phys_dev, kVulkanObjectTypePhysicalDevice), queue_family_properties(GetQueueFamilyProps(phys_dev)) {}
+
+    VkPhysicalDevice PhysDev() const { return handle_.Cast<VkPhysicalDevice>(); }
+
+  private:
+    const std::vector<VkQueueFamilyProperties> GetQueueFamilyProps(VkPhysicalDevice phys_dev) {
+        std::vector<VkQueueFamilyProperties> result;
+        uint32_t count;
+        DispatchGetPhysicalDeviceQueueFamilyProperties(phys_dev, &count, nullptr);
+        result.resize(count);
+        DispatchGetPhysicalDeviceQueueFamilyProperties(phys_dev, &count, result.data());
+        return result;
+    }
 };
 
 class DISPLAY_MODE_STATE : public BASE_NODE {
   public:
-    VkPhysicalDevice physical_device;
+    const VkPhysicalDevice physical_device;
 
     DISPLAY_MODE_STATE(VkDisplayModeKHR dm, VkPhysicalDevice phys_dev)
         : BASE_NODE(dm, kVulkanObjectTypeDisplayModeKHR), physical_device(phys_dev) {}

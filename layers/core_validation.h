@@ -128,6 +128,11 @@ class CoreChecks : public ValidationStateTracker {
     const CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) const { return Get<CMD_BUFFER_STATE>(cb); }
     CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) { return Get<CMD_BUFFER_STATE>(cb); }
 
+    const PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys) const { return Get<PHYSICAL_DEVICE_STATE>(phys); }
+    PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys) { return Get<PHYSICAL_DEVICE_STATE>(phys); }
+    PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState() { return physical_device_state; }
+    const PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState() const { return physical_device_state; }
+
     // Override base class, we have some extra work to do here
     void InitDeviceValidationObject(bool add_obj, ValidationObject* inst_obj, ValidationObject* dev_obj) override;
 

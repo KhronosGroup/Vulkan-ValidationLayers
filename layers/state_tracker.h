@@ -267,6 +267,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR, accelerationStructureMap_khr)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, DISPLAY_MODE_STATE, display_mode_map)
+    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, PHYSICAL_DEVICE_STATE, physical_device_map);
 
   public:
     template <typename State>
@@ -469,18 +470,11 @@ class ValidationStateTracker : public ValidationObject {
     const BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle) const;
     BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle);
 
-    // Used for instance versions of this object
-    layer_data::unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
     // Link to the device's physical-device data
     PHYSICAL_DEVICE_STATE* physical_device_state;
 
     // Link for derived device objects back to their parent instance object
     ValidationStateTracker* instance_state;
-
-    const PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys) const;
-    PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
-    PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
-    const PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState() const;
 
     using CommandBufferResetCallback = std::function<void(VkCommandBuffer)>;
     std::unique_ptr<CommandBufferResetCallback> command_buffer_reset_callback;
@@ -511,6 +505,7 @@ class ValidationStateTracker : public ValidationObject {
 
     // State update functions
     // Gets/Enumerations
+    virtual std::shared_ptr<PHYSICAL_DEVICE_STATE> CreatePhysicalDeviceState(VkPhysicalDevice phys_dev);
     void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                      VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
                                                      VkResult result) override;
@@ -559,10 +554,6 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                    VkDisplayPlaneProperties2KHR* pProperties,
                                                                    VkResult result) override;
-    void PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) override;
-    void PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) override;
-    void PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice,
-                                                     VkPhysicalDeviceFeatures2* pFeatures) override;
     void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
                                                               VkQueueFamilyProperties* pQueueFamilyProperties) override;
     void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,

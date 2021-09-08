@@ -126,7 +126,9 @@ struct IMAGE_STATE_BP {
     IMAGE_STATE* image{nullptr};
 };
 
-struct PHYSICAL_DEVICE_STATE_BP {
+struct PHYSICAL_DEVICE_STATE_BP : public PHYSICAL_DEVICE_STATE {
+    PHYSICAL_DEVICE_STATE_BP(VkPhysicalDevice phys_dev) : PHYSICAL_DEVICE_STATE(phys_dev) {}
+
     // Track the call state and array sizes for various query functions
     CALL_STATE vkGetPhysicalDeviceQueueFamilyPropertiesState = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceQueueFamilyProperties2State = UNCALLED;
@@ -535,9 +537,6 @@ class BestPractices : public ValidationStateTracker {
     void ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                                    VkImage* pSwapchainImages, VkResult result);
 
-    void ManualPostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
-                                                      VkPhysicalDevice* pPhysicalDevices, VkResult result);
-
     void ManualPostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
 
@@ -619,6 +618,10 @@ class BestPractices : public ValidationStateTracker {
         return std::static_pointer_cast<SWAPCHAIN_NODE>(std::make_shared<SWAPCHAIN_STATE_BP>(this, create_info, swapchain));
     }
 
+    std::shared_ptr<PHYSICAL_DEVICE_STATE> CreatePhysicalDeviceState(VkPhysicalDevice phys_dev) final {
+        return std::static_pointer_cast<PHYSICAL_DEVICE_STATE>(std::make_shared<PHYSICAL_DEVICE_STATE_BP>(phys_dev));
+    }
+
 // Include code-generated functions
 #include "best_practices.h"
 
@@ -672,18 +675,19 @@ class BestPractices : public ValidationStateTracker {
 
     void RecordCmdDrawTypeArm(RenderPassState& render_pass_state, uint32_t draw_count, const char* caller);
 
-    // Backing data for BP-specific state data
-    layer_data::unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE_BP> phys_device_bp_state_map;
-    // Physical device state for this instance
-    PHYSICAL_DEVICE_STATE_BP* instance_device_bp_state = nullptr;
-
     // Get BestPractices-specific state for the given physical devices
-    PHYSICAL_DEVICE_STATE_BP* GetPhysicalDeviceStateBP(const VkPhysicalDevice& phys_device);
-    const PHYSICAL_DEVICE_STATE_BP* GetPhysicalDeviceStateBP(const VkPhysicalDevice& phys_device) const;
+    PHYSICAL_DEVICE_STATE_BP* GetPhysicalDeviceState(const VkPhysicalDevice& phys_device) {
+        return static_cast<PHYSICAL_DEVICE_STATE_BP*>(Get<PHYSICAL_DEVICE_STATE>(phys_device));
+    }
+    const PHYSICAL_DEVICE_STATE_BP* GetPhysicalDeviceState(const VkPhysicalDevice& phys_device) const {
+        return static_cast<const PHYSICAL_DEVICE_STATE_BP*>(Get<PHYSICAL_DEVICE_STATE>(phys_device));
+    }
 
     // Get BestPractices-specific for the current instance
-    PHYSICAL_DEVICE_STATE_BP* GetPhysicalDeviceStateBP();
-    const PHYSICAL_DEVICE_STATE_BP* GetPhysicalDeviceStateBP() const;
+    PHYSICAL_DEVICE_STATE_BP* GetPhysicalDeviceState() { return static_cast<PHYSICAL_DEVICE_STATE_BP*>(physical_device_state); }
+    const PHYSICAL_DEVICE_STATE_BP* GetPhysicalDeviceState() const {
+        return static_cast<const PHYSICAL_DEVICE_STATE_BP*>(physical_device_state);
+    }
 
     IMAGE_STATE_BP* GetImageUsageState(VkImage image);
     void ReleaseImageUsageState(VkImage image);
