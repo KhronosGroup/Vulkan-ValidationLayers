@@ -2551,7 +2551,7 @@ bool CoreChecks::ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE *pd_state,
         const char *conditional_ext_cmd =
             instance_extensions.vk_khr_get_physical_device_properties2 ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]" : "";
 
-        skip |= LogError(pd_state->phys_device, err_code,
+        skip |= LogError(pd_state->Handle(), err_code,
                          "%s: %s (= %" PRIu32
                          ") is not less than any previously obtained pQueueFamilyPropertyCount from "
                          "vkGetPhysicalDeviceQueueFamilyProperties%s (i.e. is not less than %s).",
@@ -2586,7 +2586,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
             // Vulkan 1.0 didn't have protected memory so always needed unique info
             create_flags flags = {requested_queue_family, not_used};
             if (queue_family_map.emplace(requested_queue_family, flags).second == false) {
-                skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-queueFamilyIndex-00372",
+                skip |= LogError(pd_state->Handle(), "VUID-VkDeviceCreateInfo-queueFamilyIndex-00372",
                                  "CreateDevice(): %s (=%" PRIu32
                                  ") is not unique and was also used in pCreateInfo->pQueueCreateInfos[%d].",
                                  queue_family_var_name.c_str(), requested_queue_family,
@@ -2608,7 +2608,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
                 // The queue family was seen, so now need to make sure the flags were different
                 if ((infos[i].flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) != 0) {
                     if (it->second.protected_index != not_used) {
-                        skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802",
+                        skip |= LogError(pd_state->Handle(), "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802",
                                          "CreateDevice(): %s (=%" PRIu32
                                          ") is not unique and was also used in pCreateInfo->pQueueCreateInfos[%d] which both have "
                                          "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT.",
@@ -2619,7 +2619,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
                     }
                 } else {
                     if (it->second.unprocted_index != not_used) {
-                        skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802",
+                        skip |= LogError(pd_state->Handle(), "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802",
                                          "CreateDevice(): %s (=%" PRIu32
                                          ") is not unique and was also used in pCreateInfo->pQueueCreateInfos[%d].",
                                          queue_family_var_name.c_str(), requested_queue_family,
@@ -2650,7 +2650,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
                         : "the pQueueFamilyProperties[" + std::to_string(requested_queue_family) + "] was never obtained";
 
                 skip |= LogError(
-                    pd_state->phys_device, "VUID-VkDeviceQueueCreateInfo-queueCount-00382",
+                    pd_state->Handle(), "VUID-VkDeviceQueueCreateInfo-queueCount-00382",
                     "vkCreateDevice: pCreateInfo->pQueueCreateInfos[%" PRIu32 "].queueCount (=%" PRIu32
                     ") is not less than or equal to available queue count for this pCreateInfo->pQueueCreateInfos[%" PRIu32
                     "].queueFamilyIndex} (=%" PRIu32 ") obtained previously from vkGetPhysicalDeviceQueueFamilyProperties%s (%s).",
@@ -2685,16 +2685,16 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
             if (shading_rate_image_features && shading_rate_image_features->shadingRateImage) {
                 if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
                     skip |= LogError(
-                        pd_state->phys_device, "VUID-VkDeviceCreateInfo-shadingRateImage-04478",
+                        pd_state->Handle(), "VUID-VkDeviceCreateInfo-shadingRateImage-04478",
                         "vkCreateDevice: Cannot enable shadingRateImage and pipelineFragmentShadingRate features simultaneously.");
                 }
                 if (fragment_shading_rate_features->primitiveFragmentShadingRate) {
                     skip |= LogError(
-                        pd_state->phys_device, "VUID-VkDeviceCreateInfo-shadingRateImage-04479",
+                        pd_state->Handle(), "VUID-VkDeviceCreateInfo-shadingRateImage-04479",
                         "vkCreateDevice: Cannot enable shadingRateImage and primitiveFragmentShadingRate features simultaneously.");
                 }
                 if (fragment_shading_rate_features->attachmentFragmentShadingRate) {
-                    skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-shadingRateImage-04480",
+                    skip |= LogError(pd_state->Handle(), "VUID-VkDeviceCreateInfo-shadingRateImage-04480",
                                      "vkCreateDevice: Cannot enable shadingRateImage and attachmentFragmentShadingRate features "
                                      "simultaneously.");
                 }
@@ -2705,17 +2705,17 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
 
             if (fragment_density_map_features && fragment_density_map_features->fragmentDensityMap) {
                 if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
-                    skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-fragmentDensityMap-04481",
+                    skip |= LogError(pd_state->Handle(), "VUID-VkDeviceCreateInfo-fragmentDensityMap-04481",
                                      "vkCreateDevice: Cannot enable fragmentDensityMap and pipelineFragmentShadingRate features "
                                      "simultaneously.");
                 }
                 if (fragment_shading_rate_features->primitiveFragmentShadingRate) {
-                    skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-fragmentDensityMap-04482",
+                    skip |= LogError(pd_state->Handle(), "VUID-VkDeviceCreateInfo-fragmentDensityMap-04482",
                                      "vkCreateDevice: Cannot enable fragmentDensityMap and primitiveFragmentShadingRate features "
                                      "simultaneously.");
                 }
                 if (fragment_shading_rate_features->attachmentFragmentShadingRate) {
-                    skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-fragmentDensityMap-04483",
+                    skip |= LogError(pd_state->Handle(), "VUID-VkDeviceCreateInfo-fragmentDensityMap-04483",
                                      "vkCreateDevice: Cannot enable fragmentDensityMap and attachmentFragmentShadingRate features "
                                      "simultaneously.");
                 }
@@ -2727,7 +2727,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
         if (shader_image_atomic_int64_features) {
             if (shader_image_atomic_int64_features->sparseImageInt64Atomics &&
                 !shader_image_atomic_int64_features->shaderImageInt64Atomics) {
-                skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-None-04896",
+                skip |= LogError(pd_state->Handle(), "VUID-VkDeviceCreateInfo-None-04896",
                                  "vkCreateDevice: if shaderImageInt64Atomics feature is enabled then sparseImageInt64Atomics "
                                  "feature must also be enabled.");
             }
@@ -2736,14 +2736,14 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
         if (shader_atomic_float_features) {
             if (shader_atomic_float_features->sparseImageFloat32Atomics &&
                 !shader_atomic_float_features->shaderImageFloat32Atomics) {
-                skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-None-04897",
+                skip |= LogError(pd_state->Handle(), "VUID-VkDeviceCreateInfo-None-04897",
                                  "vkCreateDevice: if sparseImageFloat32Atomics feature is enabled then shaderImageFloat32Atomics "
                                  "feature must also be enabled.");
             }
             if (shader_atomic_float_features->sparseImageFloat32AtomicAdd &&
                 !shader_atomic_float_features->shaderImageFloat32AtomicAdd) {
                 skip |=
-                    LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-None-04898",
+                    LogError(pd_state->Handle(), "VUID-VkDeviceCreateInfo-None-04898",
                              "vkCreateDevice: if sparseImageFloat32AtomicAdd feature is enabled then shaderImageFloat32AtomicAdd "
                              "feature must also be enabled.");
             }
@@ -2754,7 +2754,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
             if (shader_atomic_float2_features->sparseImageFloat32AtomicMinMax &&
                 !shader_atomic_float2_features->shaderImageFloat32AtomicMinMax) {
                 skip |= LogError(
-                    pd_state->phys_device, "VUID-VkDeviceCreateInfo-sparseImageFloat32AtomicMinMax-04975",
+                    pd_state->Handle(), "VUID-VkDeviceCreateInfo-sparseImageFloat32AtomicMinMax-04975",
                     "vkCreateDevice: if sparseImageFloat32AtomicMinMax feature is enabled then shaderImageFloat32AtomicMinMax "
                     "feature must also be enabled.");
             }
@@ -2764,7 +2764,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
             for (uint32_t i = 0; i < device_group_ci->physicalDeviceCount - 1; ++i) {
                 for (uint32_t j = i + 1; j < device_group_ci->physicalDeviceCount; ++j) {
                     if (device_group_ci->pPhysicalDevices[i] == device_group_ci->pPhysicalDevices[j]) {
-                        skip |= LogError(pd_state->phys_device, "VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375",
+                        skip |= LogError(pd_state->Handle(), "VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375",
                                          "vkCreateDevice: VkDeviceGroupDeviceCreateInfo has a duplicated physical device "
                                          "in pPhysicalDevices [%" PRIu32 "] and [%" PRIu32 "].",
                                          i, j);
@@ -13496,7 +13496,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                                       VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == present_mode);
 
     VkSurfaceCapabilitiesKHR capabilities{};
-    DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_state->phys_device, pCreateInfo->surface, &capabilities);
+    DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_state->PhysDev(), pCreateInfo->surface, &capabilities);
     // Validate pCreateInfo->minImageCount against VkSurfaceCapabilitiesKHR::{min|max}ImageCount:
     // Shared Present Mode must have a minImageCount of 1
     if ((pCreateInfo->minImageCount < capabilities.minImageCount) && !shared_present_mode) {
@@ -13609,7 +13609,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         VkSurfaceProtectedCapabilitiesKHR surface_protected_capabilities = {VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR};
         VkSurfaceCapabilities2KHR surface_capabilities = {VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR};
         surface_capabilities.pNext = &surface_protected_capabilities;
-        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->phys_device, &surface_info, &surface_capabilities);
+        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->PhysDev(), &surface_info, &surface_capabilities);
 
         if (!surface_protected_capabilities.supportsProtected) {
             if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-03187",
@@ -13678,10 +13678,10 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfacePresentModesKHR():
     if (physical_device_state->present_modes.empty()) {
         uint32_t present_mode_count = 0;
-        DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->phys_device, pCreateInfo->surface,
+        DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->PhysDev(), pCreateInfo->surface,
                                                         &present_mode_count, nullptr);
         present_modes.resize(present_mode_count);
-        DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->phys_device, pCreateInfo->surface,
+        DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->PhysDev(), pCreateInfo->surface,
                                                         &present_mode_count, &present_modes[0]);
     } else {
         present_modes_ref = &physical_device_state->present_modes;
@@ -13720,7 +13720,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         VkSurfaceCapabilities2KHR capabilities2 = LvlInitStruct<VkSurfaceCapabilities2KHR>(&shared_present_capabilities);
         VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
         surface_info.surface = pCreateInfo->surface;
-        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->phys_device, &surface_info, &capabilities2);
+        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->PhysDev(), &surface_info, &capabilities2);
 
         if (image_usage != (image_usage & shared_present_capabilities.sharedPresentSupportedUsageFlags)) {
             if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageUsage-01384",

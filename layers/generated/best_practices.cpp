@@ -47,7 +47,6 @@ void BestPractices::PostCallRecordEnumeratePhysicalDevices(
     VkPhysicalDevice*                           pPhysicalDevices,
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, result);
-    ManualPostCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, result);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INITIALIZATION_FAILED};
         static const std::vector<VkResult> success_codes = {VK_INCOMPLETE};
