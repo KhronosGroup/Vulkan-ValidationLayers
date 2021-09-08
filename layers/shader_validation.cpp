@@ -47,6 +47,12 @@ static shader_stage_attributes shader_stage_attribs[] = {
     {"fragment shader", false, false, VK_SHADER_STAGE_FRAGMENT_BIT},
 };
 
+static const spirv_inst_iter GetBaseTypeIter(SHADER_MODULE_STATE const *src, uint32_t type) {
+    const auto &insn = src->get_def(type);
+    const uint32_t base_insn_id = src->GetBaseType(insn);
+    return src->get_def(base_insn_id);
+}
+
 static bool BaseTypesMatch(SHADER_MODULE_STATE const *a, SHADER_MODULE_STATE const *b, const spirv_inst_iter &a_base_insn,
                            const spirv_inst_iter &b_base_insn) {
     const uint32_t a_opcode = a_base_insn.opcode();
@@ -64,8 +70,10 @@ static bool BaseTypesMatch(SHADER_MODULE_STATE const *a, SHADER_MODULE_STATE con
                 return false;  // Structs cannot match if member counts differ
             }
 
-            for (unsigned i = 2; i < a_base_insn.len(); i++) {
-                if (!BaseTypesMatch(a, b, a->get_def(a_base_insn.word(i)), b->get_def(b_base_insn.word(i)))) {
+            for (uint32_t i = 2; i < a_base_insn.len(); i++) {
+                const auto &c_base_insn = GetBaseTypeIter(a, a_base_insn.word(i));
+                const auto &d_base_insn = GetBaseTypeIter(b, b_base_insn.word(i));
+                if (!BaseTypesMatch(a, b, c_base_insn, d_base_insn)) {
                     return false;
                 }
             }
@@ -76,13 +84,9 @@ static bool BaseTypesMatch(SHADER_MODULE_STATE const *a, SHADER_MODULE_STATE con
     return false;
 }
 
-static bool TypesMatch(SHADER_MODULE_STATE const *a, SHADER_MODULE_STATE const *b, unsigned a_type, unsigned b_type) {
-    const auto &a_insn = a->get_def(a_type);
-    const auto &b_insn = b->get_def(b_type);
-    const uint32_t a_base_insn_id = a->GetBaseType(a_insn);
-    const uint32_t b_base_insn_id = b->GetBaseType(b_insn);
-    const auto &a_base_insn = a->get_def(a_base_insn_id);
-    const auto &b_base_insn = b->get_def(b_base_insn_id);
+static bool TypesMatch(SHADER_MODULE_STATE const *a, SHADER_MODULE_STATE const *b, uint32_t a_type, uint32_t b_type) {
+    const auto &a_base_insn = GetBaseTypeIter(a, a_type);
+    const auto &b_base_insn = GetBaseTypeIter(b, b_type);
 
     return BaseTypesMatch(a, b, a_base_insn, b_base_insn);
 }
