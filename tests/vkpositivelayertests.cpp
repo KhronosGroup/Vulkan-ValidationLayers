@@ -15437,3 +15437,56 @@ TEST_F(VkPositiveLayerTest, TestPhysicalDeviceSurfaceSupport) {
     }
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
+    TEST_DESCRIPTION("Test shader interface with structs.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // There is a crash inside the driver on S10
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s This test does not currently run on Galaxy S10\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+                #version 450
+
+                struct R {
+                    vec4 rgba;
+                };
+
+                layout(location = 0) out R color[3];
+
+                void main() {
+                    color[0].rgba = vec4(1.0f);
+                    color[1].rgba = vec4(0.5f);
+                    color[2].rgba = vec4(0.75f);
+                }
+            )glsl";
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    char const *fsSource = R"glsl(
+                #version 450
+
+                struct R {
+                    vec4 rgba;
+                };
+
+                layout(location = 0) in R inColor[3];
+
+                layout (location = 0) out vec4 color;
+
+                void main() {
+                    color = inColor[0].rgba * inColor[1].rgba * inColor[2].rgba;
+                }
+            )glsl";
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit, "", true);
+}
