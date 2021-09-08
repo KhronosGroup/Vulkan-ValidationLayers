@@ -1155,3 +1155,36 @@ void CMD_BUFFER_STATE::RecordWriteTimestamp(CMD_TYPE cmd_type, VkPipelineStageFl
     QueryObject query = {queryPool, slot};
     EndQuery(query);
 }
+
+void ValidationStateTracker::RecordSubmitCommandBuffer(CB_SUBMISSION &submission, VkCommandBuffer command_buffer) {
+    auto cb_node = Get<CMD_BUFFER_STATE>(command_buffer);
+    if (cb_node) {
+        submission.cbs.push_back(command_buffer);
+        for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+            submission.cbs.push_back(secondary_cmd_buffer->commandBuffer());
+            secondary_cmd_buffer->IncrementResources();
+        }
+        cb_node->IncrementResources();
+        // increment use count for all bound objects including secondary cbs
+        cb_node->BeginUse();
+
+        VkQueryPool first_pool = VK_NULL_HANDLE;
+        EventToStageMap local_event_to_stage_map;
+        QueryMap local_query_to_state_map;
+        for (auto &function : cb_node->queryUpdates) {
+            function(nullptr, /*do_validate*/ false, first_pool, submission.perf_submit_pass, &local_query_to_state_map);
+        }
+
+        for (const auto &query_state_pair : local_query_to_state_map) {
+            queryToStateMap[query_state_pair.first] = query_state_pair.second;
+        }
+
+        for (const auto &function : cb_node->eventUpdates) {
+            function(nullptr, /*do_validate*/ false, &local_event_to_stage_map);
+        }
+
+        for (const auto &eventStagePair : local_event_to_stage_map) {
+            eventMap[eventStagePair.first]->stageMask = eventStagePair.second;
+        }
+    }
+}
