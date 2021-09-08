@@ -205,7 +205,9 @@ IMAGE_VIEW_STATE *CMD_BUFFER_STATE::GetActiveAttachmentImageViewState(uint32_t i
 
 // Get the image viewstate for a given framebuffer attachment
 const IMAGE_VIEW_STATE *CMD_BUFFER_STATE::GetActiveAttachmentImageViewState(uint32_t index) const {
-    assert(active_attachments && index != VK_ATTACHMENT_UNUSED && (index < active_attachments->size()));
+    if (!active_attachments || index == VK_ATTACHMENT_UNUSED || (index >= active_attachments->size())) {
+        return nullptr;
+    }
     return active_attachments->at(index);
 }
 
