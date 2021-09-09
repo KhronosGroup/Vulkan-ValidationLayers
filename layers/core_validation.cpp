@@ -13922,7 +13922,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                     "vkQueuePresentKHR: pSwapchains[%u] image index is too large (%u). There are only %u images in this swapchain.",
                     i, pPresentInfo->pImageIndices[i], static_cast<uint32_t>(swapchain_data->images.size()));
             } else if (!swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state ||
-                       !swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state->acquired) {
+                       !swapchain_data->images[pPresentInfo->pImageIndices[i]].acquired) {
                 skip |= LogError(pPresentInfo->pSwapchains[i], validation_error,
                                  "vkQueuePresentKHR: pSwapchains[%" PRIu32 "] image at index %" PRIu32
                                  " was not acquired from the swapchain.",
@@ -13930,12 +13930,6 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             } else {
                 const auto *image_state = swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state;
                 assert(image_state);
-
-                if (!image_state->acquired) {
-                    skip |= LogError(pPresentInfo->pSwapchains[i], validation_error,
-                                     "vkQueuePresentKHR: pSwapchains[%u] image index %u has not been acquired.", i,
-                                     pPresentInfo->pImageIndices[i]);
-                }
 
                 vector<VkImageLayout> layouts;
                 if (FindLayouts(*image_state, layouts)) {
@@ -14137,11 +14131,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
                              func_name);
         }
 
-        // TODO: this is technically wrong on many levels, but requires massive cleanup
-        const uint32_t acquired_images = static_cast<uint32_t>(
-            std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(),
-                          [](const SWAPCHAIN_IMAGE &image) { return (image.image_state && image.image_state->acquired); }));
-
+        const uint32_t acquired_images = swapchain_data->acquired_images;
         const uint32_t swapchain_image_count = static_cast<uint32_t>(swapchain_data->images.size());
         const auto min_image_count = swapchain_data->surface_capabilities.minImageCount;
         const bool too_many_already_acquired = acquired_images > swapchain_image_count - min_image_count;

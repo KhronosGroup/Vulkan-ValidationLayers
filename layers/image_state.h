@@ -88,7 +88,6 @@ class IMAGE_STATE : public BINDABLE {
     const safe_VkImageCreateInfo safe_create_info;
     const VkImageCreateInfo &createInfo;
     bool valid;               // If this is a swapchain image backing memory track valid here as it doesn't have DEVICE_MEMORY_STATE
-    bool acquired;            // If this is a swapchain image, has it been acquired by the app.
     bool shared_presentable;  // True for a front-buffered swapchain image
     bool layout_locked;       // A front-buffered image that has been presented can never have layout transitioned
     bool get_sparse_reqs_called;         // Track if GetImageSparseMemoryRequirements() has been called for this image
@@ -232,6 +231,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 struct SWAPCHAIN_IMAGE {
     IMAGE_STATE *image_state = nullptr;
     VkDeviceSize fake_base_address = 0;
+    bool acquired = false;
 };
 
 // State for VkSwapchainKHR objects.
@@ -242,14 +242,15 @@ class SWAPCHAIN_NODE : public BASE_NODE {
   public:
     safe_VkSwapchainCreateInfoKHR createInfo;
     std::vector<SWAPCHAIN_IMAGE> images;
-    bool retired;
+    bool retired = false;
     const bool shared_presentable;
-    uint32_t get_swapchain_image_count;
-    uint64_t max_present_id;
+    uint32_t get_swapchain_image_count = 0;
+    uint64_t max_present_id = 0;
     const safe_VkImageCreateInfo image_create_info;
     std::shared_ptr<SURFACE_STATE> surface;
     ValidationStateTracker *dev_data;
     const VkSurfaceCapabilitiesKHR surface_capabilities;
+    uint32_t acquired_images = 0;
 
     SWAPCHAIN_NODE(ValidationStateTracker *dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
 
