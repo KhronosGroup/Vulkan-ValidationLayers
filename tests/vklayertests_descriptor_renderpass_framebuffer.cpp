@@ -4,6 +4,7 @@
  * Copyright (c) 2015-2021 LunarG, Inc.
  * Copyright (c) 2015-2021 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +25,7 @@
  * Author: Shannon McPherson <shannon@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
  * Author: Tobias Hector <tobias.hector@amd.com>
+ * Author: Quentin Huot-Marchand <quentin.huot-marchand@arm.com
  */
 
 #include "cast_utils.h"
@@ -10154,4 +10156,130 @@ TEST_F(VkLayerTest, ValidateDescriptorBindingUpdateAfterBindWithAccelerationStru
         kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingAccelerationStructureUpdateAfterBind-03570");
     vk::CreateDescriptorSetLayout(m_device->handle(), &create_info, nullptr, &setLayout);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
+    TEST_DESCRIPTION("Update a descriptor set containing multiple bindings with only one update");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    std::array<const char *, 2> required_device_extensions = {
+        {VK_KHR_MAINTENANCE1_EXTENSION_NAME, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    auto inlineUniformProps = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
+    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&inlineUniformProps);
+    vk::GetPhysicalDeviceProperties2(gpu(), &prop2);
+
+    VkPhysicalDeviceInlineUniformBlockFeaturesEXT extEnable = {};
+    extEnable.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES_EXT;
+    extEnable.inlineUniformBlock = VK_TRUE;
+    extEnable.descriptorBindingInlineUniformBlockUpdateAfterBind = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extEnable));
+    m_errorMonitor->ExpectSuccess();
+    VkResult res;
+
+    float inline_data[] = {1.f, 2.f};
+
+    vk_testing::DescriptorSetLayout descLayout;
+    {
+        VkDescriptorSetLayoutBinding layoutBinding[3] = {};
+        uint32_t bindingCount[] = {sizeof(inline_data)/2, 0, sizeof(inline_data)/2};
+        uint32_t bindingPoint[] = {0, 1, 2};
+        VkDescriptorType descType[] = {VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
+                                       VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT};
+        for (size_t i = 0; i < 3; ++i) {
+            layoutBinding[i].binding = bindingPoint[i];
+            layoutBinding[i].descriptorCount = bindingCount[i];
+            layoutBinding[i].descriptorType = descType[i];
+            layoutBinding[i].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        }
+
+        VkDescriptorSetLayoutCreateInfo layoutCreate = {};
+        layoutCreate.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutCreate.bindingCount = 3;
+        layoutCreate.pBindings = layoutBinding;
+
+        if (inlineUniformProps.maxInlineUniformBlockSize < bindingCount[0]
+            || inlineUniformProps.maxInlineUniformBlockSize < bindingCount[1]) {
+            printf("%s DescriptorCount exceeds InlineUniformBlockSize limit, skipping tests\n", kSkipPrefix);
+            return;
+        }
+
+        descLayout.init(*m_device, layoutCreate);
+
+        m_errorMonitor->VerifyNotFound();
+        ASSERT_TRUE(descLayout.initialized());
+    }
+
+    vk_testing::DescriptorPool descPool;
+    {
+        VkDescriptorPoolInlineUniformBlockCreateInfoEXT descPoolInlineInfo = {};
+        descPoolInlineInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_INLINE_UNIFORM_BLOCK_CREATE_INFO_EXT;
+        descPoolInlineInfo.maxInlineUniformBlockBindings = 2;
+
+        VkDescriptorPoolSize poolSize[2];
+        poolSize[0].descriptorCount = sizeof(inline_data);
+        poolSize[0].type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+        poolSize[1].descriptorCount = 1;
+        poolSize[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+
+        VkDescriptorPoolCreateInfo poolCreate = {};
+        poolCreate.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolCreate.pNext = &descPoolInlineInfo;
+        poolCreate.poolSizeCount = 2;
+        poolCreate.pPoolSizes = poolSize;
+        poolCreate.maxSets = 1;
+
+        descPool.init(*m_device, poolCreate);
+        ASSERT_TRUE(descPool.initialized());
+    }
+
+    VkDescriptorSet descSetHandle = VK_NULL_HANDLE;
+    {
+        VkDescriptorSetAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.pSetLayouts = &descLayout.handle();
+        allocInfo.descriptorSetCount = 1;
+        allocInfo.descriptorPool = descPool.handle();
+
+        res = vk::AllocateDescriptorSets(m_device->device(), &allocInfo, &descSetHandle);
+        ASSERT_EQ(res, VK_SUCCESS);
+    }
+    vk_testing::DescriptorSet descSet(*m_device, &descPool, descSetHandle);
+
+    VkWriteDescriptorSetInlineUniformBlockEXT writeInlineUbDesc{};
+    writeInlineUbDesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT;
+    writeInlineUbDesc.dataSize = sizeof(inline_data);
+    writeInlineUbDesc.pData = inline_data;
+
+    VkWriteDescriptorSet writeDesc = {};
+    writeDesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDesc.descriptorCount = sizeof(inline_data);
+    writeDesc.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    writeDesc.dstBinding = 0;
+    writeDesc.dstArrayElement = 0;
+    writeDesc.dstSet = descSet.handle();
+    writeDesc.pNext = &writeInlineUbDesc;
+
+    m_errorMonitor->Reset();
+    m_errorMonitor->ExpectSuccess();
+    vk::UpdateDescriptorSets(m_device->device(), 1, &writeDesc, 0, nullptr);
+    m_errorMonitor->VerifyNotFound();
 }
