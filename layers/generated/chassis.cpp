@@ -11601,6 +11601,29 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiIndexedEXT(
 
 
 
+VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(
+    VkDevice                                    device,
+    VkDeviceMemory                              memory,
+    float                                       priority) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateSetDeviceMemoryPriorityEXT]) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateSetDeviceMemoryPriorityEXT(device, memory, priority);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetDeviceMemoryPriorityEXT]) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordSetDeviceMemoryPriorityEXT(device, memory, priority);
+    }
+    DispatchSetDeviceMemoryPriorityEXT(device, memory, priority);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetDeviceMemoryPriorityEXT]) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordSetDeviceMemoryPriorityEXT(device, memory, priority);
+    }
+}
+
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
@@ -12682,6 +12705,7 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
     {"vkCmdSetColorWriteEnableEXT", {kFuncTypeDev, (void*)CmdSetColorWriteEnableEXT}},
     {"vkCmdDrawMultiEXT", {kFuncTypeDev, (void*)CmdDrawMultiEXT}},
     {"vkCmdDrawMultiIndexedEXT", {kFuncTypeDev, (void*)CmdDrawMultiIndexedEXT}},
+    {"vkSetDeviceMemoryPriorityEXT", {kFuncTypeDev, (void*)SetDeviceMemoryPriorityEXT}},
     {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
     {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
     {"vkCmdBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresKHR}},

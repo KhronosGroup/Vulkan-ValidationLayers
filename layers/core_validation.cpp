@@ -16315,7 +16315,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysi
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface,
-                                                 "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-surface-02611",
+                                                 "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-surface-06211",
                                                  "vkGetPhysicalDeviceSurfaceCapabilities2EXT");
 
     return skip;

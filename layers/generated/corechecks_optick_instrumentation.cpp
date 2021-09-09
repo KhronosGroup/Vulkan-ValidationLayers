@@ -7603,6 +7603,22 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdDrawMultiIndexedEXT(VkComman
     CoreChecks::PostCallRecordCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride, pVertexOffset);
 }
 
+bool CoreChecksOptickInstrumented::PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice       device, VkDeviceMemory memory, float          priority) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateSetDeviceMemoryPriorityEXT(device, memory, priority);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice       device, VkDeviceMemory memory, float          priority) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordSetDeviceMemoryPriorityEXT(device, memory, priority);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordSetDeviceMemoryPriorityEXT(VkDevice       device, VkDeviceMemory memory, float          priority) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordSetDeviceMemoryPriorityEXT(device, memory, priority);
+}
+
 bool CoreChecksOptickInstrumented::PreCallValidateCreateAccelerationStructureKHR(VkDevice                                           device, const VkAccelerationStructureCreateInfoKHR*        pCreateInfo, const VkAllocationCallbacks*       pAllocator, VkAccelerationStructureKHR*                        pAccelerationStructure) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);

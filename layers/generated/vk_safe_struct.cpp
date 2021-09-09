@@ -42964,6 +42964,59 @@ void safe_VkPhysicalDeviceMultiDrawPropertiesEXT::initialize(const safe_VkPhysic
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT(const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    pageableDeviceLocalMemory(in_struct->pageableDeviceLocalMemory)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT(const safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    pageableDeviceLocalMemory = copy_src.pageableDeviceLocalMemory;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT& safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::operator=(const safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pageableDeviceLocalMemory = copy_src.pageableDeviceLocalMemory;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::~safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::initialize(const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    pageableDeviceLocalMemory = in_struct->pageableDeviceLocalMemory;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::initialize(const safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    pageableDeviceLocalMemory = copy_src->pageableDeviceLocalMemory;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkDeviceOrHostAddressKHR::safe_VkDeviceOrHostAddressKHR(const VkDeviceOrHostAddressKHR* in_struct)
 {
     initialize(in_struct);
@@ -45586,6 +45639,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_PROPERTIES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceMultiDrawPropertiesEXT(reinterpret_cast<const VkPhysicalDeviceMultiDrawPropertiesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             safe_pNext = new safe_VkWriteDescriptorSetAccelerationStructureKHR(reinterpret_cast<const VkWriteDescriptorSetAccelerationStructureKHR *>(pNext));
             break;
@@ -46614,6 +46670,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_PROPERTIES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceMultiDrawPropertiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             delete reinterpret_cast<const safe_VkWriteDescriptorSetAccelerationStructureKHR *>(header);

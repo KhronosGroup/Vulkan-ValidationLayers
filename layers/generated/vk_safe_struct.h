@@ -9992,6 +9992,21 @@ struct safe_VkPhysicalDeviceMultiDrawPropertiesEXT {
     VkPhysicalDeviceMultiDrawPropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceMultiDrawPropertiesEXT const *>(this); }
 };
 
+struct safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 pageableDeviceLocalMemory;
+    safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT(const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT* in_struct);
+    safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT(const safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT& copy_src);
+    safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT& operator=(const safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT& copy_src);
+    safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT();
+    ~safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT();
+    void initialize(const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT* copy_src);
+    VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *>(this); }
+    VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT const *>(this); }
+};
+
 union safe_VkDeviceOrHostAddressKHR {
     VkDeviceAddress deviceAddress;
     void* hostAddress;
