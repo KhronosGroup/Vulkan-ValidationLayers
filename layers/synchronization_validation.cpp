@@ -2848,8 +2848,14 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
                     }
                 }
             }
-        } else if (!(last_write_is_ordered && usage_write_is_ordered)) {
-            if (last_write.any() && IsWriteHazard(usage_bit)) {
+        } else if (last_write.any() && !(last_write_is_ordered && usage_write_is_ordered)) {
+            bool ilt_ilt_hazard = false;
+            if ((usage_index == SYNC_IMAGE_LAYOUT_TRANSITION) && (usage_bit == last_write)) {
+                // ILT after ILT is a special case where we check the 2nd access scope of the first ILT against the first access
+                // scope of the second ILT, which has been passed (smuggled?) in the ordering barrier
+                ilt_ilt_hazard = !(write_barriers & ordering.access_scope).any();
+            }
+            if (ilt_ilt_hazard || IsWriteHazard(usage_bit)) {
                 hazard.Set(this, usage_index, WRITE_AFTER_WRITE, last_write, write_tag);
             }
         }
