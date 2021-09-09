@@ -1100,6 +1100,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdDrawMultiIndexedEXT,
     InterceptIdPreCallRecordCmdDrawMultiIndexedEXT,
     InterceptIdPostCallRecordCmdDrawMultiIndexedEXT,
+    InterceptIdPreCallValidateSetDeviceMemoryPriorityEXT,
+    InterceptIdPreCallRecordSetDeviceMemoryPriorityEXT,
+    InterceptIdPostCallRecordSetDeviceMemoryPriorityEXT,
     InterceptIdPreCallValidateCreateAccelerationStructureKHR,
     InterceptIdPreCallRecordCreateAccelerationStructureKHR,
     InterceptIdPostCallRecordCreateAccelerationStructureKHR,
@@ -2405,6 +2408,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawMultiIndexedEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawMultiIndexedEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawMultiIndexedEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateSetDeviceMemoryPriorityEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordSetDeviceMemoryPriorityEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordSetDeviceMemoryPriorityEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

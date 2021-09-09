@@ -8005,6 +8005,22 @@ void ThreadSafety::PostCallRecordCmdDrawMultiIndexedEXT(
     // Host access to commandBuffer must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordSetDeviceMemoryPriorityEXT(
+    VkDevice                                    device,
+    VkDeviceMemory                              memory,
+    float                                       priority) {
+    StartReadObjectParentInstance(device, "vkSetDeviceMemoryPriorityEXT");
+    StartReadObject(memory, "vkSetDeviceMemoryPriorityEXT");
+}
+
+void ThreadSafety::PostCallRecordSetDeviceMemoryPriorityEXT(
+    VkDevice                                    device,
+    VkDeviceMemory                              memory,
+    float                                       priority) {
+    FinishReadObjectParentInstance(device, "vkSetDeviceMemoryPriorityEXT");
+    FinishReadObject(memory, "vkSetDeviceMemoryPriorityEXT");
+}
+
 void ThreadSafety::PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

@@ -8792,6 +8792,20 @@ void DispatchCmdDrawMultiIndexedEXT(
 
 }
 
+void DispatchSetDeviceMemoryPriorityEXT(
+    VkDevice                                    device,
+    VkDeviceMemory                              memory,
+    float                                       priority)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.SetDeviceMemoryPriorityEXT(device, memory, priority);
+    {
+        memory = layer_data->Unwrap(memory);
+    }
+    layer_data->device_dispatch_table.SetDeviceMemoryPriorityEXT(device, memory, priority);
+
+}
+
 VkResult DispatchCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
