@@ -29,6 +29,7 @@
 #include "pipeline_state.h"
 #include "descriptor_sets.h"
 #include "state_tracker.h"
+#include <limits>
 
 static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {
     const auto format = create_info.format;
@@ -139,7 +140,6 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
       valid(false),
-      acquired(false),
       shared_presentable(false),
       layout_locked(false),
       get_sparse_reqs_called(false),
@@ -165,7 +165,6 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
       valid(false),
-      acquired(false),
       shared_presentable(false),
       layout_locked(false),
       get_sparse_reqs_called(false),
@@ -447,23 +446,20 @@ SWAPCHAIN_NODE::SWAPCHAIN_NODE(ValidationStateTracker *dev_data_, const VkSwapch
                                VkSwapchainKHR swapchain)
     : BASE_NODE(swapchain, kVulkanObjectTypeSwapchainKHR),
       createInfo(pCreateInfo),
-      images(),
-      retired(false),
       shared_presentable(VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
                          VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode),
-      get_swapchain_image_count(0),
-      max_present_id(0),
       image_create_info(GetImageCreateInfo(pCreateInfo)),
       dev_data(dev_data_),
       surface_capabilities(GetSurfaceCaps(dev_data->physical_device, pCreateInfo->surface)) {}
 
 void SWAPCHAIN_NODE::PresentImage(uint32_t image_index) {
     if (image_index >= images.size()) return;
-
-    IMAGE_STATE *image_state = images[image_index].image_state;
-    if (image_state) {
-        image_state->acquired = false;
-        if (image_state->shared_presentable) {
+    assert(acquired_images > 0);
+    acquired_images--;
+    images[image_index].acquired = false;
+    if (shared_presentable) {
+        IMAGE_STATE *image_state = images[image_index].image_state;
+        if (image_state) {
             image_state->layout_locked = true;
         }
     }
@@ -472,10 +468,14 @@ void SWAPCHAIN_NODE::PresentImage(uint32_t image_index) {
 void SWAPCHAIN_NODE::AcquireImage(uint32_t image_index) {
     if (image_index >= images.size()) return;
 
-    IMAGE_STATE *image_state = images[image_index].image_state;
-    if (image_state) {
-        image_state->acquired = true;
-        image_state->shared_presentable = shared_presentable;
+    assert(acquired_images < std::numeric_limits<uint32_t>::max());
+    acquired_images++;
+    images[image_index].acquired = true;
+    if (shared_presentable) {
+        IMAGE_STATE *image_state = images[image_index].image_state;
+        if (image_state) {
+            image_state->shared_presentable = shared_presentable;
+        }
     }
 }
 
