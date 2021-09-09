@@ -3841,117 +3841,12 @@ void ValidationStateTracker::PostCallRecordCreateHeadlessSurfaceEXT(VkInstance i
     RecordVulkanSurface(pSurface);
 }
 
-void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice,
-                                                                                   VkSurfaceKHR surface,
-                                                                                   VkSurfaceCapabilitiesKHR *pSurfaceCapabilities,
-                                                                                   VkResult result) {
-    if (VK_SUCCESS != result) return;
-    auto physical_device_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
-    physical_device_state->surfaceCapabilities = *pSurfaceCapabilities;
-
-    // TODO May make sense to move this to BestPractices, but needs further refactoring in CoreChecks first
-    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = true;
-}
-
-void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-    VkSurfaceCapabilities2KHR *pSurfaceCapabilities, VkResult result) {
-    if (VK_SUCCESS != result) return;
-    auto physical_device_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
-    physical_device_state->surfaceCapabilities = pSurfaceCapabilities->surfaceCapabilities;
-
-    // TODO May make sense to move this to BestPractices, but needs further refactoring in CoreChecks first
-    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = true;
-}
-
-void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice,
-                                                                                    VkSurfaceKHR surface,
-                                                                                    VkSurfaceCapabilities2EXT *pSurfaceCapabilities,
-                                                                                    VkResult result) {
-    auto physical_device_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
-    physical_device_state->surfaceCapabilities.minImageCount = pSurfaceCapabilities->minImageCount;
-    physical_device_state->surfaceCapabilities.maxImageCount = pSurfaceCapabilities->maxImageCount;
-    physical_device_state->surfaceCapabilities.currentExtent = pSurfaceCapabilities->currentExtent;
-    physical_device_state->surfaceCapabilities.minImageExtent = pSurfaceCapabilities->minImageExtent;
-    physical_device_state->surfaceCapabilities.maxImageExtent = pSurfaceCapabilities->maxImageExtent;
-    physical_device_state->surfaceCapabilities.maxImageArrayLayers = pSurfaceCapabilities->maxImageArrayLayers;
-    physical_device_state->surfaceCapabilities.supportedTransforms = pSurfaceCapabilities->supportedTransforms;
-    physical_device_state->surfaceCapabilities.currentTransform = pSurfaceCapabilities->currentTransform;
-    physical_device_state->surfaceCapabilities.supportedCompositeAlpha = pSurfaceCapabilities->supportedCompositeAlpha;
-    physical_device_state->surfaceCapabilities.supportedUsageFlags = pSurfaceCapabilities->supportedUsageFlags;
-
-    // TODO May make sense to move this to BestPractices, but needs further refactoring in CoreChecks first
-    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = true;
-}
-
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice,
                                                                               uint32_t queueFamilyIndex, VkSurfaceKHR surface,
                                                                               VkBool32 *pSupported, VkResult result) {
     if (VK_SUCCESS != result) return;
     auto surface_state = GetSurfaceState(surface);
     surface_state->gpu_queue_support[{physicalDevice, queueFamilyIndex}] = (*pSupported == VK_TRUE);
-}
-
-void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
-                                                                                   VkSurfaceKHR surface,
-                                                                                   uint32_t *pPresentModeCount,
-                                                                                   VkPresentModeKHR *pPresentModes,
-                                                                                   VkResult result) {
-    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
-
-    // TODO: This isn't quite right -- available modes may differ by surface AND physical device.
-    auto physical_device_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
-
-    if (*pPresentModeCount) {
-        if (*pPresentModeCount > physical_device_state->present_modes.size()) {
-            physical_device_state->present_modes.resize(*pPresentModeCount);
-        }
-    }
-    if (pPresentModes) {
-        for (uint32_t i = 0; i < *pPresentModeCount; i++) {
-            physical_device_state->present_modes[i] = pPresentModes[i];
-        }
-    }
-}
-
-void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                              uint32_t *pSurfaceFormatCount,
-                                                                              VkSurfaceFormatKHR *pSurfaceFormats,
-                                                                              VkResult result) {
-    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
-
-    auto physical_device_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
-
-    if (*pSurfaceFormatCount) {
-        if (*pSurfaceFormatCount > physical_device_state->surface_formats.size()) {
-            physical_device_state->surface_formats.resize(*pSurfaceFormatCount);
-        }
-    }
-    if (pSurfaceFormats) {
-        for (uint32_t i = 0; i < *pSurfaceFormatCount; i++) {
-            physical_device_state->surface_formats[i] = pSurfaceFormats[i];
-        }
-    }
-}
-
-void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
-                                                                               const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                               uint32_t *pSurfaceFormatCount,
-                                                                               VkSurfaceFormat2KHR *pSurfaceFormats,
-                                                                               VkResult result) {
-    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
-
-    auto physical_device_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
-    if (*pSurfaceFormatCount) {
-        if (*pSurfaceFormatCount > physical_device_state->surface_formats.size()) {
-            physical_device_state->surface_formats.resize(*pSurfaceFormatCount);
-        }
-    }
-    if (pSurfaceFormats) {
-        for (uint32_t i = 0; i < *pSurfaceFormatCount; i++) {
-            physical_device_state->surface_formats[i] = pSurfaceFormats[i].surfaceFormat;
-        }
-    }
 }
 
 void ValidationStateTracker::PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer,

@@ -437,6 +437,12 @@ static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR 
     return safe_VkImageCreateInfo(&image_ci);
 }
 
+static VkSurfaceCapabilitiesKHR GetSurfaceCaps(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
+    VkSurfaceCapabilitiesKHR result{};
+    DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &result);
+    return result;
+}
+
 SWAPCHAIN_NODE::SWAPCHAIN_NODE(ValidationStateTracker *dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                VkSwapchainKHR swapchain)
     : BASE_NODE(swapchain, kVulkanObjectTypeSwapchainKHR),
@@ -448,7 +454,8 @@ SWAPCHAIN_NODE::SWAPCHAIN_NODE(ValidationStateTracker *dev_data_, const VkSwapch
       get_swapchain_image_count(0),
       max_present_id(0),
       image_create_info(GetImageCreateInfo(pCreateInfo)),
-      dev_data(dev_data_) {}
+      dev_data(dev_data_),
+      surface_capabilities(GetSurfaceCaps(dev_data->physical_device, pCreateInfo->surface)) {}
 
 void SWAPCHAIN_NODE::PresentImage(uint32_t image_index) {
     if (image_index >= images.size()) return;

@@ -13480,8 +13480,10 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     }
 
     auto physical_device_state = GetPhysicalDeviceState();
+    VkSurfaceCapabilitiesKHR capabilities{};
+    DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_state->PhysDev(), pCreateInfo->surface, &capabilities);
     bool skip = false;
-    VkSurfaceTransformFlagBitsKHR current_transform = physical_device_state->surfaceCapabilities.currentTransform;
+    VkSurfaceTransformFlagBitsKHR current_transform = capabilities.currentTransform;
     if ((pCreateInfo->preTransform & current_transform) != pCreateInfo->preTransform) {
         skip |= LogPerformanceWarning(physical_device, kVUID_Core_Swapchain_PreTransform,
                                       "%s: pCreateInfo->preTransform (%s) doesn't match the currentTransform (%s) returned by "
@@ -13495,8 +13497,6 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     const bool shared_present_mode = (VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == present_mode ||
                                       VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == present_mode);
 
-    VkSurfaceCapabilitiesKHR capabilities{};
-    DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_state->PhysDev(), pCreateInfo->surface, &capabilities);
     // Validate pCreateInfo->minImageCount against VkSurfaceCapabilitiesKHR::{min|max}ImageCount:
     // Shared Present Mode must have a minImageCount of 1
     if ((pCreateInfo->minImageCount < capabilities.minImageCount) && !shared_present_mode) {
@@ -13621,26 +13621,18 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         }
     }
 
-    std::vector<VkSurfaceFormatKHR> surface_formats;
-    const auto *surface_formats_ref = &surface_formats;
-
     // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfaceFormatsKHR():
-    if (physical_device_state->surface_formats.empty()) {
-        uint32_t surface_format_count = 0;
-        DispatchGetPhysicalDeviceSurfaceFormatsKHR(physical_device, pCreateInfo->surface, &surface_format_count, nullptr);
-        surface_formats.resize(surface_format_count);
-        DispatchGetPhysicalDeviceSurfaceFormatsKHR(physical_device, pCreateInfo->surface, &surface_format_count,
-                                                   &surface_formats[0]);
-    } else {
-        surface_formats_ref = &physical_device_state->surface_formats;
-    }
-
+    std::vector<VkSurfaceFormatKHR> surface_formats;
+    uint32_t surface_format_count = 0;
+    DispatchGetPhysicalDeviceSurfaceFormatsKHR(physical_device, pCreateInfo->surface, &surface_format_count, nullptr);
+    surface_formats.resize(surface_format_count);
+    DispatchGetPhysicalDeviceSurfaceFormatsKHR(physical_device, pCreateInfo->surface, &surface_format_count, &surface_formats[0]);
     {
         // Validate pCreateInfo->imageFormat against VkSurfaceFormatKHR::format:
         bool found_format = false;
         bool found_color_space = false;
         bool found_match = false;
-        for (const auto &format : *surface_formats_ref) {
+        for (const auto &format : surface_formats) {
             if (pCreateInfo->imageFormat == format.format) {
                 // Validate pCreateInfo->imageColorSpace against VkSurfaceFormatKHR::colorSpace:
                 found_format = true;
@@ -13672,23 +13664,17 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         }
     }
 
-    std::vector<VkPresentModeKHR> present_modes;
-    const auto *present_modes_ref = &present_modes;
-
     // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfacePresentModesKHR():
-    if (physical_device_state->present_modes.empty()) {
-        uint32_t present_mode_count = 0;
-        DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->PhysDev(), pCreateInfo->surface,
-                                                        &present_mode_count, nullptr);
-        present_modes.resize(present_mode_count);
-        DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->PhysDev(), pCreateInfo->surface,
-                                                        &present_mode_count, &present_modes[0]);
-    } else {
-        present_modes_ref = &physical_device_state->present_modes;
-    }
+    std::vector<VkPresentModeKHR> present_modes;
+    uint32_t present_mode_count = 0;
+    DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->PhysDev(), pCreateInfo->surface, &present_mode_count,
+                                                    nullptr);
+    present_modes.resize(present_mode_count);
+    DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->PhysDev(), pCreateInfo->surface, &present_mode_count,
+                                                    &present_modes[0]);
 
     // Validate pCreateInfo->presentMode against vkGetPhysicalDeviceSurfacePresentModesKHR():
-    bool found_match = std::find(present_modes_ref->begin(), present_modes_ref->end(), present_mode) != present_modes_ref->end();
+    bool found_match = std::find(present_modes.begin(), present_modes.end(), present_mode) != present_modes.end();
     if (!found_match) {
         if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-presentMode-01281",
                      "%s called with a non-supported presentMode (i.e. %s).", func_name, string_VkPresentModeKHR(present_mode))) {
@@ -14151,34 +14137,31 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
                              func_name);
         }
 
-        auto physical_device_state = GetPhysicalDeviceState();
         // TODO: this is technically wrong on many levels, but requires massive cleanup
-        if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called) {
-            const uint32_t acquired_images = static_cast<uint32_t>(
-                std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(),
-                              [](const SWAPCHAIN_IMAGE &image) { return (image.image_state && image.image_state->acquired); }));
+        const uint32_t acquired_images = static_cast<uint32_t>(
+            std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(),
+                          [](const SWAPCHAIN_IMAGE &image) { return (image.image_state && image.image_state->acquired); }));
 
-            const uint32_t swapchain_image_count = static_cast<uint32_t>(swapchain_data->images.size());
-            const auto min_image_count = physical_device_state->surfaceCapabilities.minImageCount;
-            const bool too_many_already_acquired = acquired_images > swapchain_image_count - min_image_count;
-            if (timeout == UINT64_MAX && too_many_already_acquired) {
-                const char *vuid = "INVALID-vuid";
-                if (cmd_version == CMD_VERSION_1) {
-                    vuid = "VUID-vkAcquireNextImageKHR-swapchain-01802";
-                } else if (cmd_version == CMD_VERSION_2) {
-                    vuid = "VUID-vkAcquireNextImage2KHR-swapchain-01803";
-                } else {
-                    assert(false);
-                }
-
-                const uint32_t acquirable = swapchain_image_count - min_image_count + 1;
-                skip |= LogError(swapchain, vuid,
-                                 "%s: Application has already previously acquired %" PRIu32 " image%s from swapchain. Only %" PRIu32
-                                 " %s available to be acquired using a timeout of UINT64_MAX (given the swapchain has %" PRIu32
-                                 ", and VkSurfaceCapabilitiesKHR::minImageCount is %" PRIu32 ").",
-                                 func_name, acquired_images, acquired_images > 1 ? "s" : "", acquirable,
-                                 acquirable > 1 ? "are" : "is", swapchain_image_count, min_image_count);
+        const uint32_t swapchain_image_count = static_cast<uint32_t>(swapchain_data->images.size());
+        const auto min_image_count = swapchain_data->surface_capabilities.minImageCount;
+        const bool too_many_already_acquired = acquired_images > swapchain_image_count - min_image_count;
+        if (timeout == UINT64_MAX && too_many_already_acquired) {
+            const char *vuid = "INVALID-vuid";
+            if (cmd_version == CMD_VERSION_1) {
+                vuid = "VUID-vkAcquireNextImageKHR-swapchain-01802";
+            } else if (cmd_version == CMD_VERSION_2) {
+                vuid = "VUID-vkAcquireNextImage2KHR-swapchain-01803";
+            } else {
+                assert(false);
             }
+
+            const uint32_t acquirable = swapchain_image_count - min_image_count + 1;
+            skip |= LogError(swapchain, vuid,
+                             "%s: Application has already previously acquired %" PRIu32 " image%s from swapchain. Only %" PRIu32
+                             " %s available to be acquired using a timeout of UINT64_MAX (given the swapchain has %" PRIu32
+                             ", and VkSurfaceCapabilitiesKHR::minImageCount is %" PRIu32 ").",
+                             func_name, acquired_images, acquired_images > 1 ? "s" : "", acquirable, acquirable > 1 ? "are" : "is",
+                             swapchain_image_count, min_image_count);
         }
     }
     return skip;

@@ -2834,13 +2834,12 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysical
                            "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount; but no prior "
                            "positive value has been seen for pSurfaceFormats.");
     } else {
-        auto prev_format_count = static_cast<uint32_t>(bp_pd_state->surface_formats.size());
-        if (*pSurfaceFormatCount > prev_format_count) {
+        if (*pSurfaceFormatCount > bp_pd_state->surface_formats_count) {
             skip |= LogWarning(physicalDevice, kVUID_Core_DevLimit_CountMismatch,
                                "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount, and with "
                                "pSurfaceFormats set to a value (%u) that is greater than the value (%u) that was returned "
                                "when pSurfaceFormatCount was NULL.",
-                               *pSurfaceFormatCount, prev_format_count);
+                               *pSurfaceFormatCount, bp_pd_state->surface_formats_count);
         }
     }
     return skip;
@@ -3725,6 +3724,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhy
             if (call_state < QUERY_COUNT) {
                 call_state = QUERY_COUNT;
             }
+            bp_pd_data->surface_formats_count = *pSurfaceFormatCount;
         }
         if (pSurfaceFormats) {
             if (call_state < QUERY_DETAILS) {
@@ -3744,6 +3744,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPh
             if (bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState < QUERY_COUNT) {
                 bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState = QUERY_COUNT;
             }
+            bp_pd_data->surface_formats_count = *pSurfaceFormatCount;
         }
         if (pSurfaceFormats) {
             if (bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState < QUERY_DETAILS) {
