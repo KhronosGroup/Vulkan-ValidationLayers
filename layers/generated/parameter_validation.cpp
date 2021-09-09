@@ -224,7 +224,7 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice 
 }
 
 bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,
-                                                      const VkBaseOutStructure* header, const char *pnext_vuid, bool is_physdev_api) const {
+                                                      const VkBaseOutStructure* header, const char *pnext_vuid, bool is_physdev_api, bool is_const_param) const {
     bool skip = false;
     switch(header->sType) {
 
@@ -241,427 +241,494 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDevice16BitStorageFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES: { // Covers VUID-VkPhysicalDevice16BitStorageFeatures-sType-sType
-            VkPhysicalDevice16BitStorageFeatures *structure = (VkPhysicalDevice16BitStorageFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_16BIT_STORAGE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_16bit_storage)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES), but its parent extension "
-                           "VK_KHR_16bit_storage has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_16BIT_STORAGE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_16bit_storage)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES), but its parent extension "
+                               "VK_KHR_16bit_storage has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDevice16BitStorageFeatures", "storageBuffer16BitAccess", structure->storageBuffer16BitAccess);
+            if (is_const_param) {
+                VkPhysicalDevice16BitStorageFeatures *structure = (VkPhysicalDevice16BitStorageFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDevice16BitStorageFeatures", "storageBuffer16BitAccess", structure->storageBuffer16BitAccess);
 
-            skip |= validate_bool32("VkPhysicalDevice16BitStorageFeatures", "uniformAndStorageBuffer16BitAccess", structure->uniformAndStorageBuffer16BitAccess);
+                skip |= validate_bool32("VkPhysicalDevice16BitStorageFeatures", "uniformAndStorageBuffer16BitAccess", structure->uniformAndStorageBuffer16BitAccess);
 
-            skip |= validate_bool32("VkPhysicalDevice16BitStorageFeatures", "storagePushConstant16", structure->storagePushConstant16);
+                skip |= validate_bool32("VkPhysicalDevice16BitStorageFeatures", "storagePushConstant16", structure->storagePushConstant16);
 
-            skip |= validate_bool32("VkPhysicalDevice16BitStorageFeatures", "storageInputOutput16", structure->storageInputOutput16);
+                skip |= validate_bool32("VkPhysicalDevice16BitStorageFeatures", "storageInputOutput16", structure->storageInputOutput16);
+            }
         } break;
 
         // Validation code for VkMemoryDedicatedRequirements structure members
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS: { // Covers VUID-VkMemoryDedicatedRequirements-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_dedicated_allocation)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS), but its parent extension "
-                           "VK_KHR_dedicated_allocation has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_dedicated_allocation)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS), but its parent extension "
+                               "VK_KHR_dedicated_allocation has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkMemoryDedicatedAllocateInfo structure members
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO: { // Covers VUID-VkMemoryDedicatedAllocateInfo-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_dedicated_allocation)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO), but its parent extension "
-                           "VK_KHR_dedicated_allocation has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_dedicated_allocation)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO), but its parent extension "
+                               "VK_KHR_dedicated_allocation has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkMemoryAllocateFlagsInfo structure members
         case VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO: { // Covers VUID-VkMemoryAllocateFlagsInfo-sType-sType
-            VkMemoryAllocateFlagsInfo *structure = (VkMemoryAllocateFlagsInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO), but its parent extension "
-                           "VK_KHR_device_group has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO), but its parent extension "
+                               "VK_KHR_device_group has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_flags("VkMemoryAllocateFlagsInfo", "flags", "VkMemoryAllocateFlagBits", AllVkMemoryAllocateFlagBits, structure->flags, kOptionalFlags, "VUID-VkMemoryAllocateFlagsInfo-flags-parameter");
+            if (is_const_param) {
+                VkMemoryAllocateFlagsInfo *structure = (VkMemoryAllocateFlagsInfo *) header;
+                skip |= validate_flags("VkMemoryAllocateFlagsInfo", "flags", "VkMemoryAllocateFlagBits", AllVkMemoryAllocateFlagBits, structure->flags, kOptionalFlags, "VUID-VkMemoryAllocateFlagsInfo-flags-parameter");
+            }
         } break;
 
         // Validation code for VkDeviceGroupRenderPassBeginInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO: { // Covers VUID-VkDeviceGroupRenderPassBeginInfo-sType-sType
-            VkDeviceGroupRenderPassBeginInfo *structure = (VkDeviceGroupRenderPassBeginInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO), but its parent extension "
-                           "VK_KHR_device_group has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO), but its parent extension "
+                               "VK_KHR_device_group has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_array("VkDeviceGroupRenderPassBeginInfo", "deviceRenderAreaCount", "pDeviceRenderAreas", structure->deviceRenderAreaCount, &structure->pDeviceRenderAreas, false, true, kVUIDUndefined, "VUID-VkDeviceGroupRenderPassBeginInfo-pDeviceRenderAreas-parameter");
+            if (is_const_param) {
+                VkDeviceGroupRenderPassBeginInfo *structure = (VkDeviceGroupRenderPassBeginInfo *) header;
+                skip |= validate_array("VkDeviceGroupRenderPassBeginInfo", "deviceRenderAreaCount", "pDeviceRenderAreas", structure->deviceRenderAreaCount, &structure->pDeviceRenderAreas, false, true, kVUIDUndefined, "VUID-VkDeviceGroupRenderPassBeginInfo-pDeviceRenderAreas-parameter");
 
-            if (structure->pDeviceRenderAreas != NULL)
-            {
-                for (uint32_t deviceRenderAreaIndex = 0; deviceRenderAreaIndex < structure->deviceRenderAreaCount; ++deviceRenderAreaIndex)
+                if (structure->pDeviceRenderAreas != NULL)
                 {
+                    for (uint32_t deviceRenderAreaIndex = 0; deviceRenderAreaIndex < structure->deviceRenderAreaCount; ++deviceRenderAreaIndex)
+                    {
+                    }
                 }
             }
         } break;
 
         // Validation code for VkDeviceGroupCommandBufferBeginInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO: { // Covers VUID-VkDeviceGroupCommandBufferBeginInfo-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO), but its parent extension "
-                           "VK_KHR_device_group has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO), but its parent extension "
+                               "VK_KHR_device_group has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkDeviceGroupSubmitInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO: { // Covers VUID-VkDeviceGroupSubmitInfo-sType-sType
-            VkDeviceGroupSubmitInfo *structure = (VkDeviceGroupSubmitInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO), but its parent extension "
-                           "VK_KHR_device_group has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO), but its parent extension "
+                               "VK_KHR_device_group has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_array("VkDeviceGroupSubmitInfo", "waitSemaphoreCount", "pWaitSemaphoreDeviceIndices", structure->waitSemaphoreCount, &structure->pWaitSemaphoreDeviceIndices, false, true, kVUIDUndefined, "VUID-VkDeviceGroupSubmitInfo-pWaitSemaphoreDeviceIndices-parameter");
+            if (is_const_param) {
+                VkDeviceGroupSubmitInfo *structure = (VkDeviceGroupSubmitInfo *) header;
+                skip |= validate_array("VkDeviceGroupSubmitInfo", "waitSemaphoreCount", "pWaitSemaphoreDeviceIndices", structure->waitSemaphoreCount, &structure->pWaitSemaphoreDeviceIndices, false, true, kVUIDUndefined, "VUID-VkDeviceGroupSubmitInfo-pWaitSemaphoreDeviceIndices-parameter");
 
-            skip |= validate_array("VkDeviceGroupSubmitInfo", "commandBufferCount", "pCommandBufferDeviceMasks", structure->commandBufferCount, &structure->pCommandBufferDeviceMasks, false, true, kVUIDUndefined, "VUID-VkDeviceGroupSubmitInfo-pCommandBufferDeviceMasks-parameter");
+                skip |= validate_array("VkDeviceGroupSubmitInfo", "commandBufferCount", "pCommandBufferDeviceMasks", structure->commandBufferCount, &structure->pCommandBufferDeviceMasks, false, true, kVUIDUndefined, "VUID-VkDeviceGroupSubmitInfo-pCommandBufferDeviceMasks-parameter");
 
-            skip |= validate_array("VkDeviceGroupSubmitInfo", "signalSemaphoreCount", "pSignalSemaphoreDeviceIndices", structure->signalSemaphoreCount, &structure->pSignalSemaphoreDeviceIndices, false, true, kVUIDUndefined, "VUID-VkDeviceGroupSubmitInfo-pSignalSemaphoreDeviceIndices-parameter");
+                skip |= validate_array("VkDeviceGroupSubmitInfo", "signalSemaphoreCount", "pSignalSemaphoreDeviceIndices", structure->signalSemaphoreCount, &structure->pSignalSemaphoreDeviceIndices, false, true, kVUIDUndefined, "VUID-VkDeviceGroupSubmitInfo-pSignalSemaphoreDeviceIndices-parameter");
+            }
         } break;
 
         // Validation code for VkDeviceGroupBindSparseInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO: { // Covers VUID-VkDeviceGroupBindSparseInfo-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO), but its parent extension "
-                           "VK_KHR_device_group has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO), but its parent extension "
+                               "VK_KHR_device_group has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkBindBufferMemoryDeviceGroupInfo structure members
         case VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO: { // Covers VUID-VkBindBufferMemoryDeviceGroupInfo-sType-sType
-            VkBindBufferMemoryDeviceGroupInfo *structure = (VkBindBufferMemoryDeviceGroupInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO), but its parent extension "
-                           "VK_KHR_device_group has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO), but its parent extension "
+                               "VK_KHR_device_group has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_array("VkBindBufferMemoryDeviceGroupInfo", "deviceIndexCount", "pDeviceIndices", structure->deviceIndexCount, &structure->pDeviceIndices, false, true, kVUIDUndefined, "VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-parameter");
+            if (is_const_param) {
+                VkBindBufferMemoryDeviceGroupInfo *structure = (VkBindBufferMemoryDeviceGroupInfo *) header;
+                skip |= validate_array("VkBindBufferMemoryDeviceGroupInfo", "deviceIndexCount", "pDeviceIndices", structure->deviceIndexCount, &structure->pDeviceIndices, false, true, kVUIDUndefined, "VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-parameter");
+            }
         } break;
 
         // Validation code for VkBindImageMemoryDeviceGroupInfo structure members
         case VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO: { // Covers VUID-VkBindImageMemoryDeviceGroupInfo-sType-sType
-            VkBindImageMemoryDeviceGroupInfo *structure = (VkBindImageMemoryDeviceGroupInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO), but its parent extension "
-                           "VK_KHR_device_group has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_device_group)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO), but its parent extension "
+                               "VK_KHR_device_group has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_array("VkBindImageMemoryDeviceGroupInfo", "deviceIndexCount", "pDeviceIndices", structure->deviceIndexCount, &structure->pDeviceIndices, false, true, kVUIDUndefined, "VUID-VkBindImageMemoryDeviceGroupInfo-pDeviceIndices-parameter");
+            if (is_const_param) {
+                VkBindImageMemoryDeviceGroupInfo *structure = (VkBindImageMemoryDeviceGroupInfo *) header;
+                skip |= validate_array("VkBindImageMemoryDeviceGroupInfo", "deviceIndexCount", "pDeviceIndices", structure->deviceIndexCount, &structure->pDeviceIndices, false, true, kVUIDUndefined, "VUID-VkBindImageMemoryDeviceGroupInfo-pDeviceIndices-parameter");
 
-            skip |= validate_array("VkBindImageMemoryDeviceGroupInfo", "splitInstanceBindRegionCount", "pSplitInstanceBindRegions", structure->splitInstanceBindRegionCount, &structure->pSplitInstanceBindRegions, false, true, kVUIDUndefined, "VUID-VkBindImageMemoryDeviceGroupInfo-pSplitInstanceBindRegions-parameter");
+                skip |= validate_array("VkBindImageMemoryDeviceGroupInfo", "splitInstanceBindRegionCount", "pSplitInstanceBindRegions", structure->splitInstanceBindRegionCount, &structure->pSplitInstanceBindRegions, false, true, kVUIDUndefined, "VUID-VkBindImageMemoryDeviceGroupInfo-pSplitInstanceBindRegions-parameter");
 
-            if (structure->pSplitInstanceBindRegions != NULL)
-            {
-                for (uint32_t splitInstanceBindRegionIndex = 0; splitInstanceBindRegionIndex < structure->splitInstanceBindRegionCount; ++splitInstanceBindRegionIndex)
+                if (structure->pSplitInstanceBindRegions != NULL)
                 {
+                    for (uint32_t splitInstanceBindRegionIndex = 0; splitInstanceBindRegionIndex < structure->splitInstanceBindRegionCount; ++splitInstanceBindRegionIndex)
+                    {
+                    }
                 }
             }
         } break;
 
         // Validation code for VkDeviceGroupDeviceCreateInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO: { // Covers VUID-VkDeviceGroupDeviceCreateInfo-sType-sType
-            VkDeviceGroupDeviceCreateInfo *structure = (VkDeviceGroupDeviceCreateInfo *) header;
-            if (!instance_extensions.vk_khr_device_group_creation) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO), but its parent extension "
-                           "VK_KHR_device_group_creation has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if (!instance_extensions.vk_khr_device_group_creation) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO), but its parent extension "
+                               "VK_KHR_device_group_creation has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_array("VkDeviceGroupDeviceCreateInfo", "physicalDeviceCount", "pPhysicalDevices", structure->physicalDeviceCount, &structure->pPhysicalDevices, false, true, kVUIDUndefined, "VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-parameter");
+            if (is_const_param) {
+                VkDeviceGroupDeviceCreateInfo *structure = (VkDeviceGroupDeviceCreateInfo *) header;
+                skip |= validate_array("VkDeviceGroupDeviceCreateInfo", "physicalDeviceCount", "pPhysicalDevices", structure->physicalDeviceCount, &structure->pPhysicalDevices, false, true, kVUIDUndefined, "VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceFeatures2 structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2: { // Covers VUID-VkPhysicalDeviceFeatures2-sType-sType
-            VkPhysicalDeviceFeatures2 *structure = (VkPhysicalDeviceFeatures2 *) header;
-            if (!instance_extensions.vk_khr_get_physical_device_properties2) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2), but its parent extension "
-                           "VK_KHR_get_physical_device_properties2 has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if (!instance_extensions.vk_khr_get_physical_device_properties2) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2), but its parent extension "
+                               "VK_KHR_get_physical_device_properties2 has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.robustBufferAccess", structure->features.robustBufferAccess);
+            if (is_const_param) {
+                VkPhysicalDeviceFeatures2 *structure = (VkPhysicalDeviceFeatures2 *) header;
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.robustBufferAccess", structure->features.robustBufferAccess);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.fullDrawIndexUint32", structure->features.fullDrawIndexUint32);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.fullDrawIndexUint32", structure->features.fullDrawIndexUint32);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.imageCubeArray", structure->features.imageCubeArray);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.imageCubeArray", structure->features.imageCubeArray);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.independentBlend", structure->features.independentBlend);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.independentBlend", structure->features.independentBlend);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.geometryShader", structure->features.geometryShader);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.geometryShader", structure->features.geometryShader);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.tessellationShader", structure->features.tessellationShader);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.tessellationShader", structure->features.tessellationShader);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sampleRateShading", structure->features.sampleRateShading);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sampleRateShading", structure->features.sampleRateShading);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.dualSrcBlend", structure->features.dualSrcBlend);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.dualSrcBlend", structure->features.dualSrcBlend);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.logicOp", structure->features.logicOp);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.logicOp", structure->features.logicOp);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.multiDrawIndirect", structure->features.multiDrawIndirect);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.multiDrawIndirect", structure->features.multiDrawIndirect);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.drawIndirectFirstInstance", structure->features.drawIndirectFirstInstance);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.drawIndirectFirstInstance", structure->features.drawIndirectFirstInstance);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.depthClamp", structure->features.depthClamp);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.depthClamp", structure->features.depthClamp);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.depthBiasClamp", structure->features.depthBiasClamp);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.depthBiasClamp", structure->features.depthBiasClamp);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.fillModeNonSolid", structure->features.fillModeNonSolid);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.fillModeNonSolid", structure->features.fillModeNonSolid);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.depthBounds", structure->features.depthBounds);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.depthBounds", structure->features.depthBounds);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.wideLines", structure->features.wideLines);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.wideLines", structure->features.wideLines);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.largePoints", structure->features.largePoints);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.largePoints", structure->features.largePoints);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.alphaToOne", structure->features.alphaToOne);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.alphaToOne", structure->features.alphaToOne);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.multiViewport", structure->features.multiViewport);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.multiViewport", structure->features.multiViewport);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.samplerAnisotropy", structure->features.samplerAnisotropy);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.samplerAnisotropy", structure->features.samplerAnisotropy);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.textureCompressionETC2", structure->features.textureCompressionETC2);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.textureCompressionETC2", structure->features.textureCompressionETC2);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.textureCompressionASTC_LDR", structure->features.textureCompressionASTC_LDR);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.textureCompressionASTC_LDR", structure->features.textureCompressionASTC_LDR);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.textureCompressionBC", structure->features.textureCompressionBC);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.textureCompressionBC", structure->features.textureCompressionBC);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.occlusionQueryPrecise", structure->features.occlusionQueryPrecise);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.occlusionQueryPrecise", structure->features.occlusionQueryPrecise);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.pipelineStatisticsQuery", structure->features.pipelineStatisticsQuery);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.pipelineStatisticsQuery", structure->features.pipelineStatisticsQuery);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.vertexPipelineStoresAndAtomics", structure->features.vertexPipelineStoresAndAtomics);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.vertexPipelineStoresAndAtomics", structure->features.vertexPipelineStoresAndAtomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.fragmentStoresAndAtomics", structure->features.fragmentStoresAndAtomics);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.fragmentStoresAndAtomics", structure->features.fragmentStoresAndAtomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderTessellationAndGeometryPointSize", structure->features.shaderTessellationAndGeometryPointSize);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderTessellationAndGeometryPointSize", structure->features.shaderTessellationAndGeometryPointSize);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderImageGatherExtended", structure->features.shaderImageGatherExtended);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderImageGatherExtended", structure->features.shaderImageGatherExtended);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderStorageImageExtendedFormats", structure->features.shaderStorageImageExtendedFormats);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderStorageImageExtendedFormats", structure->features.shaderStorageImageExtendedFormats);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderStorageImageMultisample", structure->features.shaderStorageImageMultisample);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderStorageImageMultisample", structure->features.shaderStorageImageMultisample);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderStorageImageReadWithoutFormat", structure->features.shaderStorageImageReadWithoutFormat);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderStorageImageReadWithoutFormat", structure->features.shaderStorageImageReadWithoutFormat);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderStorageImageWriteWithoutFormat", structure->features.shaderStorageImageWriteWithoutFormat);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderStorageImageWriteWithoutFormat", structure->features.shaderStorageImageWriteWithoutFormat);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderUniformBufferArrayDynamicIndexing", structure->features.shaderUniformBufferArrayDynamicIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderUniformBufferArrayDynamicIndexing", structure->features.shaderUniformBufferArrayDynamicIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderSampledImageArrayDynamicIndexing", structure->features.shaderSampledImageArrayDynamicIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderSampledImageArrayDynamicIndexing", structure->features.shaderSampledImageArrayDynamicIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderStorageBufferArrayDynamicIndexing", structure->features.shaderStorageBufferArrayDynamicIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderStorageBufferArrayDynamicIndexing", structure->features.shaderStorageBufferArrayDynamicIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderStorageImageArrayDynamicIndexing", structure->features.shaderStorageImageArrayDynamicIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderStorageImageArrayDynamicIndexing", structure->features.shaderStorageImageArrayDynamicIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderClipDistance", structure->features.shaderClipDistance);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderClipDistance", structure->features.shaderClipDistance);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderCullDistance", structure->features.shaderCullDistance);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderCullDistance", structure->features.shaderCullDistance);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderFloat64", structure->features.shaderFloat64);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderFloat64", structure->features.shaderFloat64);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderInt64", structure->features.shaderInt64);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderInt64", structure->features.shaderInt64);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderInt16", structure->features.shaderInt16);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderInt16", structure->features.shaderInt16);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderResourceResidency", structure->features.shaderResourceResidency);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderResourceResidency", structure->features.shaderResourceResidency);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderResourceMinLod", structure->features.shaderResourceMinLod);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.shaderResourceMinLod", structure->features.shaderResourceMinLod);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseBinding", structure->features.sparseBinding);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseBinding", structure->features.sparseBinding);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidencyBuffer", structure->features.sparseResidencyBuffer);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidencyBuffer", structure->features.sparseResidencyBuffer);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidencyImage2D", structure->features.sparseResidencyImage2D);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidencyImage2D", structure->features.sparseResidencyImage2D);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidencyImage3D", structure->features.sparseResidencyImage3D);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidencyImage3D", structure->features.sparseResidencyImage3D);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidency2Samples", structure->features.sparseResidency2Samples);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidency2Samples", structure->features.sparseResidency2Samples);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidency4Samples", structure->features.sparseResidency4Samples);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidency4Samples", structure->features.sparseResidency4Samples);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidency8Samples", structure->features.sparseResidency8Samples);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidency8Samples", structure->features.sparseResidency8Samples);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidency16Samples", structure->features.sparseResidency16Samples);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidency16Samples", structure->features.sparseResidency16Samples);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidencyAliased", structure->features.sparseResidencyAliased);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.sparseResidencyAliased", structure->features.sparseResidencyAliased);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.variableMultisampleRate", structure->features.variableMultisampleRate);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.variableMultisampleRate", structure->features.variableMultisampleRate);
 
-            skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.inheritedQueries", structure->features.inheritedQueries);
+                skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.inheritedQueries", structure->features.inheritedQueries);
+            }
         } break;
 
         // Validation code for VkPhysicalDevicePointClippingProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES: { // Covers VUID-VkPhysicalDevicePointClippingProperties-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES), but its parent extension "
-                           "VK_KHR_maintenance2 has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES), but its parent extension "
+                               "VK_KHR_maintenance2 has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkRenderPassInputAttachmentAspectCreateInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO: { // Covers VUID-VkRenderPassInputAttachmentAspectCreateInfo-sType-sType
-            VkRenderPassInputAttachmentAspectCreateInfo *structure = (VkRenderPassInputAttachmentAspectCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO), but its parent extension "
-                           "VK_KHR_maintenance2 has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO), but its parent extension "
+                               "VK_KHR_maintenance2 has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_array("VkRenderPassInputAttachmentAspectCreateInfo", "aspectReferenceCount", "pAspectReferences", structure->aspectReferenceCount, &structure->pAspectReferences, true, true, "VUID-VkRenderPassInputAttachmentAspectCreateInfo-aspectReferenceCount-arraylength", "VUID-VkRenderPassInputAttachmentAspectCreateInfo-pAspectReferences-parameter");
+            if (is_const_param) {
+                VkRenderPassInputAttachmentAspectCreateInfo *structure = (VkRenderPassInputAttachmentAspectCreateInfo *) header;
+                skip |= validate_array("VkRenderPassInputAttachmentAspectCreateInfo", "aspectReferenceCount", "pAspectReferences", structure->aspectReferenceCount, &structure->pAspectReferences, true, true, "VUID-VkRenderPassInputAttachmentAspectCreateInfo-aspectReferenceCount-arraylength", "VUID-VkRenderPassInputAttachmentAspectCreateInfo-pAspectReferences-parameter");
 
-            if (structure->pAspectReferences != NULL)
-            {
-                for (uint32_t aspectReferenceIndex = 0; aspectReferenceIndex < structure->aspectReferenceCount; ++aspectReferenceIndex)
+                if (structure->pAspectReferences != NULL)
                 {
-                    skip |= validate_flags("VkRenderPassInputAttachmentAspectCreateInfo", ParameterName("pAspectReferences[%i].aspectMask", ParameterName::IndexVector{ aspectReferenceIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, structure->pAspectReferences[aspectReferenceIndex].aspectMask, kRequiredFlags, "VUID-VkInputAttachmentAspectReference-aspectMask-parameter", "VUID-VkInputAttachmentAspectReference-aspectMask-requiredbitmask");
+                    for (uint32_t aspectReferenceIndex = 0; aspectReferenceIndex < structure->aspectReferenceCount; ++aspectReferenceIndex)
+                    {
+                        skip |= validate_flags("VkRenderPassInputAttachmentAspectCreateInfo", ParameterName("pAspectReferences[%i].aspectMask", ParameterName::IndexVector{ aspectReferenceIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, structure->pAspectReferences[aspectReferenceIndex].aspectMask, kRequiredFlags, "VUID-VkInputAttachmentAspectReference-aspectMask-parameter", "VUID-VkInputAttachmentAspectReference-aspectMask-requiredbitmask");
+                    }
                 }
             }
         } break;
 
         // Validation code for VkImageViewUsageCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO: { // Covers VUID-VkImageViewUsageCreateInfo-sType-sType
-            VkImageViewUsageCreateInfo *structure = (VkImageViewUsageCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO), but its parent extension "
-                           "VK_KHR_maintenance2 has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO), but its parent extension "
+                               "VK_KHR_maintenance2 has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_flags("VkImageViewUsageCreateInfo", "usage", "VkImageUsageFlagBits", AllVkImageUsageFlagBits, structure->usage, kRequiredFlags, "VUID-VkImageViewUsageCreateInfo-usage-parameter", "VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask");
+            if (is_const_param) {
+                VkImageViewUsageCreateInfo *structure = (VkImageViewUsageCreateInfo *) header;
+                skip |= validate_flags("VkImageViewUsageCreateInfo", "usage", "VkImageUsageFlagBits", AllVkImageUsageFlagBits, structure->usage, kRequiredFlags, "VUID-VkImageViewUsageCreateInfo-usage-parameter", "VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask");
+            }
         } break;
 
         // Validation code for VkPipelineTessellationDomainOriginStateCreateInfo structure members
         case VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO: { // Covers VUID-VkPipelineTessellationDomainOriginStateCreateInfo-sType-sType
-            VkPipelineTessellationDomainOriginStateCreateInfo *structure = (VkPipelineTessellationDomainOriginStateCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO), but its parent extension "
-                           "VK_KHR_maintenance2 has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO), but its parent extension "
+                               "VK_KHR_maintenance2 has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_ranged_enum("VkPipelineTessellationDomainOriginStateCreateInfo", "domainOrigin", "VkTessellationDomainOrigin", AllVkTessellationDomainOriginEnums, structure->domainOrigin, "VUID-VkPipelineTessellationDomainOriginStateCreateInfo-domainOrigin-parameter");
+            if (is_const_param) {
+                VkPipelineTessellationDomainOriginStateCreateInfo *structure = (VkPipelineTessellationDomainOriginStateCreateInfo *) header;
+                skip |= validate_ranged_enum("VkPipelineTessellationDomainOriginStateCreateInfo", "domainOrigin", "VkTessellationDomainOrigin", AllVkTessellationDomainOriginEnums, structure->domainOrigin, "VUID-VkPipelineTessellationDomainOriginStateCreateInfo-domainOrigin-parameter");
+            }
         } break;
 
         // Validation code for VkRenderPassMultiviewCreateInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO: { // Covers VUID-VkRenderPassMultiviewCreateInfo-sType-sType
-            VkRenderPassMultiviewCreateInfo *structure = (VkRenderPassMultiviewCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_multiview)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO), but its parent extension "
-                           "VK_KHR_multiview has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_multiview)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO), but its parent extension "
+                               "VK_KHR_multiview has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_array("VkRenderPassMultiviewCreateInfo", "subpassCount", "pViewMasks", structure->subpassCount, &structure->pViewMasks, false, true, kVUIDUndefined, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-parameter");
+            if (is_const_param) {
+                VkRenderPassMultiviewCreateInfo *structure = (VkRenderPassMultiviewCreateInfo *) header;
+                skip |= validate_array("VkRenderPassMultiviewCreateInfo", "subpassCount", "pViewMasks", structure->subpassCount, &structure->pViewMasks, false, true, kVUIDUndefined, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-parameter");
 
-            skip |= validate_array("VkRenderPassMultiviewCreateInfo", "dependencyCount", "pViewOffsets", structure->dependencyCount, &structure->pViewOffsets, false, true, kVUIDUndefined, "VUID-VkRenderPassMultiviewCreateInfo-pViewOffsets-parameter");
+                skip |= validate_array("VkRenderPassMultiviewCreateInfo", "dependencyCount", "pViewOffsets", structure->dependencyCount, &structure->pViewOffsets, false, true, kVUIDUndefined, "VUID-VkRenderPassMultiviewCreateInfo-pViewOffsets-parameter");
 
-            skip |= validate_array("VkRenderPassMultiviewCreateInfo", "correlationMaskCount", "pCorrelationMasks", structure->correlationMaskCount, &structure->pCorrelationMasks, false, true, kVUIDUndefined, "VUID-VkRenderPassMultiviewCreateInfo-pCorrelationMasks-parameter");
+                skip |= validate_array("VkRenderPassMultiviewCreateInfo", "correlationMaskCount", "pCorrelationMasks", structure->correlationMaskCount, &structure->pCorrelationMasks, false, true, kVUIDUndefined, "VUID-VkRenderPassMultiviewCreateInfo-pCorrelationMasks-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceMultiviewFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES: { // Covers VUID-VkPhysicalDeviceMultiviewFeatures-sType-sType
-            VkPhysicalDeviceMultiviewFeatures *structure = (VkPhysicalDeviceMultiviewFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_multiview)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES), but its parent extension "
-                           "VK_KHR_multiview has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_multiview)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES), but its parent extension "
+                               "VK_KHR_multiview has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceMultiviewFeatures", "multiview", structure->multiview);
+            if (is_const_param) {
+                VkPhysicalDeviceMultiviewFeatures *structure = (VkPhysicalDeviceMultiviewFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceMultiviewFeatures", "multiview", structure->multiview);
 
-            skip |= validate_bool32("VkPhysicalDeviceMultiviewFeatures", "multiviewGeometryShader", structure->multiviewGeometryShader);
+                skip |= validate_bool32("VkPhysicalDeviceMultiviewFeatures", "multiviewGeometryShader", structure->multiviewGeometryShader);
 
-            skip |= validate_bool32("VkPhysicalDeviceMultiviewFeatures", "multiviewTessellationShader", structure->multiviewTessellationShader);
+                skip |= validate_bool32("VkPhysicalDeviceMultiviewFeatures", "multiviewTessellationShader", structure->multiviewTessellationShader);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceMultiviewProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES: { // Covers VUID-VkPhysicalDeviceMultiviewProperties-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_multiview)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES), but its parent extension "
-                           "VK_KHR_multiview has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_multiview)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES), but its parent extension "
+                               "VK_KHR_multiview has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkPhysicalDeviceVariablePointersFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES: { // Covers VUID-VkPhysicalDeviceVariablePointersFeatures-sType-sType
-            VkPhysicalDeviceVariablePointersFeatures *structure = (VkPhysicalDeviceVariablePointersFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_variable_pointers)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES), but its parent extension "
-                           "VK_KHR_variable_pointers has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_variable_pointers)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES), but its parent extension "
+                               "VK_KHR_variable_pointers has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceVariablePointersFeatures", "variablePointersStorageBuffer", structure->variablePointersStorageBuffer);
+            if (is_const_param) {
+                VkPhysicalDeviceVariablePointersFeatures *structure = (VkPhysicalDeviceVariablePointersFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceVariablePointersFeatures", "variablePointersStorageBuffer", structure->variablePointersStorageBuffer);
 
-            skip |= validate_bool32("VkPhysicalDeviceVariablePointersFeatures", "variablePointers", structure->variablePointers);
+                skip |= validate_bool32("VkPhysicalDeviceVariablePointersFeatures", "variablePointers", structure->variablePointers);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceProtectedMemoryFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES: { // Covers VUID-VkPhysicalDeviceProtectedMemoryFeatures-sType-sType
-            VkPhysicalDeviceProtectedMemoryFeatures *structure = (VkPhysicalDeviceProtectedMemoryFeatures *) header;
             if (api_version < VK_API_VERSION_1_1) {
                 skip |= LogError(
                            instance, pnext_vuid,
@@ -669,7 +736,10 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                            "current effective API version is %s.",
                            api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
             }
-            skip |= validate_bool32("VkPhysicalDeviceProtectedMemoryFeatures", "protectedMemory", structure->protectedMemory);
+            if (is_const_param) {
+                VkPhysicalDeviceProtectedMemoryFeatures *structure = (VkPhysicalDeviceProtectedMemoryFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceProtectedMemoryFeatures", "protectedMemory", structure->protectedMemory);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceProtectedMemoryProperties structure members
@@ -685,7 +755,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkProtectedSubmitInfo structure members
         case VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO: { // Covers VUID-VkProtectedSubmitInfo-sType-sType
-            VkProtectedSubmitInfo *structure = (VkProtectedSubmitInfo *) header;
             if (api_version < VK_API_VERSION_1_1) {
                 skip |= LogError(
                            instance, pnext_vuid,
@@ -693,200 +762,250 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                            "current effective API version is %s.",
                            api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
             }
-            skip |= validate_bool32("VkProtectedSubmitInfo", "protectedSubmit", structure->protectedSubmit);
+            if (is_const_param) {
+                VkProtectedSubmitInfo *structure = (VkProtectedSubmitInfo *) header;
+                skip |= validate_bool32("VkProtectedSubmitInfo", "protectedSubmit", structure->protectedSubmit);
+            }
         } break;
 
         // Validation code for VkSamplerYcbcrConversionInfo structure members
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO: { // Covers VUID-VkSamplerYcbcrConversionInfo-sType-sType
-            VkSamplerYcbcrConversionInfo *structure = (VkSamplerYcbcrConversionInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_sampler_ycbcr_conversion)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO), but its parent extension "
-                           "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO), but its parent extension "
+                               "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_required_handle("VkSamplerYcbcrConversionInfo", "conversion", structure->conversion);
+            if (is_const_param) {
+                VkSamplerYcbcrConversionInfo *structure = (VkSamplerYcbcrConversionInfo *) header;
+                skip |= validate_required_handle("VkSamplerYcbcrConversionInfo", "conversion", structure->conversion);
+            }
         } break;
 
         // Validation code for VkBindImagePlaneMemoryInfo structure members
         case VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO: { // Covers VUID-VkBindImagePlaneMemoryInfo-sType-sType
-            VkBindImagePlaneMemoryInfo *structure = (VkBindImagePlaneMemoryInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_sampler_ycbcr_conversion)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO), but its parent extension "
-                           "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO), but its parent extension "
+                               "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_flags("VkBindImagePlaneMemoryInfo", "planeAspect", "VkImageAspectFlagBits", AllVkImageAspectFlagBits, structure->planeAspect, kRequiredSingleBit, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-parameter", "VUID-VkBindImagePlaneMemoryInfo-planeAspect-parameter");
+            if (is_const_param) {
+                VkBindImagePlaneMemoryInfo *structure = (VkBindImagePlaneMemoryInfo *) header;
+                skip |= validate_flags("VkBindImagePlaneMemoryInfo", "planeAspect", "VkImageAspectFlagBits", AllVkImageAspectFlagBits, structure->planeAspect, kRequiredSingleBit, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-parameter", "VUID-VkBindImagePlaneMemoryInfo-planeAspect-parameter");
+            }
         } break;
 
         // Validation code for VkImagePlaneMemoryRequirementsInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO: { // Covers VUID-VkImagePlaneMemoryRequirementsInfo-sType-sType
-            VkImagePlaneMemoryRequirementsInfo *structure = (VkImagePlaneMemoryRequirementsInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_sampler_ycbcr_conversion)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO), but its parent extension "
-                           "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO), but its parent extension "
+                               "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_flags("VkImagePlaneMemoryRequirementsInfo", "planeAspect", "VkImageAspectFlagBits", AllVkImageAspectFlagBits, structure->planeAspect, kRequiredSingleBit, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-parameter", "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-parameter");
+            if (is_const_param) {
+                VkImagePlaneMemoryRequirementsInfo *structure = (VkImagePlaneMemoryRequirementsInfo *) header;
+                skip |= validate_flags("VkImagePlaneMemoryRequirementsInfo", "planeAspect", "VkImageAspectFlagBits", AllVkImageAspectFlagBits, structure->planeAspect, kRequiredSingleBit, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-parameter", "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceSamplerYcbcrConversionFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES: { // Covers VUID-VkPhysicalDeviceSamplerYcbcrConversionFeatures-sType-sType
-            VkPhysicalDeviceSamplerYcbcrConversionFeatures *structure = (VkPhysicalDeviceSamplerYcbcrConversionFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_sampler_ycbcr_conversion)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES), but its parent extension "
-                           "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES), but its parent extension "
+                               "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceSamplerYcbcrConversionFeatures", "samplerYcbcrConversion", structure->samplerYcbcrConversion);
+            if (is_const_param) {
+                VkPhysicalDeviceSamplerYcbcrConversionFeatures *structure = (VkPhysicalDeviceSamplerYcbcrConversionFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceSamplerYcbcrConversionFeatures", "samplerYcbcrConversion", structure->samplerYcbcrConversion);
+            }
         } break;
 
         // Validation code for VkSamplerYcbcrConversionImageFormatProperties structure members
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES: { // Covers VUID-VkSamplerYcbcrConversionImageFormatProperties-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_sampler_ycbcr_conversion)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES), but its parent extension "
-                           "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES), but its parent extension "
+                               "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkPhysicalDeviceExternalImageFormatInfo structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO: { // Covers VUID-VkPhysicalDeviceExternalImageFormatInfo-sType-sType
-            VkPhysicalDeviceExternalImageFormatInfo *structure = (VkPhysicalDeviceExternalImageFormatInfo *) header;
-            if (!instance_extensions.vk_khr_external_memory_capabilities) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO), but its parent extension "
-                           "VK_KHR_external_memory_capabilities has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if (!instance_extensions.vk_khr_external_memory_capabilities) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO), but its parent extension "
+                               "VK_KHR_external_memory_capabilities has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_flags("VkPhysicalDeviceExternalImageFormatInfo", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kOptionalSingleBit, "VUID-VkPhysicalDeviceExternalImageFormatInfo-handleType-parameter");
+            if (is_const_param) {
+                VkPhysicalDeviceExternalImageFormatInfo *structure = (VkPhysicalDeviceExternalImageFormatInfo *) header;
+                skip |= validate_flags("VkPhysicalDeviceExternalImageFormatInfo", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kOptionalSingleBit, "VUID-VkPhysicalDeviceExternalImageFormatInfo-handleType-parameter");
+            }
         } break;
 
         // Validation code for VkExternalImageFormatProperties structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES: { // Covers VUID-VkExternalImageFormatProperties-sType-sType
-            if (!instance_extensions.vk_khr_external_memory_capabilities) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES), but its parent extension "
-                           "VK_KHR_external_memory_capabilities has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if (!instance_extensions.vk_khr_external_memory_capabilities) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES), but its parent extension "
+                               "VK_KHR_external_memory_capabilities has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkPhysicalDeviceIDProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES: { // Covers VUID-VkPhysicalDeviceIDProperties-sType-sType
-            if (!instance_extensions.vk_khr_external_fence_capabilities) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES), but its parent extension "
-                           "VK_KHR_external_fence_capabilities has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if (!instance_extensions.vk_khr_external_fence_capabilities) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES), but its parent extension "
+                               "VK_KHR_external_fence_capabilities has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkExternalMemoryImageCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO: { // Covers VUID-VkExternalMemoryImageCreateInfo-sType-sType
-            VkExternalMemoryImageCreateInfo *structure = (VkExternalMemoryImageCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_external_memory)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO), but its parent extension "
-                           "VK_KHR_external_memory has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_external_memory)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO), but its parent extension "
+                               "VK_KHR_external_memory has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_flags("VkExternalMemoryImageCreateInfo", "handleTypes", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExternalMemoryImageCreateInfo-handleTypes-parameter");
+            if (is_const_param) {
+                VkExternalMemoryImageCreateInfo *structure = (VkExternalMemoryImageCreateInfo *) header;
+                skip |= validate_flags("VkExternalMemoryImageCreateInfo", "handleTypes", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExternalMemoryImageCreateInfo-handleTypes-parameter");
+            }
         } break;
 
         // Validation code for VkExternalMemoryBufferCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO: { // Covers VUID-VkExternalMemoryBufferCreateInfo-sType-sType
-            VkExternalMemoryBufferCreateInfo *structure = (VkExternalMemoryBufferCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_external_memory)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO), but its parent extension "
-                           "VK_KHR_external_memory has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_external_memory)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO), but its parent extension "
+                               "VK_KHR_external_memory has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_flags("VkExternalMemoryBufferCreateInfo", "handleTypes", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExternalMemoryBufferCreateInfo-handleTypes-parameter");
+            if (is_const_param) {
+                VkExternalMemoryBufferCreateInfo *structure = (VkExternalMemoryBufferCreateInfo *) header;
+                skip |= validate_flags("VkExternalMemoryBufferCreateInfo", "handleTypes", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExternalMemoryBufferCreateInfo-handleTypes-parameter");
+            }
         } break;
 
         // Validation code for VkExportMemoryAllocateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO: { // Covers VUID-VkExportMemoryAllocateInfo-sType-sType
-            VkExportMemoryAllocateInfo *structure = (VkExportMemoryAllocateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_external_memory)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO), but its parent extension "
-                           "VK_KHR_external_memory has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_external_memory)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO), but its parent extension "
+                               "VK_KHR_external_memory has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_flags("VkExportMemoryAllocateInfo", "handleTypes", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExportMemoryAllocateInfo-handleTypes-parameter");
+            if (is_const_param) {
+                VkExportMemoryAllocateInfo *structure = (VkExportMemoryAllocateInfo *) header;
+                skip |= validate_flags("VkExportMemoryAllocateInfo", "handleTypes", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExportMemoryAllocateInfo-handleTypes-parameter");
+            }
         } break;
 
         // Validation code for VkExportFenceCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO: { // Covers VUID-VkExportFenceCreateInfo-sType-sType
-            VkExportFenceCreateInfo *structure = (VkExportFenceCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_external_fence)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO), but its parent extension "
-                           "VK_KHR_external_fence has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_external_fence)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO), but its parent extension "
+                               "VK_KHR_external_fence has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_flags("VkExportFenceCreateInfo", "handleTypes", "VkExternalFenceHandleTypeFlagBits", AllVkExternalFenceHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExportFenceCreateInfo-handleTypes-parameter");
+            if (is_const_param) {
+                VkExportFenceCreateInfo *structure = (VkExportFenceCreateInfo *) header;
+                skip |= validate_flags("VkExportFenceCreateInfo", "handleTypes", "VkExternalFenceHandleTypeFlagBits", AllVkExternalFenceHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExportFenceCreateInfo-handleTypes-parameter");
+            }
         } break;
 
         // Validation code for VkExportSemaphoreCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO: { // Covers VUID-VkExportSemaphoreCreateInfo-sType-sType
-            VkExportSemaphoreCreateInfo *structure = (VkExportSemaphoreCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_external_semaphore)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO), but its parent extension "
-                           "VK_KHR_external_semaphore has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_external_semaphore)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO), but its parent extension "
+                               "VK_KHR_external_semaphore has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_flags("VkExportSemaphoreCreateInfo", "handleTypes", "VkExternalSemaphoreHandleTypeFlagBits", AllVkExternalSemaphoreHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExportSemaphoreCreateInfo-handleTypes-parameter");
+            if (is_const_param) {
+                VkExportSemaphoreCreateInfo *structure = (VkExportSemaphoreCreateInfo *) header;
+                skip |= validate_flags("VkExportSemaphoreCreateInfo", "handleTypes", "VkExternalSemaphoreHandleTypeFlagBits", AllVkExternalSemaphoreHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExportSemaphoreCreateInfo-handleTypes-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceMaintenance3Properties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES: { // Covers VUID-VkPhysicalDeviceMaintenance3Properties-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE3_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance3)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES), but its parent extension "
-                           "VK_KHR_maintenance3 has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE3_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance3)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES), but its parent extension "
+                               "VK_KHR_maintenance3 has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkPhysicalDeviceShaderDrawParametersFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES: { // Covers VUID-VkPhysicalDeviceShaderDrawParametersFeatures-sType-sType
-            VkPhysicalDeviceShaderDrawParametersFeatures *structure = (VkPhysicalDeviceShaderDrawParametersFeatures *) header;
             if (api_version < VK_API_VERSION_1_1) {
                 skip |= LogError(
                            instance, pnext_vuid,
@@ -894,12 +1013,14 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                            "current effective API version is %s.",
                            api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
             }
-            skip |= validate_bool32("VkPhysicalDeviceShaderDrawParametersFeatures", "shaderDrawParameters", structure->shaderDrawParameters);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderDrawParametersFeatures *structure = (VkPhysicalDeviceShaderDrawParametersFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderDrawParametersFeatures", "shaderDrawParameters", structure->shaderDrawParameters);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceVulkan11Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES: { // Covers VUID-VkPhysicalDeviceVulkan11Features-sType-sType
-            VkPhysicalDeviceVulkan11Features *structure = (VkPhysicalDeviceVulkan11Features *) header;
             if (api_version < VK_API_VERSION_1_2) {
                 skip |= LogError(
                            instance, pnext_vuid,
@@ -907,29 +1028,32 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                            "current effective API version is %s.",
                            api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
             }
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "storageBuffer16BitAccess", structure->storageBuffer16BitAccess);
+            if (is_const_param) {
+                VkPhysicalDeviceVulkan11Features *structure = (VkPhysicalDeviceVulkan11Features *) header;
+                skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "storageBuffer16BitAccess", structure->storageBuffer16BitAccess);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "uniformAndStorageBuffer16BitAccess", structure->uniformAndStorageBuffer16BitAccess);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "uniformAndStorageBuffer16BitAccess", structure->uniformAndStorageBuffer16BitAccess);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "storagePushConstant16", structure->storagePushConstant16);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "storagePushConstant16", structure->storagePushConstant16);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "storageInputOutput16", structure->storageInputOutput16);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "storageInputOutput16", structure->storageInputOutput16);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "multiview", structure->multiview);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "multiview", structure->multiview);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "multiviewGeometryShader", structure->multiviewGeometryShader);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "multiviewGeometryShader", structure->multiviewGeometryShader);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "multiviewTessellationShader", structure->multiviewTessellationShader);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "multiviewTessellationShader", structure->multiviewTessellationShader);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "variablePointersStorageBuffer", structure->variablePointersStorageBuffer);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "variablePointersStorageBuffer", structure->variablePointersStorageBuffer);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "variablePointers", structure->variablePointers);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "variablePointers", structure->variablePointers);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "protectedMemory", structure->protectedMemory);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "protectedMemory", structure->protectedMemory);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "samplerYcbcrConversion", structure->samplerYcbcrConversion);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "samplerYcbcrConversion", structure->samplerYcbcrConversion);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "shaderDrawParameters", structure->shaderDrawParameters);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "shaderDrawParameters", structure->shaderDrawParameters);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceVulkan11Properties structure members
@@ -945,7 +1069,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceVulkan12Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES: { // Covers VUID-VkPhysicalDeviceVulkan12Features-sType-sType
-            VkPhysicalDeviceVulkan12Features *structure = (VkPhysicalDeviceVulkan12Features *) header;
             if (api_version < VK_API_VERSION_1_2) {
                 skip |= LogError(
                            instance, pnext_vuid,
@@ -953,99 +1076,102 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                            "current effective API version is %s.",
                            api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
             }
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "samplerMirrorClampToEdge", structure->samplerMirrorClampToEdge);
+            if (is_const_param) {
+                VkPhysicalDeviceVulkan12Features *structure = (VkPhysicalDeviceVulkan12Features *) header;
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "samplerMirrorClampToEdge", structure->samplerMirrorClampToEdge);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "drawIndirectCount", structure->drawIndirectCount);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "drawIndirectCount", structure->drawIndirectCount);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "storageBuffer8BitAccess", structure->storageBuffer8BitAccess);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "storageBuffer8BitAccess", structure->storageBuffer8BitAccess);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "uniformAndStorageBuffer8BitAccess", structure->uniformAndStorageBuffer8BitAccess);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "uniformAndStorageBuffer8BitAccess", structure->uniformAndStorageBuffer8BitAccess);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "storagePushConstant8", structure->storagePushConstant8);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "storagePushConstant8", structure->storagePushConstant8);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderBufferInt64Atomics", structure->shaderBufferInt64Atomics);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderBufferInt64Atomics", structure->shaderBufferInt64Atomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderSharedInt64Atomics", structure->shaderSharedInt64Atomics);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderSharedInt64Atomics", structure->shaderSharedInt64Atomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderFloat16", structure->shaderFloat16);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderFloat16", structure->shaderFloat16);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderInt8", structure->shaderInt8);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderInt8", structure->shaderInt8);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorIndexing", structure->descriptorIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorIndexing", structure->descriptorIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderInputAttachmentArrayDynamicIndexing", structure->shaderInputAttachmentArrayDynamicIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderInputAttachmentArrayDynamicIndexing", structure->shaderInputAttachmentArrayDynamicIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderUniformTexelBufferArrayDynamicIndexing", structure->shaderUniformTexelBufferArrayDynamicIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderUniformTexelBufferArrayDynamicIndexing", structure->shaderUniformTexelBufferArrayDynamicIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderStorageTexelBufferArrayDynamicIndexing", structure->shaderStorageTexelBufferArrayDynamicIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderStorageTexelBufferArrayDynamicIndexing", structure->shaderStorageTexelBufferArrayDynamicIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderUniformBufferArrayNonUniformIndexing", structure->shaderUniformBufferArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderUniformBufferArrayNonUniformIndexing", structure->shaderUniformBufferArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderSampledImageArrayNonUniformIndexing", structure->shaderSampledImageArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderSampledImageArrayNonUniformIndexing", structure->shaderSampledImageArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderStorageBufferArrayNonUniformIndexing", structure->shaderStorageBufferArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderStorageBufferArrayNonUniformIndexing", structure->shaderStorageBufferArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderStorageImageArrayNonUniformIndexing", structure->shaderStorageImageArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderStorageImageArrayNonUniformIndexing", structure->shaderStorageImageArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderInputAttachmentArrayNonUniformIndexing", structure->shaderInputAttachmentArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderInputAttachmentArrayNonUniformIndexing", structure->shaderInputAttachmentArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderUniformTexelBufferArrayNonUniformIndexing", structure->shaderUniformTexelBufferArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderUniformTexelBufferArrayNonUniformIndexing", structure->shaderUniformTexelBufferArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderStorageTexelBufferArrayNonUniformIndexing", structure->shaderStorageTexelBufferArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderStorageTexelBufferArrayNonUniformIndexing", structure->shaderStorageTexelBufferArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingUniformBufferUpdateAfterBind", structure->descriptorBindingUniformBufferUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingUniformBufferUpdateAfterBind", structure->descriptorBindingUniformBufferUpdateAfterBind);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingSampledImageUpdateAfterBind", structure->descriptorBindingSampledImageUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingSampledImageUpdateAfterBind", structure->descriptorBindingSampledImageUpdateAfterBind);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingStorageImageUpdateAfterBind", structure->descriptorBindingStorageImageUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingStorageImageUpdateAfterBind", structure->descriptorBindingStorageImageUpdateAfterBind);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingStorageBufferUpdateAfterBind", structure->descriptorBindingStorageBufferUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingStorageBufferUpdateAfterBind", structure->descriptorBindingStorageBufferUpdateAfterBind);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingUniformTexelBufferUpdateAfterBind", structure->descriptorBindingUniformTexelBufferUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingUniformTexelBufferUpdateAfterBind", structure->descriptorBindingUniformTexelBufferUpdateAfterBind);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingStorageTexelBufferUpdateAfterBind", structure->descriptorBindingStorageTexelBufferUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingStorageTexelBufferUpdateAfterBind", structure->descriptorBindingStorageTexelBufferUpdateAfterBind);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingUpdateUnusedWhilePending", structure->descriptorBindingUpdateUnusedWhilePending);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingUpdateUnusedWhilePending", structure->descriptorBindingUpdateUnusedWhilePending);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingPartiallyBound", structure->descriptorBindingPartiallyBound);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingPartiallyBound", structure->descriptorBindingPartiallyBound);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingVariableDescriptorCount", structure->descriptorBindingVariableDescriptorCount);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "descriptorBindingVariableDescriptorCount", structure->descriptorBindingVariableDescriptorCount);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "runtimeDescriptorArray", structure->runtimeDescriptorArray);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "runtimeDescriptorArray", structure->runtimeDescriptorArray);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "samplerFilterMinmax", structure->samplerFilterMinmax);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "samplerFilterMinmax", structure->samplerFilterMinmax);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "scalarBlockLayout", structure->scalarBlockLayout);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "scalarBlockLayout", structure->scalarBlockLayout);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "imagelessFramebuffer", structure->imagelessFramebuffer);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "imagelessFramebuffer", structure->imagelessFramebuffer);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "uniformBufferStandardLayout", structure->uniformBufferStandardLayout);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "uniformBufferStandardLayout", structure->uniformBufferStandardLayout);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderSubgroupExtendedTypes", structure->shaderSubgroupExtendedTypes);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderSubgroupExtendedTypes", structure->shaderSubgroupExtendedTypes);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "separateDepthStencilLayouts", structure->separateDepthStencilLayouts);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "separateDepthStencilLayouts", structure->separateDepthStencilLayouts);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "hostQueryReset", structure->hostQueryReset);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "hostQueryReset", structure->hostQueryReset);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "timelineSemaphore", structure->timelineSemaphore);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "timelineSemaphore", structure->timelineSemaphore);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "bufferDeviceAddress", structure->bufferDeviceAddress);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "bufferDeviceAddress", structure->bufferDeviceAddress);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "bufferDeviceAddressCaptureReplay", structure->bufferDeviceAddressCaptureReplay);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "bufferDeviceAddressCaptureReplay", structure->bufferDeviceAddressCaptureReplay);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "bufferDeviceAddressMultiDevice", structure->bufferDeviceAddressMultiDevice);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "bufferDeviceAddressMultiDevice", structure->bufferDeviceAddressMultiDevice);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "vulkanMemoryModel", structure->vulkanMemoryModel);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "vulkanMemoryModel", structure->vulkanMemoryModel);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "vulkanMemoryModelDeviceScope", structure->vulkanMemoryModelDeviceScope);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "vulkanMemoryModelDeviceScope", structure->vulkanMemoryModelDeviceScope);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "vulkanMemoryModelAvailabilityVisibilityChains", structure->vulkanMemoryModelAvailabilityVisibilityChains);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "vulkanMemoryModelAvailabilityVisibilityChains", structure->vulkanMemoryModelAvailabilityVisibilityChains);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderOutputViewportIndex", structure->shaderOutputViewportIndex);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderOutputViewportIndex", structure->shaderOutputViewportIndex);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderOutputLayer", structure->shaderOutputLayer);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderOutputLayer", structure->shaderOutputLayer);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "subgroupBroadcastDynamicId", structure->subgroupBroadcastDynamicId);
+                skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "subgroupBroadcastDynamicId", structure->subgroupBroadcastDynamicId);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceVulkan12Properties structure members
@@ -1061,527 +1187,641 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkImageFormatListCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO: { // Covers VUID-VkImageFormatListCreateInfo-sType-sType
-            VkImageFormatListCreateInfo *structure = (VkImageFormatListCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_image_format_list)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO), but its parent extension "
-                           "VK_KHR_image_format_list has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_image_format_list)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO), but its parent extension "
+                               "VK_KHR_image_format_list has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_ranged_enum_array("VkImageFormatListCreateInfo", "viewFormatCount", "pViewFormats", "VkFormat", AllVkFormatEnums, structure->viewFormatCount, structure->pViewFormats, false, true);
+            if (is_const_param) {
+                VkImageFormatListCreateInfo *structure = (VkImageFormatListCreateInfo *) header;
+                skip |= validate_ranged_enum_array("VkImageFormatListCreateInfo", "viewFormatCount", "pViewFormats", "VkFormat", AllVkFormatEnums, structure->viewFormatCount, structure->pViewFormats, false, true);
+            }
         } break;
 
         // Validation code for VkPhysicalDevice8BitStorageFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES: { // Covers VUID-VkPhysicalDevice8BitStorageFeatures-sType-sType
-            VkPhysicalDevice8BitStorageFeatures *structure = (VkPhysicalDevice8BitStorageFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_8BIT_STORAGE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_8bit_storage)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES), but its parent extension "
-                           "VK_KHR_8bit_storage has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_8BIT_STORAGE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_8bit_storage)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES), but its parent extension "
+                               "VK_KHR_8bit_storage has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDevice8BitStorageFeatures", "storageBuffer8BitAccess", structure->storageBuffer8BitAccess);
+            if (is_const_param) {
+                VkPhysicalDevice8BitStorageFeatures *structure = (VkPhysicalDevice8BitStorageFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDevice8BitStorageFeatures", "storageBuffer8BitAccess", structure->storageBuffer8BitAccess);
 
-            skip |= validate_bool32("VkPhysicalDevice8BitStorageFeatures", "uniformAndStorageBuffer8BitAccess", structure->uniformAndStorageBuffer8BitAccess);
+                skip |= validate_bool32("VkPhysicalDevice8BitStorageFeatures", "uniformAndStorageBuffer8BitAccess", structure->uniformAndStorageBuffer8BitAccess);
 
-            skip |= validate_bool32("VkPhysicalDevice8BitStorageFeatures", "storagePushConstant8", structure->storagePushConstant8);
+                skip |= validate_bool32("VkPhysicalDevice8BitStorageFeatures", "storagePushConstant8", structure->storagePushConstant8);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceDriverProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES: { // Covers VUID-VkPhysicalDeviceDriverProperties-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_driver_properties)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES), but its parent extension "
-                           "VK_KHR_driver_properties has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_driver_properties)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES), but its parent extension "
+                               "VK_KHR_driver_properties has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkPhysicalDeviceShaderAtomicInt64Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES: { // Covers VUID-VkPhysicalDeviceShaderAtomicInt64Features-sType-sType
-            VkPhysicalDeviceShaderAtomicInt64Features *structure = (VkPhysicalDeviceShaderAtomicInt64Features *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_shader_atomic_int64)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES), but its parent extension "
-                           "VK_KHR_shader_atomic_int64 has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_shader_atomic_int64)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES), but its parent extension "
+                               "VK_KHR_shader_atomic_int64 has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicInt64Features", "shaderBufferInt64Atomics", structure->shaderBufferInt64Atomics);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderAtomicInt64Features *structure = (VkPhysicalDeviceShaderAtomicInt64Features *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicInt64Features", "shaderBufferInt64Atomics", structure->shaderBufferInt64Atomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicInt64Features", "shaderSharedInt64Atomics", structure->shaderSharedInt64Atomics);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicInt64Features", "shaderSharedInt64Atomics", structure->shaderSharedInt64Atomics);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceShaderFloat16Int8Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES: { // Covers VUID-VkPhysicalDeviceShaderFloat16Int8Features-sType-sType
-            VkPhysicalDeviceShaderFloat16Int8Features *structure = (VkPhysicalDeviceShaderFloat16Int8Features *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_shader_float16_int8)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES), but its parent extension "
-                           "VK_KHR_shader_float16_int8 has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_shader_float16_int8)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES), but its parent extension "
+                               "VK_KHR_shader_float16_int8 has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderFloat16Int8Features", "shaderFloat16", structure->shaderFloat16);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderFloat16Int8Features *structure = (VkPhysicalDeviceShaderFloat16Int8Features *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderFloat16Int8Features", "shaderFloat16", structure->shaderFloat16);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderFloat16Int8Features", "shaderInt8", structure->shaderInt8);
+                skip |= validate_bool32("VkPhysicalDeviceShaderFloat16Int8Features", "shaderInt8", structure->shaderInt8);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceFloatControlsProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES: { // Covers VUID-VkPhysicalDeviceFloatControlsProperties-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_shader_float_controls)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES), but its parent extension "
-                           "VK_KHR_shader_float_controls has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_shader_float_controls)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES), but its parent extension "
+                               "VK_KHR_shader_float_controls has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkDescriptorSetLayoutBindingFlagsCreateInfo structure members
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO: { // Covers VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-sType-sType
-            VkDescriptorSetLayoutBindingFlagsCreateInfo *structure = (VkDescriptorSetLayoutBindingFlagsCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_descriptor_indexing)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO), but its parent extension "
-                           "VK_EXT_descriptor_indexing has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_descriptor_indexing)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO), but its parent extension "
+                               "VK_EXT_descriptor_indexing has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_flags_array("VkDescriptorSetLayoutBindingFlagsCreateInfo", "bindingCount", "pBindingFlags", "VkDescriptorBindingFlagBits", AllVkDescriptorBindingFlagBits, structure->bindingCount, structure->pBindingFlags, false, false);
+            if (is_const_param) {
+                VkDescriptorSetLayoutBindingFlagsCreateInfo *structure = (VkDescriptorSetLayoutBindingFlagsCreateInfo *) header;
+                skip |= validate_flags_array("VkDescriptorSetLayoutBindingFlagsCreateInfo", "bindingCount", "pBindingFlags", "VkDescriptorBindingFlagBits", AllVkDescriptorBindingFlagBits, structure->bindingCount, structure->pBindingFlags, false, false);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceDescriptorIndexingFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES: { // Covers VUID-VkPhysicalDeviceDescriptorIndexingFeatures-sType-sType
-            VkPhysicalDeviceDescriptorIndexingFeatures *structure = (VkPhysicalDeviceDescriptorIndexingFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_descriptor_indexing)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES), but its parent extension "
-                           "VK_EXT_descriptor_indexing has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_descriptor_indexing)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES), but its parent extension "
+                               "VK_EXT_descriptor_indexing has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderInputAttachmentArrayDynamicIndexing", structure->shaderInputAttachmentArrayDynamicIndexing);
+            if (is_const_param) {
+                VkPhysicalDeviceDescriptorIndexingFeatures *structure = (VkPhysicalDeviceDescriptorIndexingFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderInputAttachmentArrayDynamicIndexing", structure->shaderInputAttachmentArrayDynamicIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderUniformTexelBufferArrayDynamicIndexing", structure->shaderUniformTexelBufferArrayDynamicIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderUniformTexelBufferArrayDynamicIndexing", structure->shaderUniformTexelBufferArrayDynamicIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderStorageTexelBufferArrayDynamicIndexing", structure->shaderStorageTexelBufferArrayDynamicIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderStorageTexelBufferArrayDynamicIndexing", structure->shaderStorageTexelBufferArrayDynamicIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderUniformBufferArrayNonUniformIndexing", structure->shaderUniformBufferArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderUniformBufferArrayNonUniformIndexing", structure->shaderUniformBufferArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderSampledImageArrayNonUniformIndexing", structure->shaderSampledImageArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderSampledImageArrayNonUniformIndexing", structure->shaderSampledImageArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderStorageBufferArrayNonUniformIndexing", structure->shaderStorageBufferArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderStorageBufferArrayNonUniformIndexing", structure->shaderStorageBufferArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderStorageImageArrayNonUniformIndexing", structure->shaderStorageImageArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderStorageImageArrayNonUniformIndexing", structure->shaderStorageImageArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderInputAttachmentArrayNonUniformIndexing", structure->shaderInputAttachmentArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderInputAttachmentArrayNonUniformIndexing", structure->shaderInputAttachmentArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderUniformTexelBufferArrayNonUniformIndexing", structure->shaderUniformTexelBufferArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderUniformTexelBufferArrayNonUniformIndexing", structure->shaderUniformTexelBufferArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderStorageTexelBufferArrayNonUniformIndexing", structure->shaderStorageTexelBufferArrayNonUniformIndexing);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderStorageTexelBufferArrayNonUniformIndexing", structure->shaderStorageTexelBufferArrayNonUniformIndexing);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingUniformBufferUpdateAfterBind", structure->descriptorBindingUniformBufferUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingUniformBufferUpdateAfterBind", structure->descriptorBindingUniformBufferUpdateAfterBind);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingSampledImageUpdateAfterBind", structure->descriptorBindingSampledImageUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingSampledImageUpdateAfterBind", structure->descriptorBindingSampledImageUpdateAfterBind);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingStorageImageUpdateAfterBind", structure->descriptorBindingStorageImageUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingStorageImageUpdateAfterBind", structure->descriptorBindingStorageImageUpdateAfterBind);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingStorageBufferUpdateAfterBind", structure->descriptorBindingStorageBufferUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingStorageBufferUpdateAfterBind", structure->descriptorBindingStorageBufferUpdateAfterBind);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingUniformTexelBufferUpdateAfterBind", structure->descriptorBindingUniformTexelBufferUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingUniformTexelBufferUpdateAfterBind", structure->descriptorBindingUniformTexelBufferUpdateAfterBind);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingStorageTexelBufferUpdateAfterBind", structure->descriptorBindingStorageTexelBufferUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingStorageTexelBufferUpdateAfterBind", structure->descriptorBindingStorageTexelBufferUpdateAfterBind);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingUpdateUnusedWhilePending", structure->descriptorBindingUpdateUnusedWhilePending);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingUpdateUnusedWhilePending", structure->descriptorBindingUpdateUnusedWhilePending);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingPartiallyBound", structure->descriptorBindingPartiallyBound);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingPartiallyBound", structure->descriptorBindingPartiallyBound);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingVariableDescriptorCount", structure->descriptorBindingVariableDescriptorCount);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "descriptorBindingVariableDescriptorCount", structure->descriptorBindingVariableDescriptorCount);
 
-            skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "runtimeDescriptorArray", structure->runtimeDescriptorArray);
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "runtimeDescriptorArray", structure->runtimeDescriptorArray);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceDescriptorIndexingProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES: { // Covers VUID-VkPhysicalDeviceDescriptorIndexingProperties-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_descriptor_indexing)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES), but its parent extension "
-                           "VK_EXT_descriptor_indexing has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_descriptor_indexing)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES), but its parent extension "
+                               "VK_EXT_descriptor_indexing has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkDescriptorSetVariableDescriptorCountAllocateInfo structure members
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO: { // Covers VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-sType-sType
-            VkDescriptorSetVariableDescriptorCountAllocateInfo *structure = (VkDescriptorSetVariableDescriptorCountAllocateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_descriptor_indexing)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO), but its parent extension "
-                           "VK_EXT_descriptor_indexing has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_descriptor_indexing)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO), but its parent extension "
+                               "VK_EXT_descriptor_indexing has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_array("VkDescriptorSetVariableDescriptorCountAllocateInfo", "descriptorSetCount", "pDescriptorCounts", structure->descriptorSetCount, &structure->pDescriptorCounts, false, true, kVUIDUndefined, "VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-pDescriptorCounts-parameter");
+            if (is_const_param) {
+                VkDescriptorSetVariableDescriptorCountAllocateInfo *structure = (VkDescriptorSetVariableDescriptorCountAllocateInfo *) header;
+                skip |= validate_array("VkDescriptorSetVariableDescriptorCountAllocateInfo", "descriptorSetCount", "pDescriptorCounts", structure->descriptorSetCount, &structure->pDescriptorCounts, false, true, kVUIDUndefined, "VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-pDescriptorCounts-parameter");
+            }
         } break;
 
         // Validation code for VkDescriptorSetVariableDescriptorCountLayoutSupport structure members
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT: { // Covers VUID-VkDescriptorSetVariableDescriptorCountLayoutSupport-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_descriptor_indexing)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT), but its parent extension "
-                           "VK_EXT_descriptor_indexing has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_descriptor_indexing)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT), but its parent extension "
+                               "VK_EXT_descriptor_indexing has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkSubpassDescriptionDepthStencilResolve structure members
         case VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE: { // Covers VUID-VkSubpassDescriptionDepthStencilResolve-sType-sType
-            VkSubpassDescriptionDepthStencilResolve *structure = (VkSubpassDescriptionDepthStencilResolve *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_depth_stencil_resolve)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE), but its parent extension "
-                           "VK_KHR_depth_stencil_resolve has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_depth_stencil_resolve)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE), but its parent extension "
+                               "VK_KHR_depth_stencil_resolve has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_struct_type("VkSubpassDescriptionDepthStencilResolve", "pDepthStencilResolveAttachment", "VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2", structure->pDepthStencilResolveAttachment, VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, false, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-parameter", "VUID-VkAttachmentReference2-sType-sType");
+            if (is_const_param) {
+                VkSubpassDescriptionDepthStencilResolve *structure = (VkSubpassDescriptionDepthStencilResolve *) header;
+                skip |= validate_struct_type("VkSubpassDescriptionDepthStencilResolve", "pDepthStencilResolveAttachment", "VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2", structure->pDepthStencilResolveAttachment, VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, false, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-parameter", "VUID-VkAttachmentReference2-sType-sType");
 
-            if (structure->pDepthStencilResolveAttachment != NULL)
-            {
-                skip |= validate_ranged_enum("VkSubpassDescriptionDepthStencilResolve", "pDepthStencilResolveAttachment->layout", "VkImageLayout", AllVkImageLayoutEnums, structure->pDepthStencilResolveAttachment->layout, "VUID-VkAttachmentReference2-layout-parameter");
+                if (structure->pDepthStencilResolveAttachment != NULL)
+                {
+                    skip |= validate_ranged_enum("VkSubpassDescriptionDepthStencilResolve", "pDepthStencilResolveAttachment->layout", "VkImageLayout", AllVkImageLayoutEnums, structure->pDepthStencilResolveAttachment->layout, "VUID-VkAttachmentReference2-layout-parameter");
+                }
             }
         } break;
 
         // Validation code for VkPhysicalDeviceDepthStencilResolveProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES: { // Covers VUID-VkPhysicalDeviceDepthStencilResolveProperties-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_depth_stencil_resolve)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES), but its parent extension "
-                           "VK_KHR_depth_stencil_resolve has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_depth_stencil_resolve)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES), but its parent extension "
+                               "VK_KHR_depth_stencil_resolve has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkPhysicalDeviceScalarBlockLayoutFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES: { // Covers VUID-VkPhysicalDeviceScalarBlockLayoutFeatures-sType-sType
-            VkPhysicalDeviceScalarBlockLayoutFeatures *structure = (VkPhysicalDeviceScalarBlockLayoutFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_scalar_block_layout)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES), but its parent extension "
-                           "VK_EXT_scalar_block_layout has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_scalar_block_layout)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES), but its parent extension "
+                               "VK_EXT_scalar_block_layout has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceScalarBlockLayoutFeatures", "scalarBlockLayout", structure->scalarBlockLayout);
+            if (is_const_param) {
+                VkPhysicalDeviceScalarBlockLayoutFeatures *structure = (VkPhysicalDeviceScalarBlockLayoutFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceScalarBlockLayoutFeatures", "scalarBlockLayout", structure->scalarBlockLayout);
+            }
         } break;
 
         // Validation code for VkImageStencilUsageCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO: { // Covers VUID-VkImageStencilUsageCreateInfo-sType-sType
-            VkImageStencilUsageCreateInfo *structure = (VkImageStencilUsageCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_separate_stencil_usage)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO), but its parent extension "
-                           "VK_EXT_separate_stencil_usage has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_separate_stencil_usage)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO), but its parent extension "
+                               "VK_EXT_separate_stencil_usage has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_flags("VkImageStencilUsageCreateInfo", "stencilUsage", "VkImageUsageFlagBits", AllVkImageUsageFlagBits, structure->stencilUsage, kRequiredFlags, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-parameter", "VUID-VkImageStencilUsageCreateInfo-stencilUsage-requiredbitmask");
+            if (is_const_param) {
+                VkImageStencilUsageCreateInfo *structure = (VkImageStencilUsageCreateInfo *) header;
+                skip |= validate_flags("VkImageStencilUsageCreateInfo", "stencilUsage", "VkImageUsageFlagBits", AllVkImageUsageFlagBits, structure->stencilUsage, kRequiredFlags, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-parameter", "VUID-VkImageStencilUsageCreateInfo-stencilUsage-requiredbitmask");
+            }
         } break;
 
         // Validation code for VkSamplerReductionModeCreateInfo structure members
         case VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO: { // Covers VUID-VkSamplerReductionModeCreateInfo-sType-sType
-            VkSamplerReductionModeCreateInfo *structure = (VkSamplerReductionModeCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_sampler_filter_minmax)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO), but its parent extension "
-                           "VK_EXT_sampler_filter_minmax has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_sampler_filter_minmax)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO), but its parent extension "
+                               "VK_EXT_sampler_filter_minmax has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_ranged_enum("VkSamplerReductionModeCreateInfo", "reductionMode", "VkSamplerReductionMode", AllVkSamplerReductionModeEnums, structure->reductionMode, "VUID-VkSamplerReductionModeCreateInfo-reductionMode-parameter");
+            if (is_const_param) {
+                VkSamplerReductionModeCreateInfo *structure = (VkSamplerReductionModeCreateInfo *) header;
+                skip |= validate_ranged_enum("VkSamplerReductionModeCreateInfo", "reductionMode", "VkSamplerReductionMode", AllVkSamplerReductionModeEnums, structure->reductionMode, "VUID-VkSamplerReductionModeCreateInfo-reductionMode-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceSamplerFilterMinmaxProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES: { // Covers VUID-VkPhysicalDeviceSamplerFilterMinmaxProperties-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_sampler_filter_minmax)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES), but its parent extension "
-                           "VK_EXT_sampler_filter_minmax has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_sampler_filter_minmax)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES), but its parent extension "
+                               "VK_EXT_sampler_filter_minmax has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkPhysicalDeviceVulkanMemoryModelFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES: { // Covers VUID-VkPhysicalDeviceVulkanMemoryModelFeatures-sType-sType
-            VkPhysicalDeviceVulkanMemoryModelFeatures *structure = (VkPhysicalDeviceVulkanMemoryModelFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_vulkan_memory_model)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES), but its parent extension "
-                           "VK_KHR_vulkan_memory_model has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_vulkan_memory_model)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES), but its parent extension "
+                               "VK_KHR_vulkan_memory_model has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkanMemoryModelFeatures", "vulkanMemoryModel", structure->vulkanMemoryModel);
+            if (is_const_param) {
+                VkPhysicalDeviceVulkanMemoryModelFeatures *structure = (VkPhysicalDeviceVulkanMemoryModelFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceVulkanMemoryModelFeatures", "vulkanMemoryModel", structure->vulkanMemoryModel);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkanMemoryModelFeatures", "vulkanMemoryModelDeviceScope", structure->vulkanMemoryModelDeviceScope);
+                skip |= validate_bool32("VkPhysicalDeviceVulkanMemoryModelFeatures", "vulkanMemoryModelDeviceScope", structure->vulkanMemoryModelDeviceScope);
 
-            skip |= validate_bool32("VkPhysicalDeviceVulkanMemoryModelFeatures", "vulkanMemoryModelAvailabilityVisibilityChains", structure->vulkanMemoryModelAvailabilityVisibilityChains);
+                skip |= validate_bool32("VkPhysicalDeviceVulkanMemoryModelFeatures", "vulkanMemoryModelAvailabilityVisibilityChains", structure->vulkanMemoryModelAvailabilityVisibilityChains);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceImagelessFramebufferFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES: { // Covers VUID-VkPhysicalDeviceImagelessFramebufferFeatures-sType-sType
-            VkPhysicalDeviceImagelessFramebufferFeatures *structure = (VkPhysicalDeviceImagelessFramebufferFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_imageless_framebuffer)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES), but its parent extension "
-                           "VK_KHR_imageless_framebuffer has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_imageless_framebuffer)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES), but its parent extension "
+                               "VK_KHR_imageless_framebuffer has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceImagelessFramebufferFeatures", "imagelessFramebuffer", structure->imagelessFramebuffer);
+            if (is_const_param) {
+                VkPhysicalDeviceImagelessFramebufferFeatures *structure = (VkPhysicalDeviceImagelessFramebufferFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceImagelessFramebufferFeatures", "imagelessFramebuffer", structure->imagelessFramebuffer);
+            }
         } break;
 
         // Validation code for VkFramebufferAttachmentsCreateInfo structure members
         case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO: { // Covers VUID-VkFramebufferAttachmentsCreateInfo-sType-sType
-            VkFramebufferAttachmentsCreateInfo *structure = (VkFramebufferAttachmentsCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_imageless_framebuffer)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO), but its parent extension "
-                           "VK_KHR_imageless_framebuffer has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_imageless_framebuffer)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO), but its parent extension "
+                               "VK_KHR_imageless_framebuffer has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_struct_type_array("VkFramebufferAttachmentsCreateInfo", "attachmentImageInfoCount", "pAttachmentImageInfos", "VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO", structure->attachmentImageInfoCount, structure->pAttachmentImageInfos, VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO, false, true, "VUID-VkFramebufferAttachmentImageInfo-sType-sType", "VUID-VkFramebufferAttachmentsCreateInfo-pAttachmentImageInfos-parameter", kVUIDUndefined);
+            if (is_const_param) {
+                VkFramebufferAttachmentsCreateInfo *structure = (VkFramebufferAttachmentsCreateInfo *) header;
+                skip |= validate_struct_type_array("VkFramebufferAttachmentsCreateInfo", "attachmentImageInfoCount", "pAttachmentImageInfos", "VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO", structure->attachmentImageInfoCount, structure->pAttachmentImageInfos, VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO, false, true, "VUID-VkFramebufferAttachmentImageInfo-sType-sType", "VUID-VkFramebufferAttachmentsCreateInfo-pAttachmentImageInfos-parameter", kVUIDUndefined);
 
-            if (structure->pAttachmentImageInfos != NULL)
-            {
-                for (uint32_t attachmentImageInfoIndex = 0; attachmentImageInfoIndex < structure->attachmentImageInfoCount; ++attachmentImageInfoIndex)
+                if (structure->pAttachmentImageInfos != NULL)
                 {
-                    skip |= validate_flags("VkFramebufferAttachmentsCreateInfo", ParameterName("pAttachmentImageInfos[%i].flags", ParameterName::IndexVector{ attachmentImageInfoIndex }), "VkImageCreateFlagBits", AllVkImageCreateFlagBits, structure->pAttachmentImageInfos[attachmentImageInfoIndex].flags, kOptionalFlags, "VUID-VkFramebufferAttachmentImageInfo-flags-parameter");
+                    for (uint32_t attachmentImageInfoIndex = 0; attachmentImageInfoIndex < structure->attachmentImageInfoCount; ++attachmentImageInfoIndex)
+                    {
+                        skip |= validate_flags("VkFramebufferAttachmentsCreateInfo", ParameterName("pAttachmentImageInfos[%i].flags", ParameterName::IndexVector{ attachmentImageInfoIndex }), "VkImageCreateFlagBits", AllVkImageCreateFlagBits, structure->pAttachmentImageInfos[attachmentImageInfoIndex].flags, kOptionalFlags, "VUID-VkFramebufferAttachmentImageInfo-flags-parameter");
 
-                    skip |= validate_flags("VkFramebufferAttachmentsCreateInfo", ParameterName("pAttachmentImageInfos[%i].usage", ParameterName::IndexVector{ attachmentImageInfoIndex }), "VkImageUsageFlagBits", AllVkImageUsageFlagBits, structure->pAttachmentImageInfos[attachmentImageInfoIndex].usage, kRequiredFlags, "VUID-VkFramebufferAttachmentImageInfo-usage-parameter", "VUID-VkFramebufferAttachmentImageInfo-usage-requiredbitmask");
+                        skip |= validate_flags("VkFramebufferAttachmentsCreateInfo", ParameterName("pAttachmentImageInfos[%i].usage", ParameterName::IndexVector{ attachmentImageInfoIndex }), "VkImageUsageFlagBits", AllVkImageUsageFlagBits, structure->pAttachmentImageInfos[attachmentImageInfoIndex].usage, kRequiredFlags, "VUID-VkFramebufferAttachmentImageInfo-usage-parameter", "VUID-VkFramebufferAttachmentImageInfo-usage-requiredbitmask");
 
-                    skip |= validate_ranged_enum_array("VkFramebufferAttachmentsCreateInfo", ParameterName("pAttachmentImageInfos[%i].viewFormatCount", ParameterName::IndexVector{ attachmentImageInfoIndex }), ParameterName("pAttachmentImageInfos[%i].pViewFormats", ParameterName::IndexVector{ attachmentImageInfoIndex }), "VkFormat", AllVkFormatEnums, structure->pAttachmentImageInfos[attachmentImageInfoIndex].viewFormatCount, structure->pAttachmentImageInfos[attachmentImageInfoIndex].pViewFormats, false, true);
+                        skip |= validate_ranged_enum_array("VkFramebufferAttachmentsCreateInfo", ParameterName("pAttachmentImageInfos[%i].viewFormatCount", ParameterName::IndexVector{ attachmentImageInfoIndex }), ParameterName("pAttachmentImageInfos[%i].pViewFormats", ParameterName::IndexVector{ attachmentImageInfoIndex }), "VkFormat", AllVkFormatEnums, structure->pAttachmentImageInfos[attachmentImageInfoIndex].viewFormatCount, structure->pAttachmentImageInfos[attachmentImageInfoIndex].pViewFormats, false, true);
+                    }
                 }
             }
         } break;
 
         // Validation code for VkRenderPassAttachmentBeginInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO: { // Covers VUID-VkRenderPassAttachmentBeginInfo-sType-sType
-            VkRenderPassAttachmentBeginInfo *structure = (VkRenderPassAttachmentBeginInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_imageless_framebuffer)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO), but its parent extension "
-                           "VK_KHR_imageless_framebuffer has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_imageless_framebuffer)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO), but its parent extension "
+                               "VK_KHR_imageless_framebuffer has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_array("VkRenderPassAttachmentBeginInfo", "attachmentCount", "pAttachments", structure->attachmentCount, &structure->pAttachments, false, true, kVUIDUndefined, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter");
+            if (is_const_param) {
+                VkRenderPassAttachmentBeginInfo *structure = (VkRenderPassAttachmentBeginInfo *) header;
+                skip |= validate_array("VkRenderPassAttachmentBeginInfo", "attachmentCount", "pAttachments", structure->attachmentCount, &structure->pAttachments, false, true, kVUIDUndefined, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceUniformBufferStandardLayoutFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES: { // Covers VUID-VkPhysicalDeviceUniformBufferStandardLayoutFeatures-sType-sType
-            VkPhysicalDeviceUniformBufferStandardLayoutFeatures *structure = (VkPhysicalDeviceUniformBufferStandardLayoutFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_uniform_buffer_standard_layout)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES), but its parent extension "
-                           "VK_KHR_uniform_buffer_standard_layout has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_uniform_buffer_standard_layout)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES), but its parent extension "
+                               "VK_KHR_uniform_buffer_standard_layout has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceUniformBufferStandardLayoutFeatures", "uniformBufferStandardLayout", structure->uniformBufferStandardLayout);
+            if (is_const_param) {
+                VkPhysicalDeviceUniformBufferStandardLayoutFeatures *structure = (VkPhysicalDeviceUniformBufferStandardLayoutFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceUniformBufferStandardLayoutFeatures", "uniformBufferStandardLayout", structure->uniformBufferStandardLayout);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES: { // Covers VUID-VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_shader_subgroup_extended_types)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES), but its parent extension "
-                           "VK_KHR_shader_subgroup_extended_types has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_shader_subgroup_extended_types)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES), but its parent extension "
+                               "VK_KHR_shader_subgroup_extended_types has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES: { // Covers VUID-VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures-sType-sType
-            VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *structure = (VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_separate_depth_stencil_layouts)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES), but its parent extension "
-                           "VK_KHR_separate_depth_stencil_layouts has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_separate_depth_stencil_layouts)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES), but its parent extension "
+                               "VK_KHR_separate_depth_stencil_layouts has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures", "separateDepthStencilLayouts", structure->separateDepthStencilLayouts);
+            if (is_const_param) {
+                VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *structure = (VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures", "separateDepthStencilLayouts", structure->separateDepthStencilLayouts);
+            }
         } break;
 
         // Validation code for VkAttachmentReferenceStencilLayout structure members
         case VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT: { // Covers VUID-VkAttachmentReferenceStencilLayout-sType-sType
-            VkAttachmentReferenceStencilLayout *structure = (VkAttachmentReferenceStencilLayout *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_separate_depth_stencil_layouts)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT), but its parent extension "
-                           "VK_KHR_separate_depth_stencil_layouts has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_separate_depth_stencil_layouts)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT), but its parent extension "
+                               "VK_KHR_separate_depth_stencil_layouts has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_ranged_enum("VkAttachmentReferenceStencilLayout", "stencilLayout", "VkImageLayout", AllVkImageLayoutEnums, structure->stencilLayout, "VUID-VkAttachmentReferenceStencilLayout-stencilLayout-parameter");
+            if (is_const_param) {
+                VkAttachmentReferenceStencilLayout *structure = (VkAttachmentReferenceStencilLayout *) header;
+                skip |= validate_ranged_enum("VkAttachmentReferenceStencilLayout", "stencilLayout", "VkImageLayout", AllVkImageLayoutEnums, structure->stencilLayout, "VUID-VkAttachmentReferenceStencilLayout-stencilLayout-parameter");
+            }
         } break;
 
         // Validation code for VkAttachmentDescriptionStencilLayout structure members
         case VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT: { // Covers VUID-VkAttachmentDescriptionStencilLayout-sType-sType
-            VkAttachmentDescriptionStencilLayout *structure = (VkAttachmentDescriptionStencilLayout *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_separate_depth_stencil_layouts)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT), but its parent extension "
-                           "VK_KHR_separate_depth_stencil_layouts has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_separate_depth_stencil_layouts)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT), but its parent extension "
+                               "VK_KHR_separate_depth_stencil_layouts has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_ranged_enum("VkAttachmentDescriptionStencilLayout", "stencilInitialLayout", "VkImageLayout", AllVkImageLayoutEnums, structure->stencilInitialLayout, "VUID-VkAttachmentDescriptionStencilLayout-stencilInitialLayout-parameter");
+            if (is_const_param) {
+                VkAttachmentDescriptionStencilLayout *structure = (VkAttachmentDescriptionStencilLayout *) header;
+                skip |= validate_ranged_enum("VkAttachmentDescriptionStencilLayout", "stencilInitialLayout", "VkImageLayout", AllVkImageLayoutEnums, structure->stencilInitialLayout, "VUID-VkAttachmentDescriptionStencilLayout-stencilInitialLayout-parameter");
 
-            skip |= validate_ranged_enum("VkAttachmentDescriptionStencilLayout", "stencilFinalLayout", "VkImageLayout", AllVkImageLayoutEnums, structure->stencilFinalLayout, "VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-parameter");
+                skip |= validate_ranged_enum("VkAttachmentDescriptionStencilLayout", "stencilFinalLayout", "VkImageLayout", AllVkImageLayoutEnums, structure->stencilFinalLayout, "VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceHostQueryResetFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES: { // Covers VUID-VkPhysicalDeviceHostQueryResetFeatures-sType-sType
-            VkPhysicalDeviceHostQueryResetFeatures *structure = (VkPhysicalDeviceHostQueryResetFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_host_query_reset)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES), but its parent extension "
-                           "VK_EXT_host_query_reset has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_host_query_reset)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES), but its parent extension "
+                               "VK_EXT_host_query_reset has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceHostQueryResetFeatures", "hostQueryReset", structure->hostQueryReset);
+            if (is_const_param) {
+                VkPhysicalDeviceHostQueryResetFeatures *structure = (VkPhysicalDeviceHostQueryResetFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceHostQueryResetFeatures", "hostQueryReset", structure->hostQueryReset);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceTimelineSemaphoreFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES: { // Covers VUID-VkPhysicalDeviceTimelineSemaphoreFeatures-sType-sType
-            VkPhysicalDeviceTimelineSemaphoreFeatures *structure = (VkPhysicalDeviceTimelineSemaphoreFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_timeline_semaphore)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES), but its parent extension "
-                           "VK_KHR_timeline_semaphore has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_timeline_semaphore)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES), but its parent extension "
+                               "VK_KHR_timeline_semaphore has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceTimelineSemaphoreFeatures", "timelineSemaphore", structure->timelineSemaphore);
+            if (is_const_param) {
+                VkPhysicalDeviceTimelineSemaphoreFeatures *structure = (VkPhysicalDeviceTimelineSemaphoreFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceTimelineSemaphoreFeatures", "timelineSemaphore", structure->timelineSemaphore);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceTimelineSemaphoreProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES: { // Covers VUID-VkPhysicalDeviceTimelineSemaphoreProperties-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_timeline_semaphore)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES), but its parent extension "
-                           "VK_KHR_timeline_semaphore has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_timeline_semaphore)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES), but its parent extension "
+                               "VK_KHR_timeline_semaphore has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkSemaphoreTypeCreateInfo structure members
         case VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO: { // Covers VUID-VkSemaphoreTypeCreateInfo-sType-sType
-            VkSemaphoreTypeCreateInfo *structure = (VkSemaphoreTypeCreateInfo *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_timeline_semaphore)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO), but its parent extension "
-                           "VK_KHR_timeline_semaphore has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_timeline_semaphore)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO), but its parent extension "
+                               "VK_KHR_timeline_semaphore has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_ranged_enum("VkSemaphoreTypeCreateInfo", "semaphoreType", "VkSemaphoreType", AllVkSemaphoreTypeEnums, structure->semaphoreType, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-parameter");
+            if (is_const_param) {
+                VkSemaphoreTypeCreateInfo *structure = (VkSemaphoreTypeCreateInfo *) header;
+                skip |= validate_ranged_enum("VkSemaphoreTypeCreateInfo", "semaphoreType", "VkSemaphoreType", AllVkSemaphoreTypeEnums, structure->semaphoreType, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-parameter");
+            }
         } break;
 
         // Validation code for VkTimelineSemaphoreSubmitInfo structure members
         case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO: { // Covers VUID-VkTimelineSemaphoreSubmitInfo-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_timeline_semaphore)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO), but its parent extension "
-                           "VK_KHR_timeline_semaphore has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_timeline_semaphore)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO), but its parent extension "
+                               "VK_KHR_timeline_semaphore has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkPhysicalDeviceBufferDeviceAddressFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES: { // Covers VUID-VkPhysicalDeviceBufferDeviceAddressFeatures-sType-sType
-            VkPhysicalDeviceBufferDeviceAddressFeatures *structure = (VkPhysicalDeviceBufferDeviceAddressFeatures *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_buffer_device_address)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES), but its parent extension "
-                           "VK_KHR_buffer_device_address has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_buffer_device_address)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES), but its parent extension "
+                               "VK_KHR_buffer_device_address has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeatures", "bufferDeviceAddress", structure->bufferDeviceAddress);
+            if (is_const_param) {
+                VkPhysicalDeviceBufferDeviceAddressFeatures *structure = (VkPhysicalDeviceBufferDeviceAddressFeatures *) header;
+                skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeatures", "bufferDeviceAddress", structure->bufferDeviceAddress);
 
-            skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeatures", "bufferDeviceAddressCaptureReplay", structure->bufferDeviceAddressCaptureReplay);
+                skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeatures", "bufferDeviceAddressCaptureReplay", structure->bufferDeviceAddressCaptureReplay);
 
-            skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeatures", "bufferDeviceAddressMultiDevice", structure->bufferDeviceAddressMultiDevice);
+                skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeatures", "bufferDeviceAddressMultiDevice", structure->bufferDeviceAddressMultiDevice);
+            }
         } break;
 
         // Validation code for VkBufferOpaqueCaptureAddressCreateInfo structure members
         case VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO: { // Covers VUID-VkBufferOpaqueCaptureAddressCreateInfo-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_buffer_device_address)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO), but its parent extension "
-                           "VK_KHR_buffer_device_address has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_buffer_device_address)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO), but its parent extension "
+                               "VK_KHR_buffer_device_address has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
 
         // Validation code for VkMemoryOpaqueCaptureAddressAllocateInfo structure members
         case VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO: { // Covers VUID-VkMemoryOpaqueCaptureAddressAllocateInfo-sType-sType
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_buffer_device_address)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO), but its parent extension "
-                           "VK_KHR_buffer_device_address has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_buffer_device_address)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO), but its parent extension "
+                               "VK_KHR_buffer_device_address has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
         } break;
@@ -1590,67 +1830,81 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkBindImageMemorySwapchainInfoKHR structure members
         case VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR: { // Covers VUID-VkBindImageMemorySwapchainInfoKHR-sType-sType
-            VkBindImageMemorySwapchainInfoKHR *structure = (VkBindImageMemorySwapchainInfoKHR *) header;
-            skip |= validate_required_handle("VkBindImageMemorySwapchainInfoKHR", "swapchain", structure->swapchain);
+            if (is_const_param) {
+                VkBindImageMemorySwapchainInfoKHR *structure = (VkBindImageMemorySwapchainInfoKHR *) header;
+                skip |= validate_required_handle("VkBindImageMemorySwapchainInfoKHR", "swapchain", structure->swapchain);
+            }
         } break;
 
         // Validation code for VkDeviceGroupPresentInfoKHR structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_PRESENT_INFO_KHR: { // Covers VUID-VkDeviceGroupPresentInfoKHR-sType-sType
-            VkDeviceGroupPresentInfoKHR *structure = (VkDeviceGroupPresentInfoKHR *) header;
-            skip |= validate_array("VkDeviceGroupPresentInfoKHR", "swapchainCount", "pDeviceMasks", structure->swapchainCount, &structure->pDeviceMasks, false, true, kVUIDUndefined, "VUID-VkDeviceGroupPresentInfoKHR-pDeviceMasks-parameter");
+            if (is_const_param) {
+                VkDeviceGroupPresentInfoKHR *structure = (VkDeviceGroupPresentInfoKHR *) header;
+                skip |= validate_array("VkDeviceGroupPresentInfoKHR", "swapchainCount", "pDeviceMasks", structure->swapchainCount, &structure->pDeviceMasks, false, true, kVUIDUndefined, "VUID-VkDeviceGroupPresentInfoKHR-pDeviceMasks-parameter");
 
-            skip |= validate_flags("VkDeviceGroupPresentInfoKHR", "mode", "VkDeviceGroupPresentModeFlagBitsKHR", AllVkDeviceGroupPresentModeFlagBitsKHR, structure->mode, kRequiredSingleBit, "VUID-VkDeviceGroupPresentInfoKHR-mode-parameter", "VUID-VkDeviceGroupPresentInfoKHR-mode-parameter");
+                skip |= validate_flags("VkDeviceGroupPresentInfoKHR", "mode", "VkDeviceGroupPresentModeFlagBitsKHR", AllVkDeviceGroupPresentModeFlagBitsKHR, structure->mode, kRequiredSingleBit, "VUID-VkDeviceGroupPresentInfoKHR-mode-parameter", "VUID-VkDeviceGroupPresentInfoKHR-mode-parameter");
+            }
         } break;
 
         // Validation code for VkDeviceGroupSwapchainCreateInfoKHR structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_SWAPCHAIN_CREATE_INFO_KHR: { // Covers VUID-VkDeviceGroupSwapchainCreateInfoKHR-sType-sType
-            VkDeviceGroupSwapchainCreateInfoKHR *structure = (VkDeviceGroupSwapchainCreateInfoKHR *) header;
-            skip |= validate_flags("VkDeviceGroupSwapchainCreateInfoKHR", "modes", "VkDeviceGroupPresentModeFlagBitsKHR", AllVkDeviceGroupPresentModeFlagBitsKHR, structure->modes, kRequiredFlags, "VUID-VkDeviceGroupSwapchainCreateInfoKHR-modes-parameter", "VUID-VkDeviceGroupSwapchainCreateInfoKHR-modes-requiredbitmask");
+            if (is_const_param) {
+                VkDeviceGroupSwapchainCreateInfoKHR *structure = (VkDeviceGroupSwapchainCreateInfoKHR *) header;
+                skip |= validate_flags("VkDeviceGroupSwapchainCreateInfoKHR", "modes", "VkDeviceGroupPresentModeFlagBitsKHR", AllVkDeviceGroupPresentModeFlagBitsKHR, structure->modes, kRequiredFlags, "VUID-VkDeviceGroupSwapchainCreateInfoKHR-modes-parameter", "VUID-VkDeviceGroupSwapchainCreateInfoKHR-modes-requiredbitmask");
+            }
         } break;
 
         // Validation code for VkDisplayPresentInfoKHR structure members
         case VK_STRUCTURE_TYPE_DISPLAY_PRESENT_INFO_KHR: { // Covers VUID-VkDisplayPresentInfoKHR-sType-sType
-            VkDisplayPresentInfoKHR *structure = (VkDisplayPresentInfoKHR *) header;
-            skip |= validate_bool32("VkDisplayPresentInfoKHR", "persistent", structure->persistent);
+            if (is_const_param) {
+                VkDisplayPresentInfoKHR *structure = (VkDisplayPresentInfoKHR *) header;
+                skip |= validate_bool32("VkDisplayPresentInfoKHR", "persistent", structure->persistent);
+            }
         } break;
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoQueueFamilyProperties2KHR structure members
         case VK_STRUCTURE_TYPE_VIDEO_QUEUE_FAMILY_PROPERTIES_2_KHR: { // Covers VUID-VkVideoQueueFamilyProperties2KHR-sType-sType
-            VkVideoQueueFamilyProperties2KHR *structure = (VkVideoQueueFamilyProperties2KHR *) header;
-            skip |= validate_flags("VkVideoQueueFamilyProperties2KHR", "videoCodecOperations", "VkVideoCodecOperationFlagBitsKHR", AllVkVideoCodecOperationFlagBitsKHR, structure->videoCodecOperations, kRequiredFlags, "VUID-VkVideoQueueFamilyProperties2KHR-videoCodecOperations-parameter", "VUID-VkVideoQueueFamilyProperties2KHR-videoCodecOperations-requiredbitmask");
+            if (is_const_param) {
+                VkVideoQueueFamilyProperties2KHR *structure = (VkVideoQueueFamilyProperties2KHR *) header;
+                skip |= validate_flags("VkVideoQueueFamilyProperties2KHR", "videoCodecOperations", "VkVideoCodecOperationFlagBitsKHR", AllVkVideoCodecOperationFlagBitsKHR, structure->videoCodecOperations, kRequiredFlags, "VUID-VkVideoQueueFamilyProperties2KHR-videoCodecOperations-parameter", "VUID-VkVideoQueueFamilyProperties2KHR-videoCodecOperations-requiredbitmask");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoProfileKHR structure members
         case VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR: { // Covers VUID-VkVideoProfileKHR-sType-sType
-            VkVideoProfileKHR *structure = (VkVideoProfileKHR *) header;
-            skip |= validate_flags("VkVideoProfileKHR", "videoCodecOperation", "VkVideoCodecOperationFlagBitsKHR", AllVkVideoCodecOperationFlagBitsKHR, structure->videoCodecOperation, kRequiredSingleBit, "VUID-VkVideoProfileKHR-videoCodecOperation-parameter", "VUID-VkVideoProfileKHR-videoCodecOperation-parameter");
+            if (is_const_param) {
+                VkVideoProfileKHR *structure = (VkVideoProfileKHR *) header;
+                skip |= validate_flags("VkVideoProfileKHR", "videoCodecOperation", "VkVideoCodecOperationFlagBitsKHR", AllVkVideoCodecOperationFlagBitsKHR, structure->videoCodecOperation, kRequiredSingleBit, "VUID-VkVideoProfileKHR-videoCodecOperation-parameter", "VUID-VkVideoProfileKHR-videoCodecOperation-parameter");
 
-            skip |= validate_flags("VkVideoProfileKHR", "chromaSubsampling", "VkVideoChromaSubsamplingFlagBitsKHR", AllVkVideoChromaSubsamplingFlagBitsKHR, structure->chromaSubsampling, kRequiredFlags, "VUID-VkVideoProfileKHR-chromaSubsampling-parameter", "VUID-VkVideoProfileKHR-chromaSubsampling-requiredbitmask");
+                skip |= validate_flags("VkVideoProfileKHR", "chromaSubsampling", "VkVideoChromaSubsamplingFlagBitsKHR", AllVkVideoChromaSubsamplingFlagBitsKHR, structure->chromaSubsampling, kRequiredFlags, "VUID-VkVideoProfileKHR-chromaSubsampling-parameter", "VUID-VkVideoProfileKHR-chromaSubsampling-requiredbitmask");
 
-            skip |= validate_flags("VkVideoProfileKHR", "lumaBitDepth", "VkVideoComponentBitDepthFlagBitsKHR", AllVkVideoComponentBitDepthFlagBitsKHR, structure->lumaBitDepth, kRequiredFlags, "VUID-VkVideoProfileKHR-lumaBitDepth-parameter", "VUID-VkVideoProfileKHR-lumaBitDepth-requiredbitmask");
+                skip |= validate_flags("VkVideoProfileKHR", "lumaBitDepth", "VkVideoComponentBitDepthFlagBitsKHR", AllVkVideoComponentBitDepthFlagBitsKHR, structure->lumaBitDepth, kRequiredFlags, "VUID-VkVideoProfileKHR-lumaBitDepth-parameter", "VUID-VkVideoProfileKHR-lumaBitDepth-requiredbitmask");
 
-            skip |= validate_flags("VkVideoProfileKHR", "chromaBitDepth", "VkVideoComponentBitDepthFlagBitsKHR", AllVkVideoComponentBitDepthFlagBitsKHR, structure->chromaBitDepth, kRequiredFlags, "VUID-VkVideoProfileKHR-chromaBitDepth-parameter", "VUID-VkVideoProfileKHR-chromaBitDepth-requiredbitmask");
+                skip |= validate_flags("VkVideoProfileKHR", "chromaBitDepth", "VkVideoComponentBitDepthFlagBitsKHR", AllVkVideoComponentBitDepthFlagBitsKHR, structure->chromaBitDepth, kRequiredFlags, "VUID-VkVideoProfileKHR-chromaBitDepth-parameter", "VUID-VkVideoProfileKHR-chromaBitDepth-requiredbitmask");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoProfilesKHR structure members
         case VK_STRUCTURE_TYPE_VIDEO_PROFILES_KHR: { // Covers VUID-VkVideoProfilesKHR-sType-sType
-            VkVideoProfilesKHR *structure = (VkVideoProfilesKHR *) header;
-            skip |= validate_struct_type("VkVideoProfilesKHR", "pProfiles", "VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR", structure->pProfiles, VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR, true, "VUID-VkVideoProfilesKHR-pProfiles-parameter", "VUID-VkVideoProfileKHR-sType-sType");
+            if (is_const_param) {
+                VkVideoProfilesKHR *structure = (VkVideoProfilesKHR *) header;
+                skip |= validate_struct_type("VkVideoProfilesKHR", "pProfiles", "VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR", structure->pProfiles, VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR, true, "VUID-VkVideoProfilesKHR-pProfiles-parameter", "VUID-VkVideoProfileKHR-sType-sType");
 
-            if (structure->pProfiles != NULL)
-            {
-                skip |= validate_flags("VkVideoProfilesKHR", "pProfiles->videoCodecOperation", "VkVideoCodecOperationFlagBitsKHR", AllVkVideoCodecOperationFlagBitsKHR, structure->pProfiles->videoCodecOperation, kRequiredSingleBit, "VUID-VkVideoProfileKHR-videoCodecOperation-parameter", "VUID-VkVideoProfileKHR-videoCodecOperation-parameter");
+                if (structure->pProfiles != NULL)
+                {
+                    skip |= validate_flags("VkVideoProfilesKHR", "pProfiles->videoCodecOperation", "VkVideoCodecOperationFlagBitsKHR", AllVkVideoCodecOperationFlagBitsKHR, structure->pProfiles->videoCodecOperation, kRequiredSingleBit, "VUID-VkVideoProfileKHR-videoCodecOperation-parameter", "VUID-VkVideoProfileKHR-videoCodecOperation-parameter");
 
-                skip |= validate_flags("VkVideoProfilesKHR", "pProfiles->chromaSubsampling", "VkVideoChromaSubsamplingFlagBitsKHR", AllVkVideoChromaSubsamplingFlagBitsKHR, structure->pProfiles->chromaSubsampling, kRequiredFlags, "VUID-VkVideoProfileKHR-chromaSubsampling-parameter", "VUID-VkVideoProfileKHR-chromaSubsampling-requiredbitmask");
+                    skip |= validate_flags("VkVideoProfilesKHR", "pProfiles->chromaSubsampling", "VkVideoChromaSubsamplingFlagBitsKHR", AllVkVideoChromaSubsamplingFlagBitsKHR, structure->pProfiles->chromaSubsampling, kRequiredFlags, "VUID-VkVideoProfileKHR-chromaSubsampling-parameter", "VUID-VkVideoProfileKHR-chromaSubsampling-requiredbitmask");
 
-                skip |= validate_flags("VkVideoProfilesKHR", "pProfiles->lumaBitDepth", "VkVideoComponentBitDepthFlagBitsKHR", AllVkVideoComponentBitDepthFlagBitsKHR, structure->pProfiles->lumaBitDepth, kRequiredFlags, "VUID-VkVideoProfileKHR-lumaBitDepth-parameter", "VUID-VkVideoProfileKHR-lumaBitDepth-requiredbitmask");
+                    skip |= validate_flags("VkVideoProfilesKHR", "pProfiles->lumaBitDepth", "VkVideoComponentBitDepthFlagBitsKHR", AllVkVideoComponentBitDepthFlagBitsKHR, structure->pProfiles->lumaBitDepth, kRequiredFlags, "VUID-VkVideoProfileKHR-lumaBitDepth-parameter", "VUID-VkVideoProfileKHR-lumaBitDepth-requiredbitmask");
 
-                skip |= validate_flags("VkVideoProfilesKHR", "pProfiles->chromaBitDepth", "VkVideoComponentBitDepthFlagBitsKHR", AllVkVideoComponentBitDepthFlagBitsKHR, structure->pProfiles->chromaBitDepth, kRequiredFlags, "VUID-VkVideoProfileKHR-chromaBitDepth-parameter", "VUID-VkVideoProfileKHR-chromaBitDepth-requiredbitmask");
+                    skip |= validate_flags("VkVideoProfilesKHR", "pProfiles->chromaBitDepth", "VkVideoComponentBitDepthFlagBitsKHR", AllVkVideoComponentBitDepthFlagBitsKHR, structure->pProfiles->chromaBitDepth, kRequiredFlags, "VUID-VkVideoProfileKHR-chromaBitDepth-parameter", "VUID-VkVideoProfileKHR-chromaBitDepth-requiredbitmask");
+                }
             }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -1658,8 +1912,10 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         // Validation code for VkImportMemoryWin32HandleInfoKHR structure members
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR: { // Covers VUID-VkImportMemoryWin32HandleInfoKHR-sType-sType
-            VkImportMemoryWin32HandleInfoKHR *structure = (VkImportMemoryWin32HandleInfoKHR *) header;
-            skip |= validate_flags("VkImportMemoryWin32HandleInfoKHR", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kOptionalSingleBit, "VUID-VkImportMemoryWin32HandleInfoKHR-handleType-parameter");
+            if (is_const_param) {
+                VkImportMemoryWin32HandleInfoKHR *structure = (VkImportMemoryWin32HandleInfoKHR *) header;
+                skip |= validate_flags("VkImportMemoryWin32HandleInfoKHR", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kOptionalSingleBit, "VUID-VkImportMemoryWin32HandleInfoKHR-handleType-parameter");
+            }
         } break;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -1667,23 +1923,27 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkImportMemoryFdInfoKHR structure members
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR: { // Covers VUID-VkImportMemoryFdInfoKHR-sType-sType
-            VkImportMemoryFdInfoKHR *structure = (VkImportMemoryFdInfoKHR *) header;
-            skip |= validate_flags("VkImportMemoryFdInfoKHR", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kOptionalSingleBit, "VUID-VkImportMemoryFdInfoKHR-handleType-parameter");
+            if (is_const_param) {
+                VkImportMemoryFdInfoKHR *structure = (VkImportMemoryFdInfoKHR *) header;
+                skip |= validate_flags("VkImportMemoryFdInfoKHR", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kOptionalSingleBit, "VUID-VkImportMemoryFdInfoKHR-handleType-parameter");
+            }
         } break;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         // Validation code for VkWin32KeyedMutexAcquireReleaseInfoKHR structure members
         case VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR: { // Covers VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-sType-sType
-            VkWin32KeyedMutexAcquireReleaseInfoKHR *structure = (VkWin32KeyedMutexAcquireReleaseInfoKHR *) header;
-            skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoKHR", "acquireCount", "pAcquireSyncs", structure->acquireCount, &structure->pAcquireSyncs, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pAcquireSyncs-parameter");
+            if (is_const_param) {
+                VkWin32KeyedMutexAcquireReleaseInfoKHR *structure = (VkWin32KeyedMutexAcquireReleaseInfoKHR *) header;
+                skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoKHR", "acquireCount", "pAcquireSyncs", structure->acquireCount, &structure->pAcquireSyncs, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pAcquireSyncs-parameter");
 
-            skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoKHR", "acquireCount", "pAcquireKeys", structure->acquireCount, &structure->pAcquireKeys, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pAcquireKeys-parameter");
+                skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoKHR", "acquireCount", "pAcquireKeys", structure->acquireCount, &structure->pAcquireKeys, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pAcquireKeys-parameter");
 
-            skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoKHR", "acquireCount", "pAcquireTimeouts", structure->acquireCount, &structure->pAcquireTimeouts, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pAcquireTimeouts-parameter");
+                skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoKHR", "acquireCount", "pAcquireTimeouts", structure->acquireCount, &structure->pAcquireTimeouts, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pAcquireTimeouts-parameter");
 
-            skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoKHR", "releaseCount", "pReleaseSyncs", structure->releaseCount, &structure->pReleaseSyncs, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pReleaseSyncs-parameter");
+                skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoKHR", "releaseCount", "pReleaseSyncs", structure->releaseCount, &structure->pReleaseSyncs, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pReleaseSyncs-parameter");
 
-            skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoKHR", "releaseCount", "pReleaseKeys", structure->releaseCount, &structure->pReleaseKeys, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pReleaseKeys-parameter");
+                skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoKHR", "releaseCount", "pReleaseKeys", structure->releaseCount, &structure->pReleaseKeys, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pReleaseKeys-parameter");
+            }
         } break;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -1695,17 +1955,19 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPresentRegionsKHR structure members
         case VK_STRUCTURE_TYPE_PRESENT_REGIONS_KHR: { // Covers VUID-VkPresentRegionsKHR-sType-sType
-            VkPresentRegionsKHR *structure = (VkPresentRegionsKHR *) header;
-            skip |= validate_array("VkPresentRegionsKHR", "swapchainCount", "pRegions", structure->swapchainCount, &structure->pRegions, true, false, "VUID-VkPresentRegionsKHR-swapchainCount-arraylength", "VUID-VkPresentRegionsKHR-pRegions-parameter");
+            if (is_const_param) {
+                VkPresentRegionsKHR *structure = (VkPresentRegionsKHR *) header;
+                skip |= validate_array("VkPresentRegionsKHR", "swapchainCount", "pRegions", structure->swapchainCount, &structure->pRegions, true, false, "VUID-VkPresentRegionsKHR-swapchainCount-arraylength", "VUID-VkPresentRegionsKHR-pRegions-parameter");
 
-            if (structure->pRegions != NULL)
-            {
-                for (uint32_t swapchainIndex = 0; swapchainIndex < structure->swapchainCount; ++swapchainIndex)
+                if (structure->pRegions != NULL)
                 {
-                    if (structure->pRegions[swapchainIndex].pRectangles != NULL)
+                    for (uint32_t swapchainIndex = 0; swapchainIndex < structure->swapchainCount; ++swapchainIndex)
                     {
-                        for (uint32_t rectangleIndex = 0; rectangleIndex < structure->pRegions[swapchainIndex].rectangleCount; ++rectangleIndex)
+                        if (structure->pRegions[swapchainIndex].pRectangles != NULL)
                         {
+                            for (uint32_t rectangleIndex = 0; rectangleIndex < structure->pRegions[swapchainIndex].rectangleCount; ++rectangleIndex)
+                            {
+                            }
                         }
                     }
                 }
@@ -1718,18 +1980,22 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDevicePerformanceQueryFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR: { // Covers VUID-VkPhysicalDevicePerformanceQueryFeaturesKHR-sType-sType
-            VkPhysicalDevicePerformanceQueryFeaturesKHR *structure = (VkPhysicalDevicePerformanceQueryFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDevicePerformanceQueryFeaturesKHR", "performanceCounterQueryPools", structure->performanceCounterQueryPools);
+            if (is_const_param) {
+                VkPhysicalDevicePerformanceQueryFeaturesKHR *structure = (VkPhysicalDevicePerformanceQueryFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDevicePerformanceQueryFeaturesKHR", "performanceCounterQueryPools", structure->performanceCounterQueryPools);
 
-            skip |= validate_bool32("VkPhysicalDevicePerformanceQueryFeaturesKHR", "performanceCounterMultipleQueryPools", structure->performanceCounterMultipleQueryPools);
+                skip |= validate_bool32("VkPhysicalDevicePerformanceQueryFeaturesKHR", "performanceCounterMultipleQueryPools", structure->performanceCounterMultipleQueryPools);
+            }
         } break;
 
         // No Validation code for VkPhysicalDevicePerformanceQueryPropertiesKHR structure members  -- Covers VUID-VkPhysicalDevicePerformanceQueryPropertiesKHR-sType-sType
 
         // Validation code for VkQueryPoolPerformanceCreateInfoKHR structure members
         case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR: { // Covers VUID-VkQueryPoolPerformanceCreateInfoKHR-sType-sType
-            VkQueryPoolPerformanceCreateInfoKHR *structure = (VkQueryPoolPerformanceCreateInfoKHR *) header;
-            skip |= validate_array("VkQueryPoolPerformanceCreateInfoKHR", "counterIndexCount", "pCounterIndices", structure->counterIndexCount, &structure->pCounterIndices, true, true, "VUID-VkQueryPoolPerformanceCreateInfoKHR-counterIndexCount-arraylength", "VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-parameter");
+            if (is_const_param) {
+                VkQueryPoolPerformanceCreateInfoKHR *structure = (VkQueryPoolPerformanceCreateInfoKHR *) header;
+                skip |= validate_array("VkQueryPoolPerformanceCreateInfoKHR", "counterIndexCount", "pCounterIndices", structure->counterIndexCount, &structure->pCounterIndices, true, true, "VUID-VkQueryPoolPerformanceCreateInfoKHR-counterIndexCount-arraylength", "VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-parameter");
+            }
         } break;
 
         // No Validation code for VkPerformanceQuerySubmitInfoKHR structure members  -- Covers VUID-VkPerformanceQuerySubmitInfoKHR-sType-sType
@@ -1737,36 +2003,38 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkPhysicalDevicePortabilitySubsetFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR: { // Covers VUID-VkPhysicalDevicePortabilitySubsetFeaturesKHR-sType-sType
-            VkPhysicalDevicePortabilitySubsetFeaturesKHR *structure = (VkPhysicalDevicePortabilitySubsetFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "constantAlphaColorBlendFactors", structure->constantAlphaColorBlendFactors);
+            if (is_const_param) {
+                VkPhysicalDevicePortabilitySubsetFeaturesKHR *structure = (VkPhysicalDevicePortabilitySubsetFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "constantAlphaColorBlendFactors", structure->constantAlphaColorBlendFactors);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "events", structure->events);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "events", structure->events);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "imageViewFormatReinterpretation", structure->imageViewFormatReinterpretation);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "imageViewFormatReinterpretation", structure->imageViewFormatReinterpretation);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "imageViewFormatSwizzle", structure->imageViewFormatSwizzle);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "imageViewFormatSwizzle", structure->imageViewFormatSwizzle);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "imageView2DOn3DImage", structure->imageView2DOn3DImage);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "imageView2DOn3DImage", structure->imageView2DOn3DImage);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "multisampleArrayImage", structure->multisampleArrayImage);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "multisampleArrayImage", structure->multisampleArrayImage);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "mutableComparisonSamplers", structure->mutableComparisonSamplers);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "mutableComparisonSamplers", structure->mutableComparisonSamplers);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "pointPolygons", structure->pointPolygons);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "pointPolygons", structure->pointPolygons);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "samplerMipLodBias", structure->samplerMipLodBias);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "samplerMipLodBias", structure->samplerMipLodBias);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "separateStencilMaskRef", structure->separateStencilMaskRef);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "separateStencilMaskRef", structure->separateStencilMaskRef);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "shaderSampleRateInterpolationFunctions", structure->shaderSampleRateInterpolationFunctions);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "shaderSampleRateInterpolationFunctions", structure->shaderSampleRateInterpolationFunctions);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "tessellationIsolines", structure->tessellationIsolines);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "tessellationIsolines", structure->tessellationIsolines);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "tessellationPointMode", structure->tessellationPointMode);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "tessellationPointMode", structure->tessellationPointMode);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "triangleFans", structure->triangleFans);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "triangleFans", structure->triangleFans);
 
-            skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "vertexAttributeAccessBeyondStride", structure->vertexAttributeAccessBeyondStride);
+                skip |= validate_bool32("VkPhysicalDevicePortabilitySubsetFeaturesKHR", "vertexAttributeAccessBeyondStride", structure->vertexAttributeAccessBeyondStride);
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -1774,265 +2042,315 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceShaderClockFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceShaderClockFeaturesKHR-sType-sType
-            VkPhysicalDeviceShaderClockFeaturesKHR *structure = (VkPhysicalDeviceShaderClockFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShaderClockFeaturesKHR", "shaderSubgroupClock", structure->shaderSubgroupClock);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderClockFeaturesKHR *structure = (VkPhysicalDeviceShaderClockFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderClockFeaturesKHR", "shaderSubgroupClock", structure->shaderSubgroupClock);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderClockFeaturesKHR", "shaderDeviceClock", structure->shaderDeviceClock);
+                skip |= validate_bool32("VkPhysicalDeviceShaderClockFeaturesKHR", "shaderDeviceClock", structure->shaderDeviceClock);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR-sType-sType
-            VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR *structure = (VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR", "shaderTerminateInvocation", structure->shaderTerminateInvocation);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR *structure = (VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR", "shaderTerminateInvocation", structure->shaderTerminateInvocation);
+            }
         } break;
 
         // Validation code for VkFragmentShadingRateAttachmentInfoKHR structure members
         case VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR: { // Covers VUID-VkFragmentShadingRateAttachmentInfoKHR-sType-sType
-            VkFragmentShadingRateAttachmentInfoKHR *structure = (VkFragmentShadingRateAttachmentInfoKHR *) header;
-            skip |= validate_struct_type("VkFragmentShadingRateAttachmentInfoKHR", "pFragmentShadingRateAttachment", "VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2", structure->pFragmentShadingRateAttachment, VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, false, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-parameter", "VUID-VkAttachmentReference2-sType-sType");
+            if (is_const_param) {
+                VkFragmentShadingRateAttachmentInfoKHR *structure = (VkFragmentShadingRateAttachmentInfoKHR *) header;
+                skip |= validate_struct_type("VkFragmentShadingRateAttachmentInfoKHR", "pFragmentShadingRateAttachment", "VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2", structure->pFragmentShadingRateAttachment, VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, false, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-parameter", "VUID-VkAttachmentReference2-sType-sType");
 
-            if (structure->pFragmentShadingRateAttachment != NULL)
-            {
-                skip |= validate_ranged_enum("VkFragmentShadingRateAttachmentInfoKHR", "pFragmentShadingRateAttachment->layout", "VkImageLayout", AllVkImageLayoutEnums, structure->pFragmentShadingRateAttachment->layout, "VUID-VkAttachmentReference2-layout-parameter");
+                if (structure->pFragmentShadingRateAttachment != NULL)
+                {
+                    skip |= validate_ranged_enum("VkFragmentShadingRateAttachmentInfoKHR", "pFragmentShadingRateAttachment->layout", "VkImageLayout", AllVkImageLayoutEnums, structure->pFragmentShadingRateAttachment->layout, "VUID-VkAttachmentReference2-layout-parameter");
+                }
+
             }
-
         } break;
 
         // No Validation code for VkPipelineFragmentShadingRateStateCreateInfoKHR structure members  -- Covers VUID-VkPipelineFragmentShadingRateStateCreateInfoKHR-sType-sType
 
         // Validation code for VkPhysicalDeviceFragmentShadingRateFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceFragmentShadingRateFeaturesKHR-sType-sType
-            VkPhysicalDeviceFragmentShadingRateFeaturesKHR *structure = (VkPhysicalDeviceFragmentShadingRateFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDeviceFragmentShadingRateFeaturesKHR", "pipelineFragmentShadingRate", structure->pipelineFragmentShadingRate);
+            if (is_const_param) {
+                VkPhysicalDeviceFragmentShadingRateFeaturesKHR *structure = (VkPhysicalDeviceFragmentShadingRateFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDeviceFragmentShadingRateFeaturesKHR", "pipelineFragmentShadingRate", structure->pipelineFragmentShadingRate);
 
-            skip |= validate_bool32("VkPhysicalDeviceFragmentShadingRateFeaturesKHR", "primitiveFragmentShadingRate", structure->primitiveFragmentShadingRate);
+                skip |= validate_bool32("VkPhysicalDeviceFragmentShadingRateFeaturesKHR", "primitiveFragmentShadingRate", structure->primitiveFragmentShadingRate);
 
-            skip |= validate_bool32("VkPhysicalDeviceFragmentShadingRateFeaturesKHR", "attachmentFragmentShadingRate", structure->attachmentFragmentShadingRate);
+                skip |= validate_bool32("VkPhysicalDeviceFragmentShadingRateFeaturesKHR", "attachmentFragmentShadingRate", structure->attachmentFragmentShadingRate);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceFragmentShadingRatePropertiesKHR structure members  -- Covers VUID-VkPhysicalDeviceFragmentShadingRatePropertiesKHR-sType-sType
 
         // Validation code for VkSurfaceProtectedCapabilitiesKHR structure members
         case VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR: { // Covers VUID-VkSurfaceProtectedCapabilitiesKHR-sType-sType
-            VkSurfaceProtectedCapabilitiesKHR *structure = (VkSurfaceProtectedCapabilitiesKHR *) header;
-            skip |= validate_bool32("VkSurfaceProtectedCapabilitiesKHR", "supportsProtected", structure->supportsProtected);
+            if (is_const_param) {
+                VkSurfaceProtectedCapabilitiesKHR *structure = (VkSurfaceProtectedCapabilitiesKHR *) header;
+                skip |= validate_bool32("VkSurfaceProtectedCapabilitiesKHR", "supportsProtected", structure->supportsProtected);
+            }
         } break;
 
         // Validation code for VkPhysicalDevicePresentWaitFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR: { // Covers VUID-VkPhysicalDevicePresentWaitFeaturesKHR-sType-sType
-            VkPhysicalDevicePresentWaitFeaturesKHR *structure = (VkPhysicalDevicePresentWaitFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDevicePresentWaitFeaturesKHR", "presentWait", structure->presentWait);
+            if (is_const_param) {
+                VkPhysicalDevicePresentWaitFeaturesKHR *structure = (VkPhysicalDevicePresentWaitFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDevicePresentWaitFeaturesKHR", "presentWait", structure->presentWait);
+            }
         } break;
 
         // Validation code for VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR: { // Covers VUID-VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR-sType-sType
-            VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *structure = (VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR", "pipelineExecutableInfo", structure->pipelineExecutableInfo);
+            if (is_const_param) {
+                VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *structure = (VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR", "pipelineExecutableInfo", structure->pipelineExecutableInfo);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR-sType-sType
-            VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR *structure = (VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR", "shaderIntegerDotProduct", structure->shaderIntegerDotProduct);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR *structure = (VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR", "shaderIntegerDotProduct", structure->shaderIntegerDotProduct);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES_KHR: { // Covers VUID-VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR-sType-sType
-            VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR *structure = (VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct8BitUnsignedAccelerated", structure->integerDotProduct8BitUnsignedAccelerated);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR *structure = (VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct8BitUnsignedAccelerated", structure->integerDotProduct8BitUnsignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct8BitSignedAccelerated", structure->integerDotProduct8BitSignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct8BitSignedAccelerated", structure->integerDotProduct8BitSignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct8BitMixedSignednessAccelerated", structure->integerDotProduct8BitMixedSignednessAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct8BitMixedSignednessAccelerated", structure->integerDotProduct8BitMixedSignednessAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct4x8BitPackedUnsignedAccelerated", structure->integerDotProduct4x8BitPackedUnsignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct4x8BitPackedUnsignedAccelerated", structure->integerDotProduct4x8BitPackedUnsignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct4x8BitPackedSignedAccelerated", structure->integerDotProduct4x8BitPackedSignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct4x8BitPackedSignedAccelerated", structure->integerDotProduct4x8BitPackedSignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct4x8BitPackedMixedSignednessAccelerated", structure->integerDotProduct4x8BitPackedMixedSignednessAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct4x8BitPackedMixedSignednessAccelerated", structure->integerDotProduct4x8BitPackedMixedSignednessAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct16BitUnsignedAccelerated", structure->integerDotProduct16BitUnsignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct16BitUnsignedAccelerated", structure->integerDotProduct16BitUnsignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct16BitSignedAccelerated", structure->integerDotProduct16BitSignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct16BitSignedAccelerated", structure->integerDotProduct16BitSignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct16BitMixedSignednessAccelerated", structure->integerDotProduct16BitMixedSignednessAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct16BitMixedSignednessAccelerated", structure->integerDotProduct16BitMixedSignednessAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct32BitUnsignedAccelerated", structure->integerDotProduct32BitUnsignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct32BitUnsignedAccelerated", structure->integerDotProduct32BitUnsignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct32BitSignedAccelerated", structure->integerDotProduct32BitSignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct32BitSignedAccelerated", structure->integerDotProduct32BitSignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct32BitMixedSignednessAccelerated", structure->integerDotProduct32BitMixedSignednessAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct32BitMixedSignednessAccelerated", structure->integerDotProduct32BitMixedSignednessAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct64BitUnsignedAccelerated", structure->integerDotProduct64BitUnsignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct64BitUnsignedAccelerated", structure->integerDotProduct64BitUnsignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct64BitSignedAccelerated", structure->integerDotProduct64BitSignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct64BitSignedAccelerated", structure->integerDotProduct64BitSignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct64BitMixedSignednessAccelerated", structure->integerDotProduct64BitMixedSignednessAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProduct64BitMixedSignednessAccelerated", structure->integerDotProduct64BitMixedSignednessAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating8BitUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating8BitUnsignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating8BitUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating8BitUnsignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating8BitSignedAccelerated", structure->integerDotProductAccumulatingSaturating8BitSignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating8BitSignedAccelerated", structure->integerDotProductAccumulatingSaturating8BitSignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated", structure->integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated", structure->integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating16BitUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating16BitUnsignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating16BitUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating16BitUnsignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating16BitSignedAccelerated", structure->integerDotProductAccumulatingSaturating16BitSignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating16BitSignedAccelerated", structure->integerDotProductAccumulatingSaturating16BitSignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating32BitUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating32BitUnsignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating32BitUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating32BitUnsignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating32BitSignedAccelerated", structure->integerDotProductAccumulatingSaturating32BitSignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating32BitSignedAccelerated", structure->integerDotProductAccumulatingSaturating32BitSignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating64BitUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating64BitUnsignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating64BitUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating64BitUnsignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating64BitSignedAccelerated", structure->integerDotProductAccumulatingSaturating64BitSignedAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating64BitSignedAccelerated", structure->integerDotProductAccumulatingSaturating64BitSignedAccelerated);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated);
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR", "integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated);
+            }
         } break;
 
         // Validation code for VkPresentIdKHR structure members
         case VK_STRUCTURE_TYPE_PRESENT_ID_KHR: { // Covers VUID-VkPresentIdKHR-sType-sType
-            VkPresentIdKHR *structure = (VkPresentIdKHR *) header;
-            skip |= validate_array("VkPresentIdKHR", "swapchainCount", "pPresentIds", structure->swapchainCount, &structure->pPresentIds, true, false, "VUID-VkPresentIdKHR-swapchainCount-arraylength", "VUID-VkPresentIdKHR-pPresentIds-parameter");
+            if (is_const_param) {
+                VkPresentIdKHR *structure = (VkPresentIdKHR *) header;
+                skip |= validate_array("VkPresentIdKHR", "swapchainCount", "pPresentIds", structure->swapchainCount, &structure->pPresentIds, true, false, "VUID-VkPresentIdKHR-swapchainCount-arraylength", "VUID-VkPresentIdKHR-pPresentIds-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDevicePresentIdFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR: { // Covers VUID-VkPhysicalDevicePresentIdFeaturesKHR-sType-sType
-            VkPhysicalDevicePresentIdFeaturesKHR *structure = (VkPhysicalDevicePresentIdFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDevicePresentIdFeaturesKHR", "presentId", structure->presentId);
+            if (is_const_param) {
+                VkPhysicalDevicePresentIdFeaturesKHR *structure = (VkPhysicalDevicePresentIdFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDevicePresentIdFeaturesKHR", "presentId", structure->presentId);
+            }
         } break;
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoEncodeRateControlInfoKHR structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_INFO_KHR: { // Covers VUID-VkVideoEncodeRateControlInfoKHR-sType-sType
-            VkVideoEncodeRateControlInfoKHR *structure = (VkVideoEncodeRateControlInfoKHR *) header;
-            skip |= validate_flags("VkVideoEncodeRateControlInfoKHR", "flags", "VkVideoEncodeRateControlFlagBitsKHR", AllVkVideoEncodeRateControlFlagBitsKHR, structure->flags, kRequiredFlags, "VUID-VkVideoEncodeRateControlInfoKHR-flags-parameter", "VUID-VkVideoEncodeRateControlInfoKHR-flags-requiredbitmask");
+            if (is_const_param) {
+                VkVideoEncodeRateControlInfoKHR *structure = (VkVideoEncodeRateControlInfoKHR *) header;
+                skip |= validate_flags("VkVideoEncodeRateControlInfoKHR", "flags", "VkVideoEncodeRateControlFlagBitsKHR", AllVkVideoEncodeRateControlFlagBitsKHR, structure->flags, kRequiredFlags, "VUID-VkVideoEncodeRateControlInfoKHR-flags-parameter", "VUID-VkVideoEncodeRateControlInfoKHR-flags-requiredbitmask");
 
-            skip |= validate_flags("VkVideoEncodeRateControlInfoKHR", "rateControlMode", "VkVideoEncodeRateControlModeFlagBitsKHR", AllVkVideoEncodeRateControlModeFlagBitsKHR, structure->rateControlMode, kRequiredSingleBit, "VUID-VkVideoEncodeRateControlInfoKHR-rateControlMode-parameter", "VUID-VkVideoEncodeRateControlInfoKHR-rateControlMode-parameter");
+                skip |= validate_flags("VkVideoEncodeRateControlInfoKHR", "rateControlMode", "VkVideoEncodeRateControlModeFlagBitsKHR", AllVkVideoEncodeRateControlModeFlagBitsKHR, structure->rateControlMode, kRequiredSingleBit, "VUID-VkVideoEncodeRateControlInfoKHR-rateControlMode-parameter", "VUID-VkVideoEncodeRateControlInfoKHR-rateControlMode-parameter");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkMemoryBarrier2KHR structure members
         case VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR: { // Covers VUID-VkMemoryBarrier2KHR-sType-sType
-            VkMemoryBarrier2KHR *structure = (VkMemoryBarrier2KHR *) header;
-            skip |= validate_flags("VkMemoryBarrier2KHR", "srcStageMask", "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, structure->srcStageMask, kOptionalFlags, "VUID-VkMemoryBarrier2KHR-srcStageMask-parameter");
+            if (is_const_param) {
+                VkMemoryBarrier2KHR *structure = (VkMemoryBarrier2KHR *) header;
+                skip |= validate_flags("VkMemoryBarrier2KHR", "srcStageMask", "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, structure->srcStageMask, kOptionalFlags, "VUID-VkMemoryBarrier2KHR-srcStageMask-parameter");
 
-            skip |= validate_flags("VkMemoryBarrier2KHR", "srcAccessMask", "VkAccessFlagBits2KHR", AllVkAccessFlagBits2KHR, structure->srcAccessMask, kOptionalFlags, "VUID-VkMemoryBarrier2KHR-srcAccessMask-parameter");
+                skip |= validate_flags("VkMemoryBarrier2KHR", "srcAccessMask", "VkAccessFlagBits2KHR", AllVkAccessFlagBits2KHR, structure->srcAccessMask, kOptionalFlags, "VUID-VkMemoryBarrier2KHR-srcAccessMask-parameter");
 
-            skip |= validate_flags("VkMemoryBarrier2KHR", "dstStageMask", "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, structure->dstStageMask, kOptionalFlags, "VUID-VkMemoryBarrier2KHR-dstStageMask-parameter");
+                skip |= validate_flags("VkMemoryBarrier2KHR", "dstStageMask", "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, structure->dstStageMask, kOptionalFlags, "VUID-VkMemoryBarrier2KHR-dstStageMask-parameter");
 
-            skip |= validate_flags("VkMemoryBarrier2KHR", "dstAccessMask", "VkAccessFlagBits2KHR", AllVkAccessFlagBits2KHR, structure->dstAccessMask, kOptionalFlags, "VUID-VkMemoryBarrier2KHR-dstAccessMask-parameter");
+                skip |= validate_flags("VkMemoryBarrier2KHR", "dstAccessMask", "VkAccessFlagBits2KHR", AllVkAccessFlagBits2KHR, structure->dstAccessMask, kOptionalFlags, "VUID-VkMemoryBarrier2KHR-dstAccessMask-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceSynchronization2FeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceSynchronization2FeaturesKHR-sType-sType
-            VkPhysicalDeviceSynchronization2FeaturesKHR *structure = (VkPhysicalDeviceSynchronization2FeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDeviceSynchronization2FeaturesKHR", "synchronization2", structure->synchronization2);
+            if (is_const_param) {
+                VkPhysicalDeviceSynchronization2FeaturesKHR *structure = (VkPhysicalDeviceSynchronization2FeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDeviceSynchronization2FeaturesKHR", "synchronization2", structure->synchronization2);
+            }
         } break;
 
         // No Validation code for VkQueueFamilyCheckpointProperties2NV structure members  -- Covers VUID-VkQueueFamilyCheckpointProperties2NV-sType-sType
 
         // Validation code for VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR-sType-sType
-            VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR *structure = (VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR", "shaderSubgroupUniformControlFlow", structure->shaderSubgroupUniformControlFlow);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR *structure = (VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR", "shaderSubgroupUniformControlFlow", structure->shaderSubgroupUniformControlFlow);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR-sType-sType
-            VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR *structure = (VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR", "shaderZeroInitializeWorkgroupMemory", structure->shaderZeroInitializeWorkgroupMemory);
+            if (is_const_param) {
+                VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR *structure = (VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR", "shaderZeroInitializeWorkgroupMemory", structure->shaderZeroInitializeWorkgroupMemory);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR-sType-sType
-            VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR *structure = (VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR", "workgroupMemoryExplicitLayout", structure->workgroupMemoryExplicitLayout);
+            if (is_const_param) {
+                VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR *structure = (VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR", "workgroupMemoryExplicitLayout", structure->workgroupMemoryExplicitLayout);
 
-            skip |= validate_bool32("VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR", "workgroupMemoryExplicitLayoutScalarBlockLayout", structure->workgroupMemoryExplicitLayoutScalarBlockLayout);
+                skip |= validate_bool32("VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR", "workgroupMemoryExplicitLayoutScalarBlockLayout", structure->workgroupMemoryExplicitLayoutScalarBlockLayout);
 
-            skip |= validate_bool32("VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR", "workgroupMemoryExplicitLayout8BitAccess", structure->workgroupMemoryExplicitLayout8BitAccess);
+                skip |= validate_bool32("VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR", "workgroupMemoryExplicitLayout8BitAccess", structure->workgroupMemoryExplicitLayout8BitAccess);
 
-            skip |= validate_bool32("VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR", "workgroupMemoryExplicitLayout16BitAccess", structure->workgroupMemoryExplicitLayout16BitAccess);
+                skip |= validate_bool32("VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR", "workgroupMemoryExplicitLayout16BitAccess", structure->workgroupMemoryExplicitLayout16BitAccess);
+            }
         } break;
 
         // Validation code for VkDebugReportCallbackCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT: { // Covers VUID-VkDebugReportCallbackCreateInfoEXT-sType-sType
-            VkDebugReportCallbackCreateInfoEXT *structure = (VkDebugReportCallbackCreateInfoEXT *) header;
-            skip |= validate_flags("VkDebugReportCallbackCreateInfoEXT", "flags", "VkDebugReportFlagBitsEXT", AllVkDebugReportFlagBitsEXT, structure->flags, kOptionalFlags, "VUID-VkDebugReportCallbackCreateInfoEXT-flags-parameter");
+            if (is_const_param) {
+                VkDebugReportCallbackCreateInfoEXT *structure = (VkDebugReportCallbackCreateInfoEXT *) header;
+                skip |= validate_flags("VkDebugReportCallbackCreateInfoEXT", "flags", "VkDebugReportFlagBitsEXT", AllVkDebugReportFlagBitsEXT, structure->flags, kOptionalFlags, "VUID-VkDebugReportCallbackCreateInfoEXT-flags-parameter");
 
-            skip |= validate_required_pointer("VkDebugReportCallbackCreateInfoEXT", "pfnCallback", reinterpret_cast<const void*>(structure->pfnCallback), "VUID-VkDebugReportCallbackCreateInfoEXT-pfnCallback-parameter");
+                skip |= validate_required_pointer("VkDebugReportCallbackCreateInfoEXT", "pfnCallback", reinterpret_cast<const void*>(structure->pfnCallback), "VUID-VkDebugReportCallbackCreateInfoEXT-pfnCallback-parameter");
+            }
         } break;
 
         // Validation code for VkPipelineRasterizationStateRasterizationOrderAMD structure members
         case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD: { // Covers VUID-VkPipelineRasterizationStateRasterizationOrderAMD-sType-sType
-            VkPipelineRasterizationStateRasterizationOrderAMD *structure = (VkPipelineRasterizationStateRasterizationOrderAMD *) header;
-            skip |= validate_ranged_enum("VkPipelineRasterizationStateRasterizationOrderAMD", "rasterizationOrder", "VkRasterizationOrderAMD", AllVkRasterizationOrderAMDEnums, structure->rasterizationOrder, "VUID-VkPipelineRasterizationStateRasterizationOrderAMD-rasterizationOrder-parameter");
+            if (is_const_param) {
+                VkPipelineRasterizationStateRasterizationOrderAMD *structure = (VkPipelineRasterizationStateRasterizationOrderAMD *) header;
+                skip |= validate_ranged_enum("VkPipelineRasterizationStateRasterizationOrderAMD", "rasterizationOrder", "VkRasterizationOrderAMD", AllVkRasterizationOrderAMDEnums, structure->rasterizationOrder, "VUID-VkPipelineRasterizationStateRasterizationOrderAMD-rasterizationOrder-parameter");
+            }
         } break;
 
         // Validation code for VkDedicatedAllocationImageCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV: { // Covers VUID-VkDedicatedAllocationImageCreateInfoNV-sType-sType
-            VkDedicatedAllocationImageCreateInfoNV *structure = (VkDedicatedAllocationImageCreateInfoNV *) header;
-            skip |= validate_bool32("VkDedicatedAllocationImageCreateInfoNV", "dedicatedAllocation", structure->dedicatedAllocation);
+            if (is_const_param) {
+                VkDedicatedAllocationImageCreateInfoNV *structure = (VkDedicatedAllocationImageCreateInfoNV *) header;
+                skip |= validate_bool32("VkDedicatedAllocationImageCreateInfoNV", "dedicatedAllocation", structure->dedicatedAllocation);
+            }
         } break;
 
         // Validation code for VkDedicatedAllocationBufferCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_BUFFER_CREATE_INFO_NV: { // Covers VUID-VkDedicatedAllocationBufferCreateInfoNV-sType-sType
-            VkDedicatedAllocationBufferCreateInfoNV *structure = (VkDedicatedAllocationBufferCreateInfoNV *) header;
-            skip |= validate_bool32("VkDedicatedAllocationBufferCreateInfoNV", "dedicatedAllocation", structure->dedicatedAllocation);
+            if (is_const_param) {
+                VkDedicatedAllocationBufferCreateInfoNV *structure = (VkDedicatedAllocationBufferCreateInfoNV *) header;
+                skip |= validate_bool32("VkDedicatedAllocationBufferCreateInfoNV", "dedicatedAllocation", structure->dedicatedAllocation);
+            }
         } break;
 
         // No Validation code for VkDedicatedAllocationMemoryAllocateInfoNV structure members  -- Covers VUID-VkDedicatedAllocationMemoryAllocateInfoNV-sType-sType
 
         // Validation code for VkPhysicalDeviceTransformFeedbackFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceTransformFeedbackFeaturesEXT-sType-sType
-            VkPhysicalDeviceTransformFeedbackFeaturesEXT *structure = (VkPhysicalDeviceTransformFeedbackFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceTransformFeedbackFeaturesEXT", "transformFeedback", structure->transformFeedback);
+            if (is_const_param) {
+                VkPhysicalDeviceTransformFeedbackFeaturesEXT *structure = (VkPhysicalDeviceTransformFeedbackFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceTransformFeedbackFeaturesEXT", "transformFeedback", structure->transformFeedback);
 
-            skip |= validate_bool32("VkPhysicalDeviceTransformFeedbackFeaturesEXT", "geometryStreams", structure->geometryStreams);
+                skip |= validate_bool32("VkPhysicalDeviceTransformFeedbackFeaturesEXT", "geometryStreams", structure->geometryStreams);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceTransformFeedbackPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceTransformFeedbackPropertiesEXT-sType-sType
 
         // Validation code for VkPipelineRasterizationStateStreamCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_STREAM_CREATE_INFO_EXT: { // Covers VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-sType-sType
-            VkPipelineRasterizationStateStreamCreateInfoEXT *structure = (VkPipelineRasterizationStateStreamCreateInfoEXT *) header;
-            skip |= validate_reserved_flags("VkPipelineRasterizationStateStreamCreateInfoEXT", "flags", structure->flags, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-flags-zerobitmask");
+            if (is_const_param) {
+                VkPipelineRasterizationStateStreamCreateInfoEXT *structure = (VkPipelineRasterizationStateStreamCreateInfoEXT *) header;
+                skip |= validate_reserved_flags("VkPipelineRasterizationStateStreamCreateInfoEXT", "flags", structure->flags, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-flags-zerobitmask");
+            }
         } break;
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoEncodeH264CapabilitiesEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_CAPABILITIES_EXT: { // Covers VUID-VkVideoEncodeH264CapabilitiesEXT-sType-sType
-            VkVideoEncodeH264CapabilitiesEXT *structure = (VkVideoEncodeH264CapabilitiesEXT *) header;
-            skip |= validate_flags("VkVideoEncodeH264CapabilitiesEXT", "flags", "VkVideoEncodeH264CapabilityFlagBitsEXT", AllVkVideoEncodeH264CapabilityFlagBitsEXT, structure->flags, kRequiredFlags, "VUID-VkVideoEncodeH264CapabilitiesEXT-flags-parameter", "VUID-VkVideoEncodeH264CapabilitiesEXT-flags-requiredbitmask");
+            if (is_const_param) {
+                VkVideoEncodeH264CapabilitiesEXT *structure = (VkVideoEncodeH264CapabilitiesEXT *) header;
+                skip |= validate_flags("VkVideoEncodeH264CapabilitiesEXT", "flags", "VkVideoEncodeH264CapabilityFlagBitsEXT", AllVkVideoEncodeH264CapabilityFlagBitsEXT, structure->flags, kRequiredFlags, "VUID-VkVideoEncodeH264CapabilitiesEXT-flags-parameter", "VUID-VkVideoEncodeH264CapabilitiesEXT-flags-requiredbitmask");
 
-            skip |= validate_flags("VkVideoEncodeH264CapabilitiesEXT", "inputModeFlags", "VkVideoEncodeH264InputModeFlagBitsEXT", AllVkVideoEncodeH264InputModeFlagBitsEXT, structure->inputModeFlags, kRequiredFlags, "VUID-VkVideoEncodeH264CapabilitiesEXT-inputModeFlags-parameter", "VUID-VkVideoEncodeH264CapabilitiesEXT-inputModeFlags-requiredbitmask");
+                skip |= validate_flags("VkVideoEncodeH264CapabilitiesEXT", "inputModeFlags", "VkVideoEncodeH264InputModeFlagBitsEXT", AllVkVideoEncodeH264InputModeFlagBitsEXT, structure->inputModeFlags, kRequiredFlags, "VUID-VkVideoEncodeH264CapabilitiesEXT-inputModeFlags-parameter", "VUID-VkVideoEncodeH264CapabilitiesEXT-inputModeFlags-requiredbitmask");
 
-            skip |= validate_flags("VkVideoEncodeH264CapabilitiesEXT", "outputModeFlags", "VkVideoEncodeH264OutputModeFlagBitsEXT", AllVkVideoEncodeH264OutputModeFlagBitsEXT, structure->outputModeFlags, kRequiredFlags, "VUID-VkVideoEncodeH264CapabilitiesEXT-outputModeFlags-parameter", "VUID-VkVideoEncodeH264CapabilitiesEXT-outputModeFlags-requiredbitmask");
+                skip |= validate_flags("VkVideoEncodeH264CapabilitiesEXT", "outputModeFlags", "VkVideoEncodeH264OutputModeFlagBitsEXT", AllVkVideoEncodeH264OutputModeFlagBitsEXT, structure->outputModeFlags, kRequiredFlags, "VUID-VkVideoEncodeH264CapabilitiesEXT-outputModeFlags-parameter", "VUID-VkVideoEncodeH264CapabilitiesEXT-outputModeFlags-requiredbitmask");
 
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoEncodeH264SessionCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_CREATE_INFO_EXT: { // Covers VUID-VkVideoEncodeH264SessionCreateInfoEXT-sType-sType
-            VkVideoEncodeH264SessionCreateInfoEXT *structure = (VkVideoEncodeH264SessionCreateInfoEXT *) header;
-            skip |= validate_flags("VkVideoEncodeH264SessionCreateInfoEXT", "flags", "VkVideoEncodeH264CreateFlagBitsEXT", AllVkVideoEncodeH264CreateFlagBitsEXT, structure->flags, kRequiredFlags, "VUID-VkVideoEncodeH264SessionCreateInfoEXT-flags-parameter", "VUID-VkVideoEncodeH264SessionCreateInfoEXT-flags-requiredbitmask");
+            if (is_const_param) {
+                VkVideoEncodeH264SessionCreateInfoEXT *structure = (VkVideoEncodeH264SessionCreateInfoEXT *) header;
+                skip |= validate_flags("VkVideoEncodeH264SessionCreateInfoEXT", "flags", "VkVideoEncodeH264CreateFlagBitsEXT", AllVkVideoEncodeH264CreateFlagBitsEXT, structure->flags, kRequiredFlags, "VUID-VkVideoEncodeH264SessionCreateInfoEXT-flags-parameter", "VUID-VkVideoEncodeH264SessionCreateInfoEXT-flags-requiredbitmask");
 
-            skip |= validate_required_pointer("VkVideoEncodeH264SessionCreateInfoEXT", "pStdExtensionVersion", structure->pStdExtensionVersion, "VUID-VkVideoEncodeH264SessionCreateInfoEXT-pStdExtensionVersion-parameter");
+                skip |= validate_required_pointer("VkVideoEncodeH264SessionCreateInfoEXT", "pStdExtensionVersion", structure->pStdExtensionVersion, "VUID-VkVideoEncodeH264SessionCreateInfoEXT-pStdExtensionVersion-parameter");
 
-            if (structure->pStdExtensionVersion != NULL)
-            {
+                if (structure->pStdExtensionVersion != NULL)
+                {
+                }
             }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -2040,24 +2358,28 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoEncodeH264SessionParametersAddInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT: { // Covers VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-sType-sType
-            VkVideoEncodeH264SessionParametersAddInfoEXT *structure = (VkVideoEncodeH264SessionParametersAddInfoEXT *) header;
-            skip |= validate_array("VkVideoEncodeH264SessionParametersAddInfoEXT", "spsStdCount", "pSpsStd", structure->spsStdCount, &structure->pSpsStd, true, false, "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-pSpsStd-parameter");
+            if (is_const_param) {
+                VkVideoEncodeH264SessionParametersAddInfoEXT *structure = (VkVideoEncodeH264SessionParametersAddInfoEXT *) header;
+                skip |= validate_array("VkVideoEncodeH264SessionParametersAddInfoEXT", "spsStdCount", "pSpsStd", structure->spsStdCount, &structure->pSpsStd, true, false, "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-pSpsStd-parameter");
 
-            skip |= validate_array("VkVideoEncodeH264SessionParametersAddInfoEXT", "ppsStdCount", "pPpsStd", structure->ppsStdCount, &structure->pPpsStd, true, false, "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-pPpsStd-parameter");
+                skip |= validate_array("VkVideoEncodeH264SessionParametersAddInfoEXT", "ppsStdCount", "pPpsStd", structure->ppsStdCount, &structure->pPpsStd, true, false, "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-pPpsStd-parameter");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoEncodeH264SessionParametersCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT: { // Covers VUID-VkVideoEncodeH264SessionParametersCreateInfoEXT-sType-sType
-            VkVideoEncodeH264SessionParametersCreateInfoEXT *structure = (VkVideoEncodeH264SessionParametersCreateInfoEXT *) header;
-            skip |= validate_struct_type("VkVideoEncodeH264SessionParametersCreateInfoEXT", "pParametersAddInfo", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT", structure->pParametersAddInfo, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT, false, "VUID-VkVideoEncodeH264SessionParametersCreateInfoEXT-pParametersAddInfo-parameter", "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-sType-sType");
+            if (is_const_param) {
+                VkVideoEncodeH264SessionParametersCreateInfoEXT *structure = (VkVideoEncodeH264SessionParametersCreateInfoEXT *) header;
+                skip |= validate_struct_type("VkVideoEncodeH264SessionParametersCreateInfoEXT", "pParametersAddInfo", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT", structure->pParametersAddInfo, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT, false, "VUID-VkVideoEncodeH264SessionParametersCreateInfoEXT-pParametersAddInfo-parameter", "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-sType-sType");
 
-            if (structure->pParametersAddInfo != NULL)
-            {
-                skip |= validate_array("VkVideoEncodeH264SessionParametersCreateInfoEXT", "pParametersAddInfo->spsStdCount", "pParametersAddInfo->pSpsStd", structure->pParametersAddInfo->spsStdCount, &structure->pParametersAddInfo->pSpsStd, true, false, "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-pSpsStd-parameter");
+                if (structure->pParametersAddInfo != NULL)
+                {
+                    skip |= validate_array("VkVideoEncodeH264SessionParametersCreateInfoEXT", "pParametersAddInfo->spsStdCount", "pParametersAddInfo->pSpsStd", structure->pParametersAddInfo->spsStdCount, &structure->pParametersAddInfo->pSpsStd, true, false, "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-pSpsStd-parameter");
 
-                skip |= validate_array("VkVideoEncodeH264SessionParametersCreateInfoEXT", "pParametersAddInfo->ppsStdCount", "pParametersAddInfo->pPpsStd", structure->pParametersAddInfo->ppsStdCount, &structure->pParametersAddInfo->pPpsStd, true, false, "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-pPpsStd-parameter");
+                    skip |= validate_array("VkVideoEncodeH264SessionParametersCreateInfoEXT", "pParametersAddInfo->ppsStdCount", "pParametersAddInfo->pPpsStd", structure->pParametersAddInfo->ppsStdCount, &structure->pParametersAddInfo->pPpsStd, true, false, "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoEncodeH264SessionParametersAddInfoEXT-pPpsStd-parameter");
+                }
             }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -2065,62 +2387,64 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoEncodeH264VclFrameInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_VCL_FRAME_INFO_EXT: { // Covers VUID-VkVideoEncodeH264VclFrameInfoEXT-sType-sType
-            VkVideoEncodeH264VclFrameInfoEXT *structure = (VkVideoEncodeH264VclFrameInfoEXT *) header;
-            skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", "refDefaultFinalList0EntryCount", "pRefDefaultFinalList0Entries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->refDefaultFinalList0EntryCount, structure->pRefDefaultFinalList0Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264VclFrameInfoEXT-pRefDefaultFinalList0Entries-parameter", "VUID-VkVideoEncodeH264VclFrameInfoEXT-refDefaultFinalList0EntryCount-arraylength");
+            if (is_const_param) {
+                VkVideoEncodeH264VclFrameInfoEXT *structure = (VkVideoEncodeH264VclFrameInfoEXT *) header;
+                skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", "refDefaultFinalList0EntryCount", "pRefDefaultFinalList0Entries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->refDefaultFinalList0EntryCount, structure->pRefDefaultFinalList0Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264VclFrameInfoEXT-pRefDefaultFinalList0Entries-parameter", "VUID-VkVideoEncodeH264VclFrameInfoEXT-refDefaultFinalList0EntryCount-arraylength");
 
-            if (structure->pRefDefaultFinalList0Entries != NULL)
-            {
-                for (uint32_t refDefaultFinalList0EntryIndex = 0; refDefaultFinalList0EntryIndex < structure->refDefaultFinalList0EntryCount; ++refDefaultFinalList0EntryIndex)
+                if (structure->pRefDefaultFinalList0Entries != NULL)
                 {
-                    skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pRefDefaultFinalList0Entries[%i].pStdPictureInfo", ParameterName::IndexVector{ refDefaultFinalList0EntryIndex }), structure->pRefDefaultFinalList0Entries[refDefaultFinalList0EntryIndex].pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
-                }
-            }
-
-            skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", "refDefaultFinalList1EntryCount", "pRefDefaultFinalList1Entries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->refDefaultFinalList1EntryCount, structure->pRefDefaultFinalList1Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264VclFrameInfoEXT-pRefDefaultFinalList1Entries-parameter", "VUID-VkVideoEncodeH264VclFrameInfoEXT-refDefaultFinalList1EntryCount-arraylength");
-
-            if (structure->pRefDefaultFinalList1Entries != NULL)
-            {
-                for (uint32_t refDefaultFinalList1EntryIndex = 0; refDefaultFinalList1EntryIndex < structure->refDefaultFinalList1EntryCount; ++refDefaultFinalList1EntryIndex)
-                {
-                    skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pRefDefaultFinalList1Entries[%i].pStdPictureInfo", ParameterName::IndexVector{ refDefaultFinalList1EntryIndex }), structure->pRefDefaultFinalList1Entries[refDefaultFinalList1EntryIndex].pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
-                }
-            }
-
-            skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", "naluSliceEntryCount", "pNaluSliceEntries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_NALU_SLICE_EXT", structure->naluSliceEntryCount, structure->pNaluSliceEntries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_NALU_SLICE_EXT, true, true, "VUID-VkVideoEncodeH264NaluSliceEXT-sType-sType", "VUID-VkVideoEncodeH264VclFrameInfoEXT-pNaluSliceEntries-parameter", "VUID-VkVideoEncodeH264VclFrameInfoEXT-naluSliceEntryCount-arraylength");
-
-            if (structure->pNaluSliceEntries != NULL)
-            {
-                for (uint32_t naluSliceEntryIndex = 0; naluSliceEntryIndex < structure->naluSliceEntryCount; ++naluSliceEntryIndex)
-                {
-                    skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pSliceHeaderStd", ParameterName::IndexVector{ naluSliceEntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pSliceHeaderStd, "VUID-VkVideoEncodeH264NaluSliceEXT-pSliceHeaderStd-parameter");
-
-                    skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].refFinalList0EntryCount", ParameterName::IndexVector{ naluSliceEntryIndex }), ParameterName("pNaluSliceEntries[%i].pRefFinalList0Entries", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].refFinalList0EntryCount, structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList0Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264NaluSliceEXT-pRefFinalList0Entries-parameter", "VUID-VkVideoEncodeH264NaluSliceEXT-refFinalList0EntryCount-arraylength");
-
-                    if (structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList0Entries != NULL)
+                    for (uint32_t refDefaultFinalList0EntryIndex = 0; refDefaultFinalList0EntryIndex < structure->refDefaultFinalList0EntryCount; ++refDefaultFinalList0EntryIndex)
                     {
-                        for (uint32_t refFinalList0EntryIndex = 0; refFinalList0EntryIndex < structure->pNaluSliceEntries[naluSliceEntryIndex].refFinalList0EntryCount; ++refFinalList0EntryIndex)
-                        {
-                            skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pRefFinalList0Entries[%i].pStdPictureInfo", ParameterName::IndexVector{ naluSliceEntryIndex, refFinalList0EntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList0Entries[refFinalList0EntryIndex].pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
-                        }
-                    }
-
-                    skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].refFinalList1EntryCount", ParameterName::IndexVector{ naluSliceEntryIndex }), ParameterName("pNaluSliceEntries[%i].pRefFinalList1Entries", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].refFinalList1EntryCount, structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList1Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264NaluSliceEXT-pRefFinalList1Entries-parameter", "VUID-VkVideoEncodeH264NaluSliceEXT-refFinalList1EntryCount-arraylength");
-
-                    if (structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList1Entries != NULL)
-                    {
-                        for (uint32_t refFinalList1EntryIndex = 0; refFinalList1EntryIndex < structure->pNaluSliceEntries[naluSliceEntryIndex].refFinalList1EntryCount; ++refFinalList1EntryIndex)
-                        {
-                            skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pRefFinalList1Entries[%i].pStdPictureInfo", ParameterName::IndexVector{ naluSliceEntryIndex, refFinalList1EntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList1Entries[refFinalList1EntryIndex].pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
-                        }
+                        skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pRefDefaultFinalList0Entries[%i].pStdPictureInfo", ParameterName::IndexVector{ refDefaultFinalList0EntryIndex }), structure->pRefDefaultFinalList0Entries[refDefaultFinalList0EntryIndex].pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
                     }
                 }
-            }
 
-            skip |= validate_struct_type("VkVideoEncodeH264VclFrameInfoEXT", "pCurrentPictureInfo", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pCurrentPictureInfo, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, "VUID-VkVideoEncodeH264VclFrameInfoEXT-pCurrentPictureInfo-parameter", "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType");
+                skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", "refDefaultFinalList1EntryCount", "pRefDefaultFinalList1Entries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->refDefaultFinalList1EntryCount, structure->pRefDefaultFinalList1Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264VclFrameInfoEXT-pRefDefaultFinalList1Entries-parameter", "VUID-VkVideoEncodeH264VclFrameInfoEXT-refDefaultFinalList1EntryCount-arraylength");
 
-            if (structure->pCurrentPictureInfo != NULL)
-            {
-                skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", "pCurrentPictureInfo->pStdPictureInfo", structure->pCurrentPictureInfo->pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
+                if (structure->pRefDefaultFinalList1Entries != NULL)
+                {
+                    for (uint32_t refDefaultFinalList1EntryIndex = 0; refDefaultFinalList1EntryIndex < structure->refDefaultFinalList1EntryCount; ++refDefaultFinalList1EntryIndex)
+                    {
+                        skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pRefDefaultFinalList1Entries[%i].pStdPictureInfo", ParameterName::IndexVector{ refDefaultFinalList1EntryIndex }), structure->pRefDefaultFinalList1Entries[refDefaultFinalList1EntryIndex].pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
+                    }
+                }
+
+                skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", "naluSliceEntryCount", "pNaluSliceEntries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_NALU_SLICE_EXT", structure->naluSliceEntryCount, structure->pNaluSliceEntries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_NALU_SLICE_EXT, true, true, "VUID-VkVideoEncodeH264NaluSliceEXT-sType-sType", "VUID-VkVideoEncodeH264VclFrameInfoEXT-pNaluSliceEntries-parameter", "VUID-VkVideoEncodeH264VclFrameInfoEXT-naluSliceEntryCount-arraylength");
+
+                if (structure->pNaluSliceEntries != NULL)
+                {
+                    for (uint32_t naluSliceEntryIndex = 0; naluSliceEntryIndex < structure->naluSliceEntryCount; ++naluSliceEntryIndex)
+                    {
+                        skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pSliceHeaderStd", ParameterName::IndexVector{ naluSliceEntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pSliceHeaderStd, "VUID-VkVideoEncodeH264NaluSliceEXT-pSliceHeaderStd-parameter");
+
+                        skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].refFinalList0EntryCount", ParameterName::IndexVector{ naluSliceEntryIndex }), ParameterName("pNaluSliceEntries[%i].pRefFinalList0Entries", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].refFinalList0EntryCount, structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList0Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264NaluSliceEXT-pRefFinalList0Entries-parameter", "VUID-VkVideoEncodeH264NaluSliceEXT-refFinalList0EntryCount-arraylength");
+
+                        if (structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList0Entries != NULL)
+                        {
+                            for (uint32_t refFinalList0EntryIndex = 0; refFinalList0EntryIndex < structure->pNaluSliceEntries[naluSliceEntryIndex].refFinalList0EntryCount; ++refFinalList0EntryIndex)
+                            {
+                                skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pRefFinalList0Entries[%i].pStdPictureInfo", ParameterName::IndexVector{ naluSliceEntryIndex, refFinalList0EntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList0Entries[refFinalList0EntryIndex].pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
+                            }
+                        }
+
+                        skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].refFinalList1EntryCount", ParameterName::IndexVector{ naluSliceEntryIndex }), ParameterName("pNaluSliceEntries[%i].pRefFinalList1Entries", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].refFinalList1EntryCount, structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList1Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264NaluSliceEXT-pRefFinalList1Entries-parameter", "VUID-VkVideoEncodeH264NaluSliceEXT-refFinalList1EntryCount-arraylength");
+
+                        if (structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList1Entries != NULL)
+                        {
+                            for (uint32_t refFinalList1EntryIndex = 0; refFinalList1EntryIndex < structure->pNaluSliceEntries[naluSliceEntryIndex].refFinalList1EntryCount; ++refFinalList1EntryIndex)
+                            {
+                                skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pRefFinalList1Entries[%i].pStdPictureInfo", ParameterName::IndexVector{ naluSliceEntryIndex, refFinalList1EntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList1Entries[refFinalList1EntryIndex].pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
+                            }
+                        }
+                    }
+                }
+
+                skip |= validate_struct_type("VkVideoEncodeH264VclFrameInfoEXT", "pCurrentPictureInfo", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pCurrentPictureInfo, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, "VUID-VkVideoEncodeH264VclFrameInfoEXT-pCurrentPictureInfo-parameter", "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType");
+
+                if (structure->pCurrentPictureInfo != NULL)
+                {
+                    skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", "pCurrentPictureInfo->pStdPictureInfo", structure->pCurrentPictureInfo->pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
+                }
             }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -2128,10 +2452,12 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoEncodeH264EmitPictureParametersEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_EMIT_PICTURE_PARAMETERS_EXT: { // Covers VUID-VkVideoEncodeH264EmitPictureParametersEXT-sType-sType
-            VkVideoEncodeH264EmitPictureParametersEXT *structure = (VkVideoEncodeH264EmitPictureParametersEXT *) header;
-            skip |= validate_bool32("VkVideoEncodeH264EmitPictureParametersEXT", "emitSpsEnable", structure->emitSpsEnable);
+            if (is_const_param) {
+                VkVideoEncodeH264EmitPictureParametersEXT *structure = (VkVideoEncodeH264EmitPictureParametersEXT *) header;
+                skip |= validate_bool32("VkVideoEncodeH264EmitPictureParametersEXT", "emitSpsEnable", structure->emitSpsEnable);
 
-            skip |= validate_array("VkVideoEncodeH264EmitPictureParametersEXT", "ppsIdEntryCount", "ppsIdEntries", structure->ppsIdEntryCount, &structure->ppsIdEntries, true, true, "VUID-VkVideoEncodeH264EmitPictureParametersEXT-ppsIdEntryCount-arraylength", "VUID-VkVideoEncodeH264EmitPictureParametersEXT-ppsIdEntries-parameter");
+                skip |= validate_array("VkVideoEncodeH264EmitPictureParametersEXT", "ppsIdEntryCount", "ppsIdEntries", structure->ppsIdEntryCount, &structure->ppsIdEntries, true, true, "VUID-VkVideoEncodeH264EmitPictureParametersEXT-ppsIdEntryCount-arraylength", "VUID-VkVideoEncodeH264EmitPictureParametersEXT-ppsIdEntries-parameter");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -2140,8 +2466,10 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH264ProfileEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_EXT: { // Covers VUID-VkVideoDecodeH264ProfileEXT-sType-sType
-            VkVideoDecodeH264ProfileEXT *structure = (VkVideoDecodeH264ProfileEXT *) header;
-            skip |= validate_flags("VkVideoDecodeH264ProfileEXT", "pictureLayout", "VkVideoDecodeH264PictureLayoutFlagBitsEXT", AllVkVideoDecodeH264PictureLayoutFlagBitsEXT, structure->pictureLayout, kRequiredFlags, "VUID-VkVideoDecodeH264ProfileEXT-pictureLayout-parameter", "VUID-VkVideoDecodeH264ProfileEXT-pictureLayout-requiredbitmask");
+            if (is_const_param) {
+                VkVideoDecodeH264ProfileEXT *structure = (VkVideoDecodeH264ProfileEXT *) header;
+                skip |= validate_flags("VkVideoDecodeH264ProfileEXT", "pictureLayout", "VkVideoDecodeH264PictureLayoutFlagBitsEXT", AllVkVideoDecodeH264PictureLayoutFlagBitsEXT, structure->pictureLayout, kRequiredFlags, "VUID-VkVideoDecodeH264ProfileEXT-pictureLayout-parameter", "VUID-VkVideoDecodeH264ProfileEXT-pictureLayout-requiredbitmask");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -2150,13 +2478,15 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH264SessionCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_CREATE_INFO_EXT: { // Covers VUID-VkVideoDecodeH264SessionCreateInfoEXT-sType-sType
-            VkVideoDecodeH264SessionCreateInfoEXT *structure = (VkVideoDecodeH264SessionCreateInfoEXT *) header;
-            skip |= validate_reserved_flags("VkVideoDecodeH264SessionCreateInfoEXT", "flags", structure->flags, "VUID-VkVideoDecodeH264SessionCreateInfoEXT-flags-zerobitmask");
+            if (is_const_param) {
+                VkVideoDecodeH264SessionCreateInfoEXT *structure = (VkVideoDecodeH264SessionCreateInfoEXT *) header;
+                skip |= validate_reserved_flags("VkVideoDecodeH264SessionCreateInfoEXT", "flags", structure->flags, "VUID-VkVideoDecodeH264SessionCreateInfoEXT-flags-zerobitmask");
 
-            skip |= validate_required_pointer("VkVideoDecodeH264SessionCreateInfoEXT", "pStdExtensionVersion", structure->pStdExtensionVersion, "VUID-VkVideoDecodeH264SessionCreateInfoEXT-pStdExtensionVersion-parameter");
+                skip |= validate_required_pointer("VkVideoDecodeH264SessionCreateInfoEXT", "pStdExtensionVersion", structure->pStdExtensionVersion, "VUID-VkVideoDecodeH264SessionCreateInfoEXT-pStdExtensionVersion-parameter");
 
-            if (structure->pStdExtensionVersion != NULL)
-            {
+                if (structure->pStdExtensionVersion != NULL)
+                {
+                }
             }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -2164,24 +2494,28 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH264SessionParametersAddInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT: { // Covers VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-sType-sType
-            VkVideoDecodeH264SessionParametersAddInfoEXT *structure = (VkVideoDecodeH264SessionParametersAddInfoEXT *) header;
-            skip |= validate_array("VkVideoDecodeH264SessionParametersAddInfoEXT", "spsStdCount", "pSpsStd", structure->spsStdCount, &structure->pSpsStd, true, false, "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-pSpsStd-parameter");
+            if (is_const_param) {
+                VkVideoDecodeH264SessionParametersAddInfoEXT *structure = (VkVideoDecodeH264SessionParametersAddInfoEXT *) header;
+                skip |= validate_array("VkVideoDecodeH264SessionParametersAddInfoEXT", "spsStdCount", "pSpsStd", structure->spsStdCount, &structure->pSpsStd, true, false, "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-pSpsStd-parameter");
 
-            skip |= validate_array("VkVideoDecodeH264SessionParametersAddInfoEXT", "ppsStdCount", "pPpsStd", structure->ppsStdCount, &structure->pPpsStd, true, false, "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-pPpsStd-parameter");
+                skip |= validate_array("VkVideoDecodeH264SessionParametersAddInfoEXT", "ppsStdCount", "pPpsStd", structure->ppsStdCount, &structure->pPpsStd, true, false, "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-pPpsStd-parameter");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH264SessionParametersCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT: { // Covers VUID-VkVideoDecodeH264SessionParametersCreateInfoEXT-sType-sType
-            VkVideoDecodeH264SessionParametersCreateInfoEXT *structure = (VkVideoDecodeH264SessionParametersCreateInfoEXT *) header;
-            skip |= validate_struct_type("VkVideoDecodeH264SessionParametersCreateInfoEXT", "pParametersAddInfo", "VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT", structure->pParametersAddInfo, VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT, false, "VUID-VkVideoDecodeH264SessionParametersCreateInfoEXT-pParametersAddInfo-parameter", "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-sType-sType");
+            if (is_const_param) {
+                VkVideoDecodeH264SessionParametersCreateInfoEXT *structure = (VkVideoDecodeH264SessionParametersCreateInfoEXT *) header;
+                skip |= validate_struct_type("VkVideoDecodeH264SessionParametersCreateInfoEXT", "pParametersAddInfo", "VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT", structure->pParametersAddInfo, VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT, false, "VUID-VkVideoDecodeH264SessionParametersCreateInfoEXT-pParametersAddInfo-parameter", "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-sType-sType");
 
-            if (structure->pParametersAddInfo != NULL)
-            {
-                skip |= validate_array("VkVideoDecodeH264SessionParametersCreateInfoEXT", "pParametersAddInfo->spsStdCount", "pParametersAddInfo->pSpsStd", structure->pParametersAddInfo->spsStdCount, &structure->pParametersAddInfo->pSpsStd, true, false, "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-pSpsStd-parameter");
+                if (structure->pParametersAddInfo != NULL)
+                {
+                    skip |= validate_array("VkVideoDecodeH264SessionParametersCreateInfoEXT", "pParametersAddInfo->spsStdCount", "pParametersAddInfo->pSpsStd", structure->pParametersAddInfo->spsStdCount, &structure->pParametersAddInfo->pSpsStd, true, false, "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-pSpsStd-parameter");
 
-                skip |= validate_array("VkVideoDecodeH264SessionParametersCreateInfoEXT", "pParametersAddInfo->ppsStdCount", "pParametersAddInfo->pPpsStd", structure->pParametersAddInfo->ppsStdCount, &structure->pParametersAddInfo->pPpsStd, true, false, "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-pPpsStd-parameter");
+                    skip |= validate_array("VkVideoDecodeH264SessionParametersCreateInfoEXT", "pParametersAddInfo->ppsStdCount", "pParametersAddInfo->pPpsStd", structure->pParametersAddInfo->ppsStdCount, &structure->pParametersAddInfo->pPpsStd, true, false, "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoDecodeH264SessionParametersAddInfoEXT-pPpsStd-parameter");
+                }
             }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -2189,26 +2523,32 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH264PictureInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PICTURE_INFO_EXT: { // Covers VUID-VkVideoDecodeH264PictureInfoEXT-sType-sType
-            VkVideoDecodeH264PictureInfoEXT *structure = (VkVideoDecodeH264PictureInfoEXT *) header;
-            skip |= validate_required_pointer("VkVideoDecodeH264PictureInfoEXT", "pStdPictureInfo", structure->pStdPictureInfo, "VUID-VkVideoDecodeH264PictureInfoEXT-pStdPictureInfo-parameter");
+            if (is_const_param) {
+                VkVideoDecodeH264PictureInfoEXT *structure = (VkVideoDecodeH264PictureInfoEXT *) header;
+                skip |= validate_required_pointer("VkVideoDecodeH264PictureInfoEXT", "pStdPictureInfo", structure->pStdPictureInfo, "VUID-VkVideoDecodeH264PictureInfoEXT-pStdPictureInfo-parameter");
 
-            skip |= validate_array("VkVideoDecodeH264PictureInfoEXT", "slicesCount", "pSlicesDataOffsets", structure->slicesCount, &structure->pSlicesDataOffsets, true, true, "VUID-VkVideoDecodeH264PictureInfoEXT-slicesCount-arraylength", "VUID-VkVideoDecodeH264PictureInfoEXT-pSlicesDataOffsets-parameter");
+                skip |= validate_array("VkVideoDecodeH264PictureInfoEXT", "slicesCount", "pSlicesDataOffsets", structure->slicesCount, &structure->pSlicesDataOffsets, true, true, "VUID-VkVideoDecodeH264PictureInfoEXT-slicesCount-arraylength", "VUID-VkVideoDecodeH264PictureInfoEXT-pSlicesDataOffsets-parameter");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH264MvcEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_MVC_EXT: { // Covers VUID-VkVideoDecodeH264MvcEXT-sType-sType
-            VkVideoDecodeH264MvcEXT *structure = (VkVideoDecodeH264MvcEXT *) header;
-            skip |= validate_required_pointer("VkVideoDecodeH264MvcEXT", "pStdMvc", structure->pStdMvc, "VUID-VkVideoDecodeH264MvcEXT-pStdMvc-parameter");
+            if (is_const_param) {
+                VkVideoDecodeH264MvcEXT *structure = (VkVideoDecodeH264MvcEXT *) header;
+                skip |= validate_required_pointer("VkVideoDecodeH264MvcEXT", "pStdMvc", structure->pStdMvc, "VUID-VkVideoDecodeH264MvcEXT-pStdMvc-parameter");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH264DpbSlotInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_DPB_SLOT_INFO_EXT: { // Covers VUID-VkVideoDecodeH264DpbSlotInfoEXT-sType-sType
-            VkVideoDecodeH264DpbSlotInfoEXT *structure = (VkVideoDecodeH264DpbSlotInfoEXT *) header;
-            skip |= validate_required_pointer("VkVideoDecodeH264DpbSlotInfoEXT", "pStdReferenceInfo", structure->pStdReferenceInfo, "VUID-VkVideoDecodeH264DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+            if (is_const_param) {
+                VkVideoDecodeH264DpbSlotInfoEXT *structure = (VkVideoDecodeH264DpbSlotInfoEXT *) header;
+                skip |= validate_required_pointer("VkVideoDecodeH264DpbSlotInfoEXT", "pStdReferenceInfo", structure->pStdReferenceInfo, "VUID-VkVideoDecodeH264DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -2216,27 +2556,35 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceCornerSampledImageFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceCornerSampledImageFeaturesNV-sType-sType
-            VkPhysicalDeviceCornerSampledImageFeaturesNV *structure = (VkPhysicalDeviceCornerSampledImageFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceCornerSampledImageFeaturesNV", "cornerSampledImage", structure->cornerSampledImage);
+            if (is_const_param) {
+                VkPhysicalDeviceCornerSampledImageFeaturesNV *structure = (VkPhysicalDeviceCornerSampledImageFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceCornerSampledImageFeaturesNV", "cornerSampledImage", structure->cornerSampledImage);
+            }
         } break;
 
         // Validation code for VkExternalMemoryImageCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV: { // Covers VUID-VkExternalMemoryImageCreateInfoNV-sType-sType
-            VkExternalMemoryImageCreateInfoNV *structure = (VkExternalMemoryImageCreateInfoNV *) header;
-            skip |= validate_flags("VkExternalMemoryImageCreateInfoNV", "handleTypes", "VkExternalMemoryHandleTypeFlagBitsNV", AllVkExternalMemoryHandleTypeFlagBitsNV, structure->handleTypes, kOptionalFlags, "VUID-VkExternalMemoryImageCreateInfoNV-handleTypes-parameter");
+            if (is_const_param) {
+                VkExternalMemoryImageCreateInfoNV *structure = (VkExternalMemoryImageCreateInfoNV *) header;
+                skip |= validate_flags("VkExternalMemoryImageCreateInfoNV", "handleTypes", "VkExternalMemoryHandleTypeFlagBitsNV", AllVkExternalMemoryHandleTypeFlagBitsNV, structure->handleTypes, kOptionalFlags, "VUID-VkExternalMemoryImageCreateInfoNV-handleTypes-parameter");
+            }
         } break;
 
         // Validation code for VkExportMemoryAllocateInfoNV structure members
         case VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_NV: { // Covers VUID-VkExportMemoryAllocateInfoNV-sType-sType
-            VkExportMemoryAllocateInfoNV *structure = (VkExportMemoryAllocateInfoNV *) header;
-            skip |= validate_flags("VkExportMemoryAllocateInfoNV", "handleTypes", "VkExternalMemoryHandleTypeFlagBitsNV", AllVkExternalMemoryHandleTypeFlagBitsNV, structure->handleTypes, kOptionalFlags, "VUID-VkExportMemoryAllocateInfoNV-handleTypes-parameter");
+            if (is_const_param) {
+                VkExportMemoryAllocateInfoNV *structure = (VkExportMemoryAllocateInfoNV *) header;
+                skip |= validate_flags("VkExportMemoryAllocateInfoNV", "handleTypes", "VkExternalMemoryHandleTypeFlagBitsNV", AllVkExternalMemoryHandleTypeFlagBitsNV, structure->handleTypes, kOptionalFlags, "VUID-VkExportMemoryAllocateInfoNV-handleTypes-parameter");
+            }
         } break;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         // Validation code for VkImportMemoryWin32HandleInfoNV structure members
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_NV: { // Covers VUID-VkImportMemoryWin32HandleInfoNV-sType-sType
-            VkImportMemoryWin32HandleInfoNV *structure = (VkImportMemoryWin32HandleInfoNV *) header;
-            skip |= validate_flags("VkImportMemoryWin32HandleInfoNV", "handleType", "VkExternalMemoryHandleTypeFlagBitsNV", AllVkExternalMemoryHandleTypeFlagBitsNV, structure->handleType, kOptionalFlags, "VUID-VkImportMemoryWin32HandleInfoNV-handleType-parameter");
+            if (is_const_param) {
+                VkImportMemoryWin32HandleInfoNV *structure = (VkImportMemoryWin32HandleInfoNV *) header;
+                skip |= validate_flags("VkImportMemoryWin32HandleInfoNV", "handleType", "VkExternalMemoryHandleTypeFlagBitsNV", AllVkExternalMemoryHandleTypeFlagBitsNV, structure->handleType, kOptionalFlags, "VUID-VkImportMemoryWin32HandleInfoNV-handleType-parameter");
+            }
         } break;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -2245,80 +2593,100 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         // Validation code for VkWin32KeyedMutexAcquireReleaseInfoNV structure members
         case VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV: { // Covers VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-sType-sType
-            VkWin32KeyedMutexAcquireReleaseInfoNV *structure = (VkWin32KeyedMutexAcquireReleaseInfoNV *) header;
-            skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoNV", "acquireCount", "pAcquireSyncs", structure->acquireCount, &structure->pAcquireSyncs, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pAcquireSyncs-parameter");
+            if (is_const_param) {
+                VkWin32KeyedMutexAcquireReleaseInfoNV *structure = (VkWin32KeyedMutexAcquireReleaseInfoNV *) header;
+                skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoNV", "acquireCount", "pAcquireSyncs", structure->acquireCount, &structure->pAcquireSyncs, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pAcquireSyncs-parameter");
 
-            skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoNV", "acquireCount", "pAcquireKeys", structure->acquireCount, &structure->pAcquireKeys, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pAcquireKeys-parameter");
+                skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoNV", "acquireCount", "pAcquireKeys", structure->acquireCount, &structure->pAcquireKeys, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pAcquireKeys-parameter");
 
-            skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoNV", "acquireCount", "pAcquireTimeoutMilliseconds", structure->acquireCount, &structure->pAcquireTimeoutMilliseconds, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pAcquireTimeoutMilliseconds-parameter");
+                skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoNV", "acquireCount", "pAcquireTimeoutMilliseconds", structure->acquireCount, &structure->pAcquireTimeoutMilliseconds, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pAcquireTimeoutMilliseconds-parameter");
 
-            skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoNV", "releaseCount", "pReleaseSyncs", structure->releaseCount, &structure->pReleaseSyncs, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pReleaseSyncs-parameter");
+                skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoNV", "releaseCount", "pReleaseSyncs", structure->releaseCount, &structure->pReleaseSyncs, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pReleaseSyncs-parameter");
 
-            skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoNV", "releaseCount", "pReleaseKeys", structure->releaseCount, &structure->pReleaseKeys, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pReleaseKeys-parameter");
+                skip |= validate_array("VkWin32KeyedMutexAcquireReleaseInfoNV", "releaseCount", "pReleaseKeys", structure->releaseCount, &structure->pReleaseKeys, false, true, kVUIDUndefined, "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pReleaseKeys-parameter");
+            }
         } break;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
         // Validation code for VkValidationFlagsEXT structure members
         case VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT: { // Covers VUID-VkValidationFlagsEXT-sType-sType
-            VkValidationFlagsEXT *structure = (VkValidationFlagsEXT *) header;
-            skip |= validate_ranged_enum_array("VkValidationFlagsEXT", "disabledValidationCheckCount", "pDisabledValidationChecks", "VkValidationCheckEXT", AllVkValidationCheckEXTEnums, structure->disabledValidationCheckCount, structure->pDisabledValidationChecks, true, true);
+            if (is_const_param) {
+                VkValidationFlagsEXT *structure = (VkValidationFlagsEXT *) header;
+                skip |= validate_ranged_enum_array("VkValidationFlagsEXT", "disabledValidationCheckCount", "pDisabledValidationChecks", "VkValidationCheckEXT", AllVkValidationCheckEXTEnums, structure->disabledValidationCheckCount, structure->pDisabledValidationChecks, true, true);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT-sType-sType
-            VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT *structure = (VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT", "textureCompressionASTC_HDR", structure->textureCompressionASTC_HDR);
+            if (is_const_param) {
+                VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT *structure = (VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT", "textureCompressionASTC_HDR", structure->textureCompressionASTC_HDR);
+            }
         } break;
 
         // Validation code for VkImageViewASTCDecodeModeEXT structure members
         case VK_STRUCTURE_TYPE_IMAGE_VIEW_ASTC_DECODE_MODE_EXT: { // Covers VUID-VkImageViewASTCDecodeModeEXT-sType-sType
-            VkImageViewASTCDecodeModeEXT *structure = (VkImageViewASTCDecodeModeEXT *) header;
-            skip |= validate_ranged_enum("VkImageViewASTCDecodeModeEXT", "decodeMode", "VkFormat", AllVkFormatEnums, structure->decodeMode, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-parameter");
+            if (is_const_param) {
+                VkImageViewASTCDecodeModeEXT *structure = (VkImageViewASTCDecodeModeEXT *) header;
+                skip |= validate_ranged_enum("VkImageViewASTCDecodeModeEXT", "decodeMode", "VkFormat", AllVkFormatEnums, structure->decodeMode, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceASTCDecodeFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceASTCDecodeFeaturesEXT-sType-sType
-            VkPhysicalDeviceASTCDecodeFeaturesEXT *structure = (VkPhysicalDeviceASTCDecodeFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceASTCDecodeFeaturesEXT", "decodeModeSharedExponent", structure->decodeModeSharedExponent);
+            if (is_const_param) {
+                VkPhysicalDeviceASTCDecodeFeaturesEXT *structure = (VkPhysicalDeviceASTCDecodeFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceASTCDecodeFeaturesEXT", "decodeModeSharedExponent", structure->decodeModeSharedExponent);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceConditionalRenderingFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceConditionalRenderingFeaturesEXT-sType-sType
-            VkPhysicalDeviceConditionalRenderingFeaturesEXT *structure = (VkPhysicalDeviceConditionalRenderingFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceConditionalRenderingFeaturesEXT", "conditionalRendering", structure->conditionalRendering);
+            if (is_const_param) {
+                VkPhysicalDeviceConditionalRenderingFeaturesEXT *structure = (VkPhysicalDeviceConditionalRenderingFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceConditionalRenderingFeaturesEXT", "conditionalRendering", structure->conditionalRendering);
 
-            skip |= validate_bool32("VkPhysicalDeviceConditionalRenderingFeaturesEXT", "inheritedConditionalRendering", structure->inheritedConditionalRendering);
+                skip |= validate_bool32("VkPhysicalDeviceConditionalRenderingFeaturesEXT", "inheritedConditionalRendering", structure->inheritedConditionalRendering);
+            }
         } break;
 
         // Validation code for VkCommandBufferInheritanceConditionalRenderingInfoEXT structure members
         case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT: { // Covers VUID-VkCommandBufferInheritanceConditionalRenderingInfoEXT-sType-sType
-            VkCommandBufferInheritanceConditionalRenderingInfoEXT *structure = (VkCommandBufferInheritanceConditionalRenderingInfoEXT *) header;
-            skip |= validate_bool32("VkCommandBufferInheritanceConditionalRenderingInfoEXT", "conditionalRenderingEnable", structure->conditionalRenderingEnable);
+            if (is_const_param) {
+                VkCommandBufferInheritanceConditionalRenderingInfoEXT *structure = (VkCommandBufferInheritanceConditionalRenderingInfoEXT *) header;
+                skip |= validate_bool32("VkCommandBufferInheritanceConditionalRenderingInfoEXT", "conditionalRenderingEnable", structure->conditionalRenderingEnable);
+            }
         } break;
 
         // Validation code for VkPipelineViewportWScalingStateCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_W_SCALING_STATE_CREATE_INFO_NV: { // Covers VUID-VkPipelineViewportWScalingStateCreateInfoNV-sType-sType
-            VkPipelineViewportWScalingStateCreateInfoNV *structure = (VkPipelineViewportWScalingStateCreateInfoNV *) header;
-            skip |= validate_bool32("VkPipelineViewportWScalingStateCreateInfoNV", "viewportWScalingEnable", structure->viewportWScalingEnable);
+            if (is_const_param) {
+                VkPipelineViewportWScalingStateCreateInfoNV *structure = (VkPipelineViewportWScalingStateCreateInfoNV *) header;
+                skip |= validate_bool32("VkPipelineViewportWScalingStateCreateInfoNV", "viewportWScalingEnable", structure->viewportWScalingEnable);
 
-            skip |= validate_array("VkPipelineViewportWScalingStateCreateInfoNV", "viewportCount", "", structure->viewportCount, &structure->pViewportWScalings, true, false, "VUID-VkPipelineViewportWScalingStateCreateInfoNV-viewportCount-arraylength", kVUIDUndefined);
+                skip |= validate_array("VkPipelineViewportWScalingStateCreateInfoNV", "viewportCount", "", structure->viewportCount, &structure->pViewportWScalings, true, false, "VUID-VkPipelineViewportWScalingStateCreateInfoNV-viewportCount-arraylength", kVUIDUndefined);
+            }
         } break;
 
         // Validation code for VkSwapchainCounterCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_SWAPCHAIN_COUNTER_CREATE_INFO_EXT: { // Covers VUID-VkSwapchainCounterCreateInfoEXT-sType-sType
-            VkSwapchainCounterCreateInfoEXT *structure = (VkSwapchainCounterCreateInfoEXT *) header;
-            skip |= validate_flags("VkSwapchainCounterCreateInfoEXT", "surfaceCounters", "VkSurfaceCounterFlagBitsEXT", AllVkSurfaceCounterFlagBitsEXT, structure->surfaceCounters, kOptionalFlags, "VUID-VkSwapchainCounterCreateInfoEXT-surfaceCounters-parameter");
+            if (is_const_param) {
+                VkSwapchainCounterCreateInfoEXT *structure = (VkSwapchainCounterCreateInfoEXT *) header;
+                skip |= validate_flags("VkSwapchainCounterCreateInfoEXT", "surfaceCounters", "VkSurfaceCounterFlagBitsEXT", AllVkSurfaceCounterFlagBitsEXT, structure->surfaceCounters, kOptionalFlags, "VUID-VkSwapchainCounterCreateInfoEXT-surfaceCounters-parameter");
+            }
         } break;
 
         // Validation code for VkPresentTimesInfoGOOGLE structure members
         case VK_STRUCTURE_TYPE_PRESENT_TIMES_INFO_GOOGLE: { // Covers VUID-VkPresentTimesInfoGOOGLE-sType-sType
-            VkPresentTimesInfoGOOGLE *structure = (VkPresentTimesInfoGOOGLE *) header;
-            skip |= validate_array("VkPresentTimesInfoGOOGLE", "swapchainCount", "pTimes", structure->swapchainCount, &structure->pTimes, true, false, "VUID-VkPresentTimesInfoGOOGLE-swapchainCount-arraylength", "VUID-VkPresentTimesInfoGOOGLE-pTimes-parameter");
+            if (is_const_param) {
+                VkPresentTimesInfoGOOGLE *structure = (VkPresentTimesInfoGOOGLE *) header;
+                skip |= validate_array("VkPresentTimesInfoGOOGLE", "swapchainCount", "pTimes", structure->swapchainCount, &structure->pTimes, true, false, "VUID-VkPresentTimesInfoGOOGLE-swapchainCount-arraylength", "VUID-VkPresentTimesInfoGOOGLE-pTimes-parameter");
 
-            if (structure->pTimes != NULL)
-            {
-                for (uint32_t swapchainIndex = 0; swapchainIndex < structure->swapchainCount; ++swapchainIndex)
+                if (structure->pTimes != NULL)
                 {
+                    for (uint32_t swapchainIndex = 0; swapchainIndex < structure->swapchainCount; ++swapchainIndex)
+                    {
+                    }
                 }
             }
         } break;
@@ -2327,22 +2695,24 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPipelineViewportSwizzleStateCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV: { // Covers VUID-VkPipelineViewportSwizzleStateCreateInfoNV-sType-sType
-            VkPipelineViewportSwizzleStateCreateInfoNV *structure = (VkPipelineViewportSwizzleStateCreateInfoNV *) header;
-            skip |= validate_reserved_flags("VkPipelineViewportSwizzleStateCreateInfoNV", "flags", structure->flags, "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-flags-zerobitmask");
+            if (is_const_param) {
+                VkPipelineViewportSwizzleStateCreateInfoNV *structure = (VkPipelineViewportSwizzleStateCreateInfoNV *) header;
+                skip |= validate_reserved_flags("VkPipelineViewportSwizzleStateCreateInfoNV", "flags", structure->flags, "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-flags-zerobitmask");
 
-            skip |= validate_array("VkPipelineViewportSwizzleStateCreateInfoNV", "viewportCount", "pViewportSwizzles", structure->viewportCount, &structure->pViewportSwizzles, true, true, "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-viewportCount-arraylength", "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-pViewportSwizzles-parameter");
+                skip |= validate_array("VkPipelineViewportSwizzleStateCreateInfoNV", "viewportCount", "pViewportSwizzles", structure->viewportCount, &structure->pViewportSwizzles, true, true, "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-viewportCount-arraylength", "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-pViewportSwizzles-parameter");
 
-            if (structure->pViewportSwizzles != NULL)
-            {
-                for (uint32_t viewportIndex = 0; viewportIndex < structure->viewportCount; ++viewportIndex)
+                if (structure->pViewportSwizzles != NULL)
                 {
-                    skip |= validate_ranged_enum("VkPipelineViewportSwizzleStateCreateInfoNV", ParameterName("pViewportSwizzles[%i].x", ParameterName::IndexVector{ viewportIndex }), "VkViewportCoordinateSwizzleNV", AllVkViewportCoordinateSwizzleNVEnums, structure->pViewportSwizzles[viewportIndex].x, "VUID-VkViewportSwizzleNV-x-parameter");
+                    for (uint32_t viewportIndex = 0; viewportIndex < structure->viewportCount; ++viewportIndex)
+                    {
+                        skip |= validate_ranged_enum("VkPipelineViewportSwizzleStateCreateInfoNV", ParameterName("pViewportSwizzles[%i].x", ParameterName::IndexVector{ viewportIndex }), "VkViewportCoordinateSwizzleNV", AllVkViewportCoordinateSwizzleNVEnums, structure->pViewportSwizzles[viewportIndex].x, "VUID-VkViewportSwizzleNV-x-parameter");
 
-                    skip |= validate_ranged_enum("VkPipelineViewportSwizzleStateCreateInfoNV", ParameterName("pViewportSwizzles[%i].y", ParameterName::IndexVector{ viewportIndex }), "VkViewportCoordinateSwizzleNV", AllVkViewportCoordinateSwizzleNVEnums, structure->pViewportSwizzles[viewportIndex].y, "VUID-VkViewportSwizzleNV-y-parameter");
+                        skip |= validate_ranged_enum("VkPipelineViewportSwizzleStateCreateInfoNV", ParameterName("pViewportSwizzles[%i].y", ParameterName::IndexVector{ viewportIndex }), "VkViewportCoordinateSwizzleNV", AllVkViewportCoordinateSwizzleNVEnums, structure->pViewportSwizzles[viewportIndex].y, "VUID-VkViewportSwizzleNV-y-parameter");
 
-                    skip |= validate_ranged_enum("VkPipelineViewportSwizzleStateCreateInfoNV", ParameterName("pViewportSwizzles[%i].z", ParameterName::IndexVector{ viewportIndex }), "VkViewportCoordinateSwizzleNV", AllVkViewportCoordinateSwizzleNVEnums, structure->pViewportSwizzles[viewportIndex].z, "VUID-VkViewportSwizzleNV-z-parameter");
+                        skip |= validate_ranged_enum("VkPipelineViewportSwizzleStateCreateInfoNV", ParameterName("pViewportSwizzles[%i].z", ParameterName::IndexVector{ viewportIndex }), "VkViewportCoordinateSwizzleNV", AllVkViewportCoordinateSwizzleNVEnums, structure->pViewportSwizzles[viewportIndex].z, "VUID-VkViewportSwizzleNV-z-parameter");
 
-                    skip |= validate_ranged_enum("VkPipelineViewportSwizzleStateCreateInfoNV", ParameterName("pViewportSwizzles[%i].w", ParameterName::IndexVector{ viewportIndex }), "VkViewportCoordinateSwizzleNV", AllVkViewportCoordinateSwizzleNVEnums, structure->pViewportSwizzles[viewportIndex].w, "VUID-VkViewportSwizzleNV-w-parameter");
+                        skip |= validate_ranged_enum("VkPipelineViewportSwizzleStateCreateInfoNV", ParameterName("pViewportSwizzles[%i].w", ParameterName::IndexVector{ viewportIndex }), "VkViewportCoordinateSwizzleNV", AllVkViewportCoordinateSwizzleNVEnums, structure->pViewportSwizzles[viewportIndex].w, "VUID-VkViewportSwizzleNV-w-parameter");
+                    }
                 }
             }
         } break;
@@ -2351,46 +2721,56 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPipelineDiscardRectangleStateCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_DISCARD_RECTANGLE_STATE_CREATE_INFO_EXT: { // Covers VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-sType-sType
-            VkPipelineDiscardRectangleStateCreateInfoEXT *structure = (VkPipelineDiscardRectangleStateCreateInfoEXT *) header;
-            skip |= validate_reserved_flags("VkPipelineDiscardRectangleStateCreateInfoEXT", "flags", structure->flags, "VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-flags-zerobitmask");
+            if (is_const_param) {
+                VkPipelineDiscardRectangleStateCreateInfoEXT *structure = (VkPipelineDiscardRectangleStateCreateInfoEXT *) header;
+                skip |= validate_reserved_flags("VkPipelineDiscardRectangleStateCreateInfoEXT", "flags", structure->flags, "VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-flags-zerobitmask");
 
-            skip |= validate_ranged_enum("VkPipelineDiscardRectangleStateCreateInfoEXT", "discardRectangleMode", "VkDiscardRectangleModeEXT", AllVkDiscardRectangleModeEXTEnums, structure->discardRectangleMode, "VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-discardRectangleMode-parameter");
+                skip |= validate_ranged_enum("VkPipelineDiscardRectangleStateCreateInfoEXT", "discardRectangleMode", "VkDiscardRectangleModeEXT", AllVkDiscardRectangleModeEXTEnums, structure->discardRectangleMode, "VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-discardRectangleMode-parameter");
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceConservativeRasterizationPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceConservativeRasterizationPropertiesEXT-sType-sType
 
         // Validation code for VkPipelineRasterizationConservativeStateCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT: { // Covers VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-sType-sType
-            VkPipelineRasterizationConservativeStateCreateInfoEXT *structure = (VkPipelineRasterizationConservativeStateCreateInfoEXT *) header;
-            skip |= validate_reserved_flags("VkPipelineRasterizationConservativeStateCreateInfoEXT", "flags", structure->flags, "VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-flags-zerobitmask");
+            if (is_const_param) {
+                VkPipelineRasterizationConservativeStateCreateInfoEXT *structure = (VkPipelineRasterizationConservativeStateCreateInfoEXT *) header;
+                skip |= validate_reserved_flags("VkPipelineRasterizationConservativeStateCreateInfoEXT", "flags", structure->flags, "VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-flags-zerobitmask");
 
-            skip |= validate_ranged_enum("VkPipelineRasterizationConservativeStateCreateInfoEXT", "conservativeRasterizationMode", "VkConservativeRasterizationModeEXT", AllVkConservativeRasterizationModeEXTEnums, structure->conservativeRasterizationMode, "VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-conservativeRasterizationMode-parameter");
+                skip |= validate_ranged_enum("VkPipelineRasterizationConservativeStateCreateInfoEXT", "conservativeRasterizationMode", "VkConservativeRasterizationModeEXT", AllVkConservativeRasterizationModeEXTEnums, structure->conservativeRasterizationMode, "VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-conservativeRasterizationMode-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceDepthClipEnableFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceDepthClipEnableFeaturesEXT-sType-sType
-            VkPhysicalDeviceDepthClipEnableFeaturesEXT *structure = (VkPhysicalDeviceDepthClipEnableFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceDepthClipEnableFeaturesEXT", "depthClipEnable", structure->depthClipEnable);
+            if (is_const_param) {
+                VkPhysicalDeviceDepthClipEnableFeaturesEXT *structure = (VkPhysicalDeviceDepthClipEnableFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceDepthClipEnableFeaturesEXT", "depthClipEnable", structure->depthClipEnable);
+            }
         } break;
 
         // Validation code for VkPipelineRasterizationDepthClipStateCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT: { // Covers VUID-VkPipelineRasterizationDepthClipStateCreateInfoEXT-sType-sType
-            VkPipelineRasterizationDepthClipStateCreateInfoEXT *structure = (VkPipelineRasterizationDepthClipStateCreateInfoEXT *) header;
-            skip |= validate_reserved_flags("VkPipelineRasterizationDepthClipStateCreateInfoEXT", "flags", structure->flags, "VUID-VkPipelineRasterizationDepthClipStateCreateInfoEXT-flags-zerobitmask");
+            if (is_const_param) {
+                VkPipelineRasterizationDepthClipStateCreateInfoEXT *structure = (VkPipelineRasterizationDepthClipStateCreateInfoEXT *) header;
+                skip |= validate_reserved_flags("VkPipelineRasterizationDepthClipStateCreateInfoEXT", "flags", structure->flags, "VUID-VkPipelineRasterizationDepthClipStateCreateInfoEXT-flags-zerobitmask");
 
-            skip |= validate_bool32("VkPipelineRasterizationDepthClipStateCreateInfoEXT", "depthClipEnable", structure->depthClipEnable);
+                skip |= validate_bool32("VkPipelineRasterizationDepthClipStateCreateInfoEXT", "depthClipEnable", structure->depthClipEnable);
+            }
         } break;
 
         // Validation code for VkDebugUtilsMessengerCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT: { // Covers VUID-VkDebugUtilsMessengerCreateInfoEXT-sType-sType
-            VkDebugUtilsMessengerCreateInfoEXT *structure = (VkDebugUtilsMessengerCreateInfoEXT *) header;
-            skip |= validate_reserved_flags("VkDebugUtilsMessengerCreateInfoEXT", "flags", structure->flags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-flags-zerobitmask");
+            if (is_const_param) {
+                VkDebugUtilsMessengerCreateInfoEXT *structure = (VkDebugUtilsMessengerCreateInfoEXT *) header;
+                skip |= validate_reserved_flags("VkDebugUtilsMessengerCreateInfoEXT", "flags", structure->flags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-flags-zerobitmask");
 
-            skip |= validate_flags("VkDebugUtilsMessengerCreateInfoEXT", "messageSeverity", "VkDebugUtilsMessageSeverityFlagBitsEXT", AllVkDebugUtilsMessageSeverityFlagBitsEXT, structure->messageSeverity, kRequiredFlags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-parameter", "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-requiredbitmask");
+                skip |= validate_flags("VkDebugUtilsMessengerCreateInfoEXT", "messageSeverity", "VkDebugUtilsMessageSeverityFlagBitsEXT", AllVkDebugUtilsMessageSeverityFlagBitsEXT, structure->messageSeverity, kRequiredFlags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-parameter", "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-requiredbitmask");
 
-            skip |= validate_flags("VkDebugUtilsMessengerCreateInfoEXT", "messageType", "VkDebugUtilsMessageTypeFlagBitsEXT", AllVkDebugUtilsMessageTypeFlagBitsEXT, structure->messageType, kRequiredFlags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageType-parameter", "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageType-requiredbitmask");
+                skip |= validate_flags("VkDebugUtilsMessengerCreateInfoEXT", "messageType", "VkDebugUtilsMessageTypeFlagBitsEXT", AllVkDebugUtilsMessageTypeFlagBitsEXT, structure->messageType, kRequiredFlags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageType-parameter", "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageType-requiredbitmask");
 
-            skip |= validate_required_pointer("VkDebugUtilsMessengerCreateInfoEXT", "pfnUserCallback", reinterpret_cast<const void*>(structure->pfnUserCallback), "VUID-VkDebugUtilsMessengerCreateInfoEXT-pfnUserCallback-parameter");
+                skip |= validate_required_pointer("VkDebugUtilsMessengerCreateInfoEXT", "pfnUserCallback", reinterpret_cast<const void*>(structure->pfnUserCallback), "VUID-VkDebugUtilsMessengerCreateInfoEXT-pfnUserCallback-parameter");
+            }
         } break;
 
         // No Validation code for VkAndroidHardwareBufferUsageANDROID structure members  -- Covers VUID-VkAndroidHardwareBufferUsageANDROID-sType-sType
@@ -2400,8 +2780,10 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         // Validation code for VkImportAndroidHardwareBufferInfoANDROID structure members
         case VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID: { // Covers VUID-VkImportAndroidHardwareBufferInfoANDROID-sType-sType
-            VkImportAndroidHardwareBufferInfoANDROID *structure = (VkImportAndroidHardwareBufferInfoANDROID *) header;
-            skip |= validate_required_pointer("VkImportAndroidHardwareBufferInfoANDROID", "buffer", structure->buffer, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-parameter");
+            if (is_const_param) {
+                VkImportAndroidHardwareBufferInfoANDROID *structure = (VkImportAndroidHardwareBufferInfoANDROID *) header;
+                skip |= validate_required_pointer("VkImportAndroidHardwareBufferInfoANDROID", "buffer", structure->buffer, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-parameter");
+            }
         } break;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -2409,71 +2791,79 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceInlineUniformBlockFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceInlineUniformBlockFeaturesEXT-sType-sType
-            VkPhysicalDeviceInlineUniformBlockFeaturesEXT *structure = (VkPhysicalDeviceInlineUniformBlockFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceInlineUniformBlockFeaturesEXT", "inlineUniformBlock", structure->inlineUniformBlock);
+            if (is_const_param) {
+                VkPhysicalDeviceInlineUniformBlockFeaturesEXT *structure = (VkPhysicalDeviceInlineUniformBlockFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceInlineUniformBlockFeaturesEXT", "inlineUniformBlock", structure->inlineUniformBlock);
 
-            skip |= validate_bool32("VkPhysicalDeviceInlineUniformBlockFeaturesEXT", "descriptorBindingInlineUniformBlockUpdateAfterBind", structure->descriptorBindingInlineUniformBlockUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceInlineUniformBlockFeaturesEXT", "descriptorBindingInlineUniformBlockUpdateAfterBind", structure->descriptorBindingInlineUniformBlockUpdateAfterBind);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceInlineUniformBlockPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceInlineUniformBlockPropertiesEXT-sType-sType
 
         // Validation code for VkWriteDescriptorSetInlineUniformBlockEXT structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT: { // Covers VUID-VkWriteDescriptorSetInlineUniformBlockEXT-sType-sType
-            VkWriteDescriptorSetInlineUniformBlockEXT *structure = (VkWriteDescriptorSetInlineUniformBlockEXT *) header;
-            skip |= validate_array("VkWriteDescriptorSetInlineUniformBlockEXT", "dataSize", "pData", structure->dataSize, &structure->pData, true, true, "VUID-VkWriteDescriptorSetInlineUniformBlockEXT-dataSize-arraylength", "VUID-VkWriteDescriptorSetInlineUniformBlockEXT-pData-parameter");
+            if (is_const_param) {
+                VkWriteDescriptorSetInlineUniformBlockEXT *structure = (VkWriteDescriptorSetInlineUniformBlockEXT *) header;
+                skip |= validate_array("VkWriteDescriptorSetInlineUniformBlockEXT", "dataSize", "pData", structure->dataSize, &structure->pData, true, true, "VUID-VkWriteDescriptorSetInlineUniformBlockEXT-dataSize-arraylength", "VUID-VkWriteDescriptorSetInlineUniformBlockEXT-pData-parameter");
+            }
         } break;
 
         // No Validation code for VkDescriptorPoolInlineUniformBlockCreateInfoEXT structure members  -- Covers VUID-VkDescriptorPoolInlineUniformBlockCreateInfoEXT-sType-sType
 
         // Validation code for VkSampleLocationsInfoEXT structure members
         case VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT: { // Covers VUID-VkSampleLocationsInfoEXT-sType-sType
-            VkSampleLocationsInfoEXT *structure = (VkSampleLocationsInfoEXT *) header;
-            skip |= validate_array("VkSampleLocationsInfoEXT", "sampleLocationsCount", "pSampleLocations", structure->sampleLocationsCount, &structure->pSampleLocations, false, true, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-pSampleLocations-parameter");
+            if (is_const_param) {
+                VkSampleLocationsInfoEXT *structure = (VkSampleLocationsInfoEXT *) header;
+                skip |= validate_array("VkSampleLocationsInfoEXT", "sampleLocationsCount", "pSampleLocations", structure->sampleLocationsCount, &structure->pSampleLocations, false, true, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-pSampleLocations-parameter");
 
-            if (structure->pSampleLocations != NULL)
-            {
-                for (uint32_t sampleLocationsIndex = 0; sampleLocationsIndex < structure->sampleLocationsCount; ++sampleLocationsIndex)
+                if (structure->pSampleLocations != NULL)
                 {
+                    for (uint32_t sampleLocationsIndex = 0; sampleLocationsIndex < structure->sampleLocationsCount; ++sampleLocationsIndex)
+                    {
+                    }
                 }
             }
         } break;
 
         // Validation code for VkRenderPassSampleLocationsBeginInfoEXT structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT: { // Covers VUID-VkRenderPassSampleLocationsBeginInfoEXT-sType-sType
-            VkRenderPassSampleLocationsBeginInfoEXT *structure = (VkRenderPassSampleLocationsBeginInfoEXT *) header;
-            skip |= validate_array("VkRenderPassSampleLocationsBeginInfoEXT", "attachmentInitialSampleLocationsCount", "pAttachmentInitialSampleLocations", structure->attachmentInitialSampleLocationsCount, &structure->pAttachmentInitialSampleLocations, false, true, kVUIDUndefined, "VUID-VkRenderPassSampleLocationsBeginInfoEXT-pAttachmentInitialSampleLocations-parameter");
+            if (is_const_param) {
+                VkRenderPassSampleLocationsBeginInfoEXT *structure = (VkRenderPassSampleLocationsBeginInfoEXT *) header;
+                skip |= validate_array("VkRenderPassSampleLocationsBeginInfoEXT", "attachmentInitialSampleLocationsCount", "pAttachmentInitialSampleLocations", structure->attachmentInitialSampleLocationsCount, &structure->pAttachmentInitialSampleLocations, false, true, kVUIDUndefined, "VUID-VkRenderPassSampleLocationsBeginInfoEXT-pAttachmentInitialSampleLocations-parameter");
 
-            if (structure->pAttachmentInitialSampleLocations != NULL)
-            {
-                for (uint32_t attachmentInitialSampleLocationsIndex = 0; attachmentInitialSampleLocationsIndex < structure->attachmentInitialSampleLocationsCount; ++attachmentInitialSampleLocationsIndex)
+                if (structure->pAttachmentInitialSampleLocations != NULL)
                 {
-                    skip |= validate_struct_type("VkRenderPassSampleLocationsBeginInfoEXT", ParameterName("pAttachmentInitialSampleLocations[%i].sampleLocationsInfo", ParameterName::IndexVector{ attachmentInitialSampleLocationsIndex }), "VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT", &(structure->pAttachmentInitialSampleLocations[attachmentInitialSampleLocationsIndex].sampleLocationsInfo), VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT, false, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-sType-sType");
-
-                    skip |= validate_array("VkRenderPassSampleLocationsBeginInfoEXT", ParameterName("pAttachmentInitialSampleLocations[%i].sampleLocationsInfo.sampleLocationsCount", ParameterName::IndexVector{ attachmentInitialSampleLocationsIndex }), ParameterName("pAttachmentInitialSampleLocations[%i].sampleLocationsInfo.pSampleLocations", ParameterName::IndexVector{ attachmentInitialSampleLocationsIndex }), structure->pAttachmentInitialSampleLocations[attachmentInitialSampleLocationsIndex].sampleLocationsInfo.sampleLocationsCount, &structure->pAttachmentInitialSampleLocations[attachmentInitialSampleLocationsIndex].sampleLocationsInfo.pSampleLocations, false, true, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-pSampleLocations-parameter");
-
-                    if (structure->pAttachmentInitialSampleLocations[attachmentInitialSampleLocationsIndex].sampleLocationsInfo.pSampleLocations != NULL)
+                    for (uint32_t attachmentInitialSampleLocationsIndex = 0; attachmentInitialSampleLocationsIndex < structure->attachmentInitialSampleLocationsCount; ++attachmentInitialSampleLocationsIndex)
                     {
-                        for (uint32_t sampleLocationsIndex = 0; sampleLocationsIndex < structure->pAttachmentInitialSampleLocations[attachmentInitialSampleLocationsIndex].sampleLocationsInfo.sampleLocationsCount; ++sampleLocationsIndex)
+                        skip |= validate_struct_type("VkRenderPassSampleLocationsBeginInfoEXT", ParameterName("pAttachmentInitialSampleLocations[%i].sampleLocationsInfo", ParameterName::IndexVector{ attachmentInitialSampleLocationsIndex }), "VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT", &(structure->pAttachmentInitialSampleLocations[attachmentInitialSampleLocationsIndex].sampleLocationsInfo), VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT, false, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-sType-sType");
+
+                        skip |= validate_array("VkRenderPassSampleLocationsBeginInfoEXT", ParameterName("pAttachmentInitialSampleLocations[%i].sampleLocationsInfo.sampleLocationsCount", ParameterName::IndexVector{ attachmentInitialSampleLocationsIndex }), ParameterName("pAttachmentInitialSampleLocations[%i].sampleLocationsInfo.pSampleLocations", ParameterName::IndexVector{ attachmentInitialSampleLocationsIndex }), structure->pAttachmentInitialSampleLocations[attachmentInitialSampleLocationsIndex].sampleLocationsInfo.sampleLocationsCount, &structure->pAttachmentInitialSampleLocations[attachmentInitialSampleLocationsIndex].sampleLocationsInfo.pSampleLocations, false, true, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-pSampleLocations-parameter");
+
+                        if (structure->pAttachmentInitialSampleLocations[attachmentInitialSampleLocationsIndex].sampleLocationsInfo.pSampleLocations != NULL)
                         {
+                            for (uint32_t sampleLocationsIndex = 0; sampleLocationsIndex < structure->pAttachmentInitialSampleLocations[attachmentInitialSampleLocationsIndex].sampleLocationsInfo.sampleLocationsCount; ++sampleLocationsIndex)
+                            {
+                            }
                         }
                     }
                 }
-            }
 
-            skip |= validate_array("VkRenderPassSampleLocationsBeginInfoEXT", "postSubpassSampleLocationsCount", "pPostSubpassSampleLocations", structure->postSubpassSampleLocationsCount, &structure->pPostSubpassSampleLocations, false, true, kVUIDUndefined, "VUID-VkRenderPassSampleLocationsBeginInfoEXT-pPostSubpassSampleLocations-parameter");
+                skip |= validate_array("VkRenderPassSampleLocationsBeginInfoEXT", "postSubpassSampleLocationsCount", "pPostSubpassSampleLocations", structure->postSubpassSampleLocationsCount, &structure->pPostSubpassSampleLocations, false, true, kVUIDUndefined, "VUID-VkRenderPassSampleLocationsBeginInfoEXT-pPostSubpassSampleLocations-parameter");
 
-            if (structure->pPostSubpassSampleLocations != NULL)
-            {
-                for (uint32_t postSubpassSampleLocationsIndex = 0; postSubpassSampleLocationsIndex < structure->postSubpassSampleLocationsCount; ++postSubpassSampleLocationsIndex)
+                if (structure->pPostSubpassSampleLocations != NULL)
                 {
-                    skip |= validate_struct_type("VkRenderPassSampleLocationsBeginInfoEXT", ParameterName("pPostSubpassSampleLocations[%i].sampleLocationsInfo", ParameterName::IndexVector{ postSubpassSampleLocationsIndex }), "VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT", &(structure->pPostSubpassSampleLocations[postSubpassSampleLocationsIndex].sampleLocationsInfo), VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT, false, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-sType-sType");
-
-                    skip |= validate_array("VkRenderPassSampleLocationsBeginInfoEXT", ParameterName("pPostSubpassSampleLocations[%i].sampleLocationsInfo.sampleLocationsCount", ParameterName::IndexVector{ postSubpassSampleLocationsIndex }), ParameterName("pPostSubpassSampleLocations[%i].sampleLocationsInfo.pSampleLocations", ParameterName::IndexVector{ postSubpassSampleLocationsIndex }), structure->pPostSubpassSampleLocations[postSubpassSampleLocationsIndex].sampleLocationsInfo.sampleLocationsCount, &structure->pPostSubpassSampleLocations[postSubpassSampleLocationsIndex].sampleLocationsInfo.pSampleLocations, false, true, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-pSampleLocations-parameter");
-
-                    if (structure->pPostSubpassSampleLocations[postSubpassSampleLocationsIndex].sampleLocationsInfo.pSampleLocations != NULL)
+                    for (uint32_t postSubpassSampleLocationsIndex = 0; postSubpassSampleLocationsIndex < structure->postSubpassSampleLocationsCount; ++postSubpassSampleLocationsIndex)
                     {
-                        for (uint32_t sampleLocationsIndex = 0; sampleLocationsIndex < structure->pPostSubpassSampleLocations[postSubpassSampleLocationsIndex].sampleLocationsInfo.sampleLocationsCount; ++sampleLocationsIndex)
+                        skip |= validate_struct_type("VkRenderPassSampleLocationsBeginInfoEXT", ParameterName("pPostSubpassSampleLocations[%i].sampleLocationsInfo", ParameterName::IndexVector{ postSubpassSampleLocationsIndex }), "VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT", &(structure->pPostSubpassSampleLocations[postSubpassSampleLocationsIndex].sampleLocationsInfo), VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT, false, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-sType-sType");
+
+                        skip |= validate_array("VkRenderPassSampleLocationsBeginInfoEXT", ParameterName("pPostSubpassSampleLocations[%i].sampleLocationsInfo.sampleLocationsCount", ParameterName::IndexVector{ postSubpassSampleLocationsIndex }), ParameterName("pPostSubpassSampleLocations[%i].sampleLocationsInfo.pSampleLocations", ParameterName::IndexVector{ postSubpassSampleLocationsIndex }), structure->pPostSubpassSampleLocations[postSubpassSampleLocationsIndex].sampleLocationsInfo.sampleLocationsCount, &structure->pPostSubpassSampleLocations[postSubpassSampleLocationsIndex].sampleLocationsInfo.pSampleLocations, false, true, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-pSampleLocations-parameter");
+
+                        if (structure->pPostSubpassSampleLocations[postSubpassSampleLocationsIndex].sampleLocationsInfo.pSampleLocations != NULL)
                         {
+                            for (uint32_t sampleLocationsIndex = 0; sampleLocationsIndex < structure->pPostSubpassSampleLocations[postSubpassSampleLocationsIndex].sampleLocationsInfo.sampleLocationsCount; ++sampleLocationsIndex)
+                            {
+                            }
                         }
                     }
                 }
@@ -2482,17 +2872,19 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPipelineSampleLocationsStateCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_SAMPLE_LOCATIONS_STATE_CREATE_INFO_EXT: { // Covers VUID-VkPipelineSampleLocationsStateCreateInfoEXT-sType-sType
-            VkPipelineSampleLocationsStateCreateInfoEXT *structure = (VkPipelineSampleLocationsStateCreateInfoEXT *) header;
-            skip |= validate_bool32("VkPipelineSampleLocationsStateCreateInfoEXT", "sampleLocationsEnable", structure->sampleLocationsEnable);
+            if (is_const_param) {
+                VkPipelineSampleLocationsStateCreateInfoEXT *structure = (VkPipelineSampleLocationsStateCreateInfoEXT *) header;
+                skip |= validate_bool32("VkPipelineSampleLocationsStateCreateInfoEXT", "sampleLocationsEnable", structure->sampleLocationsEnable);
 
-            skip |= validate_struct_type("VkPipelineSampleLocationsStateCreateInfoEXT", "sampleLocationsInfo", "VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT", &(structure->sampleLocationsInfo), VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT, false, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-sType-sType");
+                skip |= validate_struct_type("VkPipelineSampleLocationsStateCreateInfoEXT", "sampleLocationsInfo", "VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT", &(structure->sampleLocationsInfo), VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT, false, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-sType-sType");
 
-            skip |= validate_array("VkPipelineSampleLocationsStateCreateInfoEXT", "sampleLocationsInfo.sampleLocationsCount", "sampleLocationsInfo.pSampleLocations", structure->sampleLocationsInfo.sampleLocationsCount, &structure->sampleLocationsInfo.pSampleLocations, false, true, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-pSampleLocations-parameter");
+                skip |= validate_array("VkPipelineSampleLocationsStateCreateInfoEXT", "sampleLocationsInfo.sampleLocationsCount", "sampleLocationsInfo.pSampleLocations", structure->sampleLocationsInfo.sampleLocationsCount, &structure->sampleLocationsInfo.pSampleLocations, false, true, kVUIDUndefined, "VUID-VkSampleLocationsInfoEXT-pSampleLocations-parameter");
 
-            if (structure->sampleLocationsInfo.pSampleLocations != NULL)
-            {
-                for (uint32_t sampleLocationsIndex = 0; sampleLocationsIndex < structure->sampleLocationsInfo.sampleLocationsCount; ++sampleLocationsIndex)
+                if (structure->sampleLocationsInfo.pSampleLocations != NULL)
                 {
+                    for (uint32_t sampleLocationsIndex = 0; sampleLocationsIndex < structure->sampleLocationsInfo.sampleLocationsCount; ++sampleLocationsIndex)
+                    {
+                    }
                 }
             }
         } break;
@@ -2501,116 +2893,140 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT-sType-sType
-            VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT *structure = (VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT", "advancedBlendCoherentOperations", structure->advancedBlendCoherentOperations);
+            if (is_const_param) {
+                VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT *structure = (VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT", "advancedBlendCoherentOperations", structure->advancedBlendCoherentOperations);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT-sType-sType
 
         // Validation code for VkPipelineColorBlendAdvancedStateCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_ADVANCED_STATE_CREATE_INFO_EXT: { // Covers VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-sType-sType
-            VkPipelineColorBlendAdvancedStateCreateInfoEXT *structure = (VkPipelineColorBlendAdvancedStateCreateInfoEXT *) header;
-            skip |= validate_bool32("VkPipelineColorBlendAdvancedStateCreateInfoEXT", "srcPremultiplied", structure->srcPremultiplied);
+            if (is_const_param) {
+                VkPipelineColorBlendAdvancedStateCreateInfoEXT *structure = (VkPipelineColorBlendAdvancedStateCreateInfoEXT *) header;
+                skip |= validate_bool32("VkPipelineColorBlendAdvancedStateCreateInfoEXT", "srcPremultiplied", structure->srcPremultiplied);
 
-            skip |= validate_bool32("VkPipelineColorBlendAdvancedStateCreateInfoEXT", "dstPremultiplied", structure->dstPremultiplied);
+                skip |= validate_bool32("VkPipelineColorBlendAdvancedStateCreateInfoEXT", "dstPremultiplied", structure->dstPremultiplied);
 
-            skip |= validate_ranged_enum("VkPipelineColorBlendAdvancedStateCreateInfoEXT", "blendOverlap", "VkBlendOverlapEXT", AllVkBlendOverlapEXTEnums, structure->blendOverlap, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-blendOverlap-parameter");
+                skip |= validate_ranged_enum("VkPipelineColorBlendAdvancedStateCreateInfoEXT", "blendOverlap", "VkBlendOverlapEXT", AllVkBlendOverlapEXTEnums, structure->blendOverlap, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-blendOverlap-parameter");
+            }
         } break;
 
         // Validation code for VkPipelineCoverageToColorStateCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_TO_COLOR_STATE_CREATE_INFO_NV: { // Covers VUID-VkPipelineCoverageToColorStateCreateInfoNV-sType-sType
-            VkPipelineCoverageToColorStateCreateInfoNV *structure = (VkPipelineCoverageToColorStateCreateInfoNV *) header;
-            skip |= validate_reserved_flags("VkPipelineCoverageToColorStateCreateInfoNV", "flags", structure->flags, "VUID-VkPipelineCoverageToColorStateCreateInfoNV-flags-zerobitmask");
+            if (is_const_param) {
+                VkPipelineCoverageToColorStateCreateInfoNV *structure = (VkPipelineCoverageToColorStateCreateInfoNV *) header;
+                skip |= validate_reserved_flags("VkPipelineCoverageToColorStateCreateInfoNV", "flags", structure->flags, "VUID-VkPipelineCoverageToColorStateCreateInfoNV-flags-zerobitmask");
 
-            skip |= validate_bool32("VkPipelineCoverageToColorStateCreateInfoNV", "coverageToColorEnable", structure->coverageToColorEnable);
+                skip |= validate_bool32("VkPipelineCoverageToColorStateCreateInfoNV", "coverageToColorEnable", structure->coverageToColorEnable);
+            }
         } break;
 
         // Validation code for VkPipelineCoverageModulationStateCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_MODULATION_STATE_CREATE_INFO_NV: { // Covers VUID-VkPipelineCoverageModulationStateCreateInfoNV-sType-sType
-            VkPipelineCoverageModulationStateCreateInfoNV *structure = (VkPipelineCoverageModulationStateCreateInfoNV *) header;
-            skip |= validate_reserved_flags("VkPipelineCoverageModulationStateCreateInfoNV", "flags", structure->flags, "VUID-VkPipelineCoverageModulationStateCreateInfoNV-flags-zerobitmask");
+            if (is_const_param) {
+                VkPipelineCoverageModulationStateCreateInfoNV *structure = (VkPipelineCoverageModulationStateCreateInfoNV *) header;
+                skip |= validate_reserved_flags("VkPipelineCoverageModulationStateCreateInfoNV", "flags", structure->flags, "VUID-VkPipelineCoverageModulationStateCreateInfoNV-flags-zerobitmask");
 
-            skip |= validate_ranged_enum("VkPipelineCoverageModulationStateCreateInfoNV", "coverageModulationMode", "VkCoverageModulationModeNV", AllVkCoverageModulationModeNVEnums, structure->coverageModulationMode, "VUID-VkPipelineCoverageModulationStateCreateInfoNV-coverageModulationMode-parameter");
+                skip |= validate_ranged_enum("VkPipelineCoverageModulationStateCreateInfoNV", "coverageModulationMode", "VkCoverageModulationModeNV", AllVkCoverageModulationModeNVEnums, structure->coverageModulationMode, "VUID-VkPipelineCoverageModulationStateCreateInfoNV-coverageModulationMode-parameter");
 
-            skip |= validate_bool32("VkPipelineCoverageModulationStateCreateInfoNV", "coverageModulationTableEnable", structure->coverageModulationTableEnable);
+                skip |= validate_bool32("VkPipelineCoverageModulationStateCreateInfoNV", "coverageModulationTableEnable", structure->coverageModulationTableEnable);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceShaderSMBuiltinsPropertiesNV structure members  -- Covers VUID-VkPhysicalDeviceShaderSMBuiltinsPropertiesNV-sType-sType
 
         // Validation code for VkPhysicalDeviceShaderSMBuiltinsFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceShaderSMBuiltinsFeaturesNV-sType-sType
-            VkPhysicalDeviceShaderSMBuiltinsFeaturesNV *structure = (VkPhysicalDeviceShaderSMBuiltinsFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShaderSMBuiltinsFeaturesNV", "shaderSMBuiltins", structure->shaderSMBuiltins);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderSMBuiltinsFeaturesNV *structure = (VkPhysicalDeviceShaderSMBuiltinsFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderSMBuiltinsFeaturesNV", "shaderSMBuiltins", structure->shaderSMBuiltins);
+            }
         } break;
 
         // No Validation code for VkDrmFormatModifierPropertiesListEXT structure members  -- Covers VUID-VkDrmFormatModifierPropertiesListEXT-sType-sType
 
         // Validation code for VkPhysicalDeviceImageDrmFormatModifierInfoEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT: { // Covers VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sType-sType
-            VkPhysicalDeviceImageDrmFormatModifierInfoEXT *structure = (VkPhysicalDeviceImageDrmFormatModifierInfoEXT *) header;
-            skip |= validate_ranged_enum("VkPhysicalDeviceImageDrmFormatModifierInfoEXT", "sharingMode", "VkSharingMode", AllVkSharingModeEnums, structure->sharingMode, "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-parameter");
+            if (is_const_param) {
+                VkPhysicalDeviceImageDrmFormatModifierInfoEXT *structure = (VkPhysicalDeviceImageDrmFormatModifierInfoEXT *) header;
+                skip |= validate_ranged_enum("VkPhysicalDeviceImageDrmFormatModifierInfoEXT", "sharingMode", "VkSharingMode", AllVkSharingModeEnums, structure->sharingMode, "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-parameter");
+            }
         } break;
 
         // Validation code for VkImageDrmFormatModifierListCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT: { // Covers VUID-VkImageDrmFormatModifierListCreateInfoEXT-sType-sType
-            VkImageDrmFormatModifierListCreateInfoEXT *structure = (VkImageDrmFormatModifierListCreateInfoEXT *) header;
-            skip |= validate_array("VkImageDrmFormatModifierListCreateInfoEXT", "drmFormatModifierCount", "pDrmFormatModifiers", structure->drmFormatModifierCount, &structure->pDrmFormatModifiers, true, true, "VUID-VkImageDrmFormatModifierListCreateInfoEXT-drmFormatModifierCount-arraylength", "VUID-VkImageDrmFormatModifierListCreateInfoEXT-pDrmFormatModifiers-parameter");
+            if (is_const_param) {
+                VkImageDrmFormatModifierListCreateInfoEXT *structure = (VkImageDrmFormatModifierListCreateInfoEXT *) header;
+                skip |= validate_array("VkImageDrmFormatModifierListCreateInfoEXT", "drmFormatModifierCount", "pDrmFormatModifiers", structure->drmFormatModifierCount, &structure->pDrmFormatModifiers, true, true, "VUID-VkImageDrmFormatModifierListCreateInfoEXT-drmFormatModifierCount-arraylength", "VUID-VkImageDrmFormatModifierListCreateInfoEXT-pDrmFormatModifiers-parameter");
+            }
         } break;
 
         // Validation code for VkImageDrmFormatModifierExplicitCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT: { // Covers VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-sType-sType
-            VkImageDrmFormatModifierExplicitCreateInfoEXT *structure = (VkImageDrmFormatModifierExplicitCreateInfoEXT *) header;
-            skip |= validate_array("VkImageDrmFormatModifierExplicitCreateInfoEXT", "drmFormatModifierPlaneCount", "pPlaneLayouts", structure->drmFormatModifierPlaneCount, &structure->pPlaneLayouts, true, true, kVUIDUndefined, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-pPlaneLayouts-parameter");
+            if (is_const_param) {
+                VkImageDrmFormatModifierExplicitCreateInfoEXT *structure = (VkImageDrmFormatModifierExplicitCreateInfoEXT *) header;
+                skip |= validate_array("VkImageDrmFormatModifierExplicitCreateInfoEXT", "drmFormatModifierPlaneCount", "pPlaneLayouts", structure->drmFormatModifierPlaneCount, &structure->pPlaneLayouts, true, true, kVUIDUndefined, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-pPlaneLayouts-parameter");
 
-            if (structure->pPlaneLayouts != NULL)
-            {
-                for (uint32_t drmFormatModifierPlaneIndex = 0; drmFormatModifierPlaneIndex < structure->drmFormatModifierPlaneCount; ++drmFormatModifierPlaneIndex)
+                if (structure->pPlaneLayouts != NULL)
                 {
+                    for (uint32_t drmFormatModifierPlaneIndex = 0; drmFormatModifierPlaneIndex < structure->drmFormatModifierPlaneCount; ++drmFormatModifierPlaneIndex)
+                    {
+                    }
                 }
             }
         } break;
 
         // Validation code for VkShaderModuleValidationCacheCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT: { // Covers VUID-VkShaderModuleValidationCacheCreateInfoEXT-sType-sType
-            VkShaderModuleValidationCacheCreateInfoEXT *structure = (VkShaderModuleValidationCacheCreateInfoEXT *) header;
-            skip |= validate_required_handle("VkShaderModuleValidationCacheCreateInfoEXT", "validationCache", structure->validationCache);
+            if (is_const_param) {
+                VkShaderModuleValidationCacheCreateInfoEXT *structure = (VkShaderModuleValidationCacheCreateInfoEXT *) header;
+                skip |= validate_required_handle("VkShaderModuleValidationCacheCreateInfoEXT", "validationCache", structure->validationCache);
+            }
         } break;
 
         // Validation code for VkPipelineViewportShadingRateImageStateCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV: { // Covers VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-sType-sType
-            VkPipelineViewportShadingRateImageStateCreateInfoNV *structure = (VkPipelineViewportShadingRateImageStateCreateInfoNV *) header;
-            skip |= validate_bool32("VkPipelineViewportShadingRateImageStateCreateInfoNV", "shadingRateImageEnable", structure->shadingRateImageEnable);
+            if (is_const_param) {
+                VkPipelineViewportShadingRateImageStateCreateInfoNV *structure = (VkPipelineViewportShadingRateImageStateCreateInfoNV *) header;
+                skip |= validate_bool32("VkPipelineViewportShadingRateImageStateCreateInfoNV", "shadingRateImageEnable", structure->shadingRateImageEnable);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceShadingRateImageFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceShadingRateImageFeaturesNV-sType-sType
-            VkPhysicalDeviceShadingRateImageFeaturesNV *structure = (VkPhysicalDeviceShadingRateImageFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShadingRateImageFeaturesNV", "shadingRateImage", structure->shadingRateImage);
+            if (is_const_param) {
+                VkPhysicalDeviceShadingRateImageFeaturesNV *structure = (VkPhysicalDeviceShadingRateImageFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShadingRateImageFeaturesNV", "shadingRateImage", structure->shadingRateImage);
 
-            skip |= validate_bool32("VkPhysicalDeviceShadingRateImageFeaturesNV", "shadingRateCoarseSampleOrder", structure->shadingRateCoarseSampleOrder);
+                skip |= validate_bool32("VkPhysicalDeviceShadingRateImageFeaturesNV", "shadingRateCoarseSampleOrder", structure->shadingRateCoarseSampleOrder);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceShadingRateImagePropertiesNV structure members  -- Covers VUID-VkPhysicalDeviceShadingRateImagePropertiesNV-sType-sType
 
         // Validation code for VkPipelineViewportCoarseSampleOrderStateCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV: { // Covers VUID-VkPipelineViewportCoarseSampleOrderStateCreateInfoNV-sType-sType
-            VkPipelineViewportCoarseSampleOrderStateCreateInfoNV *structure = (VkPipelineViewportCoarseSampleOrderStateCreateInfoNV *) header;
-            skip |= validate_ranged_enum("VkPipelineViewportCoarseSampleOrderStateCreateInfoNV", "sampleOrderType", "VkCoarseSampleOrderTypeNV", AllVkCoarseSampleOrderTypeNVEnums, structure->sampleOrderType, "VUID-VkPipelineViewportCoarseSampleOrderStateCreateInfoNV-sampleOrderType-parameter");
+            if (is_const_param) {
+                VkPipelineViewportCoarseSampleOrderStateCreateInfoNV *structure = (VkPipelineViewportCoarseSampleOrderStateCreateInfoNV *) header;
+                skip |= validate_ranged_enum("VkPipelineViewportCoarseSampleOrderStateCreateInfoNV", "sampleOrderType", "VkCoarseSampleOrderTypeNV", AllVkCoarseSampleOrderTypeNVEnums, structure->sampleOrderType, "VUID-VkPipelineViewportCoarseSampleOrderStateCreateInfoNV-sampleOrderType-parameter");
 
-            skip |= validate_array("VkPipelineViewportCoarseSampleOrderStateCreateInfoNV", "customSampleOrderCount", "pCustomSampleOrders", structure->customSampleOrderCount, &structure->pCustomSampleOrders, false, true, kVUIDUndefined, "VUID-VkPipelineViewportCoarseSampleOrderStateCreateInfoNV-pCustomSampleOrders-parameter");
+                skip |= validate_array("VkPipelineViewportCoarseSampleOrderStateCreateInfoNV", "customSampleOrderCount", "pCustomSampleOrders", structure->customSampleOrderCount, &structure->pCustomSampleOrders, false, true, kVUIDUndefined, "VUID-VkPipelineViewportCoarseSampleOrderStateCreateInfoNV-pCustomSampleOrders-parameter");
 
-            if (structure->pCustomSampleOrders != NULL)
-            {
-                for (uint32_t customSampleOrderIndex = 0; customSampleOrderIndex < structure->customSampleOrderCount; ++customSampleOrderIndex)
+                if (structure->pCustomSampleOrders != NULL)
                 {
-                    skip |= validate_ranged_enum("VkPipelineViewportCoarseSampleOrderStateCreateInfoNV", ParameterName("pCustomSampleOrders[%i].shadingRate", ParameterName::IndexVector{ customSampleOrderIndex }), "VkShadingRatePaletteEntryNV", AllVkShadingRatePaletteEntryNVEnums, structure->pCustomSampleOrders[customSampleOrderIndex].shadingRate, "VUID-VkCoarseSampleOrderCustomNV-shadingRate-parameter");
-
-                    skip |= validate_array("VkPipelineViewportCoarseSampleOrderStateCreateInfoNV", ParameterName("pCustomSampleOrders[%i].sampleLocationCount", ParameterName::IndexVector{ customSampleOrderIndex }), ParameterName("pCustomSampleOrders[%i].pSampleLocations", ParameterName::IndexVector{ customSampleOrderIndex }), structure->pCustomSampleOrders[customSampleOrderIndex].sampleLocationCount, &structure->pCustomSampleOrders[customSampleOrderIndex].pSampleLocations, true, true, "VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-arraylength", "VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-parameter");
-
-                    if (structure->pCustomSampleOrders[customSampleOrderIndex].pSampleLocations != NULL)
+                    for (uint32_t customSampleOrderIndex = 0; customSampleOrderIndex < structure->customSampleOrderCount; ++customSampleOrderIndex)
                     {
-                        for (uint32_t sampleLocationIndex = 0; sampleLocationIndex < structure->pCustomSampleOrders[customSampleOrderIndex].sampleLocationCount; ++sampleLocationIndex)
+                        skip |= validate_ranged_enum("VkPipelineViewportCoarseSampleOrderStateCreateInfoNV", ParameterName("pCustomSampleOrders[%i].shadingRate", ParameterName::IndexVector{ customSampleOrderIndex }), "VkShadingRatePaletteEntryNV", AllVkShadingRatePaletteEntryNVEnums, structure->pCustomSampleOrders[customSampleOrderIndex].shadingRate, "VUID-VkCoarseSampleOrderCustomNV-shadingRate-parameter");
+
+                        skip |= validate_array("VkPipelineViewportCoarseSampleOrderStateCreateInfoNV", ParameterName("pCustomSampleOrders[%i].sampleLocationCount", ParameterName::IndexVector{ customSampleOrderIndex }), ParameterName("pCustomSampleOrders[%i].pSampleLocations", ParameterName::IndexVector{ customSampleOrderIndex }), structure->pCustomSampleOrders[customSampleOrderIndex].sampleLocationCount, &structure->pCustomSampleOrders[customSampleOrderIndex].pSampleLocations, true, true, "VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-arraylength", "VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-parameter");
+
+                        if (structure->pCustomSampleOrders[customSampleOrderIndex].pSampleLocations != NULL)
                         {
+                            for (uint32_t sampleLocationIndex = 0; sampleLocationIndex < structure->pCustomSampleOrders[customSampleOrderIndex].sampleLocationCount; ++sampleLocationIndex)
+                            {
+                            }
                         }
                     }
                 }
@@ -2619,52 +3035,66 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkWriteDescriptorSetAccelerationStructureNV structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV: { // Covers VUID-VkWriteDescriptorSetAccelerationStructureNV-sType-sType
-            VkWriteDescriptorSetAccelerationStructureNV *structure = (VkWriteDescriptorSetAccelerationStructureNV *) header;
-            skip |= validate_array("VkWriteDescriptorSetAccelerationStructureNV", "accelerationStructureCount", "pAccelerationStructures", structure->accelerationStructureCount, &structure->pAccelerationStructures, true, false, "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-arraylength", "VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-parameter");
+            if (is_const_param) {
+                VkWriteDescriptorSetAccelerationStructureNV *structure = (VkWriteDescriptorSetAccelerationStructureNV *) header;
+                skip |= validate_array("VkWriteDescriptorSetAccelerationStructureNV", "accelerationStructureCount", "pAccelerationStructures", structure->accelerationStructureCount, &structure->pAccelerationStructures, true, false, "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-arraylength", "VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-parameter");
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceRayTracingPropertiesNV structure members  -- Covers VUID-VkPhysicalDeviceRayTracingPropertiesNV-sType-sType
 
         // Validation code for VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV-sType-sType
-            VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV *structure = (VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV", "representativeFragmentTest", structure->representativeFragmentTest);
+            if (is_const_param) {
+                VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV *structure = (VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV", "representativeFragmentTest", structure->representativeFragmentTest);
+            }
         } break;
 
         // Validation code for VkPipelineRepresentativeFragmentTestStateCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_PIPELINE_REPRESENTATIVE_FRAGMENT_TEST_STATE_CREATE_INFO_NV: { // Covers VUID-VkPipelineRepresentativeFragmentTestStateCreateInfoNV-sType-sType
-            VkPipelineRepresentativeFragmentTestStateCreateInfoNV *structure = (VkPipelineRepresentativeFragmentTestStateCreateInfoNV *) header;
-            skip |= validate_bool32("VkPipelineRepresentativeFragmentTestStateCreateInfoNV", "representativeFragmentTestEnable", structure->representativeFragmentTestEnable);
+            if (is_const_param) {
+                VkPipelineRepresentativeFragmentTestStateCreateInfoNV *structure = (VkPipelineRepresentativeFragmentTestStateCreateInfoNV *) header;
+                skip |= validate_bool32("VkPipelineRepresentativeFragmentTestStateCreateInfoNV", "representativeFragmentTestEnable", structure->representativeFragmentTestEnable);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceImageViewImageFormatInfoEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_IMAGE_FORMAT_INFO_EXT: { // Covers VUID-VkPhysicalDeviceImageViewImageFormatInfoEXT-sType-sType
-            VkPhysicalDeviceImageViewImageFormatInfoEXT *structure = (VkPhysicalDeviceImageViewImageFormatInfoEXT *) header;
-            skip |= validate_ranged_enum("VkPhysicalDeviceImageViewImageFormatInfoEXT", "imageViewType", "VkImageViewType", AllVkImageViewTypeEnums, structure->imageViewType, "VUID-VkPhysicalDeviceImageViewImageFormatInfoEXT-imageViewType-parameter");
+            if (is_const_param) {
+                VkPhysicalDeviceImageViewImageFormatInfoEXT *structure = (VkPhysicalDeviceImageViewImageFormatInfoEXT *) header;
+                skip |= validate_ranged_enum("VkPhysicalDeviceImageViewImageFormatInfoEXT", "imageViewType", "VkImageViewType", AllVkImageViewTypeEnums, structure->imageViewType, "VUID-VkPhysicalDeviceImageViewImageFormatInfoEXT-imageViewType-parameter");
+            }
         } break;
 
         // No Validation code for VkFilterCubicImageViewImageFormatPropertiesEXT structure members  -- Covers VUID-VkFilterCubicImageViewImageFormatPropertiesEXT-sType-sType
 
         // Validation code for VkDeviceQueueGlobalPriorityCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_EXT: { // Covers VUID-VkDeviceQueueGlobalPriorityCreateInfoEXT-sType-sType
-            VkDeviceQueueGlobalPriorityCreateInfoEXT *structure = (VkDeviceQueueGlobalPriorityCreateInfoEXT *) header;
-            skip |= validate_ranged_enum("VkDeviceQueueGlobalPriorityCreateInfoEXT", "globalPriority", "VkQueueGlobalPriorityEXT", AllVkQueueGlobalPriorityEXTEnums, structure->globalPriority, "VUID-VkDeviceQueueGlobalPriorityCreateInfoEXT-globalPriority-parameter");
+            if (is_const_param) {
+                VkDeviceQueueGlobalPriorityCreateInfoEXT *structure = (VkDeviceQueueGlobalPriorityCreateInfoEXT *) header;
+                skip |= validate_ranged_enum("VkDeviceQueueGlobalPriorityCreateInfoEXT", "globalPriority", "VkQueueGlobalPriorityEXT", AllVkQueueGlobalPriorityEXTEnums, structure->globalPriority, "VUID-VkDeviceQueueGlobalPriorityCreateInfoEXT-globalPriority-parameter");
+            }
         } break;
 
         // Validation code for VkImportMemoryHostPointerInfoEXT structure members
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT: { // Covers VUID-VkImportMemoryHostPointerInfoEXT-sType-sType
-            VkImportMemoryHostPointerInfoEXT *structure = (VkImportMemoryHostPointerInfoEXT *) header;
-            skip |= validate_flags("VkImportMemoryHostPointerInfoEXT", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kRequiredSingleBit, "VUID-VkImportMemoryHostPointerInfoEXT-handleType-parameter", "VUID-VkImportMemoryHostPointerInfoEXT-handleType-parameter");
+            if (is_const_param) {
+                VkImportMemoryHostPointerInfoEXT *structure = (VkImportMemoryHostPointerInfoEXT *) header;
+                skip |= validate_flags("VkImportMemoryHostPointerInfoEXT", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kRequiredSingleBit, "VUID-VkImportMemoryHostPointerInfoEXT-handleType-parameter", "VUID-VkImportMemoryHostPointerInfoEXT-handleType-parameter");
 
-            skip |= validate_required_pointer("VkImportMemoryHostPointerInfoEXT", "pHostPointer", structure->pHostPointer, kVUIDUndefined);
+                skip |= validate_required_pointer("VkImportMemoryHostPointerInfoEXT", "pHostPointer", structure->pHostPointer, kVUIDUndefined);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceExternalMemoryHostPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceExternalMemoryHostPropertiesEXT-sType-sType
 
         // Validation code for VkPipelineCompilerControlCreateInfoAMD structure members
         case VK_STRUCTURE_TYPE_PIPELINE_COMPILER_CONTROL_CREATE_INFO_AMD: { // Covers VUID-VkPipelineCompilerControlCreateInfoAMD-sType-sType
-            VkPipelineCompilerControlCreateInfoAMD *structure = (VkPipelineCompilerControlCreateInfoAMD *) header;
-            skip |= validate_reserved_flags("VkPipelineCompilerControlCreateInfoAMD", "compilerControlFlags", structure->compilerControlFlags, "VUID-VkPipelineCompilerControlCreateInfoAMD-compilerControlFlags-zerobitmask");
+            if (is_const_param) {
+                VkPipelineCompilerControlCreateInfoAMD *structure = (VkPipelineCompilerControlCreateInfoAMD *) header;
+                skip |= validate_reserved_flags("VkPipelineCompilerControlCreateInfoAMD", "compilerControlFlags", structure->compilerControlFlags, "VUID-VkPipelineCompilerControlCreateInfoAMD-compilerControlFlags-zerobitmask");
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceShaderCorePropertiesAMD structure members  -- Covers VUID-VkPhysicalDeviceShaderCorePropertiesAMD-sType-sType
@@ -2676,13 +3106,15 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH265SessionCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_CREATE_INFO_EXT: { // Covers VUID-VkVideoDecodeH265SessionCreateInfoEXT-sType-sType
-            VkVideoDecodeH265SessionCreateInfoEXT *structure = (VkVideoDecodeH265SessionCreateInfoEXT *) header;
-            skip |= validate_reserved_flags("VkVideoDecodeH265SessionCreateInfoEXT", "flags", structure->flags, "VUID-VkVideoDecodeH265SessionCreateInfoEXT-flags-zerobitmask");
+            if (is_const_param) {
+                VkVideoDecodeH265SessionCreateInfoEXT *structure = (VkVideoDecodeH265SessionCreateInfoEXT *) header;
+                skip |= validate_reserved_flags("VkVideoDecodeH265SessionCreateInfoEXT", "flags", structure->flags, "VUID-VkVideoDecodeH265SessionCreateInfoEXT-flags-zerobitmask");
 
-            skip |= validate_required_pointer("VkVideoDecodeH265SessionCreateInfoEXT", "pStdExtensionVersion", structure->pStdExtensionVersion, "VUID-VkVideoDecodeH265SessionCreateInfoEXT-pStdExtensionVersion-parameter");
+                skip |= validate_required_pointer("VkVideoDecodeH265SessionCreateInfoEXT", "pStdExtensionVersion", structure->pStdExtensionVersion, "VUID-VkVideoDecodeH265SessionCreateInfoEXT-pStdExtensionVersion-parameter");
 
-            if (structure->pStdExtensionVersion != NULL)
-            {
+                if (structure->pStdExtensionVersion != NULL)
+                {
+                }
             }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -2690,24 +3122,28 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH265SessionParametersAddInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT: { // Covers VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-sType-sType
-            VkVideoDecodeH265SessionParametersAddInfoEXT *structure = (VkVideoDecodeH265SessionParametersAddInfoEXT *) header;
-            skip |= validate_array("VkVideoDecodeH265SessionParametersAddInfoEXT", "spsStdCount", "pSpsStd", structure->spsStdCount, &structure->pSpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pSpsStd-parameter");
+            if (is_const_param) {
+                VkVideoDecodeH265SessionParametersAddInfoEXT *structure = (VkVideoDecodeH265SessionParametersAddInfoEXT *) header;
+                skip |= validate_array("VkVideoDecodeH265SessionParametersAddInfoEXT", "spsStdCount", "pSpsStd", structure->spsStdCount, &structure->pSpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pSpsStd-parameter");
 
-            skip |= validate_array("VkVideoDecodeH265SessionParametersAddInfoEXT", "ppsStdCount", "pPpsStd", structure->ppsStdCount, &structure->pPpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pPpsStd-parameter");
+                skip |= validate_array("VkVideoDecodeH265SessionParametersAddInfoEXT", "ppsStdCount", "pPpsStd", structure->ppsStdCount, &structure->pPpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pPpsStd-parameter");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH265SessionParametersCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_CREATE_INFO_EXT: { // Covers VUID-VkVideoDecodeH265SessionParametersCreateInfoEXT-sType-sType
-            VkVideoDecodeH265SessionParametersCreateInfoEXT *structure = (VkVideoDecodeH265SessionParametersCreateInfoEXT *) header;
-            skip |= validate_struct_type("VkVideoDecodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo", "VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT", structure->pParametersAddInfo, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT, false, "VUID-VkVideoDecodeH265SessionParametersCreateInfoEXT-pParametersAddInfo-parameter", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-sType-sType");
+            if (is_const_param) {
+                VkVideoDecodeH265SessionParametersCreateInfoEXT *structure = (VkVideoDecodeH265SessionParametersCreateInfoEXT *) header;
+                skip |= validate_struct_type("VkVideoDecodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo", "VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT", structure->pParametersAddInfo, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT, false, "VUID-VkVideoDecodeH265SessionParametersCreateInfoEXT-pParametersAddInfo-parameter", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-sType-sType");
 
-            if (structure->pParametersAddInfo != NULL)
-            {
-                skip |= validate_array("VkVideoDecodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo->spsStdCount", "pParametersAddInfo->pSpsStd", structure->pParametersAddInfo->spsStdCount, &structure->pParametersAddInfo->pSpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pSpsStd-parameter");
+                if (structure->pParametersAddInfo != NULL)
+                {
+                    skip |= validate_array("VkVideoDecodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo->spsStdCount", "pParametersAddInfo->pSpsStd", structure->pParametersAddInfo->spsStdCount, &structure->pParametersAddInfo->pSpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pSpsStd-parameter");
 
-                skip |= validate_array("VkVideoDecodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo->ppsStdCount", "pParametersAddInfo->pPpsStd", structure->pParametersAddInfo->ppsStdCount, &structure->pParametersAddInfo->pPpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pPpsStd-parameter");
+                    skip |= validate_array("VkVideoDecodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo->ppsStdCount", "pParametersAddInfo->pPpsStd", structure->pParametersAddInfo->ppsStdCount, &structure->pParametersAddInfo->pPpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pPpsStd-parameter");
+                }
             }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -2715,129 +3151,157 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH265PictureInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PICTURE_INFO_EXT: { // Covers VUID-VkVideoDecodeH265PictureInfoEXT-sType-sType
-            VkVideoDecodeH265PictureInfoEXT *structure = (VkVideoDecodeH265PictureInfoEXT *) header;
-            skip |= validate_required_pointer("VkVideoDecodeH265PictureInfoEXT", "pStdPictureInfo", structure->pStdPictureInfo, "VUID-VkVideoDecodeH265PictureInfoEXT-pStdPictureInfo-parameter");
+            if (is_const_param) {
+                VkVideoDecodeH265PictureInfoEXT *structure = (VkVideoDecodeH265PictureInfoEXT *) header;
+                skip |= validate_required_pointer("VkVideoDecodeH265PictureInfoEXT", "pStdPictureInfo", structure->pStdPictureInfo, "VUID-VkVideoDecodeH265PictureInfoEXT-pStdPictureInfo-parameter");
 
-            skip |= validate_array("VkVideoDecodeH265PictureInfoEXT", "slicesCount", "pSlicesDataOffsets", structure->slicesCount, &structure->pSlicesDataOffsets, true, true, "VUID-VkVideoDecodeH265PictureInfoEXT-slicesCount-arraylength", "VUID-VkVideoDecodeH265PictureInfoEXT-pSlicesDataOffsets-parameter");
+                skip |= validate_array("VkVideoDecodeH265PictureInfoEXT", "slicesCount", "pSlicesDataOffsets", structure->slicesCount, &structure->pSlicesDataOffsets, true, true, "VUID-VkVideoDecodeH265PictureInfoEXT-slicesCount-arraylength", "VUID-VkVideoDecodeH265PictureInfoEXT-pSlicesDataOffsets-parameter");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH265DpbSlotInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_DPB_SLOT_INFO_EXT: { // Covers VUID-VkVideoDecodeH265DpbSlotInfoEXT-sType-sType
-            VkVideoDecodeH265DpbSlotInfoEXT *structure = (VkVideoDecodeH265DpbSlotInfoEXT *) header;
-            skip |= validate_required_pointer("VkVideoDecodeH265DpbSlotInfoEXT", "pStdReferenceInfo", structure->pStdReferenceInfo, "VUID-VkVideoDecodeH265DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+            if (is_const_param) {
+                VkVideoDecodeH265DpbSlotInfoEXT *structure = (VkVideoDecodeH265DpbSlotInfoEXT *) header;
+                skip |= validate_required_pointer("VkVideoDecodeH265DpbSlotInfoEXT", "pStdReferenceInfo", structure->pStdReferenceInfo, "VUID-VkVideoDecodeH265DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+            }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkDeviceMemoryOverallocationCreateInfoAMD structure members
         case VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD: { // Covers VUID-VkDeviceMemoryOverallocationCreateInfoAMD-sType-sType
-            VkDeviceMemoryOverallocationCreateInfoAMD *structure = (VkDeviceMemoryOverallocationCreateInfoAMD *) header;
-            skip |= validate_ranged_enum("VkDeviceMemoryOverallocationCreateInfoAMD", "overallocationBehavior", "VkMemoryOverallocationBehaviorAMD", AllVkMemoryOverallocationBehaviorAMDEnums, structure->overallocationBehavior, "VUID-VkDeviceMemoryOverallocationCreateInfoAMD-overallocationBehavior-parameter");
+            if (is_const_param) {
+                VkDeviceMemoryOverallocationCreateInfoAMD *structure = (VkDeviceMemoryOverallocationCreateInfoAMD *) header;
+                skip |= validate_ranged_enum("VkDeviceMemoryOverallocationCreateInfoAMD", "overallocationBehavior", "VkMemoryOverallocationBehaviorAMD", AllVkMemoryOverallocationBehaviorAMDEnums, structure->overallocationBehavior, "VUID-VkDeviceMemoryOverallocationCreateInfoAMD-overallocationBehavior-parameter");
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT-sType-sType
 
         // Validation code for VkPipelineVertexInputDivisorStateCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT: { // Covers VUID-VkPipelineVertexInputDivisorStateCreateInfoEXT-sType-sType
-            VkPipelineVertexInputDivisorStateCreateInfoEXT *structure = (VkPipelineVertexInputDivisorStateCreateInfoEXT *) header;
-            skip |= validate_array("VkPipelineVertexInputDivisorStateCreateInfoEXT", "vertexBindingDivisorCount", "pVertexBindingDivisors", structure->vertexBindingDivisorCount, &structure->pVertexBindingDivisors, true, true, "VUID-VkPipelineVertexInputDivisorStateCreateInfoEXT-vertexBindingDivisorCount-arraylength", "VUID-VkPipelineVertexInputDivisorStateCreateInfoEXT-pVertexBindingDivisors-parameter");
+            if (is_const_param) {
+                VkPipelineVertexInputDivisorStateCreateInfoEXT *structure = (VkPipelineVertexInputDivisorStateCreateInfoEXT *) header;
+                skip |= validate_array("VkPipelineVertexInputDivisorStateCreateInfoEXT", "vertexBindingDivisorCount", "pVertexBindingDivisors", structure->vertexBindingDivisorCount, &structure->pVertexBindingDivisors, true, true, "VUID-VkPipelineVertexInputDivisorStateCreateInfoEXT-vertexBindingDivisorCount-arraylength", "VUID-VkPipelineVertexInputDivisorStateCreateInfoEXT-pVertexBindingDivisors-parameter");
 
-            if (structure->pVertexBindingDivisors != NULL)
-            {
-                for (uint32_t vertexBindingDivisorIndex = 0; vertexBindingDivisorIndex < structure->vertexBindingDivisorCount; ++vertexBindingDivisorIndex)
+                if (structure->pVertexBindingDivisors != NULL)
                 {
+                    for (uint32_t vertexBindingDivisorIndex = 0; vertexBindingDivisorIndex < structure->vertexBindingDivisorCount; ++vertexBindingDivisorIndex)
+                    {
+                    }
                 }
             }
         } break;
 
         // Validation code for VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT-sType-sType
-            VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT *structure = (VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT", "vertexAttributeInstanceRateDivisor", structure->vertexAttributeInstanceRateDivisor);
+            if (is_const_param) {
+                VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT *structure = (VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT", "vertexAttributeInstanceRateDivisor", structure->vertexAttributeInstanceRateDivisor);
 
-            skip |= validate_bool32("VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT", "vertexAttributeInstanceRateZeroDivisor", structure->vertexAttributeInstanceRateZeroDivisor);
+                skip |= validate_bool32("VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT", "vertexAttributeInstanceRateZeroDivisor", structure->vertexAttributeInstanceRateZeroDivisor);
+            }
         } break;
 
         // No Validation code for VkPresentFrameTokenGGP structure members  -- Covers VUID-VkPresentFrameTokenGGP-sType-sType
 
         // Validation code for VkPipelineCreationFeedbackCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO_EXT: { // Covers VUID-VkPipelineCreationFeedbackCreateInfoEXT-sType-sType
-            VkPipelineCreationFeedbackCreateInfoEXT *structure = (VkPipelineCreationFeedbackCreateInfoEXT *) header;
-            skip |= validate_required_pointer("VkPipelineCreationFeedbackCreateInfoEXT", "pPipelineCreationFeedback", structure->pPipelineCreationFeedback, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pPipelineCreationFeedback-parameter");
+            if (is_const_param) {
+                VkPipelineCreationFeedbackCreateInfoEXT *structure = (VkPipelineCreationFeedbackCreateInfoEXT *) header;
+                skip |= validate_required_pointer("VkPipelineCreationFeedbackCreateInfoEXT", "pPipelineCreationFeedback", structure->pPipelineCreationFeedback, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pPipelineCreationFeedback-parameter");
 
-            if (structure->pPipelineCreationFeedback != NULL)
-            {
-            }
-
-            skip |= validate_array("VkPipelineCreationFeedbackCreateInfoEXT", "pipelineStageCreationFeedbackCount", "pPipelineStageCreationFeedbacks", structure->pipelineStageCreationFeedbackCount, &structure->pPipelineStageCreationFeedbacks, true, true, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-arraylength", "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pPipelineStageCreationFeedbacks-parameter");
-
-            if (structure->pPipelineStageCreationFeedbacks != NULL)
-            {
-                for (uint32_t pipelineStageCreationFeedbackIndex = 0; pipelineStageCreationFeedbackIndex < structure->pipelineStageCreationFeedbackCount; ++pipelineStageCreationFeedbackIndex)
+                if (structure->pPipelineCreationFeedback != NULL)
                 {
+                }
+
+                skip |= validate_array("VkPipelineCreationFeedbackCreateInfoEXT", "pipelineStageCreationFeedbackCount", "pPipelineStageCreationFeedbacks", structure->pipelineStageCreationFeedbackCount, &structure->pPipelineStageCreationFeedbacks, true, true, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-arraylength", "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pPipelineStageCreationFeedbacks-parameter");
+
+                if (structure->pPipelineStageCreationFeedbacks != NULL)
+                {
+                    for (uint32_t pipelineStageCreationFeedbackIndex = 0; pipelineStageCreationFeedbackIndex < structure->pipelineStageCreationFeedbackCount; ++pipelineStageCreationFeedbackIndex)
+                    {
+                    }
                 }
             }
         } break;
 
         // Validation code for VkPhysicalDeviceComputeShaderDerivativesFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceComputeShaderDerivativesFeaturesNV-sType-sType
-            VkPhysicalDeviceComputeShaderDerivativesFeaturesNV *structure = (VkPhysicalDeviceComputeShaderDerivativesFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceComputeShaderDerivativesFeaturesNV", "computeDerivativeGroupQuads", structure->computeDerivativeGroupQuads);
+            if (is_const_param) {
+                VkPhysicalDeviceComputeShaderDerivativesFeaturesNV *structure = (VkPhysicalDeviceComputeShaderDerivativesFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceComputeShaderDerivativesFeaturesNV", "computeDerivativeGroupQuads", structure->computeDerivativeGroupQuads);
 
-            skip |= validate_bool32("VkPhysicalDeviceComputeShaderDerivativesFeaturesNV", "computeDerivativeGroupLinear", structure->computeDerivativeGroupLinear);
+                skip |= validate_bool32("VkPhysicalDeviceComputeShaderDerivativesFeaturesNV", "computeDerivativeGroupLinear", structure->computeDerivativeGroupLinear);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceMeshShaderFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceMeshShaderFeaturesNV-sType-sType
-            VkPhysicalDeviceMeshShaderFeaturesNV *structure = (VkPhysicalDeviceMeshShaderFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceMeshShaderFeaturesNV", "taskShader", structure->taskShader);
+            if (is_const_param) {
+                VkPhysicalDeviceMeshShaderFeaturesNV *structure = (VkPhysicalDeviceMeshShaderFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceMeshShaderFeaturesNV", "taskShader", structure->taskShader);
 
-            skip |= validate_bool32("VkPhysicalDeviceMeshShaderFeaturesNV", "meshShader", structure->meshShader);
+                skip |= validate_bool32("VkPhysicalDeviceMeshShaderFeaturesNV", "meshShader", structure->meshShader);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceMeshShaderPropertiesNV structure members  -- Covers VUID-VkPhysicalDeviceMeshShaderPropertiesNV-sType-sType
 
         // Validation code for VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV-sType-sType
-            VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV *structure = (VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV", "fragmentShaderBarycentric", structure->fragmentShaderBarycentric);
+            if (is_const_param) {
+                VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV *structure = (VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV", "fragmentShaderBarycentric", structure->fragmentShaderBarycentric);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceShaderImageFootprintFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceShaderImageFootprintFeaturesNV-sType-sType
-            VkPhysicalDeviceShaderImageFootprintFeaturesNV *structure = (VkPhysicalDeviceShaderImageFootprintFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShaderImageFootprintFeaturesNV", "imageFootprint", structure->imageFootprint);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderImageFootprintFeaturesNV *structure = (VkPhysicalDeviceShaderImageFootprintFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderImageFootprintFeaturesNV", "imageFootprint", structure->imageFootprint);
+            }
         } break;
 
         // No Validation code for VkPipelineViewportExclusiveScissorStateCreateInfoNV structure members  -- Covers VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-sType-sType
 
         // Validation code for VkPhysicalDeviceExclusiveScissorFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceExclusiveScissorFeaturesNV-sType-sType
-            VkPhysicalDeviceExclusiveScissorFeaturesNV *structure = (VkPhysicalDeviceExclusiveScissorFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceExclusiveScissorFeaturesNV", "exclusiveScissor", structure->exclusiveScissor);
+            if (is_const_param) {
+                VkPhysicalDeviceExclusiveScissorFeaturesNV *structure = (VkPhysicalDeviceExclusiveScissorFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceExclusiveScissorFeaturesNV", "exclusiveScissor", structure->exclusiveScissor);
+            }
         } break;
 
         // No Validation code for VkQueueFamilyCheckpointPropertiesNV structure members  -- Covers VUID-VkQueueFamilyCheckpointPropertiesNV-sType-sType
 
         // Validation code for VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL: { // Covers VUID-VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL-sType-sType
-            VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL *structure = (VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL", "shaderIntegerFunctions2", structure->shaderIntegerFunctions2);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL *structure = (VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL", "shaderIntegerFunctions2", structure->shaderIntegerFunctions2);
+            }
         } break;
 
         // Validation code for VkQueryPoolPerformanceQueryCreateInfoINTEL structure members
         case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL: { // Covers VUID-VkQueryPoolPerformanceQueryCreateInfoINTEL-sType-sType
-            VkQueryPoolPerformanceQueryCreateInfoINTEL *structure = (VkQueryPoolPerformanceQueryCreateInfoINTEL *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_intel_performance_query)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL), but its parent extension "
-                           "VK_INTEL_performance_query has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_intel_performance_query)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL), but its parent extension "
+                               "VK_INTEL_performance_query has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_ranged_enum("VkQueryPoolPerformanceQueryCreateInfoINTEL", "performanceCountersSampling", "VkQueryPoolSamplingModeINTEL", AllVkQueryPoolSamplingModeINTELEnums, structure->performanceCountersSampling, "VUID-VkQueryPoolPerformanceQueryCreateInfoINTEL-performanceCountersSampling-parameter");
+            if (is_const_param) {
+                VkQueryPoolPerformanceQueryCreateInfoINTEL *structure = (VkQueryPoolPerformanceQueryCreateInfoINTEL *) header;
+                skip |= validate_ranged_enum("VkQueryPoolPerformanceQueryCreateInfoINTEL", "performanceCountersSampling", "VkQueryPoolSamplingModeINTEL", AllVkQueryPoolSamplingModeINTELEnums, structure->performanceCountersSampling, "VUID-VkQueryPoolPerformanceQueryCreateInfoINTEL-performanceCountersSampling-parameter");
+            }
         } break;
 
         // No Validation code for VkPhysicalDevicePCIBusInfoPropertiesEXT structure members  -- Covers VUID-VkPhysicalDevicePCIBusInfoPropertiesEXT-sType-sType
@@ -2846,34 +3310,42 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkSwapchainDisplayNativeHdrCreateInfoAMD structure members
         case VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD: { // Covers VUID-VkSwapchainDisplayNativeHdrCreateInfoAMD-sType-sType
-            VkSwapchainDisplayNativeHdrCreateInfoAMD *structure = (VkSwapchainDisplayNativeHdrCreateInfoAMD *) header;
-            skip |= validate_bool32("VkSwapchainDisplayNativeHdrCreateInfoAMD", "localDimmingEnable", structure->localDimmingEnable);
+            if (is_const_param) {
+                VkSwapchainDisplayNativeHdrCreateInfoAMD *structure = (VkSwapchainDisplayNativeHdrCreateInfoAMD *) header;
+                skip |= validate_bool32("VkSwapchainDisplayNativeHdrCreateInfoAMD", "localDimmingEnable", structure->localDimmingEnable);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceFragmentDensityMapFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceFragmentDensityMapFeaturesEXT-sType-sType
-            VkPhysicalDeviceFragmentDensityMapFeaturesEXT *structure = (VkPhysicalDeviceFragmentDensityMapFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceFragmentDensityMapFeaturesEXT", "fragmentDensityMap", structure->fragmentDensityMap);
+            if (is_const_param) {
+                VkPhysicalDeviceFragmentDensityMapFeaturesEXT *structure = (VkPhysicalDeviceFragmentDensityMapFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceFragmentDensityMapFeaturesEXT", "fragmentDensityMap", structure->fragmentDensityMap);
 
-            skip |= validate_bool32("VkPhysicalDeviceFragmentDensityMapFeaturesEXT", "fragmentDensityMapDynamic", structure->fragmentDensityMapDynamic);
+                skip |= validate_bool32("VkPhysicalDeviceFragmentDensityMapFeaturesEXT", "fragmentDensityMapDynamic", structure->fragmentDensityMapDynamic);
 
-            skip |= validate_bool32("VkPhysicalDeviceFragmentDensityMapFeaturesEXT", "fragmentDensityMapNonSubsampledImages", structure->fragmentDensityMapNonSubsampledImages);
+                skip |= validate_bool32("VkPhysicalDeviceFragmentDensityMapFeaturesEXT", "fragmentDensityMapNonSubsampledImages", structure->fragmentDensityMapNonSubsampledImages);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceFragmentDensityMapPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceFragmentDensityMapPropertiesEXT-sType-sType
 
         // Validation code for VkRenderPassFragmentDensityMapCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT: { // Covers VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-sType-sType
-            VkRenderPassFragmentDensityMapCreateInfoEXT *structure = (VkRenderPassFragmentDensityMapCreateInfoEXT *) header;
-            skip |= validate_ranged_enum("VkRenderPassFragmentDensityMapCreateInfoEXT", "fragmentDensityMapAttachment.layout", "VkImageLayout", AllVkImageLayoutEnums, structure->fragmentDensityMapAttachment.layout, "VUID-VkAttachmentReference-layout-parameter");
+            if (is_const_param) {
+                VkRenderPassFragmentDensityMapCreateInfoEXT *structure = (VkRenderPassFragmentDensityMapCreateInfoEXT *) header;
+                skip |= validate_ranged_enum("VkRenderPassFragmentDensityMapCreateInfoEXT", "fragmentDensityMapAttachment.layout", "VkImageLayout", AllVkImageLayoutEnums, structure->fragmentDensityMapAttachment.layout, "VUID-VkAttachmentReference-layout-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceSubgroupSizeControlFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceSubgroupSizeControlFeaturesEXT-sType-sType
-            VkPhysicalDeviceSubgroupSizeControlFeaturesEXT *structure = (VkPhysicalDeviceSubgroupSizeControlFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceSubgroupSizeControlFeaturesEXT", "subgroupSizeControl", structure->subgroupSizeControl);
+            if (is_const_param) {
+                VkPhysicalDeviceSubgroupSizeControlFeaturesEXT *structure = (VkPhysicalDeviceSubgroupSizeControlFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceSubgroupSizeControlFeaturesEXT", "subgroupSizeControl", structure->subgroupSizeControl);
 
-            skip |= validate_bool32("VkPhysicalDeviceSubgroupSizeControlFeaturesEXT", "computeFullSubgroups", structure->computeFullSubgroups);
+                skip |= validate_bool32("VkPhysicalDeviceSubgroupSizeControlFeaturesEXT", "computeFullSubgroups", structure->computeFullSubgroups);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceSubgroupSizeControlPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceSubgroupSizeControlPropertiesEXT-sType-sType
@@ -2884,131 +3356,163 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceCoherentMemoryFeaturesAMD structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD: { // Covers VUID-VkPhysicalDeviceCoherentMemoryFeaturesAMD-sType-sType
-            VkPhysicalDeviceCoherentMemoryFeaturesAMD *structure = (VkPhysicalDeviceCoherentMemoryFeaturesAMD *) header;
-            skip |= validate_bool32("VkPhysicalDeviceCoherentMemoryFeaturesAMD", "deviceCoherentMemory", structure->deviceCoherentMemory);
+            if (is_const_param) {
+                VkPhysicalDeviceCoherentMemoryFeaturesAMD *structure = (VkPhysicalDeviceCoherentMemoryFeaturesAMD *) header;
+                skip |= validate_bool32("VkPhysicalDeviceCoherentMemoryFeaturesAMD", "deviceCoherentMemory", structure->deviceCoherentMemory);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT-sType-sType
-            VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT *structure = (VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT", "shaderImageInt64Atomics", structure->shaderImageInt64Atomics);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT *structure = (VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT", "shaderImageInt64Atomics", structure->shaderImageInt64Atomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT", "sparseImageInt64Atomics", structure->sparseImageInt64Atomics);
+                skip |= validate_bool32("VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT", "sparseImageInt64Atomics", structure->sparseImageInt64Atomics);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceMemoryBudgetPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceMemoryBudgetPropertiesEXT-sType-sType
 
         // Validation code for VkPhysicalDeviceMemoryPriorityFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceMemoryPriorityFeaturesEXT-sType-sType
-            VkPhysicalDeviceMemoryPriorityFeaturesEXT *structure = (VkPhysicalDeviceMemoryPriorityFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceMemoryPriorityFeaturesEXT", "memoryPriority", structure->memoryPriority);
+            if (is_const_param) {
+                VkPhysicalDeviceMemoryPriorityFeaturesEXT *structure = (VkPhysicalDeviceMemoryPriorityFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceMemoryPriorityFeaturesEXT", "memoryPriority", structure->memoryPriority);
+            }
         } break;
 
         // No Validation code for VkMemoryPriorityAllocateInfoEXT structure members  -- Covers VUID-VkMemoryPriorityAllocateInfoEXT-sType-sType
 
         // Validation code for VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV-sType-sType
-            VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV *structure = (VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV", "dedicatedAllocationImageAliasing", structure->dedicatedAllocationImageAliasing);
+            if (is_const_param) {
+                VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV *structure = (VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV", "dedicatedAllocationImageAliasing", structure->dedicatedAllocationImageAliasing);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceBufferDeviceAddressFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceBufferDeviceAddressFeaturesEXT-sType-sType
-            VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *structure = (VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *) header;
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_buffer_device_address)) {
-                skip |= LogError(
-                           instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT), but its parent extension "
-                           "VK_EXT_buffer_device_address has not been enabled.",
-                           api_name, parameter_name.get_name().c_str());
+            if (is_const_param) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_ext_buffer_device_address)) {
+                        skip |= LogError(
+                               instance, pnext_vuid,
+                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT), but its parent extension "
+                               "VK_EXT_buffer_device_address has not been enabled.",
+                               api_name, parameter_name.get_name().c_str());
+                }
             }
 
-            skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeaturesEXT", "bufferDeviceAddress", structure->bufferDeviceAddress);
+            if (is_const_param) {
+                VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *structure = (VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeaturesEXT", "bufferDeviceAddress", structure->bufferDeviceAddress);
 
-            skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeaturesEXT", "bufferDeviceAddressCaptureReplay", structure->bufferDeviceAddressCaptureReplay);
+                skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeaturesEXT", "bufferDeviceAddressCaptureReplay", structure->bufferDeviceAddressCaptureReplay);
 
-            skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeaturesEXT", "bufferDeviceAddressMultiDevice", structure->bufferDeviceAddressMultiDevice);
+                skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeaturesEXT", "bufferDeviceAddressMultiDevice", structure->bufferDeviceAddressMultiDevice);
+            }
         } break;
 
         // No Validation code for VkBufferDeviceAddressCreateInfoEXT structure members  -- Covers VUID-VkBufferDeviceAddressCreateInfoEXT-sType-sType
 
         // Validation code for VkValidationFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT: { // Covers VUID-VkValidationFeaturesEXT-sType-sType
-            VkValidationFeaturesEXT *structure = (VkValidationFeaturesEXT *) header;
-            skip |= validate_ranged_enum_array("VkValidationFeaturesEXT", "enabledValidationFeatureCount", "pEnabledValidationFeatures", "VkValidationFeatureEnableEXT", AllVkValidationFeatureEnableEXTEnums, structure->enabledValidationFeatureCount, structure->pEnabledValidationFeatures, false, true);
+            if (is_const_param) {
+                VkValidationFeaturesEXT *structure = (VkValidationFeaturesEXT *) header;
+                skip |= validate_ranged_enum_array("VkValidationFeaturesEXT", "enabledValidationFeatureCount", "pEnabledValidationFeatures", "VkValidationFeatureEnableEXT", AllVkValidationFeatureEnableEXTEnums, structure->enabledValidationFeatureCount, structure->pEnabledValidationFeatures, false, true);
 
-            skip |= validate_ranged_enum_array("VkValidationFeaturesEXT", "disabledValidationFeatureCount", "pDisabledValidationFeatures", "VkValidationFeatureDisableEXT", AllVkValidationFeatureDisableEXTEnums, structure->disabledValidationFeatureCount, structure->pDisabledValidationFeatures, false, true);
+                skip |= validate_ranged_enum_array("VkValidationFeaturesEXT", "disabledValidationFeatureCount", "pDisabledValidationFeatures", "VkValidationFeatureDisableEXT", AllVkValidationFeatureDisableEXTEnums, structure->disabledValidationFeatureCount, structure->pDisabledValidationFeatures, false, true);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceCooperativeMatrixFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceCooperativeMatrixFeaturesNV-sType-sType
-            VkPhysicalDeviceCooperativeMatrixFeaturesNV *structure = (VkPhysicalDeviceCooperativeMatrixFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceCooperativeMatrixFeaturesNV", "cooperativeMatrix", structure->cooperativeMatrix);
+            if (is_const_param) {
+                VkPhysicalDeviceCooperativeMatrixFeaturesNV *structure = (VkPhysicalDeviceCooperativeMatrixFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceCooperativeMatrixFeaturesNV", "cooperativeMatrix", structure->cooperativeMatrix);
 
-            skip |= validate_bool32("VkPhysicalDeviceCooperativeMatrixFeaturesNV", "cooperativeMatrixRobustBufferAccess", structure->cooperativeMatrixRobustBufferAccess);
+                skip |= validate_bool32("VkPhysicalDeviceCooperativeMatrixFeaturesNV", "cooperativeMatrixRobustBufferAccess", structure->cooperativeMatrixRobustBufferAccess);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceCooperativeMatrixPropertiesNV structure members  -- Covers VUID-VkPhysicalDeviceCooperativeMatrixPropertiesNV-sType-sType
 
         // Validation code for VkPhysicalDeviceCoverageReductionModeFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceCoverageReductionModeFeaturesNV-sType-sType
-            VkPhysicalDeviceCoverageReductionModeFeaturesNV *structure = (VkPhysicalDeviceCoverageReductionModeFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceCoverageReductionModeFeaturesNV", "coverageReductionMode", structure->coverageReductionMode);
+            if (is_const_param) {
+                VkPhysicalDeviceCoverageReductionModeFeaturesNV *structure = (VkPhysicalDeviceCoverageReductionModeFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceCoverageReductionModeFeaturesNV", "coverageReductionMode", structure->coverageReductionMode);
+            }
         } break;
 
         // Validation code for VkPipelineCoverageReductionStateCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_REDUCTION_STATE_CREATE_INFO_NV: { // Covers VUID-VkPipelineCoverageReductionStateCreateInfoNV-sType-sType
-            VkPipelineCoverageReductionStateCreateInfoNV *structure = (VkPipelineCoverageReductionStateCreateInfoNV *) header;
-            skip |= validate_reserved_flags("VkPipelineCoverageReductionStateCreateInfoNV", "flags", structure->flags, "VUID-VkPipelineCoverageReductionStateCreateInfoNV-flags-zerobitmask");
+            if (is_const_param) {
+                VkPipelineCoverageReductionStateCreateInfoNV *structure = (VkPipelineCoverageReductionStateCreateInfoNV *) header;
+                skip |= validate_reserved_flags("VkPipelineCoverageReductionStateCreateInfoNV", "flags", structure->flags, "VUID-VkPipelineCoverageReductionStateCreateInfoNV-flags-zerobitmask");
 
-            skip |= validate_ranged_enum("VkPipelineCoverageReductionStateCreateInfoNV", "coverageReductionMode", "VkCoverageReductionModeNV", AllVkCoverageReductionModeNVEnums, structure->coverageReductionMode, "VUID-VkPipelineCoverageReductionStateCreateInfoNV-coverageReductionMode-parameter");
+                skip |= validate_ranged_enum("VkPipelineCoverageReductionStateCreateInfoNV", "coverageReductionMode", "VkCoverageReductionModeNV", AllVkCoverageReductionModeNVEnums, structure->coverageReductionMode, "VUID-VkPipelineCoverageReductionStateCreateInfoNV-coverageReductionMode-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT-sType-sType
-            VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT *structure = (VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT", "fragmentShaderSampleInterlock", structure->fragmentShaderSampleInterlock);
+            if (is_const_param) {
+                VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT *structure = (VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT", "fragmentShaderSampleInterlock", structure->fragmentShaderSampleInterlock);
 
-            skip |= validate_bool32("VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT", "fragmentShaderPixelInterlock", structure->fragmentShaderPixelInterlock);
+                skip |= validate_bool32("VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT", "fragmentShaderPixelInterlock", structure->fragmentShaderPixelInterlock);
 
-            skip |= validate_bool32("VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT", "fragmentShaderShadingRateInterlock", structure->fragmentShaderShadingRateInterlock);
+                skip |= validate_bool32("VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT", "fragmentShaderShadingRateInterlock", structure->fragmentShaderShadingRateInterlock);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceYcbcrImageArraysFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_IMAGE_ARRAYS_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceYcbcrImageArraysFeaturesEXT-sType-sType
-            VkPhysicalDeviceYcbcrImageArraysFeaturesEXT *structure = (VkPhysicalDeviceYcbcrImageArraysFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceYcbcrImageArraysFeaturesEXT", "ycbcrImageArrays", structure->ycbcrImageArrays);
+            if (is_const_param) {
+                VkPhysicalDeviceYcbcrImageArraysFeaturesEXT *structure = (VkPhysicalDeviceYcbcrImageArraysFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceYcbcrImageArraysFeaturesEXT", "ycbcrImageArrays", structure->ycbcrImageArrays);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceProvokingVertexFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceProvokingVertexFeaturesEXT-sType-sType
-            VkPhysicalDeviceProvokingVertexFeaturesEXT *structure = (VkPhysicalDeviceProvokingVertexFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceProvokingVertexFeaturesEXT", "provokingVertexLast", structure->provokingVertexLast);
+            if (is_const_param) {
+                VkPhysicalDeviceProvokingVertexFeaturesEXT *structure = (VkPhysicalDeviceProvokingVertexFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceProvokingVertexFeaturesEXT", "provokingVertexLast", structure->provokingVertexLast);
 
-            skip |= validate_bool32("VkPhysicalDeviceProvokingVertexFeaturesEXT", "transformFeedbackPreservesProvokingVertex", structure->transformFeedbackPreservesProvokingVertex);
+                skip |= validate_bool32("VkPhysicalDeviceProvokingVertexFeaturesEXT", "transformFeedbackPreservesProvokingVertex", structure->transformFeedbackPreservesProvokingVertex);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceProvokingVertexPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceProvokingVertexPropertiesEXT-sType-sType
 
         // Validation code for VkPipelineRasterizationProvokingVertexStateCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT: { // Covers VUID-VkPipelineRasterizationProvokingVertexStateCreateInfoEXT-sType-sType
-            VkPipelineRasterizationProvokingVertexStateCreateInfoEXT *structure = (VkPipelineRasterizationProvokingVertexStateCreateInfoEXT *) header;
-            skip |= validate_ranged_enum("VkPipelineRasterizationProvokingVertexStateCreateInfoEXT", "provokingVertexMode", "VkProvokingVertexModeEXT", AllVkProvokingVertexModeEXTEnums, structure->provokingVertexMode, "VUID-VkPipelineRasterizationProvokingVertexStateCreateInfoEXT-provokingVertexMode-parameter");
+            if (is_const_param) {
+                VkPipelineRasterizationProvokingVertexStateCreateInfoEXT *structure = (VkPipelineRasterizationProvokingVertexStateCreateInfoEXT *) header;
+                skip |= validate_ranged_enum("VkPipelineRasterizationProvokingVertexStateCreateInfoEXT", "provokingVertexMode", "VkProvokingVertexModeEXT", AllVkProvokingVertexModeEXTEnums, structure->provokingVertexMode, "VUID-VkPipelineRasterizationProvokingVertexStateCreateInfoEXT-provokingVertexMode-parameter");
+            }
         } break;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         // Validation code for VkSurfaceFullScreenExclusiveInfoEXT structure members
         case VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT: { // Covers VUID-VkSurfaceFullScreenExclusiveInfoEXT-sType-sType
-            VkSurfaceFullScreenExclusiveInfoEXT *structure = (VkSurfaceFullScreenExclusiveInfoEXT *) header;
-            skip |= validate_ranged_enum("VkSurfaceFullScreenExclusiveInfoEXT", "fullScreenExclusive", "VkFullScreenExclusiveEXT", AllVkFullScreenExclusiveEXTEnums, structure->fullScreenExclusive, "VUID-VkSurfaceFullScreenExclusiveInfoEXT-fullScreenExclusive-parameter");
+            if (is_const_param) {
+                VkSurfaceFullScreenExclusiveInfoEXT *structure = (VkSurfaceFullScreenExclusiveInfoEXT *) header;
+                skip |= validate_ranged_enum("VkSurfaceFullScreenExclusiveInfoEXT", "fullScreenExclusive", "VkFullScreenExclusiveEXT", AllVkFullScreenExclusiveEXTEnums, structure->fullScreenExclusive, "VUID-VkSurfaceFullScreenExclusiveInfoEXT-fullScreenExclusive-parameter");
+            }
         } break;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         // Validation code for VkSurfaceCapabilitiesFullScreenExclusiveEXT structure members
         case VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_FULL_SCREEN_EXCLUSIVE_EXT: { // Covers VUID-VkSurfaceCapabilitiesFullScreenExclusiveEXT-sType-sType
-            VkSurfaceCapabilitiesFullScreenExclusiveEXT *structure = (VkSurfaceCapabilitiesFullScreenExclusiveEXT *) header;
-            skip |= validate_bool32("VkSurfaceCapabilitiesFullScreenExclusiveEXT", "fullScreenExclusiveSupported", structure->fullScreenExclusiveSupported);
+            if (is_const_param) {
+                VkSurfaceCapabilitiesFullScreenExclusiveEXT *structure = (VkSurfaceCapabilitiesFullScreenExclusiveEXT *) header;
+                skip |= validate_bool32("VkSurfaceCapabilitiesFullScreenExclusiveEXT", "fullScreenExclusiveSupported", structure->fullScreenExclusiveSupported);
+            }
         } break;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -3016,172 +3520,196 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceLineRasterizationFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceLineRasterizationFeaturesEXT-sType-sType
-            VkPhysicalDeviceLineRasterizationFeaturesEXT *structure = (VkPhysicalDeviceLineRasterizationFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceLineRasterizationFeaturesEXT", "rectangularLines", structure->rectangularLines);
+            if (is_const_param) {
+                VkPhysicalDeviceLineRasterizationFeaturesEXT *structure = (VkPhysicalDeviceLineRasterizationFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceLineRasterizationFeaturesEXT", "rectangularLines", structure->rectangularLines);
 
-            skip |= validate_bool32("VkPhysicalDeviceLineRasterizationFeaturesEXT", "bresenhamLines", structure->bresenhamLines);
+                skip |= validate_bool32("VkPhysicalDeviceLineRasterizationFeaturesEXT", "bresenhamLines", structure->bresenhamLines);
 
-            skip |= validate_bool32("VkPhysicalDeviceLineRasterizationFeaturesEXT", "smoothLines", structure->smoothLines);
+                skip |= validate_bool32("VkPhysicalDeviceLineRasterizationFeaturesEXT", "smoothLines", structure->smoothLines);
 
-            skip |= validate_bool32("VkPhysicalDeviceLineRasterizationFeaturesEXT", "stippledRectangularLines", structure->stippledRectangularLines);
+                skip |= validate_bool32("VkPhysicalDeviceLineRasterizationFeaturesEXT", "stippledRectangularLines", structure->stippledRectangularLines);
 
-            skip |= validate_bool32("VkPhysicalDeviceLineRasterizationFeaturesEXT", "stippledBresenhamLines", structure->stippledBresenhamLines);
+                skip |= validate_bool32("VkPhysicalDeviceLineRasterizationFeaturesEXT", "stippledBresenhamLines", structure->stippledBresenhamLines);
 
-            skip |= validate_bool32("VkPhysicalDeviceLineRasterizationFeaturesEXT", "stippledSmoothLines", structure->stippledSmoothLines);
+                skip |= validate_bool32("VkPhysicalDeviceLineRasterizationFeaturesEXT", "stippledSmoothLines", structure->stippledSmoothLines);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceLineRasterizationPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceLineRasterizationPropertiesEXT-sType-sType
 
         // Validation code for VkPipelineRasterizationLineStateCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT: { // Covers VUID-VkPipelineRasterizationLineStateCreateInfoEXT-sType-sType
-            VkPipelineRasterizationLineStateCreateInfoEXT *structure = (VkPipelineRasterizationLineStateCreateInfoEXT *) header;
-            skip |= validate_ranged_enum("VkPipelineRasterizationLineStateCreateInfoEXT", "lineRasterizationMode", "VkLineRasterizationModeEXT", AllVkLineRasterizationModeEXTEnums, structure->lineRasterizationMode, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-parameter");
+            if (is_const_param) {
+                VkPipelineRasterizationLineStateCreateInfoEXT *structure = (VkPipelineRasterizationLineStateCreateInfoEXT *) header;
+                skip |= validate_ranged_enum("VkPipelineRasterizationLineStateCreateInfoEXT", "lineRasterizationMode", "VkLineRasterizationModeEXT", AllVkLineRasterizationModeEXTEnums, structure->lineRasterizationMode, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-parameter");
 
-            skip |= validate_bool32("VkPipelineRasterizationLineStateCreateInfoEXT", "stippledLineEnable", structure->stippledLineEnable);
+                skip |= validate_bool32("VkPipelineRasterizationLineStateCreateInfoEXT", "stippledLineEnable", structure->stippledLineEnable);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceShaderAtomicFloatFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceShaderAtomicFloatFeaturesEXT-sType-sType
-            VkPhysicalDeviceShaderAtomicFloatFeaturesEXT *structure = (VkPhysicalDeviceShaderAtomicFloatFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderBufferFloat32Atomics", structure->shaderBufferFloat32Atomics);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderAtomicFloatFeaturesEXT *structure = (VkPhysicalDeviceShaderAtomicFloatFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderBufferFloat32Atomics", structure->shaderBufferFloat32Atomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderBufferFloat32AtomicAdd", structure->shaderBufferFloat32AtomicAdd);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderBufferFloat32AtomicAdd", structure->shaderBufferFloat32AtomicAdd);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderBufferFloat64Atomics", structure->shaderBufferFloat64Atomics);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderBufferFloat64Atomics", structure->shaderBufferFloat64Atomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderBufferFloat64AtomicAdd", structure->shaderBufferFloat64AtomicAdd);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderBufferFloat64AtomicAdd", structure->shaderBufferFloat64AtomicAdd);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderSharedFloat32Atomics", structure->shaderSharedFloat32Atomics);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderSharedFloat32Atomics", structure->shaderSharedFloat32Atomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderSharedFloat32AtomicAdd", structure->shaderSharedFloat32AtomicAdd);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderSharedFloat32AtomicAdd", structure->shaderSharedFloat32AtomicAdd);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderSharedFloat64Atomics", structure->shaderSharedFloat64Atomics);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderSharedFloat64Atomics", structure->shaderSharedFloat64Atomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderSharedFloat64AtomicAdd", structure->shaderSharedFloat64AtomicAdd);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderSharedFloat64AtomicAdd", structure->shaderSharedFloat64AtomicAdd);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderImageFloat32Atomics", structure->shaderImageFloat32Atomics);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderImageFloat32Atomics", structure->shaderImageFloat32Atomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderImageFloat32AtomicAdd", structure->shaderImageFloat32AtomicAdd);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "shaderImageFloat32AtomicAdd", structure->shaderImageFloat32AtomicAdd);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "sparseImageFloat32Atomics", structure->sparseImageFloat32Atomics);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "sparseImageFloat32Atomics", structure->sparseImageFloat32Atomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "sparseImageFloat32AtomicAdd", structure->sparseImageFloat32AtomicAdd);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", "sparseImageFloat32AtomicAdd", structure->sparseImageFloat32AtomicAdd);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceIndexTypeUint8FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceIndexTypeUint8FeaturesEXT-sType-sType
-            VkPhysicalDeviceIndexTypeUint8FeaturesEXT *structure = (VkPhysicalDeviceIndexTypeUint8FeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceIndexTypeUint8FeaturesEXT", "indexTypeUint8", structure->indexTypeUint8);
+            if (is_const_param) {
+                VkPhysicalDeviceIndexTypeUint8FeaturesEXT *structure = (VkPhysicalDeviceIndexTypeUint8FeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceIndexTypeUint8FeaturesEXT", "indexTypeUint8", structure->indexTypeUint8);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceExtendedDynamicStateFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceExtendedDynamicStateFeaturesEXT-sType-sType
-            VkPhysicalDeviceExtendedDynamicStateFeaturesEXT *structure = (VkPhysicalDeviceExtendedDynamicStateFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceExtendedDynamicStateFeaturesEXT", "extendedDynamicState", structure->extendedDynamicState);
+            if (is_const_param) {
+                VkPhysicalDeviceExtendedDynamicStateFeaturesEXT *structure = (VkPhysicalDeviceExtendedDynamicStateFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceExtendedDynamicStateFeaturesEXT", "extendedDynamicState", structure->extendedDynamicState);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT-sType-sType
-            VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT *structure = (VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderBufferFloat16Atomics", structure->shaderBufferFloat16Atomics);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT *structure = (VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderBufferFloat16Atomics", structure->shaderBufferFloat16Atomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderBufferFloat16AtomicAdd", structure->shaderBufferFloat16AtomicAdd);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderBufferFloat16AtomicAdd", structure->shaderBufferFloat16AtomicAdd);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderBufferFloat16AtomicMinMax", structure->shaderBufferFloat16AtomicMinMax);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderBufferFloat16AtomicMinMax", structure->shaderBufferFloat16AtomicMinMax);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderBufferFloat32AtomicMinMax", structure->shaderBufferFloat32AtomicMinMax);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderBufferFloat32AtomicMinMax", structure->shaderBufferFloat32AtomicMinMax);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderBufferFloat64AtomicMinMax", structure->shaderBufferFloat64AtomicMinMax);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderBufferFloat64AtomicMinMax", structure->shaderBufferFloat64AtomicMinMax);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderSharedFloat16Atomics", structure->shaderSharedFloat16Atomics);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderSharedFloat16Atomics", structure->shaderSharedFloat16Atomics);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderSharedFloat16AtomicAdd", structure->shaderSharedFloat16AtomicAdd);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderSharedFloat16AtomicAdd", structure->shaderSharedFloat16AtomicAdd);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderSharedFloat16AtomicMinMax", structure->shaderSharedFloat16AtomicMinMax);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderSharedFloat16AtomicMinMax", structure->shaderSharedFloat16AtomicMinMax);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderSharedFloat32AtomicMinMax", structure->shaderSharedFloat32AtomicMinMax);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderSharedFloat32AtomicMinMax", structure->shaderSharedFloat32AtomicMinMax);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderSharedFloat64AtomicMinMax", structure->shaderSharedFloat64AtomicMinMax);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderSharedFloat64AtomicMinMax", structure->shaderSharedFloat64AtomicMinMax);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderImageFloat32AtomicMinMax", structure->shaderImageFloat32AtomicMinMax);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "shaderImageFloat32AtomicMinMax", structure->shaderImageFloat32AtomicMinMax);
 
-            skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "sparseImageFloat32AtomicMinMax", structure->sparseImageFloat32AtomicMinMax);
+                skip |= validate_bool32("VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", "sparseImageFloat32AtomicMinMax", structure->sparseImageFloat32AtomicMinMax);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT-sType-sType
-            VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT *structure = (VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT", "shaderDemoteToHelperInvocation", structure->shaderDemoteToHelperInvocation);
+            if (is_const_param) {
+                VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT *structure = (VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT", "shaderDemoteToHelperInvocation", structure->shaderDemoteToHelperInvocation);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV structure members  -- Covers VUID-VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV-sType-sType
 
         // Validation code for VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV-sType-sType
-            VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV *structure = (VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV", "deviceGeneratedCommands", structure->deviceGeneratedCommands);
+            if (is_const_param) {
+                VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV *structure = (VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV", "deviceGeneratedCommands", structure->deviceGeneratedCommands);
+            }
         } break;
 
         // Validation code for VkGraphicsPipelineShaderGroupsCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_SHADER_GROUPS_CREATE_INFO_NV: { // Covers VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-sType-sType
-            VkGraphicsPipelineShaderGroupsCreateInfoNV *structure = (VkGraphicsPipelineShaderGroupsCreateInfoNV *) header;
-            skip |= validate_struct_type_array("VkGraphicsPipelineShaderGroupsCreateInfoNV", "groupCount", "pGroups", "VK_STRUCTURE_TYPE_GRAPHICS_SHADER_GROUP_CREATE_INFO_NV", structure->groupCount, structure->pGroups, VK_STRUCTURE_TYPE_GRAPHICS_SHADER_GROUP_CREATE_INFO_NV, true, true, "VUID-VkGraphicsShaderGroupCreateInfoNV-sType-sType", "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pGroups-parameter", "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-groupCount-arraylength");
+            if (is_const_param) {
+                VkGraphicsPipelineShaderGroupsCreateInfoNV *structure = (VkGraphicsPipelineShaderGroupsCreateInfoNV *) header;
+                skip |= validate_struct_type_array("VkGraphicsPipelineShaderGroupsCreateInfoNV", "groupCount", "pGroups", "VK_STRUCTURE_TYPE_GRAPHICS_SHADER_GROUP_CREATE_INFO_NV", structure->groupCount, structure->pGroups, VK_STRUCTURE_TYPE_GRAPHICS_SHADER_GROUP_CREATE_INFO_NV, true, true, "VUID-VkGraphicsShaderGroupCreateInfoNV-sType-sType", "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pGroups-parameter", "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-groupCount-arraylength");
 
-            if (structure->pGroups != NULL)
-            {
-                for (uint32_t groupIndex = 0; groupIndex < structure->groupCount; ++groupIndex)
+                if (structure->pGroups != NULL)
                 {
-                    skip |= validate_struct_type_array("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].stageCount", ParameterName::IndexVector{ groupIndex }), ParameterName("pGroups[%i].pStages", ParameterName::IndexVector{ groupIndex }), "VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO", structure->pGroups[groupIndex].stageCount, structure->pGroups[groupIndex].pStages, VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, true, true, "VUID-VkPipelineShaderStageCreateInfo-sType-sType", "VUID-VkGraphicsShaderGroupCreateInfoNV-pStages-parameter", "VUID-VkGraphicsShaderGroupCreateInfoNV-stageCount-arraylength");
-
-                    if (structure->pGroups[groupIndex].pStages != NULL)
+                    for (uint32_t groupIndex = 0; groupIndex < structure->groupCount; ++groupIndex)
                     {
-                        for (uint32_t stageIndex = 0; stageIndex < structure->pGroups[groupIndex].stageCount; ++stageIndex)
+                        skip |= validate_struct_type_array("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].stageCount", ParameterName::IndexVector{ groupIndex }), ParameterName("pGroups[%i].pStages", ParameterName::IndexVector{ groupIndex }), "VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO", structure->pGroups[groupIndex].stageCount, structure->pGroups[groupIndex].pStages, VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, true, true, "VUID-VkPipelineShaderStageCreateInfo-sType-sType", "VUID-VkGraphicsShaderGroupCreateInfoNV-pStages-parameter", "VUID-VkGraphicsShaderGroupCreateInfoNV-stageCount-arraylength");
+
+                        if (structure->pGroups[groupIndex].pStages != NULL)
                         {
-                            skip |= validate_flags("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].pStages[%i].flags", ParameterName::IndexVector{ groupIndex, stageIndex }), "VkPipelineShaderStageCreateFlagBits", AllVkPipelineShaderStageCreateFlagBits, structure->pGroups[groupIndex].pStages[stageIndex].flags, kOptionalFlags, "VUID-VkPipelineShaderStageCreateInfo-flags-parameter");
-
-                            skip |= validate_flags("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].pStages[%i].stage", ParameterName::IndexVector{ groupIndex, stageIndex }), "VkShaderStageFlagBits", AllVkShaderStageFlagBits, structure->pGroups[groupIndex].pStages[stageIndex].stage, kRequiredSingleBit, "VUID-VkPipelineShaderStageCreateInfo-stage-parameter", "VUID-VkPipelineShaderStageCreateInfo-stage-parameter");
-
-                            skip |= validate_required_handle("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].pStages[%i].module", ParameterName::IndexVector{ groupIndex, stageIndex }), structure->pGroups[groupIndex].pStages[stageIndex].module);
-
-                            skip |= validate_required_pointer("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].pStages[%i].pName", ParameterName::IndexVector{ groupIndex, stageIndex }), structure->pGroups[groupIndex].pStages[stageIndex].pName, "VUID-VkPipelineShaderStageCreateInfo-pName-parameter");
-
-                            if (structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo != NULL)
+                            for (uint32_t stageIndex = 0; stageIndex < structure->pGroups[groupIndex].stageCount; ++stageIndex)
                             {
-                                skip |= validate_array("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].pStages[%i].pSpecializationInfo->mapEntryCount", ParameterName::IndexVector{ groupIndex, stageIndex }), ParameterName("pGroups[%i].pStages[%i].pSpecializationInfo->pMapEntries", ParameterName::IndexVector{ groupIndex, stageIndex }), structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->mapEntryCount, &structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->pMapEntries, false, true, kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
+                                skip |= validate_flags("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].pStages[%i].flags", ParameterName::IndexVector{ groupIndex, stageIndex }), "VkPipelineShaderStageCreateFlagBits", AllVkPipelineShaderStageCreateFlagBits, structure->pGroups[groupIndex].pStages[stageIndex].flags, kOptionalFlags, "VUID-VkPipelineShaderStageCreateInfo-flags-parameter");
 
-                                if (structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->pMapEntries != NULL)
+                                skip |= validate_flags("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].pStages[%i].stage", ParameterName::IndexVector{ groupIndex, stageIndex }), "VkShaderStageFlagBits", AllVkShaderStageFlagBits, structure->pGroups[groupIndex].pStages[stageIndex].stage, kRequiredSingleBit, "VUID-VkPipelineShaderStageCreateInfo-stage-parameter", "VUID-VkPipelineShaderStageCreateInfo-stage-parameter");
+
+                                skip |= validate_required_handle("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].pStages[%i].module", ParameterName::IndexVector{ groupIndex, stageIndex }), structure->pGroups[groupIndex].pStages[stageIndex].module);
+
+                                skip |= validate_required_pointer("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].pStages[%i].pName", ParameterName::IndexVector{ groupIndex, stageIndex }), structure->pGroups[groupIndex].pStages[stageIndex].pName, "VUID-VkPipelineShaderStageCreateInfo-pName-parameter");
+
+                                if (structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo != NULL)
                                 {
-                                    for (uint32_t mapEntryIndex = 0; mapEntryIndex < structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->mapEntryCount; ++mapEntryIndex)
-                                    {
-                                    }
-                                }
+                                    skip |= validate_array("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].pStages[%i].pSpecializationInfo->mapEntryCount", ParameterName::IndexVector{ groupIndex, stageIndex }), ParameterName("pGroups[%i].pStages[%i].pSpecializationInfo->pMapEntries", ParameterName::IndexVector{ groupIndex, stageIndex }), structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->mapEntryCount, &structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->pMapEntries, false, true, kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
 
-                                skip |= validate_array("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].pStages[%i].pSpecializationInfo->dataSize", ParameterName::IndexVector{ groupIndex, stageIndex }), ParameterName("pGroups[%i].pStages[%i].pSpecializationInfo->pData", ParameterName::IndexVector{ groupIndex, stageIndex }), structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->dataSize, &structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->pData, false, true, kVUIDUndefined, "VUID-VkSpecializationInfo-pData-parameter");
+                                    if (structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->pMapEntries != NULL)
+                                    {
+                                        for (uint32_t mapEntryIndex = 0; mapEntryIndex < structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->mapEntryCount; ++mapEntryIndex)
+                                        {
+                                        }
+                                    }
+
+                                    skip |= validate_array("VkGraphicsPipelineShaderGroupsCreateInfoNV", ParameterName("pGroups[%i].pStages[%i].pSpecializationInfo->dataSize", ParameterName::IndexVector{ groupIndex, stageIndex }), ParameterName("pGroups[%i].pStages[%i].pSpecializationInfo->pData", ParameterName::IndexVector{ groupIndex, stageIndex }), structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->dataSize, &structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->pData, false, true, kVUIDUndefined, "VUID-VkSpecializationInfo-pData-parameter");
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            skip |= validate_array("VkGraphicsPipelineShaderGroupsCreateInfoNV", "pipelineCount", "pPipelines", structure->pipelineCount, &structure->pPipelines, false, true, kVUIDUndefined, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parameter");
+                skip |= validate_array("VkGraphicsPipelineShaderGroupsCreateInfoNV", "pipelineCount", "pPipelines", structure->pipelineCount, &structure->pPipelines, false, true, kVUIDUndefined, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceInheritedViewportScissorFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INHERITED_VIEWPORT_SCISSOR_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceInheritedViewportScissorFeaturesNV-sType-sType
-            VkPhysicalDeviceInheritedViewportScissorFeaturesNV *structure = (VkPhysicalDeviceInheritedViewportScissorFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceInheritedViewportScissorFeaturesNV", "inheritedViewportScissor2D", structure->inheritedViewportScissor2D);
+            if (is_const_param) {
+                VkPhysicalDeviceInheritedViewportScissorFeaturesNV *structure = (VkPhysicalDeviceInheritedViewportScissorFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceInheritedViewportScissorFeaturesNV", "inheritedViewportScissor2D", structure->inheritedViewportScissor2D);
+            }
         } break;
 
         // Validation code for VkCommandBufferInheritanceViewportScissorInfoNV structure members
         case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV: { // Covers VUID-VkCommandBufferInheritanceViewportScissorInfoNV-sType-sType
-            VkCommandBufferInheritanceViewportScissorInfoNV *structure = (VkCommandBufferInheritanceViewportScissorInfoNV *) header;
-            skip |= validate_bool32("VkCommandBufferInheritanceViewportScissorInfoNV", "viewportScissor2D", structure->viewportScissor2D);
+            if (is_const_param) {
+                VkCommandBufferInheritanceViewportScissorInfoNV *structure = (VkCommandBufferInheritanceViewportScissorInfoNV *) header;
+                skip |= validate_bool32("VkCommandBufferInheritanceViewportScissorInfoNV", "viewportScissor2D", structure->viewportScissor2D);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT-sType-sType
-            VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT *structure = (VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT", "texelBufferAlignment", structure->texelBufferAlignment);
+            if (is_const_param) {
+                VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT *structure = (VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT", "texelBufferAlignment", structure->texelBufferAlignment);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT-sType-sType
@@ -3192,124 +3720,156 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceDeviceMemoryReportFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceDeviceMemoryReportFeaturesEXT-sType-sType
-            VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *structure = (VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceDeviceMemoryReportFeaturesEXT", "deviceMemoryReport", structure->deviceMemoryReport);
+            if (is_const_param) {
+                VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *structure = (VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceDeviceMemoryReportFeaturesEXT", "deviceMemoryReport", structure->deviceMemoryReport);
+            }
         } break;
 
         // Validation code for VkDeviceDeviceMemoryReportCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT: { // Covers VUID-VkDeviceDeviceMemoryReportCreateInfoEXT-sType-sType
-            VkDeviceDeviceMemoryReportCreateInfoEXT *structure = (VkDeviceDeviceMemoryReportCreateInfoEXT *) header;
-            skip |= validate_reserved_flags("VkDeviceDeviceMemoryReportCreateInfoEXT", "flags", structure->flags, "VUID-VkDeviceDeviceMemoryReportCreateInfoEXT-flags-zerobitmask");
+            if (is_const_param) {
+                VkDeviceDeviceMemoryReportCreateInfoEXT *structure = (VkDeviceDeviceMemoryReportCreateInfoEXT *) header;
+                skip |= validate_reserved_flags("VkDeviceDeviceMemoryReportCreateInfoEXT", "flags", structure->flags, "VUID-VkDeviceDeviceMemoryReportCreateInfoEXT-flags-zerobitmask");
 
-            skip |= validate_required_pointer("VkDeviceDeviceMemoryReportCreateInfoEXT", "pfnUserCallback", reinterpret_cast<const void*>(structure->pfnUserCallback), "VUID-VkDeviceDeviceMemoryReportCreateInfoEXT-pfnUserCallback-parameter");
+                skip |= validate_required_pointer("VkDeviceDeviceMemoryReportCreateInfoEXT", "pfnUserCallback", reinterpret_cast<const void*>(structure->pfnUserCallback), "VUID-VkDeviceDeviceMemoryReportCreateInfoEXT-pfnUserCallback-parameter");
 
-            skip |= validate_required_pointer("VkDeviceDeviceMemoryReportCreateInfoEXT", "pUserData", structure->pUserData, "VUID-VkDeviceDeviceMemoryReportCreateInfoEXT-pUserData-parameter");
+                skip |= validate_required_pointer("VkDeviceDeviceMemoryReportCreateInfoEXT", "pUserData", structure->pUserData, "VUID-VkDeviceDeviceMemoryReportCreateInfoEXT-pUserData-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceRobustness2FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceRobustness2FeaturesEXT-sType-sType
-            VkPhysicalDeviceRobustness2FeaturesEXT *structure = (VkPhysicalDeviceRobustness2FeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceRobustness2FeaturesEXT", "robustBufferAccess2", structure->robustBufferAccess2);
+            if (is_const_param) {
+                VkPhysicalDeviceRobustness2FeaturesEXT *structure = (VkPhysicalDeviceRobustness2FeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceRobustness2FeaturesEXT", "robustBufferAccess2", structure->robustBufferAccess2);
 
-            skip |= validate_bool32("VkPhysicalDeviceRobustness2FeaturesEXT", "robustImageAccess2", structure->robustImageAccess2);
+                skip |= validate_bool32("VkPhysicalDeviceRobustness2FeaturesEXT", "robustImageAccess2", structure->robustImageAccess2);
 
-            skip |= validate_bool32("VkPhysicalDeviceRobustness2FeaturesEXT", "nullDescriptor", structure->nullDescriptor);
+                skip |= validate_bool32("VkPhysicalDeviceRobustness2FeaturesEXT", "nullDescriptor", structure->nullDescriptor);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceRobustness2PropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceRobustness2PropertiesEXT-sType-sType
 
         // Validation code for VkSamplerCustomBorderColorCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT: { // Covers VUID-VkSamplerCustomBorderColorCreateInfoEXT-sType-sType
-            VkSamplerCustomBorderColorCreateInfoEXT *structure = (VkSamplerCustomBorderColorCreateInfoEXT *) header;
-            skip |= validate_ranged_enum("VkSamplerCustomBorderColorCreateInfoEXT", "format", "VkFormat", AllVkFormatEnums, structure->format, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-parameter");
+            if (is_const_param) {
+                VkSamplerCustomBorderColorCreateInfoEXT *structure = (VkSamplerCustomBorderColorCreateInfoEXT *) header;
+                skip |= validate_ranged_enum("VkSamplerCustomBorderColorCreateInfoEXT", "format", "VkFormat", AllVkFormatEnums, structure->format, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-parameter");
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceCustomBorderColorPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceCustomBorderColorPropertiesEXT-sType-sType
 
         // Validation code for VkPhysicalDeviceCustomBorderColorFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceCustomBorderColorFeaturesEXT-sType-sType
-            VkPhysicalDeviceCustomBorderColorFeaturesEXT *structure = (VkPhysicalDeviceCustomBorderColorFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceCustomBorderColorFeaturesEXT", "customBorderColors", structure->customBorderColors);
+            if (is_const_param) {
+                VkPhysicalDeviceCustomBorderColorFeaturesEXT *structure = (VkPhysicalDeviceCustomBorderColorFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceCustomBorderColorFeaturesEXT", "customBorderColors", structure->customBorderColors);
 
-            skip |= validate_bool32("VkPhysicalDeviceCustomBorderColorFeaturesEXT", "customBorderColorWithoutFormat", structure->customBorderColorWithoutFormat);
+                skip |= validate_bool32("VkPhysicalDeviceCustomBorderColorFeaturesEXT", "customBorderColorWithoutFormat", structure->customBorderColorWithoutFormat);
+            }
         } break;
 
         // Validation code for VkPhysicalDevicePrivateDataFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT: { // Covers VUID-VkPhysicalDevicePrivateDataFeaturesEXT-sType-sType
-            VkPhysicalDevicePrivateDataFeaturesEXT *structure = (VkPhysicalDevicePrivateDataFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDevicePrivateDataFeaturesEXT", "privateData", structure->privateData);
+            if (is_const_param) {
+                VkPhysicalDevicePrivateDataFeaturesEXT *structure = (VkPhysicalDevicePrivateDataFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDevicePrivateDataFeaturesEXT", "privateData", structure->privateData);
+            }
         } break;
 
         // No Validation code for VkDevicePrivateDataCreateInfoEXT structure members  -- Covers VUID-VkDevicePrivateDataCreateInfoEXT-sType-sType
 
         // Validation code for VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT: { // Covers VUID-VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT-sType-sType
-            VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT *structure = (VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT", "pipelineCreationCacheControl", structure->pipelineCreationCacheControl);
+            if (is_const_param) {
+                VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT *structure = (VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT", "pipelineCreationCacheControl", structure->pipelineCreationCacheControl);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceDiagnosticsConfigFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DIAGNOSTICS_CONFIG_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceDiagnosticsConfigFeaturesNV-sType-sType
-            VkPhysicalDeviceDiagnosticsConfigFeaturesNV *structure = (VkPhysicalDeviceDiagnosticsConfigFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceDiagnosticsConfigFeaturesNV", "diagnosticsConfig", structure->diagnosticsConfig);
+            if (is_const_param) {
+                VkPhysicalDeviceDiagnosticsConfigFeaturesNV *structure = (VkPhysicalDeviceDiagnosticsConfigFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceDiagnosticsConfigFeaturesNV", "diagnosticsConfig", structure->diagnosticsConfig);
+            }
         } break;
 
         // Validation code for VkDeviceDiagnosticsConfigCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV: { // Covers VUID-VkDeviceDiagnosticsConfigCreateInfoNV-sType-sType
-            VkDeviceDiagnosticsConfigCreateInfoNV *structure = (VkDeviceDiagnosticsConfigCreateInfoNV *) header;
-            skip |= validate_flags("VkDeviceDiagnosticsConfigCreateInfoNV", "flags", "VkDeviceDiagnosticsConfigFlagBitsNV", AllVkDeviceDiagnosticsConfigFlagBitsNV, structure->flags, kOptionalFlags, "VUID-VkDeviceDiagnosticsConfigCreateInfoNV-flags-parameter");
+            if (is_const_param) {
+                VkDeviceDiagnosticsConfigCreateInfoNV *structure = (VkDeviceDiagnosticsConfigCreateInfoNV *) header;
+                skip |= validate_flags("VkDeviceDiagnosticsConfigCreateInfoNV", "flags", "VkDeviceDiagnosticsConfigFlagBitsNV", AllVkDeviceDiagnosticsConfigFlagBitsNV, structure->flags, kOptionalFlags, "VUID-VkDeviceDiagnosticsConfigCreateInfoNV-flags-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV-sType-sType
-            VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV *structure = (VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV", "fragmentShadingRateEnums", structure->fragmentShadingRateEnums);
+            if (is_const_param) {
+                VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV *structure = (VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV", "fragmentShadingRateEnums", structure->fragmentShadingRateEnums);
 
-            skip |= validate_bool32("VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV", "supersampleFragmentShadingRates", structure->supersampleFragmentShadingRates);
+                skip |= validate_bool32("VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV", "supersampleFragmentShadingRates", structure->supersampleFragmentShadingRates);
 
-            skip |= validate_bool32("VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV", "noInvocationFragmentShadingRates", structure->noInvocationFragmentShadingRates);
+                skip |= validate_bool32("VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV", "noInvocationFragmentShadingRates", structure->noInvocationFragmentShadingRates);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_PROPERTIES_NV: { // Covers VUID-VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV-sType-sType
-            VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV *structure = (VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV *) header;
-            skip |= validate_flags("VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV", "maxFragmentShadingRateInvocationCount", "VkSampleCountFlagBits", AllVkSampleCountFlagBits, structure->maxFragmentShadingRateInvocationCount, kRequiredSingleBit, "VUID-VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV-maxFragmentShadingRateInvocationCount-parameter", "VUID-VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV-maxFragmentShadingRateInvocationCount-parameter");
+            if (is_const_param) {
+                VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV *structure = (VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV *) header;
+                skip |= validate_flags("VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV", "maxFragmentShadingRateInvocationCount", "VkSampleCountFlagBits", AllVkSampleCountFlagBits, structure->maxFragmentShadingRateInvocationCount, kRequiredSingleBit, "VUID-VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV-maxFragmentShadingRateInvocationCount-parameter", "VUID-VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV-maxFragmentShadingRateInvocationCount-parameter");
+            }
         } break;
 
         // Validation code for VkPipelineFragmentShadingRateEnumStateCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_ENUM_STATE_CREATE_INFO_NV: { // Covers VUID-VkPipelineFragmentShadingRateEnumStateCreateInfoNV-sType-sType
-            VkPipelineFragmentShadingRateEnumStateCreateInfoNV *structure = (VkPipelineFragmentShadingRateEnumStateCreateInfoNV *) header;
-            skip |= validate_ranged_enum("VkPipelineFragmentShadingRateEnumStateCreateInfoNV", "shadingRateType", "VkFragmentShadingRateTypeNV", AllVkFragmentShadingRateTypeNVEnums, structure->shadingRateType, "VUID-VkPipelineFragmentShadingRateEnumStateCreateInfoNV-shadingRateType-parameter");
+            if (is_const_param) {
+                VkPipelineFragmentShadingRateEnumStateCreateInfoNV *structure = (VkPipelineFragmentShadingRateEnumStateCreateInfoNV *) header;
+                skip |= validate_ranged_enum("VkPipelineFragmentShadingRateEnumStateCreateInfoNV", "shadingRateType", "VkFragmentShadingRateTypeNV", AllVkFragmentShadingRateTypeNVEnums, structure->shadingRateType, "VUID-VkPipelineFragmentShadingRateEnumStateCreateInfoNV-shadingRateType-parameter");
 
-            skip |= validate_ranged_enum("VkPipelineFragmentShadingRateEnumStateCreateInfoNV", "shadingRate", "VkFragmentShadingRateNV", AllVkFragmentShadingRateNVEnums, structure->shadingRate, "VUID-VkPipelineFragmentShadingRateEnumStateCreateInfoNV-shadingRate-parameter");
+                skip |= validate_ranged_enum("VkPipelineFragmentShadingRateEnumStateCreateInfoNV", "shadingRate", "VkFragmentShadingRateNV", AllVkFragmentShadingRateNVEnums, structure->shadingRate, "VUID-VkPipelineFragmentShadingRateEnumStateCreateInfoNV-shadingRate-parameter");
+            }
         } break;
 
         // No Validation code for VkAccelerationStructureGeometryMotionTrianglesDataNV structure members  -- Covers VUID-VkAccelerationStructureGeometryMotionTrianglesDataNV-sType-sType
 
         // Validation code for VkAccelerationStructureMotionInfoNV structure members
         case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MOTION_INFO_NV: { // Covers VUID-VkAccelerationStructureMotionInfoNV-sType-sType
-            VkAccelerationStructureMotionInfoNV *structure = (VkAccelerationStructureMotionInfoNV *) header;
-            skip |= validate_reserved_flags("VkAccelerationStructureMotionInfoNV", "flags", structure->flags, "VUID-VkAccelerationStructureMotionInfoNV-flags-zerobitmask");
+            if (is_const_param) {
+                VkAccelerationStructureMotionInfoNV *structure = (VkAccelerationStructureMotionInfoNV *) header;
+                skip |= validate_reserved_flags("VkAccelerationStructureMotionInfoNV", "flags", structure->flags, "VUID-VkAccelerationStructureMotionInfoNV-flags-zerobitmask");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceRayTracingMotionBlurFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MOTION_BLUR_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceRayTracingMotionBlurFeaturesNV-sType-sType
-            VkPhysicalDeviceRayTracingMotionBlurFeaturesNV *structure = (VkPhysicalDeviceRayTracingMotionBlurFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceRayTracingMotionBlurFeaturesNV", "rayTracingMotionBlur", structure->rayTracingMotionBlur);
+            if (is_const_param) {
+                VkPhysicalDeviceRayTracingMotionBlurFeaturesNV *structure = (VkPhysicalDeviceRayTracingMotionBlurFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceRayTracingMotionBlurFeaturesNV", "rayTracingMotionBlur", structure->rayTracingMotionBlur);
 
-            skip |= validate_bool32("VkPhysicalDeviceRayTracingMotionBlurFeaturesNV", "rayTracingMotionBlurPipelineTraceRaysIndirect", structure->rayTracingMotionBlurPipelineTraceRaysIndirect);
+                skip |= validate_bool32("VkPhysicalDeviceRayTracingMotionBlurFeaturesNV", "rayTracingMotionBlurPipelineTraceRaysIndirect", structure->rayTracingMotionBlurPipelineTraceRaysIndirect);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_2_PLANE_444_FORMATS_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT-sType-sType
-            VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT *structure = (VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT", "ycbcr2plane444Formats", structure->ycbcr2plane444Formats);
+            if (is_const_param) {
+                VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT *structure = (VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT", "ycbcr2plane444Formats", structure->ycbcr2plane444Formats);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceFragmentDensityMap2FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceFragmentDensityMap2FeaturesEXT-sType-sType
-            VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *structure = (VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceFragmentDensityMap2FeaturesEXT", "fragmentDensityMapDeferred", structure->fragmentDensityMapDeferred);
+            if (is_const_param) {
+                VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *structure = (VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceFragmentDensityMap2FeaturesEXT", "fragmentDensityMapDeferred", structure->fragmentDensityMapDeferred);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceFragmentDensityMap2PropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceFragmentDensityMap2PropertiesEXT-sType-sType
@@ -3318,59 +3878,73 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceImageRobustnessFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceImageRobustnessFeaturesEXT-sType-sType
-            VkPhysicalDeviceImageRobustnessFeaturesEXT *structure = (VkPhysicalDeviceImageRobustnessFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceImageRobustnessFeaturesEXT", "robustImageAccess", structure->robustImageAccess);
+            if (is_const_param) {
+                VkPhysicalDeviceImageRobustnessFeaturesEXT *structure = (VkPhysicalDeviceImageRobustnessFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceImageRobustnessFeaturesEXT", "robustImageAccess", structure->robustImageAccess);
+            }
         } break;
 
         // Validation code for VkPhysicalDevice4444FormatsFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT: { // Covers VUID-VkPhysicalDevice4444FormatsFeaturesEXT-sType-sType
-            VkPhysicalDevice4444FormatsFeaturesEXT *structure = (VkPhysicalDevice4444FormatsFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDevice4444FormatsFeaturesEXT", "formatA4R4G4B4", structure->formatA4R4G4B4);
+            if (is_const_param) {
+                VkPhysicalDevice4444FormatsFeaturesEXT *structure = (VkPhysicalDevice4444FormatsFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDevice4444FormatsFeaturesEXT", "formatA4R4G4B4", structure->formatA4R4G4B4);
 
-            skip |= validate_bool32("VkPhysicalDevice4444FormatsFeaturesEXT", "formatA4B4G4R4", structure->formatA4B4G4R4);
+                skip |= validate_bool32("VkPhysicalDevice4444FormatsFeaturesEXT", "formatA4B4G4R4", structure->formatA4B4G4R4);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE: { // Covers VUID-VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE-sType-sType
-            VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE *structure = (VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE *) header;
-            skip |= validate_bool32("VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE", "mutableDescriptorType", structure->mutableDescriptorType);
+            if (is_const_param) {
+                VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE *structure = (VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE *) header;
+                skip |= validate_bool32("VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE", "mutableDescriptorType", structure->mutableDescriptorType);
+            }
         } break;
 
         // Validation code for VkMutableDescriptorTypeCreateInfoVALVE structure members
         case VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE: { // Covers VUID-VkMutableDescriptorTypeCreateInfoVALVE-sType-sType
-            VkMutableDescriptorTypeCreateInfoVALVE *structure = (VkMutableDescriptorTypeCreateInfoVALVE *) header;
-            skip |= validate_array("VkMutableDescriptorTypeCreateInfoVALVE", "mutableDescriptorTypeListCount", "pMutableDescriptorTypeLists", structure->mutableDescriptorTypeListCount, &structure->pMutableDescriptorTypeLists, false, true, kVUIDUndefined, "VUID-VkMutableDescriptorTypeCreateInfoVALVE-pMutableDescriptorTypeLists-parameter");
+            if (is_const_param) {
+                VkMutableDescriptorTypeCreateInfoVALVE *structure = (VkMutableDescriptorTypeCreateInfoVALVE *) header;
+                skip |= validate_array("VkMutableDescriptorTypeCreateInfoVALVE", "mutableDescriptorTypeListCount", "pMutableDescriptorTypeLists", structure->mutableDescriptorTypeListCount, &structure->pMutableDescriptorTypeLists, false, true, kVUIDUndefined, "VUID-VkMutableDescriptorTypeCreateInfoVALVE-pMutableDescriptorTypeLists-parameter");
 
-            if (structure->pMutableDescriptorTypeLists != NULL)
-            {
-                for (uint32_t mutableDescriptorTypeListIndex = 0; mutableDescriptorTypeListIndex < structure->mutableDescriptorTypeListCount; ++mutableDescriptorTypeListIndex)
+                if (structure->pMutableDescriptorTypeLists != NULL)
                 {
-                    skip |= validate_ranged_enum_array("VkMutableDescriptorTypeCreateInfoVALVE", ParameterName("pMutableDescriptorTypeLists[%i].descriptorTypeCount", ParameterName::IndexVector{ mutableDescriptorTypeListIndex }), ParameterName("pMutableDescriptorTypeLists[%i].pDescriptorTypes", ParameterName::IndexVector{ mutableDescriptorTypeListIndex }), "VkDescriptorType", AllVkDescriptorTypeEnums, structure->pMutableDescriptorTypeLists[mutableDescriptorTypeListIndex].descriptorTypeCount, structure->pMutableDescriptorTypeLists[mutableDescriptorTypeListIndex].pDescriptorTypes, false, true);
+                    for (uint32_t mutableDescriptorTypeListIndex = 0; mutableDescriptorTypeListIndex < structure->mutableDescriptorTypeListCount; ++mutableDescriptorTypeListIndex)
+                    {
+                        skip |= validate_ranged_enum_array("VkMutableDescriptorTypeCreateInfoVALVE", ParameterName("pMutableDescriptorTypeLists[%i].descriptorTypeCount", ParameterName::IndexVector{ mutableDescriptorTypeListIndex }), ParameterName("pMutableDescriptorTypeLists[%i].pDescriptorTypes", ParameterName::IndexVector{ mutableDescriptorTypeListIndex }), "VkDescriptorType", AllVkDescriptorTypeEnums, structure->pMutableDescriptorTypeLists[mutableDescriptorTypeListIndex].descriptorTypeCount, structure->pMutableDescriptorTypeLists[mutableDescriptorTypeListIndex].pDescriptorTypes, false, true);
+                    }
                 }
             }
         } break;
 
         // Validation code for VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT-sType-sType
-            VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT *structure = (VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT", "vertexInputDynamicState", structure->vertexInputDynamicState);
+            if (is_const_param) {
+                VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT *structure = (VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT", "vertexInputDynamicState", structure->vertexInputDynamicState);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceDrmPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceDrmPropertiesEXT-sType-sType
 
         // Validation code for VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT: { // Covers VUID-VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT-sType-sType
-            VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *structure = (VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT", "primitiveTopologyListRestart", structure->primitiveTopologyListRestart);
+            if (is_const_param) {
+                VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *structure = (VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT", "primitiveTopologyListRestart", structure->primitiveTopologyListRestart);
 
-            skip |= validate_bool32("VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT", "primitiveTopologyPatchListRestart", structure->primitiveTopologyPatchListRestart);
+                skip |= validate_bool32("VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT", "primitiveTopologyPatchListRestart", structure->primitiveTopologyPatchListRestart);
+            }
         } break;
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
         // Validation code for VkImportMemoryZirconHandleInfoFUCHSIA structure members
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA: { // Covers VUID-VkImportMemoryZirconHandleInfoFUCHSIA-sType-sType
-            VkImportMemoryZirconHandleInfoFUCHSIA *structure = (VkImportMemoryZirconHandleInfoFUCHSIA *) header;
-            skip |= validate_flags("VkImportMemoryZirconHandleInfoFUCHSIA", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kOptionalSingleBit, "VUID-VkImportMemoryZirconHandleInfoFUCHSIA-handleType-parameter");
+            if (is_const_param) {
+                VkImportMemoryZirconHandleInfoFUCHSIA *structure = (VkImportMemoryZirconHandleInfoFUCHSIA *) header;
+                skip |= validate_flags("VkImportMemoryZirconHandleInfoFUCHSIA", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kOptionalSingleBit, "VUID-VkImportMemoryZirconHandleInfoFUCHSIA-handleType-parameter");
+            }
         } break;
 #endif // VK_USE_PLATFORM_FUCHSIA
 
@@ -3378,110 +3952,136 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceSubpassShadingFeaturesHUAWEI structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_FEATURES_HUAWEI: { // Covers VUID-VkPhysicalDeviceSubpassShadingFeaturesHUAWEI-sType-sType
-            VkPhysicalDeviceSubpassShadingFeaturesHUAWEI *structure = (VkPhysicalDeviceSubpassShadingFeaturesHUAWEI *) header;
-            skip |= validate_bool32("VkPhysicalDeviceSubpassShadingFeaturesHUAWEI", "subpassShading", structure->subpassShading);
+            if (is_const_param) {
+                VkPhysicalDeviceSubpassShadingFeaturesHUAWEI *structure = (VkPhysicalDeviceSubpassShadingFeaturesHUAWEI *) header;
+                skip |= validate_bool32("VkPhysicalDeviceSubpassShadingFeaturesHUAWEI", "subpassShading", structure->subpassShading);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceSubpassShadingPropertiesHUAWEI structure members  -- Covers VUID-VkPhysicalDeviceSubpassShadingPropertiesHUAWEI-sType-sType
 
         // Validation code for VkPhysicalDeviceInvocationMaskFeaturesHUAWEI structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INVOCATION_MASK_FEATURES_HUAWEI: { // Covers VUID-VkPhysicalDeviceInvocationMaskFeaturesHUAWEI-sType-sType
-            VkPhysicalDeviceInvocationMaskFeaturesHUAWEI *structure = (VkPhysicalDeviceInvocationMaskFeaturesHUAWEI *) header;
-            skip |= validate_bool32("VkPhysicalDeviceInvocationMaskFeaturesHUAWEI", "invocationMask", structure->invocationMask);
+            if (is_const_param) {
+                VkPhysicalDeviceInvocationMaskFeaturesHUAWEI *structure = (VkPhysicalDeviceInvocationMaskFeaturesHUAWEI *) header;
+                skip |= validate_bool32("VkPhysicalDeviceInvocationMaskFeaturesHUAWEI", "invocationMask", structure->invocationMask);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceExternalMemoryRDMAFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV: { // Covers VUID-VkPhysicalDeviceExternalMemoryRDMAFeaturesNV-sType-sType
-            VkPhysicalDeviceExternalMemoryRDMAFeaturesNV *structure = (VkPhysicalDeviceExternalMemoryRDMAFeaturesNV *) header;
-            skip |= validate_bool32("VkPhysicalDeviceExternalMemoryRDMAFeaturesNV", "externalMemoryRDMA", structure->externalMemoryRDMA);
+            if (is_const_param) {
+                VkPhysicalDeviceExternalMemoryRDMAFeaturesNV *structure = (VkPhysicalDeviceExternalMemoryRDMAFeaturesNV *) header;
+                skip |= validate_bool32("VkPhysicalDeviceExternalMemoryRDMAFeaturesNV", "externalMemoryRDMA", structure->externalMemoryRDMA);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceExtendedDynamicState2FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceExtendedDynamicState2FeaturesEXT-sType-sType
-            VkPhysicalDeviceExtendedDynamicState2FeaturesEXT *structure = (VkPhysicalDeviceExtendedDynamicState2FeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceExtendedDynamicState2FeaturesEXT", "extendedDynamicState2", structure->extendedDynamicState2);
+            if (is_const_param) {
+                VkPhysicalDeviceExtendedDynamicState2FeaturesEXT *structure = (VkPhysicalDeviceExtendedDynamicState2FeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceExtendedDynamicState2FeaturesEXT", "extendedDynamicState2", structure->extendedDynamicState2);
 
-            skip |= validate_bool32("VkPhysicalDeviceExtendedDynamicState2FeaturesEXT", "extendedDynamicState2LogicOp", structure->extendedDynamicState2LogicOp);
+                skip |= validate_bool32("VkPhysicalDeviceExtendedDynamicState2FeaturesEXT", "extendedDynamicState2LogicOp", structure->extendedDynamicState2LogicOp);
 
-            skip |= validate_bool32("VkPhysicalDeviceExtendedDynamicState2FeaturesEXT", "extendedDynamicState2PatchControlPoints", structure->extendedDynamicState2PatchControlPoints);
+                skip |= validate_bool32("VkPhysicalDeviceExtendedDynamicState2FeaturesEXT", "extendedDynamicState2PatchControlPoints", structure->extendedDynamicState2PatchControlPoints);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceColorWriteEnableFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceColorWriteEnableFeaturesEXT-sType-sType
-            VkPhysicalDeviceColorWriteEnableFeaturesEXT *structure = (VkPhysicalDeviceColorWriteEnableFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceColorWriteEnableFeaturesEXT", "colorWriteEnable", structure->colorWriteEnable);
+            if (is_const_param) {
+                VkPhysicalDeviceColorWriteEnableFeaturesEXT *structure = (VkPhysicalDeviceColorWriteEnableFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceColorWriteEnableFeaturesEXT", "colorWriteEnable", structure->colorWriteEnable);
+            }
         } break;
 
         // Validation code for VkPipelineColorWriteCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_COLOR_WRITE_CREATE_INFO_EXT: { // Covers VUID-VkPipelineColorWriteCreateInfoEXT-sType-sType
-            VkPipelineColorWriteCreateInfoEXT *structure = (VkPipelineColorWriteCreateInfoEXT *) header;
-            skip |= validate_bool32_array("VkPipelineColorWriteCreateInfoEXT", "attachmentCount", "pColorWriteEnables", structure->attachmentCount, structure->pColorWriteEnables, false, true);
+            if (is_const_param) {
+                VkPipelineColorWriteCreateInfoEXT *structure = (VkPipelineColorWriteCreateInfoEXT *) header;
+                skip |= validate_bool32_array("VkPipelineColorWriteCreateInfoEXT", "attachmentCount", "pColorWriteEnables", structure->attachmentCount, structure->pColorWriteEnables, false, true);
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT-sType-sType
-            VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT *structure = (VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT", "globalPriorityQuery", structure->globalPriorityQuery);
+            if (is_const_param) {
+                VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT *structure = (VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT", "globalPriorityQuery", structure->globalPriorityQuery);
+            }
         } break;
 
         // No Validation code for VkQueueFamilyGlobalPriorityPropertiesEXT structure members  -- Covers VUID-VkQueueFamilyGlobalPriorityPropertiesEXT-sType-sType
 
         // Validation code for VkPhysicalDeviceMultiDrawFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceMultiDrawFeaturesEXT-sType-sType
-            VkPhysicalDeviceMultiDrawFeaturesEXT *structure = (VkPhysicalDeviceMultiDrawFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDeviceMultiDrawFeaturesEXT", "multiDraw", structure->multiDraw);
+            if (is_const_param) {
+                VkPhysicalDeviceMultiDrawFeaturesEXT *structure = (VkPhysicalDeviceMultiDrawFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceMultiDrawFeaturesEXT", "multiDraw", structure->multiDraw);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceMultiDrawPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceMultiDrawPropertiesEXT-sType-sType
 
         // Validation code for VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT: { // Covers VUID-VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT-sType-sType
-            VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *structure = (VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *) header;
-            skip |= validate_bool32("VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT", "pageableDeviceLocalMemory", structure->pageableDeviceLocalMemory);
+            if (is_const_param) {
+                VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *structure = (VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT", "pageableDeviceLocalMemory", structure->pageableDeviceLocalMemory);
+            }
         } break;
 
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: { // Covers VUID-VkWriteDescriptorSetAccelerationStructureKHR-sType-sType
-            VkWriteDescriptorSetAccelerationStructureKHR *structure = (VkWriteDescriptorSetAccelerationStructureKHR *) header;
-            skip |= validate_array("VkWriteDescriptorSetAccelerationStructureKHR", "accelerationStructureCount", "pAccelerationStructures", structure->accelerationStructureCount, &structure->pAccelerationStructures, true, false, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength", "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parameter");
+            if (is_const_param) {
+                VkWriteDescriptorSetAccelerationStructureKHR *structure = (VkWriteDescriptorSetAccelerationStructureKHR *) header;
+                skip |= validate_array("VkWriteDescriptorSetAccelerationStructureKHR", "accelerationStructureCount", "pAccelerationStructures", structure->accelerationStructureCount, &structure->pAccelerationStructures, true, false, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength", "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parameter");
+            }
         } break;
 
         // Validation code for VkPhysicalDeviceAccelerationStructureFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceAccelerationStructureFeaturesKHR-sType-sType
-            VkPhysicalDeviceAccelerationStructureFeaturesKHR *structure = (VkPhysicalDeviceAccelerationStructureFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDeviceAccelerationStructureFeaturesKHR", "accelerationStructure", structure->accelerationStructure);
+            if (is_const_param) {
+                VkPhysicalDeviceAccelerationStructureFeaturesKHR *structure = (VkPhysicalDeviceAccelerationStructureFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDeviceAccelerationStructureFeaturesKHR", "accelerationStructure", structure->accelerationStructure);
 
-            skip |= validate_bool32("VkPhysicalDeviceAccelerationStructureFeaturesKHR", "accelerationStructureCaptureReplay", structure->accelerationStructureCaptureReplay);
+                skip |= validate_bool32("VkPhysicalDeviceAccelerationStructureFeaturesKHR", "accelerationStructureCaptureReplay", structure->accelerationStructureCaptureReplay);
 
-            skip |= validate_bool32("VkPhysicalDeviceAccelerationStructureFeaturesKHR", "accelerationStructureIndirectBuild", structure->accelerationStructureIndirectBuild);
+                skip |= validate_bool32("VkPhysicalDeviceAccelerationStructureFeaturesKHR", "accelerationStructureIndirectBuild", structure->accelerationStructureIndirectBuild);
 
-            skip |= validate_bool32("VkPhysicalDeviceAccelerationStructureFeaturesKHR", "accelerationStructureHostCommands", structure->accelerationStructureHostCommands);
+                skip |= validate_bool32("VkPhysicalDeviceAccelerationStructureFeaturesKHR", "accelerationStructureHostCommands", structure->accelerationStructureHostCommands);
 
-            skip |= validate_bool32("VkPhysicalDeviceAccelerationStructureFeaturesKHR", "descriptorBindingAccelerationStructureUpdateAfterBind", structure->descriptorBindingAccelerationStructureUpdateAfterBind);
+                skip |= validate_bool32("VkPhysicalDeviceAccelerationStructureFeaturesKHR", "descriptorBindingAccelerationStructureUpdateAfterBind", structure->descriptorBindingAccelerationStructureUpdateAfterBind);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceAccelerationStructurePropertiesKHR structure members  -- Covers VUID-VkPhysicalDeviceAccelerationStructurePropertiesKHR-sType-sType
 
         // Validation code for VkPhysicalDeviceRayTracingPipelineFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceRayTracingPipelineFeaturesKHR-sType-sType
-            VkPhysicalDeviceRayTracingPipelineFeaturesKHR *structure = (VkPhysicalDeviceRayTracingPipelineFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDeviceRayTracingPipelineFeaturesKHR", "rayTracingPipeline", structure->rayTracingPipeline);
+            if (is_const_param) {
+                VkPhysicalDeviceRayTracingPipelineFeaturesKHR *structure = (VkPhysicalDeviceRayTracingPipelineFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDeviceRayTracingPipelineFeaturesKHR", "rayTracingPipeline", structure->rayTracingPipeline);
 
-            skip |= validate_bool32("VkPhysicalDeviceRayTracingPipelineFeaturesKHR", "rayTracingPipelineShaderGroupHandleCaptureReplay", structure->rayTracingPipelineShaderGroupHandleCaptureReplay);
+                skip |= validate_bool32("VkPhysicalDeviceRayTracingPipelineFeaturesKHR", "rayTracingPipelineShaderGroupHandleCaptureReplay", structure->rayTracingPipelineShaderGroupHandleCaptureReplay);
 
-            skip |= validate_bool32("VkPhysicalDeviceRayTracingPipelineFeaturesKHR", "rayTracingPipelineShaderGroupHandleCaptureReplayMixed", structure->rayTracingPipelineShaderGroupHandleCaptureReplayMixed);
+                skip |= validate_bool32("VkPhysicalDeviceRayTracingPipelineFeaturesKHR", "rayTracingPipelineShaderGroupHandleCaptureReplayMixed", structure->rayTracingPipelineShaderGroupHandleCaptureReplayMixed);
 
-            skip |= validate_bool32("VkPhysicalDeviceRayTracingPipelineFeaturesKHR", "rayTracingPipelineTraceRaysIndirect", structure->rayTracingPipelineTraceRaysIndirect);
+                skip |= validate_bool32("VkPhysicalDeviceRayTracingPipelineFeaturesKHR", "rayTracingPipelineTraceRaysIndirect", structure->rayTracingPipelineTraceRaysIndirect);
 
-            skip |= validate_bool32("VkPhysicalDeviceRayTracingPipelineFeaturesKHR", "rayTraversalPrimitiveCulling", structure->rayTraversalPrimitiveCulling);
+                skip |= validate_bool32("VkPhysicalDeviceRayTracingPipelineFeaturesKHR", "rayTraversalPrimitiveCulling", structure->rayTraversalPrimitiveCulling);
+            }
         } break;
 
         // No Validation code for VkPhysicalDeviceRayTracingPipelinePropertiesKHR structure members  -- Covers VUID-VkPhysicalDeviceRayTracingPipelinePropertiesKHR-sType-sType
 
         // Validation code for VkPhysicalDeviceRayQueryFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceRayQueryFeaturesKHR-sType-sType
-            VkPhysicalDeviceRayQueryFeaturesKHR *structure = (VkPhysicalDeviceRayQueryFeaturesKHR *) header;
-            skip |= validate_bool32("VkPhysicalDeviceRayQueryFeaturesKHR", "rayQuery", structure->rayQuery);
+            if (is_const_param) {
+                VkPhysicalDeviceRayQueryFeaturesKHR *structure = (VkPhysicalDeviceRayQueryFeaturesKHR *) header;
+                skip |= validate_bool32("VkPhysicalDeviceRayQueryFeaturesKHR", "rayQuery", structure->rayQuery);
+            }
         } break;
         default:
             skip = false;
@@ -3507,7 +4107,7 @@ bool StatelessValidation::PreCallValidateCreateInstance(
     {
         const VkStructureType allowed_structs_VkInstanceCreateInfo[] = { VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT };
 
-        skip |= validate_struct_pnext("vkCreateInstance", "pCreateInfo->pNext", "VkDebugReportCallbackCreateInfoEXT, VkDebugUtilsMessengerCreateInfoEXT, VkValidationFeaturesEXT, VkValidationFlagsEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkInstanceCreateInfo), allowed_structs_VkInstanceCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkInstanceCreateInfo-pNext-pNext", "VUID-VkInstanceCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateInstance", "pCreateInfo->pNext", "VkDebugReportCallbackCreateInfoEXT, VkDebugUtilsMessengerCreateInfoEXT, VkValidationFeaturesEXT, VkValidationFlagsEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkInstanceCreateInfo), allowed_structs_VkInstanceCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkInstanceCreateInfo-pNext-pNext", "VUID-VkInstanceCreateInfo-sType-unique", false, true);
 
         skip |= validate_reserved_flags("vkCreateInstance", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkInstanceCreateInfo-flags-zerobitmask");
 
@@ -3515,7 +4115,7 @@ bool StatelessValidation::PreCallValidateCreateInstance(
 
         if (pCreateInfo->pApplicationInfo != NULL)
         {
-            skip |= validate_struct_pnext("vkCreateInstance", "pCreateInfo->pApplicationInfo->pNext", NULL, pCreateInfo->pApplicationInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkApplicationInfo-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkCreateInstance", "pCreateInfo->pApplicationInfo->pNext", NULL, pCreateInfo->pApplicationInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkApplicationInfo-pNext-pNext", kVUIDUndefined, false, true);
         }
 
         skip |= validate_string_array("vkCreateInstance", "pCreateInfo->enabledLayerCount", "pCreateInfo->ppEnabledLayerNames", pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames, false, true, kVUIDUndefined, "VUID-VkInstanceCreateInfo-ppEnabledLayerNames-parameter");
@@ -3679,7 +4279,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(
     {
         const VkStructureType allowed_structs_VkDeviceCreateInfo[] = { VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV, VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO, VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD, VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DIAGNOSTICS_CONFIG_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INHERITED_VIEWPORT_SCISSOR_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INVOCATION_MASK_FEATURES_HUAWEI, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MOTION_BLUR_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_FEATURES_HUAWEI, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_2_PLANE_444_FORMATS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_IMAGE_ARRAYS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR };
 
-        skip |= validate_struct_pnext("vkCreateDevice", "pCreateInfo->pNext", "VkDeviceDeviceMemoryReportCreateInfoEXT, VkDeviceDiagnosticsConfigCreateInfoNV, VkDeviceGroupDeviceCreateInfo, VkDeviceMemoryOverallocationCreateInfoAMD, VkDevicePrivateDataCreateInfoEXT, VkPhysicalDevice16BitStorageFeatures, VkPhysicalDevice4444FormatsFeaturesEXT, VkPhysicalDevice8BitStorageFeatures, VkPhysicalDeviceASTCDecodeFeaturesEXT, VkPhysicalDeviceAccelerationStructureFeaturesKHR, VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT, VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceBufferDeviceAddressFeaturesEXT, VkPhysicalDeviceCoherentMemoryFeaturesAMD, VkPhysicalDeviceColorWriteEnableFeaturesEXT, VkPhysicalDeviceComputeShaderDerivativesFeaturesNV, VkPhysicalDeviceConditionalRenderingFeaturesEXT, VkPhysicalDeviceCooperativeMatrixFeaturesNV, VkPhysicalDeviceCornerSampledImageFeaturesNV, VkPhysicalDeviceCoverageReductionModeFeaturesNV, VkPhysicalDeviceCustomBorderColorFeaturesEXT, VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV, VkPhysicalDeviceDepthClipEnableFeaturesEXT, VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV, VkPhysicalDeviceDeviceMemoryReportFeaturesEXT, VkPhysicalDeviceDiagnosticsConfigFeaturesNV, VkPhysicalDeviceExclusiveScissorFeaturesNV, VkPhysicalDeviceExtendedDynamicState2FeaturesEXT, VkPhysicalDeviceExtendedDynamicStateFeaturesEXT, VkPhysicalDeviceExternalMemoryRDMAFeaturesNV, VkPhysicalDeviceFeatures2, VkPhysicalDeviceFragmentDensityMap2FeaturesEXT, VkPhysicalDeviceFragmentDensityMapFeaturesEXT, VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV, VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT, VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV, VkPhysicalDeviceFragmentShadingRateFeaturesKHR, VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT, VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceImageRobustnessFeaturesEXT, VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceIndexTypeUint8FeaturesEXT, VkPhysicalDeviceInheritedViewportScissorFeaturesNV, VkPhysicalDeviceInlineUniformBlockFeaturesEXT, VkPhysicalDeviceInvocationMaskFeaturesHUAWEI, VkPhysicalDeviceLineRasterizationFeaturesEXT, VkPhysicalDeviceMemoryPriorityFeaturesEXT, VkPhysicalDeviceMeshShaderFeaturesNV, VkPhysicalDeviceMultiDrawFeaturesEXT, VkPhysicalDeviceMultiviewFeatures, VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE, VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT, VkPhysicalDevicePerformanceQueryFeaturesKHR, VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT, VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR, VkPhysicalDevicePortabilitySubsetFeaturesKHR, VkPhysicalDevicePresentIdFeaturesKHR, VkPhysicalDevicePresentWaitFeaturesKHR, VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT, VkPhysicalDevicePrivateDataFeaturesEXT, VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceProvokingVertexFeaturesEXT, VkPhysicalDeviceRayQueryFeaturesKHR, VkPhysicalDeviceRayTracingMotionBlurFeaturesNV, VkPhysicalDeviceRayTracingPipelineFeaturesKHR, VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV, VkPhysicalDeviceRobustness2FeaturesEXT, VkPhysicalDeviceSamplerYcbcrConversionFeatures, VkPhysicalDeviceScalarBlockLayoutFeatures, VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT, VkPhysicalDeviceShaderAtomicFloatFeaturesEXT, VkPhysicalDeviceShaderAtomicInt64Features, VkPhysicalDeviceShaderClockFeaturesKHR, VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT, VkPhysicalDeviceShaderDrawParametersFeatures, VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT, VkPhysicalDeviceShaderImageFootprintFeaturesNV, VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR, VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL, VkPhysicalDeviceShaderSMBuiltinsFeaturesNV, VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR, VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR, VkPhysicalDeviceShadingRateImageFeaturesNV, VkPhysicalDeviceSubgroupSizeControlFeaturesEXT, VkPhysicalDeviceSubpassShadingFeaturesHUAWEI, VkPhysicalDeviceSynchronization2FeaturesKHR, VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT, VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT, VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceTransformFeedbackFeaturesEXT, VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT, VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT, VkPhysicalDeviceVulkan11Features, VkPhysicalDeviceVulkan12Features, VkPhysicalDeviceVulkanMemoryModelFeatures, VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR, VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT, VkPhysicalDeviceYcbcrImageArraysFeaturesEXT, VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDeviceCreateInfo), allowed_structs_VkDeviceCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDeviceCreateInfo-pNext-pNext", "VUID-VkDeviceCreateInfo-sType-unique", true);
+        skip |= validate_struct_pnext("vkCreateDevice", "pCreateInfo->pNext", "VkDeviceDeviceMemoryReportCreateInfoEXT, VkDeviceDiagnosticsConfigCreateInfoNV, VkDeviceGroupDeviceCreateInfo, VkDeviceMemoryOverallocationCreateInfoAMD, VkDevicePrivateDataCreateInfoEXT, VkPhysicalDevice16BitStorageFeatures, VkPhysicalDevice4444FormatsFeaturesEXT, VkPhysicalDevice8BitStorageFeatures, VkPhysicalDeviceASTCDecodeFeaturesEXT, VkPhysicalDeviceAccelerationStructureFeaturesKHR, VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT, VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceBufferDeviceAddressFeaturesEXT, VkPhysicalDeviceCoherentMemoryFeaturesAMD, VkPhysicalDeviceColorWriteEnableFeaturesEXT, VkPhysicalDeviceComputeShaderDerivativesFeaturesNV, VkPhysicalDeviceConditionalRenderingFeaturesEXT, VkPhysicalDeviceCooperativeMatrixFeaturesNV, VkPhysicalDeviceCornerSampledImageFeaturesNV, VkPhysicalDeviceCoverageReductionModeFeaturesNV, VkPhysicalDeviceCustomBorderColorFeaturesEXT, VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV, VkPhysicalDeviceDepthClipEnableFeaturesEXT, VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV, VkPhysicalDeviceDeviceMemoryReportFeaturesEXT, VkPhysicalDeviceDiagnosticsConfigFeaturesNV, VkPhysicalDeviceExclusiveScissorFeaturesNV, VkPhysicalDeviceExtendedDynamicState2FeaturesEXT, VkPhysicalDeviceExtendedDynamicStateFeaturesEXT, VkPhysicalDeviceExternalMemoryRDMAFeaturesNV, VkPhysicalDeviceFeatures2, VkPhysicalDeviceFragmentDensityMap2FeaturesEXT, VkPhysicalDeviceFragmentDensityMapFeaturesEXT, VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV, VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT, VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV, VkPhysicalDeviceFragmentShadingRateFeaturesKHR, VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT, VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceImageRobustnessFeaturesEXT, VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceIndexTypeUint8FeaturesEXT, VkPhysicalDeviceInheritedViewportScissorFeaturesNV, VkPhysicalDeviceInlineUniformBlockFeaturesEXT, VkPhysicalDeviceInvocationMaskFeaturesHUAWEI, VkPhysicalDeviceLineRasterizationFeaturesEXT, VkPhysicalDeviceMemoryPriorityFeaturesEXT, VkPhysicalDeviceMeshShaderFeaturesNV, VkPhysicalDeviceMultiDrawFeaturesEXT, VkPhysicalDeviceMultiviewFeatures, VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE, VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT, VkPhysicalDevicePerformanceQueryFeaturesKHR, VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT, VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR, VkPhysicalDevicePortabilitySubsetFeaturesKHR, VkPhysicalDevicePresentIdFeaturesKHR, VkPhysicalDevicePresentWaitFeaturesKHR, VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT, VkPhysicalDevicePrivateDataFeaturesEXT, VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceProvokingVertexFeaturesEXT, VkPhysicalDeviceRayQueryFeaturesKHR, VkPhysicalDeviceRayTracingMotionBlurFeaturesNV, VkPhysicalDeviceRayTracingPipelineFeaturesKHR, VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV, VkPhysicalDeviceRobustness2FeaturesEXT, VkPhysicalDeviceSamplerYcbcrConversionFeatures, VkPhysicalDeviceScalarBlockLayoutFeatures, VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT, VkPhysicalDeviceShaderAtomicFloatFeaturesEXT, VkPhysicalDeviceShaderAtomicInt64Features, VkPhysicalDeviceShaderClockFeaturesKHR, VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT, VkPhysicalDeviceShaderDrawParametersFeatures, VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT, VkPhysicalDeviceShaderImageFootprintFeaturesNV, VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR, VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL, VkPhysicalDeviceShaderSMBuiltinsFeaturesNV, VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR, VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR, VkPhysicalDeviceShadingRateImageFeaturesNV, VkPhysicalDeviceSubgroupSizeControlFeaturesEXT, VkPhysicalDeviceSubpassShadingFeaturesHUAWEI, VkPhysicalDeviceSynchronization2FeaturesKHR, VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT, VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT, VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceTransformFeedbackFeaturesEXT, VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT, VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT, VkPhysicalDeviceVulkan11Features, VkPhysicalDeviceVulkan12Features, VkPhysicalDeviceVulkanMemoryModelFeatures, VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR, VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT, VkPhysicalDeviceYcbcrImageArraysFeaturesEXT, VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDeviceCreateInfo), allowed_structs_VkDeviceCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDeviceCreateInfo-pNext-pNext", "VUID-VkDeviceCreateInfo-sType-unique", true, true);
 
         skip |= validate_reserved_flags("vkCreateDevice", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkDeviceCreateInfo-flags-zerobitmask");
 
@@ -3691,7 +4291,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(
             {
                 const VkStructureType allowed_structs_VkDeviceQueueCreateInfo[] = { VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_EXT };
 
-                skip |= validate_struct_pnext("vkCreateDevice", ParameterName("pCreateInfo->pQueueCreateInfos[%i].pNext", ParameterName::IndexVector{ queueCreateInfoIndex }), "VkDeviceQueueGlobalPriorityCreateInfoEXT", pCreateInfo->pQueueCreateInfos[queueCreateInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkDeviceQueueCreateInfo), allowed_structs_VkDeviceQueueCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDeviceQueueCreateInfo-pNext-pNext", "VUID-VkDeviceQueueCreateInfo-sType-unique", true);
+                skip |= validate_struct_pnext("vkCreateDevice", ParameterName("pCreateInfo->pQueueCreateInfos[%i].pNext", ParameterName::IndexVector{ queueCreateInfoIndex }), "VkDeviceQueueGlobalPriorityCreateInfoEXT", pCreateInfo->pQueueCreateInfos[queueCreateInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkDeviceQueueCreateInfo), allowed_structs_VkDeviceQueueCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDeviceQueueCreateInfo-pNext-pNext", "VUID-VkDeviceQueueCreateInfo-sType-unique", true, true);
 
                 skip |= validate_flags("vkCreateDevice", ParameterName("pCreateInfo->pQueueCreateInfos[%i].flags", ParameterName::IndexVector{ queueCreateInfoIndex }), "VkDeviceQueueCreateFlagBits", AllVkDeviceQueueCreateFlagBits, pCreateInfo->pQueueCreateInfos[queueCreateInfoIndex].flags, kOptionalFlags, "VUID-VkDeviceQueueCreateInfo-flags-parameter");
 
@@ -3891,7 +4491,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit(
         {
             const VkStructureType allowed_structs_VkSubmitInfo[] = { VK_STRUCTURE_TYPE_D3D12_FENCE_SUBMIT_INFO_KHR, VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO, VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR, VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO, VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO, VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR, VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV };
 
-            skip |= validate_struct_pnext("vkQueueSubmit", ParameterName("pSubmits[%i].pNext", ParameterName::IndexVector{ submitIndex }), "VkD3D12FenceSubmitInfoKHR, VkDeviceGroupSubmitInfo, VkPerformanceQuerySubmitInfoKHR, VkProtectedSubmitInfo, VkTimelineSemaphoreSubmitInfo, VkWin32KeyedMutexAcquireReleaseInfoKHR, VkWin32KeyedMutexAcquireReleaseInfoNV", pSubmits[submitIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubmitInfo), allowed_structs_VkSubmitInfo, GeneratedVulkanHeaderVersion, "VUID-VkSubmitInfo-pNext-pNext", "VUID-VkSubmitInfo-sType-unique");
+            skip |= validate_struct_pnext("vkQueueSubmit", ParameterName("pSubmits[%i].pNext", ParameterName::IndexVector{ submitIndex }), "VkD3D12FenceSubmitInfoKHR, VkDeviceGroupSubmitInfo, VkPerformanceQuerySubmitInfoKHR, VkProtectedSubmitInfo, VkTimelineSemaphoreSubmitInfo, VkWin32KeyedMutexAcquireReleaseInfoKHR, VkWin32KeyedMutexAcquireReleaseInfoNV", pSubmits[submitIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubmitInfo), allowed_structs_VkSubmitInfo, GeneratedVulkanHeaderVersion, "VUID-VkSubmitInfo-pNext-pNext", "VUID-VkSubmitInfo-sType-unique", false, true);
 
             skip |= validate_array("vkQueueSubmit", ParameterName("pSubmits[%i].waitSemaphoreCount", ParameterName::IndexVector{ submitIndex }), ParameterName("pSubmits[%i].pWaitSemaphores", ParameterName::IndexVector{ submitIndex }), pSubmits[submitIndex].waitSemaphoreCount, &pSubmits[submitIndex].pWaitSemaphores, false, true, kVUIDUndefined, "VUID-VkSubmitInfo-pWaitSemaphores-parameter");
 
@@ -3930,7 +4530,7 @@ bool StatelessValidation::PreCallValidateAllocateMemory(
     {
         const VkStructureType allowed_structs_VkMemoryAllocateInfo[] = { VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_MEMORY_ALLOCATE_INFO_NV, VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO, VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_NV, VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_KHR, VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_NV, VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID, VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR, VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT, VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR, VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_NV, VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA, VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO, VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO, VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO, VK_STRUCTURE_TYPE_MEMORY_PRIORITY_ALLOCATE_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkAllocateMemory", "pAllocateInfo->pNext", "VkDedicatedAllocationMemoryAllocateInfoNV, VkExportMemoryAllocateInfo, VkExportMemoryAllocateInfoNV, VkExportMemoryWin32HandleInfoKHR, VkExportMemoryWin32HandleInfoNV, VkImportAndroidHardwareBufferInfoANDROID, VkImportMemoryFdInfoKHR, VkImportMemoryHostPointerInfoEXT, VkImportMemoryWin32HandleInfoKHR, VkImportMemoryWin32HandleInfoNV, VkImportMemoryZirconHandleInfoFUCHSIA, VkMemoryAllocateFlagsInfo, VkMemoryDedicatedAllocateInfo, VkMemoryOpaqueCaptureAddressAllocateInfo, VkMemoryPriorityAllocateInfoEXT", pAllocateInfo->pNext, ARRAY_SIZE(allowed_structs_VkMemoryAllocateInfo), allowed_structs_VkMemoryAllocateInfo, GeneratedVulkanHeaderVersion, "VUID-VkMemoryAllocateInfo-pNext-pNext", "VUID-VkMemoryAllocateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkAllocateMemory", "pAllocateInfo->pNext", "VkDedicatedAllocationMemoryAllocateInfoNV, VkExportMemoryAllocateInfo, VkExportMemoryAllocateInfoNV, VkExportMemoryWin32HandleInfoKHR, VkExportMemoryWin32HandleInfoNV, VkImportAndroidHardwareBufferInfoANDROID, VkImportMemoryFdInfoKHR, VkImportMemoryHostPointerInfoEXT, VkImportMemoryWin32HandleInfoKHR, VkImportMemoryWin32HandleInfoNV, VkImportMemoryZirconHandleInfoFUCHSIA, VkMemoryAllocateFlagsInfo, VkMemoryDedicatedAllocateInfo, VkMemoryOpaqueCaptureAddressAllocateInfo, VkMemoryPriorityAllocateInfoEXT", pAllocateInfo->pNext, ARRAY_SIZE(allowed_structs_VkMemoryAllocateInfo), allowed_structs_VkMemoryAllocateInfo, GeneratedVulkanHeaderVersion, "VUID-VkMemoryAllocateInfo-pNext-pNext", "VUID-VkMemoryAllocateInfo-sType-unique", false, true);
     }
     if (pAllocator != NULL)
     {
@@ -4016,7 +4616,7 @@ bool StatelessValidation::PreCallValidateFlushMappedMemoryRanges(
     {
         for (uint32_t memoryRangeIndex = 0; memoryRangeIndex < memoryRangeCount; ++memoryRangeIndex)
         {
-            skip |= validate_struct_pnext("vkFlushMappedMemoryRanges", ParameterName("pMemoryRanges[%i].pNext", ParameterName::IndexVector{ memoryRangeIndex }), NULL, pMemoryRanges[memoryRangeIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMappedMemoryRange-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkFlushMappedMemoryRanges", ParameterName("pMemoryRanges[%i].pNext", ParameterName::IndexVector{ memoryRangeIndex }), NULL, pMemoryRanges[memoryRangeIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMappedMemoryRange-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_required_handle("vkFlushMappedMemoryRanges", ParameterName("pMemoryRanges[%i].memory", ParameterName::IndexVector{ memoryRangeIndex }), pMemoryRanges[memoryRangeIndex].memory);
         }
@@ -4034,7 +4634,7 @@ bool StatelessValidation::PreCallValidateInvalidateMappedMemoryRanges(
     {
         for (uint32_t memoryRangeIndex = 0; memoryRangeIndex < memoryRangeCount; ++memoryRangeIndex)
         {
-            skip |= validate_struct_pnext("vkInvalidateMappedMemoryRanges", ParameterName("pMemoryRanges[%i].pNext", ParameterName::IndexVector{ memoryRangeIndex }), NULL, pMemoryRanges[memoryRangeIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMappedMemoryRange-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkInvalidateMappedMemoryRanges", ParameterName("pMemoryRanges[%i].pNext", ParameterName::IndexVector{ memoryRangeIndex }), NULL, pMemoryRanges[memoryRangeIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMappedMemoryRange-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_required_handle("vkInvalidateMappedMemoryRanges", ParameterName("pMemoryRanges[%i].memory", ParameterName::IndexVector{ memoryRangeIndex }), pMemoryRanges[memoryRangeIndex].memory);
         }
@@ -4159,7 +4759,7 @@ bool StatelessValidation::PreCallValidateQueueBindSparse(
         {
             const VkStructureType allowed_structs_VkBindSparseInfo[] = { VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO, VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO };
 
-            skip |= validate_struct_pnext("vkQueueBindSparse", ParameterName("pBindInfo[%i].pNext", ParameterName::IndexVector{ bindInfoIndex }), "VkDeviceGroupBindSparseInfo, VkTimelineSemaphoreSubmitInfo", pBindInfo[bindInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkBindSparseInfo), allowed_structs_VkBindSparseInfo, GeneratedVulkanHeaderVersion, "VUID-VkBindSparseInfo-pNext-pNext", "VUID-VkBindSparseInfo-sType-unique");
+            skip |= validate_struct_pnext("vkQueueBindSparse", ParameterName("pBindInfo[%i].pNext", ParameterName::IndexVector{ bindInfoIndex }), "VkDeviceGroupBindSparseInfo, VkTimelineSemaphoreSubmitInfo", pBindInfo[bindInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkBindSparseInfo), allowed_structs_VkBindSparseInfo, GeneratedVulkanHeaderVersion, "VUID-VkBindSparseInfo-pNext-pNext", "VUID-VkBindSparseInfo-sType-unique", false, true);
 
             skip |= validate_array("vkQueueBindSparse", ParameterName("pBindInfo[%i].waitSemaphoreCount", ParameterName::IndexVector{ bindInfoIndex }), ParameterName("pBindInfo[%i].pWaitSemaphores", ParameterName::IndexVector{ bindInfoIndex }), pBindInfo[bindInfoIndex].waitSemaphoreCount, &pBindInfo[bindInfoIndex].pWaitSemaphores, false, true, kVUIDUndefined, "VUID-VkBindSparseInfo-pWaitSemaphores-parameter");
 
@@ -4246,7 +4846,7 @@ bool StatelessValidation::PreCallValidateCreateFence(
     {
         const VkStructureType allowed_structs_VkFenceCreateInfo[] = { VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO, VK_STRUCTURE_TYPE_EXPORT_FENCE_WIN32_HANDLE_INFO_KHR };
 
-        skip |= validate_struct_pnext("vkCreateFence", "pCreateInfo->pNext", "VkExportFenceCreateInfo, VkExportFenceWin32HandleInfoKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkFenceCreateInfo), allowed_structs_VkFenceCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkFenceCreateInfo-pNext-pNext", "VUID-VkFenceCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateFence", "pCreateInfo->pNext", "VkExportFenceCreateInfo, VkExportFenceWin32HandleInfoKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkFenceCreateInfo), allowed_structs_VkFenceCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkFenceCreateInfo-pNext-pNext", "VUID-VkFenceCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateFence", "pCreateInfo->flags", "VkFenceCreateFlagBits", AllVkFenceCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkFenceCreateInfo-flags-parameter");
     }
@@ -4342,7 +4942,7 @@ bool StatelessValidation::PreCallValidateCreateSemaphore(
     {
         const VkStructureType allowed_structs_VkSemaphoreCreateInfo[] = { VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO, VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR, VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
 
-        skip |= validate_struct_pnext("vkCreateSemaphore", "pCreateInfo->pNext", "VkExportSemaphoreCreateInfo, VkExportSemaphoreWin32HandleInfoKHR, VkSemaphoreTypeCreateInfo", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkSemaphoreCreateInfo), allowed_structs_VkSemaphoreCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreCreateInfo-pNext-pNext", "VUID-VkSemaphoreCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateSemaphore", "pCreateInfo->pNext", "VkExportSemaphoreCreateInfo, VkExportSemaphoreWin32HandleInfoKHR, VkSemaphoreTypeCreateInfo", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkSemaphoreCreateInfo), allowed_structs_VkSemaphoreCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreCreateInfo-pNext-pNext", "VUID-VkSemaphoreCreateInfo-sType-unique", false, true);
 
         skip |= validate_reserved_flags("vkCreateSemaphore", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkSemaphoreCreateInfo-flags-zerobitmask");
     }
@@ -4407,7 +5007,7 @@ bool StatelessValidation::PreCallValidateCreateEvent(
     skip |= validate_struct_type("vkCreateEvent", "pCreateInfo", "VK_STRUCTURE_TYPE_EVENT_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_EVENT_CREATE_INFO, true, "VUID-vkCreateEvent-pCreateInfo-parameter", "VUID-VkEventCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateEvent", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkEventCreateInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateEvent", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkEventCreateInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_flags("vkCreateEvent", "pCreateInfo->flags", "VkEventCreateFlagBits", AllVkEventCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkEventCreateInfo-flags-parameter");
     }
@@ -4498,7 +5098,7 @@ bool StatelessValidation::PreCallValidateCreateQueryPool(
     {
         const VkStructureType allowed_structs_VkQueryPoolCreateInfo[] = { VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR, VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL, VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR };
 
-        skip |= validate_struct_pnext("vkCreateQueryPool", "pCreateInfo->pNext", "VkQueryPoolPerformanceCreateInfoKHR, VkQueryPoolPerformanceQueryCreateInfoINTEL, VkVideoProfileKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkQueryPoolCreateInfo), allowed_structs_VkQueryPoolCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkQueryPoolCreateInfo-pNext-pNext", "VUID-VkQueryPoolCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateQueryPool", "pCreateInfo->pNext", "VkQueryPoolPerformanceCreateInfoKHR, VkQueryPoolPerformanceQueryCreateInfoINTEL, VkVideoProfileKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkQueryPoolCreateInfo), allowed_structs_VkQueryPoolCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkQueryPoolCreateInfo-pNext-pNext", "VUID-VkQueryPoolCreateInfo-sType-unique", false, true);
 
         skip |= validate_reserved_flags("vkCreateQueryPool", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkQueryPoolCreateInfo-flags-zerobitmask");
 
@@ -4585,7 +5185,7 @@ bool StatelessValidation::PreCallValidateCreateBuffer(
     {
         const VkStructureType allowed_structs_VkBufferCreateInfo[] = { VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO, VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_BUFFER_CREATE_INFO_NV, VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO, VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR, VK_STRUCTURE_TYPE_VIDEO_PROFILES_KHR };
 
-        skip |= validate_struct_pnext("vkCreateBuffer", "pCreateInfo->pNext", "VkBufferDeviceAddressCreateInfoEXT, VkBufferOpaqueCaptureAddressCreateInfo, VkDedicatedAllocationBufferCreateInfoNV, VkExternalMemoryBufferCreateInfo, VkVideoProfileKHR, VkVideoProfilesKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkBufferCreateInfo), allowed_structs_VkBufferCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkBufferCreateInfo-pNext-pNext", "VUID-VkBufferCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateBuffer", "pCreateInfo->pNext", "VkBufferDeviceAddressCreateInfoEXT, VkBufferOpaqueCaptureAddressCreateInfo, VkDedicatedAllocationBufferCreateInfoNV, VkExternalMemoryBufferCreateInfo, VkVideoProfileKHR, VkVideoProfilesKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkBufferCreateInfo), allowed_structs_VkBufferCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkBufferCreateInfo-pNext-pNext", "VUID-VkBufferCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateBuffer", "pCreateInfo->flags", "VkBufferCreateFlagBits", AllVkBufferCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkBufferCreateInfo-flags-parameter");
 
@@ -4655,7 +5255,7 @@ bool StatelessValidation::PreCallValidateCreateBufferView(
     skip |= validate_struct_type("vkCreateBufferView", "pCreateInfo", "VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO, true, "VUID-vkCreateBufferView-pCreateInfo-parameter", "VUID-VkBufferViewCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateBufferView", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferViewCreateInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateBufferView", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferViewCreateInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateBufferView", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkBufferViewCreateInfo-flags-zerobitmask");
 
@@ -4726,7 +5326,7 @@ bool StatelessValidation::PreCallValidateCreateImage(
     {
         const VkStructureType allowed_structs_VkImageCreateInfo[] = { VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV, VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID, VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO, VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV, VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO, VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO, VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR, VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR, VK_STRUCTURE_TYPE_VIDEO_PROFILES_KHR };
 
-        skip |= validate_struct_pnext("vkCreateImage", "pCreateInfo->pNext", "VkDedicatedAllocationImageCreateInfoNV, VkExternalFormatANDROID, VkExternalMemoryImageCreateInfo, VkExternalMemoryImageCreateInfoNV, VkImageDrmFormatModifierExplicitCreateInfoEXT, VkImageDrmFormatModifierListCreateInfoEXT, VkImageFormatListCreateInfo, VkImageStencilUsageCreateInfo, VkImageSwapchainCreateInfoKHR, VkVideoProfileKHR, VkVideoProfilesKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkImageCreateInfo), allowed_structs_VkImageCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkImageCreateInfo-pNext-pNext", "VUID-VkImageCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateImage", "pCreateInfo->pNext", "VkDedicatedAllocationImageCreateInfoNV, VkExternalFormatANDROID, VkExternalMemoryImageCreateInfo, VkExternalMemoryImageCreateInfoNV, VkImageDrmFormatModifierExplicitCreateInfoEXT, VkImageDrmFormatModifierListCreateInfoEXT, VkImageFormatListCreateInfo, VkImageStencilUsageCreateInfo, VkImageSwapchainCreateInfoKHR, VkVideoProfileKHR, VkVideoProfilesKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkImageCreateInfo), allowed_structs_VkImageCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkImageCreateInfo-pNext-pNext", "VUID-VkImageCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateImage", "pCreateInfo->flags", "VkImageCreateFlagBits", AllVkImageCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkImageCreateInfo-flags-parameter");
 
@@ -4830,7 +5430,7 @@ bool StatelessValidation::PreCallValidateCreateImageView(
     {
         const VkStructureType allowed_structs_VkImageViewCreateInfo[] = { VK_STRUCTURE_TYPE_IMAGE_VIEW_ASTC_DECODE_MODE_EXT, VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO, VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR, VK_STRUCTURE_TYPE_VIDEO_PROFILES_KHR };
 
-        skip |= validate_struct_pnext("vkCreateImageView", "pCreateInfo->pNext", "VkImageViewASTCDecodeModeEXT, VkImageViewUsageCreateInfo, VkSamplerYcbcrConversionInfo, VkVideoProfileKHR, VkVideoProfilesKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkImageViewCreateInfo), allowed_structs_VkImageViewCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkImageViewCreateInfo-pNext-pNext", "VUID-VkImageViewCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateImageView", "pCreateInfo->pNext", "VkImageViewASTCDecodeModeEXT, VkImageViewUsageCreateInfo, VkSamplerYcbcrConversionInfo, VkVideoProfileKHR, VkVideoProfilesKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkImageViewCreateInfo), allowed_structs_VkImageViewCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkImageViewCreateInfo-pNext-pNext", "VUID-VkImageViewCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateImageView", "pCreateInfo->flags", "VkImageViewCreateFlagBits", AllVkImageViewCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkImageViewCreateInfo-flags-parameter");
 
@@ -4914,7 +5514,7 @@ bool StatelessValidation::PreCallValidateCreateShaderModule(
     {
         const VkStructureType allowed_structs_VkShaderModuleCreateInfo[] = { VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkCreateShaderModule", "pCreateInfo->pNext", "VkShaderModuleValidationCacheCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkShaderModuleCreateInfo), allowed_structs_VkShaderModuleCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkShaderModuleCreateInfo-pNext-pNext", "VUID-VkShaderModuleCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateShaderModule", "pCreateInfo->pNext", "VkShaderModuleValidationCacheCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkShaderModuleCreateInfo), allowed_structs_VkShaderModuleCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkShaderModuleCreateInfo-pNext-pNext", "VUID-VkShaderModuleCreateInfo-sType-unique", false, true);
 
         skip |= validate_reserved_flags("vkCreateShaderModule", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkShaderModuleCreateInfo-flags-zerobitmask");
 
@@ -4981,7 +5581,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineCache(
     skip |= validate_struct_type("vkCreatePipelineCache", "pCreateInfo", "VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO, true, "VUID-vkCreatePipelineCache-pCreateInfo-parameter", "VUID-VkPipelineCacheCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreatePipelineCache", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineCacheCreateInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreatePipelineCache", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineCacheCreateInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_flags("vkCreatePipelineCache", "pCreateInfo->flags", "VkPipelineCacheCreateFlagBits", AllVkPipelineCacheCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkPipelineCacheCreateInfo-flags-parameter");
 
@@ -5077,7 +5677,7 @@ bool StatelessValidation::PreCallValidateCreateGraphicsPipelines(
         {
             const VkStructureType allowed_structs_VkGraphicsPipelineCreateInfo[] = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_SHADER_GROUPS_CREATE_INFO_NV, VK_STRUCTURE_TYPE_PIPELINE_COMPILER_CONTROL_CREATE_INFO_AMD, VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_PIPELINE_DISCARD_RECTANGLE_STATE_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_ENUM_STATE_CREATE_INFO_NV, VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR, VK_STRUCTURE_TYPE_PIPELINE_REPRESENTATIVE_FRAGMENT_TEST_STATE_CREATE_INFO_NV };
 
-            skip |= validate_struct_pnext("vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pNext", ParameterName::IndexVector{ createInfoIndex }), "VkGraphicsPipelineShaderGroupsCreateInfoNV, VkPipelineCompilerControlCreateInfoAMD, VkPipelineCreationFeedbackCreateInfoEXT, VkPipelineDiscardRectangleStateCreateInfoEXT, VkPipelineFragmentShadingRateEnumStateCreateInfoNV, VkPipelineFragmentShadingRateStateCreateInfoKHR, VkPipelineRepresentativeFragmentTestStateCreateInfoNV", pCreateInfos[createInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkGraphicsPipelineCreateInfo), allowed_structs_VkGraphicsPipelineCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext", "VUID-VkGraphicsPipelineCreateInfo-sType-unique");
+            skip |= validate_struct_pnext("vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pNext", ParameterName::IndexVector{ createInfoIndex }), "VkGraphicsPipelineShaderGroupsCreateInfoNV, VkPipelineCompilerControlCreateInfoAMD, VkPipelineCreationFeedbackCreateInfoEXT, VkPipelineDiscardRectangleStateCreateInfoEXT, VkPipelineFragmentShadingRateEnumStateCreateInfoNV, VkPipelineFragmentShadingRateStateCreateInfoKHR, VkPipelineRepresentativeFragmentTestStateCreateInfoNV", pCreateInfos[createInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkGraphicsPipelineCreateInfo), allowed_structs_VkGraphicsPipelineCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext", "VUID-VkGraphicsPipelineCreateInfo-sType-unique", false, true);
 
             skip |= validate_flags("vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].flags", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits, pCreateInfos[createInfoIndex].flags, kOptionalFlags, "VUID-VkGraphicsPipelineCreateInfo-flags-parameter");
 
@@ -5089,7 +5689,7 @@ bool StatelessValidation::PreCallValidateCreateGraphicsPipelines(
                 {
                     const VkStructureType allowed_structs_VkPipelineShaderStageCreateInfo[] = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT };
 
-                    skip |= validate_struct_pnext("vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pStages[%i].pNext", ParameterName::IndexVector{ createInfoIndex, stageIndex }), "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT", pCreateInfos[createInfoIndex].pStages[stageIndex].pNext, ARRAY_SIZE(allowed_structs_VkPipelineShaderStageCreateInfo), allowed_structs_VkPipelineShaderStageCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkPipelineShaderStageCreateInfo-pNext-pNext", "VUID-VkPipelineShaderStageCreateInfo-sType-unique");
+                    skip |= validate_struct_pnext("vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pStages[%i].pNext", ParameterName::IndexVector{ createInfoIndex, stageIndex }), "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT", pCreateInfos[createInfoIndex].pStages[stageIndex].pNext, ARRAY_SIZE(allowed_structs_VkPipelineShaderStageCreateInfo), allowed_structs_VkPipelineShaderStageCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkPipelineShaderStageCreateInfo-pNext-pNext", "VUID-VkPipelineShaderStageCreateInfo-sType-unique", false, true);
 
                     skip |= validate_flags("vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pStages[%i].flags", ParameterName::IndexVector{ createInfoIndex, stageIndex }), "VkPipelineShaderStageCreateFlagBits", AllVkPipelineShaderStageCreateFlagBits, pCreateInfos[createInfoIndex].pStages[stageIndex].flags, kOptionalFlags, "VUID-VkPipelineShaderStageCreateInfo-flags-parameter");
 
@@ -5122,7 +5722,7 @@ bool StatelessValidation::PreCallValidateCreateGraphicsPipelines(
             {
                 const VkStructureType allowed_structs_VkPipelineRasterizationStateCreateInfo[] = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD, VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_STREAM_CREATE_INFO_EXT };
 
-                skip |= validate_struct_pnext("vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pRasterizationState->pNext", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineRasterizationConservativeStateCreateInfoEXT, VkPipelineRasterizationDepthClipStateCreateInfoEXT, VkPipelineRasterizationLineStateCreateInfoEXT, VkPipelineRasterizationProvokingVertexStateCreateInfoEXT, VkPipelineRasterizationStateRasterizationOrderAMD, VkPipelineRasterizationStateStreamCreateInfoEXT", pCreateInfos[createInfoIndex].pRasterizationState->pNext, ARRAY_SIZE(allowed_structs_VkPipelineRasterizationStateCreateInfo), allowed_structs_VkPipelineRasterizationStateCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkPipelineRasterizationStateCreateInfo-pNext-pNext", "VUID-VkPipelineRasterizationStateCreateInfo-sType-unique");
+                skip |= validate_struct_pnext("vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pRasterizationState->pNext", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineRasterizationConservativeStateCreateInfoEXT, VkPipelineRasterizationDepthClipStateCreateInfoEXT, VkPipelineRasterizationLineStateCreateInfoEXT, VkPipelineRasterizationProvokingVertexStateCreateInfoEXT, VkPipelineRasterizationStateRasterizationOrderAMD, VkPipelineRasterizationStateStreamCreateInfoEXT", pCreateInfos[createInfoIndex].pRasterizationState->pNext, ARRAY_SIZE(allowed_structs_VkPipelineRasterizationStateCreateInfo), allowed_structs_VkPipelineRasterizationStateCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkPipelineRasterizationStateCreateInfo-pNext-pNext", "VUID-VkPipelineRasterizationStateCreateInfo-sType-unique", false, true);
 
                 skip |= validate_reserved_flags("vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pRasterizationState->flags", ParameterName::IndexVector{ createInfoIndex }), pCreateInfos[createInfoIndex].pRasterizationState->flags, "VUID-VkPipelineRasterizationStateCreateInfo-flags-zerobitmask");
 
@@ -5143,7 +5743,7 @@ bool StatelessValidation::PreCallValidateCreateGraphicsPipelines(
 
             if (pCreateInfos[createInfoIndex].pDynamicState != NULL)
             {
-                skip |= validate_struct_pnext("vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pDynamicState->pNext", ParameterName::IndexVector{ createInfoIndex }), NULL, pCreateInfos[createInfoIndex].pDynamicState->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineDynamicStateCreateInfo-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pDynamicState->pNext", ParameterName::IndexVector{ createInfoIndex }), NULL, pCreateInfos[createInfoIndex].pDynamicState->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineDynamicStateCreateInfo-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_reserved_flags("vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pDynamicState->flags", ParameterName::IndexVector{ createInfoIndex }), pCreateInfos[createInfoIndex].pDynamicState->flags, "VUID-VkPipelineDynamicStateCreateInfo-flags-zerobitmask");
 
@@ -5195,7 +5795,7 @@ bool StatelessValidation::PreCallValidateCreateComputePipelines(
         {
             const VkStructureType allowed_structs_VkComputePipelineCreateInfo[] = { VK_STRUCTURE_TYPE_PIPELINE_COMPILER_CONTROL_CREATE_INFO_AMD, VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI };
 
-            skip |= validate_struct_pnext("vkCreateComputePipelines", ParameterName("pCreateInfos[%i].pNext", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineCompilerControlCreateInfoAMD, VkPipelineCreationFeedbackCreateInfoEXT, VkSubpassShadingPipelineCreateInfoHUAWEI", pCreateInfos[createInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkComputePipelineCreateInfo), allowed_structs_VkComputePipelineCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkComputePipelineCreateInfo-pNext-pNext", "VUID-VkComputePipelineCreateInfo-sType-unique");
+            skip |= validate_struct_pnext("vkCreateComputePipelines", ParameterName("pCreateInfos[%i].pNext", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineCompilerControlCreateInfoAMD, VkPipelineCreationFeedbackCreateInfoEXT, VkSubpassShadingPipelineCreateInfoHUAWEI", pCreateInfos[createInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkComputePipelineCreateInfo), allowed_structs_VkComputePipelineCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkComputePipelineCreateInfo-pNext-pNext", "VUID-VkComputePipelineCreateInfo-sType-unique", false, true);
 
             skip |= validate_flags("vkCreateComputePipelines", ParameterName("pCreateInfos[%i].flags", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits, pCreateInfos[createInfoIndex].flags, kOptionalFlags, "VUID-VkComputePipelineCreateInfo-flags-parameter");
 
@@ -5203,7 +5803,7 @@ bool StatelessValidation::PreCallValidateCreateComputePipelines(
 
             const VkStructureType allowed_structs_VkPipelineShaderStageCreateInfo[] = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT };
 
-            skip |= validate_struct_pnext("vkCreateComputePipelines", ParameterName("pCreateInfos[%i].stage.pNext", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT", pCreateInfos[createInfoIndex].stage.pNext, ARRAY_SIZE(allowed_structs_VkPipelineShaderStageCreateInfo), allowed_structs_VkPipelineShaderStageCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkPipelineShaderStageCreateInfo-pNext-pNext", "VUID-VkPipelineShaderStageCreateInfo-sType-unique");
+            skip |= validate_struct_pnext("vkCreateComputePipelines", ParameterName("pCreateInfos[%i].stage.pNext", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT", pCreateInfos[createInfoIndex].stage.pNext, ARRAY_SIZE(allowed_structs_VkPipelineShaderStageCreateInfo), allowed_structs_VkPipelineShaderStageCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkPipelineShaderStageCreateInfo-pNext-pNext", "VUID-VkPipelineShaderStageCreateInfo-sType-unique", false, true);
 
             skip |= validate_flags("vkCreateComputePipelines", ParameterName("pCreateInfos[%i].stage.flags", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineShaderStageCreateFlagBits", AllVkPipelineShaderStageCreateFlagBits, pCreateInfos[createInfoIndex].stage.flags, kOptionalFlags, "VUID-VkPipelineShaderStageCreateInfo-flags-parameter");
 
@@ -5293,7 +5893,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineLayout(
     skip |= validate_struct_type("vkCreatePipelineLayout", "pCreateInfo", "VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, true, "VUID-vkCreatePipelineLayout-pCreateInfo-parameter", "VUID-VkPipelineLayoutCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreatePipelineLayout", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineLayoutCreateInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreatePipelineLayout", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineLayoutCreateInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreatePipelineLayout", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkPipelineLayoutCreateInfo-flags-zerobitmask");
 
@@ -5373,7 +5973,7 @@ bool StatelessValidation::PreCallValidateCreateSampler(
     {
         const VkStructureType allowed_structs_VkSamplerCreateInfo[] = { VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO };
 
-        skip |= validate_struct_pnext("vkCreateSampler", "pCreateInfo->pNext", "VkSamplerCustomBorderColorCreateInfoEXT, VkSamplerReductionModeCreateInfo, VkSamplerYcbcrConversionInfo", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkSamplerCreateInfo), allowed_structs_VkSamplerCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkSamplerCreateInfo-pNext-pNext", "VUID-VkSamplerCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateSampler", "pCreateInfo->pNext", "VkSamplerCustomBorderColorCreateInfoEXT, VkSamplerReductionModeCreateInfo, VkSamplerYcbcrConversionInfo", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkSamplerCreateInfo), allowed_structs_VkSamplerCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkSamplerCreateInfo-pNext-pNext", "VUID-VkSamplerCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateSampler", "pCreateInfo->flags", "VkSamplerCreateFlagBits", AllVkSamplerCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkSamplerCreateInfo-flags-parameter");
 
@@ -5459,7 +6059,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorSetLayout(
     {
         const VkStructureType allowed_structs_VkDescriptorSetLayoutCreateInfo[] = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO, VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE };
 
-        skip |= validate_struct_pnext("vkCreateDescriptorSetLayout", "pCreateInfo->pNext", "VkDescriptorSetLayoutBindingFlagsCreateInfo, VkMutableDescriptorTypeCreateInfoVALVE", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorSetLayoutCreateInfo), allowed_structs_VkDescriptorSetLayoutCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorSetLayoutCreateInfo-pNext-pNext", "VUID-VkDescriptorSetLayoutCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateDescriptorSetLayout", "pCreateInfo->pNext", "VkDescriptorSetLayoutBindingFlagsCreateInfo, VkMutableDescriptorTypeCreateInfoVALVE", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorSetLayoutCreateInfo), allowed_structs_VkDescriptorSetLayoutCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorSetLayoutCreateInfo-pNext-pNext", "VUID-VkDescriptorSetLayoutCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateDescriptorSetLayout", "pCreateInfo->flags", "VkDescriptorSetLayoutCreateFlagBits", AllVkDescriptorSetLayoutCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkDescriptorSetLayoutCreateInfo-flags-parameter");
 
@@ -5537,7 +6137,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorPool(
     {
         const VkStructureType allowed_structs_VkDescriptorPoolCreateInfo[] = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_INLINE_UNIFORM_BLOCK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE };
 
-        skip |= validate_struct_pnext("vkCreateDescriptorPool", "pCreateInfo->pNext", "VkDescriptorPoolInlineUniformBlockCreateInfoEXT, VkMutableDescriptorTypeCreateInfoVALVE", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorPoolCreateInfo), allowed_structs_VkDescriptorPoolCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorPoolCreateInfo-pNext-pNext", "VUID-VkDescriptorPoolCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateDescriptorPool", "pCreateInfo->pNext", "VkDescriptorPoolInlineUniformBlockCreateInfoEXT, VkMutableDescriptorTypeCreateInfoVALVE", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorPoolCreateInfo), allowed_structs_VkDescriptorPoolCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorPoolCreateInfo-pNext-pNext", "VUID-VkDescriptorPoolCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateDescriptorPool", "pCreateInfo->flags", "VkDescriptorPoolCreateFlagBits", AllVkDescriptorPoolCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkDescriptorPoolCreateInfo-flags-parameter");
 
@@ -5624,7 +6224,7 @@ bool StatelessValidation::PreCallValidateAllocateDescriptorSets(
     {
         const VkStructureType allowed_structs_VkDescriptorSetAllocateInfo[] = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO };
 
-        skip |= validate_struct_pnext("vkAllocateDescriptorSets", "pAllocateInfo->pNext", "VkDescriptorSetVariableDescriptorCountAllocateInfo", pAllocateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorSetAllocateInfo), allowed_structs_VkDescriptorSetAllocateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorSetAllocateInfo-pNext-pNext", "VUID-VkDescriptorSetAllocateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkAllocateDescriptorSets", "pAllocateInfo->pNext", "VkDescriptorSetVariableDescriptorCountAllocateInfo", pAllocateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorSetAllocateInfo), allowed_structs_VkDescriptorSetAllocateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorSetAllocateInfo-pNext-pNext", "VUID-VkDescriptorSetAllocateInfo-sType-unique", false, true);
 
         skip |= validate_required_handle("vkAllocateDescriptorSets", "pAllocateInfo->descriptorPool", pAllocateInfo->descriptorPool);
 
@@ -5662,7 +6262,7 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSets(
         {
             const VkStructureType allowed_structs_VkWriteDescriptorSet[] = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR, VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV, VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT };
 
-            skip |= validate_struct_pnext("vkUpdateDescriptorSets", ParameterName("pDescriptorWrites[%i].pNext", ParameterName::IndexVector{ descriptorWriteIndex }), "VkWriteDescriptorSetAccelerationStructureKHR, VkWriteDescriptorSetAccelerationStructureNV, VkWriteDescriptorSetInlineUniformBlockEXT", pDescriptorWrites[descriptorWriteIndex].pNext, ARRAY_SIZE(allowed_structs_VkWriteDescriptorSet), allowed_structs_VkWriteDescriptorSet, GeneratedVulkanHeaderVersion, "VUID-VkWriteDescriptorSet-pNext-pNext", "VUID-VkWriteDescriptorSet-sType-unique");
+            skip |= validate_struct_pnext("vkUpdateDescriptorSets", ParameterName("pDescriptorWrites[%i].pNext", ParameterName::IndexVector{ descriptorWriteIndex }), "VkWriteDescriptorSetAccelerationStructureKHR, VkWriteDescriptorSetAccelerationStructureNV, VkWriteDescriptorSetInlineUniformBlockEXT", pDescriptorWrites[descriptorWriteIndex].pNext, ARRAY_SIZE(allowed_structs_VkWriteDescriptorSet), allowed_structs_VkWriteDescriptorSet, GeneratedVulkanHeaderVersion, "VUID-VkWriteDescriptorSet-pNext-pNext", "VUID-VkWriteDescriptorSet-sType-unique", false, true);
 
             skip |= validate_ranged_enum("vkUpdateDescriptorSets", ParameterName("pDescriptorWrites[%i].descriptorType", ParameterName::IndexVector{ descriptorWriteIndex }), "VkDescriptorType", AllVkDescriptorTypeEnums, pDescriptorWrites[descriptorWriteIndex].descriptorType, "VUID-VkWriteDescriptorSet-descriptorType-parameter");
 
@@ -5674,7 +6274,7 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSets(
     {
         for (uint32_t descriptorCopyIndex = 0; descriptorCopyIndex < descriptorCopyCount; ++descriptorCopyIndex)
         {
-            skip |= validate_struct_pnext("vkUpdateDescriptorSets", ParameterName("pDescriptorCopies[%i].pNext", ParameterName::IndexVector{ descriptorCopyIndex }), NULL, pDescriptorCopies[descriptorCopyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyDescriptorSet-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkUpdateDescriptorSets", ParameterName("pDescriptorCopies[%i].pNext", ParameterName::IndexVector{ descriptorCopyIndex }), NULL, pDescriptorCopies[descriptorCopyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyDescriptorSet-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_required_handle("vkUpdateDescriptorSets", ParameterName("pDescriptorCopies[%i].srcSet", ParameterName::IndexVector{ descriptorCopyIndex }), pDescriptorCopies[descriptorCopyIndex].srcSet);
 
@@ -5696,7 +6296,7 @@ bool StatelessValidation::PreCallValidateCreateFramebuffer(
     {
         const VkStructureType allowed_structs_VkFramebufferCreateInfo[] = { VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO };
 
-        skip |= validate_struct_pnext("vkCreateFramebuffer", "pCreateInfo->pNext", "VkFramebufferAttachmentsCreateInfo", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkFramebufferCreateInfo), allowed_structs_VkFramebufferCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkFramebufferCreateInfo-pNext-pNext", "VUID-VkFramebufferCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateFramebuffer", "pCreateInfo->pNext", "VkFramebufferAttachmentsCreateInfo", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkFramebufferCreateInfo), allowed_structs_VkFramebufferCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkFramebufferCreateInfo-pNext-pNext", "VUID-VkFramebufferCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateFramebuffer", "pCreateInfo->flags", "VkFramebufferCreateFlagBits", AllVkFramebufferCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkFramebufferCreateInfo-flags-parameter");
 
@@ -5766,7 +6366,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(
     {
         const VkStructureType allowed_structs_VkRenderPassCreateInfo[] = { VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO, VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO };
 
-        skip |= validate_struct_pnext("vkCreateRenderPass", "pCreateInfo->pNext", "VkRenderPassFragmentDensityMapCreateInfoEXT, VkRenderPassInputAttachmentAspectCreateInfo, VkRenderPassMultiviewCreateInfo", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassCreateInfo), allowed_structs_VkRenderPassCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassCreateInfo-pNext-pNext", "VUID-VkRenderPassCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateRenderPass", "pCreateInfo->pNext", "VkRenderPassFragmentDensityMapCreateInfoEXT, VkRenderPassInputAttachmentAspectCreateInfo, VkRenderPassMultiviewCreateInfo", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassCreateInfo), allowed_structs_VkRenderPassCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassCreateInfo-pNext-pNext", "VUID-VkRenderPassCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateRenderPass", "pCreateInfo->flags", "VkRenderPassCreateFlagBits", AllVkRenderPassCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkRenderPassCreateInfo-flags-parameter");
 
@@ -5933,7 +6533,7 @@ bool StatelessValidation::PreCallValidateCreateCommandPool(
     skip |= validate_struct_type("vkCreateCommandPool", "pCreateInfo", "VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, true, "VUID-vkCreateCommandPool-pCreateInfo-parameter", "VUID-VkCommandPoolCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateCommandPool", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCommandPoolCreateInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateCommandPool", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCommandPoolCreateInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_flags("vkCreateCommandPool", "pCreateInfo->flags", "VkCommandPoolCreateFlagBits", AllVkCommandPoolCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkCommandPoolCreateInfo-flags-parameter");
     }
@@ -6007,7 +6607,7 @@ bool StatelessValidation::PreCallValidateAllocateCommandBuffers(
     skip |= validate_struct_type("vkAllocateCommandBuffers", "pAllocateInfo", "VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO", pAllocateInfo, VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, true, "VUID-vkAllocateCommandBuffers-pAllocateInfo-parameter", "VUID-VkCommandBufferAllocateInfo-sType-sType");
     if (pAllocateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkAllocateCommandBuffers", "pAllocateInfo->pNext", NULL, pAllocateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferAllocateInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkAllocateCommandBuffers", "pAllocateInfo->pNext", NULL, pAllocateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferAllocateInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkAllocateCommandBuffers", "pAllocateInfo->commandPool", pAllocateInfo->commandPool);
 
@@ -6039,7 +6639,7 @@ bool StatelessValidation::PreCallValidateBeginCommandBuffer(
     {
         const VkStructureType allowed_structs_VkCommandBufferBeginInfo[] = { VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO };
 
-        skip |= validate_struct_pnext("vkBeginCommandBuffer", "pBeginInfo->pNext", "VkDeviceGroupCommandBufferBeginInfo", pBeginInfo->pNext, ARRAY_SIZE(allowed_structs_VkCommandBufferBeginInfo), allowed_structs_VkCommandBufferBeginInfo, GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferBeginInfo-pNext-pNext", "VUID-VkCommandBufferBeginInfo-sType-unique");
+        skip |= validate_struct_pnext("vkBeginCommandBuffer", "pBeginInfo->pNext", "VkDeviceGroupCommandBufferBeginInfo", pBeginInfo->pNext, ARRAY_SIZE(allowed_structs_VkCommandBufferBeginInfo), allowed_structs_VkCommandBufferBeginInfo, GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferBeginInfo-pNext-pNext", "VUID-VkCommandBufferBeginInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkBeginCommandBuffer", "pBeginInfo->flags", "VkCommandBufferUsageFlagBits", AllVkCommandBufferUsageFlagBits, pBeginInfo->flags, kOptionalFlags, "VUID-VkCommandBufferBeginInfo-flags-parameter");
     }
@@ -6591,7 +7191,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents(
     {
         for (uint32_t memoryBarrierIndex = 0; memoryBarrierIndex < memoryBarrierCount; ++memoryBarrierIndex)
         {
-            skip |= validate_struct_pnext("vkCmdWaitEvents", ParameterName("pMemoryBarriers[%i].pNext", ParameterName::IndexVector{ memoryBarrierIndex }), NULL, pMemoryBarriers[memoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryBarrier-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkCmdWaitEvents", ParameterName("pMemoryBarriers[%i].pNext", ParameterName::IndexVector{ memoryBarrierIndex }), NULL, pMemoryBarriers[memoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryBarrier-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_flags("vkCmdWaitEvents", ParameterName("pMemoryBarriers[%i].srcAccessMask", ParameterName::IndexVector{ memoryBarrierIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pMemoryBarriers[memoryBarrierIndex].srcAccessMask, kOptionalFlags, "VUID-VkMemoryBarrier-srcAccessMask-parameter");
 
@@ -6603,7 +7203,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents(
     {
         for (uint32_t bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < bufferMemoryBarrierCount; ++bufferMemoryBarrierIndex)
         {
-            skip |= validate_struct_pnext("vkCmdWaitEvents", ParameterName("pBufferMemoryBarriers[%i].pNext", ParameterName::IndexVector{ bufferMemoryBarrierIndex }), NULL, pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryBarrier-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkCmdWaitEvents", ParameterName("pBufferMemoryBarriers[%i].pNext", ParameterName::IndexVector{ bufferMemoryBarrierIndex }), NULL, pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryBarrier-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_required_handle("vkCmdWaitEvents", ParameterName("pBufferMemoryBarriers[%i].buffer", ParameterName::IndexVector{ bufferMemoryBarrierIndex }), pBufferMemoryBarriers[bufferMemoryBarrierIndex].buffer);
         }
@@ -6615,7 +7215,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents(
         {
             const VkStructureType allowed_structs_VkImageMemoryBarrier[] = { VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT };
 
-            skip |= validate_struct_pnext("vkCmdWaitEvents", ParameterName("pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier), allowed_structs_VkImageMemoryBarrier, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier-pNext-pNext", "VUID-VkImageMemoryBarrier-sType-unique");
+            skip |= validate_struct_pnext("vkCmdWaitEvents", ParameterName("pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier), allowed_structs_VkImageMemoryBarrier, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier-pNext-pNext", "VUID-VkImageMemoryBarrier-sType-unique", false, true);
 
             skip |= validate_ranged_enum("vkCmdWaitEvents", ParameterName("pImageMemoryBarriers[%i].oldLayout", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkImageLayout", AllVkImageLayoutEnums, pImageMemoryBarriers[imageMemoryBarrierIndex].oldLayout, "VUID-VkImageMemoryBarrier-oldLayout-parameter");
 
@@ -6649,7 +7249,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier(
     {
         for (uint32_t memoryBarrierIndex = 0; memoryBarrierIndex < memoryBarrierCount; ++memoryBarrierIndex)
         {
-            skip |= validate_struct_pnext("vkCmdPipelineBarrier", ParameterName("pMemoryBarriers[%i].pNext", ParameterName::IndexVector{ memoryBarrierIndex }), NULL, pMemoryBarriers[memoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryBarrier-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkCmdPipelineBarrier", ParameterName("pMemoryBarriers[%i].pNext", ParameterName::IndexVector{ memoryBarrierIndex }), NULL, pMemoryBarriers[memoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryBarrier-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_flags("vkCmdPipelineBarrier", ParameterName("pMemoryBarriers[%i].srcAccessMask", ParameterName::IndexVector{ memoryBarrierIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pMemoryBarriers[memoryBarrierIndex].srcAccessMask, kOptionalFlags, "VUID-VkMemoryBarrier-srcAccessMask-parameter");
 
@@ -6661,7 +7261,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier(
     {
         for (uint32_t bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < bufferMemoryBarrierCount; ++bufferMemoryBarrierIndex)
         {
-            skip |= validate_struct_pnext("vkCmdPipelineBarrier", ParameterName("pBufferMemoryBarriers[%i].pNext", ParameterName::IndexVector{ bufferMemoryBarrierIndex }), NULL, pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryBarrier-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkCmdPipelineBarrier", ParameterName("pBufferMemoryBarriers[%i].pNext", ParameterName::IndexVector{ bufferMemoryBarrierIndex }), NULL, pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryBarrier-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_required_handle("vkCmdPipelineBarrier", ParameterName("pBufferMemoryBarriers[%i].buffer", ParameterName::IndexVector{ bufferMemoryBarrierIndex }), pBufferMemoryBarriers[bufferMemoryBarrierIndex].buffer);
         }
@@ -6673,7 +7273,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier(
         {
             const VkStructureType allowed_structs_VkImageMemoryBarrier[] = { VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT };
 
-            skip |= validate_struct_pnext("vkCmdPipelineBarrier", ParameterName("pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier), allowed_structs_VkImageMemoryBarrier, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier-pNext-pNext", "VUID-VkImageMemoryBarrier-sType-unique");
+            skip |= validate_struct_pnext("vkCmdPipelineBarrier", ParameterName("pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier), allowed_structs_VkImageMemoryBarrier, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier-pNext-pNext", "VUID-VkImageMemoryBarrier-sType-unique", false, true);
 
             skip |= validate_ranged_enum("vkCmdPipelineBarrier", ParameterName("pImageMemoryBarriers[%i].oldLayout", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkImageLayout", AllVkImageLayoutEnums, pImageMemoryBarriers[imageMemoryBarrierIndex].oldLayout, "VUID-VkImageMemoryBarrier-oldLayout-parameter");
 
@@ -6769,7 +7369,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass(
     {
         const VkStructureType allowed_structs_VkRenderPassBeginInfo[] = { VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO, VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO, VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM };
 
-        skip |= validate_struct_pnext("vkCmdBeginRenderPass", "pRenderPassBegin->pNext", "VkDeviceGroupRenderPassBeginInfo, VkRenderPassAttachmentBeginInfo, VkRenderPassSampleLocationsBeginInfoEXT, VkRenderPassTransformBeginInfoQCOM", pRenderPassBegin->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassBeginInfo), allowed_structs_VkRenderPassBeginInfo, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassBeginInfo-pNext-pNext", "VUID-VkRenderPassBeginInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCmdBeginRenderPass", "pRenderPassBegin->pNext", "VkDeviceGroupRenderPassBeginInfo, VkRenderPassAttachmentBeginInfo, VkRenderPassSampleLocationsBeginInfoEXT, VkRenderPassTransformBeginInfoQCOM", pRenderPassBegin->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassBeginInfo), allowed_structs_VkRenderPassBeginInfo, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassBeginInfo-pNext-pNext", "VUID-VkRenderPassBeginInfo-sType-unique", false, true);
 
         skip |= validate_required_handle("vkCmdBeginRenderPass", "pRenderPassBegin->renderPass", pRenderPassBegin->renderPass);
 
@@ -6822,7 +7422,7 @@ bool StatelessValidation::PreCallValidateBindBufferMemory2(
         {
             const VkStructureType allowed_structs_VkBindBufferMemoryInfo[] = { VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO };
 
-            skip |= validate_struct_pnext("vkBindBufferMemory2", ParameterName("pBindInfos[%i].pNext", ParameterName::IndexVector{ bindInfoIndex }), "VkBindBufferMemoryDeviceGroupInfo", pBindInfos[bindInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkBindBufferMemoryInfo), allowed_structs_VkBindBufferMemoryInfo, GeneratedVulkanHeaderVersion, "VUID-VkBindBufferMemoryInfo-pNext-pNext", "VUID-VkBindBufferMemoryInfo-sType-unique");
+            skip |= validate_struct_pnext("vkBindBufferMemory2", ParameterName("pBindInfos[%i].pNext", ParameterName::IndexVector{ bindInfoIndex }), "VkBindBufferMemoryDeviceGroupInfo", pBindInfos[bindInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkBindBufferMemoryInfo), allowed_structs_VkBindBufferMemoryInfo, GeneratedVulkanHeaderVersion, "VUID-VkBindBufferMemoryInfo-pNext-pNext", "VUID-VkBindBufferMemoryInfo-sType-unique", false, true);
 
             skip |= validate_required_handle("vkBindBufferMemory2", ParameterName("pBindInfos[%i].buffer", ParameterName::IndexVector{ bindInfoIndex }), pBindInfos[bindInfoIndex].buffer);
 
@@ -6844,7 +7444,7 @@ bool StatelessValidation::PreCallValidateBindImageMemory2(
         {
             const VkStructureType allowed_structs_VkBindImageMemoryInfo[] = { VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO, VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR, VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO };
 
-            skip |= validate_struct_pnext("vkBindImageMemory2", ParameterName("pBindInfos[%i].pNext", ParameterName::IndexVector{ bindInfoIndex }), "VkBindImageMemoryDeviceGroupInfo, VkBindImageMemorySwapchainInfoKHR, VkBindImagePlaneMemoryInfo", pBindInfos[bindInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkBindImageMemoryInfo), allowed_structs_VkBindImageMemoryInfo, GeneratedVulkanHeaderVersion, "VUID-VkBindImageMemoryInfo-pNext-pNext", "VUID-VkBindImageMemoryInfo-sType-unique");
+            skip |= validate_struct_pnext("vkBindImageMemory2", ParameterName("pBindInfos[%i].pNext", ParameterName::IndexVector{ bindInfoIndex }), "VkBindImageMemoryDeviceGroupInfo, VkBindImageMemorySwapchainInfoKHR, VkBindImagePlaneMemoryInfo", pBindInfos[bindInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkBindImageMemoryInfo), allowed_structs_VkBindImageMemoryInfo, GeneratedVulkanHeaderVersion, "VUID-VkBindImageMemoryInfo-pNext-pNext", "VUID-VkBindImageMemoryInfo-sType-unique", false, true);
 
             skip |= validate_required_handle("vkBindImageMemory2", ParameterName("pBindInfos[%i].image", ParameterName::IndexVector{ bindInfoIndex }), pBindInfos[bindInfoIndex].image);
         }
@@ -6895,7 +7495,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroups(
     {
         for (uint32_t pPhysicalDeviceGroupIndex = 0; pPhysicalDeviceGroupIndex < *pPhysicalDeviceGroupCount; ++pPhysicalDeviceGroupIndex)
         {
-            skip |= validate_struct_pnext("vkEnumeratePhysicalDeviceGroups", ParameterName("pPhysicalDeviceGroupProperties[%i].pNext", ParameterName::IndexVector{ pPhysicalDeviceGroupIndex }), NULL, pPhysicalDeviceGroupProperties[pPhysicalDeviceGroupIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceGroupProperties-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkEnumeratePhysicalDeviceGroups", ParameterName("pPhysicalDeviceGroupProperties[%i].pNext", ParameterName::IndexVector{ pPhysicalDeviceGroupIndex }), NULL, pPhysicalDeviceGroupProperties[pPhysicalDeviceGroupIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceGroupProperties-pNext-pNext", kVUIDUndefined, false, false);
         }
     }
     return skip;
@@ -6911,7 +7511,7 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements2(
     {
         const VkStructureType allowed_structs_VkImageMemoryRequirementsInfo2[] = { VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO };
 
-        skip |= validate_struct_pnext("vkGetImageMemoryRequirements2", "pInfo->pNext", "VkImagePlaneMemoryRequirementsInfo", pInfo->pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryRequirementsInfo2), allowed_structs_VkImageMemoryRequirementsInfo2, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryRequirementsInfo2-pNext-pNext", "VUID-VkImageMemoryRequirementsInfo2-sType-unique");
+        skip |= validate_struct_pnext("vkGetImageMemoryRequirements2", "pInfo->pNext", "VkImagePlaneMemoryRequirementsInfo", pInfo->pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryRequirementsInfo2), allowed_structs_VkImageMemoryRequirementsInfo2, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryRequirementsInfo2-pNext-pNext", "VUID-VkImageMemoryRequirementsInfo2-sType-unique", false, true);
 
         skip |= validate_required_handle("vkGetImageMemoryRequirements2", "pInfo->image", pInfo->image);
     }
@@ -6920,7 +7520,7 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements2(
     {
         const VkStructureType allowed_structs_VkMemoryRequirements2[] = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS };
 
-        skip |= validate_struct_pnext("vkGetImageMemoryRequirements2", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique");
+        skip |= validate_struct_pnext("vkGetImageMemoryRequirements2", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique", false, false);
     }
     return skip;
 }
@@ -6933,7 +7533,7 @@ bool StatelessValidation::PreCallValidateGetBufferMemoryRequirements2(
     skip |= validate_struct_type("vkGetBufferMemoryRequirements2", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2", pInfo, VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2, true, "VUID-vkGetBufferMemoryRequirements2-pInfo-parameter", "VUID-VkBufferMemoryRequirementsInfo2-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetBufferMemoryRequirements2", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryRequirementsInfo2-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetBufferMemoryRequirements2", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryRequirementsInfo2-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetBufferMemoryRequirements2", "pInfo->buffer", pInfo->buffer);
     }
@@ -6942,7 +7542,7 @@ bool StatelessValidation::PreCallValidateGetBufferMemoryRequirements2(
     {
         const VkStructureType allowed_structs_VkMemoryRequirements2[] = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS };
 
-        skip |= validate_struct_pnext("vkGetBufferMemoryRequirements2", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique");
+        skip |= validate_struct_pnext("vkGetBufferMemoryRequirements2", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique", false, false);
     }
     return skip;
 }
@@ -6956,7 +7556,7 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements2(
     skip |= validate_struct_type("vkGetImageSparseMemoryRequirements2", "pInfo", "VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2", pInfo, VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2, true, "VUID-vkGetImageSparseMemoryRequirements2-pInfo-parameter", "VUID-VkImageSparseMemoryRequirementsInfo2-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetImageSparseMemoryRequirements2", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageSparseMemoryRequirementsInfo2-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetImageSparseMemoryRequirements2", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageSparseMemoryRequirementsInfo2-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetImageSparseMemoryRequirements2", "pInfo->image", pInfo->image);
     }
@@ -6965,7 +7565,7 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements2(
     {
         for (uint32_t pSparseMemoryRequirementIndex = 0; pSparseMemoryRequirementIndex < *pSparseMemoryRequirementCount; ++pSparseMemoryRequirementIndex)
         {
-            skip |= validate_struct_pnext("vkGetImageSparseMemoryRequirements2", ParameterName("pSparseMemoryRequirements[%i].pNext", ParameterName::IndexVector{ pSparseMemoryRequirementIndex }), NULL, pSparseMemoryRequirements[pSparseMemoryRequirementIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSparseImageMemoryRequirements2-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkGetImageSparseMemoryRequirements2", ParameterName("pSparseMemoryRequirements[%i].pNext", ParameterName::IndexVector{ pSparseMemoryRequirementIndex }), NULL, pSparseMemoryRequirements[pSparseMemoryRequirementIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSparseImageMemoryRequirements2-pNext-pNext", kVUIDUndefined, false, false);
         }
     }
     return skip;
@@ -6990,7 +7590,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(
     {
         const VkStructureType allowed_structs_VkPhysicalDeviceProperties2[] = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_ATTRIBUTES_PROPERTIES_NVX, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLE_LOCATIONS_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_2_AMD, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_AMD, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_PROPERTIES_HUAWEI, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceProperties2", "pProperties->pNext", "VkPhysicalDeviceAccelerationStructurePropertiesKHR, VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT, VkPhysicalDeviceConservativeRasterizationPropertiesEXT, VkPhysicalDeviceCooperativeMatrixPropertiesNV, VkPhysicalDeviceCustomBorderColorPropertiesEXT, VkPhysicalDeviceDepthStencilResolveProperties, VkPhysicalDeviceDescriptorIndexingProperties, VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV, VkPhysicalDeviceDiscardRectanglePropertiesEXT, VkPhysicalDeviceDriverProperties, VkPhysicalDeviceDrmPropertiesEXT, VkPhysicalDeviceExternalMemoryHostPropertiesEXT, VkPhysicalDeviceFloatControlsProperties, VkPhysicalDeviceFragmentDensityMap2PropertiesEXT, VkPhysicalDeviceFragmentDensityMapPropertiesEXT, VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV, VkPhysicalDeviceFragmentShadingRatePropertiesKHR, VkPhysicalDeviceIDProperties, VkPhysicalDeviceInlineUniformBlockPropertiesEXT, VkPhysicalDeviceLineRasterizationPropertiesEXT, VkPhysicalDeviceMaintenance3Properties, VkPhysicalDeviceMeshShaderPropertiesNV, VkPhysicalDeviceMultiDrawPropertiesEXT, VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX, VkPhysicalDeviceMultiviewProperties, VkPhysicalDevicePCIBusInfoPropertiesEXT, VkPhysicalDevicePerformanceQueryPropertiesKHR, VkPhysicalDevicePointClippingProperties, VkPhysicalDevicePortabilitySubsetPropertiesKHR, VkPhysicalDeviceProtectedMemoryProperties, VkPhysicalDeviceProvokingVertexPropertiesEXT, VkPhysicalDevicePushDescriptorPropertiesKHR, VkPhysicalDeviceRayTracingPipelinePropertiesKHR, VkPhysicalDeviceRayTracingPropertiesNV, VkPhysicalDeviceRobustness2PropertiesEXT, VkPhysicalDeviceSampleLocationsPropertiesEXT, VkPhysicalDeviceSamplerFilterMinmaxProperties, VkPhysicalDeviceShaderCoreProperties2AMD, VkPhysicalDeviceShaderCorePropertiesAMD, VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR, VkPhysicalDeviceShaderSMBuiltinsPropertiesNV, VkPhysicalDeviceShadingRateImagePropertiesNV, VkPhysicalDeviceSubgroupProperties, VkPhysicalDeviceSubgroupSizeControlPropertiesEXT, VkPhysicalDeviceSubpassShadingPropertiesHUAWEI, VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT, VkPhysicalDeviceTimelineSemaphoreProperties, VkPhysicalDeviceTransformFeedbackPropertiesEXT, VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT, VkPhysicalDeviceVulkan11Properties, VkPhysicalDeviceVulkan12Properties", pProperties->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceProperties2), allowed_structs_VkPhysicalDeviceProperties2, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceProperties2-pNext-pNext", "VUID-VkPhysicalDeviceProperties2-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceProperties2", "pProperties->pNext", "VkPhysicalDeviceAccelerationStructurePropertiesKHR, VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT, VkPhysicalDeviceConservativeRasterizationPropertiesEXT, VkPhysicalDeviceCooperativeMatrixPropertiesNV, VkPhysicalDeviceCustomBorderColorPropertiesEXT, VkPhysicalDeviceDepthStencilResolveProperties, VkPhysicalDeviceDescriptorIndexingProperties, VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV, VkPhysicalDeviceDiscardRectanglePropertiesEXT, VkPhysicalDeviceDriverProperties, VkPhysicalDeviceDrmPropertiesEXT, VkPhysicalDeviceExternalMemoryHostPropertiesEXT, VkPhysicalDeviceFloatControlsProperties, VkPhysicalDeviceFragmentDensityMap2PropertiesEXT, VkPhysicalDeviceFragmentDensityMapPropertiesEXT, VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV, VkPhysicalDeviceFragmentShadingRatePropertiesKHR, VkPhysicalDeviceIDProperties, VkPhysicalDeviceInlineUniformBlockPropertiesEXT, VkPhysicalDeviceLineRasterizationPropertiesEXT, VkPhysicalDeviceMaintenance3Properties, VkPhysicalDeviceMeshShaderPropertiesNV, VkPhysicalDeviceMultiDrawPropertiesEXT, VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX, VkPhysicalDeviceMultiviewProperties, VkPhysicalDevicePCIBusInfoPropertiesEXT, VkPhysicalDevicePerformanceQueryPropertiesKHR, VkPhysicalDevicePointClippingProperties, VkPhysicalDevicePortabilitySubsetPropertiesKHR, VkPhysicalDeviceProtectedMemoryProperties, VkPhysicalDeviceProvokingVertexPropertiesEXT, VkPhysicalDevicePushDescriptorPropertiesKHR, VkPhysicalDeviceRayTracingPipelinePropertiesKHR, VkPhysicalDeviceRayTracingPropertiesNV, VkPhysicalDeviceRobustness2PropertiesEXT, VkPhysicalDeviceSampleLocationsPropertiesEXT, VkPhysicalDeviceSamplerFilterMinmaxProperties, VkPhysicalDeviceShaderCoreProperties2AMD, VkPhysicalDeviceShaderCorePropertiesAMD, VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR, VkPhysicalDeviceShaderSMBuiltinsPropertiesNV, VkPhysicalDeviceShadingRateImagePropertiesNV, VkPhysicalDeviceSubgroupProperties, VkPhysicalDeviceSubgroupSizeControlPropertiesEXT, VkPhysicalDeviceSubpassShadingPropertiesHUAWEI, VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT, VkPhysicalDeviceTimelineSemaphoreProperties, VkPhysicalDeviceTransformFeedbackPropertiesEXT, VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT, VkPhysicalDeviceVulkan11Properties, VkPhysicalDeviceVulkan12Properties", pProperties->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceProperties2), allowed_structs_VkPhysicalDeviceProperties2, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceProperties2-pNext-pNext", "VUID-VkPhysicalDeviceProperties2-sType-unique", true, false);
     }
     return skip;
 }
@@ -7007,7 +7607,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFormatProperties2(
     {
         const VkStructureType allowed_structs_VkFormatProperties2[] = { VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT, VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR, VK_STRUCTURE_TYPE_VIDEO_PROFILES_KHR };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceFormatProperties2", "pFormatProperties->pNext", "VkDrmFormatModifierPropertiesListEXT, VkVideoProfileKHR, VkVideoProfilesKHR", pFormatProperties->pNext, ARRAY_SIZE(allowed_structs_VkFormatProperties2), allowed_structs_VkFormatProperties2, GeneratedVulkanHeaderVersion, "VUID-VkFormatProperties2-pNext-pNext", "VUID-VkFormatProperties2-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceFormatProperties2", "pFormatProperties->pNext", "VkDrmFormatModifierPropertiesListEXT, VkVideoProfileKHR, VkVideoProfilesKHR", pFormatProperties->pNext, ARRAY_SIZE(allowed_structs_VkFormatProperties2), allowed_structs_VkFormatProperties2, GeneratedVulkanHeaderVersion, "VUID-VkFormatProperties2-pNext-pNext", "VUID-VkFormatProperties2-sType-unique", true, false);
     }
     return skip;
 }
@@ -7023,7 +7623,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2
     {
         const VkStructureType allowed_structs_VkPhysicalDeviceImageFormatInfo2[] = { VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO, VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_IMAGE_FORMAT_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceImageFormatProperties2", "pImageFormatInfo->pNext", "VkImageFormatListCreateInfo, VkImageStencilUsageCreateInfo, VkPhysicalDeviceExternalImageFormatInfo, VkPhysicalDeviceImageDrmFormatModifierInfoEXT, VkPhysicalDeviceImageViewImageFormatInfoEXT", pImageFormatInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceImageFormatInfo2), allowed_structs_VkPhysicalDeviceImageFormatInfo2, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceImageFormatInfo2-pNext-pNext", "VUID-VkPhysicalDeviceImageFormatInfo2-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceImageFormatProperties2", "pImageFormatInfo->pNext", "VkImageFormatListCreateInfo, VkImageStencilUsageCreateInfo, VkPhysicalDeviceExternalImageFormatInfo, VkPhysicalDeviceImageDrmFormatModifierInfoEXT, VkPhysicalDeviceImageViewImageFormatInfoEXT", pImageFormatInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceImageFormatInfo2), allowed_structs_VkPhysicalDeviceImageFormatInfo2, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceImageFormatInfo2-pNext-pNext", "VUID-VkPhysicalDeviceImageFormatInfo2-sType-unique", true, true);
 
         skip |= validate_ranged_enum("vkGetPhysicalDeviceImageFormatProperties2", "pImageFormatInfo->format", "VkFormat", AllVkFormatEnums, pImageFormatInfo->format, "VUID-VkPhysicalDeviceImageFormatInfo2-format-parameter");
 
@@ -7040,7 +7640,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2
     {
         const VkStructureType allowed_structs_VkImageFormatProperties2[] = { VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID, VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES, VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES, VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceImageFormatProperties2", "pImageFormatProperties->pNext", "VkAndroidHardwareBufferUsageANDROID, VkExternalImageFormatProperties, VkFilterCubicImageViewImageFormatPropertiesEXT, VkSamplerYcbcrConversionImageFormatProperties, VkTextureLODGatherFormatPropertiesAMD", pImageFormatProperties->pNext, ARRAY_SIZE(allowed_structs_VkImageFormatProperties2), allowed_structs_VkImageFormatProperties2, GeneratedVulkanHeaderVersion, "VUID-VkImageFormatProperties2-pNext-pNext", "VUID-VkImageFormatProperties2-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceImageFormatProperties2", "pImageFormatProperties->pNext", "VkAndroidHardwareBufferUsageANDROID, VkExternalImageFormatProperties, VkFilterCubicImageViewImageFormatPropertiesEXT, VkSamplerYcbcrConversionImageFormatProperties, VkTextureLODGatherFormatPropertiesAMD", pImageFormatProperties->pNext, ARRAY_SIZE(allowed_structs_VkImageFormatProperties2), allowed_structs_VkImageFormatProperties2, GeneratedVulkanHeaderVersion, "VUID-VkImageFormatProperties2-pNext-pNext", "VUID-VkImageFormatProperties2-sType-unique", true, false);
     }
     if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties);
     return skip;
@@ -7059,7 +7659,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2
         {
             const VkStructureType allowed_structs_VkQueueFamilyProperties2[] = { VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV, VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_NV, VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_EXT, VK_STRUCTURE_TYPE_VIDEO_QUEUE_FAMILY_PROPERTIES_2_KHR };
 
-            skip |= validate_struct_pnext("vkGetPhysicalDeviceQueueFamilyProperties2", ParameterName("pQueueFamilyProperties[%i].pNext", ParameterName::IndexVector{ pQueueFamilyPropertyIndex }), "VkQueueFamilyCheckpointProperties2NV, VkQueueFamilyCheckpointPropertiesNV, VkQueueFamilyGlobalPriorityPropertiesEXT, VkVideoQueueFamilyProperties2KHR", pQueueFamilyProperties[pQueueFamilyPropertyIndex].pNext, ARRAY_SIZE(allowed_structs_VkQueueFamilyProperties2), allowed_structs_VkQueueFamilyProperties2, GeneratedVulkanHeaderVersion, "VUID-VkQueueFamilyProperties2-pNext-pNext", "VUID-VkQueueFamilyProperties2-sType-unique", true);
+            skip |= validate_struct_pnext("vkGetPhysicalDeviceQueueFamilyProperties2", ParameterName("pQueueFamilyProperties[%i].pNext", ParameterName::IndexVector{ pQueueFamilyPropertyIndex }), "VkQueueFamilyCheckpointProperties2NV, VkQueueFamilyCheckpointPropertiesNV, VkQueueFamilyGlobalPriorityPropertiesEXT, VkVideoQueueFamilyProperties2KHR", pQueueFamilyProperties[pQueueFamilyPropertyIndex].pNext, ARRAY_SIZE(allowed_structs_VkQueueFamilyProperties2), allowed_structs_VkQueueFamilyProperties2, GeneratedVulkanHeaderVersion, "VUID-VkQueueFamilyProperties2-pNext-pNext", "VUID-VkQueueFamilyProperties2-sType-unique", true, false);
         }
     }
     return skip;
@@ -7075,7 +7675,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceMemoryProperties2(
     {
         const VkStructureType allowed_structs_VkPhysicalDeviceMemoryProperties2[] = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceMemoryProperties2", "pMemoryProperties->pNext", "VkPhysicalDeviceMemoryBudgetPropertiesEXT", pMemoryProperties->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceMemoryProperties2), allowed_structs_VkPhysicalDeviceMemoryProperties2, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceMemoryProperties2-pNext-pNext", "VUID-VkPhysicalDeviceMemoryProperties2-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceMemoryProperties2", "pMemoryProperties->pNext", "VkPhysicalDeviceMemoryBudgetPropertiesEXT", pMemoryProperties->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceMemoryProperties2), allowed_structs_VkPhysicalDeviceMemoryProperties2, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceMemoryProperties2-pNext-pNext", "VUID-VkPhysicalDeviceMemoryProperties2-sType-unique", true, false);
     }
     return skip;
 }
@@ -7090,7 +7690,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
     skip |= validate_struct_type("vkGetPhysicalDeviceSparseImageFormatProperties2", "pFormatInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2", pFormatInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2, true, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pFormatInfo-parameter", "VUID-VkPhysicalDeviceSparseImageFormatInfo2-sType-sType");
     if (pFormatInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceSparseImageFormatProperties2", "pFormatInfo->pNext", NULL, pFormatInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSparseImageFormatInfo2-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceSparseImageFormatProperties2", "pFormatInfo->pNext", NULL, pFormatInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSparseImageFormatInfo2-pNext-pNext", kVUIDUndefined, true, true);
 
         skip |= validate_ranged_enum("vkGetPhysicalDeviceSparseImageFormatProperties2", "pFormatInfo->format", "VkFormat", AllVkFormatEnums, pFormatInfo->format, "VUID-VkPhysicalDeviceSparseImageFormatInfo2-format-parameter");
 
@@ -7107,7 +7707,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
     {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex)
         {
-            skip |= validate_struct_pnext("vkGetPhysicalDeviceSparseImageFormatProperties2", ParameterName("pProperties[%i].pNext", ParameterName::IndexVector{ pPropertyIndex }), NULL, pProperties[pPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSparseImageFormatProperties2-pNext-pNext", kVUIDUndefined, true);
+            skip |= validate_struct_pnext("vkGetPhysicalDeviceSparseImageFormatProperties2", ParameterName("pProperties[%i].pNext", ParameterName::IndexVector{ pPropertyIndex }), NULL, pProperties[pPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSparseImageFormatProperties2-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
     return skip;
@@ -7131,7 +7731,7 @@ bool StatelessValidation::PreCallValidateGetDeviceQueue2(
     skip |= validate_struct_type("vkGetDeviceQueue2", "pQueueInfo", "VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2", pQueueInfo, VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2, true, "VUID-vkGetDeviceQueue2-pQueueInfo-parameter", "VUID-VkDeviceQueueInfo2-sType-sType");
     if (pQueueInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetDeviceQueue2", "pQueueInfo->pNext", NULL, pQueueInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDeviceQueueInfo2-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetDeviceQueue2", "pQueueInfo->pNext", NULL, pQueueInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDeviceQueueInfo2-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_flags("vkGetDeviceQueue2", "pQueueInfo->flags", "VkDeviceQueueCreateFlagBits", AllVkDeviceQueueCreateFlagBits, pQueueInfo->flags, kOptionalFlags, "VUID-VkDeviceQueueInfo2-flags-parameter");
     }
@@ -7150,7 +7750,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversion(
     {
         const VkStructureType allowed_structs_VkSamplerYcbcrConversionCreateInfo[] = { VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID };
 
-        skip |= validate_struct_pnext("vkCreateSamplerYcbcrConversion", "pCreateInfo->pNext", "VkExternalFormatANDROID", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkSamplerYcbcrConversionCreateInfo), allowed_structs_VkSamplerYcbcrConversionCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkSamplerYcbcrConversionCreateInfo-pNext-pNext", "VUID-VkSamplerYcbcrConversionCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateSamplerYcbcrConversion", "pCreateInfo->pNext", "VkExternalFormatANDROID", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkSamplerYcbcrConversionCreateInfo), allowed_structs_VkSamplerYcbcrConversionCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkSamplerYcbcrConversionCreateInfo-pNext-pNext", "VUID-VkSamplerYcbcrConversionCreateInfo-sType-unique", false, true);
 
         skip |= validate_ranged_enum("vkCreateSamplerYcbcrConversion", "pCreateInfo->format", "VkFormat", AllVkFormatEnums, pCreateInfo->format, "VUID-VkSamplerYcbcrConversionCreateInfo-format-parameter");
 
@@ -7236,7 +7836,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorUpdateTemplate(
     skip |= validate_struct_type("vkCreateDescriptorUpdateTemplate", "pCreateInfo", "VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO, true, "VUID-vkCreateDescriptorUpdateTemplate-pCreateInfo-parameter", "VUID-VkDescriptorUpdateTemplateCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateDescriptorUpdateTemplate", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorUpdateTemplateCreateInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateDescriptorUpdateTemplate", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorUpdateTemplateCreateInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateDescriptorUpdateTemplate", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkDescriptorUpdateTemplateCreateInfo-flags-zerobitmask");
 
@@ -7324,7 +7924,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperti
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalBufferProperties", "pExternalBufferInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO", pExternalBufferInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO, true, "VUID-vkGetPhysicalDeviceExternalBufferProperties-pExternalBufferInfo-parameter", "VUID-VkPhysicalDeviceExternalBufferInfo-sType-sType");
     if (pExternalBufferInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalBufferProperties", "pExternalBufferInfo->pNext", NULL, pExternalBufferInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalBufferInfo-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalBufferProperties", "pExternalBufferInfo->pNext", NULL, pExternalBufferInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalBufferInfo-pNext-pNext", kVUIDUndefined, true, true);
 
         skip |= validate_flags("vkGetPhysicalDeviceExternalBufferProperties", "pExternalBufferInfo->flags", "VkBufferCreateFlagBits", AllVkBufferCreateFlagBits, pExternalBufferInfo->flags, kOptionalFlags, "VUID-VkPhysicalDeviceExternalBufferInfo-flags-parameter");
 
@@ -7335,7 +7935,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperti
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalBufferProperties", "pExternalBufferProperties", "VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES", pExternalBufferProperties, VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES, true, "VUID-vkGetPhysicalDeviceExternalBufferProperties-pExternalBufferProperties-parameter", "VUID-VkExternalBufferProperties-sType-sType");
     if (pExternalBufferProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalBufferProperties", "pExternalBufferProperties->pNext", NULL, pExternalBufferProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkExternalBufferProperties-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalBufferProperties", "pExternalBufferProperties->pNext", NULL, pExternalBufferProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkExternalBufferProperties-pNext-pNext", kVUIDUndefined, true, false);
     }
     return skip;
 }
@@ -7349,14 +7949,14 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalFencePropertie
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalFenceProperties", "pExternalFenceInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO", pExternalFenceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO, true, "VUID-vkGetPhysicalDeviceExternalFenceProperties-pExternalFenceInfo-parameter", "VUID-VkPhysicalDeviceExternalFenceInfo-sType-sType");
     if (pExternalFenceInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalFenceProperties", "pExternalFenceInfo->pNext", NULL, pExternalFenceInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalFenceInfo-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalFenceProperties", "pExternalFenceInfo->pNext", NULL, pExternalFenceInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalFenceInfo-pNext-pNext", kVUIDUndefined, true, true);
 
         skip |= validate_flags("vkGetPhysicalDeviceExternalFenceProperties", "pExternalFenceInfo->handleType", "VkExternalFenceHandleTypeFlagBits", AllVkExternalFenceHandleTypeFlagBits, pExternalFenceInfo->handleType, kRequiredSingleBit, "VUID-VkPhysicalDeviceExternalFenceInfo-handleType-parameter", "VUID-VkPhysicalDeviceExternalFenceInfo-handleType-parameter");
     }
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalFenceProperties", "pExternalFenceProperties", "VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES", pExternalFenceProperties, VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES, true, "VUID-vkGetPhysicalDeviceExternalFenceProperties-pExternalFenceProperties-parameter", "VUID-VkExternalFenceProperties-sType-sType");
     if (pExternalFenceProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalFenceProperties", "pExternalFenceProperties->pNext", NULL, pExternalFenceProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkExternalFenceProperties-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalFenceProperties", "pExternalFenceProperties->pNext", NULL, pExternalFenceProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkExternalFenceProperties-pNext-pNext", kVUIDUndefined, true, false);
     }
     return skip;
 }
@@ -7372,14 +7972,14 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalSemaphorePrope
     {
         const VkStructureType allowed_structs_VkPhysicalDeviceExternalSemaphoreInfo[] = { VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalSemaphoreProperties", "pExternalSemaphoreInfo->pNext", "VkSemaphoreTypeCreateInfo", pExternalSemaphoreInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceExternalSemaphoreInfo), allowed_structs_VkPhysicalDeviceExternalSemaphoreInfo, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalSemaphoreInfo-pNext-pNext", "VUID-VkPhysicalDeviceExternalSemaphoreInfo-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalSemaphoreProperties", "pExternalSemaphoreInfo->pNext", "VkSemaphoreTypeCreateInfo", pExternalSemaphoreInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceExternalSemaphoreInfo), allowed_structs_VkPhysicalDeviceExternalSemaphoreInfo, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalSemaphoreInfo-pNext-pNext", "VUID-VkPhysicalDeviceExternalSemaphoreInfo-sType-unique", true, true);
 
         skip |= validate_flags("vkGetPhysicalDeviceExternalSemaphoreProperties", "pExternalSemaphoreInfo->handleType", "VkExternalSemaphoreHandleTypeFlagBits", AllVkExternalSemaphoreHandleTypeFlagBits, pExternalSemaphoreInfo->handleType, kRequiredSingleBit, "VUID-VkPhysicalDeviceExternalSemaphoreInfo-handleType-parameter", "VUID-VkPhysicalDeviceExternalSemaphoreInfo-handleType-parameter");
     }
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalSemaphoreProperties", "pExternalSemaphoreProperties", "VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES", pExternalSemaphoreProperties, VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES, true, "VUID-vkGetPhysicalDeviceExternalSemaphoreProperties-pExternalSemaphoreProperties-parameter", "VUID-VkExternalSemaphoreProperties-sType-sType");
     if (pExternalSemaphoreProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalSemaphoreProperties", "pExternalSemaphoreProperties->pNext", NULL, pExternalSemaphoreProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkExternalSemaphoreProperties-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalSemaphoreProperties", "pExternalSemaphoreProperties->pNext", NULL, pExternalSemaphoreProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkExternalSemaphoreProperties-pNext-pNext", kVUIDUndefined, true, false);
     }
     return skip;
 }
@@ -7394,7 +7994,7 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSupport(
     {
         const VkStructureType allowed_structs_VkDescriptorSetLayoutCreateInfo[] = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO, VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE };
 
-        skip |= validate_struct_pnext("vkGetDescriptorSetLayoutSupport", "pCreateInfo->pNext", "VkDescriptorSetLayoutBindingFlagsCreateInfo, VkMutableDescriptorTypeCreateInfoVALVE", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorSetLayoutCreateInfo), allowed_structs_VkDescriptorSetLayoutCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorSetLayoutCreateInfo-pNext-pNext", "VUID-VkDescriptorSetLayoutCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkGetDescriptorSetLayoutSupport", "pCreateInfo->pNext", "VkDescriptorSetLayoutBindingFlagsCreateInfo, VkMutableDescriptorTypeCreateInfoVALVE", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorSetLayoutCreateInfo), allowed_structs_VkDescriptorSetLayoutCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorSetLayoutCreateInfo-pNext-pNext", "VUID-VkDescriptorSetLayoutCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkGetDescriptorSetLayoutSupport", "pCreateInfo->flags", "VkDescriptorSetLayoutCreateFlagBits", AllVkDescriptorSetLayoutCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkDescriptorSetLayoutCreateInfo-flags-parameter");
 
@@ -7413,7 +8013,7 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSupport(
     {
         const VkStructureType allowed_structs_VkDescriptorSetLayoutSupport[] = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT };
 
-        skip |= validate_struct_pnext("vkGetDescriptorSetLayoutSupport", "pSupport->pNext", "VkDescriptorSetVariableDescriptorCountLayoutSupport", pSupport->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorSetLayoutSupport), allowed_structs_VkDescriptorSetLayoutSupport, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorSetLayoutSupport-pNext-pNext", "VUID-VkDescriptorSetLayoutSupport-sType-unique");
+        skip |= validate_struct_pnext("vkGetDescriptorSetLayoutSupport", "pSupport->pNext", "VkDescriptorSetVariableDescriptorCountLayoutSupport", pSupport->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorSetLayoutSupport), allowed_structs_VkDescriptorSetLayoutSupport, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorSetLayoutSupport-pNext-pNext", "VUID-VkDescriptorSetLayoutSupport-sType-unique", false, false);
     }
     return skip;
 }
@@ -7461,7 +8061,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
     {
         const VkStructureType allowed_structs_VkRenderPassCreateInfo2[] = { VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkCreateRenderPass2", "pCreateInfo->pNext", "VkRenderPassFragmentDensityMapCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassCreateInfo2), allowed_structs_VkRenderPassCreateInfo2, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassCreateInfo2-pNext-pNext", "VUID-VkRenderPassCreateInfo2-sType-unique");
+        skip |= validate_struct_pnext("vkCreateRenderPass2", "pCreateInfo->pNext", "VkRenderPassFragmentDensityMapCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassCreateInfo2), allowed_structs_VkRenderPassCreateInfo2, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassCreateInfo2-pNext-pNext", "VUID-VkRenderPassCreateInfo2-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateRenderPass2", "pCreateInfo->flags", "VkRenderPassCreateFlagBits", AllVkRenderPassCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkRenderPassCreateInfo2-flags-parameter");
 
@@ -7473,7 +8073,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
             {
                 const VkStructureType allowed_structs_VkAttachmentDescription2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT };
 
-                skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pAttachments[%i].pNext", ParameterName::IndexVector{ attachmentIndex }), "VkAttachmentDescriptionStencilLayout", pCreateInfo->pAttachments[attachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentDescription2), allowed_structs_VkAttachmentDescription2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentDescription2-pNext-pNext", "VUID-VkAttachmentDescription2-sType-unique");
+                skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pAttachments[%i].pNext", ParameterName::IndexVector{ attachmentIndex }), "VkAttachmentDescriptionStencilLayout", pCreateInfo->pAttachments[attachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentDescription2), allowed_structs_VkAttachmentDescription2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentDescription2-pNext-pNext", "VUID-VkAttachmentDescription2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCreateRenderPass2", ParameterName("pCreateInfo->pAttachments[%i].flags", ParameterName::IndexVector{ attachmentIndex }), "VkAttachmentDescriptionFlagBits", AllVkAttachmentDescriptionFlagBits, pCreateInfo->pAttachments[attachmentIndex].flags, kOptionalFlags, "VUID-VkAttachmentDescription2-flags-parameter");
 
@@ -7503,7 +8103,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
             {
                 const VkStructureType allowed_structs_VkSubpassDescription2[] = { VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR, VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE };
 
-                skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pNext", ParameterName::IndexVector{ subpassIndex }), "VkFragmentShadingRateAttachmentInfoKHR, VkSubpassDescriptionDepthStencilResolve", pCreateInfo->pSubpasses[subpassIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDescription2), allowed_structs_VkSubpassDescription2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDescription2-pNext-pNext", "VUID-VkSubpassDescription2-sType-unique");
+                skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pNext", ParameterName::IndexVector{ subpassIndex }), "VkFragmentShadingRateAttachmentInfoKHR, VkSubpassDescriptionDepthStencilResolve", pCreateInfo->pSubpasses[subpassIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDescription2), allowed_structs_VkSubpassDescription2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDescription2-pNext-pNext", "VUID-VkSubpassDescription2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].flags", ParameterName::IndexVector{ subpassIndex }), "VkSubpassDescriptionFlagBits", AllVkSubpassDescriptionFlagBits, pCreateInfo->pSubpasses[subpassIndex].flags, kOptionalFlags, "VUID-VkSubpassDescription2-flags-parameter");
 
@@ -7517,7 +8117,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
                     {
                         const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
 
-                        skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pInputAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, inputAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pInputAttachments[inputAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+                        skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pInputAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, inputAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pInputAttachments[inputAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique", false, true);
 
                         skip |= validate_ranged_enum("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pInputAttachments[%i].layout", ParameterName::IndexVector{ subpassIndex, inputAttachmentIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pInputAttachments[inputAttachmentIndex].layout, "VUID-VkAttachmentReference2-layout-parameter");
                     }
@@ -7531,7 +8131,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
                     {
                         const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
 
-                        skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pColorAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pColorAttachments[colorAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+                        skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pColorAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pColorAttachments[colorAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique", false, true);
 
                         skip |= validate_ranged_enum("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pColorAttachments[%i].layout", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pColorAttachments[colorAttachmentIndex].layout, "VUID-VkAttachmentReference2-layout-parameter");
                     }
@@ -7545,7 +8145,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
                     {
                         const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
 
-                        skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pResolveAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pResolveAttachments[colorAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+                        skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pResolveAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pResolveAttachments[colorAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique", false, true);
 
                         skip |= validate_ranged_enum("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pResolveAttachments[%i].layout", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pResolveAttachments[colorAttachmentIndex].layout, "VUID-VkAttachmentReference2-layout-parameter");
                     }
@@ -7557,7 +8157,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
                 {
                     const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
 
-                    skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pDepthStencilAttachment->pNext", ParameterName::IndexVector{ subpassIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pDepthStencilAttachment->pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+                    skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pDepthStencilAttachment->pNext", ParameterName::IndexVector{ subpassIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pDepthStencilAttachment->pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique", false, true);
 
                     skip |= validate_ranged_enum("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pDepthStencilAttachment->layout", ParameterName::IndexVector{ subpassIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pDepthStencilAttachment->layout, "VUID-VkAttachmentReference2-layout-parameter");
                 }
@@ -7574,7 +8174,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
             {
                 const VkStructureType allowed_structs_VkSubpassDependency2[] = { VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR };
 
-                skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].pNext", ParameterName::IndexVector{ dependencyIndex }), "VkMemoryBarrier2KHR", pCreateInfo->pDependencies[dependencyIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDependency2), allowed_structs_VkSubpassDependency2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDependency2-pNext-pNext", "VUID-VkSubpassDependency2-sType-unique");
+                skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].pNext", ParameterName::IndexVector{ dependencyIndex }), "VkMemoryBarrier2KHR", pCreateInfo->pDependencies[dependencyIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDependency2), allowed_structs_VkSubpassDependency2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDependency2-pNext-pNext", "VUID-VkSubpassDependency2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].srcStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcStageMask-parameter");
 
@@ -7625,7 +8225,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2(
     {
         const VkStructureType allowed_structs_VkRenderPassBeginInfo[] = { VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO, VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO, VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM };
 
-        skip |= validate_struct_pnext("vkCmdBeginRenderPass2", "pRenderPassBegin->pNext", "VkDeviceGroupRenderPassBeginInfo, VkRenderPassAttachmentBeginInfo, VkRenderPassSampleLocationsBeginInfoEXT, VkRenderPassTransformBeginInfoQCOM", pRenderPassBegin->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassBeginInfo), allowed_structs_VkRenderPassBeginInfo, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassBeginInfo-pNext-pNext", "VUID-VkRenderPassBeginInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCmdBeginRenderPass2", "pRenderPassBegin->pNext", "VkDeviceGroupRenderPassBeginInfo, VkRenderPassAttachmentBeginInfo, VkRenderPassSampleLocationsBeginInfoEXT, VkRenderPassTransformBeginInfoQCOM", pRenderPassBegin->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassBeginInfo), allowed_structs_VkRenderPassBeginInfo, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassBeginInfo-pNext-pNext", "VUID-VkRenderPassBeginInfo-sType-unique", false, true);
 
         skip |= validate_required_handle("vkCmdBeginRenderPass2", "pRenderPassBegin->renderPass", pRenderPassBegin->renderPass);
 
@@ -7638,7 +8238,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2(
     skip |= validate_struct_type("vkCmdBeginRenderPass2", "pSubpassBeginInfo", "VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO", pSubpassBeginInfo, VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO, true, "VUID-vkCmdBeginRenderPass2-pSubpassBeginInfo-parameter", "VUID-VkSubpassBeginInfo-sType-sType");
     if (pSubpassBeginInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdBeginRenderPass2", "pSubpassBeginInfo->pNext", NULL, pSubpassBeginInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassBeginInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdBeginRenderPass2", "pSubpassBeginInfo->pNext", NULL, pSubpassBeginInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassBeginInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkCmdBeginRenderPass2", "pSubpassBeginInfo->contents", "VkSubpassContents", AllVkSubpassContentsEnums, pSubpassBeginInfo->contents, "VUID-VkSubpassBeginInfo-contents-parameter");
     }
@@ -7654,14 +8254,14 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2(
     skip |= validate_struct_type("vkCmdNextSubpass2", "pSubpassBeginInfo", "VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO", pSubpassBeginInfo, VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO, true, "VUID-vkCmdNextSubpass2-pSubpassBeginInfo-parameter", "VUID-VkSubpassBeginInfo-sType-sType");
     if (pSubpassBeginInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdNextSubpass2", "pSubpassBeginInfo->pNext", NULL, pSubpassBeginInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassBeginInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdNextSubpass2", "pSubpassBeginInfo->pNext", NULL, pSubpassBeginInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassBeginInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkCmdNextSubpass2", "pSubpassBeginInfo->contents", "VkSubpassContents", AllVkSubpassContentsEnums, pSubpassBeginInfo->contents, "VUID-VkSubpassBeginInfo-contents-parameter");
     }
     skip |= validate_struct_type("vkCmdNextSubpass2", "pSubpassEndInfo", "VK_STRUCTURE_TYPE_SUBPASS_END_INFO", pSubpassEndInfo, VK_STRUCTURE_TYPE_SUBPASS_END_INFO, true, "VUID-vkCmdNextSubpass2-pSubpassEndInfo-parameter", "VUID-VkSubpassEndInfo-sType-sType");
     if (pSubpassEndInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdNextSubpass2", "pSubpassEndInfo->pNext", NULL, pSubpassEndInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassEndInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdNextSubpass2", "pSubpassEndInfo->pNext", NULL, pSubpassEndInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassEndInfo-pNext-pNext", kVUIDUndefined, false, true);
     }
     return skip;
 }
@@ -7673,7 +8273,7 @@ bool StatelessValidation::PreCallValidateCmdEndRenderPass2(
     skip |= validate_struct_type("vkCmdEndRenderPass2", "pSubpassEndInfo", "VK_STRUCTURE_TYPE_SUBPASS_END_INFO", pSubpassEndInfo, VK_STRUCTURE_TYPE_SUBPASS_END_INFO, true, "VUID-vkCmdEndRenderPass2-pSubpassEndInfo-parameter", "VUID-VkSubpassEndInfo-sType-sType");
     if (pSubpassEndInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdEndRenderPass2", "pSubpassEndInfo->pNext", NULL, pSubpassEndInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassEndInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdEndRenderPass2", "pSubpassEndInfo->pNext", NULL, pSubpassEndInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassEndInfo-pNext-pNext", kVUIDUndefined, false, true);
     }
     return skip;
 }
@@ -7706,7 +8306,7 @@ bool StatelessValidation::PreCallValidateWaitSemaphores(
     skip |= validate_struct_type("vkWaitSemaphores", "pWaitInfo", "VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO", pWaitInfo, VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO, true, "VUID-vkWaitSemaphores-pWaitInfo-parameter", "VUID-VkSemaphoreWaitInfo-sType-sType");
     if (pWaitInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkWaitSemaphores", "pWaitInfo->pNext", NULL, pWaitInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreWaitInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkWaitSemaphores", "pWaitInfo->pNext", NULL, pWaitInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreWaitInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_flags("vkWaitSemaphores", "pWaitInfo->flags", "VkSemaphoreWaitFlagBits", AllVkSemaphoreWaitFlagBits, pWaitInfo->flags, kOptionalFlags, "VUID-VkSemaphoreWaitInfo-flags-parameter");
 
@@ -7724,7 +8324,7 @@ bool StatelessValidation::PreCallValidateSignalSemaphore(
     skip |= validate_struct_type("vkSignalSemaphore", "pSignalInfo", "VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO", pSignalInfo, VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO, true, "VUID-vkSignalSemaphore-pSignalInfo-parameter", "VUID-VkSemaphoreSignalInfo-sType-sType");
     if (pSignalInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkSignalSemaphore", "pSignalInfo->pNext", NULL, pSignalInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreSignalInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkSignalSemaphore", "pSignalInfo->pNext", NULL, pSignalInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreSignalInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkSignalSemaphore", "pSignalInfo->semaphore", pSignalInfo->semaphore);
     }
@@ -7738,7 +8338,7 @@ bool StatelessValidation::PreCallValidateGetBufferDeviceAddress(
     skip |= validate_struct_type("vkGetBufferDeviceAddress", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, true, "VUID-vkGetBufferDeviceAddress-pInfo-parameter", "VUID-VkBufferDeviceAddressInfo-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetBufferDeviceAddress", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferDeviceAddressInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetBufferDeviceAddress", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferDeviceAddressInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetBufferDeviceAddress", "pInfo->buffer", pInfo->buffer);
     }
@@ -7752,7 +8352,7 @@ bool StatelessValidation::PreCallValidateGetBufferOpaqueCaptureAddress(
     skip |= validate_struct_type("vkGetBufferOpaqueCaptureAddress", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, true, "VUID-vkGetBufferOpaqueCaptureAddress-pInfo-parameter", "VUID-VkBufferDeviceAddressInfo-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetBufferOpaqueCaptureAddress", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferDeviceAddressInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetBufferOpaqueCaptureAddress", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferDeviceAddressInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetBufferOpaqueCaptureAddress", "pInfo->buffer", pInfo->buffer);
     }
@@ -7766,7 +8366,7 @@ bool StatelessValidation::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(
     skip |= validate_struct_type("vkGetDeviceMemoryOpaqueCaptureAddress", "pInfo", "VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO, true, "VUID-vkGetDeviceMemoryOpaqueCaptureAddress-pInfo-parameter", "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetDeviceMemoryOpaqueCaptureAddress", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetDeviceMemoryOpaqueCaptureAddress", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetDeviceMemoryOpaqueCaptureAddress", "pInfo->memory", pInfo->memory);
     }
@@ -7877,7 +8477,7 @@ bool StatelessValidation::PreCallValidateCreateSwapchainKHR(
     {
         const VkStructureType allowed_structs_VkSwapchainCreateInfoKHR[] = { VK_STRUCTURE_TYPE_DEVICE_GROUP_SWAPCHAIN_CREATE_INFO_KHR, VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO, VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT, VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT, VK_STRUCTURE_TYPE_SWAPCHAIN_COUNTER_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD };
 
-        skip |= validate_struct_pnext("vkCreateSwapchainKHR", "pCreateInfo->pNext", "VkDeviceGroupSwapchainCreateInfoKHR, VkImageFormatListCreateInfo, VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT, VkSwapchainCounterCreateInfoEXT, VkSwapchainDisplayNativeHdrCreateInfoAMD", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkSwapchainCreateInfoKHR), allowed_structs_VkSwapchainCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkSwapchainCreateInfoKHR-pNext-pNext", "VUID-VkSwapchainCreateInfoKHR-sType-unique");
+        skip |= validate_struct_pnext("vkCreateSwapchainKHR", "pCreateInfo->pNext", "VkDeviceGroupSwapchainCreateInfoKHR, VkImageFormatListCreateInfo, VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT, VkSwapchainCounterCreateInfoEXT, VkSwapchainDisplayNativeHdrCreateInfoAMD", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkSwapchainCreateInfoKHR), allowed_structs_VkSwapchainCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkSwapchainCreateInfoKHR-pNext-pNext", "VUID-VkSwapchainCreateInfoKHR-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateSwapchainKHR", "pCreateInfo->flags", "VkSwapchainCreateFlagBitsKHR", AllVkSwapchainCreateFlagBitsKHR, pCreateInfo->flags, kOptionalFlags, "VUID-VkSwapchainCreateInfoKHR-flags-parameter");
 
@@ -7996,7 +8596,7 @@ bool StatelessValidation::PreCallValidateQueuePresentKHR(
     {
         const VkStructureType allowed_structs_VkPresentInfoKHR[] = { VK_STRUCTURE_TYPE_DEVICE_GROUP_PRESENT_INFO_KHR, VK_STRUCTURE_TYPE_DISPLAY_PRESENT_INFO_KHR, VK_STRUCTURE_TYPE_PRESENT_FRAME_TOKEN_GGP, VK_STRUCTURE_TYPE_PRESENT_ID_KHR, VK_STRUCTURE_TYPE_PRESENT_REGIONS_KHR, VK_STRUCTURE_TYPE_PRESENT_TIMES_INFO_GOOGLE };
 
-        skip |= validate_struct_pnext("vkQueuePresentKHR", "pPresentInfo->pNext", "VkDeviceGroupPresentInfoKHR, VkDisplayPresentInfoKHR, VkPresentFrameTokenGGP, VkPresentIdKHR, VkPresentRegionsKHR, VkPresentTimesInfoGOOGLE", pPresentInfo->pNext, ARRAY_SIZE(allowed_structs_VkPresentInfoKHR), allowed_structs_VkPresentInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext", "VUID-VkPresentInfoKHR-sType-unique");
+        skip |= validate_struct_pnext("vkQueuePresentKHR", "pPresentInfo->pNext", "VkDeviceGroupPresentInfoKHR, VkDisplayPresentInfoKHR, VkPresentFrameTokenGGP, VkPresentIdKHR, VkPresentRegionsKHR, VkPresentTimesInfoGOOGLE", pPresentInfo->pNext, ARRAY_SIZE(allowed_structs_VkPresentInfoKHR), allowed_structs_VkPresentInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext", "VUID-VkPresentInfoKHR-sType-unique", false, true);
 
         skip |= validate_array("vkQueuePresentKHR", "pPresentInfo->waitSemaphoreCount", "pPresentInfo->pWaitSemaphores", pPresentInfo->waitSemaphoreCount, &pPresentInfo->pWaitSemaphores, false, true, kVUIDUndefined, "VUID-VkPresentInfoKHR-pWaitSemaphores-parameter");
 
@@ -8019,7 +8619,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupPresentCapabilitiesKHR(
     skip |= validate_struct_type("vkGetDeviceGroupPresentCapabilitiesKHR", "pDeviceGroupPresentCapabilities", "VK_STRUCTURE_TYPE_DEVICE_GROUP_PRESENT_CAPABILITIES_KHR", pDeviceGroupPresentCapabilities, VK_STRUCTURE_TYPE_DEVICE_GROUP_PRESENT_CAPABILITIES_KHR, true, "VUID-vkGetDeviceGroupPresentCapabilitiesKHR-pDeviceGroupPresentCapabilities-parameter", "VUID-VkDeviceGroupPresentCapabilitiesKHR-sType-sType");
     if (pDeviceGroupPresentCapabilities != NULL)
     {
-        skip |= validate_struct_pnext("vkGetDeviceGroupPresentCapabilitiesKHR", "pDeviceGroupPresentCapabilities->pNext", NULL, pDeviceGroupPresentCapabilities->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDeviceGroupPresentCapabilitiesKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetDeviceGroupPresentCapabilitiesKHR", "pDeviceGroupPresentCapabilities->pNext", NULL, pDeviceGroupPresentCapabilities->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDeviceGroupPresentCapabilitiesKHR-pNext-pNext", kVUIDUndefined, false, false);
     }
     return skip;
 }
@@ -8056,7 +8656,7 @@ bool StatelessValidation::PreCallValidateAcquireNextImage2KHR(
     skip |= validate_struct_type("vkAcquireNextImage2KHR", "pAcquireInfo", "VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR", pAcquireInfo, VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR, true, "VUID-vkAcquireNextImage2KHR-pAcquireInfo-parameter", "VUID-VkAcquireNextImageInfoKHR-sType-sType");
     if (pAcquireInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkAcquireNextImage2KHR", "pAcquireInfo->pNext", NULL, pAcquireInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAcquireNextImageInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkAcquireNextImage2KHR", "pAcquireInfo->pNext", NULL, pAcquireInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAcquireNextImageInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkAcquireNextImage2KHR", "pAcquireInfo->swapchain", pAcquireInfo->swapchain);
     }
@@ -8148,7 +8748,7 @@ bool StatelessValidation::PreCallValidateCreateDisplayModeKHR(
     skip |= validate_struct_type("vkCreateDisplayModeKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR", pCreateInfo, VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR, true, "VUID-vkCreateDisplayModeKHR-pCreateInfo-parameter", "VUID-VkDisplayModeCreateInfoKHR-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateDisplayModeKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayModeCreateInfoKHR-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkCreateDisplayModeKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayModeCreateInfoKHR-pNext-pNext", kVUIDUndefined, true, true);
 
         skip |= validate_reserved_flags("vkCreateDisplayModeKHR", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkDisplayModeCreateInfoKHR-flags-zerobitmask");
 
@@ -8207,7 +8807,7 @@ bool StatelessValidation::PreCallValidateCreateDisplayPlaneSurfaceKHR(
     skip |= validate_struct_type("vkCreateDisplayPlaneSurfaceKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR", pCreateInfo, VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR, true, "VUID-vkCreateDisplayPlaneSurfaceKHR-pCreateInfo-parameter", "VUID-VkDisplaySurfaceCreateInfoKHR-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateDisplayPlaneSurfaceKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplaySurfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateDisplayPlaneSurfaceKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplaySurfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateDisplayPlaneSurfaceKHR", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkDisplaySurfaceCreateInfoKHR-flags-zerobitmask");
 
@@ -8262,7 +8862,7 @@ bool StatelessValidation::PreCallValidateCreateSharedSwapchainsKHR(
         {
             const VkStructureType allowed_structs_VkSwapchainCreateInfoKHR[] = { VK_STRUCTURE_TYPE_DEVICE_GROUP_SWAPCHAIN_CREATE_INFO_KHR, VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO, VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT, VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT, VK_STRUCTURE_TYPE_SWAPCHAIN_COUNTER_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD };
 
-            skip |= validate_struct_pnext("vkCreateSharedSwapchainsKHR", ParameterName("pCreateInfos[%i].pNext", ParameterName::IndexVector{ swapchainIndex }), "VkDeviceGroupSwapchainCreateInfoKHR, VkImageFormatListCreateInfo, VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT, VkSwapchainCounterCreateInfoEXT, VkSwapchainDisplayNativeHdrCreateInfoAMD", pCreateInfos[swapchainIndex].pNext, ARRAY_SIZE(allowed_structs_VkSwapchainCreateInfoKHR), allowed_structs_VkSwapchainCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkSwapchainCreateInfoKHR-pNext-pNext", "VUID-VkSwapchainCreateInfoKHR-sType-unique");
+            skip |= validate_struct_pnext("vkCreateSharedSwapchainsKHR", ParameterName("pCreateInfos[%i].pNext", ParameterName::IndexVector{ swapchainIndex }), "VkDeviceGroupSwapchainCreateInfoKHR, VkImageFormatListCreateInfo, VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT, VkSwapchainCounterCreateInfoEXT, VkSwapchainDisplayNativeHdrCreateInfoAMD", pCreateInfos[swapchainIndex].pNext, ARRAY_SIZE(allowed_structs_VkSwapchainCreateInfoKHR), allowed_structs_VkSwapchainCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkSwapchainCreateInfoKHR-pNext-pNext", "VUID-VkSwapchainCreateInfoKHR-sType-unique", false, true);
 
             skip |= validate_flags("vkCreateSharedSwapchainsKHR", ParameterName("pCreateInfos[%i].flags", ParameterName::IndexVector{ swapchainIndex }), "VkSwapchainCreateFlagBitsKHR", AllVkSwapchainCreateFlagBitsKHR, pCreateInfos[swapchainIndex].flags, kOptionalFlags, "VUID-VkSwapchainCreateInfoKHR-flags-parameter");
 
@@ -8327,7 +8927,7 @@ bool StatelessValidation::PreCallValidateCreateXlibSurfaceKHR(
     skip |= validate_struct_type("vkCreateXlibSurfaceKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR", pCreateInfo, VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR, true, "VUID-vkCreateXlibSurfaceKHR-pCreateInfo-parameter", "VUID-VkXlibSurfaceCreateInfoKHR-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateXlibSurfaceKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkXlibSurfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateXlibSurfaceKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkXlibSurfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateXlibSurfaceKHR", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkXlibSurfaceCreateInfoKHR-flags-zerobitmask");
     }
@@ -8382,7 +8982,7 @@ bool StatelessValidation::PreCallValidateCreateXcbSurfaceKHR(
     skip |= validate_struct_type("vkCreateXcbSurfaceKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR", pCreateInfo, VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR, true, "VUID-vkCreateXcbSurfaceKHR-pCreateInfo-parameter", "VUID-VkXcbSurfaceCreateInfoKHR-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateXcbSurfaceKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkXcbSurfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateXcbSurfaceKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkXcbSurfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateXcbSurfaceKHR", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkXcbSurfaceCreateInfoKHR-flags-zerobitmask");
     }
@@ -8437,7 +9037,7 @@ bool StatelessValidation::PreCallValidateCreateWaylandSurfaceKHR(
     skip |= validate_struct_type("vkCreateWaylandSurfaceKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR", pCreateInfo, VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR, true, "VUID-vkCreateWaylandSurfaceKHR-pCreateInfo-parameter", "VUID-VkWaylandSurfaceCreateInfoKHR-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateWaylandSurfaceKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkWaylandSurfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateWaylandSurfaceKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkWaylandSurfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateWaylandSurfaceKHR", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkWaylandSurfaceCreateInfoKHR-flags-zerobitmask");
     }
@@ -8491,7 +9091,7 @@ bool StatelessValidation::PreCallValidateCreateAndroidSurfaceKHR(
     skip |= validate_struct_type("vkCreateAndroidSurfaceKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR", pCreateInfo, VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR, true, "VUID-vkCreateAndroidSurfaceKHR-pCreateInfo-parameter", "VUID-VkAndroidSurfaceCreateInfoKHR-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateAndroidSurfaceKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAndroidSurfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateAndroidSurfaceKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAndroidSurfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateAndroidSurfaceKHR", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkAndroidSurfaceCreateInfoKHR-flags-zerobitmask");
     }
@@ -8534,7 +9134,7 @@ bool StatelessValidation::PreCallValidateCreateWin32SurfaceKHR(
     skip |= validate_struct_type("vkCreateWin32SurfaceKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR", pCreateInfo, VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR, true, "VUID-vkCreateWin32SurfaceKHR-pCreateInfo-parameter", "VUID-VkWin32SurfaceCreateInfoKHR-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateWin32SurfaceKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkWin32SurfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateWin32SurfaceKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkWin32SurfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateWin32SurfaceKHR", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkWin32SurfaceCreateInfoKHR-flags-zerobitmask");
     }
@@ -8588,7 +9188,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(
     {
         const VkStructureType allowed_structs_VkVideoProfileKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PROFILE_EXT };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pVideoProfile->pNext", "VkVideoDecodeH264ProfileEXT, VkVideoDecodeH265ProfileEXT, VkVideoEncodeH264ProfileEXT", pVideoProfile->pNext, ARRAY_SIZE(allowed_structs_VkVideoProfileKHR), allowed_structs_VkVideoProfileKHR, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pVideoProfile->pNext", "VkVideoDecodeH264ProfileEXT, VkVideoDecodeH265ProfileEXT, VkVideoEncodeH264ProfileEXT", pVideoProfile->pNext, ARRAY_SIZE(allowed_structs_VkVideoProfileKHR), allowed_structs_VkVideoProfileKHR, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, true, true);
 
         skip |= validate_flags("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pVideoProfile->videoCodecOperation", "VkVideoCodecOperationFlagBitsKHR", AllVkVideoCodecOperationFlagBitsKHR, pVideoProfile->videoCodecOperation, kRequiredSingleBit, "VUID-VkVideoProfileKHR-videoCodecOperation-parameter", "VUID-VkVideoProfileKHR-videoCodecOperation-parameter");
 
@@ -8603,7 +9203,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(
     {
         const VkStructureType allowed_structs_VkVideoCapabilitiesKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_CAPABILITIES_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_CAPABILITIES_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_CAPABILITIES_EXT };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pCapabilities->pNext", "VkVideoDecodeH264CapabilitiesEXT, VkVideoDecodeH265CapabilitiesEXT, VkVideoEncodeH264CapabilitiesEXT", pCapabilities->pNext, ARRAY_SIZE(allowed_structs_VkVideoCapabilitiesKHR), allowed_structs_VkVideoCapabilitiesKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoCapabilitiesKHR-pNext-pNext", "VUID-VkVideoCapabilitiesKHR-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pCapabilities->pNext", "VkVideoDecodeH264CapabilitiesEXT, VkVideoDecodeH265CapabilitiesEXT, VkVideoEncodeH264CapabilitiesEXT", pCapabilities->pNext, ARRAY_SIZE(allowed_structs_VkVideoCapabilitiesKHR), allowed_structs_VkVideoCapabilitiesKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoCapabilitiesKHR-pNext-pNext", "VUID-VkVideoCapabilitiesKHR-sType-unique", true, false);
     }
     return skip;
 }
@@ -8617,14 +9217,14 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesK
     skip |= validate_struct_type("vkGetPhysicalDeviceVideoFormatPropertiesKHR", "pVideoFormatInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_FORMAT_INFO_KHR", pVideoFormatInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_FORMAT_INFO_KHR, true, "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pVideoFormatInfo-parameter", "VUID-VkPhysicalDeviceVideoFormatInfoKHR-sType-sType");
     if (pVideoFormatInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoFormatPropertiesKHR", "pVideoFormatInfo->pNext", NULL, pVideoFormatInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceVideoFormatInfoKHR-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoFormatPropertiesKHR", "pVideoFormatInfo->pNext", NULL, pVideoFormatInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceVideoFormatInfoKHR-pNext-pNext", kVUIDUndefined, true, true);
     }
     skip |= validate_struct_type_array("vkGetPhysicalDeviceVideoFormatPropertiesKHR", "pVideoFormatPropertyCount", "pVideoFormatProperties", "VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR", pVideoFormatPropertyCount, pVideoFormatProperties, VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR, true, false, false, "VUID-VkVideoFormatPropertiesKHR-sType-sType", "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pVideoFormatProperties-parameter", kVUIDUndefined);
     if (pVideoFormatProperties != NULL)
     {
         for (uint32_t pVideoFormatPropertyIndex = 0; pVideoFormatPropertyIndex < *pVideoFormatPropertyCount; ++pVideoFormatPropertyIndex)
         {
-            skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoFormatPropertiesKHR", ParameterName("pVideoFormatProperties[%i].pNext", ParameterName::IndexVector{ pVideoFormatPropertyIndex }), NULL, pVideoFormatProperties[pVideoFormatPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoFormatPropertiesKHR-pNext-pNext", kVUIDUndefined, true);
+            skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoFormatPropertiesKHR", ParameterName("pVideoFormatProperties[%i].pNext", ParameterName::IndexVector{ pVideoFormatPropertyIndex }), NULL, pVideoFormatProperties[pVideoFormatPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoFormatPropertiesKHR-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
     if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties);
@@ -8645,7 +9245,7 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionKHR(
     {
         const VkStructureType allowed_structs_VkVideoSessionCreateInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_CREATE_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkCreateVideoSessionKHR", "pCreateInfo->pNext", "VkVideoDecodeH264SessionCreateInfoEXT, VkVideoDecodeH265SessionCreateInfoEXT, VkVideoEncodeH264SessionCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionCreateInfoKHR), allowed_structs_VkVideoSessionCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionCreateInfoKHR-pNext-pNext", "VUID-VkVideoSessionCreateInfoKHR-sType-unique");
+        skip |= validate_struct_pnext("vkCreateVideoSessionKHR", "pCreateInfo->pNext", "VkVideoDecodeH264SessionCreateInfoEXT, VkVideoDecodeH265SessionCreateInfoEXT, VkVideoEncodeH264SessionCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionCreateInfoKHR), allowed_structs_VkVideoSessionCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionCreateInfoKHR-pNext-pNext", "VUID-VkVideoSessionCreateInfoKHR-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateVideoSessionKHR", "pCreateInfo->flags", "VkVideoSessionCreateFlagBitsKHR", AllVkVideoSessionCreateFlagBitsKHR, pCreateInfo->flags, kOptionalFlags, "VUID-VkVideoSessionCreateInfoKHR-flags-parameter");
 
@@ -8655,7 +9255,7 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionKHR(
         {
             const VkStructureType allowed_structs_VkVideoProfileKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PROFILE_EXT };
 
-            skip |= validate_struct_pnext("vkCreateVideoSessionKHR", "pCreateInfo->pVideoProfile->pNext", "VkVideoDecodeH264ProfileEXT, VkVideoDecodeH265ProfileEXT, VkVideoEncodeH264ProfileEXT", pCreateInfo->pVideoProfile->pNext, ARRAY_SIZE(allowed_structs_VkVideoProfileKHR), allowed_structs_VkVideoProfileKHR, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined);
+            skip |= validate_struct_pnext("vkCreateVideoSessionKHR", "pCreateInfo->pVideoProfile->pNext", "VkVideoDecodeH264ProfileEXT, VkVideoDecodeH265ProfileEXT, VkVideoEncodeH264ProfileEXT", pCreateInfo->pVideoProfile->pNext, ARRAY_SIZE(allowed_structs_VkVideoProfileKHR), allowed_structs_VkVideoProfileKHR, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
 
             skip |= validate_flags("vkCreateVideoSessionKHR", "pCreateInfo->pVideoProfile->videoCodecOperation", "VkVideoCodecOperationFlagBitsKHR", AllVkVideoCodecOperationFlagBitsKHR, pCreateInfo->pVideoProfile->videoCodecOperation, kRequiredSingleBit, "VUID-VkVideoProfileKHR-videoCodecOperation-parameter", "VUID-VkVideoProfileKHR-videoCodecOperation-parameter");
 
@@ -8757,7 +9357,7 @@ bool StatelessValidation::PreCallValidateBindVideoSessionMemoryKHR(
     {
         for (uint32_t videoSessionBindMemoryIndex = 0; videoSessionBindMemoryIndex < videoSessionBindMemoryCount; ++videoSessionBindMemoryIndex)
         {
-            skip |= validate_struct_pnext("vkBindVideoSessionMemoryKHR", ParameterName("pVideoSessionBindMemories[%i].pNext", ParameterName::IndexVector{ videoSessionBindMemoryIndex }), NULL, pVideoSessionBindMemories[videoSessionBindMemoryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoBindMemoryKHR-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkBindVideoSessionMemoryKHR", ParameterName("pVideoSessionBindMemories[%i].pNext", ParameterName::IndexVector{ videoSessionBindMemoryIndex }), NULL, pVideoSessionBindMemories[videoSessionBindMemoryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoBindMemoryKHR-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_required_handle("vkBindVideoSessionMemoryKHR", ParameterName("pVideoSessionBindMemories[%i].memory", ParameterName::IndexVector{ videoSessionBindMemoryIndex }), pVideoSessionBindMemories[videoSessionBindMemoryIndex].memory);
         }
@@ -8779,7 +9379,7 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionParametersKHR(
     {
         const VkStructureType allowed_structs_VkVideoSessionParametersCreateInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkCreateVideoSessionParametersKHR", "pCreateInfo->pNext", "VkVideoDecodeH264SessionParametersCreateInfoEXT, VkVideoDecodeH265SessionParametersCreateInfoEXT, VkVideoEncodeH264SessionParametersCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionParametersCreateInfoKHR), allowed_structs_VkVideoSessionParametersCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionParametersCreateInfoKHR-pNext-pNext", "VUID-VkVideoSessionParametersCreateInfoKHR-sType-unique");
+        skip |= validate_struct_pnext("vkCreateVideoSessionParametersKHR", "pCreateInfo->pNext", "VkVideoDecodeH264SessionParametersCreateInfoEXT, VkVideoDecodeH265SessionParametersCreateInfoEXT, VkVideoEncodeH264SessionParametersCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionParametersCreateInfoKHR), allowed_structs_VkVideoSessionParametersCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionParametersCreateInfoKHR-pNext-pNext", "VUID-VkVideoSessionParametersCreateInfoKHR-sType-unique", false, true);
 
         skip |= validate_required_handle("vkCreateVideoSessionParametersKHR", "pCreateInfo->videoSessionParametersTemplate", pCreateInfo->videoSessionParametersTemplate);
 
@@ -8823,7 +9423,7 @@ bool StatelessValidation::PreCallValidateUpdateVideoSessionParametersKHR(
     {
         const VkStructureType allowed_structs_VkVideoSessionParametersUpdateInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkUpdateVideoSessionParametersKHR", "pUpdateInfo->pNext", "VkVideoDecodeH264SessionParametersAddInfoEXT, VkVideoDecodeH265SessionParametersAddInfoEXT, VkVideoEncodeH264SessionParametersAddInfoEXT", pUpdateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionParametersUpdateInfoKHR), allowed_structs_VkVideoSessionParametersUpdateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionParametersUpdateInfoKHR-pNext-pNext", "VUID-VkVideoSessionParametersUpdateInfoKHR-sType-unique");
+        skip |= validate_struct_pnext("vkUpdateVideoSessionParametersKHR", "pUpdateInfo->pNext", "VkVideoDecodeH264SessionParametersAddInfoEXT, VkVideoDecodeH265SessionParametersAddInfoEXT, VkVideoEncodeH264SessionParametersAddInfoEXT", pUpdateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionParametersUpdateInfoKHR), allowed_structs_VkVideoSessionParametersUpdateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionParametersUpdateInfoKHR-pNext-pNext", "VUID-VkVideoSessionParametersUpdateInfoKHR-sType-unique", false, true);
     }
     return skip;
 }
@@ -8870,7 +9470,7 @@ bool StatelessValidation::PreCallValidateCmdBeginVideoCodingKHR(
     skip |= validate_struct_type("vkCmdBeginVideoCodingKHR", "pBeginInfo", "VK_STRUCTURE_TYPE_VIDEO_BEGIN_CODING_INFO_KHR", pBeginInfo, VK_STRUCTURE_TYPE_VIDEO_BEGIN_CODING_INFO_KHR, true, "VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-parameter", "VUID-VkVideoBeginCodingInfoKHR-sType-sType");
     if (pBeginInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdBeginVideoCodingKHR", "pBeginInfo->pNext", NULL, pBeginInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoBeginCodingInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdBeginVideoCodingKHR", "pBeginInfo->pNext", NULL, pBeginInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoBeginCodingInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCmdBeginVideoCodingKHR", "pBeginInfo->flags", pBeginInfo->flags, "VUID-VkVideoBeginCodingInfoKHR-flags-zerobitmask");
 
@@ -8886,13 +9486,13 @@ bool StatelessValidation::PreCallValidateCmdBeginVideoCodingKHR(
             {
                 const VkStructureType allowed_structs_VkVideoReferenceSlotKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_DPB_SLOT_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_DPB_SLOT_INFO_EXT };
 
-                skip |= validate_struct_pnext("vkCmdBeginVideoCodingKHR", ParameterName("pBeginInfo->pReferenceSlots[%i].pNext", ParameterName::IndexVector{ referenceSlotIndex }), "VkVideoDecodeH264DpbSlotInfoEXT, VkVideoDecodeH265DpbSlotInfoEXT", pBeginInfo->pReferenceSlots[referenceSlotIndex].pNext, ARRAY_SIZE(allowed_structs_VkVideoReferenceSlotKHR), allowed_structs_VkVideoReferenceSlotKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoReferenceSlotKHR-pNext-pNext", "VUID-VkVideoReferenceSlotKHR-sType-unique");
+                skip |= validate_struct_pnext("vkCmdBeginVideoCodingKHR", ParameterName("pBeginInfo->pReferenceSlots[%i].pNext", ParameterName::IndexVector{ referenceSlotIndex }), "VkVideoDecodeH264DpbSlotInfoEXT, VkVideoDecodeH265DpbSlotInfoEXT", pBeginInfo->pReferenceSlots[referenceSlotIndex].pNext, ARRAY_SIZE(allowed_structs_VkVideoReferenceSlotKHR), allowed_structs_VkVideoReferenceSlotKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoReferenceSlotKHR-pNext-pNext", "VUID-VkVideoReferenceSlotKHR-sType-unique", false, true);
 
                 skip |= validate_struct_type("vkCmdBeginVideoCodingKHR", ParameterName("pBeginInfo->pReferenceSlots[%i].pPictureResource", ParameterName::IndexVector{ referenceSlotIndex }), "VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR", pBeginInfo->pReferenceSlots[referenceSlotIndex].pPictureResource, VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR, true, "VUID-VkVideoReferenceSlotKHR-pPictureResource-parameter", "VUID-VkVideoPictureResourceKHR-sType-sType");
 
                 if (pBeginInfo->pReferenceSlots[referenceSlotIndex].pPictureResource != NULL)
                 {
-                    skip |= validate_struct_pnext("vkCmdBeginVideoCodingKHR", ParameterName("pBeginInfo->pReferenceSlots[%i].pPictureResource->pNext", ParameterName::IndexVector{ referenceSlotIndex }), NULL, pBeginInfo->pReferenceSlots[referenceSlotIndex].pPictureResource->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkCmdBeginVideoCodingKHR", ParameterName("pBeginInfo->pReferenceSlots[%i].pPictureResource->pNext", ParameterName::IndexVector{ referenceSlotIndex }), NULL, pBeginInfo->pReferenceSlots[referenceSlotIndex].pPictureResource->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     // No xml-driven validation
 
@@ -8916,7 +9516,7 @@ bool StatelessValidation::PreCallValidateCmdEndVideoCodingKHR(
     skip |= validate_struct_type("vkCmdEndVideoCodingKHR", "pEndCodingInfo", "VK_STRUCTURE_TYPE_VIDEO_END_CODING_INFO_KHR", pEndCodingInfo, VK_STRUCTURE_TYPE_VIDEO_END_CODING_INFO_KHR, true, "VUID-vkCmdEndVideoCodingKHR-pEndCodingInfo-parameter", "VUID-VkVideoEndCodingInfoKHR-sType-sType");
     if (pEndCodingInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdEndVideoCodingKHR", "pEndCodingInfo->pNext", NULL, pEndCodingInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoEndCodingInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdEndVideoCodingKHR", "pEndCodingInfo->pNext", NULL, pEndCodingInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoEndCodingInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCmdEndVideoCodingKHR", "pEndCodingInfo->flags", pEndCodingInfo->flags, "VUID-VkVideoEndCodingInfoKHR-flags-zerobitmask");
     }
@@ -8935,7 +9535,7 @@ bool StatelessValidation::PreCallValidateCmdControlVideoCodingKHR(
     {
         const VkStructureType allowed_structs_VkVideoCodingControlInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_INFO_KHR };
 
-        skip |= validate_struct_pnext("vkCmdControlVideoCodingKHR", "pCodingControlInfo->pNext", "VkVideoEncodeRateControlInfoKHR", pCodingControlInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoCodingControlInfoKHR), allowed_structs_VkVideoCodingControlInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoCodingControlInfoKHR-pNext-pNext", "VUID-VkVideoCodingControlInfoKHR-sType-unique");
+        skip |= validate_struct_pnext("vkCmdControlVideoCodingKHR", "pCodingControlInfo->pNext", "VkVideoEncodeRateControlInfoKHR", pCodingControlInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoCodingControlInfoKHR), allowed_structs_VkVideoCodingControlInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoCodingControlInfoKHR-pNext-pNext", "VUID-VkVideoCodingControlInfoKHR-sType-unique", false, true);
 
         skip |= validate_flags("vkCmdControlVideoCodingKHR", "pCodingControlInfo->flags", "VkVideoCodingControlFlagBitsKHR", AllVkVideoCodingControlFlagBitsKHR, pCodingControlInfo->flags, kOptionalFlags, "VUID-VkVideoCodingControlInfoKHR-flags-parameter");
     }
@@ -8958,7 +9558,7 @@ bool StatelessValidation::PreCallValidateCmdDecodeVideoKHR(
     {
         const VkStructureType allowed_structs_VkVideoDecodeInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PICTURE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PICTURE_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkCmdDecodeVideoKHR", "pFrameInfo->pNext", "VkVideoDecodeH264PictureInfoEXT, VkVideoDecodeH265PictureInfoEXT", pFrameInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoDecodeInfoKHR), allowed_structs_VkVideoDecodeInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoDecodeInfoKHR-pNext-pNext", "VUID-VkVideoDecodeInfoKHR-sType-unique");
+        skip |= validate_struct_pnext("vkCmdDecodeVideoKHR", "pFrameInfo->pNext", "VkVideoDecodeH264PictureInfoEXT, VkVideoDecodeH265PictureInfoEXT", pFrameInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoDecodeInfoKHR), allowed_structs_VkVideoDecodeInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoDecodeInfoKHR-pNext-pNext", "VUID-VkVideoDecodeInfoKHR-sType-unique", false, true);
 
         skip |= validate_flags("vkCmdDecodeVideoKHR", "pFrameInfo->flags", "VkVideoDecodeFlagBitsKHR", AllVkVideoDecodeFlagBitsKHR, pFrameInfo->flags, kOptionalFlags, "VUID-VkVideoDecodeInfoKHR-flags-parameter");
 
@@ -8970,7 +9570,7 @@ bool StatelessValidation::PreCallValidateCmdDecodeVideoKHR(
 
         skip |= validate_struct_type("vkCmdDecodeVideoKHR", "pFrameInfo->dstPictureResource", "VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR", &(pFrameInfo->dstPictureResource), VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR, false, kVUIDUndefined, "VUID-VkVideoPictureResourceKHR-sType-sType");
 
-        skip |= validate_struct_pnext("vkCmdDecodeVideoKHR", "pFrameInfo->dstPictureResource.pNext", NULL, pFrameInfo->dstPictureResource.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdDecodeVideoKHR", "pFrameInfo->dstPictureResource.pNext", NULL, pFrameInfo->dstPictureResource.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         // No xml-driven validation
 
@@ -8984,13 +9584,13 @@ bool StatelessValidation::PreCallValidateCmdDecodeVideoKHR(
         {
             const VkStructureType allowed_structs_VkVideoReferenceSlotKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_DPB_SLOT_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_DPB_SLOT_INFO_EXT };
 
-            skip |= validate_struct_pnext("vkCmdDecodeVideoKHR", "pFrameInfo->pSetupReferenceSlot->pNext", "VkVideoDecodeH264DpbSlotInfoEXT, VkVideoDecodeH265DpbSlotInfoEXT", pFrameInfo->pSetupReferenceSlot->pNext, ARRAY_SIZE(allowed_structs_VkVideoReferenceSlotKHR), allowed_structs_VkVideoReferenceSlotKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoReferenceSlotKHR-pNext-pNext", "VUID-VkVideoReferenceSlotKHR-sType-unique");
+            skip |= validate_struct_pnext("vkCmdDecodeVideoKHR", "pFrameInfo->pSetupReferenceSlot->pNext", "VkVideoDecodeH264DpbSlotInfoEXT, VkVideoDecodeH265DpbSlotInfoEXT", pFrameInfo->pSetupReferenceSlot->pNext, ARRAY_SIZE(allowed_structs_VkVideoReferenceSlotKHR), allowed_structs_VkVideoReferenceSlotKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoReferenceSlotKHR-pNext-pNext", "VUID-VkVideoReferenceSlotKHR-sType-unique", false, true);
 
             skip |= validate_struct_type("vkCmdDecodeVideoKHR", "pFrameInfo->pSetupReferenceSlot->pPictureResource", "VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR", pFrameInfo->pSetupReferenceSlot->pPictureResource, VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR, true, "VUID-VkVideoReferenceSlotKHR-pPictureResource-parameter", "VUID-VkVideoPictureResourceKHR-sType-sType");
 
             if (pFrameInfo->pSetupReferenceSlot->pPictureResource != NULL)
             {
-                skip |= validate_struct_pnext("vkCmdDecodeVideoKHR", "pFrameInfo->pSetupReferenceSlot->pPictureResource->pNext", NULL, pFrameInfo->pSetupReferenceSlot->pPictureResource->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCmdDecodeVideoKHR", "pFrameInfo->pSetupReferenceSlot->pPictureResource->pNext", NULL, pFrameInfo->pSetupReferenceSlot->pPictureResource->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                 // No xml-driven validation
 
@@ -9008,13 +9608,13 @@ bool StatelessValidation::PreCallValidateCmdDecodeVideoKHR(
             {
                 const VkStructureType allowed_structs_VkVideoReferenceSlotKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_DPB_SLOT_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_DPB_SLOT_INFO_EXT };
 
-                skip |= validate_struct_pnext("vkCmdDecodeVideoKHR", ParameterName("pFrameInfo->pReferenceSlots[%i].pNext", ParameterName::IndexVector{ referenceSlotIndex }), "VkVideoDecodeH264DpbSlotInfoEXT, VkVideoDecodeH265DpbSlotInfoEXT", pFrameInfo->pReferenceSlots[referenceSlotIndex].pNext, ARRAY_SIZE(allowed_structs_VkVideoReferenceSlotKHR), allowed_structs_VkVideoReferenceSlotKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoReferenceSlotKHR-pNext-pNext", "VUID-VkVideoReferenceSlotKHR-sType-unique");
+                skip |= validate_struct_pnext("vkCmdDecodeVideoKHR", ParameterName("pFrameInfo->pReferenceSlots[%i].pNext", ParameterName::IndexVector{ referenceSlotIndex }), "VkVideoDecodeH264DpbSlotInfoEXT, VkVideoDecodeH265DpbSlotInfoEXT", pFrameInfo->pReferenceSlots[referenceSlotIndex].pNext, ARRAY_SIZE(allowed_structs_VkVideoReferenceSlotKHR), allowed_structs_VkVideoReferenceSlotKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoReferenceSlotKHR-pNext-pNext", "VUID-VkVideoReferenceSlotKHR-sType-unique", false, true);
 
                 skip |= validate_struct_type("vkCmdDecodeVideoKHR", ParameterName("pFrameInfo->pReferenceSlots[%i].pPictureResource", ParameterName::IndexVector{ referenceSlotIndex }), "VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR", pFrameInfo->pReferenceSlots[referenceSlotIndex].pPictureResource, VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR, true, "VUID-VkVideoReferenceSlotKHR-pPictureResource-parameter", "VUID-VkVideoPictureResourceKHR-sType-sType");
 
                 if (pFrameInfo->pReferenceSlots[referenceSlotIndex].pPictureResource != NULL)
                 {
-                    skip |= validate_struct_pnext("vkCmdDecodeVideoKHR", ParameterName("pFrameInfo->pReferenceSlots[%i].pPictureResource->pNext", ParameterName::IndexVector{ referenceSlotIndex }), NULL, pFrameInfo->pReferenceSlots[referenceSlotIndex].pPictureResource->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkCmdDecodeVideoKHR", ParameterName("pFrameInfo->pReferenceSlots[%i].pPictureResource->pNext", ParameterName::IndexVector{ referenceSlotIndex }), NULL, pFrameInfo->pReferenceSlots[referenceSlotIndex].pPictureResource->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     // No xml-driven validation
 
@@ -9051,7 +9651,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2KHR(
     {
         const VkStructureType allowed_structs_VkPhysicalDeviceProperties2[] = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_ATTRIBUTES_PROPERTIES_NVX, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLE_LOCATIONS_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_2_AMD, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_AMD, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_PROPERTIES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_PROPERTIES_HUAWEI, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceProperties2KHR", "pProperties->pNext", "VkPhysicalDeviceAccelerationStructurePropertiesKHR, VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT, VkPhysicalDeviceConservativeRasterizationPropertiesEXT, VkPhysicalDeviceCooperativeMatrixPropertiesNV, VkPhysicalDeviceCustomBorderColorPropertiesEXT, VkPhysicalDeviceDepthStencilResolveProperties, VkPhysicalDeviceDescriptorIndexingProperties, VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV, VkPhysicalDeviceDiscardRectanglePropertiesEXT, VkPhysicalDeviceDriverProperties, VkPhysicalDeviceDrmPropertiesEXT, VkPhysicalDeviceExternalMemoryHostPropertiesEXT, VkPhysicalDeviceFloatControlsProperties, VkPhysicalDeviceFragmentDensityMap2PropertiesEXT, VkPhysicalDeviceFragmentDensityMapPropertiesEXT, VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV, VkPhysicalDeviceFragmentShadingRatePropertiesKHR, VkPhysicalDeviceIDProperties, VkPhysicalDeviceInlineUniformBlockPropertiesEXT, VkPhysicalDeviceLineRasterizationPropertiesEXT, VkPhysicalDeviceMaintenance3Properties, VkPhysicalDeviceMeshShaderPropertiesNV, VkPhysicalDeviceMultiDrawPropertiesEXT, VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX, VkPhysicalDeviceMultiviewProperties, VkPhysicalDevicePCIBusInfoPropertiesEXT, VkPhysicalDevicePerformanceQueryPropertiesKHR, VkPhysicalDevicePointClippingProperties, VkPhysicalDevicePortabilitySubsetPropertiesKHR, VkPhysicalDeviceProtectedMemoryProperties, VkPhysicalDeviceProvokingVertexPropertiesEXT, VkPhysicalDevicePushDescriptorPropertiesKHR, VkPhysicalDeviceRayTracingPipelinePropertiesKHR, VkPhysicalDeviceRayTracingPropertiesNV, VkPhysicalDeviceRobustness2PropertiesEXT, VkPhysicalDeviceSampleLocationsPropertiesEXT, VkPhysicalDeviceSamplerFilterMinmaxProperties, VkPhysicalDeviceShaderCoreProperties2AMD, VkPhysicalDeviceShaderCorePropertiesAMD, VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR, VkPhysicalDeviceShaderSMBuiltinsPropertiesNV, VkPhysicalDeviceShadingRateImagePropertiesNV, VkPhysicalDeviceSubgroupProperties, VkPhysicalDeviceSubgroupSizeControlPropertiesEXT, VkPhysicalDeviceSubpassShadingPropertiesHUAWEI, VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT, VkPhysicalDeviceTimelineSemaphoreProperties, VkPhysicalDeviceTransformFeedbackPropertiesEXT, VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT, VkPhysicalDeviceVulkan11Properties, VkPhysicalDeviceVulkan12Properties", pProperties->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceProperties2), allowed_structs_VkPhysicalDeviceProperties2, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceProperties2-pNext-pNext", "VUID-VkPhysicalDeviceProperties2-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceProperties2KHR", "pProperties->pNext", "VkPhysicalDeviceAccelerationStructurePropertiesKHR, VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT, VkPhysicalDeviceConservativeRasterizationPropertiesEXT, VkPhysicalDeviceCooperativeMatrixPropertiesNV, VkPhysicalDeviceCustomBorderColorPropertiesEXT, VkPhysicalDeviceDepthStencilResolveProperties, VkPhysicalDeviceDescriptorIndexingProperties, VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV, VkPhysicalDeviceDiscardRectanglePropertiesEXT, VkPhysicalDeviceDriverProperties, VkPhysicalDeviceDrmPropertiesEXT, VkPhysicalDeviceExternalMemoryHostPropertiesEXT, VkPhysicalDeviceFloatControlsProperties, VkPhysicalDeviceFragmentDensityMap2PropertiesEXT, VkPhysicalDeviceFragmentDensityMapPropertiesEXT, VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV, VkPhysicalDeviceFragmentShadingRatePropertiesKHR, VkPhysicalDeviceIDProperties, VkPhysicalDeviceInlineUniformBlockPropertiesEXT, VkPhysicalDeviceLineRasterizationPropertiesEXT, VkPhysicalDeviceMaintenance3Properties, VkPhysicalDeviceMeshShaderPropertiesNV, VkPhysicalDeviceMultiDrawPropertiesEXT, VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX, VkPhysicalDeviceMultiviewProperties, VkPhysicalDevicePCIBusInfoPropertiesEXT, VkPhysicalDevicePerformanceQueryPropertiesKHR, VkPhysicalDevicePointClippingProperties, VkPhysicalDevicePortabilitySubsetPropertiesKHR, VkPhysicalDeviceProtectedMemoryProperties, VkPhysicalDeviceProvokingVertexPropertiesEXT, VkPhysicalDevicePushDescriptorPropertiesKHR, VkPhysicalDeviceRayTracingPipelinePropertiesKHR, VkPhysicalDeviceRayTracingPropertiesNV, VkPhysicalDeviceRobustness2PropertiesEXT, VkPhysicalDeviceSampleLocationsPropertiesEXT, VkPhysicalDeviceSamplerFilterMinmaxProperties, VkPhysicalDeviceShaderCoreProperties2AMD, VkPhysicalDeviceShaderCorePropertiesAMD, VkPhysicalDeviceShaderIntegerDotProductPropertiesKHR, VkPhysicalDeviceShaderSMBuiltinsPropertiesNV, VkPhysicalDeviceShadingRateImagePropertiesNV, VkPhysicalDeviceSubgroupProperties, VkPhysicalDeviceSubgroupSizeControlPropertiesEXT, VkPhysicalDeviceSubpassShadingPropertiesHUAWEI, VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT, VkPhysicalDeviceTimelineSemaphoreProperties, VkPhysicalDeviceTransformFeedbackPropertiesEXT, VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT, VkPhysicalDeviceVulkan11Properties, VkPhysicalDeviceVulkan12Properties", pProperties->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceProperties2), allowed_structs_VkPhysicalDeviceProperties2, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceProperties2-pNext-pNext", "VUID-VkPhysicalDeviceProperties2-sType-unique", true, false);
     }
     return skip;
 }
@@ -9068,7 +9668,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFormatProperties2KHR(
     {
         const VkStructureType allowed_structs_VkFormatProperties2[] = { VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT, VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR, VK_STRUCTURE_TYPE_VIDEO_PROFILES_KHR };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceFormatProperties2KHR", "pFormatProperties->pNext", "VkDrmFormatModifierPropertiesListEXT, VkVideoProfileKHR, VkVideoProfilesKHR", pFormatProperties->pNext, ARRAY_SIZE(allowed_structs_VkFormatProperties2), allowed_structs_VkFormatProperties2, GeneratedVulkanHeaderVersion, "VUID-VkFormatProperties2-pNext-pNext", "VUID-VkFormatProperties2-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceFormatProperties2KHR", "pFormatProperties->pNext", "VkDrmFormatModifierPropertiesListEXT, VkVideoProfileKHR, VkVideoProfilesKHR", pFormatProperties->pNext, ARRAY_SIZE(allowed_structs_VkFormatProperties2), allowed_structs_VkFormatProperties2, GeneratedVulkanHeaderVersion, "VUID-VkFormatProperties2-pNext-pNext", "VUID-VkFormatProperties2-sType-unique", true, false);
     }
     return skip;
 }
@@ -9084,7 +9684,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2
     {
         const VkStructureType allowed_structs_VkPhysicalDeviceImageFormatInfo2[] = { VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO, VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_IMAGE_FORMAT_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceImageFormatProperties2KHR", "pImageFormatInfo->pNext", "VkImageFormatListCreateInfo, VkImageStencilUsageCreateInfo, VkPhysicalDeviceExternalImageFormatInfo, VkPhysicalDeviceImageDrmFormatModifierInfoEXT, VkPhysicalDeviceImageViewImageFormatInfoEXT", pImageFormatInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceImageFormatInfo2), allowed_structs_VkPhysicalDeviceImageFormatInfo2, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceImageFormatInfo2-pNext-pNext", "VUID-VkPhysicalDeviceImageFormatInfo2-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceImageFormatProperties2KHR", "pImageFormatInfo->pNext", "VkImageFormatListCreateInfo, VkImageStencilUsageCreateInfo, VkPhysicalDeviceExternalImageFormatInfo, VkPhysicalDeviceImageDrmFormatModifierInfoEXT, VkPhysicalDeviceImageViewImageFormatInfoEXT", pImageFormatInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceImageFormatInfo2), allowed_structs_VkPhysicalDeviceImageFormatInfo2, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceImageFormatInfo2-pNext-pNext", "VUID-VkPhysicalDeviceImageFormatInfo2-sType-unique", true, true);
 
         skip |= validate_ranged_enum("vkGetPhysicalDeviceImageFormatProperties2KHR", "pImageFormatInfo->format", "VkFormat", AllVkFormatEnums, pImageFormatInfo->format, "VUID-VkPhysicalDeviceImageFormatInfo2-format-parameter");
 
@@ -9101,7 +9701,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2
     {
         const VkStructureType allowed_structs_VkImageFormatProperties2[] = { VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID, VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES, VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES, VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceImageFormatProperties2KHR", "pImageFormatProperties->pNext", "VkAndroidHardwareBufferUsageANDROID, VkExternalImageFormatProperties, VkFilterCubicImageViewImageFormatPropertiesEXT, VkSamplerYcbcrConversionImageFormatProperties, VkTextureLODGatherFormatPropertiesAMD", pImageFormatProperties->pNext, ARRAY_SIZE(allowed_structs_VkImageFormatProperties2), allowed_structs_VkImageFormatProperties2, GeneratedVulkanHeaderVersion, "VUID-VkImageFormatProperties2-pNext-pNext", "VUID-VkImageFormatProperties2-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceImageFormatProperties2KHR", "pImageFormatProperties->pNext", "VkAndroidHardwareBufferUsageANDROID, VkExternalImageFormatProperties, VkFilterCubicImageViewImageFormatPropertiesEXT, VkSamplerYcbcrConversionImageFormatProperties, VkTextureLODGatherFormatPropertiesAMD", pImageFormatProperties->pNext, ARRAY_SIZE(allowed_structs_VkImageFormatProperties2), allowed_structs_VkImageFormatProperties2, GeneratedVulkanHeaderVersion, "VUID-VkImageFormatProperties2-pNext-pNext", "VUID-VkImageFormatProperties2-sType-unique", true, false);
     }
     if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties);
     return skip;
@@ -9120,7 +9720,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2
         {
             const VkStructureType allowed_structs_VkQueueFamilyProperties2[] = { VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV, VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_NV, VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_EXT, VK_STRUCTURE_TYPE_VIDEO_QUEUE_FAMILY_PROPERTIES_2_KHR };
 
-            skip |= validate_struct_pnext("vkGetPhysicalDeviceQueueFamilyProperties2KHR", ParameterName("pQueueFamilyProperties[%i].pNext", ParameterName::IndexVector{ pQueueFamilyPropertyIndex }), "VkQueueFamilyCheckpointProperties2NV, VkQueueFamilyCheckpointPropertiesNV, VkQueueFamilyGlobalPriorityPropertiesEXT, VkVideoQueueFamilyProperties2KHR", pQueueFamilyProperties[pQueueFamilyPropertyIndex].pNext, ARRAY_SIZE(allowed_structs_VkQueueFamilyProperties2), allowed_structs_VkQueueFamilyProperties2, GeneratedVulkanHeaderVersion, "VUID-VkQueueFamilyProperties2-pNext-pNext", "VUID-VkQueueFamilyProperties2-sType-unique", true);
+            skip |= validate_struct_pnext("vkGetPhysicalDeviceQueueFamilyProperties2KHR", ParameterName("pQueueFamilyProperties[%i].pNext", ParameterName::IndexVector{ pQueueFamilyPropertyIndex }), "VkQueueFamilyCheckpointProperties2NV, VkQueueFamilyCheckpointPropertiesNV, VkQueueFamilyGlobalPriorityPropertiesEXT, VkVideoQueueFamilyProperties2KHR", pQueueFamilyProperties[pQueueFamilyPropertyIndex].pNext, ARRAY_SIZE(allowed_structs_VkQueueFamilyProperties2), allowed_structs_VkQueueFamilyProperties2, GeneratedVulkanHeaderVersion, "VUID-VkQueueFamilyProperties2-pNext-pNext", "VUID-VkQueueFamilyProperties2-sType-unique", true, false);
         }
     }
     return skip;
@@ -9136,7 +9736,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceMemoryProperties2KHR(
     {
         const VkStructureType allowed_structs_VkPhysicalDeviceMemoryProperties2[] = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceMemoryProperties2KHR", "pMemoryProperties->pNext", "VkPhysicalDeviceMemoryBudgetPropertiesEXT", pMemoryProperties->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceMemoryProperties2), allowed_structs_VkPhysicalDeviceMemoryProperties2, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceMemoryProperties2-pNext-pNext", "VUID-VkPhysicalDeviceMemoryProperties2-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceMemoryProperties2KHR", "pMemoryProperties->pNext", "VkPhysicalDeviceMemoryBudgetPropertiesEXT", pMemoryProperties->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceMemoryProperties2), allowed_structs_VkPhysicalDeviceMemoryProperties2, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceMemoryProperties2-pNext-pNext", "VUID-VkPhysicalDeviceMemoryProperties2-sType-unique", true, false);
     }
     return skip;
 }
@@ -9151,7 +9751,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
     skip |= validate_struct_type("vkGetPhysicalDeviceSparseImageFormatProperties2KHR", "pFormatInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2", pFormatInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2, true, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pFormatInfo-parameter", "VUID-VkPhysicalDeviceSparseImageFormatInfo2-sType-sType");
     if (pFormatInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceSparseImageFormatProperties2KHR", "pFormatInfo->pNext", NULL, pFormatInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSparseImageFormatInfo2-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceSparseImageFormatProperties2KHR", "pFormatInfo->pNext", NULL, pFormatInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSparseImageFormatInfo2-pNext-pNext", kVUIDUndefined, true, true);
 
         skip |= validate_ranged_enum("vkGetPhysicalDeviceSparseImageFormatProperties2KHR", "pFormatInfo->format", "VkFormat", AllVkFormatEnums, pFormatInfo->format, "VUID-VkPhysicalDeviceSparseImageFormatInfo2-format-parameter");
 
@@ -9168,7 +9768,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
     {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex)
         {
-            skip |= validate_struct_pnext("vkGetPhysicalDeviceSparseImageFormatProperties2KHR", ParameterName("pProperties[%i].pNext", ParameterName::IndexVector{ pPropertyIndex }), NULL, pProperties[pPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSparseImageFormatProperties2-pNext-pNext", kVUIDUndefined, true);
+            skip |= validate_struct_pnext("vkGetPhysicalDeviceSparseImageFormatProperties2KHR", ParameterName("pProperties[%i].pNext", ParameterName::IndexVector{ pPropertyIndex }), NULL, pProperties[pPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSparseImageFormatProperties2-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
     return skip;
@@ -9243,7 +9843,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroupsKHR(
     {
         for (uint32_t pPhysicalDeviceGroupIndex = 0; pPhysicalDeviceGroupIndex < *pPhysicalDeviceGroupCount; ++pPhysicalDeviceGroupIndex)
         {
-            skip |= validate_struct_pnext("vkEnumeratePhysicalDeviceGroupsKHR", ParameterName("pPhysicalDeviceGroupProperties[%i].pNext", ParameterName::IndexVector{ pPhysicalDeviceGroupIndex }), NULL, pPhysicalDeviceGroupProperties[pPhysicalDeviceGroupIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceGroupProperties-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkEnumeratePhysicalDeviceGroupsKHR", ParameterName("pPhysicalDeviceGroupProperties[%i].pNext", ParameterName::IndexVector{ pPhysicalDeviceGroupIndex }), NULL, pPhysicalDeviceGroupProperties[pPhysicalDeviceGroupIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceGroupProperties-pNext-pNext", kVUIDUndefined, false, false);
         }
     }
     return skip;
@@ -9261,7 +9861,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperti
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalBufferPropertiesKHR", "pExternalBufferInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO", pExternalBufferInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO, true, "VUID-vkGetPhysicalDeviceExternalBufferProperties-pExternalBufferInfo-parameter", "VUID-VkPhysicalDeviceExternalBufferInfo-sType-sType");
     if (pExternalBufferInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalBufferPropertiesKHR", "pExternalBufferInfo->pNext", NULL, pExternalBufferInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalBufferInfo-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalBufferPropertiesKHR", "pExternalBufferInfo->pNext", NULL, pExternalBufferInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalBufferInfo-pNext-pNext", kVUIDUndefined, true, true);
 
         skip |= validate_flags("vkGetPhysicalDeviceExternalBufferPropertiesKHR", "pExternalBufferInfo->flags", "VkBufferCreateFlagBits", AllVkBufferCreateFlagBits, pExternalBufferInfo->flags, kOptionalFlags, "VUID-VkPhysicalDeviceExternalBufferInfo-flags-parameter");
 
@@ -9272,7 +9872,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperti
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalBufferPropertiesKHR", "pExternalBufferProperties", "VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES", pExternalBufferProperties, VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES, true, "VUID-vkGetPhysicalDeviceExternalBufferProperties-pExternalBufferProperties-parameter", "VUID-VkExternalBufferProperties-sType-sType");
     if (pExternalBufferProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalBufferPropertiesKHR", "pExternalBufferProperties->pNext", NULL, pExternalBufferProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkExternalBufferProperties-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalBufferPropertiesKHR", "pExternalBufferProperties->pNext", NULL, pExternalBufferProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkExternalBufferProperties-pNext-pNext", kVUIDUndefined, true, false);
     }
     return skip;
 }
@@ -9293,7 +9893,7 @@ bool StatelessValidation::PreCallValidateGetMemoryWin32HandleKHR(
     skip |= validate_struct_type("vkGetMemoryWin32HandleKHR", "pGetWin32HandleInfo", "VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR", pGetWin32HandleInfo, VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR, true, "VUID-vkGetMemoryWin32HandleKHR-pGetWin32HandleInfo-parameter", "VUID-VkMemoryGetWin32HandleInfoKHR-sType-sType");
     if (pGetWin32HandleInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetMemoryWin32HandleKHR", "pGetWin32HandleInfo->pNext", NULL, pGetWin32HandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryGetWin32HandleInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetMemoryWin32HandleKHR", "pGetWin32HandleInfo->pNext", NULL, pGetWin32HandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryGetWin32HandleInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetMemoryWin32HandleKHR", "pGetWin32HandleInfo->memory", pGetWin32HandleInfo->memory);
 
@@ -9315,7 +9915,7 @@ bool StatelessValidation::PreCallValidateGetMemoryWin32HandlePropertiesKHR(
     skip |= validate_struct_type("vkGetMemoryWin32HandlePropertiesKHR", "pMemoryWin32HandleProperties", "VK_STRUCTURE_TYPE_MEMORY_WIN32_HANDLE_PROPERTIES_KHR", pMemoryWin32HandleProperties, VK_STRUCTURE_TYPE_MEMORY_WIN32_HANDLE_PROPERTIES_KHR, true, "VUID-vkGetMemoryWin32HandlePropertiesKHR-pMemoryWin32HandleProperties-parameter", "VUID-VkMemoryWin32HandlePropertiesKHR-sType-sType");
     if (pMemoryWin32HandleProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetMemoryWin32HandlePropertiesKHR", "pMemoryWin32HandleProperties->pNext", NULL, pMemoryWin32HandleProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryWin32HandlePropertiesKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetMemoryWin32HandlePropertiesKHR", "pMemoryWin32HandleProperties->pNext", NULL, pMemoryWin32HandleProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryWin32HandlePropertiesKHR-pNext-pNext", kVUIDUndefined, false, false);
     }
     return skip;
 }
@@ -9332,7 +9932,7 @@ bool StatelessValidation::PreCallValidateGetMemoryFdKHR(
     skip |= validate_struct_type("vkGetMemoryFdKHR", "pGetFdInfo", "VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR", pGetFdInfo, VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, true, "VUID-vkGetMemoryFdKHR-pGetFdInfo-parameter", "VUID-VkMemoryGetFdInfoKHR-sType-sType");
     if (pGetFdInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetMemoryFdKHR", "pGetFdInfo->pNext", NULL, pGetFdInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryGetFdInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetMemoryFdKHR", "pGetFdInfo->pNext", NULL, pGetFdInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryGetFdInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetMemoryFdKHR", "pGetFdInfo->memory", pGetFdInfo->memory);
 
@@ -9354,7 +9954,7 @@ bool StatelessValidation::PreCallValidateGetMemoryFdPropertiesKHR(
     skip |= validate_struct_type("vkGetMemoryFdPropertiesKHR", "pMemoryFdProperties", "VK_STRUCTURE_TYPE_MEMORY_FD_PROPERTIES_KHR", pMemoryFdProperties, VK_STRUCTURE_TYPE_MEMORY_FD_PROPERTIES_KHR, true, "VUID-vkGetMemoryFdPropertiesKHR-pMemoryFdProperties-parameter", "VUID-VkMemoryFdPropertiesKHR-sType-sType");
     if (pMemoryFdProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetMemoryFdPropertiesKHR", "pMemoryFdProperties->pNext", NULL, pMemoryFdProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryFdPropertiesKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetMemoryFdPropertiesKHR", "pMemoryFdProperties->pNext", NULL, pMemoryFdProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryFdPropertiesKHR-pNext-pNext", kVUIDUndefined, false, false);
     }
     return skip;
 }
@@ -9377,14 +9977,14 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalSemaphorePrope
     {
         const VkStructureType allowed_structs_VkPhysicalDeviceExternalSemaphoreInfo[] = { VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalSemaphorePropertiesKHR", "pExternalSemaphoreInfo->pNext", "VkSemaphoreTypeCreateInfo", pExternalSemaphoreInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceExternalSemaphoreInfo), allowed_structs_VkPhysicalDeviceExternalSemaphoreInfo, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalSemaphoreInfo-pNext-pNext", "VUID-VkPhysicalDeviceExternalSemaphoreInfo-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalSemaphorePropertiesKHR", "pExternalSemaphoreInfo->pNext", "VkSemaphoreTypeCreateInfo", pExternalSemaphoreInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceExternalSemaphoreInfo), allowed_structs_VkPhysicalDeviceExternalSemaphoreInfo, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalSemaphoreInfo-pNext-pNext", "VUID-VkPhysicalDeviceExternalSemaphoreInfo-sType-unique", true, true);
 
         skip |= validate_flags("vkGetPhysicalDeviceExternalSemaphorePropertiesKHR", "pExternalSemaphoreInfo->handleType", "VkExternalSemaphoreHandleTypeFlagBits", AllVkExternalSemaphoreHandleTypeFlagBits, pExternalSemaphoreInfo->handleType, kRequiredSingleBit, "VUID-VkPhysicalDeviceExternalSemaphoreInfo-handleType-parameter", "VUID-VkPhysicalDeviceExternalSemaphoreInfo-handleType-parameter");
     }
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalSemaphorePropertiesKHR", "pExternalSemaphoreProperties", "VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES", pExternalSemaphoreProperties, VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES, true, "VUID-vkGetPhysicalDeviceExternalSemaphoreProperties-pExternalSemaphoreProperties-parameter", "VUID-VkExternalSemaphoreProperties-sType-sType");
     if (pExternalSemaphoreProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalSemaphorePropertiesKHR", "pExternalSemaphoreProperties->pNext", NULL, pExternalSemaphoreProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkExternalSemaphoreProperties-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalSemaphorePropertiesKHR", "pExternalSemaphoreProperties->pNext", NULL, pExternalSemaphoreProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkExternalSemaphoreProperties-pNext-pNext", kVUIDUndefined, true, false);
     }
     return skip;
 }
@@ -9404,7 +10004,7 @@ bool StatelessValidation::PreCallValidateImportSemaphoreWin32HandleKHR(
     skip |= validate_struct_type("vkImportSemaphoreWin32HandleKHR", "pImportSemaphoreWin32HandleInfo", "VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR", pImportSemaphoreWin32HandleInfo, VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR, true, "VUID-vkImportSemaphoreWin32HandleKHR-pImportSemaphoreWin32HandleInfo-parameter", "VUID-VkImportSemaphoreWin32HandleInfoKHR-sType-sType");
     if (pImportSemaphoreWin32HandleInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkImportSemaphoreWin32HandleKHR", "pImportSemaphoreWin32HandleInfo->pNext", NULL, pImportSemaphoreWin32HandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImportSemaphoreWin32HandleInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkImportSemaphoreWin32HandleKHR", "pImportSemaphoreWin32HandleInfo->pNext", NULL, pImportSemaphoreWin32HandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImportSemaphoreWin32HandleInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkImportSemaphoreWin32HandleKHR", "pImportSemaphoreWin32HandleInfo->semaphore", pImportSemaphoreWin32HandleInfo->semaphore);
 
@@ -9423,7 +10023,7 @@ bool StatelessValidation::PreCallValidateGetSemaphoreWin32HandleKHR(
     skip |= validate_struct_type("vkGetSemaphoreWin32HandleKHR", "pGetWin32HandleInfo", "VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR", pGetWin32HandleInfo, VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR, true, "VUID-vkGetSemaphoreWin32HandleKHR-pGetWin32HandleInfo-parameter", "VUID-VkSemaphoreGetWin32HandleInfoKHR-sType-sType");
     if (pGetWin32HandleInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetSemaphoreWin32HandleKHR", "pGetWin32HandleInfo->pNext", NULL, pGetWin32HandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreGetWin32HandleInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetSemaphoreWin32HandleKHR", "pGetWin32HandleInfo->pNext", NULL, pGetWin32HandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreGetWin32HandleInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetSemaphoreWin32HandleKHR", "pGetWin32HandleInfo->semaphore", pGetWin32HandleInfo->semaphore);
 
@@ -9444,7 +10044,7 @@ bool StatelessValidation::PreCallValidateImportSemaphoreFdKHR(
     skip |= validate_struct_type("vkImportSemaphoreFdKHR", "pImportSemaphoreFdInfo", "VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR", pImportSemaphoreFdInfo, VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR, true, "VUID-vkImportSemaphoreFdKHR-pImportSemaphoreFdInfo-parameter", "VUID-VkImportSemaphoreFdInfoKHR-sType-sType");
     if (pImportSemaphoreFdInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkImportSemaphoreFdKHR", "pImportSemaphoreFdInfo->pNext", NULL, pImportSemaphoreFdInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImportSemaphoreFdInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkImportSemaphoreFdKHR", "pImportSemaphoreFdInfo->pNext", NULL, pImportSemaphoreFdInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImportSemaphoreFdInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkImportSemaphoreFdKHR", "pImportSemaphoreFdInfo->semaphore", pImportSemaphoreFdInfo->semaphore);
 
@@ -9466,7 +10066,7 @@ bool StatelessValidation::PreCallValidateGetSemaphoreFdKHR(
     skip |= validate_struct_type("vkGetSemaphoreFdKHR", "pGetFdInfo", "VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR", pGetFdInfo, VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR, true, "VUID-vkGetSemaphoreFdKHR-pGetFdInfo-parameter", "VUID-VkSemaphoreGetFdInfoKHR-sType-sType");
     if (pGetFdInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetSemaphoreFdKHR", "pGetFdInfo->pNext", NULL, pGetFdInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreGetFdInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetSemaphoreFdKHR", "pGetFdInfo->pNext", NULL, pGetFdInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreGetFdInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetSemaphoreFdKHR", "pGetFdInfo->semaphore", pGetFdInfo->semaphore);
 
@@ -9497,7 +10097,7 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetKHR(
         {
             const VkStructureType allowed_structs_VkWriteDescriptorSet[] = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR, VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV, VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT };
 
-            skip |= validate_struct_pnext("vkCmdPushDescriptorSetKHR", ParameterName("pDescriptorWrites[%i].pNext", ParameterName::IndexVector{ descriptorWriteIndex }), "VkWriteDescriptorSetAccelerationStructureKHR, VkWriteDescriptorSetAccelerationStructureNV, VkWriteDescriptorSetInlineUniformBlockEXT", pDescriptorWrites[descriptorWriteIndex].pNext, ARRAY_SIZE(allowed_structs_VkWriteDescriptorSet), allowed_structs_VkWriteDescriptorSet, GeneratedVulkanHeaderVersion, "VUID-VkWriteDescriptorSet-pNext-pNext", "VUID-VkWriteDescriptorSet-sType-unique");
+            skip |= validate_struct_pnext("vkCmdPushDescriptorSetKHR", ParameterName("pDescriptorWrites[%i].pNext", ParameterName::IndexVector{ descriptorWriteIndex }), "VkWriteDescriptorSetAccelerationStructureKHR, VkWriteDescriptorSetAccelerationStructureNV, VkWriteDescriptorSetInlineUniformBlockEXT", pDescriptorWrites[descriptorWriteIndex].pNext, ARRAY_SIZE(allowed_structs_VkWriteDescriptorSet), allowed_structs_VkWriteDescriptorSet, GeneratedVulkanHeaderVersion, "VUID-VkWriteDescriptorSet-pNext-pNext", "VUID-VkWriteDescriptorSet-sType-unique", false, true);
 
             skip |= validate_ranged_enum("vkCmdPushDescriptorSetKHR", ParameterName("pDescriptorWrites[%i].descriptorType", ParameterName::IndexVector{ descriptorWriteIndex }), "VkDescriptorType", AllVkDescriptorTypeEnums, pDescriptorWrites[descriptorWriteIndex].descriptorType, "VUID-VkWriteDescriptorSet-descriptorType-parameter");
 
@@ -9541,7 +10141,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorUpdateTemplateKHR(
     skip |= validate_struct_type("vkCreateDescriptorUpdateTemplateKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO, true, "VUID-vkCreateDescriptorUpdateTemplate-pCreateInfo-parameter", "VUID-VkDescriptorUpdateTemplateCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateDescriptorUpdateTemplateKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorUpdateTemplateCreateInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateDescriptorUpdateTemplateKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorUpdateTemplateCreateInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateDescriptorUpdateTemplateKHR", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkDescriptorUpdateTemplateCreateInfo-flags-zerobitmask");
 
@@ -9640,7 +10240,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
     {
         const VkStructureType allowed_structs_VkRenderPassCreateInfo2[] = { VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", "pCreateInfo->pNext", "VkRenderPassFragmentDensityMapCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassCreateInfo2), allowed_structs_VkRenderPassCreateInfo2, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassCreateInfo2-pNext-pNext", "VUID-VkRenderPassCreateInfo2-sType-unique");
+        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", "pCreateInfo->pNext", "VkRenderPassFragmentDensityMapCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassCreateInfo2), allowed_structs_VkRenderPassCreateInfo2, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassCreateInfo2-pNext-pNext", "VUID-VkRenderPassCreateInfo2-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateRenderPass2KHR", "pCreateInfo->flags", "VkRenderPassCreateFlagBits", AllVkRenderPassCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkRenderPassCreateInfo2-flags-parameter");
 
@@ -9652,7 +10252,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
             {
                 const VkStructureType allowed_structs_VkAttachmentDescription2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT };
 
-                skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pAttachments[%i].pNext", ParameterName::IndexVector{ attachmentIndex }), "VkAttachmentDescriptionStencilLayout", pCreateInfo->pAttachments[attachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentDescription2), allowed_structs_VkAttachmentDescription2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentDescription2-pNext-pNext", "VUID-VkAttachmentDescription2-sType-unique");
+                skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pAttachments[%i].pNext", ParameterName::IndexVector{ attachmentIndex }), "VkAttachmentDescriptionStencilLayout", pCreateInfo->pAttachments[attachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentDescription2), allowed_structs_VkAttachmentDescription2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentDescription2-pNext-pNext", "VUID-VkAttachmentDescription2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pAttachments[%i].flags", ParameterName::IndexVector{ attachmentIndex }), "VkAttachmentDescriptionFlagBits", AllVkAttachmentDescriptionFlagBits, pCreateInfo->pAttachments[attachmentIndex].flags, kOptionalFlags, "VUID-VkAttachmentDescription2-flags-parameter");
 
@@ -9682,7 +10282,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
             {
                 const VkStructureType allowed_structs_VkSubpassDescription2[] = { VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR, VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE };
 
-                skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pNext", ParameterName::IndexVector{ subpassIndex }), "VkFragmentShadingRateAttachmentInfoKHR, VkSubpassDescriptionDepthStencilResolve", pCreateInfo->pSubpasses[subpassIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDescription2), allowed_structs_VkSubpassDescription2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDescription2-pNext-pNext", "VUID-VkSubpassDescription2-sType-unique");
+                skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pNext", ParameterName::IndexVector{ subpassIndex }), "VkFragmentShadingRateAttachmentInfoKHR, VkSubpassDescriptionDepthStencilResolve", pCreateInfo->pSubpasses[subpassIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDescription2), allowed_structs_VkSubpassDescription2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDescription2-pNext-pNext", "VUID-VkSubpassDescription2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].flags", ParameterName::IndexVector{ subpassIndex }), "VkSubpassDescriptionFlagBits", AllVkSubpassDescriptionFlagBits, pCreateInfo->pSubpasses[subpassIndex].flags, kOptionalFlags, "VUID-VkSubpassDescription2-flags-parameter");
 
@@ -9696,7 +10296,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
                     {
                         const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
 
-                        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pInputAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, inputAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pInputAttachments[inputAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+                        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pInputAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, inputAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pInputAttachments[inputAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique", false, true);
 
                         skip |= validate_ranged_enum("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pInputAttachments[%i].layout", ParameterName::IndexVector{ subpassIndex, inputAttachmentIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pInputAttachments[inputAttachmentIndex].layout, "VUID-VkAttachmentReference2-layout-parameter");
                     }
@@ -9710,7 +10310,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
                     {
                         const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
 
-                        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pColorAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pColorAttachments[colorAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+                        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pColorAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pColorAttachments[colorAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique", false, true);
 
                         skip |= validate_ranged_enum("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pColorAttachments[%i].layout", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pColorAttachments[colorAttachmentIndex].layout, "VUID-VkAttachmentReference2-layout-parameter");
                     }
@@ -9724,7 +10324,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
                     {
                         const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
 
-                        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pResolveAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pResolveAttachments[colorAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+                        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pResolveAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pResolveAttachments[colorAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique", false, true);
 
                         skip |= validate_ranged_enum("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pResolveAttachments[%i].layout", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pResolveAttachments[colorAttachmentIndex].layout, "VUID-VkAttachmentReference2-layout-parameter");
                     }
@@ -9736,7 +10336,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
                 {
                     const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
 
-                    skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pDepthStencilAttachment->pNext", ParameterName::IndexVector{ subpassIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pDepthStencilAttachment->pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+                    skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pDepthStencilAttachment->pNext", ParameterName::IndexVector{ subpassIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pDepthStencilAttachment->pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique", false, true);
 
                     skip |= validate_ranged_enum("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pDepthStencilAttachment->layout", ParameterName::IndexVector{ subpassIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pDepthStencilAttachment->layout, "VUID-VkAttachmentReference2-layout-parameter");
                 }
@@ -9753,7 +10353,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
             {
                 const VkStructureType allowed_structs_VkSubpassDependency2[] = { VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR };
 
-                skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].pNext", ParameterName::IndexVector{ dependencyIndex }), "VkMemoryBarrier2KHR", pCreateInfo->pDependencies[dependencyIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDependency2), allowed_structs_VkSubpassDependency2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDependency2-pNext-pNext", "VUID-VkSubpassDependency2-sType-unique");
+                skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].pNext", ParameterName::IndexVector{ dependencyIndex }), "VkMemoryBarrier2KHR", pCreateInfo->pDependencies[dependencyIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDependency2), allowed_structs_VkSubpassDependency2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDependency2-pNext-pNext", "VUID-VkSubpassDependency2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].srcStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcStageMask-parameter");
 
@@ -9807,7 +10407,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2KHR(
     {
         const VkStructureType allowed_structs_VkRenderPassBeginInfo[] = { VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO, VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO, VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM };
 
-        skip |= validate_struct_pnext("vkCmdBeginRenderPass2KHR", "pRenderPassBegin->pNext", "VkDeviceGroupRenderPassBeginInfo, VkRenderPassAttachmentBeginInfo, VkRenderPassSampleLocationsBeginInfoEXT, VkRenderPassTransformBeginInfoQCOM", pRenderPassBegin->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassBeginInfo), allowed_structs_VkRenderPassBeginInfo, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassBeginInfo-pNext-pNext", "VUID-VkRenderPassBeginInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCmdBeginRenderPass2KHR", "pRenderPassBegin->pNext", "VkDeviceGroupRenderPassBeginInfo, VkRenderPassAttachmentBeginInfo, VkRenderPassSampleLocationsBeginInfoEXT, VkRenderPassTransformBeginInfoQCOM", pRenderPassBegin->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassBeginInfo), allowed_structs_VkRenderPassBeginInfo, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassBeginInfo-pNext-pNext", "VUID-VkRenderPassBeginInfo-sType-unique", false, true);
 
         skip |= validate_required_handle("vkCmdBeginRenderPass2KHR", "pRenderPassBegin->renderPass", pRenderPassBegin->renderPass);
 
@@ -9820,7 +10420,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2KHR(
     skip |= validate_struct_type("vkCmdBeginRenderPass2KHR", "pSubpassBeginInfo", "VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO", pSubpassBeginInfo, VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO, true, "VUID-vkCmdBeginRenderPass2-pSubpassBeginInfo-parameter", "VUID-VkSubpassBeginInfo-sType-sType");
     if (pSubpassBeginInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdBeginRenderPass2KHR", "pSubpassBeginInfo->pNext", NULL, pSubpassBeginInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassBeginInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdBeginRenderPass2KHR", "pSubpassBeginInfo->pNext", NULL, pSubpassBeginInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassBeginInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkCmdBeginRenderPass2KHR", "pSubpassBeginInfo->contents", "VkSubpassContents", AllVkSubpassContentsEnums, pSubpassBeginInfo->contents, "VUID-VkSubpassBeginInfo-contents-parameter");
     }
@@ -9839,14 +10439,14 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2KHR(
     skip |= validate_struct_type("vkCmdNextSubpass2KHR", "pSubpassBeginInfo", "VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO", pSubpassBeginInfo, VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO, true, "VUID-vkCmdNextSubpass2-pSubpassBeginInfo-parameter", "VUID-VkSubpassBeginInfo-sType-sType");
     if (pSubpassBeginInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdNextSubpass2KHR", "pSubpassBeginInfo->pNext", NULL, pSubpassBeginInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassBeginInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdNextSubpass2KHR", "pSubpassBeginInfo->pNext", NULL, pSubpassBeginInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassBeginInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkCmdNextSubpass2KHR", "pSubpassBeginInfo->contents", "VkSubpassContents", AllVkSubpassContentsEnums, pSubpassBeginInfo->contents, "VUID-VkSubpassBeginInfo-contents-parameter");
     }
     skip |= validate_struct_type("vkCmdNextSubpass2KHR", "pSubpassEndInfo", "VK_STRUCTURE_TYPE_SUBPASS_END_INFO", pSubpassEndInfo, VK_STRUCTURE_TYPE_SUBPASS_END_INFO, true, "VUID-vkCmdNextSubpass2-pSubpassEndInfo-parameter", "VUID-VkSubpassEndInfo-sType-sType");
     if (pSubpassEndInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdNextSubpass2KHR", "pSubpassEndInfo->pNext", NULL, pSubpassEndInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassEndInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdNextSubpass2KHR", "pSubpassEndInfo->pNext", NULL, pSubpassEndInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassEndInfo-pNext-pNext", kVUIDUndefined, false, true);
     }
     return skip;
 }
@@ -9861,7 +10461,7 @@ bool StatelessValidation::PreCallValidateCmdEndRenderPass2KHR(
     skip |= validate_struct_type("vkCmdEndRenderPass2KHR", "pSubpassEndInfo", "VK_STRUCTURE_TYPE_SUBPASS_END_INFO", pSubpassEndInfo, VK_STRUCTURE_TYPE_SUBPASS_END_INFO, true, "VUID-vkCmdEndRenderPass2-pSubpassEndInfo-parameter", "VUID-VkSubpassEndInfo-sType-sType");
     if (pSubpassEndInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdEndRenderPass2KHR", "pSubpassEndInfo->pNext", NULL, pSubpassEndInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassEndInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdEndRenderPass2KHR", "pSubpassEndInfo->pNext", NULL, pSubpassEndInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassEndInfo-pNext-pNext", kVUIDUndefined, false, true);
     }
     return skip;
 }
@@ -9892,14 +10492,14 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalFencePropertie
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalFencePropertiesKHR", "pExternalFenceInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO", pExternalFenceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO, true, "VUID-vkGetPhysicalDeviceExternalFenceProperties-pExternalFenceInfo-parameter", "VUID-VkPhysicalDeviceExternalFenceInfo-sType-sType");
     if (pExternalFenceInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalFencePropertiesKHR", "pExternalFenceInfo->pNext", NULL, pExternalFenceInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalFenceInfo-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalFencePropertiesKHR", "pExternalFenceInfo->pNext", NULL, pExternalFenceInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalFenceInfo-pNext-pNext", kVUIDUndefined, true, true);
 
         skip |= validate_flags("vkGetPhysicalDeviceExternalFencePropertiesKHR", "pExternalFenceInfo->handleType", "VkExternalFenceHandleTypeFlagBits", AllVkExternalFenceHandleTypeFlagBits, pExternalFenceInfo->handleType, kRequiredSingleBit, "VUID-VkPhysicalDeviceExternalFenceInfo-handleType-parameter", "VUID-VkPhysicalDeviceExternalFenceInfo-handleType-parameter");
     }
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalFencePropertiesKHR", "pExternalFenceProperties", "VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES", pExternalFenceProperties, VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES, true, "VUID-vkGetPhysicalDeviceExternalFenceProperties-pExternalFenceProperties-parameter", "VUID-VkExternalFenceProperties-sType-sType");
     if (pExternalFenceProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalFencePropertiesKHR", "pExternalFenceProperties->pNext", NULL, pExternalFenceProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkExternalFenceProperties-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceExternalFencePropertiesKHR", "pExternalFenceProperties->pNext", NULL, pExternalFenceProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkExternalFenceProperties-pNext-pNext", kVUIDUndefined, true, false);
     }
     return skip;
 }
@@ -9919,7 +10519,7 @@ bool StatelessValidation::PreCallValidateImportFenceWin32HandleKHR(
     skip |= validate_struct_type("vkImportFenceWin32HandleKHR", "pImportFenceWin32HandleInfo", "VK_STRUCTURE_TYPE_IMPORT_FENCE_WIN32_HANDLE_INFO_KHR", pImportFenceWin32HandleInfo, VK_STRUCTURE_TYPE_IMPORT_FENCE_WIN32_HANDLE_INFO_KHR, true, "VUID-vkImportFenceWin32HandleKHR-pImportFenceWin32HandleInfo-parameter", "VUID-VkImportFenceWin32HandleInfoKHR-sType-sType");
     if (pImportFenceWin32HandleInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkImportFenceWin32HandleKHR", "pImportFenceWin32HandleInfo->pNext", NULL, pImportFenceWin32HandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImportFenceWin32HandleInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkImportFenceWin32HandleKHR", "pImportFenceWin32HandleInfo->pNext", NULL, pImportFenceWin32HandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImportFenceWin32HandleInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkImportFenceWin32HandleKHR", "pImportFenceWin32HandleInfo->fence", pImportFenceWin32HandleInfo->fence);
 
@@ -9938,7 +10538,7 @@ bool StatelessValidation::PreCallValidateGetFenceWin32HandleKHR(
     skip |= validate_struct_type("vkGetFenceWin32HandleKHR", "pGetWin32HandleInfo", "VK_STRUCTURE_TYPE_FENCE_GET_WIN32_HANDLE_INFO_KHR", pGetWin32HandleInfo, VK_STRUCTURE_TYPE_FENCE_GET_WIN32_HANDLE_INFO_KHR, true, "VUID-vkGetFenceWin32HandleKHR-pGetWin32HandleInfo-parameter", "VUID-VkFenceGetWin32HandleInfoKHR-sType-sType");
     if (pGetWin32HandleInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetFenceWin32HandleKHR", "pGetWin32HandleInfo->pNext", NULL, pGetWin32HandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkFenceGetWin32HandleInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetFenceWin32HandleKHR", "pGetWin32HandleInfo->pNext", NULL, pGetWin32HandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkFenceGetWin32HandleInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetFenceWin32HandleKHR", "pGetWin32HandleInfo->fence", pGetWin32HandleInfo->fence);
 
@@ -9959,7 +10559,7 @@ bool StatelessValidation::PreCallValidateImportFenceFdKHR(
     skip |= validate_struct_type("vkImportFenceFdKHR", "pImportFenceFdInfo", "VK_STRUCTURE_TYPE_IMPORT_FENCE_FD_INFO_KHR", pImportFenceFdInfo, VK_STRUCTURE_TYPE_IMPORT_FENCE_FD_INFO_KHR, true, "VUID-vkImportFenceFdKHR-pImportFenceFdInfo-parameter", "VUID-VkImportFenceFdInfoKHR-sType-sType");
     if (pImportFenceFdInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkImportFenceFdKHR", "pImportFenceFdInfo->pNext", NULL, pImportFenceFdInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImportFenceFdInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkImportFenceFdKHR", "pImportFenceFdInfo->pNext", NULL, pImportFenceFdInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImportFenceFdInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkImportFenceFdKHR", "pImportFenceFdInfo->fence", pImportFenceFdInfo->fence);
 
@@ -9980,7 +10580,7 @@ bool StatelessValidation::PreCallValidateGetFenceFdKHR(
     skip |= validate_struct_type("vkGetFenceFdKHR", "pGetFdInfo", "VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR", pGetFdInfo, VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR, true, "VUID-vkGetFenceFdKHR-pGetFdInfo-parameter", "VUID-VkFenceGetFdInfoKHR-sType-sType");
     if (pGetFdInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetFenceFdKHR", "pGetFdInfo->pNext", NULL, pGetFdInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkFenceGetFdInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetFenceFdKHR", "pGetFdInfo->pNext", NULL, pGetFdInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkFenceGetFdInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetFenceFdKHR", "pGetFdInfo->fence", pGetFdInfo->fence);
 
@@ -10004,7 +10604,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerfo
     {
         for (uint32_t pIndexerIndex = 0; pIndexerIndex < *pCounterCount; ++pIndexerIndex)
         {
-            skip |= validate_struct_pnext("vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR", ParameterName("pCounters[%i].pNext", ParameterName::IndexVector{ pIndexerIndex }), NULL, pCounters[pIndexerIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPerformanceCounterKHR-pNext-pNext", kVUIDUndefined, true);
+            skip |= validate_struct_pnext("vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR", ParameterName("pCounters[%i].pNext", ParameterName::IndexVector{ pIndexerIndex }), NULL, pCounters[pIndexerIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPerformanceCounterKHR-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
     skip |= validate_struct_type_array("vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR", "pCounterCount", "pCounterDescriptions", "VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_DESCRIPTION_KHR", pCounterCount, pCounterDescriptions, VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_DESCRIPTION_KHR, true, false, false, "VUID-VkPerformanceCounterDescriptionKHR-sType-sType", "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-pCounterDescriptions-parameter", kVUIDUndefined);
@@ -10012,7 +10612,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerfo
     {
         for (uint32_t pIndexerIndex = 0; pIndexerIndex < *pCounterCount; ++pIndexerIndex)
         {
-            skip |= validate_struct_pnext("vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR", ParameterName("pCounterDescriptions[%i].pNext", ParameterName::IndexVector{ pIndexerIndex }), NULL, pCounterDescriptions[pIndexerIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPerformanceCounterDescriptionKHR-pNext-pNext", kVUIDUndefined, true);
+            skip |= validate_struct_pnext("vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR", ParameterName("pCounterDescriptions[%i].pNext", ParameterName::IndexVector{ pIndexerIndex }), NULL, pCounterDescriptions[pIndexerIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPerformanceCounterDescriptionKHR-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
     return skip;
@@ -10026,7 +10626,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyPerformance
     skip |= validate_struct_type("vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR", "pPerformanceQueryCreateInfo", "VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR", pPerformanceQueryCreateInfo, VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR, true, "VUID-vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR-pPerformanceQueryCreateInfo-parameter", "VUID-VkQueryPoolPerformanceCreateInfoKHR-sType-sType");
     if (pPerformanceQueryCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR", "pPerformanceQueryCreateInfo->pNext", NULL, pPerformanceQueryCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR", "pPerformanceQueryCreateInfo->pNext", NULL, pPerformanceQueryCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, true, true);
 
         skip |= validate_array("vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR", "pPerformanceQueryCreateInfo->counterIndexCount", "pPerformanceQueryCreateInfo->pCounterIndices", pPerformanceQueryCreateInfo->counterIndexCount, &pPerformanceQueryCreateInfo->pCounterIndices, true, true, "VUID-VkQueryPoolPerformanceCreateInfoKHR-counterIndexCount-arraylength", "VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-parameter");
     }
@@ -10043,7 +10643,7 @@ bool StatelessValidation::PreCallValidateAcquireProfilingLockKHR(
     skip |= validate_struct_type("vkAcquireProfilingLockKHR", "pInfo", "VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR", pInfo, VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR, true, "VUID-vkAcquireProfilingLockKHR-pInfo-parameter", "VUID-VkAcquireProfilingLockInfoKHR-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkAcquireProfilingLockKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAcquireProfilingLockInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkAcquireProfilingLockKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAcquireProfilingLockInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkAcquireProfilingLockKHR", "pInfo->flags", pInfo->flags, "VUID-VkAcquireProfilingLockInfoKHR-flags-zerobitmask");
     }
@@ -10075,7 +10675,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KH
     {
         const VkStructureType allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR[] = { VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT, VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfaceCapabilities2KHR", "pSurfaceInfo->pNext", "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT", pSurfaceInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR), allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfaceCapabilities2KHR", "pSurfaceInfo->pNext", "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT", pSurfaceInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR), allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique", true, true);
 
         skip |= validate_required_handle("vkGetPhysicalDeviceSurfaceCapabilities2KHR", "pSurfaceInfo->surface", pSurfaceInfo->surface);
     }
@@ -10084,7 +10684,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KH
     {
         const VkStructureType allowed_structs_VkSurfaceCapabilities2KHR[] = { VK_STRUCTURE_TYPE_DISPLAY_NATIVE_HDR_SURFACE_CAPABILITIES_AMD, VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR, VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_FULL_SCREEN_EXCLUSIVE_EXT, VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfaceCapabilities2KHR", "pSurfaceCapabilities->pNext", "VkDisplayNativeHdrSurfaceCapabilitiesAMD, VkSharedPresentSurfaceCapabilitiesKHR, VkSurfaceCapabilitiesFullScreenExclusiveEXT, VkSurfaceProtectedCapabilitiesKHR", pSurfaceCapabilities->pNext, ARRAY_SIZE(allowed_structs_VkSurfaceCapabilities2KHR), allowed_structs_VkSurfaceCapabilities2KHR, GeneratedVulkanHeaderVersion, "VUID-VkSurfaceCapabilities2KHR-pNext-pNext", "VUID-VkSurfaceCapabilities2KHR-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfaceCapabilities2KHR", "pSurfaceCapabilities->pNext", "VkDisplayNativeHdrSurfaceCapabilitiesAMD, VkSharedPresentSurfaceCapabilitiesKHR, VkSurfaceCapabilitiesFullScreenExclusiveEXT, VkSurfaceProtectedCapabilitiesKHR", pSurfaceCapabilities->pNext, ARRAY_SIZE(allowed_structs_VkSurfaceCapabilities2KHR), allowed_structs_VkSurfaceCapabilities2KHR, GeneratedVulkanHeaderVersion, "VUID-VkSurfaceCapabilities2KHR-pNext-pNext", "VUID-VkSurfaceCapabilities2KHR-sType-unique", true, false);
     }
     return skip;
 }
@@ -10102,7 +10702,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(
     {
         const VkStructureType allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR[] = { VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT, VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfaceFormats2KHR", "pSurfaceInfo->pNext", "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT", pSurfaceInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR), allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfaceFormats2KHR", "pSurfaceInfo->pNext", "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT", pSurfaceInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR), allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique", true, true);
 
         skip |= validate_required_handle("vkGetPhysicalDeviceSurfaceFormats2KHR", "pSurfaceInfo->surface", pSurfaceInfo->surface);
     }
@@ -10111,7 +10711,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(
     {
         for (uint32_t pSurfaceFormatIndex = 0; pSurfaceFormatIndex < *pSurfaceFormatCount; ++pSurfaceFormatIndex)
         {
-            skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfaceFormats2KHR", ParameterName("pSurfaceFormats[%i].pNext", ParameterName::IndexVector{ pSurfaceFormatIndex }), NULL, pSurfaceFormats[pSurfaceFormatIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSurfaceFormat2KHR-pNext-pNext", kVUIDUndefined, true);
+            skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfaceFormats2KHR", ParameterName("pSurfaceFormats[%i].pNext", ParameterName::IndexVector{ pSurfaceFormatIndex }), NULL, pSurfaceFormats[pSurfaceFormatIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSurfaceFormat2KHR-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
     return skip;
@@ -10133,7 +10733,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(
     {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex)
         {
-            skip |= validate_struct_pnext("vkGetPhysicalDeviceDisplayProperties2KHR", ParameterName("pProperties[%i].pNext", ParameterName::IndexVector{ pPropertyIndex }), NULL, pProperties[pPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayProperties2KHR-pNext-pNext", kVUIDUndefined, true);
+            skip |= validate_struct_pnext("vkGetPhysicalDeviceDisplayProperties2KHR", ParameterName("pProperties[%i].pNext", ParameterName::IndexVector{ pPropertyIndex }), NULL, pProperties[pPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayProperties2KHR-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
     return skip;
@@ -10151,7 +10751,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties
     {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex)
         {
-            skip |= validate_struct_pnext("vkGetPhysicalDeviceDisplayPlaneProperties2KHR", ParameterName("pProperties[%i].pNext", ParameterName::IndexVector{ pPropertyIndex }), NULL, pProperties[pPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayPlaneProperties2KHR-pNext-pNext", kVUIDUndefined, true);
+            skip |= validate_struct_pnext("vkGetPhysicalDeviceDisplayPlaneProperties2KHR", ParameterName("pProperties[%i].pNext", ParameterName::IndexVector{ pPropertyIndex }), NULL, pProperties[pPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayPlaneProperties2KHR-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
     return skip;
@@ -10171,7 +10771,7 @@ bool StatelessValidation::PreCallValidateGetDisplayModeProperties2KHR(
     {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex)
         {
-            skip |= validate_struct_pnext("vkGetDisplayModeProperties2KHR", ParameterName("pProperties[%i].pNext", ParameterName::IndexVector{ pPropertyIndex }), NULL, pProperties[pPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayModeProperties2KHR-pNext-pNext", kVUIDUndefined, true);
+            skip |= validate_struct_pnext("vkGetDisplayModeProperties2KHR", ParameterName("pProperties[%i].pNext", ParameterName::IndexVector{ pPropertyIndex }), NULL, pProperties[pPropertyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayModeProperties2KHR-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
     return skip;
@@ -10187,14 +10787,14 @@ bool StatelessValidation::PreCallValidateGetDisplayPlaneCapabilities2KHR(
     skip |= validate_struct_type("vkGetDisplayPlaneCapabilities2KHR", "pDisplayPlaneInfo", "VK_STRUCTURE_TYPE_DISPLAY_PLANE_INFO_2_KHR", pDisplayPlaneInfo, VK_STRUCTURE_TYPE_DISPLAY_PLANE_INFO_2_KHR, true, "VUID-vkGetDisplayPlaneCapabilities2KHR-pDisplayPlaneInfo-parameter", "VUID-VkDisplayPlaneInfo2KHR-sType-sType");
     if (pDisplayPlaneInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetDisplayPlaneCapabilities2KHR", "pDisplayPlaneInfo->pNext", NULL, pDisplayPlaneInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayPlaneInfo2KHR-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetDisplayPlaneCapabilities2KHR", "pDisplayPlaneInfo->pNext", NULL, pDisplayPlaneInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayPlaneInfo2KHR-pNext-pNext", kVUIDUndefined, true, true);
 
         skip |= validate_required_handle("vkGetDisplayPlaneCapabilities2KHR", "pDisplayPlaneInfo->mode", pDisplayPlaneInfo->mode);
     }
     skip |= validate_struct_type("vkGetDisplayPlaneCapabilities2KHR", "pCapabilities", "VK_STRUCTURE_TYPE_DISPLAY_PLANE_CAPABILITIES_2_KHR", pCapabilities, VK_STRUCTURE_TYPE_DISPLAY_PLANE_CAPABILITIES_2_KHR, true, "VUID-vkGetDisplayPlaneCapabilities2KHR-pCapabilities-parameter", "VUID-VkDisplayPlaneCapabilities2KHR-sType-sType");
     if (pCapabilities != NULL)
     {
-        skip |= validate_struct_pnext("vkGetDisplayPlaneCapabilities2KHR", "pCapabilities->pNext", NULL, pCapabilities->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayPlaneCapabilities2KHR-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetDisplayPlaneCapabilities2KHR", "pCapabilities->pNext", NULL, pCapabilities->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayPlaneCapabilities2KHR-pNext-pNext", kVUIDUndefined, true, false);
     }
     return skip;
 }
@@ -10218,7 +10818,7 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements2KHR(
     {
         const VkStructureType allowed_structs_VkImageMemoryRequirementsInfo2[] = { VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO };
 
-        skip |= validate_struct_pnext("vkGetImageMemoryRequirements2KHR", "pInfo->pNext", "VkImagePlaneMemoryRequirementsInfo", pInfo->pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryRequirementsInfo2), allowed_structs_VkImageMemoryRequirementsInfo2, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryRequirementsInfo2-pNext-pNext", "VUID-VkImageMemoryRequirementsInfo2-sType-unique");
+        skip |= validate_struct_pnext("vkGetImageMemoryRequirements2KHR", "pInfo->pNext", "VkImagePlaneMemoryRequirementsInfo", pInfo->pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryRequirementsInfo2), allowed_structs_VkImageMemoryRequirementsInfo2, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryRequirementsInfo2-pNext-pNext", "VUID-VkImageMemoryRequirementsInfo2-sType-unique", false, true);
 
         skip |= validate_required_handle("vkGetImageMemoryRequirements2KHR", "pInfo->image", pInfo->image);
     }
@@ -10227,7 +10827,7 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements2KHR(
     {
         const VkStructureType allowed_structs_VkMemoryRequirements2[] = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS };
 
-        skip |= validate_struct_pnext("vkGetImageMemoryRequirements2KHR", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique");
+        skip |= validate_struct_pnext("vkGetImageMemoryRequirements2KHR", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique", false, false);
     }
     return skip;
 }
@@ -10241,7 +10841,7 @@ bool StatelessValidation::PreCallValidateGetBufferMemoryRequirements2KHR(
     skip |= validate_struct_type("vkGetBufferMemoryRequirements2KHR", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2", pInfo, VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2, true, "VUID-vkGetBufferMemoryRequirements2-pInfo-parameter", "VUID-VkBufferMemoryRequirementsInfo2-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetBufferMemoryRequirements2KHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryRequirementsInfo2-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetBufferMemoryRequirements2KHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryRequirementsInfo2-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetBufferMemoryRequirements2KHR", "pInfo->buffer", pInfo->buffer);
     }
@@ -10250,7 +10850,7 @@ bool StatelessValidation::PreCallValidateGetBufferMemoryRequirements2KHR(
     {
         const VkStructureType allowed_structs_VkMemoryRequirements2[] = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS };
 
-        skip |= validate_struct_pnext("vkGetBufferMemoryRequirements2KHR", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique");
+        skip |= validate_struct_pnext("vkGetBufferMemoryRequirements2KHR", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique", false, false);
     }
     return skip;
 }
@@ -10265,7 +10865,7 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements2KHR(
     skip |= validate_struct_type("vkGetImageSparseMemoryRequirements2KHR", "pInfo", "VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2", pInfo, VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2, true, "VUID-vkGetImageSparseMemoryRequirements2-pInfo-parameter", "VUID-VkImageSparseMemoryRequirementsInfo2-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetImageSparseMemoryRequirements2KHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageSparseMemoryRequirementsInfo2-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetImageSparseMemoryRequirements2KHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageSparseMemoryRequirementsInfo2-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetImageSparseMemoryRequirements2KHR", "pInfo->image", pInfo->image);
     }
@@ -10274,7 +10874,7 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements2KHR(
     {
         for (uint32_t pSparseMemoryRequirementIndex = 0; pSparseMemoryRequirementIndex < *pSparseMemoryRequirementCount; ++pSparseMemoryRequirementIndex)
         {
-            skip |= validate_struct_pnext("vkGetImageSparseMemoryRequirements2KHR", ParameterName("pSparseMemoryRequirements[%i].pNext", ParameterName::IndexVector{ pSparseMemoryRequirementIndex }), NULL, pSparseMemoryRequirements[pSparseMemoryRequirementIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSparseImageMemoryRequirements2-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkGetImageSparseMemoryRequirements2KHR", ParameterName("pSparseMemoryRequirements[%i].pNext", ParameterName::IndexVector{ pSparseMemoryRequirementIndex }), NULL, pSparseMemoryRequirements[pSparseMemoryRequirementIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSparseImageMemoryRequirements2-pNext-pNext", kVUIDUndefined, false, false);
         }
     }
     return skip;
@@ -10300,7 +10900,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversionKHR(
     {
         const VkStructureType allowed_structs_VkSamplerYcbcrConversionCreateInfo[] = { VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID };
 
-        skip |= validate_struct_pnext("vkCreateSamplerYcbcrConversionKHR", "pCreateInfo->pNext", "VkExternalFormatANDROID", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkSamplerYcbcrConversionCreateInfo), allowed_structs_VkSamplerYcbcrConversionCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkSamplerYcbcrConversionCreateInfo-pNext-pNext", "VUID-VkSamplerYcbcrConversionCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkCreateSamplerYcbcrConversionKHR", "pCreateInfo->pNext", "VkExternalFormatANDROID", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkSamplerYcbcrConversionCreateInfo), allowed_structs_VkSamplerYcbcrConversionCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkSamplerYcbcrConversionCreateInfo-pNext-pNext", "VUID-VkSamplerYcbcrConversionCreateInfo-sType-unique", false, true);
 
         skip |= validate_ranged_enum("vkCreateSamplerYcbcrConversionKHR", "pCreateInfo->format", "VkFormat", AllVkFormatEnums, pCreateInfo->format, "VUID-VkSamplerYcbcrConversionCreateInfo-format-parameter");
 
@@ -10397,7 +10997,7 @@ bool StatelessValidation::PreCallValidateBindBufferMemory2KHR(
         {
             const VkStructureType allowed_structs_VkBindBufferMemoryInfo[] = { VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO };
 
-            skip |= validate_struct_pnext("vkBindBufferMemory2KHR", ParameterName("pBindInfos[%i].pNext", ParameterName::IndexVector{ bindInfoIndex }), "VkBindBufferMemoryDeviceGroupInfo", pBindInfos[bindInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkBindBufferMemoryInfo), allowed_structs_VkBindBufferMemoryInfo, GeneratedVulkanHeaderVersion, "VUID-VkBindBufferMemoryInfo-pNext-pNext", "VUID-VkBindBufferMemoryInfo-sType-unique");
+            skip |= validate_struct_pnext("vkBindBufferMemory2KHR", ParameterName("pBindInfos[%i].pNext", ParameterName::IndexVector{ bindInfoIndex }), "VkBindBufferMemoryDeviceGroupInfo", pBindInfos[bindInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkBindBufferMemoryInfo), allowed_structs_VkBindBufferMemoryInfo, GeneratedVulkanHeaderVersion, "VUID-VkBindBufferMemoryInfo-pNext-pNext", "VUID-VkBindBufferMemoryInfo-sType-unique", false, true);
 
             skip |= validate_required_handle("vkBindBufferMemory2KHR", ParameterName("pBindInfos[%i].buffer", ParameterName::IndexVector{ bindInfoIndex }), pBindInfos[bindInfoIndex].buffer);
 
@@ -10420,7 +11020,7 @@ bool StatelessValidation::PreCallValidateBindImageMemory2KHR(
         {
             const VkStructureType allowed_structs_VkBindImageMemoryInfo[] = { VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO, VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR, VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO };
 
-            skip |= validate_struct_pnext("vkBindImageMemory2KHR", ParameterName("pBindInfos[%i].pNext", ParameterName::IndexVector{ bindInfoIndex }), "VkBindImageMemoryDeviceGroupInfo, VkBindImageMemorySwapchainInfoKHR, VkBindImagePlaneMemoryInfo", pBindInfos[bindInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkBindImageMemoryInfo), allowed_structs_VkBindImageMemoryInfo, GeneratedVulkanHeaderVersion, "VUID-VkBindImageMemoryInfo-pNext-pNext", "VUID-VkBindImageMemoryInfo-sType-unique");
+            skip |= validate_struct_pnext("vkBindImageMemory2KHR", ParameterName("pBindInfos[%i].pNext", ParameterName::IndexVector{ bindInfoIndex }), "VkBindImageMemoryDeviceGroupInfo, VkBindImageMemorySwapchainInfoKHR, VkBindImagePlaneMemoryInfo", pBindInfos[bindInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkBindImageMemoryInfo), allowed_structs_VkBindImageMemoryInfo, GeneratedVulkanHeaderVersion, "VUID-VkBindImageMemoryInfo-pNext-pNext", "VUID-VkBindImageMemoryInfo-sType-unique", false, true);
 
             skip |= validate_required_handle("vkBindImageMemory2KHR", ParameterName("pBindInfos[%i].image", ParameterName::IndexVector{ bindInfoIndex }), pBindInfos[bindInfoIndex].image);
         }
@@ -10446,7 +11046,7 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSupportKHR(
     {
         const VkStructureType allowed_structs_VkDescriptorSetLayoutCreateInfo[] = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO, VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE };
 
-        skip |= validate_struct_pnext("vkGetDescriptorSetLayoutSupportKHR", "pCreateInfo->pNext", "VkDescriptorSetLayoutBindingFlagsCreateInfo, VkMutableDescriptorTypeCreateInfoVALVE", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorSetLayoutCreateInfo), allowed_structs_VkDescriptorSetLayoutCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorSetLayoutCreateInfo-pNext-pNext", "VUID-VkDescriptorSetLayoutCreateInfo-sType-unique");
+        skip |= validate_struct_pnext("vkGetDescriptorSetLayoutSupportKHR", "pCreateInfo->pNext", "VkDescriptorSetLayoutBindingFlagsCreateInfo, VkMutableDescriptorTypeCreateInfoVALVE", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorSetLayoutCreateInfo), allowed_structs_VkDescriptorSetLayoutCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorSetLayoutCreateInfo-pNext-pNext", "VUID-VkDescriptorSetLayoutCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkGetDescriptorSetLayoutSupportKHR", "pCreateInfo->flags", "VkDescriptorSetLayoutCreateFlagBits", AllVkDescriptorSetLayoutCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkDescriptorSetLayoutCreateInfo-flags-parameter");
 
@@ -10465,7 +11065,7 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSupportKHR(
     {
         const VkStructureType allowed_structs_VkDescriptorSetLayoutSupport[] = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT };
 
-        skip |= validate_struct_pnext("vkGetDescriptorSetLayoutSupportKHR", "pSupport->pNext", "VkDescriptorSetVariableDescriptorCountLayoutSupport", pSupport->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorSetLayoutSupport), allowed_structs_VkDescriptorSetLayoutSupport, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorSetLayoutSupport-pNext-pNext", "VUID-VkDescriptorSetLayoutSupport-sType-unique");
+        skip |= validate_struct_pnext("vkGetDescriptorSetLayoutSupportKHR", "pSupport->pNext", "VkDescriptorSetVariableDescriptorCountLayoutSupport", pSupport->pNext, ARRAY_SIZE(allowed_structs_VkDescriptorSetLayoutSupport), allowed_structs_VkDescriptorSetLayoutSupport, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorSetLayoutSupport-pNext-pNext", "VUID-VkDescriptorSetLayoutSupport-sType-unique", false, false);
     }
     return skip;
 }
@@ -10544,7 +11144,7 @@ bool StatelessValidation::PreCallValidateWaitSemaphoresKHR(
     skip |= validate_struct_type("vkWaitSemaphoresKHR", "pWaitInfo", "VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO", pWaitInfo, VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO, true, "VUID-vkWaitSemaphores-pWaitInfo-parameter", "VUID-VkSemaphoreWaitInfo-sType-sType");
     if (pWaitInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkWaitSemaphoresKHR", "pWaitInfo->pNext", NULL, pWaitInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreWaitInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkWaitSemaphoresKHR", "pWaitInfo->pNext", NULL, pWaitInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreWaitInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_flags("vkWaitSemaphoresKHR", "pWaitInfo->flags", "VkSemaphoreWaitFlagBits", AllVkSemaphoreWaitFlagBits, pWaitInfo->flags, kOptionalFlags, "VUID-VkSemaphoreWaitInfo-flags-parameter");
 
@@ -10564,7 +11164,7 @@ bool StatelessValidation::PreCallValidateSignalSemaphoreKHR(
     skip |= validate_struct_type("vkSignalSemaphoreKHR", "pSignalInfo", "VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO", pSignalInfo, VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO, true, "VUID-vkSignalSemaphore-pSignalInfo-parameter", "VUID-VkSemaphoreSignalInfo-sType-sType");
     if (pSignalInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkSignalSemaphoreKHR", "pSignalInfo->pNext", NULL, pSignalInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreSignalInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkSignalSemaphoreKHR", "pSignalInfo->pNext", NULL, pSignalInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreSignalInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkSignalSemaphoreKHR", "pSignalInfo->semaphore", pSignalInfo->semaphore);
     }
@@ -10587,7 +11187,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFragmentShadingRatesKH
     {
         for (uint32_t pFragmentShadingRateIndex = 0; pFragmentShadingRateIndex < *pFragmentShadingRateCount; ++pFragmentShadingRateIndex)
         {
-            skip |= validate_struct_pnext("vkGetPhysicalDeviceFragmentShadingRatesKHR", ParameterName("pFragmentShadingRates[%i].pNext", ParameterName::IndexVector{ pFragmentShadingRateIndex }), NULL, pFragmentShadingRates[pFragmentShadingRateIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceFragmentShadingRateKHR-pNext-pNext", kVUIDUndefined, true);
+            skip |= validate_struct_pnext("vkGetPhysicalDeviceFragmentShadingRatesKHR", ParameterName("pFragmentShadingRates[%i].pNext", ParameterName::IndexVector{ pFragmentShadingRateIndex }), NULL, pFragmentShadingRates[pFragmentShadingRateIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceFragmentShadingRateKHR-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
     return skip;
@@ -10644,7 +11244,7 @@ bool StatelessValidation::PreCallValidateGetBufferDeviceAddressKHR(
     skip |= validate_struct_type("vkGetBufferDeviceAddressKHR", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, true, "VUID-vkGetBufferDeviceAddress-pInfo-parameter", "VUID-VkBufferDeviceAddressInfo-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetBufferDeviceAddressKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferDeviceAddressInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetBufferDeviceAddressKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferDeviceAddressInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetBufferDeviceAddressKHR", "pInfo->buffer", pInfo->buffer);
     }
@@ -10660,7 +11260,7 @@ bool StatelessValidation::PreCallValidateGetBufferOpaqueCaptureAddressKHR(
     skip |= validate_struct_type("vkGetBufferOpaqueCaptureAddressKHR", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, true, "VUID-vkGetBufferOpaqueCaptureAddress-pInfo-parameter", "VUID-VkBufferDeviceAddressInfo-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetBufferOpaqueCaptureAddressKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferDeviceAddressInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetBufferOpaqueCaptureAddressKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferDeviceAddressInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetBufferOpaqueCaptureAddressKHR", "pInfo->buffer", pInfo->buffer);
     }
@@ -10676,7 +11276,7 @@ bool StatelessValidation::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
     skip |= validate_struct_type("vkGetDeviceMemoryOpaqueCaptureAddressKHR", "pInfo", "VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO, true, "VUID-vkGetDeviceMemoryOpaqueCaptureAddress-pInfo-parameter", "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetDeviceMemoryOpaqueCaptureAddressKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetDeviceMemoryOpaqueCaptureAddressKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetDeviceMemoryOpaqueCaptureAddressKHR", "pInfo->memory", pInfo->memory);
     }
@@ -10784,7 +11384,7 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutablePropertiesKHR(
     skip |= validate_struct_type("vkGetPipelineExecutablePropertiesKHR", "pPipelineInfo", "VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR", pPipelineInfo, VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR, true, "VUID-vkGetPipelineExecutablePropertiesKHR-pPipelineInfo-parameter", "VUID-VkPipelineInfoKHR-sType-sType");
     if (pPipelineInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPipelineExecutablePropertiesKHR", "pPipelineInfo->pNext", NULL, pPipelineInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetPipelineExecutablePropertiesKHR", "pPipelineInfo->pNext", NULL, pPipelineInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetPipelineExecutablePropertiesKHR", "pPipelineInfo->pipeline", pPipelineInfo->pipeline);
     }
@@ -10793,7 +11393,7 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutablePropertiesKHR(
     {
         for (uint32_t pExecutableIndex = 0; pExecutableIndex < *pExecutableCount; ++pExecutableIndex)
         {
-            skip |= validate_struct_pnext("vkGetPipelineExecutablePropertiesKHR", ParameterName("pProperties[%i].pNext", ParameterName::IndexVector{ pExecutableIndex }), NULL, pProperties[pExecutableIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineExecutablePropertiesKHR-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkGetPipelineExecutablePropertiesKHR", ParameterName("pProperties[%i].pNext", ParameterName::IndexVector{ pExecutableIndex }), NULL, pProperties[pExecutableIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineExecutablePropertiesKHR-pNext-pNext", kVUIDUndefined, false, false);
         }
     }
     return skip;
@@ -10810,7 +11410,7 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableStatisticsKHR(
     skip |= validate_struct_type("vkGetPipelineExecutableStatisticsKHR", "pExecutableInfo", "VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR", pExecutableInfo, VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR, true, "VUID-vkGetPipelineExecutableStatisticsKHR-pExecutableInfo-parameter", "VUID-VkPipelineExecutableInfoKHR-sType-sType");
     if (pExecutableInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPipelineExecutableStatisticsKHR", "pExecutableInfo->pNext", NULL, pExecutableInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineExecutableInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetPipelineExecutableStatisticsKHR", "pExecutableInfo->pNext", NULL, pExecutableInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineExecutableInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetPipelineExecutableStatisticsKHR", "pExecutableInfo->pipeline", pExecutableInfo->pipeline);
     }
@@ -10819,7 +11419,7 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableStatisticsKHR(
     {
         for (uint32_t pStatisticIndex = 0; pStatisticIndex < *pStatisticCount; ++pStatisticIndex)
         {
-            skip |= validate_struct_pnext("vkGetPipelineExecutableStatisticsKHR", ParameterName("pStatistics[%i].pNext", ParameterName::IndexVector{ pStatisticIndex }), NULL, pStatistics[pStatisticIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineExecutableStatisticKHR-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkGetPipelineExecutableStatisticsKHR", ParameterName("pStatistics[%i].pNext", ParameterName::IndexVector{ pStatisticIndex }), NULL, pStatistics[pStatisticIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineExecutableStatisticKHR-pNext-pNext", kVUIDUndefined, false, false);
         }
     }
     return skip;
@@ -10836,7 +11436,7 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableInternalRepresenta
     skip |= validate_struct_type("vkGetPipelineExecutableInternalRepresentationsKHR", "pExecutableInfo", "VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR", pExecutableInfo, VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR, true, "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pExecutableInfo-parameter", "VUID-VkPipelineExecutableInfoKHR-sType-sType");
     if (pExecutableInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPipelineExecutableInternalRepresentationsKHR", "pExecutableInfo->pNext", NULL, pExecutableInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineExecutableInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetPipelineExecutableInternalRepresentationsKHR", "pExecutableInfo->pNext", NULL, pExecutableInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineExecutableInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetPipelineExecutableInternalRepresentationsKHR", "pExecutableInfo->pipeline", pExecutableInfo->pipeline);
     }
@@ -10845,7 +11445,7 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableInternalRepresenta
     {
         for (uint32_t pInternalRepresentationIndex = 0; pInternalRepresentationIndex < *pInternalRepresentationCount; ++pInternalRepresentationIndex)
         {
-            skip |= validate_struct_pnext("vkGetPipelineExecutableInternalRepresentationsKHR", ParameterName("pInternalRepresentations[%i].pNext", ParameterName::IndexVector{ pInternalRepresentationIndex }), NULL, pInternalRepresentations[pInternalRepresentationIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineExecutableInternalRepresentationKHR-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkGetPipelineExecutableInternalRepresentationsKHR", ParameterName("pInternalRepresentations[%i].pNext", ParameterName::IndexVector{ pInternalRepresentationIndex }), NULL, pInternalRepresentations[pInternalRepresentationIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineExecutableInternalRepresentationKHR-pNext-pNext", kVUIDUndefined, false, false);
         }
     }
     return skip;
@@ -10875,7 +11475,7 @@ bool StatelessValidation::PreCallValidateCmdEncodeVideoKHR(
     {
         const VkStructureType allowed_structs_VkVideoEncodeInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_EMIT_PICTURE_PARAMETERS_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_VCL_FRAME_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", "pEncodeInfo->pNext", "VkVideoEncodeH264EmitPictureParametersEXT, VkVideoEncodeH264VclFrameInfoEXT", pEncodeInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoEncodeInfoKHR), allowed_structs_VkVideoEncodeInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoEncodeInfoKHR-pNext-pNext", "VUID-VkVideoEncodeInfoKHR-sType-unique");
+        skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", "pEncodeInfo->pNext", "VkVideoEncodeH264EmitPictureParametersEXT, VkVideoEncodeH264VclFrameInfoEXT", pEncodeInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoEncodeInfoKHR), allowed_structs_VkVideoEncodeInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoEncodeInfoKHR-pNext-pNext", "VUID-VkVideoEncodeInfoKHR-sType-unique", false, true);
 
         skip |= validate_flags("vkCmdEncodeVideoKHR", "pEncodeInfo->flags", "VkVideoEncodeFlagBitsKHR", AllVkVideoEncodeFlagBitsKHR, pEncodeInfo->flags, kOptionalFlags, "VUID-VkVideoEncodeInfoKHR-flags-parameter");
 
@@ -10885,7 +11485,7 @@ bool StatelessValidation::PreCallValidateCmdEncodeVideoKHR(
 
         skip |= validate_struct_type("vkCmdEncodeVideoKHR", "pEncodeInfo->srcPictureResource", "VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR", &(pEncodeInfo->srcPictureResource), VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR, false, kVUIDUndefined, "VUID-VkVideoPictureResourceKHR-sType-sType");
 
-        skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", "pEncodeInfo->srcPictureResource.pNext", NULL, pEncodeInfo->srcPictureResource.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", "pEncodeInfo->srcPictureResource.pNext", NULL, pEncodeInfo->srcPictureResource.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         // No xml-driven validation
 
@@ -10899,13 +11499,13 @@ bool StatelessValidation::PreCallValidateCmdEncodeVideoKHR(
         {
             const VkStructureType allowed_structs_VkVideoReferenceSlotKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_DPB_SLOT_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_DPB_SLOT_INFO_EXT };
 
-            skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", "pEncodeInfo->pSetupReferenceSlot->pNext", "VkVideoDecodeH264DpbSlotInfoEXT, VkVideoDecodeH265DpbSlotInfoEXT", pEncodeInfo->pSetupReferenceSlot->pNext, ARRAY_SIZE(allowed_structs_VkVideoReferenceSlotKHR), allowed_structs_VkVideoReferenceSlotKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoReferenceSlotKHR-pNext-pNext", "VUID-VkVideoReferenceSlotKHR-sType-unique");
+            skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", "pEncodeInfo->pSetupReferenceSlot->pNext", "VkVideoDecodeH264DpbSlotInfoEXT, VkVideoDecodeH265DpbSlotInfoEXT", pEncodeInfo->pSetupReferenceSlot->pNext, ARRAY_SIZE(allowed_structs_VkVideoReferenceSlotKHR), allowed_structs_VkVideoReferenceSlotKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoReferenceSlotKHR-pNext-pNext", "VUID-VkVideoReferenceSlotKHR-sType-unique", false, true);
 
             skip |= validate_struct_type("vkCmdEncodeVideoKHR", "pEncodeInfo->pSetupReferenceSlot->pPictureResource", "VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR", pEncodeInfo->pSetupReferenceSlot->pPictureResource, VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR, true, "VUID-VkVideoReferenceSlotKHR-pPictureResource-parameter", "VUID-VkVideoPictureResourceKHR-sType-sType");
 
             if (pEncodeInfo->pSetupReferenceSlot->pPictureResource != NULL)
             {
-                skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", "pEncodeInfo->pSetupReferenceSlot->pPictureResource->pNext", NULL, pEncodeInfo->pSetupReferenceSlot->pPictureResource->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", "pEncodeInfo->pSetupReferenceSlot->pPictureResource->pNext", NULL, pEncodeInfo->pSetupReferenceSlot->pPictureResource->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                 // No xml-driven validation
 
@@ -10923,13 +11523,13 @@ bool StatelessValidation::PreCallValidateCmdEncodeVideoKHR(
             {
                 const VkStructureType allowed_structs_VkVideoReferenceSlotKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_DPB_SLOT_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_DPB_SLOT_INFO_EXT };
 
-                skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", ParameterName("pEncodeInfo->pReferenceSlots[%i].pNext", ParameterName::IndexVector{ referenceSlotIndex }), "VkVideoDecodeH264DpbSlotInfoEXT, VkVideoDecodeH265DpbSlotInfoEXT", pEncodeInfo->pReferenceSlots[referenceSlotIndex].pNext, ARRAY_SIZE(allowed_structs_VkVideoReferenceSlotKHR), allowed_structs_VkVideoReferenceSlotKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoReferenceSlotKHR-pNext-pNext", "VUID-VkVideoReferenceSlotKHR-sType-unique");
+                skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", ParameterName("pEncodeInfo->pReferenceSlots[%i].pNext", ParameterName::IndexVector{ referenceSlotIndex }), "VkVideoDecodeH264DpbSlotInfoEXT, VkVideoDecodeH265DpbSlotInfoEXT", pEncodeInfo->pReferenceSlots[referenceSlotIndex].pNext, ARRAY_SIZE(allowed_structs_VkVideoReferenceSlotKHR), allowed_structs_VkVideoReferenceSlotKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoReferenceSlotKHR-pNext-pNext", "VUID-VkVideoReferenceSlotKHR-sType-unique", false, true);
 
                 skip |= validate_struct_type("vkCmdEncodeVideoKHR", ParameterName("pEncodeInfo->pReferenceSlots[%i].pPictureResource", ParameterName::IndexVector{ referenceSlotIndex }), "VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR", pEncodeInfo->pReferenceSlots[referenceSlotIndex].pPictureResource, VK_STRUCTURE_TYPE_VIDEO_PICTURE_RESOURCE_KHR, true, "VUID-VkVideoReferenceSlotKHR-pPictureResource-parameter", "VUID-VkVideoPictureResourceKHR-sType-sType");
 
                 if (pEncodeInfo->pReferenceSlots[referenceSlotIndex].pPictureResource != NULL)
                 {
-                    skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", ParameterName("pEncodeInfo->pReferenceSlots[%i].pPictureResource->pNext", ParameterName::IndexVector{ referenceSlotIndex }), NULL, pEncodeInfo->pReferenceSlots[referenceSlotIndex].pPictureResource->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", ParameterName("pEncodeInfo->pReferenceSlots[%i].pPictureResource->pNext", ParameterName::IndexVector{ referenceSlotIndex }), NULL, pEncodeInfo->pReferenceSlots[referenceSlotIndex].pPictureResource->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoPictureResourceKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     // No xml-driven validation
 
@@ -10956,7 +11556,7 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2KHR(
     skip |= validate_struct_type("vkCmdSetEvent2KHR", "pDependencyInfo", "VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR", pDependencyInfo, VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR, true, "VUID-vkCmdSetEvent2KHR-pDependencyInfo-parameter", "VUID-VkDependencyInfoKHR-sType-sType");
     if (pDependencyInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdSetEvent2KHR", "pDependencyInfo->pNext", NULL, pDependencyInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDependencyInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdSetEvent2KHR", "pDependencyInfo->pNext", NULL, pDependencyInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDependencyInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_flags("vkCmdSetEvent2KHR", "pDependencyInfo->dependencyFlags", "VkDependencyFlagBits", AllVkDependencyFlagBits, pDependencyInfo->dependencyFlags, kOptionalFlags, "VUID-VkDependencyInfoKHR-dependencyFlags-parameter");
 
@@ -10966,7 +11566,7 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2KHR(
         {
             for (uint32_t memoryBarrierIndex = 0; memoryBarrierIndex < pDependencyInfo->memoryBarrierCount; ++memoryBarrierIndex)
             {
-                skip |= validate_struct_pnext("vkCmdSetEvent2KHR", ParameterName("pDependencyInfo->pMemoryBarriers[%i].pNext", ParameterName::IndexVector{ memoryBarrierIndex }), NULL, pDependencyInfo->pMemoryBarriers[memoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCmdSetEvent2KHR", ParameterName("pDependencyInfo->pMemoryBarriers[%i].pNext", ParameterName::IndexVector{ memoryBarrierIndex }), NULL, pDependencyInfo->pMemoryBarriers[memoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
 
                 skip |= validate_flags("vkCmdSetEvent2KHR", ParameterName("pDependencyInfo->pMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ memoryBarrierIndex }), "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, pDependencyInfo->pMemoryBarriers[memoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkMemoryBarrier2KHR-srcStageMask-parameter");
 
@@ -10984,7 +11584,7 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2KHR(
         {
             for (uint32_t bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < pDependencyInfo->bufferMemoryBarrierCount; ++bufferMemoryBarrierIndex)
             {
-                skip |= validate_struct_pnext("vkCmdSetEvent2KHR", ParameterName("pDependencyInfo->pBufferMemoryBarriers[%i].pNext", ParameterName::IndexVector{ bufferMemoryBarrierIndex }), NULL, pDependencyInfo->pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryBarrier2KHR-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCmdSetEvent2KHR", ParameterName("pDependencyInfo->pBufferMemoryBarriers[%i].pNext", ParameterName::IndexVector{ bufferMemoryBarrierIndex }), NULL, pDependencyInfo->pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryBarrier2KHR-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_flags("vkCmdSetEvent2KHR", ParameterName("pDependencyInfo->pBufferMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ bufferMemoryBarrierIndex }), "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, pDependencyInfo->pBufferMemoryBarriers[bufferMemoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkBufferMemoryBarrier2KHR-srcStageMask-parameter");
 
@@ -11006,7 +11606,7 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2KHR(
             {
                 const VkStructureType allowed_structs_VkImageMemoryBarrier2KHR[] = { VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT };
 
-                skip |= validate_struct_pnext("vkCmdSetEvent2KHR", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier2KHR), allowed_structs_VkImageMemoryBarrier2KHR, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2KHR-pNext-pNext", "VUID-VkImageMemoryBarrier2KHR-sType-unique");
+                skip |= validate_struct_pnext("vkCmdSetEvent2KHR", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier2KHR), allowed_structs_VkImageMemoryBarrier2KHR, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2KHR-pNext-pNext", "VUID-VkImageMemoryBarrier2KHR-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdSetEvent2KHR", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkImageMemoryBarrier2KHR-srcStageMask-parameter");
 
@@ -11055,7 +11655,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2KHR(
     {
         for (uint32_t eventIndex = 0; eventIndex < eventCount; ++eventIndex)
         {
-            skip |= validate_struct_pnext("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pNext", ParameterName::IndexVector{ eventIndex }), NULL, pDependencyInfos[eventIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDependencyInfoKHR-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pNext", ParameterName::IndexVector{ eventIndex }), NULL, pDependencyInfos[eventIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDependencyInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_flags("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].dependencyFlags", ParameterName::IndexVector{ eventIndex }), "VkDependencyFlagBits", AllVkDependencyFlagBits, pDependencyInfos[eventIndex].dependencyFlags, kOptionalFlags, "VUID-VkDependencyInfoKHR-dependencyFlags-parameter");
 
@@ -11065,7 +11665,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2KHR(
             {
                 for (uint32_t memoryBarrierIndex = 0; memoryBarrierIndex < pDependencyInfos[eventIndex].memoryBarrierCount; ++memoryBarrierIndex)
                 {
-                    skip |= validate_struct_pnext("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pMemoryBarriers[%i].pNext", ParameterName::IndexVector{ eventIndex, memoryBarrierIndex }), NULL, pDependencyInfos[eventIndex].pMemoryBarriers[memoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pMemoryBarriers[%i].pNext", ParameterName::IndexVector{ eventIndex, memoryBarrierIndex }), NULL, pDependencyInfos[eventIndex].pMemoryBarriers[memoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
 
                     skip |= validate_flags("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ eventIndex, memoryBarrierIndex }), "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, pDependencyInfos[eventIndex].pMemoryBarriers[memoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkMemoryBarrier2KHR-srcStageMask-parameter");
 
@@ -11083,7 +11683,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2KHR(
             {
                 for (uint32_t bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < pDependencyInfos[eventIndex].bufferMemoryBarrierCount; ++bufferMemoryBarrierIndex)
                 {
-                    skip |= validate_struct_pnext("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pBufferMemoryBarriers[%i].pNext", ParameterName::IndexVector{ eventIndex, bufferMemoryBarrierIndex }), NULL, pDependencyInfos[eventIndex].pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryBarrier2KHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pBufferMemoryBarriers[%i].pNext", ParameterName::IndexVector{ eventIndex, bufferMemoryBarrierIndex }), NULL, pDependencyInfos[eventIndex].pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryBarrier2KHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     skip |= validate_flags("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pBufferMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ eventIndex, bufferMemoryBarrierIndex }), "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, pDependencyInfos[eventIndex].pBufferMemoryBarriers[bufferMemoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkBufferMemoryBarrier2KHR-srcStageMask-parameter");
 
@@ -11105,7 +11705,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2KHR(
                 {
                     const VkStructureType allowed_structs_VkImageMemoryBarrier2KHR[] = { VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT };
 
-                    skip |= validate_struct_pnext("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ eventIndex, imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pDependencyInfos[eventIndex].pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier2KHR), allowed_structs_VkImageMemoryBarrier2KHR, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2KHR-pNext-pNext", "VUID-VkImageMemoryBarrier2KHR-sType-unique");
+                    skip |= validate_struct_pnext("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ eventIndex, imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pDependencyInfos[eventIndex].pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier2KHR), allowed_structs_VkImageMemoryBarrier2KHR, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2KHR-pNext-pNext", "VUID-VkImageMemoryBarrier2KHR-sType-unique", false, true);
 
                     skip |= validate_flags("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pImageMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ eventIndex, imageMemoryBarrierIndex }), "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, pDependencyInfos[eventIndex].pImageMemoryBarriers[imageMemoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkImageMemoryBarrier2KHR-srcStageMask-parameter");
 
@@ -11138,7 +11738,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2KHR(
     skip |= validate_struct_type("vkCmdPipelineBarrier2KHR", "pDependencyInfo", "VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR", pDependencyInfo, VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR, true, "VUID-vkCmdPipelineBarrier2KHR-pDependencyInfo-parameter", "VUID-VkDependencyInfoKHR-sType-sType");
     if (pDependencyInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdPipelineBarrier2KHR", "pDependencyInfo->pNext", NULL, pDependencyInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDependencyInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdPipelineBarrier2KHR", "pDependencyInfo->pNext", NULL, pDependencyInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDependencyInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_flags("vkCmdPipelineBarrier2KHR", "pDependencyInfo->dependencyFlags", "VkDependencyFlagBits", AllVkDependencyFlagBits, pDependencyInfo->dependencyFlags, kOptionalFlags, "VUID-VkDependencyInfoKHR-dependencyFlags-parameter");
 
@@ -11148,7 +11748,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2KHR(
         {
             for (uint32_t memoryBarrierIndex = 0; memoryBarrierIndex < pDependencyInfo->memoryBarrierCount; ++memoryBarrierIndex)
             {
-                skip |= validate_struct_pnext("vkCmdPipelineBarrier2KHR", ParameterName("pDependencyInfo->pMemoryBarriers[%i].pNext", ParameterName::IndexVector{ memoryBarrierIndex }), NULL, pDependencyInfo->pMemoryBarriers[memoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCmdPipelineBarrier2KHR", ParameterName("pDependencyInfo->pMemoryBarriers[%i].pNext", ParameterName::IndexVector{ memoryBarrierIndex }), NULL, pDependencyInfo->pMemoryBarriers[memoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
 
                 skip |= validate_flags("vkCmdPipelineBarrier2KHR", ParameterName("pDependencyInfo->pMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ memoryBarrierIndex }), "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, pDependencyInfo->pMemoryBarriers[memoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkMemoryBarrier2KHR-srcStageMask-parameter");
 
@@ -11166,7 +11766,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2KHR(
         {
             for (uint32_t bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < pDependencyInfo->bufferMemoryBarrierCount; ++bufferMemoryBarrierIndex)
             {
-                skip |= validate_struct_pnext("vkCmdPipelineBarrier2KHR", ParameterName("pDependencyInfo->pBufferMemoryBarriers[%i].pNext", ParameterName::IndexVector{ bufferMemoryBarrierIndex }), NULL, pDependencyInfo->pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryBarrier2KHR-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCmdPipelineBarrier2KHR", ParameterName("pDependencyInfo->pBufferMemoryBarriers[%i].pNext", ParameterName::IndexVector{ bufferMemoryBarrierIndex }), NULL, pDependencyInfo->pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferMemoryBarrier2KHR-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_flags("vkCmdPipelineBarrier2KHR", ParameterName("pDependencyInfo->pBufferMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ bufferMemoryBarrierIndex }), "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, pDependencyInfo->pBufferMemoryBarriers[bufferMemoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkBufferMemoryBarrier2KHR-srcStageMask-parameter");
 
@@ -11188,7 +11788,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2KHR(
             {
                 const VkStructureType allowed_structs_VkImageMemoryBarrier2KHR[] = { VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT };
 
-                skip |= validate_struct_pnext("vkCmdPipelineBarrier2KHR", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier2KHR), allowed_structs_VkImageMemoryBarrier2KHR, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2KHR-pNext-pNext", "VUID-VkImageMemoryBarrier2KHR-sType-unique");
+                skip |= validate_struct_pnext("vkCmdPipelineBarrier2KHR", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier2KHR), allowed_structs_VkImageMemoryBarrier2KHR, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2KHR-pNext-pNext", "VUID-VkImageMemoryBarrier2KHR-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdPipelineBarrier2KHR", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkImageMemoryBarrier2KHR-srcStageMask-parameter");
 
@@ -11239,7 +11839,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit2KHR(
         {
             const VkStructureType allowed_structs_VkSubmitInfo2KHR[] = { VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR, VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR, VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV };
 
-            skip |= validate_struct_pnext("vkQueueSubmit2KHR", ParameterName("pSubmits[%i].pNext", ParameterName::IndexVector{ submitIndex }), "VkPerformanceQuerySubmitInfoKHR, VkWin32KeyedMutexAcquireReleaseInfoKHR, VkWin32KeyedMutexAcquireReleaseInfoNV", pSubmits[submitIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubmitInfo2KHR), allowed_structs_VkSubmitInfo2KHR, GeneratedVulkanHeaderVersion, "VUID-VkSubmitInfo2KHR-pNext-pNext", "VUID-VkSubmitInfo2KHR-sType-unique");
+            skip |= validate_struct_pnext("vkQueueSubmit2KHR", ParameterName("pSubmits[%i].pNext", ParameterName::IndexVector{ submitIndex }), "VkPerformanceQuerySubmitInfoKHR, VkWin32KeyedMutexAcquireReleaseInfoKHR, VkWin32KeyedMutexAcquireReleaseInfoNV", pSubmits[submitIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubmitInfo2KHR), allowed_structs_VkSubmitInfo2KHR, GeneratedVulkanHeaderVersion, "VUID-VkSubmitInfo2KHR-pNext-pNext", "VUID-VkSubmitInfo2KHR-sType-unique", false, true);
 
             skip |= validate_flags("vkQueueSubmit2KHR", ParameterName("pSubmits[%i].flags", ParameterName::IndexVector{ submitIndex }), "VkSubmitFlagBitsKHR", AllVkSubmitFlagBitsKHR, pSubmits[submitIndex].flags, kOptionalFlags, "VUID-VkSubmitInfo2KHR-flags-parameter");
 
@@ -11249,7 +11849,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit2KHR(
             {
                 for (uint32_t waitSemaphoreInfoIndex = 0; waitSemaphoreInfoIndex < pSubmits[submitIndex].waitSemaphoreInfoCount; ++waitSemaphoreInfoIndex)
                 {
-                    skip |= validate_struct_pnext("vkQueueSubmit2KHR", ParameterName("pSubmits[%i].pWaitSemaphoreInfos[%i].pNext", ParameterName::IndexVector{ submitIndex, waitSemaphoreInfoIndex }), NULL, pSubmits[submitIndex].pWaitSemaphoreInfos[waitSemaphoreInfoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreSubmitInfoKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkQueueSubmit2KHR", ParameterName("pSubmits[%i].pWaitSemaphoreInfos[%i].pNext", ParameterName::IndexVector{ submitIndex, waitSemaphoreInfoIndex }), NULL, pSubmits[submitIndex].pWaitSemaphoreInfos[waitSemaphoreInfoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreSubmitInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     skip |= validate_required_handle("vkQueueSubmit2KHR", ParameterName("pSubmits[%i].pWaitSemaphoreInfos[%i].semaphore", ParameterName::IndexVector{ submitIndex, waitSemaphoreInfoIndex }), pSubmits[submitIndex].pWaitSemaphoreInfos[waitSemaphoreInfoIndex].semaphore);
 
@@ -11263,7 +11863,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit2KHR(
             {
                 for (uint32_t commandBufferInfoIndex = 0; commandBufferInfoIndex < pSubmits[submitIndex].commandBufferInfoCount; ++commandBufferInfoIndex)
                 {
-                    skip |= validate_struct_pnext("vkQueueSubmit2KHR", ParameterName("pSubmits[%i].pCommandBufferInfos[%i].pNext", ParameterName::IndexVector{ submitIndex, commandBufferInfoIndex }), NULL, pSubmits[submitIndex].pCommandBufferInfos[commandBufferInfoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferSubmitInfoKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkQueueSubmit2KHR", ParameterName("pSubmits[%i].pCommandBufferInfos[%i].pNext", ParameterName::IndexVector{ submitIndex, commandBufferInfoIndex }), NULL, pSubmits[submitIndex].pCommandBufferInfos[commandBufferInfoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferSubmitInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     skip |= validate_required_handle("vkQueueSubmit2KHR", ParameterName("pSubmits[%i].pCommandBufferInfos[%i].commandBuffer", ParameterName::IndexVector{ submitIndex, commandBufferInfoIndex }), pSubmits[submitIndex].pCommandBufferInfos[commandBufferInfoIndex].commandBuffer);
                 }
@@ -11275,7 +11875,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit2KHR(
             {
                 for (uint32_t signalSemaphoreInfoIndex = 0; signalSemaphoreInfoIndex < pSubmits[submitIndex].signalSemaphoreInfoCount; ++signalSemaphoreInfoIndex)
                 {
-                    skip |= validate_struct_pnext("vkQueueSubmit2KHR", ParameterName("pSubmits[%i].pSignalSemaphoreInfos[%i].pNext", ParameterName::IndexVector{ submitIndex, signalSemaphoreInfoIndex }), NULL, pSubmits[submitIndex].pSignalSemaphoreInfos[signalSemaphoreInfoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreSubmitInfoKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkQueueSubmit2KHR", ParameterName("pSubmits[%i].pSignalSemaphoreInfos[%i].pNext", ParameterName::IndexVector{ submitIndex, signalSemaphoreInfoIndex }), NULL, pSubmits[submitIndex].pSignalSemaphoreInfos[signalSemaphoreInfoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreSubmitInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     skip |= validate_required_handle("vkQueueSubmit2KHR", ParameterName("pSubmits[%i].pSignalSemaphoreInfos[%i].semaphore", ParameterName::IndexVector{ submitIndex, signalSemaphoreInfoIndex }), pSubmits[submitIndex].pSignalSemaphoreInfos[signalSemaphoreInfoIndex].semaphore);
 
@@ -11315,7 +11915,7 @@ bool StatelessValidation::PreCallValidateGetQueueCheckpointData2NV(
     {
         for (uint32_t pCheckpointDataIndex = 0; pCheckpointDataIndex < *pCheckpointDataCount; ++pCheckpointDataIndex)
         {
-            skip |= validate_struct_pnext("vkGetQueueCheckpointData2NV", ParameterName("pCheckpointData[%i].pNext", ParameterName::IndexVector{ pCheckpointDataIndex }), NULL, pCheckpointData[pCheckpointDataIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCheckpointData2NV-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkGetQueueCheckpointData2NV", ParameterName("pCheckpointData[%i].pNext", ParameterName::IndexVector{ pCheckpointDataIndex }), NULL, pCheckpointData[pCheckpointDataIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCheckpointData2NV-pNext-pNext", kVUIDUndefined, false, false);
         }
     }
     return skip;
@@ -11337,7 +11937,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBuffer2KHR(
     skip |= validate_struct_type("vkCmdCopyBuffer2KHR", "pCopyBufferInfo", "VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR", pCopyBufferInfo, VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, true, "VUID-vkCmdCopyBuffer2KHR-pCopyBufferInfo-parameter", "VUID-VkCopyBufferInfo2KHR-sType-sType");
     if (pCopyBufferInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdCopyBuffer2KHR", "pCopyBufferInfo->pNext", NULL, pCopyBufferInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyBufferInfo2KHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdCopyBuffer2KHR", "pCopyBufferInfo->pNext", NULL, pCopyBufferInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyBufferInfo2KHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCmdCopyBuffer2KHR", "pCopyBufferInfo->srcBuffer", pCopyBufferInfo->srcBuffer);
 
@@ -11349,7 +11949,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBuffer2KHR(
         {
             for (uint32_t regionIndex = 0; regionIndex < pCopyBufferInfo->regionCount; ++regionIndex)
             {
-                skip |= validate_struct_pnext("vkCmdCopyBuffer2KHR", ParameterName("pCopyBufferInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pCopyBufferInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferCopy2KHR-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCmdCopyBuffer2KHR", ParameterName("pCopyBufferInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pCopyBufferInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferCopy2KHR-pNext-pNext", kVUIDUndefined, false, true);
             }
         }
     }
@@ -11365,7 +11965,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImage2KHR(
     skip |= validate_struct_type("vkCmdCopyImage2KHR", "pCopyImageInfo", "VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR", pCopyImageInfo, VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR, true, "VUID-vkCmdCopyImage2KHR-pCopyImageInfo-parameter", "VUID-VkCopyImageInfo2KHR-sType-sType");
     if (pCopyImageInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdCopyImage2KHR", "pCopyImageInfo->pNext", NULL, pCopyImageInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyImageInfo2KHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdCopyImage2KHR", "pCopyImageInfo->pNext", NULL, pCopyImageInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyImageInfo2KHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCmdCopyImage2KHR", "pCopyImageInfo->srcImage", pCopyImageInfo->srcImage);
 
@@ -11381,7 +11981,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImage2KHR(
         {
             for (uint32_t regionIndex = 0; regionIndex < pCopyImageInfo->regionCount; ++regionIndex)
             {
-                skip |= validate_struct_pnext("vkCmdCopyImage2KHR", ParameterName("pCopyImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pCopyImageInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageCopy2KHR-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCmdCopyImage2KHR", ParameterName("pCopyImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pCopyImageInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageCopy2KHR-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_flags("vkCmdCopyImage2KHR", ParameterName("pCopyImageInfo->pRegions[%i].srcSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pCopyImageInfo->pRegions[regionIndex].srcSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -11406,7 +12006,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage2KHR(
     skip |= validate_struct_type("vkCmdCopyBufferToImage2KHR", "pCopyBufferToImageInfo", "VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR", pCopyBufferToImageInfo, VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR, true, "VUID-vkCmdCopyBufferToImage2KHR-pCopyBufferToImageInfo-parameter", "VUID-VkCopyBufferToImageInfo2KHR-sType-sType");
     if (pCopyBufferToImageInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdCopyBufferToImage2KHR", "pCopyBufferToImageInfo->pNext", NULL, pCopyBufferToImageInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyBufferToImageInfo2KHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdCopyBufferToImage2KHR", "pCopyBufferToImageInfo->pNext", NULL, pCopyBufferToImageInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyBufferToImageInfo2KHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCmdCopyBufferToImage2KHR", "pCopyBufferToImageInfo->srcBuffer", pCopyBufferToImageInfo->srcBuffer);
 
@@ -11422,7 +12022,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage2KHR(
             {
                 const VkStructureType allowed_structs_VkBufferImageCopy2KHR[] = { VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM };
 
-                skip |= validate_struct_pnext("vkCmdCopyBufferToImage2KHR", ParameterName("pCopyBufferToImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pCopyBufferToImageInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkBufferImageCopy2KHR), allowed_structs_VkBufferImageCopy2KHR, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2KHR-pNext-pNext", "VUID-VkBufferImageCopy2KHR-sType-unique");
+                skip |= validate_struct_pnext("vkCmdCopyBufferToImage2KHR", ParameterName("pCopyBufferToImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pCopyBufferToImageInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkBufferImageCopy2KHR), allowed_structs_VkBufferImageCopy2KHR, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2KHR-pNext-pNext", "VUID-VkBufferImageCopy2KHR-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdCopyBufferToImage2KHR", ParameterName("pCopyBufferToImageInfo->pRegions[%i].imageSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pCopyBufferToImageInfo->pRegions[regionIndex].imageSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -11443,7 +12043,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer2KHR(
     skip |= validate_struct_type("vkCmdCopyImageToBuffer2KHR", "pCopyImageToBufferInfo", "VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2_KHR", pCopyImageToBufferInfo, VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2_KHR, true, "VUID-vkCmdCopyImageToBuffer2KHR-pCopyImageToBufferInfo-parameter", "VUID-VkCopyImageToBufferInfo2KHR-sType-sType");
     if (pCopyImageToBufferInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdCopyImageToBuffer2KHR", "pCopyImageToBufferInfo->pNext", NULL, pCopyImageToBufferInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyImageToBufferInfo2KHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdCopyImageToBuffer2KHR", "pCopyImageToBufferInfo->pNext", NULL, pCopyImageToBufferInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyImageToBufferInfo2KHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCmdCopyImageToBuffer2KHR", "pCopyImageToBufferInfo->srcImage", pCopyImageToBufferInfo->srcImage);
 
@@ -11459,7 +12059,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer2KHR(
             {
                 const VkStructureType allowed_structs_VkBufferImageCopy2KHR[] = { VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM };
 
-                skip |= validate_struct_pnext("vkCmdCopyImageToBuffer2KHR", ParameterName("pCopyImageToBufferInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pCopyImageToBufferInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkBufferImageCopy2KHR), allowed_structs_VkBufferImageCopy2KHR, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2KHR-pNext-pNext", "VUID-VkBufferImageCopy2KHR-sType-unique");
+                skip |= validate_struct_pnext("vkCmdCopyImageToBuffer2KHR", ParameterName("pCopyImageToBufferInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pCopyImageToBufferInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkBufferImageCopy2KHR), allowed_structs_VkBufferImageCopy2KHR, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2KHR-pNext-pNext", "VUID-VkBufferImageCopy2KHR-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdCopyImageToBuffer2KHR", ParameterName("pCopyImageToBufferInfo->pRegions[%i].imageSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pCopyImageToBufferInfo->pRegions[regionIndex].imageSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -11480,7 +12080,7 @@ bool StatelessValidation::PreCallValidateCmdBlitImage2KHR(
     skip |= validate_struct_type("vkCmdBlitImage2KHR", "pBlitImageInfo", "VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR", pBlitImageInfo, VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR, true, "VUID-vkCmdBlitImage2KHR-pBlitImageInfo-parameter", "VUID-VkBlitImageInfo2KHR-sType-sType");
     if (pBlitImageInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdBlitImage2KHR", "pBlitImageInfo->pNext", NULL, pBlitImageInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBlitImageInfo2KHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdBlitImage2KHR", "pBlitImageInfo->pNext", NULL, pBlitImageInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBlitImageInfo2KHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCmdBlitImage2KHR", "pBlitImageInfo->srcImage", pBlitImageInfo->srcImage);
 
@@ -11498,7 +12098,7 @@ bool StatelessValidation::PreCallValidateCmdBlitImage2KHR(
             {
                 const VkStructureType allowed_structs_VkImageBlit2KHR[] = { VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM };
 
-                skip |= validate_struct_pnext("vkCmdBlitImage2KHR", ParameterName("pBlitImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pBlitImageInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageBlit2KHR), allowed_structs_VkImageBlit2KHR, GeneratedVulkanHeaderVersion, "VUID-VkImageBlit2KHR-pNext-pNext", "VUID-VkImageBlit2KHR-sType-unique");
+                skip |= validate_struct_pnext("vkCmdBlitImage2KHR", ParameterName("pBlitImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pBlitImageInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageBlit2KHR), allowed_structs_VkImageBlit2KHR, GeneratedVulkanHeaderVersion, "VUID-VkImageBlit2KHR-pNext-pNext", "VUID-VkImageBlit2KHR-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdBlitImage2KHR", ParameterName("pBlitImageInfo->pRegions[%i].srcSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pBlitImageInfo->pRegions[regionIndex].srcSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -11519,7 +12119,7 @@ bool StatelessValidation::PreCallValidateCmdResolveImage2KHR(
     skip |= validate_struct_type("vkCmdResolveImage2KHR", "pResolveImageInfo", "VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR", pResolveImageInfo, VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR, true, "VUID-vkCmdResolveImage2KHR-pResolveImageInfo-parameter", "VUID-VkResolveImageInfo2KHR-sType-sType");
     if (pResolveImageInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdResolveImage2KHR", "pResolveImageInfo->pNext", NULL, pResolveImageInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkResolveImageInfo2KHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdResolveImage2KHR", "pResolveImageInfo->pNext", NULL, pResolveImageInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkResolveImageInfo2KHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCmdResolveImage2KHR", "pResolveImageInfo->srcImage", pResolveImageInfo->srcImage);
 
@@ -11535,7 +12135,7 @@ bool StatelessValidation::PreCallValidateCmdResolveImage2KHR(
         {
             for (uint32_t regionIndex = 0; regionIndex < pResolveImageInfo->regionCount; ++regionIndex)
             {
-                skip |= validate_struct_pnext("vkCmdResolveImage2KHR", ParameterName("pResolveImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pResolveImageInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageResolve2KHR-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCmdResolveImage2KHR", ParameterName("pResolveImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pResolveImageInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageResolve2KHR-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_flags("vkCmdResolveImage2KHR", ParameterName("pResolveImageInfo->pRegions[%i].srcSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pResolveImageInfo->pRegions[regionIndex].srcSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -11564,7 +12164,7 @@ bool StatelessValidation::PreCallValidateCreateDebugReportCallbackEXT(
     skip |= validate_struct_type("vkCreateDebugReportCallbackEXT", "pCreateInfo", "VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT", pCreateInfo, VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, true, "VUID-vkCreateDebugReportCallbackEXT-pCreateInfo-parameter", "VUID-VkDebugReportCallbackCreateInfoEXT-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateDebugReportCallbackEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateDebugReportCallbackEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
 
         skip |= validate_flags("vkCreateDebugReportCallbackEXT", "pCreateInfo->flags", "VkDebugReportFlagBitsEXT", AllVkDebugReportFlagBitsEXT, pCreateInfo->flags, kOptionalFlags, "VUID-VkDebugReportCallbackCreateInfoEXT-flags-parameter");
 
@@ -11664,7 +12264,7 @@ bool StatelessValidation::PreCallValidateDebugMarkerSetObjectTagEXT(
     skip |= validate_struct_type("vkDebugMarkerSetObjectTagEXT", "pTagInfo", "VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_TAG_INFO_EXT", pTagInfo, VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_TAG_INFO_EXT, true, "VUID-vkDebugMarkerSetObjectTagEXT-pTagInfo-parameter", "VUID-VkDebugMarkerObjectTagInfoEXT-sType-sType");
     if (pTagInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkDebugMarkerSetObjectTagEXT", "pTagInfo->pNext", NULL, pTagInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugMarkerObjectTagInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkDebugMarkerSetObjectTagEXT", "pTagInfo->pNext", NULL, pTagInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugMarkerObjectTagInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkDebugMarkerSetObjectTagEXT", "pTagInfo->objectType", "VkDebugReportObjectTypeEXT", AllVkDebugReportObjectTypeEXTEnums, pTagInfo->objectType, "VUID-VkDebugMarkerObjectTagInfoEXT-objectType-parameter");
 
@@ -11682,7 +12282,7 @@ bool StatelessValidation::PreCallValidateDebugMarkerSetObjectNameEXT(
     skip |= validate_struct_type("vkDebugMarkerSetObjectNameEXT", "pNameInfo", "VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT", pNameInfo, VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT, true, "VUID-vkDebugMarkerSetObjectNameEXT-pNameInfo-parameter", "VUID-VkDebugMarkerObjectNameInfoEXT-sType-sType");
     if (pNameInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkDebugMarkerSetObjectNameEXT", "pNameInfo->pNext", NULL, pNameInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugMarkerObjectNameInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkDebugMarkerSetObjectNameEXT", "pNameInfo->pNext", NULL, pNameInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugMarkerObjectNameInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkDebugMarkerSetObjectNameEXT", "pNameInfo->objectType", "VkDebugReportObjectTypeEXT", AllVkDebugReportObjectTypeEXTEnums, pNameInfo->objectType, "VUID-VkDebugMarkerObjectNameInfoEXT-objectType-parameter");
 
@@ -11700,7 +12300,7 @@ bool StatelessValidation::PreCallValidateCmdDebugMarkerBeginEXT(
     skip |= validate_struct_type("vkCmdDebugMarkerBeginEXT", "pMarkerInfo", "VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT", pMarkerInfo, VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT, true, "VUID-vkCmdDebugMarkerBeginEXT-pMarkerInfo-parameter", "VUID-VkDebugMarkerMarkerInfoEXT-sType-sType");
     if (pMarkerInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdDebugMarkerBeginEXT", "pMarkerInfo->pNext", NULL, pMarkerInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugMarkerMarkerInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdDebugMarkerBeginEXT", "pMarkerInfo->pNext", NULL, pMarkerInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugMarkerMarkerInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_pointer("vkCmdDebugMarkerBeginEXT", "pMarkerInfo->pMarkerName", pMarkerInfo->pMarkerName, "VUID-VkDebugMarkerMarkerInfoEXT-pMarkerName-parameter");
     }
@@ -11725,7 +12325,7 @@ bool StatelessValidation::PreCallValidateCmdDebugMarkerInsertEXT(
     skip |= validate_struct_type("vkCmdDebugMarkerInsertEXT", "pMarkerInfo", "VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT", pMarkerInfo, VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT, true, "VUID-vkCmdDebugMarkerInsertEXT-pMarkerInfo-parameter", "VUID-VkDebugMarkerMarkerInfoEXT-sType-sType");
     if (pMarkerInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdDebugMarkerInsertEXT", "pMarkerInfo->pNext", NULL, pMarkerInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugMarkerMarkerInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdDebugMarkerInsertEXT", "pMarkerInfo->pNext", NULL, pMarkerInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugMarkerMarkerInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_pointer("vkCmdDebugMarkerInsertEXT", "pMarkerInfo->pMarkerName", pMarkerInfo->pMarkerName, "VUID-VkDebugMarkerMarkerInfoEXT-pMarkerName-parameter");
     }
@@ -11837,7 +12437,7 @@ bool StatelessValidation::PreCallValidateCreateCuModuleNVX(
     skip |= validate_struct_type("vkCreateCuModuleNVX", "pCreateInfo", "VK_STRUCTURE_TYPE_CU_MODULE_CREATE_INFO_NVX", pCreateInfo, VK_STRUCTURE_TYPE_CU_MODULE_CREATE_INFO_NVX, true, kVUIDUndefined, kVUIDUndefined);
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateCuModuleNVX", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateCuModuleNVX", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
 
         skip |= validate_required_pointer("vkCreateCuModuleNVX", "pCreateInfo->pData", pCreateInfo->pData, kVUIDUndefined);
     }
@@ -11875,7 +12475,7 @@ bool StatelessValidation::PreCallValidateCreateCuFunctionNVX(
     skip |= validate_struct_type("vkCreateCuFunctionNVX", "pCreateInfo", "VK_STRUCTURE_TYPE_CU_FUNCTION_CREATE_INFO_NVX", pCreateInfo, VK_STRUCTURE_TYPE_CU_FUNCTION_CREATE_INFO_NVX, true, kVUIDUndefined, kVUIDUndefined);
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateCuFunctionNVX", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateCuFunctionNVX", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCreateCuFunctionNVX", "pCreateInfo->module", pCreateInfo->module);
 
@@ -11973,7 +12573,7 @@ bool StatelessValidation::PreCallValidateCmdCuLaunchKernelNVX(
     skip |= validate_struct_type("vkCmdCuLaunchKernelNVX", "pLaunchInfo", "VK_STRUCTURE_TYPE_CU_LAUNCH_INFO_NVX", pLaunchInfo, VK_STRUCTURE_TYPE_CU_LAUNCH_INFO_NVX, true, kVUIDUndefined, kVUIDUndefined);
     if (pLaunchInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdCuLaunchKernelNVX", "pLaunchInfo->pNext", NULL, pLaunchInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdCuLaunchKernelNVX", "pLaunchInfo->pNext", NULL, pLaunchInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCmdCuLaunchKernelNVX", "pLaunchInfo->function", pLaunchInfo->function);
 
@@ -11994,7 +12594,7 @@ bool StatelessValidation::PreCallValidateGetImageViewHandleNVX(
     skip |= validate_struct_type("vkGetImageViewHandleNVX", "pInfo", "VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX", pInfo, VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX, true, "VUID-vkGetImageViewHandleNVX-pInfo-parameter", "VUID-VkImageViewHandleInfoNVX-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetImageViewHandleNVX", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageViewHandleInfoNVX-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetImageViewHandleNVX", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageViewHandleInfoNVX-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetImageViewHandleNVX", "pInfo->imageView", pInfo->imageView);
 
@@ -12013,7 +12613,7 @@ bool StatelessValidation::PreCallValidateGetImageViewAddressNVX(
     skip |= validate_struct_type("vkGetImageViewAddressNVX", "pProperties", "VK_STRUCTURE_TYPE_IMAGE_VIEW_ADDRESS_PROPERTIES_NVX", pProperties, VK_STRUCTURE_TYPE_IMAGE_VIEW_ADDRESS_PROPERTIES_NVX, true, "VUID-vkGetImageViewAddressNVX-pProperties-parameter", "VUID-VkImageViewAddressPropertiesNVX-sType-sType");
     if (pProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetImageViewAddressNVX", "pProperties->pNext", NULL, pProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageViewAddressPropertiesNVX-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetImageViewAddressNVX", "pProperties->pNext", NULL, pProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageViewAddressPropertiesNVX-pNext-pNext", kVUIDUndefined, false, false);
     }
     return skip;
 }
@@ -12101,7 +12701,7 @@ bool StatelessValidation::PreCallValidateCreateStreamDescriptorSurfaceGGP(
     skip |= validate_struct_type("vkCreateStreamDescriptorSurfaceGGP", "pCreateInfo", "VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP", pCreateInfo, VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP, true, "VUID-vkCreateStreamDescriptorSurfaceGGP-pCreateInfo-parameter", "VUID-VkStreamDescriptorSurfaceCreateInfoGGP-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateStreamDescriptorSurfaceGGP", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkStreamDescriptorSurfaceCreateInfoGGP-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateStreamDescriptorSurfaceGGP", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkStreamDescriptorSurfaceCreateInfoGGP-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateStreamDescriptorSurfaceGGP", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkStreamDescriptorSurfaceCreateInfoGGP-flags-zerobitmask");
     }
@@ -12201,7 +12801,7 @@ bool StatelessValidation::PreCallValidateCreateViSurfaceNN(
     skip |= validate_struct_type("vkCreateViSurfaceNN", "pCreateInfo", "VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN", pCreateInfo, VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN, true, "VUID-vkCreateViSurfaceNN-pCreateInfo-parameter", "VUID-VkViSurfaceCreateInfoNN-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateViSurfaceNN", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkViSurfaceCreateInfoNN-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateViSurfaceNN", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkViSurfaceCreateInfoNN-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateViSurfaceNN", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkViSurfaceCreateInfoNN-flags-zerobitmask");
     }
@@ -12247,7 +12847,7 @@ bool StatelessValidation::PreCallValidateCmdBeginConditionalRenderingEXT(
     skip |= validate_struct_type("vkCmdBeginConditionalRenderingEXT", "pConditionalRenderingBegin", "VK_STRUCTURE_TYPE_CONDITIONAL_RENDERING_BEGIN_INFO_EXT", pConditionalRenderingBegin, VK_STRUCTURE_TYPE_CONDITIONAL_RENDERING_BEGIN_INFO_EXT, true, "VUID-vkCmdBeginConditionalRenderingEXT-pConditionalRenderingBegin-parameter", "VUID-VkConditionalRenderingBeginInfoEXT-sType-sType");
     if (pConditionalRenderingBegin != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdBeginConditionalRenderingEXT", "pConditionalRenderingBegin->pNext", NULL, pConditionalRenderingBegin->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkConditionalRenderingBeginInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdBeginConditionalRenderingEXT", "pConditionalRenderingBegin->pNext", NULL, pConditionalRenderingBegin->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkConditionalRenderingBeginInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCmdBeginConditionalRenderingEXT", "pConditionalRenderingBegin->buffer", pConditionalRenderingBegin->buffer);
 
@@ -12339,7 +12939,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EX
     skip |= validate_struct_type("vkGetPhysicalDeviceSurfaceCapabilities2EXT", "pSurfaceCapabilities", "VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_EXT", pSurfaceCapabilities, VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_EXT, true, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-pSurfaceCapabilities-parameter", "VUID-VkSurfaceCapabilities2EXT-sType-sType");
     if (pSurfaceCapabilities != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfaceCapabilities2EXT", "pSurfaceCapabilities->pNext", NULL, pSurfaceCapabilities->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSurfaceCapabilities2EXT-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfaceCapabilities2EXT", "pSurfaceCapabilities->pNext", NULL, pSurfaceCapabilities->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSurfaceCapabilities2EXT-pNext-pNext", kVUIDUndefined, true, false);
     }
     return skip;
 }
@@ -12358,7 +12958,7 @@ bool StatelessValidation::PreCallValidateDisplayPowerControlEXT(
     skip |= validate_struct_type("vkDisplayPowerControlEXT", "pDisplayPowerInfo", "VK_STRUCTURE_TYPE_DISPLAY_POWER_INFO_EXT", pDisplayPowerInfo, VK_STRUCTURE_TYPE_DISPLAY_POWER_INFO_EXT, true, "VUID-vkDisplayPowerControlEXT-pDisplayPowerInfo-parameter", "VUID-VkDisplayPowerInfoEXT-sType-sType");
     if (pDisplayPowerInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkDisplayPowerControlEXT", "pDisplayPowerInfo->pNext", NULL, pDisplayPowerInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayPowerInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkDisplayPowerControlEXT", "pDisplayPowerInfo->pNext", NULL, pDisplayPowerInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayPowerInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkDisplayPowerControlEXT", "pDisplayPowerInfo->powerState", "VkDisplayPowerStateEXT", AllVkDisplayPowerStateEXTEnums, pDisplayPowerInfo->powerState, "VUID-VkDisplayPowerInfoEXT-powerState-parameter");
     }
@@ -12377,7 +12977,7 @@ bool StatelessValidation::PreCallValidateRegisterDeviceEventEXT(
     skip |= validate_struct_type("vkRegisterDeviceEventEXT", "pDeviceEventInfo", "VK_STRUCTURE_TYPE_DEVICE_EVENT_INFO_EXT", pDeviceEventInfo, VK_STRUCTURE_TYPE_DEVICE_EVENT_INFO_EXT, true, "VUID-vkRegisterDeviceEventEXT-pDeviceEventInfo-parameter", "VUID-VkDeviceEventInfoEXT-sType-sType");
     if (pDeviceEventInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkRegisterDeviceEventEXT", "pDeviceEventInfo->pNext", NULL, pDeviceEventInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDeviceEventInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkRegisterDeviceEventEXT", "pDeviceEventInfo->pNext", NULL, pDeviceEventInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDeviceEventInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkRegisterDeviceEventEXT", "pDeviceEventInfo->deviceEvent", "VkDeviceEventTypeEXT", AllVkDeviceEventTypeEXTEnums, pDeviceEventInfo->deviceEvent, "VUID-VkDeviceEventInfoEXT-deviceEvent-parameter");
     }
@@ -12419,7 +13019,7 @@ bool StatelessValidation::PreCallValidateRegisterDisplayEventEXT(
     skip |= validate_struct_type("vkRegisterDisplayEventEXT", "pDisplayEventInfo", "VK_STRUCTURE_TYPE_DISPLAY_EVENT_INFO_EXT", pDisplayEventInfo, VK_STRUCTURE_TYPE_DISPLAY_EVENT_INFO_EXT, true, "VUID-vkRegisterDisplayEventEXT-pDisplayEventInfo-parameter", "VUID-VkDisplayEventInfoEXT-sType-sType");
     if (pDisplayEventInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkRegisterDisplayEventEXT", "pDisplayEventInfo->pNext", NULL, pDisplayEventInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayEventInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkRegisterDisplayEventEXT", "pDisplayEventInfo->pNext", NULL, pDisplayEventInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDisplayEventInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkRegisterDisplayEventEXT", "pDisplayEventInfo->displayEvent", "VkDisplayEventTypeEXT", AllVkDisplayEventTypeEXTEnums, pDisplayEventInfo->displayEvent, "VUID-VkDisplayEventInfoEXT-displayEvent-parameter");
     }
@@ -12556,7 +13156,7 @@ bool StatelessValidation::PreCallValidateSetHdrMetadataEXT(
     {
         for (uint32_t swapchainIndex = 0; swapchainIndex < swapchainCount; ++swapchainIndex)
         {
-            skip |= validate_struct_pnext("vkSetHdrMetadataEXT", ParameterName("pMetadata[%i].pNext", ParameterName::IndexVector{ swapchainIndex }), NULL, pMetadata[swapchainIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkHdrMetadataEXT-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkSetHdrMetadataEXT", ParameterName("pMetadata[%i].pNext", ParameterName::IndexVector{ swapchainIndex }), NULL, pMetadata[swapchainIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkHdrMetadataEXT-pNext-pNext", kVUIDUndefined, false, true);
         }
     }
     return skip;
@@ -12577,7 +13177,7 @@ bool StatelessValidation::PreCallValidateCreateIOSSurfaceMVK(
     skip |= validate_struct_type("vkCreateIOSSurfaceMVK", "pCreateInfo", "VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK", pCreateInfo, VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK, true, "VUID-vkCreateIOSSurfaceMVK-pCreateInfo-parameter", "VUID-VkIOSSurfaceCreateInfoMVK-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateIOSSurfaceMVK", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkIOSSurfaceCreateInfoMVK-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateIOSSurfaceMVK", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkIOSSurfaceCreateInfoMVK-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateIOSSurfaceMVK", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkIOSSurfaceCreateInfoMVK-flags-zerobitmask");
     }
@@ -12620,7 +13220,7 @@ bool StatelessValidation::PreCallValidateCreateMacOSSurfaceMVK(
     skip |= validate_struct_type("vkCreateMacOSSurfaceMVK", "pCreateInfo", "VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK", pCreateInfo, VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK, true, "VUID-vkCreateMacOSSurfaceMVK-pCreateInfo-parameter", "VUID-VkMacOSSurfaceCreateInfoMVK-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateMacOSSurfaceMVK", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMacOSSurfaceCreateInfoMVK-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateMacOSSurfaceMVK", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMacOSSurfaceCreateInfoMVK-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateMacOSSurfaceMVK", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkMacOSSurfaceCreateInfoMVK-flags-zerobitmask");
     }
@@ -12662,7 +13262,7 @@ bool StatelessValidation::PreCallValidateSetDebugUtilsObjectNameEXT(
     skip |= validate_struct_type("vkSetDebugUtilsObjectNameEXT", "pNameInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT", pNameInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, true, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-parameter", "VUID-VkDebugUtilsObjectNameInfoEXT-sType-sType");
     if (pNameInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkSetDebugUtilsObjectNameEXT", "pNameInfo->pNext", NULL, pNameInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsObjectNameInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkSetDebugUtilsObjectNameEXT", "pNameInfo->pNext", NULL, pNameInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsObjectNameInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkSetDebugUtilsObjectNameEXT", "pNameInfo->objectType", "VkObjectType", AllVkObjectTypeEnums, pNameInfo->objectType, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-parameter");
     }
@@ -12678,7 +13278,7 @@ bool StatelessValidation::PreCallValidateSetDebugUtilsObjectTagEXT(
     skip |= validate_struct_type("vkSetDebugUtilsObjectTagEXT", "pTagInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT", pTagInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT, true, "VUID-vkSetDebugUtilsObjectTagEXT-pTagInfo-parameter", "VUID-VkDebugUtilsObjectTagInfoEXT-sType-sType");
     if (pTagInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkSetDebugUtilsObjectTagEXT", "pTagInfo->pNext", NULL, pTagInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsObjectTagInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkSetDebugUtilsObjectTagEXT", "pTagInfo->pNext", NULL, pTagInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsObjectTagInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkSetDebugUtilsObjectTagEXT", "pTagInfo->objectType", "VkObjectType", AllVkObjectTypeEnums, pTagInfo->objectType, "VUID-VkDebugUtilsObjectTagInfoEXT-objectType-parameter");
 
@@ -12696,7 +13296,7 @@ bool StatelessValidation::PreCallValidateQueueBeginDebugUtilsLabelEXT(
     skip |= validate_struct_type("vkQueueBeginDebugUtilsLabelEXT", "pLabelInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT", pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true, "VUID-vkQueueBeginDebugUtilsLabelEXT-pLabelInfo-parameter", "VUID-VkDebugUtilsLabelEXT-sType-sType");
     if (pLabelInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkQueueBeginDebugUtilsLabelEXT", "pLabelInfo->pNext", NULL, pLabelInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkQueueBeginDebugUtilsLabelEXT", "pLabelInfo->pNext", NULL, pLabelInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_pointer("vkQueueBeginDebugUtilsLabelEXT", "pLabelInfo->pLabelName", pLabelInfo->pLabelName, "VUID-VkDebugUtilsLabelEXT-pLabelName-parameter");
     }
@@ -12719,7 +13319,7 @@ bool StatelessValidation::PreCallValidateQueueInsertDebugUtilsLabelEXT(
     skip |= validate_struct_type("vkQueueInsertDebugUtilsLabelEXT", "pLabelInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT", pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true, "VUID-vkQueueInsertDebugUtilsLabelEXT-pLabelInfo-parameter", "VUID-VkDebugUtilsLabelEXT-sType-sType");
     if (pLabelInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkQueueInsertDebugUtilsLabelEXT", "pLabelInfo->pNext", NULL, pLabelInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkQueueInsertDebugUtilsLabelEXT", "pLabelInfo->pNext", NULL, pLabelInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_pointer("vkQueueInsertDebugUtilsLabelEXT", "pLabelInfo->pLabelName", pLabelInfo->pLabelName, "VUID-VkDebugUtilsLabelEXT-pLabelName-parameter");
     }
@@ -12734,7 +13334,7 @@ bool StatelessValidation::PreCallValidateCmdBeginDebugUtilsLabelEXT(
     skip |= validate_struct_type("vkCmdBeginDebugUtilsLabelEXT", "pLabelInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT", pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true, "VUID-vkCmdBeginDebugUtilsLabelEXT-pLabelInfo-parameter", "VUID-VkDebugUtilsLabelEXT-sType-sType");
     if (pLabelInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdBeginDebugUtilsLabelEXT", "pLabelInfo->pNext", NULL, pLabelInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdBeginDebugUtilsLabelEXT", "pLabelInfo->pNext", NULL, pLabelInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_pointer("vkCmdBeginDebugUtilsLabelEXT", "pLabelInfo->pLabelName", pLabelInfo->pLabelName, "VUID-VkDebugUtilsLabelEXT-pLabelName-parameter");
     }
@@ -12757,7 +13357,7 @@ bool StatelessValidation::PreCallValidateCmdInsertDebugUtilsLabelEXT(
     skip |= validate_struct_type("vkCmdInsertDebugUtilsLabelEXT", "pLabelInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT", pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true, "VUID-vkCmdInsertDebugUtilsLabelEXT-pLabelInfo-parameter", "VUID-VkDebugUtilsLabelEXT-sType-sType");
     if (pLabelInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdInsertDebugUtilsLabelEXT", "pLabelInfo->pNext", NULL, pLabelInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdInsertDebugUtilsLabelEXT", "pLabelInfo->pNext", NULL, pLabelInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_pointer("vkCmdInsertDebugUtilsLabelEXT", "pLabelInfo->pLabelName", pLabelInfo->pLabelName, "VUID-VkDebugUtilsLabelEXT-pLabelName-parameter");
     }
@@ -12774,7 +13374,7 @@ bool StatelessValidation::PreCallValidateCreateDebugUtilsMessengerEXT(
     skip |= validate_struct_type("vkCreateDebugUtilsMessengerEXT", "pCreateInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT", pCreateInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, true, "VUID-vkCreateDebugUtilsMessengerEXT-pCreateInfo-parameter", "VUID-VkDebugUtilsMessengerCreateInfoEXT-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateDebugUtilsMessengerEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateDebugUtilsMessengerEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateDebugUtilsMessengerEXT", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-flags-zerobitmask");
 
@@ -12849,7 +13449,7 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(
     skip |= validate_struct_type("vkSubmitDebugUtilsMessageEXT", "pCallbackData", "VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT", pCallbackData, VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT, true, "VUID-vkSubmitDebugUtilsMessageEXT-pCallbackData-parameter", "VUID-VkDebugUtilsMessengerCallbackDataEXT-sType-sType");
     if (pCallbackData != NULL)
     {
-        skip |= validate_struct_pnext("vkSubmitDebugUtilsMessageEXT", "pCallbackData->pNext", NULL, pCallbackData->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsMessengerCallbackDataEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkSubmitDebugUtilsMessageEXT", "pCallbackData->pNext", NULL, pCallbackData->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsMessengerCallbackDataEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkSubmitDebugUtilsMessageEXT", "pCallbackData->flags", pCallbackData->flags, "VUID-VkDebugUtilsMessengerCallbackDataEXT-flags-zerobitmask");
 
@@ -12861,7 +13461,7 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(
         {
             for (uint32_t queueLabelIndex = 0; queueLabelIndex < pCallbackData->queueLabelCount; ++queueLabelIndex)
             {
-                skip |= validate_struct_pnext("vkSubmitDebugUtilsMessageEXT", ParameterName("pCallbackData->pQueueLabels[%i].pNext", ParameterName::IndexVector{ queueLabelIndex }), NULL, pCallbackData->pQueueLabels[queueLabelIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkSubmitDebugUtilsMessageEXT", ParameterName("pCallbackData->pQueueLabels[%i].pNext", ParameterName::IndexVector{ queueLabelIndex }), NULL, pCallbackData->pQueueLabels[queueLabelIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_required_pointer("vkSubmitDebugUtilsMessageEXT", ParameterName("pCallbackData->pQueueLabels[%i].pLabelName", ParameterName::IndexVector{ queueLabelIndex }), pCallbackData->pQueueLabels[queueLabelIndex].pLabelName, "VUID-VkDebugUtilsLabelEXT-pLabelName-parameter");
             }
@@ -12873,7 +13473,7 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(
         {
             for (uint32_t cmdBufLabelIndex = 0; cmdBufLabelIndex < pCallbackData->cmdBufLabelCount; ++cmdBufLabelIndex)
             {
-                skip |= validate_struct_pnext("vkSubmitDebugUtilsMessageEXT", ParameterName("pCallbackData->pCmdBufLabels[%i].pNext", ParameterName::IndexVector{ cmdBufLabelIndex }), NULL, pCallbackData->pCmdBufLabels[cmdBufLabelIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkSubmitDebugUtilsMessageEXT", ParameterName("pCallbackData->pCmdBufLabels[%i].pNext", ParameterName::IndexVector{ cmdBufLabelIndex }), NULL, pCallbackData->pCmdBufLabels[cmdBufLabelIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_required_pointer("vkSubmitDebugUtilsMessageEXT", ParameterName("pCallbackData->pCmdBufLabels[%i].pLabelName", ParameterName::IndexVector{ cmdBufLabelIndex }), pCallbackData->pCmdBufLabels[cmdBufLabelIndex].pLabelName, "VUID-VkDebugUtilsLabelEXT-pLabelName-parameter");
             }
@@ -12885,7 +13485,7 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(
         {
             for (uint32_t objectIndex = 0; objectIndex < pCallbackData->objectCount; ++objectIndex)
             {
-                skip |= validate_struct_pnext("vkSubmitDebugUtilsMessageEXT", ParameterName("pCallbackData->pObjects[%i].pNext", ParameterName::IndexVector{ objectIndex }), NULL, pCallbackData->pObjects[objectIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsObjectNameInfoEXT-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkSubmitDebugUtilsMessageEXT", ParameterName("pCallbackData->pObjects[%i].pNext", ParameterName::IndexVector{ objectIndex }), NULL, pCallbackData->pObjects[objectIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsObjectNameInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_ranged_enum("vkSubmitDebugUtilsMessageEXT", ParameterName("pCallbackData->pObjects[%i].objectType", ParameterName::IndexVector{ objectIndex }), "VkObjectType", AllVkObjectTypeEnums, pCallbackData->pObjects[objectIndex].objectType, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-parameter");
             }
@@ -12914,7 +13514,7 @@ bool StatelessValidation::PreCallValidateGetAndroidHardwareBufferPropertiesANDRO
     {
         const VkStructureType allowed_structs_VkAndroidHardwareBufferPropertiesANDROID[] = { VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID };
 
-        skip |= validate_struct_pnext("vkGetAndroidHardwareBufferPropertiesANDROID", "pProperties->pNext", "VkAndroidHardwareBufferFormatPropertiesANDROID", pProperties->pNext, ARRAY_SIZE(allowed_structs_VkAndroidHardwareBufferPropertiesANDROID), allowed_structs_VkAndroidHardwareBufferPropertiesANDROID, GeneratedVulkanHeaderVersion, "VUID-VkAndroidHardwareBufferPropertiesANDROID-pNext-pNext", "VUID-VkAndroidHardwareBufferPropertiesANDROID-sType-unique");
+        skip |= validate_struct_pnext("vkGetAndroidHardwareBufferPropertiesANDROID", "pProperties->pNext", "VkAndroidHardwareBufferFormatPropertiesANDROID", pProperties->pNext, ARRAY_SIZE(allowed_structs_VkAndroidHardwareBufferPropertiesANDROID), allowed_structs_VkAndroidHardwareBufferPropertiesANDROID, GeneratedVulkanHeaderVersion, "VUID-VkAndroidHardwareBufferPropertiesANDROID-pNext-pNext", "VUID-VkAndroidHardwareBufferPropertiesANDROID-sType-unique", false, false);
     }
     return skip;
 }
@@ -12932,7 +13532,7 @@ bool StatelessValidation::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(
     skip |= validate_struct_type("vkGetMemoryAndroidHardwareBufferANDROID", "pInfo", "VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID", pInfo, VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID, true, "VUID-vkGetMemoryAndroidHardwareBufferANDROID-pInfo-parameter", "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetMemoryAndroidHardwareBufferANDROID", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetMemoryAndroidHardwareBufferANDROID", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetMemoryAndroidHardwareBufferANDROID", "pInfo->memory", pInfo->memory);
     }
@@ -12963,7 +13563,7 @@ bool StatelessValidation::PreCallValidateCmdSetSampleLocationsEXT(
     skip |= validate_struct_type("vkCmdSetSampleLocationsEXT", "pSampleLocationsInfo", "VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT", pSampleLocationsInfo, VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT, true, "VUID-vkCmdSetSampleLocationsEXT-pSampleLocationsInfo-parameter", "VUID-VkSampleLocationsInfoEXT-sType-sType");
     if (pSampleLocationsInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdSetSampleLocationsEXT", "pSampleLocationsInfo->pNext", NULL, pSampleLocationsInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdSetSampleLocationsEXT", "pSampleLocationsInfo->pNext", NULL, pSampleLocationsInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
 
         // No xml-driven validation
 
@@ -12989,7 +13589,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceMultisamplePropertiesE
     skip |= validate_struct_type("vkGetPhysicalDeviceMultisamplePropertiesEXT", "pMultisampleProperties", "VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT", pMultisampleProperties, VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT, true, "VUID-vkGetPhysicalDeviceMultisamplePropertiesEXT-pMultisampleProperties-parameter", "VUID-VkMultisamplePropertiesEXT-sType-sType");
     if (pMultisampleProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceMultisamplePropertiesEXT", "pMultisampleProperties->pNext", NULL, pMultisampleProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMultisamplePropertiesEXT-pNext-pNext", kVUIDUndefined, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceMultisamplePropertiesEXT", "pMultisampleProperties->pNext", NULL, pMultisampleProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMultisamplePropertiesEXT-pNext-pNext", kVUIDUndefined, true, false);
     }
     return skip;
 }
@@ -13022,7 +13622,7 @@ bool StatelessValidation::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(
     skip |= validate_struct_type("vkGetImageDrmFormatModifierPropertiesEXT", "pProperties", "VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT", pProperties, VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT, true, "VUID-vkGetImageDrmFormatModifierPropertiesEXT-pProperties-parameter", "VUID-VkImageDrmFormatModifierPropertiesEXT-sType-sType");
     if (pProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetImageDrmFormatModifierPropertiesEXT", "pProperties->pNext", NULL, pProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageDrmFormatModifierPropertiesEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetImageDrmFormatModifierPropertiesEXT", "pProperties->pNext", NULL, pProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageDrmFormatModifierPropertiesEXT-pNext-pNext", kVUIDUndefined, false, false);
     }
     return skip;
 }
@@ -13039,7 +13639,7 @@ bool StatelessValidation::PreCallValidateCreateValidationCacheEXT(
     skip |= validate_struct_type("vkCreateValidationCacheEXT", "pCreateInfo", "VK_STRUCTURE_TYPE_VALIDATION_CACHE_CREATE_INFO_EXT", pCreateInfo, VK_STRUCTURE_TYPE_VALIDATION_CACHE_CREATE_INFO_EXT, true, "VUID-vkCreateValidationCacheEXT-pCreateInfo-parameter", "VUID-VkValidationCacheCreateInfoEXT-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateValidationCacheEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkValidationCacheCreateInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateValidationCacheEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkValidationCacheCreateInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateValidationCacheEXT", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkValidationCacheCreateInfoEXT-flags-zerobitmask");
 
@@ -13204,11 +13804,11 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureNV(
     skip |= validate_struct_type("vkCreateAccelerationStructureNV", "pCreateInfo", "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV", pCreateInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV, true, "VUID-vkCreateAccelerationStructureNV-pCreateInfo-parameter", "VUID-VkAccelerationStructureCreateInfoNV-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateAccelerationStructureNV", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureCreateInfoNV-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateAccelerationStructureNV", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureCreateInfoNV-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_struct_type("vkCreateAccelerationStructureNV", "pCreateInfo->info", "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV", &(pCreateInfo->info), VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV, false, kVUIDUndefined, "VUID-VkAccelerationStructureInfoNV-sType-sType");
 
-        skip |= validate_struct_pnext("vkCreateAccelerationStructureNV", "pCreateInfo->info.pNext", NULL, pCreateInfo->info.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureInfoNV-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateAccelerationStructureNV", "pCreateInfo->info.pNext", NULL, pCreateInfo->info.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureInfoNV-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkCreateAccelerationStructureNV", "pCreateInfo->info.type", "VkAccelerationStructureTypeNV", AllVkAccelerationStructureTypeNVEnums, pCreateInfo->info.type, "VUID-VkAccelerationStructureInfoNV-type-parameter");
 
@@ -13220,13 +13820,13 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureNV(
         {
             for (uint32_t geometryIndex = 0; geometryIndex < pCreateInfo->info.geometryCount; ++geometryIndex)
             {
-                skip |= validate_struct_pnext("vkCreateAccelerationStructureNV", ParameterName("pCreateInfo->info.pGeometries[%i].pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pCreateInfo->info.pGeometries[geometryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeometryNV-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCreateAccelerationStructureNV", ParameterName("pCreateInfo->info.pGeometries[%i].pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pCreateInfo->info.pGeometries[geometryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeometryNV-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_ranged_enum("vkCreateAccelerationStructureNV", ParameterName("pCreateInfo->info.pGeometries[%i].geometryType", ParameterName::IndexVector{ geometryIndex }), "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pCreateInfo->info.pGeometries[geometryIndex].geometryType, "VUID-VkGeometryNV-geometryType-parameter");
 
                 skip |= validate_struct_type("vkCreateAccelerationStructureNV", ParameterName("pCreateInfo->info.pGeometries[%i].geometry.triangles", ParameterName::IndexVector{ geometryIndex }), "VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV", &(pCreateInfo->info.pGeometries[geometryIndex].geometry.triangles), VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV, false, kVUIDUndefined, "VUID-VkGeometryTrianglesNV-sType-sType");
 
-                skip |= validate_struct_pnext("vkCreateAccelerationStructureNV", ParameterName("pCreateInfo->info.pGeometries[%i].geometry.triangles.pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pCreateInfo->info.pGeometries[geometryIndex].geometry.triangles.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeometryTrianglesNV-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCreateAccelerationStructureNV", ParameterName("pCreateInfo->info.pGeometries[%i].geometry.triangles.pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pCreateInfo->info.pGeometries[geometryIndex].geometry.triangles.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeometryTrianglesNV-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_ranged_enum("vkCreateAccelerationStructureNV", ParameterName("pCreateInfo->info.pGeometries[%i].geometry.triangles.vertexFormat", ParameterName::IndexVector{ geometryIndex }), "VkFormat", AllVkFormatEnums, pCreateInfo->info.pGeometries[geometryIndex].geometry.triangles.vertexFormat, "VUID-VkGeometryTrianglesNV-vertexFormat-parameter");
 
@@ -13234,7 +13834,7 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureNV(
 
                 skip |= validate_struct_type("vkCreateAccelerationStructureNV", ParameterName("pCreateInfo->info.pGeometries[%i].geometry.aabbs", ParameterName::IndexVector{ geometryIndex }), "VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV", &(pCreateInfo->info.pGeometries[geometryIndex].geometry.aabbs), VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV, false, kVUIDUndefined, "VUID-VkGeometryAABBNV-sType-sType");
 
-                skip |= validate_struct_pnext("vkCreateAccelerationStructureNV", ParameterName("pCreateInfo->info.pGeometries[%i].geometry.aabbs.pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pCreateInfo->info.pGeometries[geometryIndex].geometry.aabbs.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeometryAABBNV-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCreateAccelerationStructureNV", ParameterName("pCreateInfo->info.pGeometries[%i].geometry.aabbs.pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pCreateInfo->info.pGeometries[geometryIndex].geometry.aabbs.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeometryAABBNV-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_flags("vkCreateAccelerationStructureNV", ParameterName("pCreateInfo->info.pGeometries[%i].flags", ParameterName::IndexVector{ geometryIndex }), "VkGeometryFlagBitsKHR", AllVkGeometryFlagBitsKHR, pCreateInfo->info.pGeometries[geometryIndex].flags, kOptionalFlags, "VUID-VkGeometryNV-flags-parameter");
             }
@@ -13307,7 +13907,7 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureMemoryRequireme
     skip |= validate_struct_type("vkGetAccelerationStructureMemoryRequirementsNV", "pInfo", "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV", pInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV, true, "VUID-vkGetAccelerationStructureMemoryRequirementsNV-pInfo-parameter", "VUID-VkAccelerationStructureMemoryRequirementsInfoNV-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetAccelerationStructureMemoryRequirementsNV", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureMemoryRequirementsInfoNV-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetAccelerationStructureMemoryRequirementsNV", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureMemoryRequirementsInfoNV-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkGetAccelerationStructureMemoryRequirementsNV", "pInfo->type", "VkAccelerationStructureMemoryRequirementsTypeNV", AllVkAccelerationStructureMemoryRequirementsTypeNVEnums, pInfo->type, "VUID-VkAccelerationStructureMemoryRequirementsInfoNV-type-parameter");
 
@@ -13330,7 +13930,7 @@ bool StatelessValidation::PreCallValidateBindAccelerationStructureMemoryNV(
     {
         for (uint32_t bindInfoIndex = 0; bindInfoIndex < bindInfoCount; ++bindInfoIndex)
         {
-            skip |= validate_struct_pnext("vkBindAccelerationStructureMemoryNV", ParameterName("pBindInfos[%i].pNext", ParameterName::IndexVector{ bindInfoIndex }), NULL, pBindInfos[bindInfoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBindAccelerationStructureMemoryInfoNV-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkBindAccelerationStructureMemoryNV", ParameterName("pBindInfos[%i].pNext", ParameterName::IndexVector{ bindInfoIndex }), NULL, pBindInfos[bindInfoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBindAccelerationStructureMemoryInfoNV-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_required_handle("vkBindAccelerationStructureMemoryNV", ParameterName("pBindInfos[%i].accelerationStructure", ParameterName::IndexVector{ bindInfoIndex }), pBindInfos[bindInfoIndex].accelerationStructure);
 
@@ -13359,7 +13959,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureNV(
     skip |= validate_struct_type("vkCmdBuildAccelerationStructureNV", "pInfo", "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV", pInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV, true, "VUID-vkCmdBuildAccelerationStructureNV-pInfo-parameter", "VUID-VkAccelerationStructureInfoNV-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdBuildAccelerationStructureNV", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureInfoNV-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdBuildAccelerationStructureNV", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureInfoNV-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkCmdBuildAccelerationStructureNV", "pInfo->type", "VkAccelerationStructureTypeNV", AllVkAccelerationStructureTypeNVEnums, pInfo->type, "VUID-VkAccelerationStructureInfoNV-type-parameter");
 
@@ -13371,13 +13971,13 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureNV(
         {
             for (uint32_t geometryIndex = 0; geometryIndex < pInfo->geometryCount; ++geometryIndex)
             {
-                skip |= validate_struct_pnext("vkCmdBuildAccelerationStructureNV", ParameterName("pInfo->pGeometries[%i].pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pInfo->pGeometries[geometryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeometryNV-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCmdBuildAccelerationStructureNV", ParameterName("pInfo->pGeometries[%i].pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pInfo->pGeometries[geometryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeometryNV-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_ranged_enum("vkCmdBuildAccelerationStructureNV", ParameterName("pInfo->pGeometries[%i].geometryType", ParameterName::IndexVector{ geometryIndex }), "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pInfo->pGeometries[geometryIndex].geometryType, "VUID-VkGeometryNV-geometryType-parameter");
 
                 skip |= validate_struct_type("vkCmdBuildAccelerationStructureNV", ParameterName("pInfo->pGeometries[%i].geometry.triangles", ParameterName::IndexVector{ geometryIndex }), "VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV", &(pInfo->pGeometries[geometryIndex].geometry.triangles), VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV, false, kVUIDUndefined, "VUID-VkGeometryTrianglesNV-sType-sType");
 
-                skip |= validate_struct_pnext("vkCmdBuildAccelerationStructureNV", ParameterName("pInfo->pGeometries[%i].geometry.triangles.pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pInfo->pGeometries[geometryIndex].geometry.triangles.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeometryTrianglesNV-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCmdBuildAccelerationStructureNV", ParameterName("pInfo->pGeometries[%i].geometry.triangles.pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pInfo->pGeometries[geometryIndex].geometry.triangles.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeometryTrianglesNV-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_ranged_enum("vkCmdBuildAccelerationStructureNV", ParameterName("pInfo->pGeometries[%i].geometry.triangles.vertexFormat", ParameterName::IndexVector{ geometryIndex }), "VkFormat", AllVkFormatEnums, pInfo->pGeometries[geometryIndex].geometry.triangles.vertexFormat, "VUID-VkGeometryTrianglesNV-vertexFormat-parameter");
 
@@ -13385,7 +13985,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureNV(
 
                 skip |= validate_struct_type("vkCmdBuildAccelerationStructureNV", ParameterName("pInfo->pGeometries[%i].geometry.aabbs", ParameterName::IndexVector{ geometryIndex }), "VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV", &(pInfo->pGeometries[geometryIndex].geometry.aabbs), VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV, false, kVUIDUndefined, "VUID-VkGeometryAABBNV-sType-sType");
 
-                skip |= validate_struct_pnext("vkCmdBuildAccelerationStructureNV", ParameterName("pInfo->pGeometries[%i].geometry.aabbs.pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pInfo->pGeometries[geometryIndex].geometry.aabbs.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeometryAABBNV-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCmdBuildAccelerationStructureNV", ParameterName("pInfo->pGeometries[%i].geometry.aabbs.pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pInfo->pGeometries[geometryIndex].geometry.aabbs.pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeometryAABBNV-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_flags("vkCmdBuildAccelerationStructureNV", ParameterName("pInfo->pGeometries[%i].flags", ParameterName::IndexVector{ geometryIndex }), "VkGeometryFlagBitsKHR", AllVkGeometryFlagBitsKHR, pInfo->pGeometries[geometryIndex].flags, kOptionalFlags, "VUID-VkGeometryNV-flags-parameter");
             }
@@ -13456,7 +14056,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(
         {
             const VkStructureType allowed_structs_VkRayTracingPipelineCreateInfoNV[] = { VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO_EXT };
 
-            skip |= validate_struct_pnext("vkCreateRayTracingPipelinesNV", ParameterName("pCreateInfos[%i].pNext", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineCreationFeedbackCreateInfoEXT", pCreateInfos[createInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkRayTracingPipelineCreateInfoNV), allowed_structs_VkRayTracingPipelineCreateInfoNV, GeneratedVulkanHeaderVersion, "VUID-VkRayTracingPipelineCreateInfoNV-pNext-pNext", "VUID-VkRayTracingPipelineCreateInfoNV-sType-unique");
+            skip |= validate_struct_pnext("vkCreateRayTracingPipelinesNV", ParameterName("pCreateInfos[%i].pNext", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineCreationFeedbackCreateInfoEXT", pCreateInfos[createInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkRayTracingPipelineCreateInfoNV), allowed_structs_VkRayTracingPipelineCreateInfoNV, GeneratedVulkanHeaderVersion, "VUID-VkRayTracingPipelineCreateInfoNV-pNext-pNext", "VUID-VkRayTracingPipelineCreateInfoNV-sType-unique", false, true);
 
             skip |= validate_flags("vkCreateRayTracingPipelinesNV", ParameterName("pCreateInfos[%i].flags", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits, pCreateInfos[createInfoIndex].flags, kOptionalFlags, "VUID-VkRayTracingPipelineCreateInfoNV-flags-parameter");
 
@@ -13468,7 +14068,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(
                 {
                     const VkStructureType allowed_structs_VkPipelineShaderStageCreateInfo[] = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT };
 
-                    skip |= validate_struct_pnext("vkCreateRayTracingPipelinesNV", ParameterName("pCreateInfos[%i].pStages[%i].pNext", ParameterName::IndexVector{ createInfoIndex, stageIndex }), "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT", pCreateInfos[createInfoIndex].pStages[stageIndex].pNext, ARRAY_SIZE(allowed_structs_VkPipelineShaderStageCreateInfo), allowed_structs_VkPipelineShaderStageCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkPipelineShaderStageCreateInfo-pNext-pNext", "VUID-VkPipelineShaderStageCreateInfo-sType-unique");
+                    skip |= validate_struct_pnext("vkCreateRayTracingPipelinesNV", ParameterName("pCreateInfos[%i].pStages[%i].pNext", ParameterName::IndexVector{ createInfoIndex, stageIndex }), "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT", pCreateInfos[createInfoIndex].pStages[stageIndex].pNext, ARRAY_SIZE(allowed_structs_VkPipelineShaderStageCreateInfo), allowed_structs_VkPipelineShaderStageCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkPipelineShaderStageCreateInfo-pNext-pNext", "VUID-VkPipelineShaderStageCreateInfo-sType-unique", false, true);
 
                     skip |= validate_flags("vkCreateRayTracingPipelinesNV", ParameterName("pCreateInfos[%i].pStages[%i].flags", ParameterName::IndexVector{ createInfoIndex, stageIndex }), "VkPipelineShaderStageCreateFlagBits", AllVkPipelineShaderStageCreateFlagBits, pCreateInfos[createInfoIndex].pStages[stageIndex].flags, kOptionalFlags, "VUID-VkPipelineShaderStageCreateInfo-flags-parameter");
 
@@ -13501,7 +14101,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(
             {
                 for (uint32_t groupIndex = 0; groupIndex < pCreateInfos[createInfoIndex].groupCount; ++groupIndex)
                 {
-                    skip |= validate_struct_pnext("vkCreateRayTracingPipelinesNV", ParameterName("pCreateInfos[%i].pGroups[%i].pNext", ParameterName::IndexVector{ createInfoIndex, groupIndex }), NULL, pCreateInfos[createInfoIndex].pGroups[groupIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkRayTracingShaderGroupCreateInfoNV-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkCreateRayTracingPipelinesNV", ParameterName("pCreateInfos[%i].pGroups[%i].pNext", ParameterName::IndexVector{ createInfoIndex, groupIndex }), NULL, pCreateInfos[createInfoIndex].pGroups[groupIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkRayTracingShaderGroupCreateInfoNV-pNext-pNext", kVUIDUndefined, false, true);
 
                     skip |= validate_ranged_enum("vkCreateRayTracingPipelinesNV", ParameterName("pCreateInfos[%i].pGroups[%i].type", ParameterName::IndexVector{ createInfoIndex, groupIndex }), "VkRayTracingShaderGroupTypeKHR", AllVkRayTracingShaderGroupTypeKHREnums, pCreateInfos[createInfoIndex].pGroups[groupIndex].type, "VUID-VkRayTracingShaderGroupCreateInfoNV-type-parameter");
                 }
@@ -13632,7 +14232,7 @@ bool StatelessValidation::PreCallValidateGetMemoryHostPointerPropertiesEXT(
     skip |= validate_struct_type("vkGetMemoryHostPointerPropertiesEXT", "pMemoryHostPointerProperties", "VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT", pMemoryHostPointerProperties, VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT, true, "VUID-vkGetMemoryHostPointerPropertiesEXT-pMemoryHostPointerProperties-parameter", "VUID-VkMemoryHostPointerPropertiesEXT-sType-sType");
     if (pMemoryHostPointerProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetMemoryHostPointerPropertiesEXT", "pMemoryHostPointerProperties->pNext", NULL, pMemoryHostPointerProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryHostPointerPropertiesEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetMemoryHostPointerPropertiesEXT", "pMemoryHostPointerProperties->pNext", NULL, pMemoryHostPointerProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryHostPointerPropertiesEXT-pNext-pNext", kVUIDUndefined, false, false);
     }
     return skip;
 }
@@ -13679,7 +14279,7 @@ bool StatelessValidation::PreCallValidateGetCalibratedTimestampsEXT(
     {
         for (uint32_t timestampIndex = 0; timestampIndex < timestampCount; ++timestampIndex)
         {
-            skip |= validate_struct_pnext("vkGetCalibratedTimestampsEXT", ParameterName("pTimestampInfos[%i].pNext", ParameterName::IndexVector{ timestampIndex }), NULL, pTimestampInfos[timestampIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCalibratedTimestampInfoEXT-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkGetCalibratedTimestampsEXT", ParameterName("pTimestampInfos[%i].pNext", ParameterName::IndexVector{ timestampIndex }), NULL, pTimestampInfos[timestampIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCalibratedTimestampInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_ranged_enum("vkGetCalibratedTimestampsEXT", ParameterName("pTimestampInfos[%i].timeDomain", ParameterName::IndexVector{ timestampIndex }), "VkTimeDomainEXT", AllVkTimeDomainEXTEnums, pTimestampInfos[timestampIndex].timeDomain, "VUID-VkCalibratedTimestampInfoEXT-timeDomain-parameter");
         }
@@ -13806,7 +14406,7 @@ bool StatelessValidation::PreCallValidateGetQueueCheckpointDataNV(
     {
         for (uint32_t pCheckpointDataIndex = 0; pCheckpointDataIndex < *pCheckpointDataCount; ++pCheckpointDataIndex)
         {
-            skip |= validate_struct_pnext("vkGetQueueCheckpointDataNV", ParameterName("pCheckpointData[%i].pNext", ParameterName::IndexVector{ pCheckpointDataIndex }), NULL, pCheckpointData[pCheckpointDataIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCheckpointDataNV-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkGetQueueCheckpointDataNV", ParameterName("pCheckpointData[%i].pNext", ParameterName::IndexVector{ pCheckpointDataIndex }), NULL, pCheckpointData[pCheckpointDataIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCheckpointDataNV-pNext-pNext", kVUIDUndefined, false, false);
         }
     }
     return skip;
@@ -13824,7 +14424,7 @@ bool StatelessValidation::PreCallValidateInitializePerformanceApiINTEL(
     skip |= validate_struct_type("vkInitializePerformanceApiINTEL", "pInitializeInfo", "VK_STRUCTURE_TYPE_INITIALIZE_PERFORMANCE_API_INFO_INTEL", pInitializeInfo, VK_STRUCTURE_TYPE_INITIALIZE_PERFORMANCE_API_INFO_INTEL, true, "VUID-vkInitializePerformanceApiINTEL-pInitializeInfo-parameter", "VUID-VkInitializePerformanceApiInfoINTEL-sType-sType");
     if (pInitializeInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkInitializePerformanceApiINTEL", "pInitializeInfo->pNext", NULL, pInitializeInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkInitializePerformanceApiInfoINTEL-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkInitializePerformanceApiINTEL", "pInitializeInfo->pNext", NULL, pInitializeInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkInitializePerformanceApiInfoINTEL-pNext-pNext", kVUIDUndefined, false, true);
     }
     return skip;
 }
@@ -13845,7 +14445,7 @@ bool StatelessValidation::PreCallValidateCmdSetPerformanceMarkerINTEL(
     skip |= validate_struct_type("vkCmdSetPerformanceMarkerINTEL", "pMarkerInfo", "VK_STRUCTURE_TYPE_PERFORMANCE_MARKER_INFO_INTEL", pMarkerInfo, VK_STRUCTURE_TYPE_PERFORMANCE_MARKER_INFO_INTEL, true, "VUID-vkCmdSetPerformanceMarkerINTEL-pMarkerInfo-parameter", "VUID-VkPerformanceMarkerInfoINTEL-sType-sType");
     if (pMarkerInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdSetPerformanceMarkerINTEL", "pMarkerInfo->pNext", NULL, pMarkerInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPerformanceMarkerInfoINTEL-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdSetPerformanceMarkerINTEL", "pMarkerInfo->pNext", NULL, pMarkerInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPerformanceMarkerInfoINTEL-pNext-pNext", kVUIDUndefined, false, true);
     }
     return skip;
 }
@@ -13858,7 +14458,7 @@ bool StatelessValidation::PreCallValidateCmdSetPerformanceStreamMarkerINTEL(
     skip |= validate_struct_type("vkCmdSetPerformanceStreamMarkerINTEL", "pMarkerInfo", "VK_STRUCTURE_TYPE_PERFORMANCE_STREAM_MARKER_INFO_INTEL", pMarkerInfo, VK_STRUCTURE_TYPE_PERFORMANCE_STREAM_MARKER_INFO_INTEL, true, "VUID-vkCmdSetPerformanceStreamMarkerINTEL-pMarkerInfo-parameter", "VUID-VkPerformanceStreamMarkerInfoINTEL-sType-sType");
     if (pMarkerInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdSetPerformanceStreamMarkerINTEL", "pMarkerInfo->pNext", NULL, pMarkerInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPerformanceStreamMarkerInfoINTEL-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdSetPerformanceStreamMarkerINTEL", "pMarkerInfo->pNext", NULL, pMarkerInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPerformanceStreamMarkerInfoINTEL-pNext-pNext", kVUIDUndefined, false, true);
     }
     return skip;
 }
@@ -13871,7 +14471,7 @@ bool StatelessValidation::PreCallValidateCmdSetPerformanceOverrideINTEL(
     skip |= validate_struct_type("vkCmdSetPerformanceOverrideINTEL", "pOverrideInfo", "VK_STRUCTURE_TYPE_PERFORMANCE_OVERRIDE_INFO_INTEL", pOverrideInfo, VK_STRUCTURE_TYPE_PERFORMANCE_OVERRIDE_INFO_INTEL, true, "VUID-vkCmdSetPerformanceOverrideINTEL-pOverrideInfo-parameter", "VUID-VkPerformanceOverrideInfoINTEL-sType-sType");
     if (pOverrideInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdSetPerformanceOverrideINTEL", "pOverrideInfo->pNext", NULL, pOverrideInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPerformanceOverrideInfoINTEL-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdSetPerformanceOverrideINTEL", "pOverrideInfo->pNext", NULL, pOverrideInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPerformanceOverrideInfoINTEL-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkCmdSetPerformanceOverrideINTEL", "pOverrideInfo->type", "VkPerformanceOverrideTypeINTEL", AllVkPerformanceOverrideTypeINTELEnums, pOverrideInfo->type, "VUID-VkPerformanceOverrideInfoINTEL-type-parameter");
 
@@ -13889,7 +14489,7 @@ bool StatelessValidation::PreCallValidateAcquirePerformanceConfigurationINTEL(
     skip |= validate_struct_type("vkAcquirePerformanceConfigurationINTEL", "pAcquireInfo", "VK_STRUCTURE_TYPE_PERFORMANCE_CONFIGURATION_ACQUIRE_INFO_INTEL", pAcquireInfo, VK_STRUCTURE_TYPE_PERFORMANCE_CONFIGURATION_ACQUIRE_INFO_INTEL, true, "VUID-vkAcquirePerformanceConfigurationINTEL-pAcquireInfo-parameter", "VUID-VkPerformanceConfigurationAcquireInfoINTEL-sType-sType");
     if (pAcquireInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkAcquirePerformanceConfigurationINTEL", "pAcquireInfo->pNext", NULL, pAcquireInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPerformanceConfigurationAcquireInfoINTEL-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkAcquirePerformanceConfigurationINTEL", "pAcquireInfo->pNext", NULL, pAcquireInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPerformanceConfigurationAcquireInfoINTEL-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkAcquirePerformanceConfigurationINTEL", "pAcquireInfo->type", "VkPerformanceConfigurationTypeINTEL", AllVkPerformanceConfigurationTypeINTELEnums, pAcquireInfo->type, "VUID-VkPerformanceConfigurationAcquireInfoINTEL-type-parameter");
     }
@@ -13959,7 +14559,7 @@ bool StatelessValidation::PreCallValidateCreateImagePipeSurfaceFUCHSIA(
     skip |= validate_struct_type("vkCreateImagePipeSurfaceFUCHSIA", "pCreateInfo", "VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA", pCreateInfo, VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA, true, "VUID-vkCreateImagePipeSurfaceFUCHSIA-pCreateInfo-parameter", "VUID-VkImagePipeSurfaceCreateInfoFUCHSIA-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateImagePipeSurfaceFUCHSIA", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImagePipeSurfaceCreateInfoFUCHSIA-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateImagePipeSurfaceFUCHSIA", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImagePipeSurfaceCreateInfoFUCHSIA-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateImagePipeSurfaceFUCHSIA", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkImagePipeSurfaceCreateInfoFUCHSIA-flags-zerobitmask");
     }
@@ -14002,7 +14602,7 @@ bool StatelessValidation::PreCallValidateCreateMetalSurfaceEXT(
     skip |= validate_struct_type("vkCreateMetalSurfaceEXT", "pCreateInfo", "VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT", pCreateInfo, VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT, true, "VUID-vkCreateMetalSurfaceEXT-pCreateInfo-parameter", "VUID-VkMetalSurfaceCreateInfoEXT-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateMetalSurfaceEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMetalSurfaceCreateInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateMetalSurfaceEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMetalSurfaceCreateInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateMetalSurfaceEXT", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkMetalSurfaceCreateInfoEXT-flags-zerobitmask");
     }
@@ -14063,7 +14663,7 @@ bool StatelessValidation::PreCallValidateGetBufferDeviceAddressEXT(
     skip |= validate_struct_type("vkGetBufferDeviceAddressEXT", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, true, "VUID-vkGetBufferDeviceAddress-pInfo-parameter", "VUID-VkBufferDeviceAddressInfo-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetBufferDeviceAddressEXT", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferDeviceAddressInfo-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetBufferDeviceAddressEXT", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferDeviceAddressInfo-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetBufferDeviceAddressEXT", "pInfo->buffer", pInfo->buffer);
     }
@@ -14082,7 +14682,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceToolPropertiesEXT(
     {
         for (uint32_t pToolIndex = 0; pToolIndex < *pToolCount; ++pToolIndex)
         {
-            skip |= validate_struct_pnext("vkGetPhysicalDeviceToolPropertiesEXT", ParameterName("pToolProperties[%i].pNext", ParameterName::IndexVector{ pToolIndex }), NULL, pToolProperties[pToolIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceToolPropertiesEXT-pNext-pNext", kVUIDUndefined, true);
+            skip |= validate_struct_pnext("vkGetPhysicalDeviceToolPropertiesEXT", ParameterName("pToolProperties[%i].pNext", ParameterName::IndexVector{ pToolIndex }), NULL, pToolProperties[pToolIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceToolPropertiesEXT-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
     return skip;
@@ -14115,7 +14715,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSupportedFramebufferMi
     {
         for (uint32_t pCombinationIndex = 0; pCombinationIndex < *pCombinationCount; ++pCombinationIndex)
         {
-            skip |= validate_struct_pnext("vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV", ParameterName("pCombinations[%i].pNext", ParameterName::IndexVector{ pCombinationIndex }), NULL, pCombinations[pCombinationIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkFramebufferMixedSamplesCombinationNV-pNext-pNext", kVUIDUndefined, true);
+            skip |= validate_struct_pnext("vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV", ParameterName("pCombinations[%i].pNext", ParameterName::IndexVector{ pCombinationIndex }), NULL, pCombinations[pCombinationIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkFramebufferMixedSamplesCombinationNV-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
     return skip;
@@ -14142,7 +14742,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EX
     {
         const VkStructureType allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR[] = { VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT, VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfacePresentModes2EXT", "pSurfaceInfo->pNext", "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT", pSurfaceInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR), allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique", true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfacePresentModes2EXT", "pSurfaceInfo->pNext", "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT", pSurfaceInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR), allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique", true, true);
 
         skip |= validate_required_handle("vkGetPhysicalDeviceSurfacePresentModes2EXT", "pSurfaceInfo->surface", pSurfaceInfo->surface);
     }
@@ -14189,7 +14789,7 @@ bool StatelessValidation::PreCallValidateCreateHeadlessSurfaceEXT(
     skip |= validate_struct_type("vkCreateHeadlessSurfaceEXT", "pCreateInfo", "VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT", pCreateInfo, VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT, true, "VUID-vkCreateHeadlessSurfaceEXT-pCreateInfo-parameter", "VUID-VkHeadlessSurfaceCreateInfoEXT-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateHeadlessSurfaceEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkHeadlessSurfaceCreateInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateHeadlessSurfaceEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkHeadlessSurfaceCreateInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateHeadlessSurfaceEXT", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkHeadlessSurfaceCreateInfoEXT-flags-zerobitmask");
     }
@@ -14423,7 +15023,7 @@ bool StatelessValidation::PreCallValidateGetGeneratedCommandsMemoryRequirementsN
     skip |= validate_struct_type("vkGetGeneratedCommandsMemoryRequirementsNV", "pInfo", "VK_STRUCTURE_TYPE_GENERATED_COMMANDS_MEMORY_REQUIREMENTS_INFO_NV", pInfo, VK_STRUCTURE_TYPE_GENERATED_COMMANDS_MEMORY_REQUIREMENTS_INFO_NV, true, "VUID-vkGetGeneratedCommandsMemoryRequirementsNV-pInfo-parameter", "VUID-VkGeneratedCommandsMemoryRequirementsInfoNV-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetGeneratedCommandsMemoryRequirementsNV", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeneratedCommandsMemoryRequirementsInfoNV-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetGeneratedCommandsMemoryRequirementsNV", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeneratedCommandsMemoryRequirementsInfoNV-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkGetGeneratedCommandsMemoryRequirementsNV", "pInfo->pipelineBindPoint", "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pInfo->pipelineBindPoint, "VUID-VkGeneratedCommandsMemoryRequirementsInfoNV-pipelineBindPoint-parameter");
 
@@ -14436,7 +15036,7 @@ bool StatelessValidation::PreCallValidateGetGeneratedCommandsMemoryRequirementsN
     {
         const VkStructureType allowed_structs_VkMemoryRequirements2[] = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS };
 
-        skip |= validate_struct_pnext("vkGetGeneratedCommandsMemoryRequirementsNV", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique");
+        skip |= validate_struct_pnext("vkGetGeneratedCommandsMemoryRequirementsNV", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique", false, false);
     }
     return skip;
 }
@@ -14449,7 +15049,7 @@ bool StatelessValidation::PreCallValidateCmdPreprocessGeneratedCommandsNV(
     skip |= validate_struct_type("vkCmdPreprocessGeneratedCommandsNV", "pGeneratedCommandsInfo", "VK_STRUCTURE_TYPE_GENERATED_COMMANDS_INFO_NV", pGeneratedCommandsInfo, VK_STRUCTURE_TYPE_GENERATED_COMMANDS_INFO_NV, true, "VUID-vkCmdPreprocessGeneratedCommandsNV-pGeneratedCommandsInfo-parameter", "VUID-VkGeneratedCommandsInfoNV-sType-sType");
     if (pGeneratedCommandsInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdPreprocessGeneratedCommandsNV", "pGeneratedCommandsInfo->pNext", NULL, pGeneratedCommandsInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeneratedCommandsInfoNV-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdPreprocessGeneratedCommandsNV", "pGeneratedCommandsInfo->pNext", NULL, pGeneratedCommandsInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeneratedCommandsInfoNV-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkCmdPreprocessGeneratedCommandsNV", "pGeneratedCommandsInfo->pipelineBindPoint", "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pGeneratedCommandsInfo->pipelineBindPoint, "VUID-VkGeneratedCommandsInfoNV-pipelineBindPoint-parameter");
 
@@ -14482,7 +15082,7 @@ bool StatelessValidation::PreCallValidateCmdExecuteGeneratedCommandsNV(
     skip |= validate_struct_type("vkCmdExecuteGeneratedCommandsNV", "pGeneratedCommandsInfo", "VK_STRUCTURE_TYPE_GENERATED_COMMANDS_INFO_NV", pGeneratedCommandsInfo, VK_STRUCTURE_TYPE_GENERATED_COMMANDS_INFO_NV, true, "VUID-vkCmdExecuteGeneratedCommandsNV-pGeneratedCommandsInfo-parameter", "VUID-VkGeneratedCommandsInfoNV-sType-sType");
     if (pGeneratedCommandsInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdExecuteGeneratedCommandsNV", "pGeneratedCommandsInfo->pNext", NULL, pGeneratedCommandsInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeneratedCommandsInfoNV-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdExecuteGeneratedCommandsNV", "pGeneratedCommandsInfo->pNext", NULL, pGeneratedCommandsInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeneratedCommandsInfoNV-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkCmdExecuteGeneratedCommandsNV", "pGeneratedCommandsInfo->pipelineBindPoint", "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pGeneratedCommandsInfo->pipelineBindPoint, "VUID-VkGeneratedCommandsInfoNV-pipelineBindPoint-parameter");
 
@@ -14527,7 +15127,7 @@ bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutNV(
     skip |= validate_struct_type("vkCreateIndirectCommandsLayoutNV", "pCreateInfo", "VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_NV", pCreateInfo, VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_NV, true, "VUID-vkCreateIndirectCommandsLayoutNV-pCreateInfo-parameter", "VUID-VkIndirectCommandsLayoutCreateInfoNV-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateIndirectCommandsLayoutNV", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateIndirectCommandsLayoutNV", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_flags("vkCreateIndirectCommandsLayoutNV", "pCreateInfo->flags", "VkIndirectCommandsLayoutUsageFlagBitsNV", AllVkIndirectCommandsLayoutUsageFlagBitsNV, pCreateInfo->flags, kOptionalFlags, "VUID-VkIndirectCommandsLayoutCreateInfoNV-flags-parameter");
 
@@ -14539,7 +15139,7 @@ bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutNV(
         {
             for (uint32_t tokenIndex = 0; tokenIndex < pCreateInfo->tokenCount; ++tokenIndex)
             {
-                skip |= validate_struct_pnext("vkCreateIndirectCommandsLayoutNV", ParameterName("pCreateInfo->pTokens[%i].pNext", ParameterName::IndexVector{ tokenIndex }), NULL, pCreateInfo->pTokens[tokenIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkIndirectCommandsLayoutTokenNV-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCreateIndirectCommandsLayoutNV", ParameterName("pCreateInfo->pTokens[%i].pNext", ParameterName::IndexVector{ tokenIndex }), NULL, pCreateInfo->pTokens[tokenIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkIndirectCommandsLayoutTokenNV-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_ranged_enum("vkCreateIndirectCommandsLayoutNV", ParameterName("pCreateInfo->pTokens[%i].tokenType", ParameterName::IndexVector{ tokenIndex }), "VkIndirectCommandsTokenTypeNV", AllVkIndirectCommandsTokenTypeNVEnums, pCreateInfo->pTokens[tokenIndex].tokenType, "VUID-VkIndirectCommandsLayoutTokenNV-tokenType-parameter");
 
@@ -14661,7 +15261,7 @@ bool StatelessValidation::PreCallValidateCreatePrivateDataSlotEXT(
     skip |= validate_struct_type("vkCreatePrivateDataSlotEXT", "pCreateInfo", "VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT", pCreateInfo, VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT, true, "VUID-vkCreatePrivateDataSlotEXT-pCreateInfo-parameter", "VUID-VkPrivateDataSlotCreateInfoEXT-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreatePrivateDataSlotEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPrivateDataSlotCreateInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreatePrivateDataSlotEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPrivateDataSlotCreateInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreatePrivateDataSlotEXT", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkPrivateDataSlotCreateInfoEXT-flags-zerobitmask");
     }
@@ -14814,7 +15414,7 @@ bool StatelessValidation::PreCallValidateCreateDirectFBSurfaceEXT(
     skip |= validate_struct_type("vkCreateDirectFBSurfaceEXT", "pCreateInfo", "VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT", pCreateInfo, VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT, true, "VUID-vkCreateDirectFBSurfaceEXT-pCreateInfo-parameter", "VUID-VkDirectFBSurfaceCreateInfoEXT-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateDirectFBSurfaceEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDirectFBSurfaceCreateInfoEXT-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateDirectFBSurfaceEXT", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDirectFBSurfaceCreateInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateDirectFBSurfaceEXT", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkDirectFBSurfaceCreateInfoEXT-flags-zerobitmask");
     }
@@ -14905,7 +15505,7 @@ bool StatelessValidation::PreCallValidateGetMemoryZirconHandleFUCHSIA(
     skip |= validate_struct_type("vkGetMemoryZirconHandleFUCHSIA", "pGetZirconHandleInfo", "VK_STRUCTURE_TYPE_MEMORY_GET_ZIRCON_HANDLE_INFO_FUCHSIA", pGetZirconHandleInfo, VK_STRUCTURE_TYPE_MEMORY_GET_ZIRCON_HANDLE_INFO_FUCHSIA, true, "VUID-vkGetMemoryZirconHandleFUCHSIA-pGetZirconHandleInfo-parameter", "VUID-VkMemoryGetZirconHandleInfoFUCHSIA-sType-sType");
     if (pGetZirconHandleInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetMemoryZirconHandleFUCHSIA", "pGetZirconHandleInfo->pNext", NULL, pGetZirconHandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryGetZirconHandleInfoFUCHSIA-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetMemoryZirconHandleFUCHSIA", "pGetZirconHandleInfo->pNext", NULL, pGetZirconHandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryGetZirconHandleInfoFUCHSIA-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetMemoryZirconHandleFUCHSIA", "pGetZirconHandleInfo->memory", pGetZirconHandleInfo->memory);
 
@@ -14928,7 +15528,7 @@ bool StatelessValidation::PreCallValidateGetMemoryZirconHandlePropertiesFUCHSIA(
     skip |= validate_struct_type("vkGetMemoryZirconHandlePropertiesFUCHSIA", "pMemoryZirconHandleProperties", "VK_STRUCTURE_TYPE_MEMORY_ZIRCON_HANDLE_PROPERTIES_FUCHSIA", pMemoryZirconHandleProperties, VK_STRUCTURE_TYPE_MEMORY_ZIRCON_HANDLE_PROPERTIES_FUCHSIA, true, "VUID-vkGetMemoryZirconHandlePropertiesFUCHSIA-pMemoryZirconHandleProperties-parameter", "VUID-VkMemoryZirconHandlePropertiesFUCHSIA-sType-sType");
     if (pMemoryZirconHandleProperties != NULL)
     {
-        skip |= validate_struct_pnext("vkGetMemoryZirconHandlePropertiesFUCHSIA", "pMemoryZirconHandleProperties->pNext", NULL, pMemoryZirconHandleProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryZirconHandlePropertiesFUCHSIA-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetMemoryZirconHandlePropertiesFUCHSIA", "pMemoryZirconHandleProperties->pNext", NULL, pMemoryZirconHandleProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryZirconHandlePropertiesFUCHSIA-pNext-pNext", kVUIDUndefined, false, false);
     }
     return skip;
 }
@@ -14947,7 +15547,7 @@ bool StatelessValidation::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
     skip |= validate_struct_type("vkImportSemaphoreZirconHandleFUCHSIA", "pImportSemaphoreZirconHandleInfo", "VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_ZIRCON_HANDLE_INFO_FUCHSIA", pImportSemaphoreZirconHandleInfo, VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_ZIRCON_HANDLE_INFO_FUCHSIA, true, "VUID-vkImportSemaphoreZirconHandleFUCHSIA-pImportSemaphoreZirconHandleInfo-parameter", "VUID-VkImportSemaphoreZirconHandleInfoFUCHSIA-sType-sType");
     if (pImportSemaphoreZirconHandleInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkImportSemaphoreZirconHandleFUCHSIA", "pImportSemaphoreZirconHandleInfo->pNext", NULL, pImportSemaphoreZirconHandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImportSemaphoreZirconHandleInfoFUCHSIA-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkImportSemaphoreZirconHandleFUCHSIA", "pImportSemaphoreZirconHandleInfo->pNext", NULL, pImportSemaphoreZirconHandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImportSemaphoreZirconHandleInfoFUCHSIA-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkImportSemaphoreZirconHandleFUCHSIA", "pImportSemaphoreZirconHandleInfo->semaphore", pImportSemaphoreZirconHandleInfo->semaphore);
 
@@ -14969,7 +15569,7 @@ bool StatelessValidation::PreCallValidateGetSemaphoreZirconHandleFUCHSIA(
     skip |= validate_struct_type("vkGetSemaphoreZirconHandleFUCHSIA", "pGetZirconHandleInfo", "VK_STRUCTURE_TYPE_SEMAPHORE_GET_ZIRCON_HANDLE_INFO_FUCHSIA", pGetZirconHandleInfo, VK_STRUCTURE_TYPE_SEMAPHORE_GET_ZIRCON_HANDLE_INFO_FUCHSIA, true, "VUID-vkGetSemaphoreZirconHandleFUCHSIA-pGetZirconHandleInfo-parameter", "VUID-VkSemaphoreGetZirconHandleInfoFUCHSIA-sType-sType");
     if (pGetZirconHandleInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetSemaphoreZirconHandleFUCHSIA", "pGetZirconHandleInfo->pNext", NULL, pGetZirconHandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreGetZirconHandleInfoFUCHSIA-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetSemaphoreZirconHandleFUCHSIA", "pGetZirconHandleInfo->pNext", NULL, pGetZirconHandleInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreGetZirconHandleInfoFUCHSIA-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetSemaphoreZirconHandleFUCHSIA", "pGetZirconHandleInfo->semaphore", pGetZirconHandleInfo->semaphore);
 
@@ -15030,7 +15630,7 @@ bool StatelessValidation::PreCallValidateGetMemoryRemoteAddressNV(
     skip |= validate_struct_type("vkGetMemoryRemoteAddressNV", "pMemoryGetRemoteAddressInfo", "VK_STRUCTURE_TYPE_MEMORY_GET_REMOTE_ADDRESS_INFO_NV", pMemoryGetRemoteAddressInfo, VK_STRUCTURE_TYPE_MEMORY_GET_REMOTE_ADDRESS_INFO_NV, true, "VUID-vkGetMemoryRemoteAddressNV-pMemoryGetRemoteAddressInfo-parameter", "VUID-VkMemoryGetRemoteAddressInfoNV-sType-sType");
     if (pMemoryGetRemoteAddressInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetMemoryRemoteAddressNV", "pMemoryGetRemoteAddressInfo->pNext", NULL, pMemoryGetRemoteAddressInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryGetRemoteAddressInfoNV-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetMemoryRemoteAddressNV", "pMemoryGetRemoteAddressInfo->pNext", NULL, pMemoryGetRemoteAddressInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkMemoryGetRemoteAddressInfoNV-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetMemoryRemoteAddressNV", "pMemoryGetRemoteAddressInfo->memory", pMemoryGetRemoteAddressInfo->memory);
 
@@ -15107,7 +15707,7 @@ bool StatelessValidation::PreCallValidateCreateScreenSurfaceQNX(
     skip |= validate_struct_type("vkCreateScreenSurfaceQNX", "pCreateInfo", "VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX", pCreateInfo, VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX, true, "VUID-vkCreateScreenSurfaceQNX-pCreateInfo-parameter", "VUID-VkScreenSurfaceCreateInfoQNX-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateScreenSurfaceQNX", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkScreenSurfaceCreateInfoQNX-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCreateScreenSurfaceQNX", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkScreenSurfaceCreateInfoQNX-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_reserved_flags("vkCreateScreenSurfaceQNX", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkScreenSurfaceCreateInfoQNX-flags-zerobitmask");
     }
@@ -15224,7 +15824,7 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureKHR(
     {
         const VkStructureType allowed_structs_VkAccelerationStructureCreateInfoKHR[] = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MOTION_INFO_NV };
 
-        skip |= validate_struct_pnext("vkCreateAccelerationStructureKHR", "pCreateInfo->pNext", "VkAccelerationStructureMotionInfoNV", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkAccelerationStructureCreateInfoKHR), allowed_structs_VkAccelerationStructureCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureCreateInfoKHR-pNext-pNext", "VUID-VkAccelerationStructureCreateInfoKHR-sType-unique");
+        skip |= validate_struct_pnext("vkCreateAccelerationStructureKHR", "pCreateInfo->pNext", "VkAccelerationStructureMotionInfoNV", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkAccelerationStructureCreateInfoKHR), allowed_structs_VkAccelerationStructureCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureCreateInfoKHR-pNext-pNext", "VUID-VkAccelerationStructureCreateInfoKHR-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateAccelerationStructureKHR", "pCreateInfo->createFlags", "VkAccelerationStructureCreateFlagBitsKHR", AllVkAccelerationStructureCreateFlagBitsKHR, pCreateInfo->createFlags, kOptionalFlags, "VUID-VkAccelerationStructureCreateInfoKHR-createFlags-parameter");
 
@@ -15304,7 +15904,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresKHR(
     {
         for (uint32_t infoIndex = 0; infoIndex < infoCount; ++infoIndex)
         {
-            skip |= validate_struct_pnext("vkCmdBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].pNext", ParameterName::IndexVector{ infoIndex }), NULL, pInfos[infoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkCmdBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].pNext", ParameterName::IndexVector{ infoIndex }), NULL, pInfos[infoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_ranged_enum("vkCmdBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].type", ParameterName::IndexVector{ infoIndex }), "VkAccelerationStructureTypeKHR", AllVkAccelerationStructureTypeKHREnums, pInfos[infoIndex].type, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-parameter");
 
@@ -15316,7 +15916,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresKHR(
             {
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex)
                 {
-                    skip |= validate_struct_pnext("vkCmdBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].pGeometries[%i].pNext", ParameterName::IndexVector{ infoIndex, geometryIndex }), NULL, pInfos[infoIndex].pGeometries[geometryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkCmdBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].pGeometries[%i].pNext", ParameterName::IndexVector{ infoIndex, geometryIndex }), NULL, pInfos[infoIndex].pGeometries[geometryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     skip |= validate_ranged_enum("vkCmdBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].pGeometries[%i].geometryType", ParameterName::IndexVector{ infoIndex, geometryIndex }), "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pInfos[infoIndex].pGeometries[geometryIndex].geometryType, "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
 
@@ -15330,7 +15930,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresKHR(
             {
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex)
                 {
-                    skip |= validate_struct_pnext("vkCmdBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].ppGeometries[%i]->pNext", ParameterName::IndexVector{ infoIndex, geometryIndex }), NULL, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkCmdBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].ppGeometries[%i]->pNext", ParameterName::IndexVector{ infoIndex, geometryIndex }), NULL, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     skip |= validate_ranged_enum("vkCmdBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].ppGeometries[%i]->geometryType", ParameterName::IndexVector{ infoIndex, geometryIndex }), "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pInfos[infoIndex].ppGeometries[geometryIndex]->geometryType, "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
 
@@ -15368,7 +15968,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresIndirectK
     {
         for (uint32_t infoIndex = 0; infoIndex < infoCount; ++infoIndex)
         {
-            skip |= validate_struct_pnext("vkCmdBuildAccelerationStructuresIndirectKHR", ParameterName("pInfos[%i].pNext", ParameterName::IndexVector{ infoIndex }), NULL, pInfos[infoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkCmdBuildAccelerationStructuresIndirectKHR", ParameterName("pInfos[%i].pNext", ParameterName::IndexVector{ infoIndex }), NULL, pInfos[infoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_ranged_enum("vkCmdBuildAccelerationStructuresIndirectKHR", ParameterName("pInfos[%i].type", ParameterName::IndexVector{ infoIndex }), "VkAccelerationStructureTypeKHR", AllVkAccelerationStructureTypeKHREnums, pInfos[infoIndex].type, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-parameter");
 
@@ -15380,7 +15980,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresIndirectK
             {
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex)
                 {
-                    skip |= validate_struct_pnext("vkCmdBuildAccelerationStructuresIndirectKHR", ParameterName("pInfos[%i].pGeometries[%i].pNext", ParameterName::IndexVector{ infoIndex, geometryIndex }), NULL, pInfos[infoIndex].pGeometries[geometryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkCmdBuildAccelerationStructuresIndirectKHR", ParameterName("pInfos[%i].pGeometries[%i].pNext", ParameterName::IndexVector{ infoIndex, geometryIndex }), NULL, pInfos[infoIndex].pGeometries[geometryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     skip |= validate_ranged_enum("vkCmdBuildAccelerationStructuresIndirectKHR", ParameterName("pInfos[%i].pGeometries[%i].geometryType", ParameterName::IndexVector{ infoIndex, geometryIndex }), "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pInfos[infoIndex].pGeometries[geometryIndex].geometryType, "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
 
@@ -15394,7 +15994,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresIndirectK
             {
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex)
                 {
-                    skip |= validate_struct_pnext("vkCmdBuildAccelerationStructuresIndirectKHR", ParameterName("pInfos[%i].ppGeometries[%i]->pNext", ParameterName::IndexVector{ infoIndex, geometryIndex }), NULL, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkCmdBuildAccelerationStructuresIndirectKHR", ParameterName("pInfos[%i].ppGeometries[%i]->pNext", ParameterName::IndexVector{ infoIndex, geometryIndex }), NULL, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     skip |= validate_ranged_enum("vkCmdBuildAccelerationStructuresIndirectKHR", ParameterName("pInfos[%i].ppGeometries[%i]->geometryType", ParameterName::IndexVector{ infoIndex, geometryIndex }), "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pInfos[infoIndex].ppGeometries[geometryIndex]->geometryType, "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
 
@@ -15426,7 +16026,7 @@ bool StatelessValidation::PreCallValidateBuildAccelerationStructuresKHR(
     {
         for (uint32_t infoIndex = 0; infoIndex < infoCount; ++infoIndex)
         {
-            skip |= validate_struct_pnext("vkBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].pNext", ParameterName::IndexVector{ infoIndex }), NULL, pInfos[infoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pNext-pNext", kVUIDUndefined);
+            skip |= validate_struct_pnext("vkBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].pNext", ParameterName::IndexVector{ infoIndex }), NULL, pInfos[infoIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
             skip |= validate_ranged_enum("vkBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].type", ParameterName::IndexVector{ infoIndex }), "VkAccelerationStructureTypeKHR", AllVkAccelerationStructureTypeKHREnums, pInfos[infoIndex].type, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-parameter");
 
@@ -15438,7 +16038,7 @@ bool StatelessValidation::PreCallValidateBuildAccelerationStructuresKHR(
             {
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex)
                 {
-                    skip |= validate_struct_pnext("vkBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].pGeometries[%i].pNext", ParameterName::IndexVector{ infoIndex, geometryIndex }), NULL, pInfos[infoIndex].pGeometries[geometryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].pGeometries[%i].pNext", ParameterName::IndexVector{ infoIndex, geometryIndex }), NULL, pInfos[infoIndex].pGeometries[geometryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     skip |= validate_ranged_enum("vkBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].pGeometries[%i].geometryType", ParameterName::IndexVector{ infoIndex, geometryIndex }), "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pInfos[infoIndex].pGeometries[geometryIndex].geometryType, "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
 
@@ -15452,7 +16052,7 @@ bool StatelessValidation::PreCallValidateBuildAccelerationStructuresKHR(
             {
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex)
                 {
-                    skip |= validate_struct_pnext("vkBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].ppGeometries[%i]->pNext", ParameterName::IndexVector{ infoIndex, geometryIndex }), NULL, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].ppGeometries[%i]->pNext", ParameterName::IndexVector{ infoIndex, geometryIndex }), NULL, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     skip |= validate_ranged_enum("vkBuildAccelerationStructuresKHR", ParameterName("pInfos[%i].ppGeometries[%i]->geometryType", ParameterName::IndexVector{ infoIndex, geometryIndex }), "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pInfos[infoIndex].ppGeometries[geometryIndex]->geometryType, "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
 
@@ -15485,7 +16085,7 @@ bool StatelessValidation::PreCallValidateCopyAccelerationStructureKHR(
     skip |= validate_struct_type("vkCopyAccelerationStructureKHR", "pInfo", "VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR", pInfo, VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR, true, "VUID-vkCopyAccelerationStructureKHR-pInfo-parameter", "VUID-VkCopyAccelerationStructureInfoKHR-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCopyAccelerationStructureKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyAccelerationStructureInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCopyAccelerationStructureKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyAccelerationStructureInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCopyAccelerationStructureKHR", "pInfo->src", pInfo->src);
 
@@ -15509,7 +16109,7 @@ bool StatelessValidation::PreCallValidateCopyAccelerationStructureToMemoryKHR(
     skip |= validate_struct_type("vkCopyAccelerationStructureToMemoryKHR", "pInfo", "VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_TO_MEMORY_INFO_KHR", pInfo, VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_TO_MEMORY_INFO_KHR, true, "VUID-vkCopyAccelerationStructureToMemoryKHR-pInfo-parameter", "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCopyAccelerationStructureToMemoryKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCopyAccelerationStructureToMemoryKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCopyAccelerationStructureToMemoryKHR", "pInfo->src", pInfo->src);
 
@@ -15531,7 +16131,7 @@ bool StatelessValidation::PreCallValidateCopyMemoryToAccelerationStructureKHR(
     skip |= validate_struct_type("vkCopyMemoryToAccelerationStructureKHR", "pInfo", "VK_STRUCTURE_TYPE_COPY_MEMORY_TO_ACCELERATION_STRUCTURE_INFO_KHR", pInfo, VK_STRUCTURE_TYPE_COPY_MEMORY_TO_ACCELERATION_STRUCTURE_INFO_KHR, true, "VUID-vkCopyMemoryToAccelerationStructureKHR-pInfo-parameter", "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCopyMemoryToAccelerationStructureKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCopyMemoryToAccelerationStructureKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCopyMemoryToAccelerationStructureKHR", "pInfo->dst", pInfo->dst);
 
@@ -15572,7 +16172,7 @@ bool StatelessValidation::PreCallValidateCmdCopyAccelerationStructureKHR(
     skip |= validate_struct_type("vkCmdCopyAccelerationStructureKHR", "pInfo", "VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR", pInfo, VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR, true, "VUID-vkCmdCopyAccelerationStructureKHR-pInfo-parameter", "VUID-VkCopyAccelerationStructureInfoKHR-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdCopyAccelerationStructureKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyAccelerationStructureInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdCopyAccelerationStructureKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyAccelerationStructureInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCmdCopyAccelerationStructureKHR", "pInfo->src", pInfo->src);
 
@@ -15595,7 +16195,7 @@ bool StatelessValidation::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR
     skip |= validate_struct_type("vkCmdCopyAccelerationStructureToMemoryKHR", "pInfo", "VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_TO_MEMORY_INFO_KHR", pInfo, VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_TO_MEMORY_INFO_KHR, true, "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-pInfo-parameter", "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdCopyAccelerationStructureToMemoryKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdCopyAccelerationStructureToMemoryKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCmdCopyAccelerationStructureToMemoryKHR", "pInfo->src", pInfo->src);
 
@@ -15616,7 +16216,7 @@ bool StatelessValidation::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR
     skip |= validate_struct_type("vkCmdCopyMemoryToAccelerationStructureKHR", "pInfo", "VK_STRUCTURE_TYPE_COPY_MEMORY_TO_ACCELERATION_STRUCTURE_INFO_KHR", pInfo, VK_STRUCTURE_TYPE_COPY_MEMORY_TO_ACCELERATION_STRUCTURE_INFO_KHR, true, "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-pInfo-parameter", "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCmdCopyMemoryToAccelerationStructureKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkCmdCopyMemoryToAccelerationStructureKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkCmdCopyMemoryToAccelerationStructureKHR", "pInfo->dst", pInfo->dst);
 
@@ -15637,7 +16237,7 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureDeviceAddressKH
     skip |= validate_struct_type("vkGetAccelerationStructureDeviceAddressKHR", "pInfo", "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR", pInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR, true, "VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-parameter", "VUID-VkAccelerationStructureDeviceAddressInfoKHR-sType-sType");
     if (pInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetAccelerationStructureDeviceAddressKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureDeviceAddressInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetAccelerationStructureDeviceAddressKHR", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureDeviceAddressInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_handle("vkGetAccelerationStructureDeviceAddressKHR", "pInfo->accelerationStructure", pInfo->accelerationStructure);
     }
@@ -15675,7 +16275,7 @@ bool StatelessValidation::PreCallValidateGetDeviceAccelerationStructureCompatibi
     skip |= validate_struct_type("vkGetDeviceAccelerationStructureCompatibilityKHR", "pVersionInfo", "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_VERSION_INFO_KHR", pVersionInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_VERSION_INFO_KHR, true, "VUID-vkGetDeviceAccelerationStructureCompatibilityKHR-pVersionInfo-parameter", "VUID-VkAccelerationStructureVersionInfoKHR-sType-sType");
     if (pVersionInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetDeviceAccelerationStructureCompatibilityKHR", "pVersionInfo->pNext", NULL, pVersionInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureVersionInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetDeviceAccelerationStructureCompatibilityKHR", "pVersionInfo->pNext", NULL, pVersionInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureVersionInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_required_pointer("vkGetDeviceAccelerationStructureCompatibilityKHR", "pVersionInfo->pVersionData", pVersionInfo->pVersionData, "VUID-VkAccelerationStructureVersionInfoKHR-pVersionData-parameter");
     }
@@ -15699,7 +16299,7 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureBuildSizesKHR(
     skip |= validate_struct_type("vkGetAccelerationStructureBuildSizesKHR", "pBuildInfo", "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR", pBuildInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR, true, "VUID-vkGetAccelerationStructureBuildSizesKHR-pBuildInfo-parameter", "VUID-VkAccelerationStructureBuildGeometryInfoKHR-sType-sType");
     if (pBuildInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkGetAccelerationStructureBuildSizesKHR", "pBuildInfo->pNext", NULL, pBuildInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pNext-pNext", kVUIDUndefined);
+        skip |= validate_struct_pnext("vkGetAccelerationStructureBuildSizesKHR", "pBuildInfo->pNext", NULL, pBuildInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_ranged_enum("vkGetAccelerationStructureBuildSizesKHR", "pBuildInfo->type", "VkAccelerationStructureTypeKHR", AllVkAccelerationStructureTypeKHREnums, pBuildInfo->type, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-parameter");
 
@@ -15711,7 +16311,7 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureBuildSizesKHR(
         {
             for (uint32_t geometryIndex = 0; geometryIndex < pBuildInfo->geometryCount; ++geometryIndex)
             {
-                skip |= validate_struct_pnext("vkGetAccelerationStructureBuildSizesKHR", ParameterName("pBuildInfo->pGeometries[%i].pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pBuildInfo->pGeometries[geometryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkGetAccelerationStructureBuildSizesKHR", ParameterName("pBuildInfo->pGeometries[%i].pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pBuildInfo->pGeometries[geometryIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_ranged_enum("vkGetAccelerationStructureBuildSizesKHR", ParameterName("pBuildInfo->pGeometries[%i].geometryType", ParameterName::IndexVector{ geometryIndex }), "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pBuildInfo->pGeometries[geometryIndex].geometryType, "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
 
@@ -15725,7 +16325,7 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureBuildSizesKHR(
         {
             for (uint32_t geometryIndex = 0; geometryIndex < pBuildInfo->geometryCount; ++geometryIndex)
             {
-                skip |= validate_struct_pnext("vkGetAccelerationStructureBuildSizesKHR", ParameterName("pBuildInfo->ppGeometries[%i]->pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pBuildInfo->ppGeometries[geometryIndex]->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkGetAccelerationStructureBuildSizesKHR", ParameterName("pBuildInfo->ppGeometries[%i]->pNext", ParameterName::IndexVector{ geometryIndex }), NULL, pBuildInfo->ppGeometries[geometryIndex]->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_ranged_enum("vkGetAccelerationStructureBuildSizesKHR", ParameterName("pBuildInfo->ppGeometries[%i]->geometryType", ParameterName::IndexVector{ geometryIndex }), "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pBuildInfo->ppGeometries[geometryIndex]->geometryType, "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
 
@@ -15799,7 +16399,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(
         {
             const VkStructureType allowed_structs_VkRayTracingPipelineCreateInfoKHR[] = { VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO_EXT };
 
-            skip |= validate_struct_pnext("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pNext", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineCreationFeedbackCreateInfoEXT", pCreateInfos[createInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkRayTracingPipelineCreateInfoKHR), allowed_structs_VkRayTracingPipelineCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkRayTracingPipelineCreateInfoKHR-pNext-pNext", "VUID-VkRayTracingPipelineCreateInfoKHR-sType-unique");
+            skip |= validate_struct_pnext("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pNext", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineCreationFeedbackCreateInfoEXT", pCreateInfos[createInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkRayTracingPipelineCreateInfoKHR), allowed_structs_VkRayTracingPipelineCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkRayTracingPipelineCreateInfoKHR-pNext-pNext", "VUID-VkRayTracingPipelineCreateInfoKHR-sType-unique", false, true);
 
             skip |= validate_flags("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].flags", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits, pCreateInfos[createInfoIndex].flags, kOptionalFlags, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-parameter");
 
@@ -15811,7 +16411,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(
                 {
                     const VkStructureType allowed_structs_VkPipelineShaderStageCreateInfo[] = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT };
 
-                    skip |= validate_struct_pnext("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pStages[%i].pNext", ParameterName::IndexVector{ createInfoIndex, stageIndex }), "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT", pCreateInfos[createInfoIndex].pStages[stageIndex].pNext, ARRAY_SIZE(allowed_structs_VkPipelineShaderStageCreateInfo), allowed_structs_VkPipelineShaderStageCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkPipelineShaderStageCreateInfo-pNext-pNext", "VUID-VkPipelineShaderStageCreateInfo-sType-unique");
+                    skip |= validate_struct_pnext("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pStages[%i].pNext", ParameterName::IndexVector{ createInfoIndex, stageIndex }), "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT", pCreateInfos[createInfoIndex].pStages[stageIndex].pNext, ARRAY_SIZE(allowed_structs_VkPipelineShaderStageCreateInfo), allowed_structs_VkPipelineShaderStageCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkPipelineShaderStageCreateInfo-pNext-pNext", "VUID-VkPipelineShaderStageCreateInfo-sType-unique", false, true);
 
                     skip |= validate_flags("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pStages[%i].flags", ParameterName::IndexVector{ createInfoIndex, stageIndex }), "VkPipelineShaderStageCreateFlagBits", AllVkPipelineShaderStageCreateFlagBits, pCreateInfos[createInfoIndex].pStages[stageIndex].flags, kOptionalFlags, "VUID-VkPipelineShaderStageCreateInfo-flags-parameter");
 
@@ -15844,7 +16444,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(
             {
                 for (uint32_t groupIndex = 0; groupIndex < pCreateInfos[createInfoIndex].groupCount; ++groupIndex)
                 {
-                    skip |= validate_struct_pnext("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pGroups[%i].pNext", ParameterName::IndexVector{ createInfoIndex, groupIndex }), NULL, pCreateInfos[createInfoIndex].pGroups[groupIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkRayTracingShaderGroupCreateInfoKHR-pNext-pNext", kVUIDUndefined);
+                    skip |= validate_struct_pnext("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pGroups[%i].pNext", ParameterName::IndexVector{ createInfoIndex, groupIndex }), NULL, pCreateInfos[createInfoIndex].pGroups[groupIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkRayTracingShaderGroupCreateInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                     skip |= validate_ranged_enum("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pGroups[%i].type", ParameterName::IndexVector{ createInfoIndex, groupIndex }), "VkRayTracingShaderGroupTypeKHR", AllVkRayTracingShaderGroupTypeKHREnums, pCreateInfos[createInfoIndex].pGroups[groupIndex].type, "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-parameter");
                 }
@@ -15854,7 +16454,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(
 
             if (pCreateInfos[createInfoIndex].pLibraryInfo != NULL)
             {
-                skip |= validate_struct_pnext("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pLibraryInfo->pNext", ParameterName::IndexVector{ createInfoIndex }), NULL, pCreateInfos[createInfoIndex].pLibraryInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineLibraryCreateInfoKHR-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pLibraryInfo->pNext", ParameterName::IndexVector{ createInfoIndex }), NULL, pCreateInfos[createInfoIndex].pLibraryInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineLibraryCreateInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_array("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pLibraryInfo->libraryCount", ParameterName::IndexVector{ createInfoIndex }), ParameterName("pCreateInfos[%i].pLibraryInfo->pLibraries", ParameterName::IndexVector{ createInfoIndex }), pCreateInfos[createInfoIndex].pLibraryInfo->libraryCount, &pCreateInfos[createInfoIndex].pLibraryInfo->pLibraries, false, true, kVUIDUndefined, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter");
             }
@@ -15863,14 +16463,14 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(
 
             if (pCreateInfos[createInfoIndex].pLibraryInterface != NULL)
             {
-                skip |= validate_struct_pnext("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pLibraryInterface->pNext", ParameterName::IndexVector{ createInfoIndex }), NULL, pCreateInfos[createInfoIndex].pLibraryInterface->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkRayTracingPipelineInterfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pLibraryInterface->pNext", ParameterName::IndexVector{ createInfoIndex }), NULL, pCreateInfos[createInfoIndex].pLibraryInterface->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkRayTracingPipelineInterfaceCreateInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
             }
 
             skip |= validate_struct_type("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pDynamicState", ParameterName::IndexVector{ createInfoIndex }), "VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO", pCreateInfos[createInfoIndex].pDynamicState, VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, false, "VUID-VkRayTracingPipelineCreateInfoKHR-pDynamicState-parameter", "VUID-VkPipelineDynamicStateCreateInfo-sType-sType");
 
             if (pCreateInfos[createInfoIndex].pDynamicState != NULL)
             {
-                skip |= validate_struct_pnext("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pDynamicState->pNext", ParameterName::IndexVector{ createInfoIndex }), NULL, pCreateInfos[createInfoIndex].pDynamicState->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineDynamicStateCreateInfo-pNext-pNext", kVUIDUndefined);
+                skip |= validate_struct_pnext("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pDynamicState->pNext", ParameterName::IndexVector{ createInfoIndex }), NULL, pCreateInfos[createInfoIndex].pDynamicState->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPipelineDynamicStateCreateInfo-pNext-pNext", kVUIDUndefined, false, true);
 
                 skip |= validate_reserved_flags("vkCreateRayTracingPipelinesKHR", ParameterName("pCreateInfos[%i].pDynamicState->flags", ParameterName::IndexVector{ createInfoIndex }), pCreateInfos[createInfoIndex].pDynamicState->flags, "VUID-VkPipelineDynamicStateCreateInfo-flags-zerobitmask");
 

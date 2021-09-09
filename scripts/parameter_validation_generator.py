@@ -27,8 +27,22 @@ from generator import *
 from collections import namedtuple
 from common_codegen import *
 
-# This is a workaround to use a Python 2.7 and 3.x compatible syntax.
-from io import open
+# Helper for iterating over a list where each element is possibly a single element or another 1-dimensional list
+# Generates (setter, deleter, element) for each element where:
+#  - element = the next element in the list
+#  - setter(x) = a function that will set the entry in `lines` corresponding to `element` to `x`
+#  - deleter() = a function that will delete the entry corresponding to `element` in `lines`
+def multi_string_iter(lines):
+    for i, ul in enumerate(lines):
+        if not isinstance(ul, list):
+            def setter(x): lines[i] = x
+            def deleter(): del(lines[i])
+            yield (setter, deleter, ul)
+        else:
+            for j, l in enumerate(lines[i]):
+                def setter(x): lines[i][j] = x
+                def deleter(): del(lines[i][j])
+                yield (setter, deleter, l)
 
 # ParameterValidationGeneratorOptions - subclass of GeneratorOptions.
 #
@@ -483,7 +497,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             write(api_func, file=self.outFile)
 
             pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,\n'
-            pnext_handler += '                                                      const VkBaseOutStructure* header, const char *pnext_vuid, bool is_physdev_api) const {\n'
+            pnext_handler += '                                                      const VkBaseOutStructure* header, const char *pnext_vuid, bool is_physdev_api, bool is_const_param) const {\n'
             pnext_handler += '    bool skip = false;\n'
             pnext_handler += '    switch(header->sType) {\n'
 
@@ -514,8 +528,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         ver_info = self.stype_version_dict[struct_type[:-4]]
                     else:
                         ver_info = None
+                api_check = False
                 if ver_info is not None:
                     if 'VK_API_VERSION_' in ver_info:
+                        api_check = True
                         api_version = ver_info;
                         pnext_check += '            if (api_version < %s) {\n' % ver_info
                         pnext_check += '                skip |= LogError(\n'
@@ -535,21 +551,25 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                             table_type = 'device'
                         else:
                             print("Error in parameter_validation_generator.py CodeGen.")
+                        pnext_check += '            if (is_const_param) {\n'
                         if table_type == 'device':
-                            pnext_check += f'            if ((is_physdev_api && !SupportedByPdev(physical_device, {ext_name_define})) || (!is_physdev_api && !{table_type}_extensions.{ext_name.lower()})) {{\n'
+                            pnext_check += f'                if ((is_physdev_api && !SupportedByPdev(physical_device, {ext_name_define})) || (!is_physdev_api && !{table_type}_extensions.{ext_name.lower()})) {{\n'
                         else:
-                            pnext_check += '            if (!%s_extensions.%s) {\n' % (table_type, ext_name.lower())
-                        pnext_check += '                skip |= LogError(\n'
-                        pnext_check += '                           instance, pnext_vuid,\n'
-                        pnext_check += '                           "%%s: Includes a pNext pointer (%%s) to a VkStructureType (%s), but its parent extension "\n' % struct_type
-                        pnext_check += '                           "%s has not been enabled.",\n' % ext_name
-                        pnext_check += '                           api_name, parameter_name.get_name().c_str());\n'
+                            pnext_check += '                if (!%s_extensions.%s) {\n' % (table_type, ext_name.lower())
+                        pnext_check += '                        skip |= LogError(\n'
+                        pnext_check += '                               instance, pnext_vuid,\n'
+                        pnext_check += '                               "%%s: Includes a pNext pointer (%%s) to a VkStructureType (%s), but its parent extension "\n' % struct_type
+                        pnext_check += '                               "%s has not been enabled.",\n' % ext_name
+                        pnext_check += '                               api_name, parameter_name.get_name().c_str());\n'
+                        pnext_check += '                }\n'
                         pnext_check += '            }\n'
                         pnext_check += '\n'
-                expr = self.expandStructCode(item, item, 'structure->', '', '            ', [], postProcSpec)
+                expr = self.expandStructCode(item, item, 'structure->', '', '                ', [], postProcSpec)
                 struct_validation_source = self.ScrubStructCode(expr)
                 if struct_validation_source != '':
-                    pnext_case += '            %s *structure = (%s *) header;\n' % (item, item)
+                    pnext_check += '            if (is_const_param) {\n'
+                    struct_validation_source = '                %s *structure = (%s *) header;\n' % (item, item) + struct_validation_source
+                    struct_validation_source += '            }\n'
                 pnext_case += '%s%s' % (pnext_check, struct_validation_source)
                 pnext_case += '        } break;\n'
                 if protect:
@@ -1330,6 +1350,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         lines = []    # Generated lines of code
         unused = []   # Unused variable names
         duplicateCountVuid = [] # prevent duplicate VUs being generated
+
+        # TODO Using a regex in this context is not ideal. Would be nicer if usedLines were a list of objects with "settings" (such as "is_phys_device")
+        validate_pnext_rx = re.compile(r'(.*validate_struct_pnext\(.*)(\).*\n*)', re.M)
+
         for value in values:
             usedLines = []
             lenParam = None
@@ -1424,19 +1448,13 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         elif value.type in self.returnedonly_structs:
                             usedLines.append(self.expandStructPointerCode(valuePrefix, value, lenParam, funcName, valueDisplayName, postProcSpec))
 
-                    if is_phys_device:
-                        # TODO Using a regex in this context is not ideal. Would be nicer if usedLines were a list of objects with "settings" (such as "is_phys_device")
-                        rx = re.compile(r'(.*validate_struct_pnext\(.*)(\).*\n*)', re.M)
-                        for i, ul in enumerate(usedLines):
-                            if isinstance(ul, str):
-                                m = rx.match(ul)
-                                if m is not None:
-                                    usedLines[i] = f'{m.group(1)}, true{m.group(2)}'
-                            elif isinstance(ul, list):
-                                for j, l in enumerate(usedLines[i]):
-                                    m = rx.match(l)
-                                    if m is not None:
-                                        usedLines[i][j] = f'{m.group(1)}, true{m.group(2)}'
+                    is_const_str = 'true' if value.isconst else 'false'
+                    is_phys_device_str = 'true' if is_phys_device else 'false'
+                    for setter, _, elem in multi_string_iter(usedLines):
+                        elem = re.sub(r', (true|false)', '', elem)
+                        m = validate_pnext_rx.match(elem)
+                        if m is not None:
+                            setter(f'{m.group(1)}, {is_phys_device_str}, {is_const_str}{m.group(2)}')
 
             # Non-pointer types
             else:
