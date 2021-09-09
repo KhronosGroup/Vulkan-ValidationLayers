@@ -530,7 +530,7 @@ class StatelessValidation : public ValidationObject {
     bool SupportedByPdev(const VkPhysicalDevice physical_device, const std::string ext_name) const;
 
     bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure *header,
-                                     const char *pnext_vuid, bool is_physdev_api = false) const;
+                                     const char *pnext_vuid, bool is_physdev_api = false, bool is_const_param = true) const;
 
     /**
      * Validate a structure's pNext member.
@@ -551,7 +551,7 @@ class StatelessValidation : public ValidationObject {
     bool validate_struct_pnext(const char *api_name, const ParameterName &parameter_name, const char *allowed_struct_names,
                                const void *next, size_t allowed_type_count, const VkStructureType *allowed_types,
                                uint32_t header_version, const char *pnext_vuid, const char *stype_vuid,
-                               bool is_physdev_api = false) const {
+                               const bool is_physdev_api = false, const bool is_const_param = true) const {
         bool skip_call = false;
 
         if (next != nullptr) {
@@ -617,7 +617,8 @@ class StatelessValidation : public ValidationObject {
                                                           allowed_struct_names, header_version, parameter_name.get_name().c_str());
                                 }
                             }
-                            skip_call |= ValidatePnextStructContents(api_name, parameter_name, current, pnext_vuid, is_physdev_api);
+                            skip_call |= ValidatePnextStructContents(api_name, parameter_name, current, pnext_vuid, is_physdev_api,
+                                                                     is_const_param);
                         }
                     }
                     current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
