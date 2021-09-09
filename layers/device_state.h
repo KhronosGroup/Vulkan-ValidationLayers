@@ -99,17 +99,12 @@ class PHYSICAL_DEVICE_STATE : public BASE_NODE {
   public:
     uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
     const std::vector<VkQueueFamilyProperties> queue_family_properties;
-    VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
-    std::vector<VkPresentModeKHR> present_modes;
-    std::vector<VkSurfaceFormatKHR> surface_formats;
+    // TODO These are currently used by CoreChecks, but should probably be refactored
+    bool vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
     uint32_t display_plane_property_count = 0;
 
     // Map of queue family index to QUEUE_FAMILY_PERF_COUNTERS
     layer_data::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
-
-    // TODO These are currently used by CoreChecks, but should probably be refactored
-    bool vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = false;
-    bool vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
 
     PHYSICAL_DEVICE_STATE(VkPhysicalDevice phys_dev)
         : BASE_NODE(phys_dev, kVulkanObjectTypePhysicalDevice), queue_family_properties(GetQueueFamilyProps(phys_dev)) {}

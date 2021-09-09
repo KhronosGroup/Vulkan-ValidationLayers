@@ -249,6 +249,7 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     const safe_VkImageCreateInfo image_create_info;
     std::shared_ptr<SURFACE_STATE> surface;
     ValidationStateTracker *dev_data;
+    const VkSurfaceCapabilitiesKHR surface_capabilities;
 
     SWAPCHAIN_NODE(ValidationStateTracker *dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
 
