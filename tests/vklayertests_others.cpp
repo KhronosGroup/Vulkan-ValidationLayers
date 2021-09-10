@@ -12581,10 +12581,18 @@ TEST_F(VkLayerTest, InvalidCmdEndQueryIndexedEXTIndex) {
     fpCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), tf_query_pool, 0, 0, 0);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQueryIndexedEXT-queryType-02346");
     fpCmdEndQueryIndexedEXT(m_commandBuffer->handle(), tf_query_pool, 0, transform_feedback_properties.maxTransformFeedbackStreams);
+
     fpCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool, 0, 0, 0);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQueryIndexedEXT-queryType-02347");
     fpCmdEndQueryIndexedEXT(m_commandBuffer->handle(), query_pool, 0, 1);
     m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQueryIndexedEXT-None-02342");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQueryIndexedEXT-query-02343");
+    fpCmdEndQueryIndexedEXT(m_commandBuffer->handle(), query_pool, 1, 0);
+    m_errorMonitor->VerifyFound();
+
+    fpCmdEndQueryIndexedEXT(m_commandBuffer->handle(), query_pool, 0, 0);
     m_commandBuffer->end();
 }
 
