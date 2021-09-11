@@ -84,6 +84,7 @@ struct DrawDispatchVuid {
     const char* vertex_input_binding_stride = kVUIDUndefined;
     const char* vertex_input = kVUIDUndefined;
     const char* blend_enable = kVUIDUndefined;
+    const char* count_buffer_offset = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
@@ -383,6 +384,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdSubpassState(const CMD_BUFFER_STATE* pCB, const CMD_TYPE cmd_type) const;
     bool ValidateCmd(const CMD_BUFFER_STATE* cb_state, const CMD_TYPE cmd, const char* caller_name) const;
     bool ValidateIndirectCmd(VkCommandBuffer command_buffer, VkBuffer buffer, CMD_TYPE cmd_type, const char* caller_name) const;
+    bool ValidateIndirectCountCmd(VkBuffer countBuffer, VkDeviceSize countBufferOffset, const char* caller_name,
+                                  CMD_TYPE cmd_type) const;
 
     template <typename T1>
     bool ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const T1 object, const char* VUID) const;

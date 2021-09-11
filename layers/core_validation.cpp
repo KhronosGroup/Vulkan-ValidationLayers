@@ -2479,6 +2479,24 @@ bool CoreChecks::ValidateIndirectCmd(VkCommandBuffer command_buffer, VkBuffer bu
     return skip;
 }
 
+bool CoreChecks::ValidateIndirectCountCmd(VkBuffer countBuffer, VkDeviceSize countBufferOffset, const char *caller_name,
+                                          CMD_TYPE cmd_type) const {
+    bool skip = false;
+
+    const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
+
+    if (count_buffer_state) {
+        if (countBufferOffset + sizeof(uint32_t) > count_buffer_state->createInfo.size) {
+            const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+            skip |= LogError(countBuffer, vuid.count_buffer_offset,
+                             "%s: countBufferOffset %" PRIu64 " + 4 is greater than the size of countBuffer %" PRIu64 ".",
+                             caller_name, countBufferOffset, count_buffer_state->createInfo.size);
+        }
+    }
+
+    return skip;
+}
+
 template <typename T1>
 bool CoreChecks::ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const T1 object, const char *VUID) const {
     bool skip = false;
