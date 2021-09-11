@@ -6234,6 +6234,12 @@ TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer, 0, count_buffer.handle(), 0, 1, 1);
     m_errorMonitor->VerifyFound();
 
+    // VUID-vkCmdDrawIndirectCount-countBufferOffset-04129
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBufferOffset-04129");
+    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer, 0, count_buffer.handle(), count_buffer_create_info.size, 1,
+                              sizeof(VkDrawIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
     // TODO: These covered VUIDs aren't tested. There is also no test coverage for the core Vulkan 1.0 vk::CmdDraw* equivalent of
     // these:
     //     VUID-vkCmdDrawIndirectCount-renderPass-02684
