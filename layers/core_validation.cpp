@@ -15602,9 +15602,23 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
 
     {
         auto const cb_state = GetCBState(commandBuffer);
-        if (cb_state->transform_feedback_active) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-None-02367", "%s: transform feedback is active.",
-                             cmd_name);
+        if (cb_state) {
+            if (cb_state->transform_feedback_active) {
+                skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-None-02367",
+                                 "%s: transform feedback is active.", cmd_name);
+            }
+            if (cb_state->activeRenderPass) {
+                const auto &rp_ci = cb_state->activeRenderPass->createInfo;
+                for (uint32_t i = 0; i < rp_ci.subpassCount; ++i) {
+                    // When a subpass uses a non-zero view mask, multiview functionality is considered to be enabled
+                    if (rp_ci.pSubpasses[i].viewMask > 0) {
+                        skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-None-02373",
+                                         "%s: active render pass (%s) has multiview enabled.", cmd_name,
+                                         report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                        break;
+                    }
+                }
+            }
         }
     }
 
