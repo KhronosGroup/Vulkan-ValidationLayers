@@ -1947,11 +1947,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
     if (device_extensions.vk_khr_maintenance2) {
         if (pCreateInfo->flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
-            if (!(FormatIsCompressed_BC(pCreateInfo->format) || FormatIsCompressed_ASTC(pCreateInfo->format) ||
-                  FormatIsCompressed_ETC2_EAC(pCreateInfo->format))) {
+            if (!FormatIsCompressed(pCreateInfo->format)) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-flags-01572",
                                  "vkCreateImage(): If pCreateInfo->flags contains VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT, "
-                                 "format must be block, ETC or ASTC compressed, but is %s",
+                                 "format must be a compressed image format, but is %s",
                                  string_VkFormat(pCreateInfo->format));
             }
             if (!(pCreateInfo->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
