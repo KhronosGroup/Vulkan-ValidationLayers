@@ -493,9 +493,9 @@ class CoreChecks : public ValidationStateTracker {
                                   const char* func_name, std::string* error_code, std::string* error_msg) const;
     // Validate contents of a WriteUpdate
     bool ValidateWriteUpdate(const DescriptorSet* descriptor_set, const VkWriteDescriptorSet* update, const char* func_name,
-                             std::string* error_code, std::string* error_msg) const;
+                             std::string* error_code, std::string* error_msg, bool push) const;
     bool VerifyWriteUpdateContents(const DescriptorSet* dest_set, const VkWriteDescriptorSet* update, const uint32_t index,
-                                   const char* func_name, std::string* error_code, std::string* error_msg) const;
+                                   const char* func_name, std::string* error_code, std::string* error_msg, bool push) const;
     // Shared helper functions - These are useful because the shared sampler image descriptor type
     //  performs common functions with both sampler and image descriptors so they can share their common functions
     bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, const char* func_name, std::string*, std::string*) const;
