@@ -2531,7 +2531,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWrit
         } else {
             std::string error_code;
             std::string error_str;
-            if (!ValidateWriteUpdate(set_node, &p_wds[i], func_name, &error_code, &error_str)) {
+            if (!ValidateWriteUpdate(set_node, &p_wds[i], func_name, &error_code, &error_str, false)) {
                 skip |=
                     LogError(dest_set, error_code, "%s pDescriptorWrites[%u] failed write update validation for %s with error: %s.",
                              func_name, i, report_data->FormatHandle(dest_set).c_str(), error_str.c_str());
@@ -2756,7 +2756,7 @@ bool CoreChecks::ValidatePushDescriptorsUpdate(const DescriptorSet *push_set, ui
     for (uint32_t i = 0; i < write_count; i++) {
         std::string error_code;
         std::string error_str;
-        if (!ValidateWriteUpdate(push_set, &p_wds[i], func_name, &error_code, &error_str)) {
+        if (!ValidateWriteUpdate(push_set, &p_wds[i], func_name, &error_code, &error_str, true)) {
             skip |= LogError(push_set->GetDescriptorSetLayout(), error_code,
                              "%s VkWriteDescriptorSet[%u] failed update validation: %s.", func_name, i, error_str.c_str());
         }
@@ -3257,7 +3257,7 @@ bool cvdescriptorset::VerifyUpdateConsistency(debug_report_data *report_data,
 // Validate the state for a given write update but don't actually perform the update
 //  If an error would occur for this update, return false and fill in details in error_msg string
 bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update, const char *func_name,
-                                     std::string *error_code, std::string *error_msg) const {
+                                     std::string *error_code, std::string *error_msg, bool push) const {
     const auto dest_layout = dest_set->GetLayout().get();
 
     // Verify dst layout still valid
@@ -3425,7 +3425,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
         }
     }
     // Update is within bounds and consistent so last step is to validate update contents
-    if (!VerifyWriteUpdateContents(dest_set, update, start_idx, func_name, error_code, error_msg)) {
+    if (!VerifyWriteUpdateContents(dest_set, update, start_idx, func_name, error_code, error_msg, push)) {
         std::stringstream error_str;
         error_str << "Write update to " << dest_set->StringifySetAndLayout() << " binding #" << update->dstBinding
                   << " failed with error message: " << error_msg->c_str();
@@ -3438,7 +3438,8 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
 
 // Verify that the contents of the update are ok, but don't perform actual update
 bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update, const uint32_t index,
-                                           const char *func_name, std::string *error_code, std::string *error_msg) const {
+                                           const char *func_name, std::string *error_code, std::string *error_msg,
+                                           bool push) const {
     using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
     using Descriptor = cvdescriptorset::Descriptor;
 
@@ -3545,7 +3546,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                         *error_msg = error_str.str();
                         return false;
                     }
-                } else if (update->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) {
+                } else if (update->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER && !push) {
                     *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02752";
                     std::stringstream error_str;
                     error_str << "Attempted write update to an immutable sampler descriptor.";
