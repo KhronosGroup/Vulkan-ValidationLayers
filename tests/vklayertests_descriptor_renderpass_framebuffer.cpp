@@ -10259,8 +10259,12 @@ TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
         allocInfo.descriptorSetCount = 1;
         allocInfo.descriptorPool = descPool.handle();
 
+        // The Galaxy S10 device used in LunarG CI fails to allocate this descriptor set
         res = vk::AllocateDescriptorSets(m_device->device(), &allocInfo, &descSetHandle);
-        ASSERT_EQ(res, VK_SUCCESS);
+        if (res != VK_SUCCESS) {
+            printf("%s vkAllocateDescriptorSets failed with error %d, skipping test.\n", kSkipPrefix, res);
+            return;
+        }
     }
     vk_testing::DescriptorSet descSet(*m_device, &descPool, descSetHandle);
 
