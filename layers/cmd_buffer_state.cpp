@@ -1156,35 +1156,44 @@ void CMD_BUFFER_STATE::RecordWriteTimestamp(CMD_TYPE cmd_type, VkPipelineStageFl
     EndQuery(query);
 }
 
-void ValidationStateTracker::RecordSubmitCommandBuffer(CB_SUBMISSION &submission, VkCommandBuffer command_buffer) {
-    auto cb_node = Get<CMD_BUFFER_STATE>(command_buffer);
-    if (cb_node) {
-        submission.cbs.push_back(command_buffer);
-        for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
-            submission.cbs.push_back(secondary_cmd_buffer->commandBuffer());
-            secondary_cmd_buffer->IncrementResources();
-        }
-        cb_node->IncrementResources();
-        // increment use count for all bound objects including secondary cbs
-        cb_node->BeginUse();
+void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
+    VkQueryPool first_pool = VK_NULL_HANDLE;
+    EventToStageMap local_event_to_stage_map;
+    QueryMap local_query_to_state_map;
+    for (auto &function : queryUpdates) {
+        function(nullptr, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
+    }
 
-        VkQueryPool first_pool = VK_NULL_HANDLE;
-        EventToStageMap local_event_to_stage_map;
-        QueryMap local_query_to_state_map;
-        for (auto &function : cb_node->queryUpdates) {
-            function(nullptr, /*do_validate*/ false, first_pool, submission.perf_submit_pass, &local_query_to_state_map);
-        }
+    for (const auto &query_state_pair : local_query_to_state_map) {
+        dev_data->queryToStateMap[query_state_pair.first] = query_state_pair.second;
+    }
 
-        for (const auto &query_state_pair : local_query_to_state_map) {
-            queryToStateMap[query_state_pair.first] = query_state_pair.second;
-        }
+    for (const auto &function : eventUpdates) {
+        function(nullptr, /*do_validate*/ false, &local_event_to_stage_map);
+    }
 
-        for (const auto &function : cb_node->eventUpdates) {
-            function(nullptr, /*do_validate*/ false, &local_event_to_stage_map);
-        }
+    for (const auto &eventStagePair : local_event_to_stage_map) {
+        dev_data->eventMap[eventStagePair.first]->stageMask = eventStagePair.second;
+    }
+}
 
-        for (const auto &eventStagePair : local_event_to_stage_map) {
-            eventMap[eventStagePair.first]->stageMask = eventStagePair.second;
+void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass) {
+    // First perform decrement on general case bound objects
+    for (auto event : writeEventsBeforeWait) {
+        auto event_node = dev_data->eventMap.find(event);
+        if (event_node != dev_data->eventMap.end()) {
+            event_node->second->write_in_use--;
+        }
+    }
+    QueryMap local_query_to_state_map;
+    VkQueryPool first_pool = VK_NULL_HANDLE;
+    for (auto &function : queryUpdates) {
+        function(nullptr, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
+    }
+
+    for (const auto &query_state_pair : local_query_to_state_map) {
+        if (query_state_pair.second == QUERYSTATE_ENDED) {
+            dev_data->queryToStateMap[query_state_pair.first] = QUERYSTATE_AVAILABLE;
         }
     }
 }
