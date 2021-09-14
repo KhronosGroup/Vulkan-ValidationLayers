@@ -1902,8 +1902,20 @@ uint32_t SHADER_MODULE_STATE::CalcComputeSharedMemory(VkShaderStageFlagBits stag
     return 0;
 }
 
-// Assumes itr points to an OpConstant instruction
-uint32_t GetConstantValue(const spirv_inst_iter &itr) { return itr.word(3); }
+uint32_t SHADER_MODULE_STATE::GetConstantValue(const spirv_inst_iter &iter) const {
+    const uint32_t opcode = iter.opcode();
+    if (opcode == spv::OpConstant || opcode == spv::OpSpecConstant) {
+        return iter.word(3);
+    } else if (opcode == spv::OpSpecConstantOp) {
+        auto spec_constant_op = iter.word(3);
+        if (spec_constant_op == spv::OpSelect) {
+            uint32_t left = GetConstantValue(get_def(iter.word(5)));
+            uint32_t right = GetConstantValue(get_def(iter.word(6)));
+            return std::max(left, right);
+        }
+    }
+    return 0;
+}
 
 std::vector<uint32_t> FindEntrypointInterfaces(const spirv_inst_iter &entrypoint) {
     assert(entrypoint.opcode() == spv::OpEntryPoint);
