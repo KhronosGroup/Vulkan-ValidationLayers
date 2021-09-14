@@ -37,13 +37,13 @@ void ValidationStateTracker::RecordSubmitWaitSemaphore(CB_SUBMISSION &submission
             wait.semaphore = semaphore;
             wait.type = semaphore_state->type;
             if (semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY) {
-                if (semaphore_state->signaler.first != VK_NULL_HANDLE) {
-                    wait.queue = semaphore_state->signaler.first;
-                    wait.seq = semaphore_state->signaler.second;
+                if (semaphore_state->signaler.queue != VK_NULL_HANDLE) {
+                    wait.queue = semaphore_state->signaler.queue;
+                    wait.seq = semaphore_state->signaler.seq;
                     submission.waitSemaphores.emplace_back(std::move(wait));
                     semaphore_state->BeginUse();
                 }
-                semaphore_state->signaler.first = VK_NULL_HANDLE;
+                semaphore_state->signaler.queue = VK_NULL_HANDLE;
                 semaphore_state->signaled = false;
             } else if (semaphore_state->payload < value) {
                 wait.queue = queue;
@@ -72,8 +72,8 @@ bool ValidationStateTracker::RecordSubmitSignalSemaphore(CB_SUBMISSION &submissi
             signal.semaphore = semaphore;
             signal.seq = next_seq;
             if (semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY) {
-                semaphore_state->signaler.first = queue;
-                semaphore_state->signaler.second = next_seq;
+                semaphore_state->signaler.queue = queue;
+                semaphore_state->signaler.seq = next_seq;
                 semaphore_state->signaled = true;
             } else {
                 signal.payload = value;
@@ -92,8 +92,8 @@ bool ValidationStateTracker::RecordSubmitSignalSemaphore(CB_SUBMISSION &submissi
 // work by it.
 static void SubmitFence(QUEUE_STATE *pQueue, FENCE_STATE *pFence, uint64_t submitCount) {
     pFence->state = FENCE_INFLIGHT;
-    pFence->signaler.first = pQueue->Queue();
-    pFence->signaler.second = pQueue->seq + pQueue->submissions.size() + submitCount;
+    pFence->signaler.queue = pQueue->Queue();
+    pFence->signaler.seq = pQueue->seq + pQueue->submissions.size() + submitCount;
 }
 
 uint64_t ValidationStateTracker::RecordSubmitFence(QUEUE_STATE *queue_state, VkFence fence, uint32_t submit_count) {
@@ -207,9 +207,9 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
 void ValidationStateTracker::RetireFence(VkFence fence) {
     auto fence_state = GetFenceState(fence);
     if (fence_state && fence_state->scope == kSyncScopeInternal) {
-        if (fence_state->signaler.first != VK_NULL_HANDLE) {
+        if (fence_state->signaler.queue != VK_NULL_HANDLE) {
             // Fence signaller is a queue -- use this as proof that prior operations on that queue have completed.
-            RetireWorkOnQueue(GetQueueState(fence_state->signaler.first), fence_state->signaler.second);
+            RetireWorkOnQueue(GetQueueState(fence_state->signaler.queue), fence_state->signaler.seq);
         } else {
             // Fence signaller is the WSI. We're not tracking what the WSI op actually /was/ in CV yet, but we need to mark
             // the fence as retired.

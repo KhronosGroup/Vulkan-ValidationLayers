@@ -3003,8 +3003,8 @@ bool CoreChecks::VerifyQueueStateToSeq(const QUEUE_STATE *initial_queue, uint64_
 // When the given fence is retired, verify outstanding queue operations through the point of the fence
 bool CoreChecks::VerifyQueueStateToFence(VkFence fence) const {
     auto fence_state = GetFenceState(fence);
-    if (fence_state && fence_state->scope == kSyncScopeInternal && VK_NULL_HANDLE != fence_state->signaler.first) {
-        return VerifyQueueStateToSeq(GetQueueState(fence_state->signaler.first), fence_state->signaler.second);
+    if (fence_state && fence_state->scope == kSyncScopeInternal && VK_NULL_HANDLE != fence_state->signaler.queue) {
+        return VerifyQueueStateToSeq(GetQueueState(fence_state->signaler.queue), fence_state->signaler.seq);
     }
     return false;
 }
@@ -3334,13 +3334,13 @@ struct SemaphoreSubmitState {
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR &&
             (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
             if (signaled_semaphores.count(semaphore) || (!(unsignaled_semaphores.count(semaphore)) && pSemaphore->signaled)) {
-                objlist.add(pSemaphore->signaler.first);
+                objlist.add(pSemaphore->signaler.queue);
                 skip |= core->LogError(objlist, kVUID_Core_DrawState_QueueForwardProgress,
                                        "%s is signaling %s (%s) that was previously "
                                        "signaled by %s but has not since been waited on by any queue.",
                                        loc.Message().c_str(), core->report_data->FormatHandle(queue).c_str(),
                                        core->report_data->FormatHandle(semaphore).c_str(),
-                                       core->report_data->FormatHandle(pSemaphore->signaler.first).c_str());
+                                       core->report_data->FormatHandle(pSemaphore->signaler.queue).c_str());
             } else {
                 unsignaled_semaphores.erase(semaphore);
                 signaled_semaphores.insert(semaphore);
@@ -13367,13 +13367,13 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                     (!(unsignaled_semaphores.count(semaphore)) && semaphore_state->signaled)) {
                     LogObjectList objlist(semaphore);
                     objlist.add(queue);
-                    objlist.add(semaphore_state->signaler.first);
+                    objlist.add(semaphore_state->signaler.queue);
                     skip |= LogError(objlist, kVUID_Core_DrawState_QueueForwardProgress,
                                      "vkQueueBindSparse(): %s is signaling pBindInfo[%u].pSignalSemaphores[%u] (%s) that was "
                                      "previously signaled by %s but has not since been waited on by any queue.",
                                      report_data->FormatHandle(queue).c_str(), bind_idx, i,
                                      report_data->FormatHandle(semaphore).c_str(),
-                                     report_data->FormatHandle(semaphore_state->signaler.first).c_str());
+                                     report_data->FormatHandle(semaphore_state->signaler.queue).c_str());
                 } else {
                     unsignaled_semaphores.erase(semaphore);
                     signaled_semaphores.insert(semaphore);

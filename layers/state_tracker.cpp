@@ -3312,7 +3312,7 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         auto semaphore_state = GetSemaphoreState(pPresentInfo->pWaitSemaphores[i]);
         if (semaphore_state) {
-            semaphore_state->signaler.first = VK_NULL_HANDLE;
+            semaphore_state->signaler.queue = VK_NULL_HANDLE;
             semaphore_state->signaled = false;
         }
     }
@@ -3358,7 +3358,7 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
         // Treat as inflight since it is valid to wait on this fence, even in cases where it is technically a temporary
         // import
         fence_state->state = FENCE_INFLIGHT;
-        fence_state->signaler.first = VK_NULL_HANDLE;  // ANI isn't on a queue, so this can't participate in a completion proof.
+        fence_state->signaler.queue = VK_NULL_HANDLE;  // ANI isn't on a queue, so this can't participate in a completion proof.
     }
 
     auto semaphore_state = GetSemaphoreState(semaphore);
@@ -3366,7 +3366,7 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
         // Treat as signaled since it is valid to wait on this semaphore, even in cases where it is technically a
         // temporary import
         semaphore_state->signaled = true;
-        semaphore_state->signaler.first = VK_NULL_HANDLE;
+        semaphore_state->signaler.queue = VK_NULL_HANDLE;
     }
 
     // Mark the image as acquired.
