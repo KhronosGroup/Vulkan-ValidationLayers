@@ -295,6 +295,27 @@ class VkRenderFramework : public VkTestFramework {
     bool DeviceExtensionEnabled(const char *name);
     bool DeviceSimulation();
 
+    // Tracks ext_name to be enabled at device creation time and attempts to enable any required instance extensions.
+    // Returns true if all required instance extensions are supported or there are no required instance extensions, false
+    // otherwise.
+    bool AddRequiredExtensions(const char *ext_name);
+    // After instance and physical device creation (e.g., after InitFramework), returns true if all required extensions are
+    // available, false otherwise
+    bool AreRequestedExtensionsEnabled() const;
+
+    // Add an instance extension and all of its dependent extensions. Returns true if the extension is supported. If the extension
+    // is not supported, false is returned, and no extension names are added for instance creation.
+    bool AddRequiredInstanceExtensions(const char *ext_name);
+    // Returns true if the instance extension is enabled. This call is only valid _after_ previous `AddRequired*Extensions` calls
+    // and InitFramework has been called.
+    bool CanEnableInstanceExtension(const std::string &ext_name) const;
+    // Add a device extension and all of its dependent _device_ extensions. Returns true if the extension is supported. If the
+    // extension is not supported, false is returned, and no extension names are added for device creation.
+    bool AddRequiredDeviceExtensions(const char *ext_name);
+    // Returns true if the device extension is enabled. This call is only valid _after_ previous `AddRequired*Extensions` calls and
+    // InitFramework has been called.
+    bool CanEnableDeviceExtension(const std::string &ext_name) const;
+
   protected:
     VkRenderFramework();
     virtual ~VkRenderFramework() = 0;
@@ -358,6 +379,9 @@ class VkRenderFramework : public VkTestFramework {
     uint32_t m_stencil_clear_color;
     VkDepthStencilObj *m_depthStencil;
 
+    // Requested extensions to enable at device creation time
+    std::vector<const char *> m_requested_extensions;
+    // Device extensions to enable
     std::vector<const char *> m_device_extension_names;
 };
 
