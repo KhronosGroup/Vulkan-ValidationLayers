@@ -809,14 +809,6 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                        VkResult result) override;
     void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result) override;
-
-    uint64_t RecordSubmitFence(QUEUE_STATE* queue_state, VkFence fence, uint32_t submit_count);
-    void RecordSubmitCommandBuffer(CB_SUBMISSION& submission, VkCommandBuffer command_buffer);
-    bool RecordSubmitSignalSemaphore(CB_SUBMISSION& submission, VkQueue queue, VkSemaphore semaphore, uint64_t value,
-                                     uint64_t next_seq);
-    void RecordSubmitWaitSemaphore(CB_SUBMISSION& submission, VkQueue queue, VkSemaphore semaphore, uint64_t value,
-                                   uint64_t next_seq);
-
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    VkResult result) override;
     void PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) override;
@@ -1163,11 +1155,8 @@ class ValidationStateTracker : public ValidationObject {
                                                    VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate);
     void RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
-    void RetireFence(VkFence fence);
-    void RetireTimelineSemaphore(VkSemaphore semaphore, uint64_t until_payload);
     void RecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout, VkResult result);
     void RecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue, VkResult result);
-    void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq);
     QueryState GetQueryState(const QueryMap* localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
                              uint32_t perfPass) const;
     void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);

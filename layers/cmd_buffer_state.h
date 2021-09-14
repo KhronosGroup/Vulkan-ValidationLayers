@@ -442,6 +442,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range, VkImageLayout layout);
     void SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceLayers &layers, VkImageLayout layout);
 
+    void Submit(uint32_t perf_submit_pass);
+    void Retire(uint32_t perf_submit_pass);
+
   protected:
     void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
     void UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin);

@@ -1384,13 +1384,18 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
     if (result != VK_SUCCESS) return;
     auto queue_state = GetQueueState(queue);
 
-    uint64_t early_retire_seq = RecordSubmitFence(queue_state, fence, submitCount);
+    uint64_t early_retire_seq = 0;
+
+    if (submitCount == 0) {
+        CB_SUBMISSION submission;
+        submission.AddFence(GetShared<FENCE_STATE>(fence));
+        early_retire_seq = queue_state->Submit(std::move(submission));
+    }
 
     // Now process each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         CB_SUBMISSION submission;
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
-        const uint64_t next_seq = queue_state->seq + queue_state->submissions.size() + 1;
         auto *timeline_semaphore_submit = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
             uint64_t value = 0;
@@ -1398,34 +1403,33 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                 (i < timeline_semaphore_submit->waitSemaphoreValueCount)) {
                 value = timeline_semaphore_submit->pWaitSemaphoreValues[i];
             }
-            RecordSubmitWaitSemaphore(submission, queue, submit->pWaitSemaphores[i], value, next_seq);
+            submission.AddWaitSemaphore(GetShared<SEMAPHORE_STATE>(submit->pWaitSemaphores[i]), value);
         }
 
-        bool retire_early = false;
         for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
             uint64_t value = 0;
             if (timeline_semaphore_submit && timeline_semaphore_submit->pSignalSemaphoreValues != nullptr &&
                 (i < timeline_semaphore_submit->signalSemaphoreValueCount)) {
                 value = timeline_semaphore_submit->pSignalSemaphoreValues[i];
             }
-            retire_early |= RecordSubmitSignalSemaphore(submission, queue, submit->pSignalSemaphores[i], value, next_seq);
-        }
-        if (retire_early) {
-            early_retire_seq = std::max(early_retire_seq, next_seq);
+            submission.AddSignalSemaphore(GetShared<SEMAPHORE_STATE>(submit->pSignalSemaphores[i]), value);
         }
 
         const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
         submission.perf_submit_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            RecordSubmitCommandBuffer(submission, submit->pCommandBuffers[i]);
+            submission.AddCommandBuffer(GetShared<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]));
         }
-        submission.fence = submit_idx == (submitCount - 1) ? fence : VK_NULL_HANDLE;
-        queue_state->submissions.emplace_back(std::move(submission));
+        if (submit_idx == (submitCount - 1) && fence != VK_NULL_HANDLE) {
+            submission.AddFence(GetShared<FENCE_STATE>(fence));
+        }
+        auto submit_seq = queue_state->Submit(std::move(submission));
+        early_retire_seq = std::max(early_retire_seq, submit_seq);
     }
 
     if (early_retire_seq) {
-        RetireWorkOnQueue(queue_state, early_retire_seq);
+        queue_state->Retire(early_retire_seq);
     }
 }
 
@@ -1433,38 +1437,38 @@ void ValidationStateTracker::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32
                                                            VkFence fence, VkResult result) {
     if (result != VK_SUCCESS) return;
     auto queue_state = GetQueueState(queue);
+    uint64_t early_retire_seq = 0;
+    if (submitCount == 0) {
+        CB_SUBMISSION submission;
+        submission.AddFence(GetShared<FENCE_STATE>(fence));
+        early_retire_seq = queue_state->Submit(std::move(submission));
+    }
 
-    uint64_t early_retire_seq = RecordSubmitFence(queue_state, fence, submitCount);
-
-    // Now process each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         CB_SUBMISSION submission;
         const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
-        const uint64_t next_seq = queue_state->seq + queue_state->submissions.size() + 1;
         for (uint32_t i = 0; i < submit->waitSemaphoreInfoCount; ++i) {
             const auto &sem_info = submit->pWaitSemaphoreInfos[i];
-            RecordSubmitWaitSemaphore(submission, queue, sem_info.semaphore, sem_info.value, next_seq);
+            submission.AddWaitSemaphore(GetShared<SEMAPHORE_STATE>(sem_info.semaphore), sem_info.value);
         }
-        bool retire_early = false;
         for (uint32_t i = 0; i < submit->signalSemaphoreInfoCount; ++i) {
             const auto &sem_info = submit->pSignalSemaphoreInfos[i];
-            retire_early |= RecordSubmitSignalSemaphore(submission, queue, sem_info.semaphore, sem_info.value, next_seq);
-        }
-        if (retire_early) {
-            early_retire_seq = std::max(early_retire_seq, next_seq);
+            submission.AddSignalSemaphore(GetShared<SEMAPHORE_STATE>(sem_info.semaphore), sem_info.value);
         }
         const auto perf_submit = lvl_find_in_chain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
         submission.perf_submit_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
-            RecordSubmitCommandBuffer(submission, submit->pCommandBufferInfos[i].commandBuffer);
+            submission.AddCommandBuffer(GetShared<CMD_BUFFER_STATE>(submit->pCommandBufferInfos[i].commandBuffer));
         }
-        submission.fence = submit_idx == (submitCount - 1) ? fence : VK_NULL_HANDLE;
-        queue_state->submissions.emplace_back(std::move(submission));
+        if (submit_idx == (submitCount - 1)) {
+            submission.AddFence(GetShared<FENCE_STATE>(fence));
+        }
+        auto submit_seq = queue_state->Submit(std::move(submission));
+        early_retire_seq = std::max(early_retire_seq, submit_seq);
     }
-
     if (early_retire_seq) {
-        RetireWorkOnQueue(queue_state, early_retire_seq);
+        queue_state->Retire(early_retire_seq);
     }
 }
 
@@ -1518,7 +1522,7 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
     if (result != VK_SUCCESS) return;
     auto queue_state = GetQueueState(queue);
 
-    uint64_t early_retire_seq = RecordSubmitFence(queue_state, fence, bindInfoCount);
+    uint64_t early_retire_seq = 0;
 
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
         const VkBindSparseInfo &bind_info = pBindInfo[bind_idx];
@@ -1556,25 +1560,21 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
             }
         }
         CB_SUBMISSION submission;
-        const uint64_t next_seq = queue_state->seq + queue_state->submissions.size() + 1;
         for (uint32_t i = 0; i < bind_info.waitSemaphoreCount; ++i) {
-            RecordSubmitWaitSemaphore(submission, queue, bind_info.pWaitSemaphores[i], 0, next_seq);
+            submission.AddWaitSemaphore(GetShared<SEMAPHORE_STATE>(bind_info.pWaitSemaphores[i]), 0);
         }
-        bool retire_early = false;
         for (uint32_t i = 0; i < bind_info.signalSemaphoreCount; ++i) {
-            retire_early |= RecordSubmitSignalSemaphore(submission, queue, bind_info.pSignalSemaphores[i], 0, next_seq);
+            submission.AddSignalSemaphore(GetShared<SEMAPHORE_STATE>(bind_info.pSignalSemaphores[i]), 0);
         }
-        // Retire work up until this submit early, we will not see the wait that corresponds to this signal
-        if (retire_early) {
-            early_retire_seq = std::max(early_retire_seq, queue_state->seq + queue_state->submissions.size() + 1);
+        if (bind_idx == (bindInfoCount - 1)) {
+            submission.AddFence(GetShared<FENCE_STATE>(fence));
         }
-
-        submission.fence = bind_idx == (bindInfoCount - 1) ? fence : VK_NULL_HANDLE;
-        queue_state->submissions.emplace_back(std::move(submission));
+        auto submit_seq = queue_state->Submit(std::move(submission));
+        early_retire_seq = std::max(early_retire_seq, submit_seq);
     }
 
     if (early_retire_seq) {
-        RetireWorkOnQueue(queue_state, early_retire_seq);
+        queue_state->Retire(early_retire_seq);
     }
 }
 
@@ -1582,7 +1582,8 @@ void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, cons
                                                            const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
                                                            VkResult result) {
     if (VK_SUCCESS != result) return;
-    semaphoreMap[*pSemaphore] = std::make_shared<SEMAPHORE_STATE>(*pSemaphore, LvlFindInChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext));
+    semaphoreMap[*pSemaphore] =
+        std::make_shared<SEMAPHORE_STATE>(*pSemaphore, LvlFindInChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext));
 }
 
 void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBits handle_type,
@@ -1620,7 +1621,10 @@ void ValidationStateTracker::PostCallRecordWaitForFences(VkDevice device, uint32
     // When we know that all fences are complete we can clean/remove their CBs
     if ((VK_TRUE == waitAll) || (1 == fenceCount)) {
         for (uint32_t i = 0; i < fenceCount; i++) {
-            RetireFence(pFences[i]);
+            auto fence_state = GetFenceState(pFences[i]);
+            if (fence_state) {
+                fence_state->Retire();
+            }
         }
     }
     // NOTE : Alternate case not handled here is when some fences have completed. In
@@ -1633,7 +1637,10 @@ void ValidationStateTracker::RecordWaitSemaphores(VkDevice device, const VkSemap
     if (VK_SUCCESS != result) return;
 
     for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
-        RetireTimelineSemaphore(pWaitInfo->pSemaphores[i], pWaitInfo->pValues[i]);
+        auto semaphore_state = GetSemaphoreState(pWaitInfo->pSemaphores[i]);
+        if (semaphore_state) {
+            semaphore_state->Retire(pWaitInfo->pValues[i]);
+        }
     }
 }
 
@@ -1651,7 +1658,10 @@ void ValidationStateTracker::RecordGetSemaphoreCounterValue(VkDevice device, VkS
                                                             VkResult result) {
     if (VK_SUCCESS != result) return;
 
-    RetireTimelineSemaphore(semaphore, *pValue);
+    auto semaphore_state = GetSemaphoreState(semaphore);
+    if (semaphore_state) {
+        semaphore_state->Retire(*pValue);
+    }
 }
 
 void ValidationStateTracker::PostCallRecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue,
@@ -1665,19 +1675,24 @@ void ValidationStateTracker::PostCallRecordGetSemaphoreCounterValueKHR(VkDevice 
 
 void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
     if (VK_SUCCESS != result) return;
-    RetireFence(fence);
+    auto fence_state = GetFenceState(fence);
+    if (fence_state) {
+        fence_state->Retire();
+    }
 }
 
 void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
     if (VK_SUCCESS != result) return;
     QUEUE_STATE *queue_state = GetQueueState(queue);
-    RetireWorkOnQueue(queue_state, queue_state->seq + queue_state->submissions.size());
+    if (queue_state) {
+        queue_state->Retire();
+    }
 }
 
 void ValidationStateTracker::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (auto &queue : queueMap) {
-        RetireWorkOnQueue(queue.second.get(), queue.second->seq + queue.second->submissions.size());
+        queue.second->Retire();
     }
 }
 
@@ -3312,7 +3327,7 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         auto semaphore_state = GetSemaphoreState(pPresentInfo->pWaitSemaphores[i]);
         if (semaphore_state) {
-            semaphore_state->signaler.queue = VK_NULL_HANDLE;
+            semaphore_state->signaler.queue = nullptr;
             semaphore_state->signaled = false;
         }
     }
@@ -3358,7 +3373,7 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
         // Treat as inflight since it is valid to wait on this fence, even in cases where it is technically a temporary
         // import
         fence_state->state = FENCE_INFLIGHT;
-        fence_state->signaler.queue = VK_NULL_HANDLE;  // ANI isn't on a queue, so this can't participate in a completion proof.
+        fence_state->signaler.queue = nullptr;  // ANI isn't on a queue, so this can't participate in a completion proof.
     }
 
     auto semaphore_state = GetSemaphoreState(semaphore);
@@ -3366,7 +3381,7 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
         // Treat as signaled since it is valid to wait on this semaphore, even in cases where it is technically a
         // temporary import
         semaphore_state->signaled = true;
-        semaphore_state->signaler.queue = VK_NULL_HANDLE;
+        semaphore_state->signaler.queue = nullptr;
     }
 
     // Mark the image as acquired.
