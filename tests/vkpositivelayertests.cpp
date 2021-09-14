@@ -15594,3 +15594,40 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit, "", true);
 }
+
+TEST_F(VkPositiveLayerTest, TestComputeShaderMemoryWithSpecConstantOp) {
+    TEST_DESCRIPTION("Validate compute shader shared memory");
+
+    m_errorMonitor->ExpectSuccess();
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const auto max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const auto max_shared_ints = max_shared_memory_size / 4;
+
+    if (max_shared_ints < 64 * 7) {
+        printf("%s Supported compute shader shared memory size is too small, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    std::stringstream csSource;
+    csSource << R"glsl(
+        #version 450
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+        layout(constant_id = 0) const uint Condition = 0;
+        layout(constant_id = 1) const uint SharedSize = 64;
+
+        #define enableSharedMemoryOpt (Condition == 1 || Condition == 2 || Condition == 3)
+        shared uint arr[enableSharedMemoryOpt ? SharedSize : 1][enableSharedMemoryOpt ? 7 : 1];
+
+        void main() {}
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(m_device, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyNotFound();
+}
