@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "vk_format_utils.h"
+#include "vk_extension_helper.h"
 
 using std::string;
 using std::strncmp;
@@ -535,6 +536,83 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
 
         driver_printed = true;
     }
+
+    for (const auto &ext : m_requested_extensions) {
+        AddRequiredDeviceExtensions(ext);
+    }
+}
+
+bool VkRenderFramework::AddRequiredExtensions(const char *ext_name) {
+    m_requested_extensions.push_back(ext_name);
+    return AddRequiredInstanceExtensions(ext_name);
+}
+
+bool VkRenderFramework::AreRequestedExtensionsEnabled() const {
+    for (const auto &ext : m_requested_extensions) {
+        if (!CanEnableDeviceExtension(ext)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool VkRenderFramework::AddRequiredInstanceExtensions(const char *ext_name) {
+    if (CanEnableInstanceExtension(ext_name)) {
+        return true;
+    }
+
+    const auto &instance_exts_map = InstanceExtensions::get_info_map();
+    if (instance_exts_map.count(ext_name) > 0) {
+        if (InstanceExtensionSupported(ext_name)) {
+            m_instance_extension_names.push_back(ext_name);
+        } else {
+            return false;
+        }
+    }
+
+    const auto &info = DeviceExtensions::get_info(ext_name);
+    for (const auto &req : info.requirements) {
+        if (!AddRequiredInstanceExtensions(req.name)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool VkRenderFramework::CanEnableInstanceExtension(const std::string &ext_name) const {
+    return std::any_of(m_instance_extension_names.cbegin(), m_instance_extension_names.cend(),
+                       [&ext_name](const char *ext) { return ext_name == ext; });
+}
+
+bool VkRenderFramework::AddRequiredDeviceExtensions(const char *ext_name) {
+    // Check if the extension has already been added
+    if (CanEnableDeviceExtension(ext_name)) {
+        return true;
+    }
+
+    // If this is an instance extension, just return true
+    const auto &instance_exts_map = InstanceExtensions::get_info_map();
+    if (instance_exts_map.count(ext_name) != 0) {
+        return true;
+    }
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, ext_name)) {
+        return false;
+    }
+    m_device_extension_names.push_back(ext_name);
+
+    const auto &info = DeviceExtensions::get_info(ext_name);
+    for (const auto &req : info.requirements) {
+        if (!AddRequiredDeviceExtensions(req.name)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool VkRenderFramework::CanEnableDeviceExtension(const std::string &ext_name) const {
+    return std::any_of(m_device_extension_names.cbegin(), m_device_extension_names.cend(),
+                       [&ext_name](const char *ext) { return ext_name == ext; });
 }
 
 void VkRenderFramework::ShutdownFramework() {

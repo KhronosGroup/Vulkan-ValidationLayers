@@ -262,8 +262,6 @@ class VkLayerTest : public VkRenderFramework {
     bool AddSwapchainDeviceExtension();
     VkCommandBufferObj *CommandBuffer();
     void OOBRayTracingShadersTestBody(bool gpu_assisted);
-    bool AddYCbCrDeviceExtensions();
-    bool AddImageDrmFormatModifierDeviceExtensions();
 
   protected:
     uint32_t m_instance_api_version = 0;
