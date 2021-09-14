@@ -37,10 +37,15 @@ enum SyncScope {
 
 enum FENCE_STATUS { FENCE_UNSIGNALED, FENCE_INFLIGHT, FENCE_RETIRED };
 
+struct QUEUE_SIGNALER {
+    VkQueue queue;
+    uint64_t seq;
+};
+
 class FENCE_STATE : public REFCOUNTED_NODE {
   public:
     VkFenceCreateInfo createInfo;
-    std::pair<VkQueue, uint64_t> signaler;
+    QUEUE_SIGNALER signaler;
     FENCE_STATUS state;
     SyncScope scope;
 
@@ -48,6 +53,7 @@ class FENCE_STATE : public REFCOUNTED_NODE {
     FENCE_STATE(VkFence f, const VkFenceCreateInfo* pCreateInfo)
         : REFCOUNTED_NODE(f, kVulkanObjectTypeFence),
           createInfo(*pCreateInfo),
+          signaler{VK_NULL_HANDLE, 0},
           state((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED),
           scope(kSyncScopeInternal) {}
 
@@ -56,7 +62,7 @@ class FENCE_STATE : public REFCOUNTED_NODE {
 
 class SEMAPHORE_STATE : public REFCOUNTED_NODE {
   public:
-    std::pair<VkQueue, uint64_t> signaler;
+    QUEUE_SIGNALER signaler;
     bool signaled;
     SyncScope scope;
     VkSemaphoreType type;
@@ -64,7 +70,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
 
     SEMAPHORE_STATE(VkSemaphore sem, const VkSemaphoreTypeCreateInfo* type_create_info)
         : REFCOUNTED_NODE(sem, kVulkanObjectTypeSemaphore),
-          signaler(VK_NULL_HANDLE, 0),
+          signaler{VK_NULL_HANDLE, 0},
           signaled(false),
           scope(kSyncScopeInternal),
           type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
