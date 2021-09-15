@@ -4,6 +4,7 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 __pycache__
+.cache/
 # Ignore everything in external except the CMake file
 /external/*
 !/external/CMakeLists.txt
