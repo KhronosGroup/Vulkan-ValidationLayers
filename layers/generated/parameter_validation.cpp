@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 191;
+const uint32_t GeneratedVulkanHeaderVersion = 192;
 
 const VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR|VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV|VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV|VK_ACCESS_NONE_KHR;
 const VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -576,7 +576,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDevicePointClippingProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES: { // Covers VUID-VkPhysicalDevicePointClippingProperties-sType-sType
             if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
                         skip |= LogError(
                                instance, pnext_vuid,
                                "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES), but its parent extension "
@@ -590,7 +590,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkRenderPassInputAttachmentAspectCreateInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO: { // Covers VUID-VkRenderPassInputAttachmentAspectCreateInfo-sType-sType
             if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
                         skip |= LogError(
                                instance, pnext_vuid,
                                "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO), but its parent extension "
@@ -616,7 +616,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkImageViewUsageCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO: { // Covers VUID-VkImageViewUsageCreateInfo-sType-sType
             if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
                         skip |= LogError(
                                instance, pnext_vuid,
                                "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO), but its parent extension "
@@ -634,7 +634,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPipelineTessellationDomainOriginStateCreateInfo structure members
         case VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO: { // Covers VUID-VkPipelineTessellationDomainOriginStateCreateInfo-sType-sType
             if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance2)) {
                         skip |= LogError(
                                instance, pnext_vuid,
                                "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO), but its parent extension "
@@ -993,7 +993,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceMaintenance3Properties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES: { // Covers VUID-VkPhysicalDeviceMaintenance3Properties-sType-sType
             if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE3_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance3)) {
+                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_3_EXTENSION_NAME)) || (!is_physdev_api && !device_extensions.vk_khr_maintenance3)) {
                         skip |= LogError(
                                instance, pnext_vuid,
                                "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES), but its parent extension "
@@ -9824,7 +9824,7 @@ bool StatelessValidation::PreCallValidateTrimCommandPoolKHR(
     VkCommandPool                               commandPool,
     VkCommandPoolTrimFlags                      flags) const {
     bool skip = false;
-    if (!device_extensions.vk_khr_maintenance1) skip |= OutputExtensionError("vkTrimCommandPoolKHR", VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_maintenance1) skip |= OutputExtensionError("vkTrimCommandPoolKHR", VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     skip |= validate_required_handle("vkTrimCommandPoolKHR", "commandPool", commandPool);
     skip |= validate_reserved_flags("vkTrimCommandPoolKHR", "flags", flags, "VUID-vkTrimCommandPool-flags-zerobitmask");
     return skip;
@@ -10232,7 +10232,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
     const VkAllocationCallbacks*                pAllocator,
     VkRenderPass*                               pRenderPass) const {
     bool skip = false;
-    if (!device_extensions.vk_khr_maintenance2) skip |= OutputExtensionError("vkCreateRenderPass2KHR", VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_maintenance2) skip |= OutputExtensionError("vkCreateRenderPass2KHR", VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_multiview) skip |= OutputExtensionError("vkCreateRenderPass2KHR", VK_KHR_MULTIVIEW_EXTENSION_NAME);
     if (!device_extensions.vk_khr_create_renderpass2) skip |= OutputExtensionError("vkCreateRenderPass2KHR", VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkCreateRenderPass2KHR", "pCreateInfo", "VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2", pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2, true, "VUID-vkCreateRenderPass2-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo2-sType-sType");
@@ -10399,7 +10399,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2KHR(
     const VkRenderPassBeginInfo*                pRenderPassBegin,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo) const {
     bool skip = false;
-    if (!device_extensions.vk_khr_maintenance2) skip |= OutputExtensionError("vkCmdBeginRenderPass2KHR", VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_maintenance2) skip |= OutputExtensionError("vkCmdBeginRenderPass2KHR", VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_multiview) skip |= OutputExtensionError("vkCmdBeginRenderPass2KHR", VK_KHR_MULTIVIEW_EXTENSION_NAME);
     if (!device_extensions.vk_khr_create_renderpass2) skip |= OutputExtensionError("vkCmdBeginRenderPass2KHR", VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkCmdBeginRenderPass2KHR", "pRenderPassBegin", "VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO", pRenderPassBegin, VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, true, "VUID-vkCmdBeginRenderPass2-pRenderPassBegin-parameter", "VUID-VkRenderPassBeginInfo-sType-sType");
@@ -10433,7 +10433,7 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2KHR(
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
     const VkSubpassEndInfo*                     pSubpassEndInfo) const {
     bool skip = false;
-    if (!device_extensions.vk_khr_maintenance2) skip |= OutputExtensionError("vkCmdNextSubpass2KHR", VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_maintenance2) skip |= OutputExtensionError("vkCmdNextSubpass2KHR", VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_multiview) skip |= OutputExtensionError("vkCmdNextSubpass2KHR", VK_KHR_MULTIVIEW_EXTENSION_NAME);
     if (!device_extensions.vk_khr_create_renderpass2) skip |= OutputExtensionError("vkCmdNextSubpass2KHR", VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkCmdNextSubpass2KHR", "pSubpassBeginInfo", "VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO", pSubpassBeginInfo, VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO, true, "VUID-vkCmdNextSubpass2-pSubpassBeginInfo-parameter", "VUID-VkSubpassBeginInfo-sType-sType");
@@ -10455,7 +10455,7 @@ bool StatelessValidation::PreCallValidateCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassEndInfo*                     pSubpassEndInfo) const {
     bool skip = false;
-    if (!device_extensions.vk_khr_maintenance2) skip |= OutputExtensionError("vkCmdEndRenderPass2KHR", VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_maintenance2) skip |= OutputExtensionError("vkCmdEndRenderPass2KHR", VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_multiview) skip |= OutputExtensionError("vkCmdEndRenderPass2KHR", VK_KHR_MULTIVIEW_EXTENSION_NAME);
     if (!device_extensions.vk_khr_create_renderpass2) skip |= OutputExtensionError("vkCmdEndRenderPass2KHR", VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkCmdEndRenderPass2KHR", "pSubpassEndInfo", "VK_STRUCTURE_TYPE_SUBPASS_END_INFO", pSubpassEndInfo, VK_STRUCTURE_TYPE_SUBPASS_END_INFO, true, "VUID-vkCmdEndRenderPass2-pSubpassEndInfo-parameter", "VUID-VkSubpassEndInfo-sType-sType");
@@ -10893,7 +10893,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversionKHR(
     if (!device_extensions.vk_khr_get_physical_device_properties2) skip |= OutputExtensionError("vkCreateSamplerYcbcrConversionKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_memory_requirements2) skip |= OutputExtensionError("vkCreateSamplerYcbcrConversionKHR", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_bind_memory2) skip |= OutputExtensionError("vkCreateSamplerYcbcrConversionKHR", VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    if (!device_extensions.vk_khr_maintenance1) skip |= OutputExtensionError("vkCreateSamplerYcbcrConversionKHR", VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_maintenance1) skip |= OutputExtensionError("vkCreateSamplerYcbcrConversionKHR", VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     if (!device_extensions.vk_khr_sampler_ycbcr_conversion) skip |= OutputExtensionError("vkCreateSamplerYcbcrConversionKHR", VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     skip |= validate_struct_type("vkCreateSamplerYcbcrConversionKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO, true, "VUID-vkCreateSamplerYcbcrConversion-pCreateInfo-parameter", "VUID-VkSamplerYcbcrConversionCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -10957,7 +10957,7 @@ bool StatelessValidation::PreCallValidateDestroySamplerYcbcrConversionKHR(
     if (!device_extensions.vk_khr_get_physical_device_properties2) skip |= OutputExtensionError("vkDestroySamplerYcbcrConversionKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_memory_requirements2) skip |= OutputExtensionError("vkDestroySamplerYcbcrConversionKHR", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_bind_memory2) skip |= OutputExtensionError("vkDestroySamplerYcbcrConversionKHR", VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    if (!device_extensions.vk_khr_maintenance1) skip |= OutputExtensionError("vkDestroySamplerYcbcrConversionKHR", VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_maintenance1) skip |= OutputExtensionError("vkDestroySamplerYcbcrConversionKHR", VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     if (!device_extensions.vk_khr_sampler_ycbcr_conversion) skip |= OutputExtensionError("vkDestroySamplerYcbcrConversionKHR", VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     if (pAllocator != NULL)
     {
@@ -11040,7 +11040,7 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSupportKHR(
     VkDescriptorSetLayoutSupport*               pSupport) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties2) skip |= OutputExtensionError("vkGetDescriptorSetLayoutSupportKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (!device_extensions.vk_khr_maintenance3) skip |= OutputExtensionError("vkGetDescriptorSetLayoutSupportKHR", VK_KHR_MAINTENANCE3_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_maintenance3) skip |= OutputExtensionError("vkGetDescriptorSetLayoutSupportKHR", VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetDescriptorSetLayoutSupportKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, true, "VUID-vkGetDescriptorSetLayoutSupport-pCreateInfo-parameter", "VUID-VkDescriptorSetLayoutCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
     {

@@ -641,7 +641,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_range_unrestricted, {})},
             {VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_descriptor_indexing, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
-                           {&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE3_EXTENSION_NAME}}})},
+                           {&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE_3_EXTENSION_NAME}}})},
             {VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_device_memory_report, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_discard_rectangles, {{
@@ -689,7 +689,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_index_type_uint8, {})},
             {VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_inline_uniform_block, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
-                           {&DeviceExtensions::vk_khr_maintenance1, VK_KHR_MAINTENANCE1_EXTENSION_NAME}}})},
+                           {&DeviceExtensions::vk_khr_maintenance1, VK_KHR_MAINTENANCE_1_EXTENSION_NAME}}})},
             {VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_line_rasterization, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_load_store_op_none, {})},
@@ -781,7 +781,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_GOOGLE_DECORATE_STRING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_google_decorate_string, {})},
             {VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_google_display_timing, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
-            {VK_GOOGLE_HLSL_FUNCTIONALITY1_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_google_hlsl_functionality1, {})},
+            {VK_GOOGLE_HLSL_FUNCTIONALITY_1_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_google_hlsl_functionality1, {})},
             {VK_GOOGLE_USER_TYPE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_google_user_type, {})},
             {VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_huawei_invocation_mask, {{
                            {&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME},
@@ -811,7 +811,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_copy_commands2, {})},
             {VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_create_renderpass2, {{
                            {&DeviceExtensions::vk_khr_multiview, VK_KHR_MULTIVIEW_EXTENSION_NAME},
-                           {&DeviceExtensions::vk_khr_maintenance2, VK_KHR_MAINTENANCE2_EXTENSION_NAME}}})},
+                           {&DeviceExtensions::vk_khr_maintenance2, VK_KHR_MAINTENANCE_2_EXTENSION_NAME}}})},
             {VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_dedicated_allocation, {{
                            {&DeviceExtensions::vk_khr_get_memory_requirements2, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME}}})},
             {VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_deferred_host_operations, {})},
@@ -856,13 +856,13 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_get_memory_requirements2, {})},
             {VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_image_format_list, {})},
             {VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_imageless_framebuffer, {{
-                           {&DeviceExtensions::vk_khr_maintenance2, VK_KHR_MAINTENANCE2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_maintenance2, VK_KHR_MAINTENANCE_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_image_format_list, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME}}})},
             {VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_incremental_present, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
-            {VK_KHR_MAINTENANCE1_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_maintenance1, {})},
-            {VK_KHR_MAINTENANCE2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_maintenance2, {})},
-            {VK_KHR_MAINTENANCE3_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_maintenance3, {{
+            {VK_KHR_MAINTENANCE_1_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_maintenance1, {})},
+            {VK_KHR_MAINTENANCE_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_maintenance2, {})},
+            {VK_KHR_MAINTENANCE_3_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_maintenance3, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_MULTIVIEW_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_multiview, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -893,7 +893,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_relaxed_block_layout, {})},
             {VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_sampler_mirror_clamp_to_edge, {})},
             {VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, {{
-                           {&DeviceExtensions::vk_khr_maintenance1, VK_KHR_MAINTENANCE1_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_maintenance1, VK_KHR_MAINTENANCE_1_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_bind_memory2, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_memory_requirements2, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -930,7 +930,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
             {VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_swapchain_mutable_format, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
-                           {&DeviceExtensions::vk_khr_maintenance2, VK_KHR_MAINTENANCE2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_maintenance2, VK_KHR_MAINTENANCE_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_image_format_list, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME}}})},
             {VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_synchronization2, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -1028,7 +1028,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
             {VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_shading_rate_image, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_viewport_array2, {})},
+            {VK_NV_VIEWPORT_ARRAY_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_viewport_array2, {})},
             {VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_viewport_swizzle, {})},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             {VK_NV_WIN32_KEYED_MUTEX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_win32_keyed_mutex, {{
@@ -1043,7 +1043,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_copy_commands2, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME}}})},
             {VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_valve_mutable_descriptor_type, {{
-                           {&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE3_EXTENSION_NAME}}})},
+                           {&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE_3_EXTENSION_NAME}}})},
         };
 
         return info_map;
@@ -1079,9 +1079,9 @@ struct DeviceExtensions : public InstanceExtensions {
             VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
             VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
             VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-            VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-            VK_KHR_MAINTENANCE2_EXTENSION_NAME,
-            VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+            VK_KHR_MAINTENANCE_1_EXTENSION_NAME,
+            VK_KHR_MAINTENANCE_2_EXTENSION_NAME,
+            VK_KHR_MAINTENANCE_3_EXTENSION_NAME,
             VK_KHR_MULTIVIEW_EXTENSION_NAME,
             VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME,
             VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME,
@@ -1266,7 +1266,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #endif
     VK_GOOGLE_DECORATE_STRING_EXTENSION_NAME,
     VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME,
-    VK_GOOGLE_HLSL_FUNCTIONALITY1_EXTENSION_NAME,
+    VK_GOOGLE_HLSL_FUNCTIONALITY_1_EXTENSION_NAME,
     VK_GOOGLE_USER_TYPE_EXTENSION_NAME,
     VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME,
     VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME,
@@ -1309,9 +1309,9 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
     VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME,
     VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME,
-    VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-    VK_KHR_MAINTENANCE2_EXTENSION_NAME,
-    VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+    VK_KHR_MAINTENANCE_1_EXTENSION_NAME,
+    VK_KHR_MAINTENANCE_2_EXTENSION_NAME,
+    VK_KHR_MAINTENANCE_3_EXTENSION_NAME,
     VK_KHR_MULTIVIEW_EXTENSION_NAME,
     VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME,
     VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME,
@@ -1401,7 +1401,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_NV_SHADER_SM_BUILTINS_EXTENSION_NAME,
     VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME,
     VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME,
-    VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME,
+    VK_NV_VIEWPORT_ARRAY_2_EXTENSION_NAME,
     VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     VK_NV_WIN32_KEYED_MUTEX_EXTENSION_NAME,
