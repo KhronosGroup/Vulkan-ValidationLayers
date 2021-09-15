@@ -10844,6 +10844,26 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                 device, "VUID-VkRenderPassCreateInfo-pNext-02513",
                 "vkCreateRenderPass(): elements of VkRenderPassMultiviewCreateInfo pViewMasks must all be either 0 or not 0.");
         }
+
+        for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+            if ((pCreateInfo->pDependencies[i].dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0) {
+                if (i < multiview_info->dependencyCount && multiview_info->pViewMasks[i] != 0) {
+                    skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-02512",
+                                     "vkCreateRenderPass(): pCreateInfo->pDependencies[%" PRIu32
+                                     "].dependencyFlags does not include VK_DEPENDENCY_VIEW_LOCAL_BIT bit, but "
+                                     "VkRenderPassMultiviewCreateInfo::pViewMasks[%" PRIu32 "] is %" PRIu32 ".",
+                                     i, i, multiview_info->pViewMasks[i]);
+                }
+            }
+        }
+        if (all_zero) {
+            for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+                if (pCreateInfo->pDependencies[i].dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) {
+                    skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-02513",
+                                     "vkCreateRenderPass(): all elements of VkRenderPassMultiviewCreateInfo pViewMasks are 0, but pCreateInfo->pDependencies[%" PRIu32 "].dependencyFlags includes VK_DEPENDENCY_VIEW_LOCAL_BIT bit.", i);
+                }
+            }
+        }
     }
     const VkRenderPassInputAttachmentAspectCreateInfo *input_attachment_aspect_info =
         LvlFindInChain<VkRenderPassInputAttachmentAspectCreateInfo>(pCreateInfo->pNext);
