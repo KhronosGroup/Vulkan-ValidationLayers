@@ -31,7 +31,7 @@ ASSERT_NO_FATAL_FAILURE(Init());
 
 // or
 
-ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+ASSERT_NO_FATAL_FAILURE(InitFramework());
 ASSERT_NO_FATAL_FAILURE(InitState());
 ```
 
@@ -46,24 +46,19 @@ Adding extension support is quite easy.
 Here is an example of adding `VK_KHR_sampler_ycbcr_conversion` with all the extensions it requires as well. Note, most extensions will have only 1 or 2 dependency extensions needed
 
 ```cpp
-bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 1);
-if (mp_extensions) {
-    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-}
-ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-if (mp_extensions) {
-    m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-} else {
+// Setup extensions, including dependent instance and device extensions. This call should be made before any call to InitFramework
+AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+
+//  Among other things, this will create the VkInstance and VkPhysicalDevice that will be used for the test.
+ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+// Check that all extensions and their dependencies were enabled successfully
+if (!IsRequestedExtensionsEnabled()) {
     printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
     return;
 }
+
+// Finish initializing state, including creating the VkDevice that will be used for the test
 ASSERT_NO_FATAL_FAILURE(InitState());
 ```
 
@@ -82,7 +77,7 @@ If a certain version of Vulkan is needed a test writer can call
 
 ```cpp
 SetTargetApiVersion(VK_API_VERSION_1_1);
-ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+ASSERT_NO_FATAL_FAILURE(InitFramework());
 ```
 
 Later in the test it can also be checked
@@ -102,7 +97,7 @@ PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
 if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
     vkBindImageMemory2Function = vk::BindImageMemory2;
 } else {
-    vkBindImageMemory2Function = (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+    vkBindImageMemory2Function = reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
 }
 
 // later in code
@@ -126,8 +121,11 @@ m_errorMonitor->VerifyFound();
 
 - For making sure there is no error (positive test)
 ```cpp
+// This should be the first call in the test to ensure there are no "silent failures" during test setup
 m_errorMonitor->ExpectSuccess();
+...
 vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
+...
 m_errorMonitor->VerifyNotFound();
 ```
 
@@ -196,7 +194,7 @@ fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_UINT, for
 When using the device profile layer for limits, the test maybe need to call `vkSetPhysicalDeviceLimitsEXT` prior to creating the `VkDevice` for some validation state tracking
 
 ```cpp
-ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+ASSERT_NO_FATAL_FAILURE(InitFramework());
 
 PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
 PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
