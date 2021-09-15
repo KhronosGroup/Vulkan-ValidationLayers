@@ -9755,13 +9755,39 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewMasks) {
     VkSubpassDescription subpasses[2];
     subpasses[0] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
     subpasses[1] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    uint32_t viewMasks[] = {0x3u, 0x0};
-    uint32_t correlationMasks[] = {0x1u, 0x3u};
-    VkRenderPassMultiviewCreateInfo rpmvci = {
-        VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO, nullptr, 2, viewMasks, 0, nullptr, 2, correlationMasks};
+    uint32_t viewMasks[] = {0x3u, 0x0u};
+    uint32_t correlationMasks[] = {0x1u, 0x2u};
+    VkRenderPassMultiviewCreateInfo rpmvci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>();
+    rpmvci.subpassCount = 2;
+    rpmvci.pViewMasks = viewMasks;
+    rpmvci.correlationMaskCount = 2;
+    rpmvci.pCorrelationMasks = correlationMasks;
 
-    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, &rpmvci, 0, 0, nullptr, 2, subpasses, 0, nullptr};
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci);
+    rpci.subpassCount = 2;
+    rpci.pSubpasses = subpasses;
 
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pNext-02513",
+                         nullptr);
+
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = 0;
+    dependency.dstSubpass = 1;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    viewMasks[1] = 0x4u;
+    rpci.dependencyCount = 1;
+    rpci.pDependencies = &dependency;
+    rpmvci.dependencyCount = 1;
+    int32_t view_offset = 1;
+    rpmvci.pViewOffsets = &view_offset;
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pNext-02512",
+                         nullptr);
+
+    viewMasks[0] = 0x0u;
+    viewMasks[1] = 0x0u;
+    dependency.dependencyFlags = VK_DEPENDENCY_VIEW_LOCAL_BIT;
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pNext-02513",
                          nullptr);
 }
