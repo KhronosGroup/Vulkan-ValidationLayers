@@ -34,13 +34,10 @@
 TEST_F(VkLayerTest, BufferExtents) {
     TEST_DESCRIPTION("Perform copies across a buffer, provoking out-of-range errors.");
 
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    bool copy_commands2 = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-        copy_commands2 = true;
-    }
+    const bool copy_commands2 = CanEnableDeviceExtension(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -203,6 +200,7 @@ TEST_F(VkLayerTest, AnisotropyFeatureEnabled) {
     TEST_DESCRIPTION("Validation must check several conditions that apply only when Anisotropy is enabled.");
 
     // Determine if required device features are available
+    AddRequiredExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
     VkPhysicalDeviceFeatures device_features = {};
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
@@ -213,11 +211,7 @@ TEST_F(VkLayerTest, AnisotropyFeatureEnabled) {
         return;
     }
 
-    bool cubic_support = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, "VK_IMG_filter_cubic")) {
-        m_device_extension_names.push_back("VK_IMG_filter_cubic");
-        cubic_support = true;
-    }
+    const bool cubic_support = CanEnableDeviceExtension(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
 
     VkSamplerCreateInfo sampler_info_ref = SafeSaneSamplerCreateInfo();
     sampler_info_ref.anisotropyEnable = VK_TRUE;
@@ -1029,13 +1023,10 @@ TEST_F(VkLayerTest, InvalidUsageBits) {
         "Specify wrong usage for image then create conflicting view of image Initialize buffer with wrong usage then perform copy "
         "expecting errors from both the image and the buffer (2 calls)");
 
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    bool copy_commands2 = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-        copy_commands2 = true;
-    }
+    const bool copy_commands2 = CanEnableDeviceExtension(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdCopyBufferToImage2KHR vkCmdCopyBufferToImage2Function = nullptr;
@@ -1647,21 +1638,14 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
 
 TEST_F(VkLayerTest, BindInvalidMemoryYcbcr) {
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
+        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
+        return;
     }
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
+
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
@@ -1812,27 +1796,14 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
     TEST_DESCRIPTION("These tests deal with VK_KHR_bind_memory_2 and disjoint memory being bound");
 
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
-    bool bind_memory_2_extension = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    const bool mp_extensions = CanEnableDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    const bool bind_memory_2_extension = CanEnableDeviceExtension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
 
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else if (bind_memory_2_extension) {
-        // bind_memory_2 extension is subset of mp_extensions
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    } else {
+    if (!bind_memory_2_extension) {
         printf("%s test requires VK_KHR_bind_memory2 extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
@@ -2185,21 +2156,9 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
     TEST_DESCRIPTION("Tests case were no call to memory requirements was made prior to binding");
 
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    }
+    const bool mp_extensions = CanEnableDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // first test buffer
@@ -2450,27 +2409,13 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
     TEST_DESCRIPTION("These tests deal with VK_KHR_bind_memory_2 and invalid VkBindImageMemoryInfo* pBindInfos");
 
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    const bool mp_extensions = CanEnableDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    const bool bind_memory_2_extension = CanEnableDeviceExtension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
 
-    bool bind_memory_2_extension = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else if (bind_memory_2_extension) {
-        // bind_memory_2 extension is subset of mp_extensions
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    } else {
+    if (!bind_memory_2_extension) {
         printf("%s test requires VK_KHR_bind_memory2 extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
@@ -2953,13 +2898,10 @@ TEST_F(VkLayerTest, ImageSampleCounts) {
 }
 
 TEST_F(VkLayerTest, BlitImageFormatTypes) {
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    bool copy_commands2 = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-        copy_commands2 = true;
-    }
+    const bool copy_commands2 = CanEnableDeviceExtension(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdBlitImage2KHR vkCmdBlitImage2Function = nullptr;
@@ -3188,12 +3130,9 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
 }
 
 TEST_F(VkLayerTest, BlitImageFilters) {
-    bool cubic_support = false;
+    AddRequiredExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, "VK_IMG_filter_cubic")) {
-        m_device_extension_names.push_back("VK_IMG_filter_cubic");
-        cubic_support = true;
-    }
+    const bool cubic_support = CanEnableDeviceExtension(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkFormat fmt = VK_FORMAT_R8_UINT;
@@ -4276,10 +4215,9 @@ TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
 
 TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
         return;
     }
@@ -4352,10 +4290,9 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
 
 TEST_F(VkLayerTest, Sync2InvalidCmdBarrierImageDestroyed) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
         return;
     }
@@ -4833,22 +4770,9 @@ TEST_F(VkLayerTest, MultiplaneImageLayoutBadAspectFlags) {
     TEST_DESCRIPTION("Query layout of a multiplane image using illegal aspect flag masks");
 
     // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
@@ -5004,16 +4928,9 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
     TEST_DESCRIPTION("Attempt to create a buffer view with invalid create info.");
 
     // Attempt to enable texel buffer alignmnet extension
-    bool texel_buffer_alignment = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (texel_buffer_alignment) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    texel_buffer_alignment =
-        texel_buffer_alignment && DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
-    if (texel_buffer_alignment) {
-        m_device_extension_names.push_back(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
-    }
+    const bool texel_buffer_alignment = CanEnableDeviceExtension(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
@@ -5361,21 +5278,9 @@ TEST_F(VkLayerTest, ClearColorImageWithInvalidFormat) {
     TEST_DESCRIPTION("Record clear color with an invalid image formats");
 
     // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 1);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
@@ -5424,13 +5329,10 @@ TEST_F(VkLayerTest, ClearColorImageWithInvalidFormat) {
 TEST_F(VkLayerTest, ClearDepthStencilWithBadAspect) {
     TEST_DESCRIPTION("Verify ClearDepth with an invalid VkImageAspectFlags.");
 
+    AddRequiredExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    const bool separate_stencil_usage_supported =
-        DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
-    if (separate_stencil_usage_supported) {
-        m_device_extension_names.push_back(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
-    }
+    const bool separate_stencil_usage_supported = CanEnableDeviceExtension(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
 
     const auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
@@ -5785,49 +5687,23 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     TEST_DESCRIPTION("A variety of ways to get VK_INVALID_BARRIER ");
 
     // Make sure extensions for multi-planar and separate depth stencil images are enabled if possible
-    bool mp_extensions = true;
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        mp_extensions = false;
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
-    bool external_memory = false;
-    if (InstanceExtensionSupported(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
-        external_memory = true;
-    }
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (IsPlatform(kNexusPlayer)) {
         printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
         return;
     }
-    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    }
-    bool separate_ds_layouts = false;
-    if (rp2Supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-        separate_ds_layouts = true;
-    }
-    bool maintaince2 = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    if (maintaince2) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    }
+    const bool mp_extensions = CanEnableDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    const bool separate_ds_layouts = CanEnableDeviceExtension(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
+    const bool maintenance2 = CanEnableDeviceExtension(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+
     // Check for external memory device extensions
-    if (external_memory && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-    } else {
-        external_memory = false;
-    }
+    const bool external_memory = CanEnableDeviceExtension(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
 
     // Set separate depth stencil feature bit
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
@@ -6236,9 +6112,9 @@ TEST_F(VkLayerTest, InvalidBarriers) {
 
         for (uint32_t i = 0; i < layout_count; ++i) {
             const VkImageLayout bad_layout = bad_buffer_layouts[i].bad_layout;
-            // Skip layouts that require maintaince2 support
-            if ((maintaince2 == false) && ((bad_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) ||
-                                           (bad_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL))) {
+            // Skip layouts that require maintenance2 support
+            if ((maintenance2 == false) && ((bad_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) ||
+                                            (bad_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL))) {
                 continue;
             }
             conc_test.image_barrier_.image = bad_buffer_layouts[i].image_obj.handle();
@@ -6325,22 +6201,16 @@ TEST_F(VkLayerTest, InvalidBarriers) {
 TEST_F(VkLayerTest, Sync2InvalidBarriers) {
     TEST_DESCRIPTION("Synchronization2 test for invalid Memory Barriers");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    } else {
+    if (!CanEnableDeviceExtension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
         printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    bool separate_ds_layouts = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-        separate_ds_layouts = true;
-    }
-    bool maintaince2 = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    if (maintaince2) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    }
+    const bool separate_ds_layouts = CanEnableDeviceExtension(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
+    const bool maintenance2 = CanEnableDeviceExtension(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
 
     if (!CheckSynchronization2SupportAndInitState(this)) {
         printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
@@ -6644,9 +6514,9 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
 
         for (uint32_t i = 0; i < layout_count; ++i) {
             const VkImageLayout bad_layout = bad_buffer_layouts[i].bad_layout;
-            // Skip layouts that require maintaince2 support
-            if ((maintaince2 == false) && ((bad_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) ||
-                                           (bad_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL))) {
+            // Skip layouts that require maintenance2 support
+            if ((maintenance2 == false) && ((bad_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) ||
+                                            (bad_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL))) {
                 continue;
             }
             conc_test.image_barrier_.image = bad_buffer_layouts[i].image_obj.handle();
@@ -6839,22 +6709,10 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
 
 TEST_F(VkLayerTest, InvalidBarrierQueueFamilyWithMemExt) {
     TEST_DESCRIPTION("Create and submit barriers with invalid queue families when memory extension is enabled ");
-    std::vector<const char *> reqd_instance_extensions = {
-        {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME}};
-    for (auto extension_name : reqd_instance_extensions) {
-        if (InstanceExtensionSupported(extension_name)) {
-            m_instance_extension_names.push_back(extension_name);
-        } else {
-            printf("%s Required instance extension %s not supported, skipping test\n", kSkipPrefix, extension_name);
-            return;
-        }
-    }
-
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     // Check for external memory device extensions
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s External memory extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
@@ -7117,10 +6975,9 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 TEST_F(VkLayerTest, Sync2InvalidBarrierQueueFamily) {
     TEST_DESCRIPTION("Create and submit barriers with invalid queue families with synchronization2");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
         return;
     }
@@ -7223,10 +7080,9 @@ TEST_F(VkLayerTest, IdxBufferAlignmentError) {
 TEST_F(VkLayerTest, Bad2DArrayImageType) {
     TEST_DESCRIPTION("Create an image with a flag specifying 2D_ARRAY_COMPATIBLE but not of imageType 3D.");
 
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
         return;
     }
@@ -7403,18 +7259,14 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     // *  -3 Cmd buf submit of image w/ layout not matching first use w/o subresource
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    } else {
+    if (!CanEnableDeviceExtension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
         printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    bool copy_commands2 = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-        copy_commands2 = true;
-    }
+    const bool copy_commands2 = CanEnableDeviceExtension(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
     if (!CheckSynchronization2SupportAndInitState(this)) {
         printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
@@ -7770,10 +7622,9 @@ TEST_F(VkLayerTest, InvalidStorageImageLayout) {
 TEST_F(VkLayerTest, ClearColorImageInvalidImageLayout) {
     TEST_DESCRIPTION("Check ClearImage layouts with SHARED_PRESENTABLE_IMAGE extension active.");
 
+    AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s is not supported on this platform, skipping test.\n", kSkipPrefix,
                VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
         return;
@@ -7822,13 +7673,10 @@ TEST_F(VkLayerTest, ClearColorImageInvalidImageLayout) {
 TEST_F(VkLayerTest, CopyInvalidImageMemory) {
     TEST_DESCRIPTION("Validate 4 invalid image memory VUIDs ");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    bool copy_commands2 = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-        copy_commands2 = true;
-    }
+    const bool copy_commands2 = CanEnableDeviceExtension(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdCopyImage2KHR vkCmdCopyImage2Function = nullptr;
@@ -7926,10 +7774,9 @@ TEST_F(VkLayerTest, CreateImageViewBreaksParameterCompatibilityRequirements) {
     TEST_DESCRIPTION(
         "Attempts to create an Image View with a view type that does not match the image type it is being created from.");
 
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    }
+    const bool maintenance1_support = CanEnableDeviceExtension(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkPhysicalDeviceMemoryProperties memProps;
@@ -8054,7 +7901,7 @@ TEST_F(VkLayerTest, CreateImageViewBreaksParameterCompatibilityRequirements) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
 
     // Test for error message
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
+    if (maintenance1_support) {
         CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01005");
     } else {
         CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
@@ -8069,8 +7916,7 @@ TEST_F(VkLayerTest, CreateImageViewBreaksParameterCompatibilityRequirements) {
         &formProps);
 
     // If not, skip this part of the test.
-    if (res || !m_device->phy().features().sparseBinding ||
-        !DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
+    if (res || !m_device->phy().features().sparseBinding || !maintenance1_support) {
         printf("%s %s is not supported.\n", kSkipPrefix, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
         return;
     }
@@ -8289,12 +8135,12 @@ TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
         return;
     }
 
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
-        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n", kSkipPrefix);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE_2 extension, unavailable - skipped.\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
@@ -8376,13 +8222,13 @@ TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
 TEST_F(VkLayerTest, CreateImageViewNoSeparateStencilUsage) {
     TEST_DESCRIPTION("Verify CreateImageView create info for the case VK_EXT_separate_stencil_usage is not supported.");
 
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
-        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n", kSkipPrefix);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE_2 extension, unavailable - skipped.\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     const auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
         printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
@@ -8443,19 +8289,19 @@ TEST_F(VkLayerTest, CreateImageViewNoSeparateStencilUsage) {
 TEST_F(VkLayerTest, CreateImageViewStencilUsageCreateInfo) {
     TEST_DESCRIPTION("Verify CreateImageView with stencil usage.");
 
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
-        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n", kSkipPrefix);
+    if (!CanEnableDeviceExtension(VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
+        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE_2 extension, unavailable - skipped.\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
 
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME)) {
+    if (!CanEnableDeviceExtension(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME)) {
         printf("%s VK_EXT_separate_stencil_usage Extension not supported, skipping tests\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
 
     const auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
@@ -8953,22 +8799,9 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
     TEST_DESCRIPTION("Postive/negative tests of multiplane imageview format compatibility");
 
     // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
@@ -9065,12 +8898,9 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
 
 TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
     TEST_DESCRIPTION("Passing bad image subrange to CreateImageView");
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    bool maintenance1 = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        maintenance1 = true;
-    }
+    const bool maintenance1 = CanEnableDeviceExtension(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkPhysicalDeviceFeatures device_features = {};
@@ -9885,20 +9715,10 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
 
     // Check for VK_KHR_get_physical_device_properties2
-    bool push_physical_device_properties_2_support =
-        InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (push_physical_device_properties_2_support) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    bool push_fragment_density_support = false;
-
-    if (push_physical_device_properties_2_support) {
-        push_fragment_density_support = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-        if (push_fragment_density_support) m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    }
+    const bool push_fragment_density_support = CanEnableDeviceExtension(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
 
@@ -10047,13 +9867,10 @@ TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
         "Create sampler with a filter and use with image view using a format that does not support the sampler filter.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    bool cubic_support = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, "VK_IMG_filter_cubic")) {
-        m_device_extension_names.push_back("VK_IMG_filter_cubic");
-        cubic_support = true;
-    }
+    const bool cubic_support = CanEnableDeviceExtension(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
 
@@ -10272,11 +10089,10 @@ TEST_F(VkLayerTest, IllegalAddressModeWithCornerSampledNV) {
         "Create image with VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV flag and sample it with something other than "
         "VK_SAMPLER_ADDRESS_MODE_CLAMP_EDGE.");
 
+    AddRequiredExtensions(VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, "VK_NV_corner_sampled_image")) {
-        m_device_extension_names.push_back("VK_NV_corner_sampled_image");
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s VK_NV_corner_sampled_image not supported.  Skipping test.\n", kSkipPrefix);
         return;
     }
@@ -10351,29 +10167,17 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
         "Create sampler with ycbcr conversion and use with an image created without ycrcb conversion or immutable sampler");
 
     // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_SPEC_VERSION);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
 
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
+
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
 
     // Enable Ycbcr Conversion Features
     VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = {};
@@ -10608,9 +10412,7 @@ TEST_F(VkLayerTest, DepthStencilImageViewWithColorAspectBitError) {
 TEST_F(VkLayerTest, ExtensionNotEnabled) {
     TEST_DESCRIPTION("Validate that using an API from an unenabled extension returns an error");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
+    if (!AddRequiredInstanceExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
@@ -10621,7 +10423,7 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
     std::vector<const char *> required_device_extensions = {VK_KHR_MAINTENANCE_1_EXTENSION_NAME, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
                                                             VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME};
     for (auto dev_ext : required_device_extensions) {
-        if (DeviceExtensionSupported(gpu(), nullptr, dev_ext)) {
+        if (DeviceExtensionSupported(dev_ext)) {
             m_device_extension_names.push_back(dev_ext);
         } else {
             printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix, dev_ext);
@@ -10707,11 +10509,9 @@ TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
 }
 
 TEST_F(VkLayerTest, DedicatedAllocationBinding) {
+    AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Dedicated allocation extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
@@ -10954,24 +10754,22 @@ TEST_F(VkLayerTest, CornerSampledImageNV) {
 TEST_F(VkLayerTest, ImageStencilCreate) {
     TEST_DESCRIPTION("Verify ImageStencil create info.");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
+    if (!AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
+    AddRequiredExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     VkPhysicalDeviceFeatures device_features = {};
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
     device_features.shaderStorageImageMultisample = VK_FALSE;  // Force multisampled storage images off
 
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME)) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s VK_EXT_separate_stencil_usage Extension not supported, skipping tests\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
 
@@ -11787,29 +11585,15 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
     }
 
     // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 1);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
 
-    bool ycbcr_array_extension = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME);
-    if (ycbcr_array_extension) {
-        m_device_extension_names.push_back(VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME);
-    }
+    const bool ycbcr_array_extension = CanEnableDeviceExtension(VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -11918,28 +11702,20 @@ TEST_F(VkLayerTest, InvalidSamplerFilterMinmax) {
     TEST_DESCRIPTION("Invalid uses of VK_EXT_sampler_filter_minmax.");
 
     // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 1);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    const bool mp_extensions = AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME) &&
+                               AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (!mp_extensions) {
+        printf("%s Instance extensions not supported for %s and %s\n", kSkipPrefix, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME,
+               VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
-    } else {
+    if (!CanEnableDeviceExtension(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) {
         printf("%s test requires Sampler Filter MinMax extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
 
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
+    if (!CanEnableDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
         printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
@@ -12081,8 +11857,7 @@ TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
         return;
     }
 
-    // Check extension support but do not enable it
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME)) {
+    if (!AddRequiredDeviceExtensions(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME)) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
         return;
     }
@@ -12285,33 +12060,15 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
     TEST_DESCRIPTION("Create invalid requests to image and buffer memory requirments.");
 
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    }
 
-    bool drm_format_modifier = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME) &&
-        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
-        drm_format_modifier = true;
-    }
+    const bool drm_format_modifier = CanEnableDeviceExtension(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    if (!mp_extensions) {
+    if (!CanEnableDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
         printf("%s test requires KHR YCbCr extensions, not available.  Skipping.\n", kSkipPrefix);
     } else {
         // Need to make sure disjoint is supported for format
@@ -12421,32 +12178,23 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
 TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
     TEST_DESCRIPTION("Validation must check several conditions that apply only when Fragment Density Maps are used.");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME) &&
+        !AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extensions for %s or %s; skipped.\n", kSkipPrefix,
+               VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME, VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
         return;
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    bool fdmSupported = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    bool fdm2Supported = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
+    const bool fdmSupported = CanEnableDeviceExtension(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    const bool fdm2Supported = CanEnableDeviceExtension(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
 
     // Check extension support
     if (!(fdmSupported || fdm2Supported)) {
         printf("%s test requires %s or %s extensions. Skipping.\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME,
                VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
         return;
-    }
-
-    if (fdmSupported) {
-        m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    }
-
-    if (fdm2Supported) {
-        m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
     }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
@@ -12632,9 +12380,15 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
 TEST_F(VkLayerTest, FragmentDensityMapDisabled) {
     TEST_DESCRIPTION("Checks for when the fragment density map features are not enabled.");
 
+    if (!AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME) &&
+        !AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extensions for %s or %s; skipped.\n", kSkipPrefix,
+               VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME, VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    bool fdmSupported = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    bool fdm2Supported = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
+    const bool fdmSupported = CanEnableDeviceExtension(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    const bool fdm2Supported = CanEnableDeviceExtension(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
 
     // Check extension support
     if (!(fdmSupported || fdm2Supported)) {
@@ -12930,13 +12684,11 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
 #endif
 
     // Check for external memory instance extensions
-    if (InstanceExtensionSupported(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
+    if (!AddRequiredExtensions(ext_mem_extension_name)) {
         printf("%s External memory extensions not supported, skipping test\n", kSkipPrefix);
         return;
     }
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kGalaxyS10)) {
@@ -12944,17 +12696,11 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
         return;
     }
 
-    bool bind_memory2 = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    if (DeviceExtensionSupported(gpu(), nullptr, ext_mem_extension_name)) {
-        m_device_extension_names.push_back(ext_mem_extension_name);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-        if (bind_memory2) {
-            m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        }
-    } else {
+    if (!CanEnableDeviceExtension(ext_mem_extension_name)) {
         printf("%s %s extension not supported, skipping test\n", kSkipPrefix, ext_mem_extension_name);
         return;
     }
+    const bool bind_memory2 = CanEnableDeviceExtension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkPhysicalDeviceMemoryProperties phys_mem_props;
@@ -13046,13 +12792,11 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
 #endif
 
     // Check for external memory instance extensions
-    if (InstanceExtensionSupported(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
+    if (!AddRequiredExtensions(ext_mem_extension_name)) {
         printf("%s External memory extensions not supported, skipping test\n", kSkipPrefix);
         return;
     }
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kGalaxyS10)) {
@@ -13060,17 +12804,12 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
         return;
     }
 
-    bool bind_memory2 = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    if (DeviceExtensionSupported(gpu(), nullptr, ext_mem_extension_name)) {
-        m_device_extension_names.push_back(ext_mem_extension_name);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-        if (bind_memory2) {
-            m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        }
-    } else {
+    if (!CanEnableDeviceExtension(ext_mem_extension_name)) {
         printf("%s %s extension not supported, skipping test\n", kSkipPrefix, ext_mem_extension_name);
         return;
     }
+
+    const bool bind_memory2 = CanEnableDeviceExtension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkPhysicalDeviceMemoryProperties phys_mem_props;
@@ -13255,22 +12994,15 @@ TEST_F(VkLayerTest, VerityUnnormalizedCoordinatesSampler) {
 TEST_F(VkLayerTest, CreateImageViewIncompatibleFormat) {
     TEST_DESCRIPTION("Tests for VUID-VkImageViewCreateInfo-image-01761");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s %s not supported", kSkipPrefix, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
 
     VkPhysicalDeviceFeatures device_features = {};
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
 
-    auto maintenance2_support = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    if (maintenance2_support) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    }
-    const auto ycbcr_support = AddYCbCrDeviceExtensions();
+    const auto ycbcr_support = CanEnableDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    const auto maintenance2_support = CanEnableDeviceExtension(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
 
     const char *error_vuid;
     if ((!maintenance2_support) && (!ycbcr_support)) {
@@ -13341,9 +13073,9 @@ TEST_F(VkLayerTest, CreateImageViewIncompatibleFormat) {
 TEST_F(VkLayerTest, CreateImageViewIncompatibleDepthFormat) {
     TEST_DESCRIPTION("Tests for VUID-VkImageViewCreateInfo-image-01761 with depth format");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    if (!AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         printf("%s %s not supported", kSkipPrefix, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
         return;
     }
@@ -13352,11 +13084,8 @@ TEST_F(VkLayerTest, CreateImageViewIncompatibleDepthFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
 
-    auto maintenance2_support = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    if (maintenance2_support) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    }
-    const auto ycbcr_support = AddYCbCrDeviceExtensions();
+    const auto maintenance2_support = CanEnableDeviceExtension(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    const auto ycbcr_support = CanEnableDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
     const char *error_vuid;
     if ((!maintenance2_support) && (!ycbcr_support)) {
@@ -13508,11 +13237,13 @@ TEST_F(VkLayerTest, InvalidShadingRateUsage) {
 TEST_F(VkLayerTest, InvalidImageFormatList) {
     TEST_DESCRIPTION("Tests for VK_KHR_image_format_list");
 
+    if (!AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) {
+        printf("%s: Missing required instance extensions\n", kSkipPrefix);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s extension not supported, skipping test\n", kSkipPrefix, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
         return;
     }
@@ -13712,17 +13443,19 @@ TEST_F(VkLayerTest, SparseMemoryBindOffset) {
 TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
     TEST_DESCRIPTION("Bind image memory with VkBindImageMemoryDeviceGroupInfo but invalid flags");
 
-    if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
-    } else {
+    if (!AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
         printf("%s %s not supported\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+        return;
+    }
+    if (!AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
+        printf("%s %s not supported\n", kSkipPrefix, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         return;
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    bool bind_memory_2_extension = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    bool device_group_extension = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    const bool bind_memory_2_extension = CanEnableDeviceExtension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    const bool device_group_extension = CanEnableDeviceExtension(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
 
     if (!bind_memory_2_extension) {
         printf("%s test requires VK_KHR_bind_memory2 extensions, not available.  Skipping.\n", kSkipPrefix);
@@ -13731,8 +13464,6 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
         printf("%s test requires VK_KHR_device_group extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -13804,10 +13535,14 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
 TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
     TEST_DESCRIPTION("Bind image memory with VkBindImageMemoryDeviceGroupInfo but invalid splitInstanceBindRegionCount");
 
+    if (!AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME) || !AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
+        printf("%s Missing required instance extensions\n", kSkipPrefix);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    bool bind_memory_2_extension = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    bool device_group_extension = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    const bool bind_memory_2_extension = CanEnableDeviceExtension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    const bool device_group_extension = CanEnableDeviceExtension(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
 
     if (!bind_memory_2_extension) {
         printf("%s test requires VK_KHR_bind_memory2 extensions, not available.  Skipping.\n", kSkipPrefix);
@@ -13816,8 +13551,6 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
         printf("%s test requires VK_KHR_device_group extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
 
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
@@ -13955,12 +13688,15 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBindings) {
 TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBinding) {
     TEST_DESCRIPTION("Create invalid descriptor set layout.");
 
+    if (!AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME)) {
+        printf("%s Missing instance extensions for %s", kSkipPrefix, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME)) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s VK_VALVE_mutable_descriptor_type Extension not supported, skipping part of test\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
 
     VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -13986,11 +13722,12 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBinding) {
 TEST_F(VkLayerTest, DedicatedAllocationBufferWithInvalidFlags) {
     TEST_DESCRIPTION("Verify that flags are valid with VkDedicatedAllocationBufferCreateInfoNV");
 
+    if (!AddRequiredExtensions(VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
+        printf("%s Missing required instance extensions for %s\n", kSkipPrefix, VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    }
     // Positive test to check parameter_validation and unique_objects support for NV_dedicated_allocation
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME Extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
@@ -14019,23 +13756,14 @@ TEST_F(VkLayerTest, DedicatedAllocationBufferWithInvalidFlags) {
 TEST_F(VkLayerTest, InvalidMemoryAllocatepNextChain) {
     // Attempts to allocate from a memory type that doesn't exist
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s %s not supported\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
-
-    if (InstanceExtensionSupported(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
-    } else {
-        printf("%s %s not supported\n", kSkipPrefix, VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+    if (!AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) {
+        printf("%s Missing instance extensions required by %s\n", kSkipPrefix, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        return;
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     // Check for external memory device extensions
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s External memory extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
@@ -14077,12 +13805,15 @@ TEST_F(VkLayerTest, CreateImageViewWithInvalidLevelOrLayerCount) {
         "Attempts to create an Image View with an image using VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT, but levelCount and "
         "layerCount are not 1.");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
-        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n", kSkipPrefix);
+    if (!AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
+        printf("%s Missing instance extensions required for %s\n", kSkipPrefix, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE_2 extension, unavailable - skipped.\n", kSkipPrefix);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
@@ -14160,24 +13891,21 @@ TEST_F(VkLayerTest, FillBufferCmdPoolUnsupported) {
 TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
     TEST_DESCRIPTION("Checks for invalid BindIMageMemoryDeviceGroupInfo.");
 
-    if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
-    } else {
-        printf("%s %s not supported\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+    if (!AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME) || !AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
+        printf("%s Missing required instance extensions for %s and %s\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_EXTENSION_NAME,
+               VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         return;
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+    if (!CanEnableDeviceExtension(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
         printf("%s VK_KHR_DEVICE_GROUP_EXTENSION_NAME Extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
+    if (!CanEnableDeviceExtension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
         printf("%s VK_KHR_BIND_MEMORY_2_EXTENSION_NAME Extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
@@ -14244,12 +13972,12 @@ TEST_F(VkLayerTest, CreateImageViewWithInvalidViewType) {
         "Create Image with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT and non-compressed format and ImageView with view type "
         "VK_IMAGE_VIEW_TYPE_3D.");
 
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
-        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n", kSkipPrefix);
+    if (!CanEnableDeviceExtension(VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
+        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE_2 extension, unavailable - skipped.\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
@@ -14294,11 +14022,6 @@ TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
     TEST_DESCRIPTION("Test creating Image with invalid VkImageSubresourceRange aspectMask.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
-        printf("%s Did not find required device extension %s; test skipped.\n", kSkipPrefix,
-               VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-        return;
-    }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
@@ -14377,13 +14100,14 @@ TEST_F(VkLayerTest, InvalidCreateImageQueueFamilies) {
 TEST_F(VkLayerTest, InvalidConditionalRenderingBufferUsage) {
     TEST_DESCRIPTION("Use a buffer without conditional rendering usage when needed.");
 
+    AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME)) {
-        printf("%s Did not find required device extension %s; test skipped.\n", kSkipPrefix, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Did not find required device extension %s; test skipped.\n", kSkipPrefix,
+               VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdBeginConditionalRenderingEXT vkCmdBeginConditionalRenderingEXT =
@@ -14408,15 +14132,14 @@ TEST_F(VkLayerTest, InvalidConditionalRenderingBufferUsage) {
 TEST_F(VkLayerTest, ImageFormatInfoDrmFormatModifier) {
     TEST_DESCRIPTION("Validate VkPhysicalDeviceImageFormatInfo2.");
 
-    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+    if (!AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME)) {
         printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!AddImageDrmFormatModifierDeviceExtensions()) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s not supported, skipping tests\n", kSkipPrefix, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
         return;
     }
@@ -14559,12 +14282,13 @@ TEST_F(VkLayerTest, InvalidQueueBindSparseMemoryType) {
 TEST_F(VkLayerTest, InvalidBeginConditionalRendering) {
     TEST_DESCRIPTION("Begin conditional rendering when it is already active.");
 
+    AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME)) {
-        printf("%s Did not find required device extension %s; test skipped.\n", kSkipPrefix, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Did not find required device extension %s; test skipped.\n", kSkipPrefix,
+               VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdBeginConditionalRenderingEXT vkCmdBeginConditionalRenderingEXT =
@@ -14593,10 +14317,9 @@ TEST_F(VkLayerTest, InvalidBeginConditionalRendering) {
 TEST_F(VkLayerTest, InvalidMultiSampleImageView) {
     TEST_DESCRIPTION("Begin conditional rendering when it is already active.");
 
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
         return;
     }
