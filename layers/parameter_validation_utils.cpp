@@ -369,7 +369,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     {
-        bool maint1 = IsExtEnabled(extension_state_by_name(device_extensions, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
+        bool maint1 = IsExtEnabled(extension_state_by_name(device_extensions, VK_KHR_MAINTENANCE_1_EXTENSION_NAME));
         bool negative_viewport =
             IsExtEnabled(extension_state_by_name(device_extensions, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME));
         if (maint1 && negative_viewport) {

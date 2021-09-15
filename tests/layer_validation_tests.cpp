@@ -757,7 +757,7 @@ VkImageViewCreateInfo SafeSaneImageViewCreateInfo(const VkImageObj &image, VkFor
 bool CheckCreateRenderPass2Support(VkRenderFramework *renderFramework, std::vector<const char *> &device_extension_names) {
     if (renderFramework->DeviceExtensionSupported(renderFramework->gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
         device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
         device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
         return true;
     }
@@ -774,11 +774,11 @@ bool CheckDescriptorIndexingSupportAndInitFramework(VkRenderFramework *renderFra
     }
     renderFramework->InitFramework(userData, features);
     descriptor_indexing = descriptor_indexing && renderFramework->DeviceExtensionSupported(renderFramework->gpu(), nullptr,
-                                                                                           VK_KHR_MAINTENANCE3_EXTENSION_NAME);
+                                                                                           VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     descriptor_indexing = descriptor_indexing && renderFramework->DeviceExtensionSupported(
                                                      renderFramework->gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     if (descriptor_indexing) {
-        device_extension_names.push_back(VK_KHR_MAINTENANCE3_EXTENSION_NAME);
+        device_extension_names.push_back(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
         device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
         return true;
     }
@@ -3455,12 +3455,12 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
 bool VkLayerTest::AddYCbCrDeviceExtensions() {
     const bool supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) &&
                            DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME) &&
-                           DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME) &&
+                           DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME) &&
                            DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (supported) {
         m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     }
