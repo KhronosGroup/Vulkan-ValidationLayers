@@ -1902,6 +1902,36 @@ uint32_t SHADER_MODULE_STATE::CalcComputeSharedMemory(VkShaderStageFlagBits stag
     return 0;
 }
 
+uint32_t SHADER_MODULE_STATE::ImageOperandsCount(uint32_t i) const {
+    uint32_t count = 0;
+    switch (i) {
+        case spv::ImageOperandsMaskNone:
+        case spv::ImageOperandsMakeTexelAvailableMask:  // ImageOperandsMakeTexelAvailableKHRMask
+        case spv::ImageOperandsMakeTexelVisibleMask:    // ImageOperandsMakeTexelVisibleKHRMask
+        case spv::ImageOperandsNonPrivateTexelMask:     // ImageOperandsNonPrivateTexelKHRMask
+        case spv::ImageOperandsVolatileTexelMask:       // ImageOperandsVolatileTexelKHRMask
+        case spv::ImageOperandsSignExtendMask:
+        case spv::ImageOperandsZeroExtendMask:
+            count = 0;
+            break;
+        case spv::ImageOperandsBiasMask:
+        case spv::ImageOperandsLodMask:
+        case spv::ImageOperandsConstOffsetMask:
+        case spv::ImageOperandsOffsetMask:
+        case spv::ImageOperandsConstOffsetsMask:
+        case spv::ImageOperandsSampleMask:
+        case spv::ImageOperandsMinLodMask:
+            count = 1;
+            break;
+        case spv::ImageOperandsGradMask:
+            count = 2;
+            break;
+        default:
+            break;
+    }
+    return count;
+}
+
 // Assumes itr points to an OpConstant instruction
 uint32_t GetConstantValue(const spirv_inst_iter &itr) { return itr.word(3); }
 

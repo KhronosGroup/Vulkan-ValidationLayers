@@ -342,6 +342,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     uint32_t GetBaseType(const spirv_inst_iter &iter) const;
     uint32_t CalcComputeSharedMemory(VkShaderStageFlagBits stage,
                                      const spirv_inst_iter &insn) const;
+    uint32_t ImageOperandsCount(uint32_t i) const;
 };
 
 // TODO - Most things below are agnostic of even the shader module and more of pure SPIR-V utils
