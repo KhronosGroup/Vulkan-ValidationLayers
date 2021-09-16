@@ -14086,6 +14086,50 @@ TEST_F(VkLayerTest, TestPipelineRasterizationConservativeStateCreateInfo) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, TestShaderZeroInitializeWorkgroupMemory) {
+    TEST_DESCRIPTION("Test initializing workgroup memory in compute shader");
+
+    AddRequiredExtensions(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    bool zero_initialize_workgroup_memory = AreRequestedExtensionsEnabled();
+
+    auto zero_initialize_work_group_memory_features = LvlInitStruct<VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&zero_initialize_work_group_memory_features);
+    if (zero_initialize_workgroup_memory) {
+        features2.pNext = &zero_initialize_work_group_memory_features;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpName %main "main"
+               OpName %counter "counter"
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+  %zero_uint = OpConstantNull %uint
+    %counter = OpVariable %_ptr_Workgroup_uint Workgroup %zero_uint
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    auto cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr);
+    const auto set_info = [&cs](CreateComputePipelineHelper &helper) { helper.cs_ = std::move(cs); };
+    if (cs) {
+        const char *vuid = zero_initialize_workgroup_memory ? "VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372"
+                                                            : "VUID-RuntimeSpirv-OpVariable-06373";
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuid);
+    }
+}
+
 TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
     TEST_DESCRIPTION("Test runtime spirv transform feedback.");
 
