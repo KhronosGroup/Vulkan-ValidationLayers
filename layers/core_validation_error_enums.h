@@ -188,11 +188,11 @@ static const char DECORATE_UNUSED *kVUID_Core_Shader_PushConstantNotAccessibleFr
 static const char DECORATE_UNUSED *kVUID_Core_Shader_MissingPointSizeBuiltIn = "UNASSIGNED-CoreValidation-Shader-PointSizeMissing";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_PointSizeBuiltInOverSpecified = "UNASSIGNED-CoreValidation-Shader-PointSizeOverSpecified";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage = "UNASSIGNED-CoreValidation-Shader-NoAlphaAtLocation0WithAlphaToCoverage";
-static const char DECORATE_UNUSED *kVUID_Core_Shader_CooperativeMatrixSupportedStages = "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixSupportedStages";
+// static const char DECORATE_UNUSED *kVUID_Core_Shader_CooperativeMatrixSupportedStages = "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixSupportedStages";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_CooperativeMatrixType = "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixType";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_CooperativeMatrixMulAdd = "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixMulAdd";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InvalidExtension = "UNASSIGNED-CoreValidation-Shader-InvalidSpirvExtension";
-static const char DECORATE_UNUSED *kVUID_Core_Shader_ResolveQCOM_InvalidCapability = "UNASSIGNED-CoreValidation-Shader-ResolveQCOM-InvalidCapability";
+// static const char DECORATE_UNUSED *kVUID_Core_Shader_ResolveQCOM_InvalidCapability = "UNASSIGNED-CoreValidation-Shader-ResolveQCOM-InvalidCapability";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_MaxComputeWorkGroupSize = "UNASSIGNED-CoreValidation-Shader-MaxComputeWorkGroupSize";
 // Previously defined but unused - uncomment as needed
 //static const char DECORATE_UNUSED *kVUID_Core_Shader_BadCapability = "UNASSIGNED-CoreValidation-Shader-BadCapability";
@@ -264,9 +264,9 @@ static const char DECORATE_UNUSED *kVUID_Core_ImageMemoryBarrier_SharingModeExcl
 static const char DECORATE_UNUSED *kVUID_Core_BufferMemoryBarrier_SharingModeExclusiveSameFamily = "UNASSIGNED-CoreValidation-VkBufferMemoryBarrier-sharing-mode-exclusive-same-family";
 
 // Portability contextual VUs
-static const char DECORATE_UNUSED *kVUID_Portability_Tessellation_Isolines = "UNASSIGNED-PortabilityValidation-Shader-isolines-not-supported";
-static const char DECORATE_UNUSED *kVUID_Portability_Tessellation_PointMode = "UNASSIGNED-PortabilityValidation-Shader-point-mode-not-supported";
-static const char DECORATE_UNUSED *kVUID_Portability_InterpolationFunction = "UNASSIGNED-PortabilityValidation-Shader-interpolation-function-supported";
+// static const char DECORATE_UNUSED *kVUID_Portability_Tessellation_Isolines = "UNASSIGNED-PortabilityValidation-Shader-isolines-not-supported";
+// static const char DECORATE_UNUSED *kVUID_Portability_Tessellation_PointMode = "UNASSIGNED-PortabilityValidation-Shader-point-mode-not-supported";
+// static const char DECORATE_UNUSED *kVUID_Portability_InterpolationFunction = "UNASSIGNED-PortabilityValidation-Shader-interpolation-function-supported";
 
 // Pending VUIDs from https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4585
 static const char DECORATE_UNUSED *kVUID_Core_CmdDraw_VertexInput = "UNASSIGNED-vkCmdDraw-vertexInput-not-specified";
@@ -285,8 +285,8 @@ static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirectByteCountEXT_Vertex
 // Format features VUs
 static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageReadWithoutFormat = "UNASSIGNED-features-shaderStorageImageReadWithoutFormat";
 static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithoutFormat = "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat";
-static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageReadWithoutFormat_NonReadable = "UNASSIGNED-features-shaderStorageImageReadWithoutFormat-NonReadable";
-static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithoutFormat_NonWritable = "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat-NonWritable";
+// static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageReadWithoutFormat_NonReadable = "UNASSIGNED-features-shaderStorageImageReadWithoutFormat-NonReadable";
+// static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithoutFormat_NonWritable = "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat-NonWritable";
 
 // clang-format on
 

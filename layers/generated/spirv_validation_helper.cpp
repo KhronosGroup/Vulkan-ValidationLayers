@@ -705,7 +705,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE con
         if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
             if ((VK_FALSE == enabled_features.portability_subset_features.shaderSampleRateInterpolationFunctions) &&
                 (spv::CapabilityInterpolationFunction == insn.word(1))) {
-                skip |= LogError(device, kVUID_Portability_InterpolationFunction,
+                skip |= LogError(device, "VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325",
                                     "Invalid shader capability (portability error): interpolation functions are not supported "
                                     "by this platform");
             }

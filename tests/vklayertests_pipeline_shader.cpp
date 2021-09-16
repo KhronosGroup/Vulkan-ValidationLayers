@@ -1736,10 +1736,10 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     pipe.cs_.reset(new VkShaderObj(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this));
     pipe.InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "exceeds device limit maxComputeWorkGroupSize[0]");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "exceeds device limit maxComputeWorkGroupSize[1]");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "exceeds device limit maxComputeWorkGroupSize[2]");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "features-limits-maxComputeWorkGroupInvocations");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-x-06368");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-y-06369");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-z-06370");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-x-06371");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 
@@ -2074,7 +2074,7 @@ TEST_F(VkLayerTest, MissingNonReadableDecorationStorageImageFormatRead) {
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-features-shaderStorageImageReadWithoutFormat-NonReadable");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpTypeImage-06270");
     cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
     m_errorMonitor->VerifyFound();
 }
@@ -2136,7 +2136,7 @@ TEST_F(VkLayerTest, MissingNonWritableDecorationStorageImageFormatWrite) {
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat-NonWritable");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpTypeImage-06269");
     cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
     m_errorMonitor->VerifyFound();
 }
@@ -2347,7 +2347,7 @@ TEST_F(VkLayerTest, InvalidPipelineRenderPassShaderResolveQCOM) {
 
     // Create a pipeline with a subpass using VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
     // and with SampleRateShading capability enabled in the SPIR-V fragment shader
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-ResolveQCOM-InvalidCapability");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-SampleRateShading-06378");
     pipeline2.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass2);
     m_errorMonitor->VerifyFound();
 
@@ -6834,8 +6834,8 @@ TEST_F(VkLayerTest, SubgroupSupportedProperties) {
     // There is no 'supportedOperations' check due to it would be redundant to the Capability check done first in VUID 01091 since
     // each 'supportedOperations' flag is 1:1 map to a SPIR-V Capability
     const char *operation_vuid = "VUID-VkShaderModuleCreateInfo-pCode-01091";
-    const char *stage_vuid = "VkPhysicalDeviceSubgroupProperties::supportedStages";
-    const char *quad_vuid = "VkPhysicalDeviceSubgroupProperties::quadOperationsInAllStages";
+    const char *stage_vuid = "VUID-RuntimeSpirv-None-06343";
+    const char *quad_vuid = "VUID-RuntimeSpirv-None-06342";
 
     // Same pipeline creation for each subgroup test
     auto info_override = [&](CreatePipelineHelper &info) {
@@ -7219,8 +7219,7 @@ TEST_F(VkLayerTest, SubgroupExtendedTypesDisabled) {
         new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr, SPV_ENV_VULKAN_1_1));
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures::shaderSubgroupExtendedTypes");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-None-06275");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -9453,7 +9452,7 @@ TEST_F(VkLayerTest, VertexStoresAndAtomicsFeatureDisable) {
         };
 
         CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                          "Shader requires vertexPipelineStoresAndAtomics but is not enabled on the device");
+                                          "VUID-RuntimeSpirv-NonWritable-06341");
     }
 
     // Test AtomicOp
@@ -9476,8 +9475,7 @@ TEST_F(VkLayerTest, VertexStoresAndAtomicsFeatureDisable) {
             // extra VU for not enabling atomic float support
             CreatePipelineHelper::OneshotTest(
                 *this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                std::vector<string>{"UNASSIGNED-CoreValidation-Shader-AtomicFeature",
-                                    "Shader requires vertexPipelineStoresAndAtomics but is not enabled on the device"});
+                std::vector<string>{"VUID-RuntimeSpirv-None-06282", "VUID-RuntimeSpirv-NonWritable-06341"});
         }
     }
 }
@@ -9508,7 +9506,7 @@ TEST_F(VkLayerTest, FragmentStoresAndAtomicsFeatureDisable) {
         };
 
         CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                          "Shader requires fragmentStoresAndAtomics but is not enabled on the device");
+                                          "VUID-RuntimeSpirv-NonWritable-06340");
     }
 
     // Test AtomicOp
@@ -9531,8 +9529,7 @@ TEST_F(VkLayerTest, FragmentStoresAndAtomicsFeatureDisable) {
             // extra VU for not enabling atomic float support
             CreatePipelineHelper::OneshotTest(
                 *this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                std::vector<string>{"UNASSIGNED-CoreValidation-Shader-AtomicFeature",
-                                    "Shader requires fragmentStoresAndAtomics but is not enabled on the device"});
+                std::vector<string>{"VUID-RuntimeSpirv-None-06282", "VUID-RuntimeSpirv-NonWritable-06340"});
         }
     }
 }
@@ -10595,7 +10592,7 @@ TEST_F(VkLayerTest, ShaderDrawParametersNotEnabled11) {
 }
 
 TEST_F(VkLayerTest, ShaderFloatControl) {
-    TEST_DESCRIPTION("Test VK_KHR_float_controls");
+    TEST_DESCRIPTION("Test VK_KHR_shader_float_controls");
 
     // Need 1.1 to get SPIR-V 1.3 since OpExecutionModeId was added in SPIR-V 1.2
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -10674,7 +10671,8 @@ TEST_F(VkLayerTest, ShaderFloatControl) {
                 new VkShaderObj(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", nullptr, SPV_ENV_VULKAN_1_1));
         };
         m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-FeatureNotEnabled");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                                 "VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat32-06294");
     }
 
     if (!denorm_preserve) {
@@ -10693,7 +10691,7 @@ TEST_F(VkLayerTest, ShaderFloatControl) {
                 new VkShaderObj(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", nullptr, SPV_ENV_VULKAN_1_1));
         };
         m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-FeatureNotEnabled");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-shaderDenormPreserveFloat32-06297");
     }
 
     if (!denorm_flush_to_zero) {
@@ -10712,7 +10710,8 @@ TEST_F(VkLayerTest, ShaderFloatControl) {
                 new VkShaderObj(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", nullptr, SPV_ENV_VULKAN_1_1));
         };
         m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-FeatureNotEnabled");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                                 "VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat32-06300");
     }
 
     if (!rounding_mode_rte) {
@@ -10731,7 +10730,8 @@ TEST_F(VkLayerTest, ShaderFloatControl) {
                 new VkShaderObj(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", nullptr, SPV_ENV_VULKAN_1_1));
         };
         m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-FeatureNotEnabled");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                                 "VUID-RuntimeSpirv-shaderRoundingModeRTEFloat32-06303");
     }
 
     if (!rounding_mode_rtz) {
@@ -10750,7 +10750,8 @@ TEST_F(VkLayerTest, ShaderFloatControl) {
                 new VkShaderObj(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", nullptr, SPV_ENV_VULKAN_1_1));
         };
         m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-FeatureNotEnabled");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                                 "VUID-RuntimeSpirv-shaderRoundingModeRTZFloat32-06306");
     }
 }
 
@@ -11169,12 +11170,12 @@ TEST_F(VkLayerTest, ReadShaderClock) {
     const auto set_info_device = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs_device.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info_device, kErrorBit, "UNASSIGNED-spirv-shaderClock-shaderDeviceClock");
+    CreatePipelineHelper::OneshotTest(*this, set_info_device, kErrorBit, "VUID-RuntimeSpirv-shaderDeviceClock-06268");
 
     const auto set_info_subgroup = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs_subgroup.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info_subgroup, kErrorBit, "UNASSIGNED-spirv-shaderClock-shaderSubgroupClock");
+    CreatePipelineHelper::OneshotTest(*this, set_info_subgroup, kErrorBit, "VUID-RuntimeSpirv-shaderSubgroupClock-06267");
 }
 
 TEST_F(VkLayerTest, GraphicsPipelineInvalidFlags) {
@@ -11681,17 +11682,17 @@ TEST_F(VkLayerTest, ShaderAtomicInt64) {
     current_shader = cs_storage_buffer.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-RuntimeSpirv-None-06278"});
     current_shader = cs_store.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-RuntimeSpirv-None-06278"});
 
     // shaderSharedInt64Atomics
     current_shader = cs_workgroup.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-RuntimeSpirv-None-06279"});
 }
 
 TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
@@ -11854,7 +11855,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
-                                "VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+                                "VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06288"});
     }
 
     // glslang doesn't omit Int64Atomics for store currently
@@ -11864,7 +11865,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-04147",
-                                "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+                                "VUID-RuntimeSpirv-None-06288"});
     }
 
     current_shader = layer_data::make_unique<VkShaderObj>(*m_device, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -11873,7 +11874,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
-                                "VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+                                "VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06288"});
     }
 
     current_shader = layer_data::make_unique<VkShaderObj>(*m_device, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -11882,7 +11883,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
-                                "VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+                                "VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06288"});
     }
 }
 
@@ -12063,72 +12064,72 @@ TEST_F(VkLayerTest, ShaderAtomicFloat) {
 
     // shaderBufferFloat32Atomics
     current_shader = cs_buffer_float_32_load.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
 
     current_shader = cs_buffer_float_32_store.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
 
     current_shader = cs_buffer_float_32_exchange.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
 
     // shaderBufferFloat32AtomicAdd
     current_shader = cs_buffer_float_32_add.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-04147",
-                            "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+                            "VUID-RuntimeSpirv-None-06280"});
 
     // shaderSharedFloat32Atomics
     current_shader = cs_shared_float_32_load.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
 
     current_shader = cs_shared_float_32_store.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
 
     current_shader = cs_shared_float_32_exchange.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
 
     // shaderSharedFloat32AtomicAdd
     current_shader = cs_shared_float_32_add.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-04147",
-                            "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+                            "VUID-RuntimeSpirv-None-06281"});
 
     // shaderBufferFloat64Atomics
     if (available_features.shaderFloat64) {
         current_shader = cs_buffer_float_64_load.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
 
         current_shader = cs_buffer_float_64_store.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
 
         current_shader = cs_buffer_float_64_exchange.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
 
         // shaderBufferFloat64AtomicAdd
         current_shader = cs_buffer_float_64_add.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-04147",
-                                "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+                                "VUID-RuntimeSpirv-None-06280"});
 
         // shaderSharedFloat64Atomics
         current_shader = cs_shared_float_64_load.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
 
         current_shader = cs_shared_float_64_store.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
 
         current_shader = cs_shared_float_64_exchange.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
 
         // shaderSharedFloat64AtomicAdd
         current_shader = cs_shared_float_64_add.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-04147",
-                                "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+                                "VUID-RuntimeSpirv-None-06281"});
     } else {
         printf("Skipping 64-bit float tests\n");
     }
@@ -12138,20 +12139,20 @@ TEST_F(VkLayerTest, ShaderAtomicFloat) {
 
     // shaderImageFloat32Atomics
     current_shader = cs_image_load.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06282");
 
     current_shader = cs_image_store.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06282");
 
     current_shader = cs_image_exchange.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06282");
 
     // shaderImageFloat32AtomicAdd
     current_shader = cs_image_add.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-04147",
-                            "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+                            "VUID-RuntimeSpirv-None-06282"});
 }
 
 TEST_F(VkLayerTest, ShaderAtomicFloat2) {
@@ -12345,59 +12346,59 @@ TEST_F(VkLayerTest, ShaderAtomicFloat2) {
     if (support_16_bit) {
         // shaderBufferFloat16Atomics
         current_shader = cs_buffer_float_16_load.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
 
         current_shader = cs_buffer_float_16_store.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
 
         current_shader = cs_buffer_float_16_exchange.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
 
         // shaderBufferFloat16AtomicAdd
         current_shader = cs_buffer_float_16_add.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-VkShaderModuleCreateInfo-pCode-04147",
-                                "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+                                "VUID-RuntimeSpirv-None-06280"});
 
         // shaderBufferFloat16AtomicMinMax
         current_shader = cs_buffer_float_16_min.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06280"});
 
         current_shader = cs_buffer_float_16_max.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06280"});
 
         // shaderSharedFloat16Atomics
         current_shader = cs_shared_float_16_load.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
 
         current_shader = cs_shared_float_16_store.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
 
         current_shader = cs_shared_float_16_exchange.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-AtomicFeature");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
 
         // shaderSharedFloat16AtomicAdd
         current_shader = cs_shared_float_16_add.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-VkShaderModuleCreateInfo-pCode-04147",
-                                "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+                                "VUID-RuntimeSpirv-None-06281"});
 
         // shaderSharedFloat16AtomicMinMax
         current_shader = cs_shared_float_16_min.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06281"});
 
         current_shader = cs_shared_float_16_max.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06281"});
     } else {
         printf("Skipping 16-bit tests\n");
     }
@@ -12406,46 +12407,46 @@ TEST_F(VkLayerTest, ShaderAtomicFloat2) {
     current_shader = cs_buffer_float_32_min.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06280"});
 
     current_shader = cs_buffer_float_32_max.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06280"});
 
     // shaderSharedFloat32AtomicMinMax
     current_shader = cs_shared_float_32_min.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06281"});
 
     current_shader = cs_shared_float_32_max.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06281"});
 
     if (features2.features.shaderFloat64 == VK_TRUE) {
         // shaderBufferFloat64AtomicMinMax
         current_shader = cs_buffer_float_64_min.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06280"});
 
         current_shader = cs_buffer_float_64_max.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06280"});
 
         // shaderSharedFloat64AtomicMinMax
         current_shader = cs_shared_float_64_min.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06281"});
 
         current_shader = cs_shared_float_64_max.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06281"});
     } else {
         printf("Skipping 64-bit float tests\n");
     }
@@ -12457,12 +12458,12 @@ TEST_F(VkLayerTest, ShaderAtomicFloat2) {
     current_shader = cs_image_32_min.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06282"});
 
     current_shader = cs_image_32_min.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "UNASSIGNED-CoreValidation-Shader-AtomicFeature"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06282"});
 }
 
 TEST_F(VkLayerTest, BindLibraryPipeline) {
