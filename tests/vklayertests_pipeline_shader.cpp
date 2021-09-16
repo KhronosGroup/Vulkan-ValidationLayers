@@ -13611,6 +13611,86 @@ TEST_F(VkLayerTest, TestWrongPipelineType) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, TestMinAndMaxTexelGatherOffset) {
+    TEST_DESCRIPTION("Test shader with offset less than minTexelGatherOffset and greather than maxTexelGatherOffset");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (m_device->phy().properties().limits.minTexelGatherOffset <= -100 ||
+        m_device->phy().properties().limits.minTexelGatherOffset >= 100) {
+        printf("%s test needs minTexelGatherOffset less than -100 and maxTexelGatherOffset greater than 100. Skipping.\n",
+               kSkipPrefix);
+        return;
+    }
+
+    const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %color "color"  ; id %9
+               OpName %samp "samp"  ; id %13
+
+               ; Annotations
+               OpDecorate %samp DescriptorSet 0
+               OpDecorate %samp Binding 0
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Function_v4float = OpTypePointer Function %v4float
+         %10 = OpTypeImage %float 2D 0 0 0 1 Unknown
+         %11 = OpTypeSampledImage %10
+%_ptr_UniformConstant_11 = OpTypePointer UniformConstant %11
+       %samp = OpVariable %_ptr_UniformConstant_11 UniformConstant
+    %v2float = OpTypeVector %float 2
+  %float_0_5 = OpConstant %float 0.5
+         %17 = OpConstantComposite %v2float %float_0_5 %float_0_5
+        %int = OpTypeInt 32 1
+      %v2int = OpTypeVector %int 2
+   %int_n100 = OpConstant %int -100
+    %int_100 = OpConstant %int 100
+         %22 = OpConstantComposite %v2int %int_n100 %int_100
+      %int_0 = OpConstant %int 0
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+      %color = OpVariable %_ptr_Function_v4float Function
+         %14 = OpLoad %11 %samp
+         %24 = OpImageGather %v4float %14 %17 %int_0 ConstOffset %22
+               OpStore %color %24
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+
+    auto cs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr);
+
+    CreateComputePipelineHelper cs_pipeline(*this);
+    cs_pipeline.InitInfo();
+    cs_pipeline.cs_ = std::move(cs);
+    cs_pipeline.InitState();
+    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    cs_pipeline.LateBindPipelineInfo();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06376");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06377");
+    cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, RayTracingLibraryFlags) {
     TEST_DESCRIPTION("Validate ray tracing pipeline flags match library flags.");
 
