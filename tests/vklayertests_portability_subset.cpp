@@ -652,7 +652,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         )glsl";
         VkShaderObj tes_obj(DeviceObj(), tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
         pipe.shader_stages_.emplace_back(tes_obj.GetStageCreateInfo());
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Portability_Tessellation_Isolines);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-tessellationShader-06326");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -673,7 +673,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         VkShaderObj tes_obj(DeviceObj(), tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
         pipe.shader_stages_.emplace_back(tes_obj.GetStageCreateInfo());
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Portability_Tessellation_PointMode);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-tessellationShader-06327");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -707,7 +707,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         iasci.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         pipe.ia_ci_ = iasci;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Portability_InterpolationFunction);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
