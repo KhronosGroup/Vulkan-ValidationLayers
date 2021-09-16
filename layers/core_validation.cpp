@@ -4809,9 +4809,13 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             // Validate bound memory range information
             skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, api_name);
 
-            const char *mem_type_vuid =
-                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01035" : "VUID-vkBindBufferMemory-memory-01035";
-            skip |= ValidateMemoryTypes(mem_info, buffer_state->requirements.memoryTypeBits, api_name, mem_type_vuid);
+            const auto external_buf_mem = LvlFindInChain<VkExternalMemoryBufferCreateInfoKHR>(buffer_state->createInfo.pNext);
+            const auto external_mem = LvlFindInChain<VkExportMemoryAllocateInfoKHR>(mem_info->alloc_info.pNext);
+            if (!external_buf_mem && !external_mem) {
+                const char *mem_type_vuid =
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01035" : "VUID-vkBindBufferMemory-memory-01035";
+                skip |= ValidateMemoryTypes(mem_info, buffer_state->requirements.memoryTypeBits, api_name, mem_type_vuid);
+            }
 
             // Validate memory requirements size
             if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
