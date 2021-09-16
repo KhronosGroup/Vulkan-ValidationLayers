@@ -658,7 +658,12 @@ void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *feat
 }
 
 bool VkRenderFramework::IsPlatform(PlatformType platform) {
-    return (!vk_gpu_table.find(platform)->second.compare(physDevProps().deviceName));
+    static const bool skip_platform_check = GetEnvironment("VK_LAYER_TESTS_SKIP_PLATFORM_CHECK") != "";
+    if (skip_platform_check) {
+        return false;
+    } else {
+        return (!vk_gpu_table.find(platform)->second.compare(physDevProps().deviceName));
+    }
 }
 
 bool VkRenderFramework::IsDriver(VkDriverId driver_id) {
