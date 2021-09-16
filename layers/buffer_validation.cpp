@@ -443,7 +443,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
                          report_data->FormatHandle(image_view).c_str());
     }
 
-    if (device_extensions.vk_khr_maintenance2) {
+    if (IsExtEnabled(device_extensions.vk_khr_maintenance2)) {
         if ((layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
              layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
              layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
@@ -893,7 +893,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                 } else {
                     auto const ds_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
                     if ((aspect_mask & ds_mask) != (ds_mask)) {
-                        auto error = device_extensions.vk_khr_separate_depth_stencil_layouts
+                        auto error = IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts)
                                          ? ImageError::kNotSeparateDepthAndStencilAspect
                                          : ImageError::kNotDepthAndStencilAspect;
                         auto vuid = GetImageBarrierVUID(image_loc, error);
@@ -952,8 +952,8 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
             if ((FormatIsColor(image_format) == true) &&
                 ((FormatIsMultiplane(image_format) == false) || (image_state->disjoint == false))) {
                 if (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) {
-                    auto error = device_extensions.vk_khr_sampler_ycbcr_conversion ? ImageError::kNotColorAspect
-                                                                                   : ImageError::kNotColorAspectYcbcr;
+                    auto error = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion) ? ImageError::kNotColorAspect
+                                                                                                 : ImageError::kNotColorAspectYcbcr;
                     const auto &vuid = GetImageBarrierVUID(loc, error);
                     skip |= LogError(img_barrier.image, vuid,
                                      "%s references %s of format %s that must be only VK_IMAGE_ASPECT_COLOR_BIT, "
@@ -1121,7 +1121,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &loc, CMD_BUFFER_
             sub_image_layout = sub_desc.pDepthStencilAttachment->layout;
             sub_image_found = true;
         }
-        if (!sub_image_found && device_extensions.vk_khr_depth_stencil_resolve) {
+        if (!sub_image_found && IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve)) {
             const auto *resolve = LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(sub_desc.pNext);
             if (resolve && resolve->pDepthStencilResolveAttachment &&
                 resolve->pDepthStencilResolveAttachment->attachment == attach_index) {
@@ -1447,7 +1447,7 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
                                               "%s: For optimal performance %s layout should be %s instead of GENERAL.", caller,
                                               report_data->FormatHandle(image).c_str(), string_VkImageLayout(optimal_layout));
             }
-        } else if (device_extensions.vk_khr_shared_presentable_image) {
+        } else if (IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
             if (image_state->shared_presentable) {
                 if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != explicit_layout) {
                     skip |=
@@ -1724,7 +1724,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                             const VkAllocationCallbacks *pAllocator, VkImage *pImage) const {
     bool skip = false;
 
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+    if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
         skip |= ValidateCreateImageANDROID(report_data, pCreateInfo);
     } else {  // These checks are omitted or replaced when Android HW Buffer extension is active
         if (pCreateInfo->format == VK_FORMAT_UNDEFINED) {
@@ -1766,7 +1766,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             "vkCreateImage(): images using sparse memory cannot have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set");
     }
 
-    if (device_extensions.vk_ext_fragment_density_map || device_extensions.vk_ext_fragment_density_map2) {
+    if (IsExtEnabled(device_extensions.vk_ext_fragment_density_map) ||
+        IsExtEnabled(device_extensions.vk_ext_fragment_density_map2)) {
         uint32_t ceiling_width = static_cast<uint32_t>(ceil(
             static_cast<float>(device_limits->maxFramebufferWidth) /
             std::max(static_cast<float>(phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width), 1.0f)));
@@ -1916,8 +1917,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     // Tests for "Formats requiring sampler YCBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views"
     if (FormatRequiresYcbcrConversion(pCreateInfo->format)) {
         if (!enabled_features.ycbcr_image_array_features.ycbcrImageArrays && pCreateInfo->arrayLayers != 1) {
-            const char *error_vuid = (device_extensions.vk_ext_ycbcr_image_arrays) ? "VUID-VkImageCreateInfo-format-02653"
-                                                                                   : "VUID-VkImageCreateInfo-format-02564";
+            const char *error_vuid = IsExtEnabled(device_extensions.vk_ext_ycbcr_image_arrays)
+                                         ? "VUID-VkImageCreateInfo-format-02653"
+                                         : "VUID-VkImageCreateInfo-format-02564";
             skip |= LogError(device, error_vuid,
                              "vkCreateImage(): arrayLayers = %d, but when the ycbcrImagesArrays feature is not enabled and using a "
                              "YCbCr Conversion format, arrayLayers must be 1",
@@ -1945,7 +1947,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
-    if (device_extensions.vk_khr_maintenance2) {
+    if (IsExtEnabled(device_extensions.vk_khr_maintenance2)) {
         if (pCreateInfo->flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
             if (!FormatIsCompressed(pCreateInfo->format)) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-flags-01572",
@@ -1962,8 +1964,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
-        const char *vuid = device_extensions.vk_khr_get_physical_device_properties2 ? "VUID-VkImageCreateInfo-sharingMode-01420"
-                                                                                    : "VUID-VkImageCreateInfo-sharingMode-01392";
+        const char *vuid = IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)
+                               ? "VUID-VkImageCreateInfo-sharingMode-01420"
+                               : "VUID-VkImageCreateInfo-sharingMode-01392";
         skip |= ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
                                                     "vkCreateImage", "pCreateInfo->pQueueFamilyIndices", vuid);
     }
@@ -2027,7 +2030,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     skip |= ValidateImageFormatFeatures(pCreateInfo);
 
     // Check compatibility with VK_KHR_portability_subset
-    if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
+    if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
         if (VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT & pCreateInfo->flags &&
             VK_FALSE == enabled_features.portability_subset_features.imageView2DOn3DImage) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-imageView2DOn3DImage-04459",
@@ -2139,7 +2142,7 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE *cb_node, const I
 
     } else {
         assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
-        if (!device_extensions.vk_khr_shared_presentable_image) {
+        if (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
             if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL)) {
                 skip |= LogError(image_state->image(), "VUID-vkCmdClearColorImage-imageLayout-00005",
                                  "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL or GENERAL.", func_name,
@@ -2194,7 +2197,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     if (cb_node && image_state) {
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
         skip |= ValidateCmd(cb_node, CMD_CLEARCOLORIMAGE, "vkCmdClearColorImage()");
-        if (device_extensions.vk_khr_maintenance1) {
+        if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
             skip |= ValidateImageFormatFeatureFlags(image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, "vkCmdClearColorImage",
                                                     "VUID-vkCmdClearColorImage-image-01993");
         }
@@ -2238,7 +2241,7 @@ bool CoreChecks::ValidateClearDepthStencilValue(VkCommandBuffer commandBuffer, V
     bool skip = false;
 
     // The extension was not created with a feature bit whichs prevents displaying the 2 variations of the VUIDs
-    if (!device_extensions.vk_ext_depth_range_unrestricted) {
+    if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted)) {
         if (!(clearValue.depth >= 0.0) || !(clearValue.depth <= 1.0)) {
             // Also VUID-VkClearDepthStencilValue-depth-00022
             skip |= LogError(commandBuffer, "VUID-VkClearDepthStencilValue-depth-02506",
@@ -2264,7 +2267,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearDepthStencilImage()",
                                              "VUID-vkCmdClearDepthStencilImage-image-00010");
         skip |= ValidateCmd(cb_node, CMD_CLEARDEPTHSTENCILIMAGE, "vkCmdClearDepthStencilImage()");
-        if (device_extensions.vk_khr_maintenance1) {
+        if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
             skip |= ValidateImageFormatFeatureFlags(image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, "vkCmdClearDepthStencilImage",
                                                     "VUID-vkCmdClearDepthStencilImage-image-01994");
         }
@@ -2758,7 +2761,7 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const ImageCo
         }
 
         // Handle difference between Maintenance 1
-        if (device_extensions.vk_khr_maintenance1) {
+        if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
             if (src_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
                 if ((0 != region.srcSubresource.baseArrayLayer) || (1 != region.srcSubresource.layerCount)) {
                     vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-04443" : "VUID-vkCmdCopyImage-srcImage-04443";
@@ -2906,7 +2909,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         skip |= ValidateImageArrayLayerRange(cb_node, dst_image_state, region.dstSubresource.baseArrayLayer,
                                              region.dstSubresource.layerCount, i, func_name, "dstSubresource", vuid);
 
-        if (device_extensions.vk_khr_maintenance1) {
+        if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
             // No chance of mismatch if we're overriding depth slice count
             if (!slice_override) {
                 // The number of depth slices in srcSubresource and dstSubresource must match
@@ -2937,7 +2940,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         // Do multiplane-specific checks, if extension enabled
-        if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
+        if (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
             if ((!FormatIsMultiplane(src_format)) && (!FormatIsMultiplane(dst_format))) {
                 // If neither image is multi-plane the aspectMask member of src and dst must match
                 if (region.srcSubresource.aspectMask != region.dstSubresource.aspectMask) {
@@ -3095,7 +3098,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         // Check depth for 2D as post Maintaince 1 requires both while prior only required one to be 2D
-        if (device_extensions.vk_khr_maintenance1) {
+        if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
             if (((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) &&
                  (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType)) &&
                 (src_copy_extent.depth != 1)) {
@@ -3168,7 +3171,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     // because because both texels are 4 bytes in size.
     if (!FormatIsMultiplane(src_format) && !FormatIsMultiplane(dst_format)) {
         const char *compatible_vuid =
-            (device_extensions.vk_khr_sampler_ycbcr_conversion)
+            IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
                 ? (is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01548" : "VUID-vkCmdCopyImage-srcImage-01548")
                 : (is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-00135" : "VUID-vkCmdCopyImage-srcImage-00135");
         // Depth/stencil formats must match exactly.
@@ -3200,11 +3203,11 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                      string_VkSampleCountFlagBits(dst_image_state->createInfo.samples));
     }
 
-    vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
+    vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
                ? (is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01546" : "VUID-vkCmdCopyImage-srcImage-01546")
                : (is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-00127" : "VUID-vkCmdCopyImage-srcImage-00127");
     skip |= ValidateMemoryIsBoundToImage(src_image_state, func_name, vuid);
-    vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
+    vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
                ? (is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01547" : "VUID-vkCmdCopyImage-dstImage-01547")
                : (is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-00132" : "VUID-vkCmdCopyImage-dstImage-00132");
     skip |= ValidateMemoryIsBoundToImage(dst_image_state, func_name, vuid);
@@ -3236,7 +3239,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                      "%s: dstImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", func_name);
     }
 
-    if (device_extensions.vk_khr_maintenance1) {
+    if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01995" : "VUID-vkCmdCopyImage-srcImage-01995";
         skip |= ValidateImageFormatFeatureFlags(src_image_state, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT, func_name, vuid);
         vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01996" : "VUID-vkCmdCopyImage-dstImage-01996";
@@ -3246,11 +3249,11 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     bool hit_error = false;
 
     const char *invalid_src_layout_vuid =
-        (src_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
+        (src_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
             ? (is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImageLayout-01917" : "VUID-vkCmdCopyImage-srcImageLayout-01917")
             : (is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImageLayout-00129" : "VUID-vkCmdCopyImage-srcImageLayout-00129");
     const char *invalid_dst_layout_vuid =
-        (dst_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
+        (dst_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
             ? (is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImageLayout-01395" : "VUID-vkCmdCopyImage-dstImageLayout-01395")
             : (is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImageLayout-00134" : "VUID-vkCmdCopyImage-dstImageLayout-00134");
 
@@ -3577,17 +3580,17 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
 
         bool hit_error = false;
         const char *invalid_src_layout_vuid =
-            is_2khr ? ((src_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
+            is_2khr ? ((src_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
                            ? "VUID-VkResolveImageInfo2KHR-srcImageLayout-01400"
                            : "VUID-VkResolveImageInfo2KHR-srcImageLayout-00261")
-                    : ((src_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
+                    : ((src_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
                            ? "VUID-vkCmdResolveImage-srcImageLayout-01400"
                            : "VUID-vkCmdResolveImage-srcImageLayout-00261");
         const char *invalid_dst_layout_vuid =
-            is_2khr ? ((dst_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
+            is_2khr ? ((dst_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
                            ? "VUID-VkResolveImageInfo2KHR-dstImageLayout-01401"
                            : "VUID-VkResolveImageInfo2KHR-dstImageLayout-00263")
-                    : ((dst_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
+                    : ((dst_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
                            ? "VUID-vkCmdResolveImage-dstImageLayout-01401"
                            : "VUID-vkCmdResolveImage-dstImageLayout-00263");
         // For each region, the number of layers in the image subresource should not be zero
@@ -3973,17 +3976,17 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
 
         // Do per-region checks
         const char *invalid_src_layout_vuid =
-            is_2khr ? ((src_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
+            is_2khr ? ((src_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
                            ? "VUID-VkBlitImageInfo2KHR-srcImageLayout-01398"
                            : "VUID-VkBlitImageInfo2KHR-srcImageLayout-00222")
-                    : ((src_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
+                    : ((src_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
                            ? "VUID-vkCmdBlitImage-srcImageLayout-01398"
                            : "VUID-vkCmdBlitImage-srcImageLayout-00222");
         const char *invalid_dst_layout_vuid =
-            is_2khr ? ((dst_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
+            is_2khr ? ((dst_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
                            ? "VUID-VkBlitImageInfo2KHR-dstImageLayout-01399"
                            : "VUID-VkBlitImageInfo2KHR-dstImageLayout-00227")
-                    : ((dst_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
+                    : ((dst_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
                            ? "VUID-vkCmdBlitImage-dstImageLayout-01399"
                            : "VUID-vkCmdBlitImage-dstImageLayout-00227");
         for (uint32_t i = 0; i < regionCount; i++) {
@@ -4365,7 +4368,7 @@ bool CoreChecks::ValidateLayoutVsAttachmentDescription(const debug_report_data *
             skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-pAttachments-02522",
                              "vkCreateRenderPass2(): Cannot clear attachment %d with invalid first layout %s.", attachment,
                              string_VkImageLayout(first_layout));
-        } else if ((use_rp2 == false) && (device_extensions.vk_khr_maintenance2) &&
+        } else if ((use_rp2 == false) && IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
                    (first_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL)) {
             skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pAttachments-01566",
                              "vkCreateRenderPass(): Cannot clear attachment %d with invalid first layout %s.", attachment,
@@ -4386,7 +4389,7 @@ bool CoreChecks::ValidateLayoutVsAttachmentDescription(const debug_report_data *
             skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-pAttachments-02523",
                              "vkCreateRenderPass2(): Cannot clear attachment %d with invalid first layout %s.", attachment,
                              string_VkImageLayout(first_layout));
-        } else if ((use_rp2 == false) && (device_extensions.vk_khr_maintenance2) &&
+        } else if ((use_rp2 == false) && IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
                    (first_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)) {
             skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pAttachments-01567",
                              "vkCreateRenderPass(): Cannot clear attachment %d with invalid first layout %s.", attachment,
@@ -4624,8 +4627,9 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
-        const char *vuid = device_extensions.vk_khr_get_physical_device_properties2 ? "VUID-VkBufferCreateInfo-sharingMode-01419"
-                                                                                    : "VUID-VkBufferCreateInfo-sharingMode-01391";
+        const char *vuid = IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)
+                               ? "VUID-VkBufferCreateInfo-sharingMode-01419"
+                               : "VUID-VkBufferCreateInfo-sharingMode-01391";
         skip |= ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
                                                     "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices", vuid);
     }
@@ -4675,8 +4679,9 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         // Buffer view offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment
         if ((pCreateInfo->offset % device_limits->minTexelBufferOffsetAlignment) != 0 &&
             !enabled_features.texel_buffer_alignment_features.texelBufferAlignment) {
-            const char *vuid = device_extensions.vk_ext_texel_buffer_alignment ? "VUID-VkBufferViewCreateInfo-offset-02749"
-                                                                               : "VUID-VkBufferViewCreateInfo-offset-00926";
+            const char *vuid = IsExtEnabled(device_extensions.vk_ext_texel_buffer_alignment)
+                                   ? "VUID-VkBufferViewCreateInfo-offset-02749"
+                                   : "VUID-VkBufferViewCreateInfo-offset-00926";
             skip |= LogError(buffer_state->buffer(), vuid,
                              "vkCreateBufferView(): VkBufferViewCreateInfo offset (%" PRIuLEAST64
                              ") must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment (%" PRIuLEAST64 ").",
@@ -5413,7 +5418,7 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE *image_state,
         tiling_features = image_state->format_features;
     } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         // Parameter validation should catch if this is used without VK_EXT_image_drm_format_modifier
-        assert(device_extensions.vk_ext_image_drm_format_modifier);
+        assert(IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier));
         VkImageDrmFormatModifierPropertiesEXT drm_format_properties = {VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT,
                                                                        nullptr};
         DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state->image(), &drm_format_properties);
@@ -5520,8 +5525,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         // If there's a chained VkImageViewUsageCreateInfo struct, modify image_usage to match
         auto chained_ivuci_struct = LvlFindInChain<VkImageViewUsageCreateInfo>(pCreateInfo->pNext);
         if (chained_ivuci_struct) {
-            if (device_extensions.vk_khr_maintenance2) {
-                if (!device_extensions.vk_ext_separate_stencil_usage) {
+            if (IsExtEnabled(device_extensions.vk_khr_maintenance2)) {
+                if (!IsExtEnabled(device_extensions.vk_ext_separate_stencil_usage)) {
                     if ((image_usage | chained_ivuci_struct->usage) != image_usage) {
                         skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-02661",
                                          "vkCreateImageView(): pNext chain includes VkImageViewUsageCreateInfo, usage must not "
@@ -5602,13 +5607,14 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                     // Need to only check if one is NONE_BIT to handle edge case both are NONE_BIT
                     if ((imageClass != viewClass) || (imageClass == VK_FORMAT_COMPATIBILITY_CLASS_NONE_BIT)) {
                         const char *error_vuid;
-                        if ((!device_extensions.vk_khr_maintenance2) && (!device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+                        if ((!IsExtEnabled(device_extensions.vk_khr_maintenance2)) &&
+                            (!IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
                             error_vuid = "VUID-VkImageViewCreateInfo-image-01018";
-                        } else if ((device_extensions.vk_khr_maintenance2) &&
-                                   (!device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+                        } else if ((IsExtEnabled(device_extensions.vk_khr_maintenance2)) &&
+                                   (!IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
                             error_vuid = "VUID-VkImageViewCreateInfo-image-01759";
-                        } else if ((!device_extensions.vk_khr_maintenance2) &&
-                                   (device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+                        } else if ((!IsExtEnabled(device_extensions.vk_khr_maintenance2)) &&
+                                   (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
                             error_vuid = "VUID-VkImageViewCreateInfo-image-01760";
                         } else {
                             // both enabled
@@ -5629,8 +5635,9 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             // Unless it is a multi-planar color bit aspect
             if ((image_format != view_format) &&
                 ((FormatIsMultiplane(image_format) == false) || (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT))) {
-                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-VkImageViewCreateInfo-image-01762"
-                                                                                       : "VUID-VkImageViewCreateInfo-image-01019";
+                const char *vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
+                                       ? "VUID-VkImageViewCreateInfo-image-01762"
+                                       : "VUID-VkImageViewCreateInfo-image-01019";
                 std::stringstream ss;
                 ss << "vkCreateImageView() format " << string_VkFormat(view_format) << " differs from "
                    << report_data->FormatHandle(pCreateInfo->image).c_str() << " format " << string_VkFormat(image_format)
@@ -5673,7 +5680,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                 }
                 break;
             case VK_IMAGE_TYPE_3D:
-                if (device_extensions.vk_khr_maintenance1) {
+                if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
                     if (view_type != VK_IMAGE_VIEW_TYPE_3D) {
                         if ((view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
                             if (!(image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT)) {
@@ -5724,7 +5731,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
 
         // External format checks needed when VK_ANDROID_external_memory_android_hardware_buffer enabled
-        if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+        if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
             skip |= ValidateCreateImageViewANDROID(pCreateInfo);
         }
 
@@ -5853,7 +5860,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                              "flags must not contain VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT");
             }
         }
-        if (device_extensions.vk_ext_fragment_density_map2) {
+        if (IsExtEnabled(device_extensions.vk_ext_fragment_density_map2)) {
             if ((image_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) && (image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) &&
                 (layer_count > phys_dev_ext_props.fragment_density_map2_props.maxSubsampledArrayLayers)) {
                 skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-03569",
@@ -5865,7 +5872,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
 
         auto astc_decode_mode = LvlFindInChain<VkImageViewASTCDecodeModeEXT>(pCreateInfo->pNext);
-        if ((device_extensions.vk_ext_astc_decode_mode) && (astc_decode_mode != nullptr)) {
+        if (IsExtEnabled(device_extensions.vk_ext_astc_decode_mode) && (astc_decode_mode != nullptr)) {
             if ((enabled_features.astc_decode_features.decodeModeSharedExponent == VK_FALSE) &&
                 (astc_decode_mode->decodeMode == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32)) {
                 skip |= LogError(device, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02231",
@@ -5874,7 +5881,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             }
         }
 
-        if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
+        if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
             // If swizzling is disabled, make sure it isn't used
             // NOTE: as of spec version 1.2.183, VUID 04465 states: "all elements of components _must_ be
             // VK_COMPONENT_SWIZZLE_IDENTITY."
@@ -6109,7 +6116,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
                          size, report_data->FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size, dstOffset);
     }
 
-    if (!device_extensions.vk_khr_maintenance1) {
+    if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         skip |= ValidateCmdQueueFlags(cb_node, "vkCmdFillBuffer()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdFillBuffer-commandBuffer-00030");
     }
@@ -6172,7 +6179,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         } else {
             // If not depth/stencil and not multi-plane
             if (!FormatIsMultiplane(image_format) && (SafeModulo(bufferOffset, element_size) != 0)) {
-                vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
+                vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
                            ? GetBufferImageCopyCommandVUID("01558", image_to_buffer, is_2khr)
                            : GetBufferImageCopyCommandVUID("00193", image_to_buffer, is_2khr);
                 skip |= LogError(image_state->image(), vuid,
@@ -6507,17 +6514,18 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
                          func_name);
     }
 
-    if (device_extensions.vk_khr_maintenance1) {
+    if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImage-01998" : "VUID-vkCmdCopyImageToBuffer-srcImage-01998";
         skip |= ValidateImageFormatFeatureFlags(src_image_state, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT, func_name, vuid);
     }
     bool hit_error = false;
 
-    const char *src_invalid_layout_vuid = (src_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
-                                              ? (vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImageLayout-01397"
-                                                                : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-01397")
-                                              : (vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImageLayout-00190"
-                                                                : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00190");
+    const char *src_invalid_layout_vuid =
+        (src_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
+            ? (vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImageLayout-01397"
+                              : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-01397")
+            : (vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImageLayout-00190"
+                              : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00190");
 
     for (uint32_t i = 0; i < regionCount; ++i) {
         skip |= ValidateImageSubresourceLayers(cb_node, &pRegions[i].imageSubresource, func_name, "imageSubresource", i);
@@ -6630,17 +6638,18 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
                          func_name);
     }
 
-    if (device_extensions.vk_khr_maintenance1) {
+    if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         vuid = is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-dstImage-01997" : "VUID-vkCmdCopyBufferToImage-dstImage-01997";
         skip |= ValidateImageFormatFeatureFlags(dst_image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, func_name, vuid);
     }
     bool hit_error = false;
 
-    const char *dst_invalid_layout_vuid = (dst_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
-                                              ? (is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-dstImageLayout-01396"
-                                                         : "VUID-vkCmdCopyBufferToImage-dstImageLayout-01396")
-                                              : (is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-dstImageLayout-00181"
-                                                         : "VUID-vkCmdCopyBufferToImage-dstImageLayout-00181");
+    const char *dst_invalid_layout_vuid =
+        (dst_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
+            ? (is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-dstImageLayout-01396"
+                       : "VUID-vkCmdCopyBufferToImage-dstImageLayout-01396")
+            : (is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-dstImageLayout-00181"
+                       : "VUID-vkCmdCopyBufferToImage-dstImageLayout-00181");
 
     for (uint32_t i = 0; i < regionCount; ++i) {
         skip |= ValidateImageSubresourceLayers(cb_node, &pRegions[i].imageSubresource, func_name, "imageSubresource", i);
@@ -6740,7 +6749,7 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
     }
 
     // Image must have been created with tiling equal to VK_IMAGE_TILING_LINEAR
-    if (device_extensions.vk_ext_image_drm_format_modifier) {
+    if (IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) {
         if ((image_entry->createInfo.tiling != VK_IMAGE_TILING_LINEAR) &&
             (image_entry->createInfo.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)) {
             skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-02270",
@@ -6834,7 +6843,7 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
         }
     }
 
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+    if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
         skip |= ValidateGetImageSubresourceLayoutANDROID(image);
     }
 

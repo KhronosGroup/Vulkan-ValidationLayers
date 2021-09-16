@@ -166,7 +166,7 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
                                                        const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
     if (VK_SUCCESS != result) return;
     VkFormatFeatureFlags format_features = 0;
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+    if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
         format_features = GetExternalFormatFeaturesANDROID(pCreateInfo);
     }
     if (format_features == 0) {
@@ -606,7 +606,7 @@ VkFormatFeatureFlags ValidationStateTracker::GetPotentialFormatFeatures(VkFormat
         DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
         format_features |= format_properties.linearTilingFeatures;
         format_features |= format_properties.optimalTilingFeatures;
-        if (device_extensions.vk_ext_image_drm_format_modifier) {
+        if (IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) {
             // VK_KHR_get_physical_device_properties2 is required in this case
             VkFormatProperties2 format_properties_2 = {VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
             VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
@@ -1159,11 +1159,9 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     auto *phys_dev_props = &state_tracker->phys_dev_ext_props;
 
     // Vulkan 1.2 can get properties from single struct, otherwise need to add to it per extension
-    if (state_tracker->device_extensions.vk_feature_version_1_2) {
-        GetPhysicalDeviceExtProperties(gpu, state_tracker->device_extensions.vk_feature_version_1_2,
-                                       &state_tracker->phys_dev_props_core11);
-        GetPhysicalDeviceExtProperties(gpu, state_tracker->device_extensions.vk_feature_version_1_2,
-                                       &state_tracker->phys_dev_props_core12);
+    if (dev_ext.vk_feature_version_1_2) {
+        GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_feature_version_1_2, &state_tracker->phys_dev_props_core11);
+        GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_feature_version_1_2, &state_tracker->phys_dev_props_core12);
     } else {
         // VkPhysicalDeviceVulkan11Properties
         //
@@ -1332,7 +1330,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_discard_rectangles, &phys_dev_props->discard_rectangle_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_blend_operation_advanced, &phys_dev_props->blend_operation_advanced_props);
 
-    if (state_tracker->device_extensions.vk_nv_cooperative_matrix) {
+    if (IsExtEnabled(dev_ext.vk_nv_cooperative_matrix)) {
         // Get the needed cooperative_matrix properties
         auto cooperative_matrix_props = LvlInitStruct<VkPhysicalDeviceCooperativeMatrixPropertiesNV>();
         auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&cooperative_matrix_props);
@@ -4056,7 +4054,7 @@ void ValidationStateTracker::RecordCreateSamplerYcbcrConversionState(const VkSam
 
     if (create_info->format != VK_FORMAT_UNDEFINED) {
         format_features = GetPotentialFormatFeatures(create_info->format);
-    } else if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+    } else if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
         // If format is VK_FORMAT_UNDEFINED, format_features will be set by external AHB features
         format_features = GetExternalFormatFeaturesANDROID(create_info);
     }
@@ -4386,7 +4384,7 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
     if (VK_SUCCESS != result) return;
     create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
 
-    spv_target_env spirv_environment = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
+    spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
     bool is_spirv = (pCreateInfo->pCode[0] == spv::MagicNumber);
     auto new_shader_module = is_spirv ? std::make_shared<SHADER_MODULE_STATE>(pCreateInfo, *pShaderModule, spirv_environment,
                                                                               csm_state->unique_shader_id)

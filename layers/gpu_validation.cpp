@@ -292,7 +292,8 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
         return;
     }
 
-    if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) &&
+    if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
+         IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
         !supported_features.shaderInt64) {
         LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
                    "shaderInt64 feature is not available.  No buffer device address checking will be attempted");
@@ -375,7 +376,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
         return;
     }
 
-    if (!device_extensions.vk_nv_ray_tracing) {
+    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) {
         return;
     }
 
@@ -1261,7 +1262,7 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     // Use the unique_shader_module_id as a shader ID so we can look up its handle later in the shader_map.
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     using namespace spvtools;
-    spv_target_env target_env = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
+    spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
     spvtools::ValidatorOptions val_options;
     AdjustValidatorOptions(device_extensions, enabled_features, val_options);
     spvtools::OptimizerOptions opt_options;
@@ -1272,8 +1273,9 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     optimizer.RegisterPass(CreateInstBindlessCheckPass(desc_set_bind_index, unique_shader_module_id, descriptor_indexing,
                                                        descriptor_indexing, buffer_oob_enabled, buffer_oob_enabled));
     optimizer.RegisterPass(CreateAggressiveDCEPass());
-    if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) && shaderInt64 &&
-        enabled_features.core12.bufferDeviceAddress) {
+    if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
+         IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
+        shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
         optimizer.RegisterPass(CreateInstBuffAddrCheckPass(desc_set_bind_index, unique_shader_module_id));
     }
     bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
@@ -2273,8 +2275,9 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         }
     }
 
-    if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) && buffer_map.size() &&
-        shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
+    if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
+         IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
+        buffer_map.size() && shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
         // Example BDA input buffer assuming 2 buffers using BDA:
         // Word 0 | Index of start of buffer sizes (in this case 5)
         // Word 1 | 0x0000000000000000

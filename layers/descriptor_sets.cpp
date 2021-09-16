@@ -424,7 +424,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
 
         if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
              binding_info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) &&
-            binding_info.pImmutableSamplers && device_extensions->vk_ext_custom_border_color) {
+            binding_info.pImmutableSamplers && IsExtEnabled(device_extensions->vk_ext_custom_border_color)) {
             const CoreChecks *core_checks = reinterpret_cast<const CoreChecks *>(val_obj);
             for (uint32_t j = 0; j < binding_info.descriptorCount; j++) {
                 const SAMPLER_STATE *sampler_state = core_checks->GetSamplerState(binding_info.pImmutableSamplers[j]);
@@ -1757,7 +1757,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         return false;
     }
 
-    if (device_extensions.vk_valve_mutable_descriptor_type) {
+    if (IsExtEnabled(device_extensions.vk_valve_mutable_descriptor_type)) {
         if (!(src_layout->GetCreateFlags() & (VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT |
                                               VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) &&
             (dst_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
@@ -1803,7 +1803,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         return false;
     }
 
-    if (device_extensions.vk_valve_mutable_descriptor_type) {
+    if (IsExtEnabled(device_extensions.vk_valve_mutable_descriptor_type)) {
         if (!(src_set->GetPoolState()->createInfo.flags &
               (VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE)) &&
             (dst_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)) {
@@ -2196,15 +2196,16 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             if (!(usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                 error_usage_bit = "VK_IMAGE_USAGE_STORAGE_BIT";
                 *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00339";
-            } else if ((VK_IMAGE_LAYOUT_GENERAL != image_layout) && (!device_extensions.vk_khr_shared_presentable_image ||
-                                                                     (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout))) {
+            } else if ((VK_IMAGE_LAYOUT_GENERAL != image_layout) &&
+                       (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image) ||
+                        (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout))) {
                 *error_code = "VUID-VkWriteDescriptorSet-descriptorType-04152";
                 std::stringstream error_str;
                 error_str << "Descriptor update with descriptorType VK_DESCRIPTOR_TYPE_STORAGE_IMAGE"
                           << " is being updated with invalid imageLayout " << string_VkImageLayout(image_layout) << " for image "
                           << report_data->FormatHandle(image) << " in imageView " << report_data->FormatHandle(image_view)
                           << ". Allowed layouts are: VK_IMAGE_LAYOUT_GENERAL";
-                if (device_extensions.vk_khr_shared_presentable_image) {
+                if (IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
                     error_str << " or VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR";
                 }
                 *error_msg = error_str.str();
@@ -2254,7 +2255,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             {VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL, &DeviceExtensions::vk_khr_separate_depth_stencil_layouts},
         }};
         auto is_layout = [image_layout, this](const ExtensionLayout &ext_layout) {
-            return device_extensions.*(ext_layout.extension) && (ext_layout.layout == image_layout);
+            return IsExtEnabled(device_extensions.*(ext_layout.extension)) && (ext_layout.layout == image_layout);
         };
 
         bool valid_layout = (std::find(valid_layouts.cbegin(), valid_layouts.cend(), image_layout) != valid_layouts.cend()) ||
@@ -2282,7 +2283,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                       << ". Allowed layouts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
                       << "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL";
             for (auto &ext_layout : extended_layouts) {
-                if (device_extensions.*(ext_layout.extension)) {
+                if (IsExtEnabled(device_extensions.*(ext_layout.extension))) {
                     error_str << ", " << string_VkImageLayout(ext_layout.layout);
                 }
             }
@@ -3113,7 +3114,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
             }
         }
     }
-    if (!device_extensions.vk_khr_maintenance1) {
+    if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         // Track number of descriptorSets allowable in this pool
         if (pool_state->availableSets < p_alloc_info->descriptorSetCount) {
             skip |= LogError(pool_state->pool, "VUID-VkDescriptorSetAllocateInfo-descriptorSetCount-00306",
@@ -3465,7 +3466,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                         *error_msg = error_str.str();
                         return false;
                     }
-                    if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                    if (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
                         if (desc->IsImmutableSampler()) {
                             auto sampler_state = GetSamplerState(desc->GetSampler());
                             if (iv_state && sampler_state) {
@@ -3525,7 +3526,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                     // Verify portability
                     auto sampler_state = GetSamplerState(sampler);
                     if (sampler_state) {
-                        if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
+                        if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
                             if ((VK_FALSE == enabled_features.portability_subset_features.mutableComparisonSamplers) &&
                                 (VK_FALSE != sampler_state->createInfo.compareEnable)) {
                                 LogError(device, "VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450",

@@ -876,7 +876,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 subpass_num_samples |= static_cast<unsigned>(render_pass_info->pAttachments[attachment].samples);
             }
 
-            if (!(device_extensions.vk_amd_mixed_attachment_samples || device_extensions.vk_nv_framebuffer_mixed_samples) &&
+            if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
+                  IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples)) &&
                 ((subpass_num_samples & static_cast<unsigned>(pso_num_samples)) != subpass_num_samples)) {
                 LogObjectList objlist(pPipeline->pipeline());
                 objlist.add(pCB->activeRenderPass->renderPass());
@@ -1273,7 +1274,7 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STA
     }
 
     // Check for portability errors
-    if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
+    if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
         if ((VK_FALSE == enabled_features.portability_subset_features.triangleFans) &&
             (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN == pipeline->topology_at_rasterizer)) {
             skip |=
@@ -1512,7 +1513,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-stage-00705",
                          "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Tessellation Shader not supported.", pipelineIndex);
     }
-    if (device_extensions.vk_nv_mesh_shader) {
+    if (IsExtEnabled(device_extensions.vk_nv_mesh_shader)) {
         // VS or mesh is required
         if (!(pPipeline->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_NV))) {
             skip |=
@@ -1603,7 +1604,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
              create_info.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
              create_info.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY ||
              create_info.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
-            if (device_extensions.vk_ext_primitive_topology_list_restart) {
+            if (IsExtEnabled(device_extensions.vk_ext_primitive_topology_list_restart)) {
                 if (create_info.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
                     if (!enabled_features.primitive_topology_list_restart_features.primitiveTopologyPatchListRestart) {
                         skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
@@ -1704,7 +1705,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                     }
 
                     // The extension was not created with a feature bit whichs prevents displaying the 2 variations of the VUIDs
-                    if (!device_extensions.vk_ext_depth_range_unrestricted &&
+                    if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted) &&
                         !IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_BOUNDS)) {
                         const float minDepthBounds = create_info.pDepthStencilState->minDepthBounds;
                         const float maxDepthBounds = create_info.pDepthStencilState->maxDepthBounds;
@@ -1824,7 +1825,8 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             }
         };
 
-        if (!(device_extensions.vk_amd_mixed_attachment_samples || device_extensions.vk_nv_framebuffer_mixed_samples)) {
+        if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
+              IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples))) {
             uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pPipeline));
             uint32_t subpass_num_samples = 0;
 
@@ -1847,7 +1849,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             }
         }
 
-        if (device_extensions.vk_amd_mixed_attachment_samples) {
+        if (IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples)) {
             VkSampleCountFlagBits max_sample_count = static_cast<VkSampleCountFlagBits>(0);
             for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; ++i) {
                 if (subpass_desc->pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
@@ -1874,7 +1876,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             }
         }
 
-        if (device_extensions.vk_nv_framebuffer_mixed_samples) {
+        if (IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples)) {
             uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pPipeline));
             uint32_t subpass_color_samples = 0;
 
@@ -1940,7 +1942,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             }
         }
 
-        if (device_extensions.vk_nv_coverage_reduction_mode) {
+        if (IsExtEnabled(device_extensions.vk_nv_coverage_reduction_mode)) {
             uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pPipeline));
             uint32_t subpass_color_samples = 0;
             uint32_t subpass_depth_samples = 0;
@@ -1992,7 +1994,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             }
         }
 
-        if (device_extensions.vk_nv_fragment_coverage_to_color) {
+        if (IsExtEnabled(device_extensions.vk_nv_fragment_coverage_to_color)) {
             const auto coverage_to_color_state = LvlFindInChain<VkPipelineCoverageToColorStateCreateInfoNV>(multisample_state);
 
             if (coverage_to_color_state && coverage_to_color_state->coverageToColorEnable == VK_TRUE) {
@@ -2045,7 +2047,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             }
         }
 
-        if (device_extensions.vk_ext_sample_locations) {
+        if (IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
             const VkPipelineSampleLocationsStateCreateInfoEXT *sample_location_state =
                 LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state->pNext);
 
@@ -2097,7 +2099,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             }
         }
 
-        if (device_extensions.vk_qcom_render_pass_shader_resolve) {
+        if (IsExtEnabled(device_extensions.vk_qcom_render_pass_shader_resolve)) {
             uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pPipeline));
             uint32_t subpass_input_attachment_samples = 0;
 
@@ -3197,7 +3199,9 @@ struct SemaphoreSubmitState {
             (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
             if (unsignaled_semaphores.count(semaphore) ||
                 (!(signaled_semaphores.count(semaphore)) && !(pSemaphore->signaled) && !core->SemaphoreWasSignaled(semaphore))) {
-                auto error = core->device_extensions.vk_khr_timeline_semaphore ? SubmitError::kTimelineCannotBeSignalled : SubmitError::kBinaryCannotBeSignalled;
+                auto error = IsExtEnabled(core->device_extensions.vk_khr_timeline_semaphore)
+                                 ? SubmitError::kTimelineCannotBeSignalled
+                                 : SubmitError::kBinaryCannotBeSignalled;
                 const auto &vuid = GetQueueSubmitVUID(loc, error);
                 skip |= core->LogError(
                     objlist, pSemaphore->scope == kSyncScopeInternal ? vuid : kVUID_Core_DrawState_QueueForwardProgress,
@@ -4181,7 +4185,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                          phys_dev_props.limits.maxMemoryAllocationCount);
     }
 
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+    if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
         skip |= ValidateAllocateMemoryANDROID(pAllocateInfo);
     } else {
         if (0 == pAllocateInfo->allocationSize) {
@@ -4257,7 +4261,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                     report_data->FormatHandle(dedicated_allocate_info->image).c_str());
             } else {
                 if ((pAllocateInfo->allocationSize != image_state->requirements[0].size) && (imported_ahb == false)) {
-                    const char *vuid = (device_extensions.vk_android_external_memory_android_hardware_buffer)
+                    const char *vuid = IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)
                                            ? "VUID-VkMemoryDedicatedAllocateInfo-image-02964"
                                            : "VUID-VkMemoryDedicatedAllocateInfo-image-01433";
                     skip |=
@@ -4279,7 +4283,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             // Dedicated VkBuffer
             const BUFFER_STATE *buffer_state = GetBufferState(dedicated_allocate_info->buffer);
             if ((pAllocateInfo->allocationSize != buffer_state->requirements.size) && (imported_ahb == false)) {
-                const char *vuid = (device_extensions.vk_android_external_memory_android_hardware_buffer)
+                const char *vuid = IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)
                                        ? "VUID-VkMemoryDedicatedAllocateInfo-buffer-02965"
                                        : "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435";
                 skip |= LogError(
@@ -4868,13 +4872,16 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             } else if (mem_info->IsImport() == true) {
                 if ((mem_info->import_handle_type_flags & buffer_state->external_memory_handle) == 0) {
                     const char *vuid = nullptr;
-                    if ((bind_buffer_mem_2) && (device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                    if ((bind_buffer_mem_2) && IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
                         vuid = "VUID-VkBindBufferMemoryInfo-memory-02985";
-                    } else if ((!bind_buffer_mem_2) && (device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                    } else if ((!bind_buffer_mem_2) &&
+                               IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
                         vuid = "VUID-vkBindBufferMemory-memory-02985";
-                    } else if ((bind_buffer_mem_2) && (!device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                    } else if ((bind_buffer_mem_2) &&
+                               !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
                         vuid = "VUID-VkBindBufferMemoryInfo-memory-02727";
-                    } else if ((!bind_buffer_mem_2) && (!device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                    } else if ((!bind_buffer_mem_2) &&
+                               !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
                         vuid = "VUID-vkBindBufferMemory-memory-02727";
                     }
                     LogObjectList objlist(buffer);
@@ -4947,7 +4954,7 @@ bool CoreChecks::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t b
 bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkImage image,
                                                            VkMemoryRequirements *pMemoryRequirements) const {
     bool skip = false;
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+    if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
         skip |= ValidateGetImageMemoryRequirementsANDROID(image, "vkGetImageMemoryRequirements()");
     }
 
@@ -4966,7 +4973,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkIm
 
 bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2 *pInfo, const char *func_name) const {
     bool skip = false;
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+    if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
         skip |= ValidateGetImageMemoryRequirementsANDROID(pInfo->image, func_name);
     }
 
@@ -4992,8 +4999,9 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
 
     if ((FormatIsMultiplane(image_format) == false) && (image_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) &&
         (image_plane_info != nullptr)) {
-        const char *vuid = device_extensions.vk_ext_image_drm_format_modifier ? "VUID-VkImageMemoryRequirementsInfo2-image-02280"
-                                                                              : "VUID-VkImageMemoryRequirementsInfo2-image-01591";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)
+                               ? "VUID-VkImageMemoryRequirementsInfo2-image-02280"
+                               : "VUID-VkImageMemoryRequirementsInfo2-image-01591";
         skip |= LogError(pInfo->image, vuid,
                          "%s: %s image is a single-plane format (%s) and does not have tiling of "
                          "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,"
@@ -5348,11 +5356,11 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
         skip |= ValidatePipelineUnlocked(cgpl_state->pipe_state[i].get(), i);
     }
 
-    if (device_extensions.vk_ext_vertex_attribute_divisor) {
+    if (IsExtEnabled(device_extensions.vk_ext_vertex_attribute_divisor)) {
         skip |= ValidatePipelineVertexDivisors(cgpl_state->pipe_state, count, pCreateInfos);
     }
 
-    if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
+    if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
         for (uint32_t i = 0; i < count; ++i) {
             // Validate depth-stencil state
             auto raster_state_ci = pCreateInfos[i].pRasterizationState;
@@ -5722,8 +5730,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     std::valarray<uint32_t> max_descriptors_per_stage = GetDescriptorCountMaxPerStage(&enabled_features, set_layouts, true);
     // Samplers
     if (max_descriptors_per_stage[DSL_TYPE_SAMPLERS] > phys_dev_props.limits.maxPerStageDescriptorSamplers) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03016"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00287";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03016"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00287";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): max per-stage sampler bindings count (%d) exceeds device "
                          "maxPerStageDescriptorSamplers limit (%d).",
@@ -5732,8 +5741,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Uniform buffers
     if (max_descriptors_per_stage[DSL_TYPE_UNIFORM_BUFFERS] > phys_dev_props.limits.maxPerStageDescriptorUniformBuffers) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00288";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00288";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): max per-stage uniform buffer bindings count (%d) exceeds device "
                          "maxPerStageDescriptorUniformBuffers limit (%d).",
@@ -5743,8 +5753,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Storage buffers
     if (max_descriptors_per_stage[DSL_TYPE_STORAGE_BUFFERS] > phys_dev_props.limits.maxPerStageDescriptorStorageBuffers) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00289";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00289";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): max per-stage storage buffer bindings count (%d) exceeds device "
                          "maxPerStageDescriptorStorageBuffers limit (%d).",
@@ -5754,8 +5765,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Sampled images
     if (max_descriptors_per_stage[DSL_TYPE_SAMPLED_IMAGES] > phys_dev_props.limits.maxPerStageDescriptorSampledImages) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03019"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03019"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290";
         skip |=
             LogError(device, vuid,
                      "vkCreatePipelineLayout(): max per-stage sampled image bindings count (%d) exceeds device "
@@ -5765,8 +5777,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Storage images
     if (max_descriptors_per_stage[DSL_TYPE_STORAGE_IMAGES] > phys_dev_props.limits.maxPerStageDescriptorStorageImages) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03020"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00291";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03020"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00291";
         skip |=
             LogError(device, vuid,
                      "vkCreatePipelineLayout(): max per-stage storage image bindings count (%d) exceeds device "
@@ -5776,8 +5789,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Input attachments
     if (max_descriptors_per_stage[DSL_TYPE_INPUT_ATTACHMENTS] > phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03021"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01676";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03021"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01676";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): max per-stage input attachment bindings count (%d) exceeds device "
                          "maxPerStageDescriptorInputAttachments limit (%d).",
@@ -5788,8 +5802,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     // Inline uniform blocks
     if (max_descriptors_per_stage[DSL_TYPE_INLINE_UNIFORM_BLOCK] >
         phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02212";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214"
+                               : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02212";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): max per-stage inline uniform block bindings count (%d) exceeds device "
                          "maxPerStageDescriptorInlineUniformBlocks limit (%d).",
@@ -5803,8 +5818,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     // Samplers
     uint32_t sum = sum_all_stages[VK_DESCRIPTOR_TYPE_SAMPLER] + sum_all_stages[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER];
     if (sum > phys_dev_props.limits.maxDescriptorSetSamplers) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01677";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01677";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of sampler bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetSamplers limit (%d).",
@@ -5813,8 +5829,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Uniform buffers
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] > phys_dev_props.limits.maxDescriptorSetUniformBuffers) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03029"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01678";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03029"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01678";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of uniform buffer bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetUniformBuffers limit (%d).",
@@ -5823,8 +5840,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Dynamic uniform buffers
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC] > phys_dev_props.limits.maxDescriptorSetUniformBuffersDynamic) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03030"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01679";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03030"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01679";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of dynamic uniform buffer bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetUniformBuffersDynamic limit (%d).",
@@ -5834,8 +5852,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Storage buffers
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER] > phys_dev_props.limits.maxDescriptorSetStorageBuffers) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03031"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01680";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03031"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01680";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of storage buffer bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetStorageBuffers limit (%d).",
@@ -5844,8 +5863,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Dynamic storage buffers
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC] > phys_dev_props.limits.maxDescriptorSetStorageBuffersDynamic) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03032"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01681";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03032"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01681";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of dynamic storage buffer bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetStorageBuffersDynamic limit (%d).",
@@ -5857,8 +5877,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     sum = sum_all_stages[VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE] + sum_all_stages[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] +
           sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER];
     if (sum > phys_dev_props.limits.maxDescriptorSetSampledImages) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of sampled image bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetSampledImages limit (%d).",
@@ -5868,8 +5889,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     //  Storage images
     sum = sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_IMAGE] + sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER];
     if (sum > phys_dev_props.limits.maxDescriptorSetStorageImages) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03034"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01683";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03034"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01683";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of storage image bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetStorageImages limit (%d).",
@@ -5878,8 +5900,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Input attachments
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT] > phys_dev_props.limits.maxDescriptorSetInputAttachments) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03035"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01684";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03035"
+                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01684";
         skip |=
             LogError(device, vuid,
                      "vkCreatePipelineLayout(): sum of input attachment bindings among all stages (%d) exceeds device "
@@ -5890,8 +5913,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     // Inline uniform blocks
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT] >
         phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks) {
-        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02216"
-                                                                          : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02213";
+        const char *vuid = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)
+                               ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02216"
+                               : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02213";
         skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of inline uniform block bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetInlineUniformBlocks limit (%d).",
@@ -5899,7 +5923,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                          phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks);
     }
 
-    if (device_extensions.vk_ext_descriptor_indexing) {
+    if (IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) {
         // XXX TODO: replace with correct VU messages
 
         // Max descriptors by type, within a single pipeline stage
@@ -6072,7 +6096,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         }
     }
 
-    if (device_extensions.vk_ext_fragment_density_map2) {
+    if (IsExtEnabled(device_extensions.vk_ext_fragment_density_map2)) {
         uint32_t sum_subsampled_samplers = 0;
         for (const auto &dsl : set_layouts) {
             // find the number of subsampled samplers across all stages
@@ -7283,7 +7307,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
     skip |= ValidateCmd(cb_state, CMD_SETDEPTHBOUNDS, "vkCmdSetDepthBounds()");
 
     // The extension was not created with a feature bit whichs prevents displaying the 2 variations of the VUIDs
-    if (!device_extensions.vk_ext_depth_range_unrestricted) {
+    if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted)) {
         if (!(minDepthBounds >= 0.0) || !(minDepthBounds <= 1.0)) {
             // Also VUID-vkCmdSetDepthBounds-minDepthBounds-00600
             skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthBounds-minDepthBounds-02508",
@@ -9472,7 +9496,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 i, aii.height, pCreateInfo->height);
                         }
 
-                        const char *mismatched_layers_no_multiview_vuid = device_extensions.vk_khr_multiview
+                        const char *mismatched_layers_no_multiview_vuid = IsExtEnabled(device_extensions.vk_khr_multiview)
                                                                               ? "VUID-VkFramebufferCreateInfo-renderPass-04546"
                                                                               : "VUID-VkFramebufferCreateInfo-flags-04547";
                         if ((rpci->subpassCount == 0) || (rpci->pSubpasses[0].viewMask == 0)) {
@@ -9511,7 +9535,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
 
                     const VkSubpassDescriptionDepthStencilResolve *depth_stencil_resolve =
                         LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(rpci->pSubpasses[i].pNext);
-                    if (device_extensions.vk_khr_depth_stencil_resolve && depth_stencil_resolve != nullptr) {
+                    if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve) && depth_stencil_resolve != nullptr) {
                         skip |= MatchUsage(1, depth_stencil_resolve->pDepthStencilResolveAttachment, pCreateInfo,
                                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03203");
                     }
@@ -9526,7 +9550,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                     }
                 }
 
-                if (device_extensions.vk_khr_multiview) {
+                if (IsExtEnabled(device_extensions.vk_khr_multiview)) {
                     if ((rpci->subpassCount > 0) && (rpci->pSubpasses[0].viewMask != 0)) {
                         for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
                             const VkSubpassDescriptionDepthStencilResolve *depth_stencil_resolve =
@@ -9606,7 +9630,8 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                     }
                                 }
 
-                                if (device_extensions.vk_khr_depth_stencil_resolve && depth_stencil_resolve != nullptr &&
+                                if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve) &&
+                                    depth_stencil_resolve != nullptr &&
                                     depth_stencil_resolve->pDepthStencilResolveAttachment != nullptr) {
                                     attachment_index = depth_stencil_resolve->pDepthStencilResolveAttachment->attachment;
                                     if (attachment_index != VK_ATTACHMENT_UNUSED) {
@@ -9645,7 +9670,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                         MatchUsage(1, subpass_description.pDepthStencilAttachment, pCreateInfo,
                                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-02633");
                     // Verify depth/stecnil resolve
-                    if (device_extensions.vk_khr_depth_stencil_resolve) {
+                    if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve)) {
                         const VkSubpassDescriptionDepthStencilResolve *ds_resolve =
                             LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(subpass_description.pNext);
                         if (ds_resolve) {
@@ -10651,7 +10676,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                         const auto depth_stencil_sample_count =
                             pCreateInfo->pAttachments[subpass.pDepthStencilAttachment->attachment].samples;
 
-                        if (device_extensions.vk_amd_mixed_attachment_samples) {
+                        if (IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples)) {
                             if (current_sample_count > depth_stencil_sample_count) {
                                 vuid = use_rp2 ? "VUID-VkSubpassDescription2-pColorAttachments-03070"
                                                : "VUID-VkSubpassDescription-pColorAttachments-01506";
@@ -10663,8 +10688,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                             }
                         }
 
-                        if (!device_extensions.vk_amd_mixed_attachment_samples &&
-                            !device_extensions.vk_nv_framebuffer_mixed_samples &&
+                        if (!IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) &&
+                            !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) &&
                             current_sample_count != depth_stencil_sample_count) {
                             vuid = use_rp2 ? "VUID-VkSubpassDescription2-pDepthStencilAttachment-03071"
                                            : "VUID-VkSubpassDescription-pDepthStencilAttachment-01418";
@@ -10975,7 +11000,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
 
         if (resolve_attachment_not_unused) {
             VkFormat resolve_format = pCreateInfo->pAttachments[resolve->pDepthStencilResolveAttachment->attachment].format;
-            const VkFormatFeatureFlags potential_format_features = GetPotentialFormatFeatures(resolve_format); 
+            const VkFormatFeatureFlags potential_format_features = GetPotentialFormatFeatures(resolve_format);
             if ((potential_format_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
                 skip |= LogError(
                     device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651",
@@ -11076,7 +11101,7 @@ bool CoreChecks::ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCr
                                            const char *function_name) const {
     bool skip = false;
 
-    if (device_extensions.vk_khr_depth_stencil_resolve) {
+    if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve)) {
         skip |= ValidateDepthStencilResolve(phys_dev_props_core12, pCreateInfo, function_name);
     }
 
@@ -11324,7 +11349,7 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPass
     uint32_t device_group_area_count = 0;
     const VkDeviceGroupRenderPassBeginInfo *device_group_render_pass_begin_info =
         LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
-    if (device_extensions.vk_khr_device_group) {
+    if (IsExtEnabled(device_extensions.vk_khr_device_group)) {
         device_group = true;
         if (device_group_render_pass_begin_info) {
             device_group_area_count = device_group_render_pass_begin_info->deviceRenderAreaCount;
@@ -12589,7 +12614,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         const char *validation_error;
                         if (bind_image_mem_2 == false) {
                             validation_error = "VUID-vkBindImageMemory-memoryOffset-01048";
-                        } else if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                        } else if (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
                             validation_error = "VUID-VkBindImageMemoryInfo-pNext-01616";
                         } else {
                             validation_error = "VUID-VkBindImageMemoryInfo-memoryOffset-01613";
@@ -12609,7 +12634,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             const char *validation_error;
                             if (bind_image_mem_2 == false) {
                                 validation_error = "VUID-vkBindImageMemory-size-01049";
-                            } else if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                            } else if (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
                                 validation_error = "VUID-VkBindImageMemoryInfo-pNext-01617";
                             } else {
                                 validation_error = "VUID-VkBindImageMemoryInfo-memory-01614";
@@ -12626,7 +12651,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             const char *validation_error;
                             if (bind_image_mem_2 == false) {
                                 validation_error = "VUID-vkBindImageMemory-memory-01047";
-                            } else if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                            } else if (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
                                 validation_error = "VUID-VkBindImageMemoryInfo-pNext-01615";
                             } else {
                                 validation_error = "VUID-VkBindImageMemoryInfo-memory-01612";
@@ -12799,13 +12824,17 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 } else if (mem_info->IsImport() == true) {
                     if ((mem_info->import_handle_type_flags & image_state->external_memory_handle) == 0) {
                         const char *vuid = nullptr;
-                        if ((bind_image_mem_2) && (device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                        if ((bind_image_mem_2) &&
+                            IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
                             vuid = "VUID-VkBindImageMemoryInfo-memory-02989";
-                        } else if ((!bind_image_mem_2) && (device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                        } else if ((!bind_image_mem_2) &&
+                                   IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
                             vuid = "VUID-vkBindImageMemory-memory-02989";
-                        } else if ((bind_image_mem_2) && (!device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                        } else if ((bind_image_mem_2) &&
+                                   !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
                             vuid = "VUID-VkBindImageMemoryInfo-memory-02729";
-                        } else if ((!bind_image_mem_2) && (!device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                        } else if ((!bind_image_mem_2) &&
+                                   !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
                             vuid = "VUID-vkBindImageMemory-memory-02729";
                         }
                         LogObjectList objlist(bind_info.image);
@@ -13082,8 +13111,8 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     layer_data::unordered_set<VkSemaphore> signaled_semaphores;
     layer_data::unordered_set<VkSemaphore> unsignaled_semaphores;
     layer_data::unordered_set<VkSemaphore> internal_semaphores;
-    auto *vuid_error = device_extensions.vk_khr_timeline_semaphore ? "VUID-vkQueueBindSparse-pWaitSemaphores-03245"
-                                                                   : kVUID_Core_DrawState_QueueForwardProgress;
+    auto *vuid_error = IsExtEnabled(device_extensions.vk_khr_timeline_semaphore) ? "VUID-vkQueueBindSparse-pWaitSemaphores-03245"
+                                                                                 : kVUID_Core_DrawState_QueueForwardProgress;
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
         const VkBindSparseInfo &bind_info = pBindInfo[bind_idx];
 
@@ -13499,7 +13528,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     // Validate pCreateInfo->minImageCount against VkSurfaceCapabilitiesKHR::{min|max}ImageCount:
     // Shared Present Mode must have a minImageCount of 1
     if ((pCreateInfo->minImageCount < capabilities.minImageCount) && !shared_present_mode) {
-        const char *vuid = (device_extensions.vk_khr_shared_presentable_image)
+        const char *vuid = IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)
                                ? "VUID-VkSwapchainCreateInfoKHR-presentMode-02839"
                                : "VUID-VkSwapchainCreateInfoKHR-minImageCount-01271";
         if (LogError(device, vuid,
@@ -13593,8 +13622,9 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     // Validate pCreateInfo->imageUsage against VkSurfaceCapabilitiesKHR::supportedUsageFlags:
     // Shared Present Mode uses different set of capabilities to check imageUsage support
     if ((image_usage != (image_usage & capabilities.supportedUsageFlags)) && !shared_present_mode) {
-        const char *vuid = (device_extensions.vk_khr_shared_presentable_image) ? "VUID-VkSwapchainCreateInfoKHR-presentMode-01427"
-                                                                               : "VUID-VkSwapchainCreateInfoKHR-imageUsage-01276";
+        const char *vuid = IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)
+                               ? "VUID-VkSwapchainCreateInfoKHR-presentMode-01427"
+                               : "VUID-VkSwapchainCreateInfoKHR-imageUsage-01276";
         if (LogError(device, vuid,
                      "%s called with a non-supported pCreateInfo->imageUsage (i.e. 0x%08x).  Supported flag bits are 0x%08x.",
                      func_name, image_usage, capabilities.supportedUsageFlags)) {
@@ -13602,7 +13632,8 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         }
     }
 
-    if (device_extensions.vk_khr_surface_protected_capabilities && (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR)) {
+    if (IsExtEnabled(device_extensions.vk_khr_surface_protected_capabilities) &&
+        (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR)) {
         VkPhysicalDeviceSurfaceInfo2KHR surface_info = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR};
         surface_info.surface = pCreateInfo->surface;
         VkSurfaceProtectedCapabilitiesKHR surface_protected_capabilities = {VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR};
@@ -13683,7 +13714,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
 
     // Validate state for shared presentable case
     if (shared_present_mode) {
-        if (!device_extensions.vk_khr_shared_presentable_image) {
+        if (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
             if (LogError(
                     device, kVUID_Core_DrawState_ExtensionNotEnabled,
                     "%s called with presentMode %s which requires the VK_KHR_shared_presentable_image extension, which has not "
@@ -13910,7 +13941,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         const auto swapchain_data = GetSwapchainState(pPresentInfo->pSwapchains[i]);
         if (swapchain_data) {
             // VU currently is 2-in-1, covers being a valid index and valid layout
-            const char *validation_error = (device_extensions.vk_khr_shared_presentable_image)
+            const char *validation_error = IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)
                                                ? "VUID-VkPresentInfoKHR-pImageIndices-01430"
                                                : "VUID-VkPresentInfoKHR-pImageIndices-01296";
 
@@ -13933,8 +13964,9 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 vector<VkImageLayout> layouts;
                 if (FindLayouts(*image_state, layouts)) {
                     for (auto layout : layouts) {
-                        if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) && (!device_extensions.vk_khr_shared_presentable_image ||
-                                                                            (layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR))) {
+                        if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) &&
+                            (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image) ||
+                             (layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR))) {
                             skip |= LogError(queue, validation_error,
                                              "vkQueuePresentKHR(): pSwapchains[%u] images passed to present must be in layout "
                                              "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
@@ -14579,7 +14611,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
     // Extension specific VU's
     const auto &query_pool_ci = GetQueryPoolState(query_obj.pool)->createInfo;
     if (query_pool_ci.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
-        if (device_extensions.vk_ext_transform_feedback &&
+        if (IsExtEnabled(device_extensions.vk_ext_transform_feedback) &&
             (index >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams)) {
             skip |= LogError(
                 cb_state->commandBuffer(), "VUID-vkCmdBeginQueryIndexedEXT-queryType-02339",
@@ -14640,7 +14672,7 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
                              index, available_query_count);
         }
         if (query_pool_ci.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
-            if (device_extensions.vk_ext_transform_feedback &&
+            if (IsExtEnabled(device_extensions.vk_ext_transform_feedback) &&
                 (index >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams)) {
                 skip |= LogError(
                     cb_state->commandBuffer(), "VUID-vkCmdEndQueryIndexedEXT-queryType-02346",
@@ -14740,7 +14772,7 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
     if ((external_format == false) && (FormatIsUNorm(conversion_format) == false)) {
-        const char *vuid = (device_extensions.vk_android_external_memory_android_hardware_buffer)
+        const char *vuid = IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)
                                ? "VUID-VkSamplerYcbcrConversionCreateInfo-format-04061"
                                : "VUID-VkSamplerYcbcrConversionCreateInfo-format-04060";
         skip |=
@@ -14910,7 +14942,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
         }
     }
 
-    if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
+    if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
         if ((VK_FALSE == enabled_features.portability_subset_features.samplerMipLodBias) && pCreateInfo->mipLodBias != 0) {
             skip |= LogError(device, "VUID-VkSamplerCreateInfo-samplerMipLodBias-04467",
                              "vkCreateSampler (portability error): mip LOD bias not supported.");
@@ -15948,7 +15980,7 @@ bool CoreChecks::PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer commandBuffer
 bool CoreChecks::PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkEvent *pEvent) const {
     bool skip = false;
-    if (device_extensions.vk_khr_portability_subset != ExtEnabled::kNotEnabled) {
+    if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
         if (VK_FALSE == enabled_features.portability_subset_features.events) {
             skip |= LogError(device, "VUID-vkCreateEvent-events-04468",
                              "vkCreateEvent: events are not supported via VK_KHR_portability_subset");
