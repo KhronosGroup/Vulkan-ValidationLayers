@@ -1102,7 +1102,8 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
         skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedback-02287",
                          "%s: transformFeedback feature is not enabled.", "vkCmdDrawIndirectByteCountEXT()");
     }
-    if (device_extensions.vk_ext_transform_feedback && !phys_dev_ext_props.transform_feedback_props.transformFeedbackDraw) {
+    if (IsExtEnabled(device_extensions.vk_ext_transform_feedback) &&
+        !phys_dev_ext_props.transform_feedback_props.transformFeedbackDraw) {
         skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedbackDraw-02288",
                          "%s: VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackDraw is not supported",
                          "vkCmdDrawIndirectByteCountEXT()");

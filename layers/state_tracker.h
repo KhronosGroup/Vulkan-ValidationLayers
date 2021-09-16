@@ -1267,7 +1267,7 @@ class ValidationStateTracker : public ValidationObject {
     template <typename ExtProp>
     void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, ExtEnabled enabled, ExtProp* ext_prop) {
         assert(ext_prop);
-        if (enabled) {
+        if (IsExtEnabled(enabled)) {
             *ext_prop = LvlInitStruct<ExtProp>();
             if (api_version < VK_API_VERSION_1_1) {
                 auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);

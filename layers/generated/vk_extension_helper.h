@@ -55,14 +55,12 @@ enum ExtEnabled : unsigned char {
     kEnabledByApiLevel,
 };
 
-static bool DECORATE_UNUSED IsExtEnabled(ExtEnabled feature) {
-    if (feature == kNotEnabled) return false;
-    return true;
+static bool DECORATE_UNUSED IsExtEnabled(ExtEnabled extension) {
+    return (extension != kNotEnabled);
 };
 
-static bool DECORATE_UNUSED IsExtEnabledByCreateinfo(ExtEnabled feature) {
-    if (feature == kEnabledByCreateinfo) return true;
-    return false;
+static bool DECORATE_UNUSED IsExtEnabledByCreateinfo(ExtEnabled extension) {
+    return (extension == kEnabledByCreateinfo);
 };
 #define VK_VERSION_1_2_NAME "VK_VERSION_1_2"
 

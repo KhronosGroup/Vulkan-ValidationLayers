@@ -553,7 +553,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                             print("Error in parameter_validation_generator.py CodeGen.")
                         pnext_check += '            if (is_const_param) {\n'
                         if table_type == 'device':
-                            pnext_check += f'                if ((is_physdev_api && !SupportedByPdev(physical_device, {ext_name_define})) || (!is_physdev_api && !{table_type}_extensions.{ext_name.lower()})) {{\n'
+                            pnext_check += f'                if ((is_physdev_api && !SupportedByPdev(physical_device, {ext_name_define})) || (!is_physdev_api && !IsExtEnabled({table_type}_extensions.{ext_name.lower()}))) {{\n'
                         else:
                             pnext_check += '                if (!%s_extensions.%s) {\n' % (table_type, ext_name.lower())
                         pnext_check += '                        skip |= LogError(\n'
@@ -1539,18 +1539,17 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             lines, unused = self.genFuncBody(command.name, command.params[startIndex:], '', '', None, is_phys_device = command.params[0].type == 'VkPhysicalDevice')
             # Cannot validate extension dependencies for device extension APIs having a physical device as their dispatchable object
             if (command.name in self.required_extensions) and (self.extension_type != 'device' or command.params[0].type != 'VkPhysicalDevice'):
-                ext_test = ''
-                if command.params[0].type in ["VkInstance", "VkPhysicalDevice"] or command.name == 'vkCreateInstance':
-                    ext_table_type = 'instance'
-                else:
-                    ext_table_type = 'device'
                 for ext in self.required_extensions[command.name]:
                     ext_name_define = ''
                     for extension in self.registry.extensions:
                         if extension.attrib['name'] == ext:
                             ext_name_define = extension[0][1].get('name')
                             break
-                    ext_test = 'if (!%s_extensions.%s) skip |= OutputExtensionError("%s", %s);\n' % (ext_table_type, ext.lower(), command.name, ext_name_define)
+                    ext_test = ''
+                    if command.params[0].type in ["VkInstance", "VkPhysicalDevice"] or command.name == 'vkCreateInstance':
+                        ext_test = 'if (!instance_extensions.%s) skip |= OutputExtensionError("%s", %s);\n' % (ext.lower(), command.name, ext_name_define)
+                    else:
+                        ext_test = 'if (!IsExtEnabled(device_extensions.%s)) skip |= OutputExtensionError("%s", %s);\n' % (ext.lower(), command.name, ext_name_define)
                     lines.insert(0, ext_test)
             if lines:
                 func_sig = self.getCmdDef(command) + ' const {\n'

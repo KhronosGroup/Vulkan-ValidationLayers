@@ -2145,7 +2145,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         }
 
         // Apply the specialization-constant values and revalidate the shader module.
-        spv_target_env spirv_environment = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
+        spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
         spvtools::MessageConsumer consumer = [&skip, &module, &stage_state, this](spv_message_level_t level, const char *source,
                                                                                   const spv_position_t &position,
@@ -2229,7 +2229,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
         skip |= ValidatePrimitiveRateShaderState(pipeline, module, entrypoint, pStage->stage);
     }
-    if (device_extensions.vk_qcom_render_pass_shader_resolve != kNotEnabled) {
+    if (IsExtEnabled(device_extensions.vk_qcom_render_pass_shader_resolve)) {
         skip |= ValidateShaderResolveQCOM(module, pStage, pipeline);
     }
 
@@ -2743,7 +2743,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         return false;
     }
 
-    auto have_glsl_shader = device_extensions.vk_nv_glsl_shader;
+    auto have_glsl_shader = IsExtEnabled(device_extensions.vk_nv_glsl_shader);
 
     if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
         skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-01376",
@@ -2761,7 +2761,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
 
         // Use SPIRV-Tools validator to try and catch any issues with the module itself. If specialization constants are present,
         // the default values will be used during validation.
-        spv_target_env spirv_environment = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
+        spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
         spv_context ctx = spvContextCreate(spirv_environment);
         spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
         spv_diagnostic diag = nullptr;
@@ -2858,7 +2858,7 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
                             spvtools::ValidatorOptions &options) {
     // VK_KHR_relaxed_block_layout never had a feature bit so just enabling the extension allows relaxed layout
     // Was promotoed in Vulkan 1.1 so anyone using Vulkan 1.1 also gets this for free
-    if (device_extensions.vk_khr_relaxed_block_layout) {
+    if (IsExtEnabled(device_extensions.vk_khr_relaxed_block_layout)) {
         // --relax-block-layout
         options.SetRelaxBlockLayout(true);
     }
