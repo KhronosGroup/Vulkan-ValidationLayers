@@ -2050,6 +2050,59 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
     return skip;
 }
 
+bool CoreChecks::ValidateTexelGatherOffset(SHADER_MODULE_STATE const *src, spirv_inst_iter &insn) const {
+    bool skip = false;
+
+    const uint32_t opcode = insn.opcode();
+    // If opcode is OpImage*Gather
+    if (opcode == spv::OpImageGather || opcode == spv::OpImageDrefGather || opcode == spv::OpImageSparseGather ||
+        opcode == spv::OpImageSparseDrefGather) {
+        if (insn.len() > 6) { // Image operands are optional
+            auto image_operand = insn.word(6);
+            // Bits we are validating
+            uint32_t offset_bits =
+                spv::ImageOperandsOffsetMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsConstOffsetsMask;
+            if (image_operand & (offset_bits)) {
+                // Operand values start at word 7
+                uint32_t index = 7;
+                // Each bit has it's own operand, starts with the smallest set bit and loop to the highest bit among
+                // ImageOperandsOffsetMask, ImageOperandsConstOffsetMask and ImageOperandsConstOffsetsMask
+                for (uint32_t i = 1; i < spv::ImageOperandsConstOffsetsMask; i <<= 1) {
+                    if (image_operand & i) {  // If the bit is set, consume operand
+                        if (insn.len() > index && (i & offset_bits)) {
+                            uint32_t constant_id = insn.word(index);
+                            const auto &constant = src->get_def(constant_id);
+                            if (constant.opcode() == spv::OpConstantComposite) {
+                                for (uint32_t j = 3; j < constant.len(); ++j) {
+                                    uint32_t comp_id = constant.word(j);
+                                    const auto &comp = src->get_def(comp_id);
+                                    // Get operand value
+                                    int offset = comp.word(3);
+                                    if (offset < phys_dev_props.limits.minTexelGatherOffset) {
+                                        skip |= LogError(device, "VUID-RuntimeSpirv-OpImage-06376",
+                                                         "vkCreateShaderModule(): Shader uses OpImageGather with offset (%" PRIi32
+                                                         ") less than VkPhysicalDeviceLimits::minTexelGatherOffset (%" PRIu32 ").",
+                                                         offset, phys_dev_props.limits.minTexelGatherOffset);
+                                    } else if (static_cast<uint32_t>(offset) > phys_dev_props.limits.maxTexelGatherOffset) {
+                                        skip |=
+                                            LogError(device, "VUID-RuntimeSpirv-OpImage-06377",
+                                                     "vkCreateShaderModule(): Shader uses OpImageGather with offset (%" PRIi32
+                                                     ") greater than VkPhysicalDeviceLimits::maxTexelGatherOffset (%" PRIu32 ").",
+                                                     offset, phys_dev_props.limits.maxTexelGatherOffset);
+                                    }
+                                }
+                            }
+                        }
+                        index += src->ImageOperandsCount(i);
+                    }
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 // Validate runtime usage of various opcodes that depends on what Vulkan properties or features are exposed
 bool CoreChecks::ValidatePropertiesAndFeatures(SHADER_MODULE_STATE const *module, spirv_inst_iter &insn) const {
     bool skip = false;
@@ -2199,6 +2252,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     // and mainly only checking the instruction in detail for a single operation
     uint32_t total_shared_size = 0;
     for (auto insn : *module) {
+        skip |= ValidateTexelGatherOffset(module, insn);
         skip |= ValidateShaderCapabilitiesAndExtensions(module, insn);
         skip |= ValidatePropertiesAndFeatures(module, insn);
         skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage, insn);
