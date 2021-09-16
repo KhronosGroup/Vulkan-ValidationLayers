@@ -2388,6 +2388,31 @@ bool CoreChecks::ValidateTransformFeedback(SHADER_MODULE_STATE const *module_sta
     return skip;
 }
 
+bool CoreChecks::ValidateWorkgroupInitialization(SHADER_MODULE_STATE const *src, spirv_inst_iter &insn) const {
+    bool skip = false;
+
+    const uint32_t opcode = insn.opcode();
+    if (opcode == spv::OpVariable) {
+        uint32_t storage_class = insn.word(3);
+        if (storage_class == spv::StorageClassWorkgroup) {
+            if (insn.len() > 4 &&
+                !enabled_features.zero_initialize_work_group_memory_features.shaderZeroInitializeWorkgroupMemory) {
+                const char *vuid = IsExtEnabled(device_extensions.vk_khr_zero_initialize_workgroup_memory)
+                                       ? "VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372"
+                                       : "VUID-RuntimeSpirv-OpVariable-06373";
+                skip |= LogError(
+                    device, vuid,
+                    "vkCreateShaderModule(): "
+                    "VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::shaderZeroInitializeWorkgroupMemory is not enabled, "
+                    "but shader contains an OpVariable with Workgroup Storage Class with an Initializer operand.\n%s",
+                    src->DescribeInstruction(insn).c_str());
+            }
+        }
+    }
+
+    return skip;
+}
+
 // Checks for both TexelOffset and TexelGatherOffset limits
 bool CoreChecks::ValidateTexelOffsetLimits(SHADER_MODULE_STATE const *module_state, spirv_inst_iter &insn) const {
     bool skip = false;
@@ -2630,6 +2655,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     // and mainly only checking the instruction in detail for a single operation
     uint32_t total_shared_size = 0;
     for (auto insn : *module_state) {
+        skip |= ValidateWorkgroupInitialization(module_state, insn);
         skip |= ValidateTexelOffsetLimits(module_state, insn);
         skip |= ValidateShaderCapabilitiesAndExtensions(insn);
         skip |= ValidateShaderClock(module_state, insn);

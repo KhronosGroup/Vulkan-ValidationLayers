@@ -569,6 +569,7 @@ class CoreChecks : public ValidationStateTracker {
                                           spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) const;
     bool ValidateTexelOffsetLimits(SHADER_MODULE_STATE const* module_state, spirv_inst_iter& insn) const;
     bool ValidateShaderCapabilitiesAndExtensions(spirv_inst_iter& insn) const;
+    bool ValidateWorkgroupInitialization(SHADER_MODULE_STATE const* src, spirv_inst_iter& insn) const;
     bool ValidateShaderStageWritableOrAtomicDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor,
                                                        bool has_atomic_descriptor) const;
     bool ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const* module_state,
