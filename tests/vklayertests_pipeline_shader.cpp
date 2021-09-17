@@ -8691,6 +8691,24 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         m_errorMonitor->VerifyFound();
     }
     {
+        VkDynamicState dynamic_state = VK_DYNAMIC_STATE_BLEND_CONSTANTS;
+        VkPipelineDynamicStateCreateInfo dynamic_states = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dynamic_states.dynamicStateCount = 1;
+        dynamic_states.pDynamicStates = &dynamic_state;
+
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
+        pipeline_ci.pLibraryInfo = &library_count_zero;
+        pipeline_ci.pStages = &stage_create_info;
+        pipeline_ci.groupCount = 1;
+        pipeline_ci.pGroups = &group_create_info;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+        pipeline_ci.stageCount = 1;
+        pipeline_ci.pDynamicState = &dynamic_states;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRayTracingPipelineCreateInfoKHR-pDynamicStates-03602");
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+    {
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
