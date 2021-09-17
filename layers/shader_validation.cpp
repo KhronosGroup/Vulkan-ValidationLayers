@@ -828,14 +828,14 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
     switch (pStage->stage) {
         case VK_SHADER_STAGE_VERTEX_BIT:
             if (num_comp_out > limits.maxVertexOutputComponents) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Vertex shader exceeds "
                                  "VkPhysicalDeviceLimits::maxVertexOutputComponents of %u "
                                  "components by %u components",
                                  limits.maxVertexOutputComponents, num_comp_out - limits.maxVertexOutputComponents);
             }
             if (max_comp_out > static_cast<int>(limits.maxVertexOutputComponents)) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Vertex shader output variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxVertexOutputComponents (%u)",
                                  limits.maxVertexOutputComponents);
@@ -844,7 +844,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
 
         case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
             if (num_comp_in > limits.maxTessellationControlPerVertexInputComponents) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Tessellation control shader exceeds "
                                  "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents of %u "
                                  "components by %u components",
@@ -853,13 +853,13 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             }
             if (max_comp_in > static_cast<int>(limits.maxTessellationControlPerVertexInputComponents)) {
                 skip |=
-                    LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                    LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                              "Invalid Pipeline CreateInfo State: Tessellation control shader input variable uses location that "
                              "exceeds component limit VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents (%u)",
                              limits.maxTessellationControlPerVertexInputComponents);
             }
             if (num_comp_out > limits.maxTessellationControlPerVertexOutputComponents) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Tessellation control shader exceeds "
                                  "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents of %u "
                                  "components by %u components",
@@ -868,7 +868,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             }
             if (max_comp_out > static_cast<int>(limits.maxTessellationControlPerVertexOutputComponents)) {
                 skip |=
-                    LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                    LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                              "Invalid Pipeline CreateInfo State: Tessellation control shader output variable uses location that "
                              "exceeds component limit VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents (%u)",
                              limits.maxTessellationControlPerVertexOutputComponents);
@@ -877,7 +877,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
 
         case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
             if (num_comp_in > limits.maxTessellationEvaluationInputComponents) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Tessellation evaluation shader exceeds "
                                  "VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents of %u "
                                  "components by %u components",
@@ -886,13 +886,13 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             }
             if (max_comp_in > static_cast<int>(limits.maxTessellationEvaluationInputComponents)) {
                 skip |=
-                    LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                    LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                              "Invalid Pipeline CreateInfo State: Tessellation evaluation shader input variable uses location that "
                              "exceeds component limit VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents (%u)",
                              limits.maxTessellationEvaluationInputComponents);
             }
             if (num_comp_out > limits.maxTessellationEvaluationOutputComponents) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Tessellation evaluation shader exceeds "
                                  "VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents of %u "
                                  "components by %u components",
@@ -901,7 +901,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             }
             if (max_comp_out > static_cast<int>(limits.maxTessellationEvaluationOutputComponents)) {
                 skip |=
-                    LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                    LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                              "Invalid Pipeline CreateInfo State: Tessellation evaluation shader output variable uses location that "
                              "exceeds component limit VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents (%u)",
                              limits.maxTessellationEvaluationOutputComponents);
@@ -923,33 +923,33 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
 
         case VK_SHADER_STAGE_GEOMETRY_BIT:
             if (num_comp_in > limits.maxGeometryInputComponents) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
                                  "VkPhysicalDeviceLimits::maxGeometryInputComponents of %u "
                                  "components by %u components",
                                  limits.maxGeometryInputComponents, num_comp_in - limits.maxGeometryInputComponents);
             }
             if (max_comp_in > static_cast<int>(limits.maxGeometryInputComponents)) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Geometry shader input variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxGeometryInputComponents (%u)",
                                  limits.maxGeometryInputComponents);
             }
             if (num_comp_out > limits.maxGeometryOutputComponents) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
                                  "VkPhysicalDeviceLimits::maxGeometryOutputComponents of %u "
                                  "components by %u components",
                                  limits.maxGeometryOutputComponents, num_comp_out - limits.maxGeometryOutputComponents);
             }
             if (max_comp_out > static_cast<int>(limits.maxGeometryOutputComponents)) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Geometry shader output variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxGeometryOutputComponents (%u)",
                                  limits.maxGeometryOutputComponents);
             }
             if (num_comp_out * num_vertices > limits.maxGeometryTotalOutputComponents) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
                                  "VkPhysicalDeviceLimits::maxGeometryTotalOutputComponents of %u "
                                  "components by %u components",
@@ -960,14 +960,14 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
 
         case VK_SHADER_STAGE_FRAGMENT_BIT:
             if (num_comp_in > limits.maxFragmentInputComponents) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Fragment shader exceeds "
                                  "VkPhysicalDeviceLimits::maxFragmentInputComponents of %u "
                                  "components by %u components",
                                  limits.maxFragmentInputComponents, num_comp_in - limits.maxFragmentInputComponents);
             }
             if (max_comp_in > static_cast<int>(limits.maxFragmentInputComponents)) {
-                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Fragment shader input variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxFragmentInputComponents (%u)",
                                  limits.maxFragmentInputComponents);
