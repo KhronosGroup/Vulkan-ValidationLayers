@@ -5152,8 +5152,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedVertexMaxComponentsWithBuiltins) {
     };
 
     // maxFragmentInputComponents is not reached because GLSL should not be including any input fragment stage built-ins by default
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      "Vertex shader exceeds VkPhysicalDeviceLimits::maxVertexOutputComponents");
+    // only maxVertexOutputComponents is reached
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
 }
 
 TEST_F(VkLayerTest, CreatePipelineExceedFragmentMaxComponentsWithBuiltins) {
@@ -5184,7 +5184,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedFragmentMaxComponentsWithBuiltins) {
 
     // vec4 == 4 components
     // This gives 128 which is the max limit
-    const uint32_t numVec4 = 33;
+    const uint32_t numVec4 = 32;  // 32 * 4 == 128
 
     std::string vsSourceStr =
         "#version 450\n"
@@ -5226,9 +5226,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedFragmentMaxComponentsWithBuiltins) {
     };
 
     // maxVertexOutputComponents is not reached because GLSL should not be including any output vertex stage built-ins
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      vector<string>{"Vertex shader exceeds VkPhysicalDeviceLimits::maxVertexOutputComponents",
-                                                     "Fragment shader exceeds VkPhysicalDeviceLimits::maxFragmentInputComponents"});
+    // only maxFragmentInputComponents is reached
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
 }
 
 TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
@@ -5285,16 +5284,14 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
 
         switch (overflow) {
             case 2:
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                                  "Vertex shader output variable uses location that exceeds component limit "
-                                                  "VkPhysicalDeviceLimits::maxVertexOutputComponents");
+                // just component limit (maxVertexOutputComponents)
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
                 break;
             case 1:
+                // component and location limit (maxVertexOutputComponents)
                 CreatePipelineHelper::OneshotTest(
                     *this, set_info, kErrorBit,
-                    vector<string>{"Vertex shader exceeds VkPhysicalDeviceLimits::maxVertexOutputComponents",
-                                   "Vertex shader output variable uses location that exceeds component limit "
-                                   "VkPhysicalDeviceLimits::maxVertexOutputComponents"});
+                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
                 break;
             default:
                 assert(0);
@@ -5358,9 +5355,9 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxComponentsBlocks) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
 
+    // 1 for maxVertexOutputComponents and 1 for maxFragmentInputComponents
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      vector<string>{"Vertex shader exceeds VkPhysicalDeviceLimits::maxVertexOutputComponents",
-                                                     "Fragment shader exceeds VkPhysicalDeviceLimits::maxFragmentInputComponents"});
+                                      vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
 }
 
 TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputComponents) {
@@ -5462,27 +5459,20 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
             helper.gp_ci_.pTessellationState = &tessInfo;
             helper.gp_ci_.pInputAssemblyState = &inputAssemblyInfo;
         };
-
+        // maxTessellationControlPerVertexInputComponents and maxTessellationControlPerVertexOutputComponents
         switch (overflow) {
             case 2:
+                // in and out component limit
                 CreatePipelineHelper::OneshotTest(
                     *this, set_info, kErrorBit,
-                    vector<string>{"Tessellation control shader input variable uses location that exceeds component limit "
-                                   "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents",
-                                   "Tessellation control shader output variable uses location that exceeds component limit "
-                                   "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents"});
+                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
                 break;
             case 1:
+                // (in and out component limit) and (in and out location limit)
                 CreatePipelineHelper::OneshotTest(
                     *this, set_info, kErrorBit,
-                    vector<string>{"Tessellation control shader exceeds "
-                                   "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents",
-                                   "Tessellation control shader exceeds "
-                                   "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents",
-                                   "Tessellation control shader input variable uses location that exceeds component limit "
-                                   "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents",
-                                   "Tessellation control shader output variable uses location that exceeds component limit "
-                                   "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents"});
+                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                   "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
                 break;
             default:
                 assert(0);
@@ -5594,25 +5584,20 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
             helper.gp_ci_.pInputAssemblyState = &inputAssemblyInfo;
         };
 
+        // maxTessellationEvaluationInputComponents and maxTessellationEvaluationOutputComponents
         switch (overflow) {
             case 2:
+                // in and out component limit
                 CreatePipelineHelper::OneshotTest(
                     *this, set_info, kErrorBit,
-                    vector<string>{"Tessellation evaluation shader input variable uses location that exceeds component limit "
-                                   "VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents",
-                                   "Tessellation evaluation shader output variable uses location that exceeds component limit "
-                                   "VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents"});
+                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
                 break;
             case 1:
+                // (in and out component limit) and (in and out location limit)
                 CreatePipelineHelper::OneshotTest(
                     *this, set_info, kErrorBit,
-                    vector<string>{
-                        "Tessellation evaluation shader exceeds VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents",
-                        "Tessellation evaluation shader exceeds VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents",
-                        "Tessellation evaluation shader input variable uses location that exceeds component limit "
-                        "VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents",
-                        "Tessellation evaluation shader output variable uses location that exceeds component limit "
-                        "VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents"});
+                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                   "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
                 break;
             default:
                 assert(0);
@@ -5716,26 +5701,21 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
-
+        // maxGeometryInputComponents and maxGeometryOutputComponents
         switch (overflow) {
             case 2:
+                // in and out component limit
                 CreatePipelineHelper::OneshotTest(
                     *this, set_info, kErrorBit,
-                    vector<string>{"Geometry shader input variable uses location that exceeds component limit "
-                                   "VkPhysicalDeviceLimits::maxGeometryInputComponents",
-                                   "Geometry shader output variable uses location that exceeds component limit "
-                                   "VkPhysicalDeviceLimits::maxGeometryOutputComponents"});
+                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
                 break;
             case 1:
+                // (in and out component limit) and (in and out location limit) and maxGeometryTotalOutputComponents
                 CreatePipelineHelper::OneshotTest(
                     *this, set_info, kErrorBit,
-                    vector<string>{"Geometry shader exceeds VkPhysicalDeviceLimits::maxGeometryInputComponents",
-                                   "Geometry shader exceeds VkPhysicalDeviceLimits::maxGeometryOutputComponents",
-                                   "Geometry shader input variable uses location that exceeds component limit "
-                                   "VkPhysicalDeviceLimits::maxGeometryInputComponents",
-                                   "Geometry shader output variable uses location that exceeds component limit "
-                                   "VkPhysicalDeviceLimits::maxGeometryOutputComponents",
-                                   "Geometry shader exceeds VkPhysicalDeviceLimits::maxGeometryTotalOutputComponents"});
+                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                   "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                   "VUID-RuntimeSpirv-Location-06272"});
                 break;
             default:
                 assert(0);
@@ -5793,16 +5773,14 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
         };
         switch (overflow) {
             case 2:
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                                  "Fragment shader input variable uses location that exceeds component limit "
-                                                  "VkPhysicalDeviceLimits::maxFragmentInputComponents");
+                // just component limit (maxFragmentInputComponents)
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
                 break;
             case 1:
+                // component and location limit (maxFragmentInputComponents)
                 CreatePipelineHelper::OneshotTest(
                     *this, set_info, kErrorBit,
-                    vector<string>{"Fragment shader exceeds VkPhysicalDeviceLimits::maxFragmentInputComponents",
-                                   "Fragment shader input variable uses location that exceeds component limit "
-                                   "VkPhysicalDeviceLimits::maxFragmentInputComponents"});
+                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
                 break;
             default:
                 assert(0);
