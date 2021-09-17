@@ -5651,6 +5651,16 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                                  "elements of pCreateInfos must not include VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT.");
             }
         }
+        if (pCreateInfos[i].pDynamicState) {
+            for (uint32_t j = 0; j < pCreateInfos[i].pDynamicState->dynamicStateCount; ++j) {
+                if (pCreateInfos[i].pDynamicState->pDynamicStates[j] != VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR) {
+                    skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pDynamicStates-03602",
+                                     "vkCreateRayTracingPipelinesKHR(): pCreateInfos[%" PRIu32
+                                     "].pDynamicState->pDynamicStates[%" PRIu32 "] is %s.",
+                                     i, j, string_VkDynamicState(pCreateInfos[i].pDynamicState->pDynamicStates[j]));
+                }
+            }
+        }
     }
 
     return skip;
