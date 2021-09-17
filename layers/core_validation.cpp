@@ -5504,7 +5504,36 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
         skip |= ValidateRayTracingPipeline(pipeline, pCreateInfos[i].flags, /*isKHR*/ true);
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, i, "vkCreateRayTracingPipelinesKHR",
                                                   "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905");
+        if (create_info.pLibraryInfo) {
+            const std::vector<std::pair<const char *, VkPipelineCreateFlags>> vuid_map = {
+                {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04718", VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR},
+                {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04719", VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR},
+                {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04720",
+                 VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR},
+                {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04721",
+                 VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR},
+                {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04722",
+                 VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR},
+                {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04723", VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR},
+            };
+            for (const auto &pair : vuid_map) {
+                if (create_info.flags & pair.second) {
+                    for (uint32_t j = 0; j < create_info.pLibraryInfo->libraryCount; ++j) {
+                        const auto &lib = Get<PIPELINE_STATE>(create_info.pLibraryInfo->pLibraries[j]);
+                        if ((lib->create_info.raytracing.flags & pair.second) == 0) {
+                            skip |= LogError(
+                                device, pair.first,
+                                "vkCreateRayTracingPipelinesKHR(): pCreateInfo[%" PRIu32
+                                "].flags contains %s bit, but pCreateInfo[%" PRIu32
+                                "].pLibraryInfo->pLibraries[%" PRIu32 "] was created without it.",
+                                i, string_VkPipelineCreateFlags(pair.second).c_str(), i, j);
+                        }
+                    }
+                }
+            }
+        }
     }
+
     return skip;
 }
 
