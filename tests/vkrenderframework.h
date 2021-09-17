@@ -298,23 +298,28 @@ class VkRenderFramework : public VkTestFramework {
     // Tracks ext_name to be enabled at device creation time and attempts to enable any required instance extensions.
     // Returns true if all required instance extensions are supported or there are no required instance extensions, false
     // otherwise.
+    // `ext_name` can refer to a device or instance extension.
     bool AddRequiredExtensions(const char *ext_name);
     // After instance and physical device creation (e.g., after InitFramework), returns true if all required extensions are
     // available, false otherwise
     bool AreRequestedExtensionsEnabled() const;
 
-    // Add an instance extension and all of its dependent extensions. Returns true if the extension is supported. If the extension
-    // is not supported, false is returned, and no extension names are added for instance creation.
+    // Add ext_name, the names of all instance extensions required by ext_name, and return true if ext_name is supported. If the
+    // extension is not supported, no extension names are added for instance creation. `ext_name` can refer to a device or instance
+    // extension.
     bool AddRequiredInstanceExtensions(const char *ext_name);
-    // Returns true if the instance extension is enabled. This call is only valid _after_ previous `AddRequired*Extensions` calls
-    // and InitFramework has been called.
-    bool CanEnableInstanceExtension(const std::string &ext_name) const;
-    // Add a device extension and all of its dependent _device_ extensions. Returns true if the extension is supported. If the
-    // extension is not supported, false is returned, and no extension names are added for device creation.
-    bool AddRequiredDeviceExtensions(const char *ext_name);
+    // Returns true if the instance extension inst_ext_name is enabled. This call is only valid _after_ previous
+    // `AddRequired*Extensions` calls and InitFramework has been called. `inst_ext_name` must be an instance extension name; false
+    // is returned for all device extension names.
+    bool CanEnableInstanceExtension(const std::string &inst_ext_name) const;
+    // Add dev_ext_name, then names of _device_ extensions required by dev_ext_name, and return true if dev_ext_name is supported.
+    // If the extension is not supported, no extension names are added for device creation. This function has no effect if
+    // dev_ext_name refers to an instance extension.
+    bool AddRequiredDeviceExtensions(const char *dev_ext_name);
     // Returns true if the device extension is enabled. This call is only valid _after_ previous `AddRequired*Extensions` calls and
     // InitFramework has been called.
-    bool CanEnableDeviceExtension(const std::string &ext_name) const;
+    // `dev_ext_name` msut be an instance extension name; false is returned for all instance extension names.
+    bool CanEnableDeviceExtension(const std::string &dev_ext_name) const;
 
   protected:
     VkRenderFramework();

@@ -549,7 +549,8 @@ bool VkRenderFramework::AddRequiredExtensions(const char *ext_name) {
 
 bool VkRenderFramework::AreRequestedExtensionsEnabled() const {
     for (const auto &ext : m_requested_extensions) {
-        if (!CanEnableDeviceExtension(ext)) {
+        // `ext` may refer to an instance or device extension
+        if (!CanEnableDeviceExtension(ext) && !CanEnableInstanceExtension(ext)) {
             return false;
         }
     }
@@ -562,46 +563,61 @@ bool VkRenderFramework::AddRequiredInstanceExtensions(const char *ext_name) {
     }
 
     const auto &instance_exts_map = InstanceExtensions::get_info_map();
+    bool is_instance_ext = false;
     if (instance_exts_map.count(ext_name) > 0) {
-        if (InstanceExtensionSupported(ext_name)) {
-            m_instance_extension_names.push_back(ext_name);
-        } else {
+        if (!InstanceExtensionSupported(ext_name)) {
             return false;
+        } else {
+            is_instance_ext = true;
         }
     }
 
-    const auto &info = DeviceExtensions::get_info(ext_name);
-    for (const auto &req : info.requirements) {
-        if (!AddRequiredInstanceExtensions(req.name)) {
-            return false;
+    // Different tables need to be used for extension dependency lookup depending on whether `ext_name` refers to a device or
+    // instance extension
+    if (is_instance_ext) {
+        const auto &info = InstanceExtensions::get_info(ext_name);
+        for (const auto &req : info.requirements) {
+            if (!AddRequiredInstanceExtensions(req.name)) {
+                return false;
+            }
+        }
+        m_instance_extension_names.push_back(ext_name);
+    } else {
+        const auto &info = DeviceExtensions::get_info(ext_name);
+        for (const auto &req : info.requirements) {
+            if (!AddRequiredInstanceExtensions(req.name)) {
+                return false;
+            }
         }
     }
+
     return true;
 }
 
-bool VkRenderFramework::CanEnableInstanceExtension(const std::string &ext_name) const {
+bool VkRenderFramework::CanEnableInstanceExtension(const std::string &inst_ext_name) const {
     return std::any_of(m_instance_extension_names.cbegin(), m_instance_extension_names.cend(),
-                       [&ext_name](const char *ext) { return ext_name == ext; });
+                       [&inst_ext_name](const char *ext) { return inst_ext_name == ext; });
 }
 
-bool VkRenderFramework::AddRequiredDeviceExtensions(const char *ext_name) {
+bool VkRenderFramework::AddRequiredDeviceExtensions(const char *dev_ext_name) {
     // Check if the extension has already been added
-    if (CanEnableDeviceExtension(ext_name)) {
+    if (CanEnableDeviceExtension(dev_ext_name)) {
         return true;
     }
 
-    // If this is an instance extension, just return true
+    // If this is an instance extension, just return true under the assumption instance extensions do not depend on any device
+    // extensions.
     const auto &instance_exts_map = InstanceExtensions::get_info_map();
-    if (instance_exts_map.count(ext_name) != 0) {
+    if (instance_exts_map.count(dev_ext_name) != 0) {
         return true;
     }
 
-    if (!DeviceExtensionSupported(gpu(), nullptr, ext_name)) {
+    if (!DeviceExtensionSupported(gpu(), nullptr, dev_ext_name)) {
         return false;
     }
-    m_device_extension_names.push_back(ext_name);
+    m_device_extension_names.push_back(dev_ext_name);
 
-    const auto &info = DeviceExtensions::get_info(ext_name);
+    const auto &info = DeviceExtensions::get_info(dev_ext_name);
     for (const auto &req : info.requirements) {
         if (!AddRequiredDeviceExtensions(req.name)) {
             return false;
@@ -610,9 +626,9 @@ bool VkRenderFramework::AddRequiredDeviceExtensions(const char *ext_name) {
     return true;
 }
 
-bool VkRenderFramework::CanEnableDeviceExtension(const std::string &ext_name) const {
+bool VkRenderFramework::CanEnableDeviceExtension(const std::string &dev_ext_name) const {
     return std::any_of(m_device_extension_names.cbegin(), m_device_extension_names.cend(),
-                       [&ext_name](const char *ext) { return ext_name == ext; });
+                       [&dev_ext_name](const char *ext) { return dev_ext_name == ext; });
 }
 
 void VkRenderFramework::ShutdownFramework() {
