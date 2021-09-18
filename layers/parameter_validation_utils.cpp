@@ -3084,22 +3084,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         LvlFindInChain<VkPipelineViewportDepthClipControlCreateInfoEXT>(viewport_state.pNext);
 
                     if (!physical_device_features.multiViewport) {
-                        if (!has_dynamic_viewport_with_count && (viewport_state.viewportCount > 1)) {
-                            skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-                                             "vkCreateGraphicsPipelines: The VkPhysicalDeviceFeatures::multiViewport feature is "
-                                             "disabled, but pCreateInfos[%" PRIu32 "].pViewportState->viewportCount (=%" PRIu32
-                                             ") is not 1.",
-                                             i, viewport_state.viewportCount);
-                        }
-
-                        if (!has_dynamic_scissor_with_count && (viewport_state.scissorCount > 1)) {
-                            skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-                                             "vkCreateGraphicsPipelines: The VkPhysicalDeviceFeatures::multiViewport feature is "
-                                             "disabled, but pCreateInfos[%" PRIu32 "].pViewportState->scissorCount (=%" PRIu32
-                                             ") is not 1.",
-                                             i, viewport_state.scissorCount);
-                        }
-
                         if (exclusive_scissor_struct && (exclusive_scissor_struct->exclusiveScissorCount != 0 &&
                                                          exclusive_scissor_struct->exclusiveScissorCount != 1)) {
                             skip |= LogError(
@@ -3120,52 +3104,79 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                              ") is neither 0 nor 1.",
                                              i, shading_rate_image_struct->viewportCount);
                         }
+                    }
 
-                    } else {  // multiViewport enabled
-                        if (viewport_state.viewportCount == 0) {
-                            if (!has_dynamic_viewport_with_count) {
-                                skip |= LogError(
-                                    device, "VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-                                    "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "].pViewportState->viewportCount is 0.", i);
-                            }
-                        } else if (viewport_state.viewportCount > device_limits.maxViewports) {
-                            skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
-                                             "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
-                                             "].pViewportState->viewportCount (=%" PRIu32
-                                             ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
-                                             i, viewport_state.viewportCount, device_limits.maxViewports);
-                        } else if (has_dynamic_viewport_with_count) {
+                    // Viewport count
+                    if (viewport_state.viewportCount > device_limits.maxViewports) {
+                        skip |=
+                            LogError(device, "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
+                                     "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "].pViewportState->viewportCount (=%" PRIu32
+                                     ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
+                                     i, viewport_state.viewportCount, device_limits.maxViewports);
+                    }
+                    if (has_dynamic_viewport_with_count) {
+                        if (viewport_state.viewportCount != 0) {
                             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03379",
                                              "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                              "].pViewportState->viewportCount (=%" PRIu32
                                              ") must be zero when VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT is used.",
                                              i, viewport_state.viewportCount);
                         }
-
-                        if (viewport_state.scissorCount == 0) {
-                            if (!has_dynamic_scissor_with_count) {
-                                const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)
-                                                       ? "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136"
-                                                       : "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength";
-                                skip |= LogError(
-                                    device, vuid,
-                                    "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "].pViewportState->scissorCount is 0.", i);
-                            }
-                        } else if (viewport_state.scissorCount > device_limits.maxViewports) {
-                            skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219",
-                                             "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
-                                             "].pViewportState->scissorCount (=%" PRIu32
-                                             ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
-                                             i, viewport_state.scissorCount, device_limits.maxViewports);
-                        } else if (has_dynamic_scissor_with_count) {
+                    } else {
+                        if (viewport_state.viewportCount == 0) {
                             const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)
-                                                   ? "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136"
-                                                   : "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380";
-                            skip |= LogError(device, vuid,
+                                                   ? "VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135"
+                                                   : "VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength";
+                            skip |= LogError(
+                                device, vuid,
+                                "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                "].pViewportState->viewportCount can't be 0 unless VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT is used.",
+                                i);
+                        }
+
+                        if (!physical_device_features.multiViewport && (viewport_state.viewportCount > 1)) {
+                            skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
+                                             "vkCreateGraphicsPipelines: The VkPhysicalDeviceFeatures::multiViewport feature is "
+                                             "disabled, but pCreateInfos[%" PRIu32 "].pViewportState->viewportCount (=%" PRIu32
+                                             ") is not 1.",
+                                             i, viewport_state.viewportCount);
+                        }
+                    }
+
+                    // Scissor count
+                    if (viewport_state.scissorCount > device_limits.maxViewports) {
+                        skip |=
+                            LogError(device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219",
+                                     "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "].pViewportState->scissorCount (=%" PRIu32
+                                     ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
+                                     i, viewport_state.scissorCount, device_limits.maxViewports);
+                    }
+                    if (has_dynamic_scissor_with_count) {
+                        if (viewport_state.scissorCount != 0) {
+                            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380",
                                              "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                              "].pViewportState->scissorCount (=%" PRIu32
                                              ") must be zero when VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT is used.",
                                              i, viewport_state.viewportCount);
+                        }
+                    } else {
+                        if (viewport_state.scissorCount == 0) {
+                            const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)
+                                                   ? "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136"
+                                                   : "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength";
+                            skip |= LogError(
+                                device, vuid,
+                                "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                "].pViewportState->scissorCount can't be 0 unless VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT is used.",
+                                i);
+                        }
+
+                        if (!physical_device_features.multiViewport && (viewport_state.scissorCount > 1)) {
+                            skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
+                                             "vkCreateGraphicsPipelines: The VkPhysicalDeviceFeatures::multiViewport feature is "
+                                             "disabled, but pCreateInfos[%" PRIu32 "].pViewportState->scissorCount (=%" PRIu32
+                                             ") is not 1.",
+                                             i, viewport_state.scissorCount);
                         }
                     }
 
