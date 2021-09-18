@@ -11755,8 +11755,48 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
     auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_properties);
     vk::GetPhysicalDeviceProperties2(gpu(), &props);
     auto subgroup_size_control = LvlInitStruct<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>();
+    if (subgroup_properties.minSubgroupSize == 0) {
+        printf("%s minSubgroupSize is 0, skipping test.\n", kSkipPrefix);
+        return;
+    }
     subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
 
+    {
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.InitState();
+        cs_pipeline.LateBindPipelineInfo();
+        cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
+        cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02754");
+        cs_pipeline.CreateComputePipeline(true, false);
+        m_errorMonitor->VerifyFound();
+
+        cs_pipeline.cp_ci_.stage.flags = 0;
+        subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize + 1;
+        m_errorMonitor->SetDesiredFailureMsg(
+            kErrorBit, "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT-requiredSubgroupSize-02760");
+        if (subgroup_size_control.requiredSubgroupSize > subgroup_properties.maxSubgroupSize) {
+            m_errorMonitor->SetDesiredFailureMsg(
+                kErrorBit, "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT-requiredSubgroupSize-02762");
+        }
+        cs_pipeline.CreateComputePipeline(true, false);
+        m_errorMonitor->VerifyFound();
+
+        subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize / 2;
+        m_errorMonitor->SetDesiredFailureMsg(
+            kErrorBit, "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT-requiredSubgroupSize-02761");
+        cs_pipeline.CreateComputePipeline(true, false);
+        m_errorMonitor->VerifyFound();
+
+        subgroup_size_control.requiredSubgroupSize = subgroup_properties.maxSubgroupSize * 2;
+        m_errorMonitor->SetDesiredFailureMsg(
+            kErrorBit, "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT-requiredSubgroupSize-02762");
+        cs_pipeline.CreateComputePipeline(true, false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
     VkPhysicalDeviceVulkan11Properties props11 = LvlInitStruct<VkPhysicalDeviceVulkan11Properties>();
     VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&props11);
     vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
