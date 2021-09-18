@@ -3368,6 +3368,10 @@ TEST_F(VkLayerTest, PSOViewportStateTests) {
     ASSERT_NO_FATAL_FAILURE(Init(&features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    if (m_device->props.limits.maxViewports < 3) {
+        GTEST_SKIP() << "maxViewports is not large enough";
+    }
+
     const auto break_vp_state = [](CreatePipelineHelper &helper) {
         helper.rs_state_ci_.rasterizerDiscardEnable = VK_FALSE;
         helper.gp_ci_.pViewportState = nullptr;
@@ -3449,14 +3453,24 @@ TEST_F(VkLayerTest, PSOViewportStateTests) {
     }
 
     vector<TestCase> dyn_test_cases = {
-        {0, viewports, 1, scissors, {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+        {0,
+         viewports,
+         1,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
         {2,
          viewports,
          1,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
-        {1, viewports, 0, scissors, {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+        {1,
+         viewports,
+         0,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
         {1,
          viewports,
          2,
@@ -3479,13 +3493,15 @@ TEST_F(VkLayerTest, PSOViewportStateTests) {
          viewports,
          2,
          scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
         {2,
          viewports,
          0,
          scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
+         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
         {2,
          nullptr,
@@ -3493,7 +3509,12 @@ TEST_F(VkLayerTest, PSOViewportStateTests) {
          nullptr,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
-        {0, nullptr, 0, nullptr},
+        {0,
+         nullptr,
+         0,
+         nullptr,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
     };
 
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
@@ -16818,7 +16839,7 @@ TEST_F(VkLayerTest, TestCreatingPipelineWithScissorWithCount) {
         };
 
         CreatePipelineHelper::OneshotTest(*this, set_viewport_state_createinfo, kErrorBit,
-                                          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136");
+                                          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380");
     }
 }
 
@@ -17764,6 +17785,40 @@ TEST_F(VkLayerTest, ShaderModuleIdentifierFeatures) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, InvalidViewportCountWithExtendedDynamicState) {
+    TEST_DESCRIPTION("Create a pipeline with invalid viewport count with extended dynamic state.");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    VkDynamicState dynamic_state = VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.dyn_state_ci_ = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    pipe.dyn_state_ci_.dynamicStateCount = 1;
+    pipe.dyn_state_ci_.pDynamicStates = &dynamic_state;
+    pipe.vp_state_ci_.viewportCount = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03379");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    pipe.dyn_state_ci_.dynamicStateCount = 0;
+    pipe.vp_state_ci_.viewportCount = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, StorageImageWriteLessComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
 
@@ -17943,7 +17998,7 @@ TEST_F(VkLayerTest, StorageTexelBufferWriteLessComponent) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
 }
 
-TEST_F(VkLayerTest, PipelineProtectedAccess) { 
+TEST_F(VkLayerTest, PipelineProtectedAccess) {
     TEST_DESCRIPTION("Test VUIDs from VK_EXT_pipeline_protected_access");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -17960,7 +18015,6 @@ TEST_F(VkLayerTest, PipelineProtectedAccess) {
     auto pipeline_protected_access_features = LvlInitStruct<VkPhysicalDevicePipelineProtectedAccessFeaturesEXT>(&protected_memory_features);
     auto features2 = GetPhysicalDeviceFeatures2(pipeline_protected_access_features);
     pipeline_protected_access_features.pipelineProtectedAccess = VK_TRUE;
-    
 
     if (protected_memory_features.protectedMemory == VK_FALSE) {
         printf("%s protectedMemory feature not supported, skipped.\n", kSkipPrefix);
@@ -18045,7 +18099,7 @@ TEST_F(VkLayerTest, PipelineProtectedAccess) {
         lib_ci.flags = 0;
         vk_testing::Pipeline lib3(*m_device, protected_lib_ci);
         m_errorMonitor->VerifyFound();
-        
+
         CreatePipelineHelper unprotected_pre_raster_lib(*this);
         unprotected_pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
         unprotected_pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
@@ -18058,7 +18112,7 @@ TEST_F(VkLayerTest, PipelineProtectedAccess) {
         vk_testing::Pipeline lib4(*m_device, unprotected_lib_ci);
         m_errorMonitor->VerifyFound();
     }
- 
+
     // Create device without protected access features
     VkDeviceObj test_device(0, gpu());
     VkPipelineObj featureless_pipe(&test_device);
