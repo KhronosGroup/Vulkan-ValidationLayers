@@ -13763,6 +13763,146 @@ TEST_F(VkLayerTest, TestPipelineRasterizationConservativeStateCreateInfo) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
+    TEST_DESCRIPTION("Test runtime spirv transform feedback.");
+
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s not supported, skipping tests\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+        return;
+    }
+
+    // Test currently crashes with valid SPIR-V
+    // Using EmitStreamVertex() with transfer_feedback_props.maxTransformFeedbackStreams
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        printf("%s Test does not run on AMD proprietary driver, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
+        LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    transform_feedback_features.transformFeedback = VK_TRUE;
+    transform_feedback_features.geometryStreams = VK_TRUE;
+    VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>(&transform_feedback_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
+    if ((!m_device->phy().features().geometryShader)) {
+        printf("%s Device does not support the required geometry shader features; skipped.\n", kSkipPrefix);
+        return;
+    }
+    if (!transform_feedback_features.transformFeedback || !transform_feedback_features.geometryStreams) {
+        printf("%s transformFeedback or geometryStreams feature is not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT transfer_feedback_props =
+        LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transfer_feedback_props);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &pd_props2);
+
+    {
+        std::stringstream vsSource;
+        vsSource << R"asm(
+               OpCapability Shader
+               OpCapability TransformFeedback
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %tf
+               OpExecutionMode %main Xfb
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %tf "tf"  ; id %8
+
+               ; Annotations
+               OpDecorate %tf Location 0
+               OpDecorate %tf XfbBuffer 0
+               OpDecorate %tf XfbStride )asm";
+        vsSource << transfer_feedback_props.maxTransformFeedbackBufferDataStride + 4;
+        vsSource << R"asm(
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_ptr_Output_float = OpTypePointer Output %float
+         %tf = OpVariable %_ptr_Output_float Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )asm";
+
+        auto vs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_VERTEX_BIT, vsSource.str().c_str(), "main", nullptr);
+
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-XfbStride-06313");
+    }
+
+    {
+        std::stringstream gsSource;
+        gsSource << R"asm(
+               OpCapability Geometry
+               OpCapability TransformFeedback
+               OpCapability GeometryStreams
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Geometry %main "main" %tf
+               OpExecutionMode %main Xfb
+               OpExecutionMode %main Triangles
+               OpExecutionMode %main Invocations 1
+               OpExecutionMode %main OutputTriangleStrip
+               OpExecutionMode %main OutputVertices 1
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %tf "tf"  ; id %10
+
+               ; Annotations
+               OpDecorate %tf Location 0
+               OpDecorate %tf Stream 0
+               OpDecorate %tf XfbBuffer 0
+               OpDecorate %tf XfbStride 0
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+     %int_17 = OpConstant %int )asm";
+        gsSource << transfer_feedback_props.maxTransformFeedbackStreams;
+        gsSource << R"asm(
+      %float = OpTypeFloat 32
+%_ptr_Output_float = OpTypePointer Output %float
+         %tf = OpVariable %_ptr_Output_float Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpEmitStreamVertex %int_17
+               OpReturn
+               OpFunctionEnd
+        )asm";
+
+        auto gs =
+            VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_GEOMETRY_BIT, gsSource.str().c_str(), "main", nullptr);
+
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEmitStreamVertex-06310");
+    }
+}
+
 TEST_F(VkLayerTest, TestMinAndMaxTexelGatherOffset) {
     TEST_DESCRIPTION("Test shader with offset less than minTexelGatherOffset and greather than maxTexelGatherOffset");
 
