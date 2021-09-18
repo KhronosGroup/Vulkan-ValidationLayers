@@ -310,11 +310,19 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_blend_operation_advanced)) {
-        // Get the needed vertex attribute divisor limits
+        // Get the needed blend operation advanced properties
         auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
         auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&blend_operation_advanced_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.blend_operation_advanced_props = blend_operation_advanced_props;
+    }
+
+    if (IsExtEnabled(device_extensions.vk_ext_subgroup_size_control)) {
+        // Get the needed vertex attribute divisor limits
+        auto subgroup_size_control_props = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_size_control_props);
+        DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+        phys_dev_ext_props.subgroup_size_control_props = subgroup_size_control_props;
     }
 
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
@@ -1590,6 +1598,25 @@ bool StatelessValidation::ValidatePipelineShaderStageCreateInfo(const char *func
                 "%s(): %s->flags (0x%x) includes VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT while "
                 "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT is included in the pNext chain.",
                 func_name, msg, pCreateInfo->flags);
+        }
+        const uint32_t requiredSubgroupSize = required_subgroup_size_features->requiredSubgroupSize;
+        if (!IsPowerOfTwo(requiredSubgroupSize)) {
+            skip |= LogError(device, "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT-requiredSubgroupSize-02760",
+                             "%s(): VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT::requiredSubgroupSize (%" PRIu32
+                             ") is not a power of 2 integer.",
+                             func_name, requiredSubgroupSize);
+        }
+
+        if (requiredSubgroupSize < phys_dev_ext_props.subgroup_size_control_props.minSubgroupSize) {
+            skip |= LogError(device, "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT-requiredSubgroupSize-02761",
+                             "%s(): VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT::requiredSubgroupSize (%" PRIu32
+                             ") is less than minSubgroupSize (%" PRIu32 ").",
+                             func_name, requiredSubgroupSize, phys_dev_ext_props.subgroup_size_control_props.minSubgroupSize);
+        } else if (requiredSubgroupSize > phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize) {
+            skip |= LogError(device, "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT-requiredSubgroupSize-02762",
+                             "%s(): VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT::requiredSubgroupSize (%" PRIu32
+                             ") is greater than maxSubgroupSize (%" PRIu32 ").",
+                             func_name, requiredSubgroupSize, phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize);
         }
     }
 
