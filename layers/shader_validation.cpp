@@ -2072,6 +2072,46 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
     return skip;
 }
 
+bool CoreChecks::ValidateDecorations(SHADER_MODULE_STATE const* module) const {
+    bool skip = false;
+
+    for (const auto &op_decorate : module->decoration_inst) {
+        uint32_t decoration = op_decorate.word(2);
+        if (decoration == spv::DecorationXfbStride) {
+            uint32_t stride = op_decorate.word(3);
+            if (stride > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride) {
+                skip |= LogError(
+                    device, "VUID-RuntimeSpirv-XfbStride-06313",
+                    "vkCreateGraphicsPipelines(): shader uses transform feedback with xfb_stride (%" PRIu32
+                    ") greater than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackBufferDataStride (%" PRIu32
+                    ").",
+                    stride, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateTransformFeedback(SHADER_MODULE_STATE const *module, spirv_inst_iter &insn) const {
+    bool skip = false;
+
+    uint32_t opcode = insn.opcode();
+    if (opcode == spv::OpEmitStreamVertex || opcode == spv::OpEndStreamPrimitive) {
+        uint32_t stream = static_cast<uint32_t>(module->GetConstantValueById(insn.word(1)));
+        if (stream >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
+            skip |= LogError(
+                device, "VUID-RuntimeSpirv-OpEmitStreamVertex-06310",
+                "vkCreateGraphicsPipelines(): shader uses transform feedback stream with index %" PRIu32
+                ", which is not less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32
+                ").",
+                stream, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateTexelGatherOffset(SHADER_MODULE_STATE const *src, spirv_inst_iter &insn) const {
     bool skip = false;
 
@@ -2282,6 +2322,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     // and mainly only checking the instruction in detail for a single operation
     uint32_t total_shared_size = 0;
     for (auto insn : *module) {
+        skip |= ValidateTransformFeedback(module, insn);
         skip |= ValidateTexelGatherOffset(module, insn);
         skip |= ValidateShaderCapabilitiesAndExtensions(module, insn);
         skip |= ValidateShaderClock(module, insn);
@@ -2303,6 +2344,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     skip |= ValidateAtomicsTypes(module);
     skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializations(pStage);
+    skip |= ValidateDecorations(module);
     if (check_point_size && !pipeline->create_info.graphics.pRasterizationState->rasterizerDiscardEnable) {
         skip |= ValidatePointListShaderState(pipeline, module, entrypoint, pStage->stage);
     }
