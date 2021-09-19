@@ -705,6 +705,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
     std::vector<Variable> variables;
 
     uint32_t num_vertices = 0;
+    uint32_t num_primitives = 0;
     bool is_iso_lines = false;
     bool is_point_mode = false;
 
@@ -749,6 +750,9 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                             break;
                         case spv::ExecutionModePointMode:
                             is_point_mode = true;
+                            break;
+                        case spv::ExecutionModeOutputPrimitivesNV:
+                            num_primitives = insn.word(3);
                             break;
                     }
                 }
@@ -973,6 +977,20 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                                  limits.maxFragmentInputComponents);
             }
             break;
+        case VK_SHADER_STAGE_MESH_BIT_NV:
+            if (num_vertices > phys_dev_ext_props.mesh_shader_props.maxMeshOutputVertices) {
+                skip |= LogError(pipeline->pipeline(), "VUID-VkPipelineShaderStageCreateInfo-stage-02093",
+                                 "Invalid Pipeline CreateInfo State: Mesh shader output vertex count (%" PRIu32 ")"
+                                 "exceeds VkPhysicalDeviceMeshShaderPropertiesNV::maxMeshOutputVertices (%" PRIu32 ")",
+                                 num_vertices, phys_dev_ext_props.mesh_shader_props.maxMeshOutputVertices);
+            }
+            if (num_primitives > phys_dev_ext_props.mesh_shader_props.maxMeshOutputPrimitives) {
+                skip |= LogError(pipeline->pipeline(), "VUID-VkPipelineShaderStageCreateInfo-stage-02094",
+                                 "Invalid Pipeline CreateInfo State: Mesh shader output primitive count (%" PRIu32 ")"
+                                 "exceeds VkPhysicalDeviceMeshShaderPropertiesNV::maxMeshOutputPrimitives (%" PRIu32 ")",
+                                 num_primitives, phys_dev_ext_props.mesh_shader_props.maxMeshOutputPrimitives);
+            }
+            break;
 
         case VK_SHADER_STAGE_RAYGEN_BIT_NV:
         case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
@@ -981,7 +999,6 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
         case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
         case VK_SHADER_STAGE_CALLABLE_BIT_NV:
         case VK_SHADER_STAGE_TASK_BIT_NV:
-        case VK_SHADER_STAGE_MESH_BIT_NV:
             break;
 
         default:
