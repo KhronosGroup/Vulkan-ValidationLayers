@@ -13658,6 +13658,170 @@ TEST_F(VkLayerTest, TestWrongPipelineType) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, MeshShaderVertexAndPrimitiveCount) {
+    TEST_DESCRIPTION("Test using a mesh shader with invalid vertex and primitive count.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    std::array<const char *, 2> required_device_extensions = {
+        {VK_NV_MESH_SHADER_EXTENSION_NAME, VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device that enables mesh_shader
+    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    if (mesh_shader_features.meshShader != VK_TRUE) {
+        printf("%sMesh shader feature not supported\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_properties = LvlInitStruct<VkPhysicalDeviceMeshShaderPropertiesNV>();
+    VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&mesh_shader_properties);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    {
+        std::stringstream meshShaderText;
+        meshShaderText << R"(
+               OpCapability MeshShadingNV
+               OpExtension "SPV_NV_mesh_shader"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint MeshNV %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpExecutionMode %main OutputVertices )";
+        meshShaderText << mesh_shader_properties.maxMeshOutputVertices + 1;
+        meshShaderText << R"(
+               OpExecutionMode %main OutputPrimitivesNV 1
+               OpExecutionMode %main OutputTrianglesNV
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpSourceExtension "GL_NV_mesh_shader"
+               OpName %main "main"  ; id %4
+
+               ; Annotations
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %v3uint = OpTypeVector %uint 3
+     %uint_1 = OpConstant %uint 1
+%gl_WorkGroupSize = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        const auto ms = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_MESH_BIT_NV, meshShaderText.str().c_str());
+        VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper helper(*this);
+        helper.InitInfo();
+        helper.shader_stages_ = {ms->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+
+        // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
+        helper.gp_ci_.pVertexInputState = nullptr;
+        helper.gp_ci_.pInputAssemblyState = nullptr;
+
+        helper.InitState();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-02093");
+        helper.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        std::stringstream meshShaderText;
+        meshShaderText << R"(
+               OpCapability MeshShadingNV
+               OpExtension "SPV_NV_mesh_shader"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint MeshNV %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpExecutionMode %main OutputVertices 3
+               OpExecutionMode %main OutputPrimitivesNV )";
+        meshShaderText << mesh_shader_properties.maxMeshOutputPrimitives + 1;
+        meshShaderText << R"(
+               OpExecutionMode %main OutputTrianglesNV
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpSourceExtension "GL_NV_mesh_shader"
+               OpName %main "main"  ; id %4
+
+               ; Annotations
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %v3uint = OpTypeVector %uint 3
+     %uint_1 = OpConstant %uint 1
+%gl_WorkGroupSize = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        const auto ms = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_MESH_BIT_NV, meshShaderText.str().c_str());
+        VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper helper(*this);
+        helper.InitInfo();
+        helper.shader_stages_ = {ms->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+
+        // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
+        helper.gp_ci_.pVertexInputState = nullptr;
+        helper.gp_ci_.pInputAssemblyState = nullptr;
+
+        helper.InitState();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-02094");
+        helper.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(VkLayerTest, TestPipelineRasterizationConservativeStateCreateInfo) {
     TEST_DESCRIPTION("Test PipelineRasterizationConservativeStateCreateInfo.");
 
