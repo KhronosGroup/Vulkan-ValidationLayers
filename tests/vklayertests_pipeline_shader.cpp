@@ -11757,15 +11757,62 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
     auto subgroup_size_control = LvlInitStruct<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>();
     subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
 
-    CreateComputePipelineHelper cs_pipeline(*this);
-    cs_pipeline.InitInfo();
-    cs_pipeline.InitState();
-    cs_pipeline.LateBindPipelineInfo();
-    cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
-    cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02754");
-    cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
-    m_errorMonitor->VerifyFound();
+    VkPhysicalDeviceVulkan11Properties props11 = LvlInitStruct<VkPhysicalDeviceVulkan11Properties>();
+    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&props11);
+    vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
+
+    {
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.InitState();
+        cs_pipeline.LateBindPipelineInfo();
+        cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
+        cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02754");
+        cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (subgroup_properties.maxSubgroupSize > 1) {
+        std::stringstream csSource;
+        csSource << R"glsl(
+        #version 450
+        layout(local_size_x = )glsl";
+        csSource << subgroup_properties.maxSubgroupSize + 1;
+        csSource << R"glsl() in;
+        void main() {}
+        )glsl";
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_.reset(new VkShaderObj(m_device, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, this));
+        cs_pipeline.InitState();
+        cs_pipeline.LateBindPipelineInfo();
+        cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT |
+                                         VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-flags-02758");
+        cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (props11.subgroupSize > 1) {
+        std::stringstream csSource;
+        csSource << R"glsl(
+        #version 450
+        layout(local_size_x = )glsl";
+        csSource << props11.subgroupSize + 1;
+        csSource << R"glsl() in;
+        void main() {}
+        )glsl";
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_.reset(new VkShaderObj(m_device, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, this));
+        cs_pipeline.InitState();
+        cs_pipeline.LateBindPipelineInfo();
+        cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-flags-02759");
+        cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, ShaderAtomicInt64) {
