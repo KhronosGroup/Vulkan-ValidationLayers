@@ -2103,8 +2103,7 @@ bool CoreChecks::ValidateTexelGatherOffset(SHADER_MODULE_STATE const *src, spirv
     return skip;
 }
 
-// Validate runtime usage of various opcodes that depends on what Vulkan properties or features are exposed
-bool CoreChecks::ValidatePropertiesAndFeatures(SHADER_MODULE_STATE const *module, spirv_inst_iter &insn) const {
+bool CoreChecks::ValidateShaderClock(SHADER_MODULE_STATE const *module, spirv_inst_iter &insn) const {
     bool skip = false;
 
     switch (insn.opcode()) {
@@ -2254,7 +2253,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     for (auto insn : *module) {
         skip |= ValidateTexelGatherOffset(module, insn);
         skip |= ValidateShaderCapabilitiesAndExtensions(module, insn);
-        skip |= ValidatePropertiesAndFeatures(module, insn);
+        skip |= ValidateShaderClock(module, insn);
         skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage, insn);
         total_shared_size += module->CalcComputeSharedMemory(pStage->stage, insn);
     }
