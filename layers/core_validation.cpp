@@ -1789,6 +1789,23 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                     phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
             }
         }
+
+        const auto rasterization_conservative_state_ci =
+            LvlFindInChain<VkPipelineRasterizationConservativeStateCreateInfoEXT>(create_info.pRasterizationState->pNext);
+        if (rasterization_conservative_state_ci) {
+            if (rasterization_conservative_state_ci->extraPrimitiveOverestimationSize < 0.0f ||
+                rasterization_conservative_state_ci->extraPrimitiveOverestimationSize >
+                    phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize) {
+                skip |= LogError(
+                    device, "VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-extraPrimitiveOverestimationSize-01769",
+                    "pCreateInfos[%" PRIu32
+                    "].pRasterizationState pNext chain includes VkPipelineRasterizationConservativeStateCreateInfoEXT with "
+                    "extraPrimitiveOverestimationSize (%f), which is not between 0.0 and "
+                    "VkPipelineRasterizationConservativeStateCreateInfoEXT::maxExtraPrimitiveOverestimationSize (%f).",
+                    pipelineIndex, rasterization_conservative_state_ci->extraPrimitiveOverestimationSize,
+                    phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
+            }
+        }
     }
 
     if ((pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT) && !create_info.pVertexInputState &&

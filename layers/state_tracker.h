@@ -1248,6 +1248,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceMultiDrawPropertiesEXT multi_draw_props;
         VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_props;
         VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props;
+        VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props;
         VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_size_control_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
