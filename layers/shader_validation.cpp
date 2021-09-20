@@ -2365,7 +2365,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         }
     }
     if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT) {
-        skip |= ValidateComputeWorkGroupSizes(module, entrypoint);
+        skip |= ValidateComputeWorkGroupSizes(module, entrypoint, stage_state);
     }
     return skip;
 }
@@ -2844,7 +2844,8 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
     return skip;
 }
 
-bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader, const spirv_inst_iter &entrypoint) const {
+bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader, const spirv_inst_iter &entrypoint,
+                                               const PipelineStageState &stage_state) const {
     bool skip = false;
     uint32_t local_size_x = 0;
     uint32_t local_size_y = 0;
@@ -2888,6 +2889,37 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
                              ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
                              report_data->FormatHandle(shader->vk_shader_module()).c_str(), local_size_x, local_size_y,
                              local_size_z, limit);
+        }
+
+        const auto subgroup_flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT |
+                                    VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
+        if ((stage_state.create_info->flags & subgroup_flags) == subgroup_flags) {
+            if (SafeModulo(local_size_x, phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize) != 0) {
+                skip |= LogError(
+                    shader->vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-flags-02758",
+                    "%s flags contain VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT and "
+                    "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT bits, but local workgroup size in the X "
+                    "dimension (%" PRIu32
+                    ") is not a multiple of VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::maxSubgroupSize (%" PRIu32 ").",
+                    report_data->FormatHandle(shader->vk_shader_module()).c_str(), local_size_x,
+                    phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize);
+            }
+        } else if ((stage_state.create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) &&
+            (stage_state.create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) == 0) {
+            const auto *required_subgroup_size_features =
+                LvlFindInChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(stage_state.create_info->pNext);
+            if (!required_subgroup_size_features) {
+                if (SafeModulo(local_size_x, phys_dev_props_core11.subgroupSize) != 0) {
+                    skip |= LogError(
+                        shader->vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-flags-02759",
+                        "%s flags contain VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT bit, and not the"
+                        "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT bit, but local workgroup size in the "
+                        "X dimension (%" PRIu32 ") is not a multiple of VkPhysicalDeviceVulkan11Properties::subgroupSize (%" PRIu32
+                        ").",
+                        report_data->FormatHandle(shader->vk_shader_module()).c_str(), local_size_x,
+                        phys_dev_props_core11.subgroupSize);
+                }
+            }
         }
     }
     return skip;
