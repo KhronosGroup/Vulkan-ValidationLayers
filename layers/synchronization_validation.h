@@ -180,6 +180,7 @@ struct SyncEventState {
     VkPipelineStageFlags2KHR barriers;
     SyncExecScope scope;
     ResourceUsageTag first_scope_tag;
+    bool first_scope_set;
     bool destroyed;
     std::array<ScopeMap, static_cast<size_t>(AccessAddressType::kTypeCount)> first_scope;
     template <typename EventPointerType>
@@ -191,6 +192,7 @@ struct SyncEventState {
           barriers(0U),
           scope(),
           first_scope_tag(),
+          first_scope_set(false),
           destroyed((event_state.get() == nullptr) || event_state->Destroyed()) {}
     SyncEventState() : SyncEventState(EventPointer()) {}
     void ResetFirstScope();

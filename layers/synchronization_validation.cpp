@@ -5259,6 +5259,8 @@ void SyncEventState::ResetFirstScope() {
         first_scope[static_cast<size_t>(address_type)].clear();
     }
     scope = SyncExecScope();
+    first_scope_set = false;
+    first_scope_tag = 0;
 }
 
 // Keep the "ignore this event" logic in same place for ValidateWait and RecordWait to use
@@ -5271,7 +5273,7 @@ SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(CMD_TYPE cmd, VkPip
         reason = (last_command == CMD_RESETEVENT) ? ResetWaitRace : Reset2WaitRace;
     } else if (unsynchronized_set) {
         reason = SetRace;
-    } else {
+    } else if (first_scope_set) {
         const VkPipelineStageFlags2KHR missing_bits = scope.mask_param & ~srcStageMask;
         if (missing_bits) reason = MissingStageBits;
     }
@@ -5651,9 +5653,14 @@ bool SyncOpWaitEvents::DoValidate(const CommandBufferAccessContext &cb_context, 
         const auto event_handle = sync_event->event->event();
         // TODO add "destroyed" checks
 
-        barrier_mask_params |= barrier_set.src_exec_scope.mask_param;
+        if (sync_event->first_scope_set) {
+            // Only accumulate barrier and event stages if there is a pending set in the current context
+            barrier_mask_params |= barrier_set.src_exec_scope.mask_param;
+            event_stage_masks |= sync_event->scope.mask_param;
+        }
+
         const auto &src_exec_scope = barrier_set.src_exec_scope;
-        event_stage_masks |= sync_event->scope.mask_param;
+
         const auto ignore_reason = sync_event->IsIgnoredByWait(cmd_, src_exec_scope.mask_param);
         if (ignore_reason) {
             switch (ignore_reason) {
@@ -6092,7 +6099,7 @@ void SyncOpSetEvent::DoRecord(ResourceUsageTag tag, AccessContext *access_contex
     if (!sync_event->HasBarrier(src_exec_scope_.mask_param, src_exec_scope_.exec_scope)) {
         sync_event->unsynchronized_set = sync_event->last_command;
         sync_event->ResetFirstScope();
-    } else if (sync_event->scope.exec_scope == 0) {
+    } else if (!sync_event->first_scope_set) {
         // We only set the scope if there isn't one
         sync_event->scope = src_exec_scope_;
 
@@ -6104,6 +6111,7 @@ void SyncOpSetEvent::DoRecord(ResourceUsageTag tag, AccessContext *access_contex
         };
         access_context->ForAll(set_scope);
         sync_event->unsynchronized_set = CMD_NONE;
+        sync_event->first_scope_set = true;
         sync_event->first_scope_tag = tag;
     }
     // TODO: Store dep_info_ shared ptr in sync_state for WaitEvents2 validation
