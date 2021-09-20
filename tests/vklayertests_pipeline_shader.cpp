@@ -13658,6 +13658,49 @@ TEST_F(VkLayerTest, TestWrongPipelineType) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, TestPipelineRasterizationConservativeStateCreateInfo) {
+    TEST_DESCRIPTION("Test PipelineRasterizationConservativeStateCreateInfo.");
+
+    AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props =
+        LvlInitStruct<VkPhysicalDeviceConservativeRasterizationPropertiesEXT>();
+    VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&conservative_rasterization_props);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_state =
+        LvlInitStruct<VkPipelineRasterizationConservativeStateCreateInfoEXT>();
+    conservative_state.extraPrimitiveOverestimationSize = -1.0f;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.rs_state_ci_.pNext = &conservative_state;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-extraPrimitiveOverestimationSize-01769");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    conservative_state.extraPrimitiveOverestimationSize =
+        conservative_rasterization_props.maxExtraPrimitiveOverestimationSize + 0.1f;
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-extraPrimitiveOverestimationSize-01769");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, TestMinAndMaxTexelGatherOffset) {
     TEST_DESCRIPTION("Test shader with offset less than minTexelGatherOffset and greather than maxTexelGatherOffset");
 
