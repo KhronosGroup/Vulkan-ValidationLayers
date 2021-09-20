@@ -15595,6 +15595,115 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit, "", true);
 }
 
+TEST_F(VkPositiveLayerTest, TaskAndMeshShader) {
+    TEST_DESCRIPTION("Test task and mesh shader");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_NV_MESH_SHADER_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
+        (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+
+    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
+    vkGetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!mesh_shader_features.meshShader || !mesh_shader_features.taskShader) {
+        printf("%s Test requires (unsupported) meshShader and taskShader features, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+
+    VkPhysicalDeviceVulkan11Properties vulkan11_props = LvlInitStruct<VkPhysicalDeviceVulkan11Properties>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&vulkan11_props);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    if ((vulkan11_props.subgroupSupportedStages & VK_SHADER_STAGE_TASK_BIT_NV) == 0) {
+        printf(
+            "%s VkPhysicalDeviceVulkan11Properties::subgroupSupportedStages does not include VK_SHADER_STAGE_TASK_BIT_NV, skipping "
+            "test.\n",
+            kSkipPrefix);
+        return;
+    }
+
+    static const char taskShaderText[] = R"glsl(
+        #version 450
+
+        #extension GL_NV_mesh_shader : require
+        #extension GL_KHR_shader_subgroup_ballot : require
+
+        #define GROUP_SIZE 32
+
+        layout(local_size_x = 32) in;
+
+        taskNV out Task {
+          uint baseID;
+          uint subIDs[GROUP_SIZE];
+        } OUT;
+
+        void main() {
+            uvec4 desc = uvec4(gl_GlobalInvocationID.x);
+
+            // implement some early culling function
+            bool render = gl_GlobalInvocationID.x < 32;
+
+            uvec4 vote  = subgroupBallot(render);
+            uint tasks = subgroupBallotBitCount(vote);
+
+            if (gl_LocalInvocationID.x == 0) {
+                // write the number of surviving meshlets, i.e.
+                // mesh workgroups to spawn
+                gl_TaskCountNV = tasks;
+
+                // where the meshletIDs started from for this task workgroup
+                OUT.baseID = gl_WorkGroupID.x * GROUP_SIZE;
+            }
+        }
+    )glsl";
+
+    static const char meshShaderText[] = R"glsl(
+        #version 450
+
+        #extension GL_NV_mesh_shader : require
+
+        layout(local_size_x = 1) in;
+        layout(max_vertices = 3) out;
+        layout(max_primitives = 1) out;
+        layout(triangles) out;
+
+        taskNV in Task {
+          uint baseID;
+          uint subIDs[32];
+        } IN;
+
+        void main() {
+            uint meshletID = IN.baseID + IN.subIDs[gl_WorkGroupID.x];
+            uvec4 desc = uvec4(meshletID);
+        }
+    )glsl";
+
+    VkShaderObj ts(m_device, taskShaderText, VK_SHADER_STAGE_TASK_BIT_NV, this, "main", false, nullptr, SPV_ENV_VULKAN_1_2);
+    VkShaderObj ms(m_device, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV, this, "main", false, nullptr, SPV_ENV_VULKAN_1_2);
+
+    const auto break_vp = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, "", true);
+}
+
 TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
     TEST_DESCRIPTION("Test nullDescriptor works wih CmdBindVertexBuffers variants");
 
