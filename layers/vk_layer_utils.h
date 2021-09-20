@@ -268,9 +268,15 @@ static inline int u_ffs(int val) {
 #endif
 
 #ifdef __cplusplus
+// clang sets _MSC_VER to 1800 and _MSC_FULL_VER to 180000000, but we only want to clean up after MSVC.
+#if defined(_MSC_FULL_VER) && !defined(__clang__)
 // Minimum Visual Studio 2015 Update 2, or libc++ with C++17
-#if defined(_MSC_FULL_VER)
-#if _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+// But, before Visual Studio 2017 version 15.7, __cplusplus is not set
+// correctly. See:
+//   https://docs.microsoft.com/en-us/cpp/build/reference/zc-cplusplus?view=msvc-160
+// Also, according to commit e2a6c442cb1e4, SDKs older than NTDDI_WIN10_RS2 do not
+// support shared_mutex.
+#if _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
 #define VVL_USE_SHARED_MUTEX 1
 #endif
 #elif __cplusplus >= 201703
