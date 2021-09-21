@@ -4945,8 +4945,14 @@ static inline const char* string_VkDriverId(VkDriverId input_value)
             return "VK_DRIVER_ID_JUICE_PROPRIETARY";
         case VK_DRIVER_ID_MESA_LLVMPIPE:
             return "VK_DRIVER_ID_MESA_LLVMPIPE";
+        case VK_DRIVER_ID_MESA_PANVK:
+            return "VK_DRIVER_ID_MESA_PANVK";
         case VK_DRIVER_ID_MESA_RADV:
             return "VK_DRIVER_ID_MESA_RADV";
+        case VK_DRIVER_ID_MESA_TURNIP:
+            return "VK_DRIVER_ID_MESA_TURNIP";
+        case VK_DRIVER_ID_MESA_V3DV:
+            return "VK_DRIVER_ID_MESA_V3DV";
         case VK_DRIVER_ID_MOLTENVK:
             return "VK_DRIVER_ID_MOLTENVK";
         case VK_DRIVER_ID_NVIDIA_PROPRIETARY:
@@ -6174,8 +6180,14 @@ static inline const char* string_VkDriverIdKHR(VkDriverIdKHR input_value)
             return "VK_DRIVER_ID_JUICE_PROPRIETARY";
         case VK_DRIVER_ID_MESA_LLVMPIPE:
             return "VK_DRIVER_ID_MESA_LLVMPIPE";
+        case VK_DRIVER_ID_MESA_PANVK:
+            return "VK_DRIVER_ID_MESA_PANVK";
         case VK_DRIVER_ID_MESA_RADV:
             return "VK_DRIVER_ID_MESA_RADV";
+        case VK_DRIVER_ID_MESA_TURNIP:
+            return "VK_DRIVER_ID_MESA_TURNIP";
+        case VK_DRIVER_ID_MESA_V3DV:
+            return "VK_DRIVER_ID_MESA_V3DV";
         case VK_DRIVER_ID_MOLTENVK:
             return "VK_DRIVER_ID_MOLTENVK";
         case VK_DRIVER_ID_NVIDIA_PROPRIETARY:
