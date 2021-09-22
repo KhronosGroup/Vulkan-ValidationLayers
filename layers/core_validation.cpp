@@ -5516,10 +5516,16 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                  VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR},
                 {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04723", VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR},
             };
-            for (const auto &pair : vuid_map) {
-                if (create_info.flags & pair.second) {
-                    for (uint32_t j = 0; j < create_info.pLibraryInfo->libraryCount; ++j) {
-                        const auto &lib = Get<PIPELINE_STATE>(create_info.pLibraryInfo->pLibraries[j]);
+            for (uint32_t j = 0; j < create_info.pLibraryInfo->libraryCount; ++j) {
+                const auto &lib = Get<PIPELINE_STATE>(create_info.pLibraryInfo->pLibraries[j]);
+                if ((lib->create_info.raytracing.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
+                    skip |= LogError(
+                        device, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381",
+                                     "vkCreateRayTracingPipelinesKHR(): pCreateInfo[%" PRIu32 "].pLibraryInfo->pLibraries[%" PRIu32
+                                     "] was not created with VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.", i, j);
+                }
+                for (const auto &pair : vuid_map) {
+                    if (create_info.flags & pair.second) {
                         if ((lib->create_info.raytracing.flags & pair.second) == 0) {
                             skip |= LogError(
                                 device, pair.first,
