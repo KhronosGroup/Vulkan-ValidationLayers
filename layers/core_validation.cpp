@@ -5634,6 +5634,7 @@ enum DSL_DESCRIPTOR_GROUPS {
     DSL_TYPE_STORAGE_IMAGES,
     DSL_TYPE_INPUT_ATTACHMENTS,
     DSL_TYPE_INLINE_UNIFORM_BLOCK,
+    DSL_TYPE_ACCELERATION_STRUCTURE,
     DSL_NUM_DESCRIPTOR_GROUPS
 };
 
@@ -5656,7 +5657,7 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
     // Allow iteration over enum values
     std::vector<DSL_DESCRIPTOR_GROUPS> dsl_groups = {
         DSL_TYPE_SAMPLERS,       DSL_TYPE_UNIFORM_BUFFERS,   DSL_TYPE_STORAGE_BUFFERS,     DSL_TYPE_SAMPLED_IMAGES,
-        DSL_TYPE_STORAGE_IMAGES, DSL_TYPE_INPUT_ATTACHMENTS, DSL_TYPE_INLINE_UNIFORM_BLOCK};
+        DSL_TYPE_STORAGE_IMAGES, DSL_TYPE_INPUT_ATTACHMENTS, DSL_TYPE_INLINE_UNIFORM_BLOCK, DSL_TYPE_ACCELERATION_STRUCTURE};
 
     // Sum by layouts per stage, then pick max of stages per type
     std::valarray<uint32_t> max_sum(0U, DSL_NUM_DESCRIPTOR_GROUPS);  // max descriptor sum among all pipeline stages
@@ -5701,6 +5702,9 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
                         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
                             // count one block per binding. descriptorCount is number of bytes
                             stage_sum[DSL_TYPE_INLINE_UNIFORM_BLOCK]++;
+                            break;
+                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+                            stage_sum[DSL_TYPE_ACCELERATION_STRUCTURE] += binding->descriptorCount;
                             break;
                         default:
                             break;
@@ -5844,6 +5848,14 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                          "vkCreatePipelineLayout(): max per-stage inline uniform block bindings count (%d) exceeds device "
                          "maxPerStageDescriptorInlineUniformBlocks limit (%d).",
                          max_descriptors_per_stage[DSL_TYPE_INLINE_UNIFORM_BLOCK],
+                         phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks);
+    }
+    if (max_descriptors_per_stage[DSL_TYPE_ACCELERATION_STRUCTURE] >
+        phys_dev_ext_props.acc_structure_props.maxPerStageDescriptorUpdateAfterBindAccelerationStructures) {
+        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03572",
+                         "vkCreatePipelineLayout(): max per-stage acceleration structure bindings count (%" PRIu32 ") exceeds device "
+                         "maxPerStageDescriptorInlineUniformBlocks limit (%" PRIu32 ").",
+                         max_descriptors_per_stage[DSL_TYPE_ACCELERATION_STRUCTURE],
                          phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks);
     }
 
