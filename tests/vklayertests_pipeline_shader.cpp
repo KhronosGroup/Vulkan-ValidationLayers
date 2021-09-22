@@ -13702,7 +13702,8 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
-        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
+        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
+        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
@@ -13712,7 +13713,7 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
         m_device_extension_names.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_NV_RAY_TRACING_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     } else {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
         return;
@@ -13733,12 +13734,11 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
 
     const std::string ray_generation_shader = R"glsl(
         #version 460 core
-        #extension GL_NV_ray_tracing : enable
+        #extension GL_KHR_ray_tracing : enable
         void main() {
         }
     )glsl";
 
-    m_errorMonitor->ExpectSuccess();
     VkShaderObj rgen_shader(m_device, ray_generation_shader.c_str(), VK_SHADER_STAGE_RAYGEN_BIT_NV, this, "main");
 
     PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR =
@@ -13757,27 +13757,31 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
     group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
     group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
 
+    VkRayTracingPipelineInterfaceCreateInfoKHR interface_ci = LvlInitStruct<VkRayTracingPipelineInterfaceCreateInfoKHR>();
+    interface_ci.maxPipelineRayHitAttributeSize = 4;
+    interface_ci.maxPipelineRayPayloadSize = 4;
+
     VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
+    pipeline_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     pipeline_ci.stageCount = 1;
     pipeline_ci.pStages = &stage_create_info;
     pipeline_ci.groupCount = 1;
     pipeline_ci.pGroups = &group_create_info;
     pipeline_ci.layout = pipeline_layout.handle();
+    pipeline_ci.pLibraryInterface = &interface_ci;
 
     VkPipeline library = VK_NULL_HANDLE;
+    VkPipeline invalid_library = VK_NULL_HANDLE;
     vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &library);
-    m_errorMonitor->VerifyNotFound();
+
+    pipeline_ci.flags = 0;
+    vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &invalid_library);
 
     VkPipelineLibraryCreateInfoKHR library_ci = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
     library_ci.libraryCount = 1;
     library_ci.pLibraries = &library;
 
-    VkRayTracingPipelineInterfaceCreateInfoKHR interface_ci = LvlInitStruct<VkRayTracingPipelineInterfaceCreateInfoKHR>();
-    interface_ci.maxPipelineRayHitAttributeSize = 4;
-    interface_ci.maxPipelineRayPayloadSize = 4;
-
     pipeline_ci.pLibraryInfo = &library_ci;
-    pipeline_ci.pLibraryInterface = &interface_ci;
     VkPipeline pipeline = VK_NULL_HANDLE;
 
     {
@@ -13816,4 +13820,15 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
         vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
+
+    {
+        pipeline_ci.flags = 0;
+        library_ci.pLibraries = &invalid_library;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381");
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    vk::DestroyPipeline(m_device->handle(), library, nullptr);
+    vk::DestroyPipeline(m_device->handle(), invalid_library, nullptr);
 }
