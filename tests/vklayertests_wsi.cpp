@@ -2279,6 +2279,7 @@ TEST_F(VkLayerTest, TestSurfaceSupportByPhysicalDevice) {
     }
 }
 
+#ifdef VVL_TESTS_ENABLE_EXCLUSIVE_FULLSCREEN
 TEST_F(VkLayerTest, TestvkAcquireFullScreenExclusiveModeEXT) {
     TEST_DESCRIPTION("Test vkAcquireFullScreenExclusiveModeEXT.");
 
@@ -2374,3 +2375,4 @@ TEST_F(VkLayerTest, TestvkAcquireFullScreenExclusiveModeEXT) {
     vk::DestroySwapchainKHR(device(), swapchain_two, nullptr);
 #endif
 }
+#endif
