@@ -172,44 +172,7 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
     if (format_features == 0) {
         format_features = GetImageFormatFeatures(physical_device, device, *pImage, pCreateInfo->format, pCreateInfo->tiling);
     }
-
-    auto is_node = std::make_shared<IMAGE_STATE>(device, *pImage, pCreateInfo, format_features);
-    // Record the memory requirements in case they won't be queried
-    // External AHB memory can't be queried until after memory is bound
-    if (is_node->IsExternalAHB() == false) {
-        if (is_node->disjoint == false) {
-            DispatchGetImageMemoryRequirements(device, *pImage, &is_node->requirements[0]);
-        } else {
-            uint32_t plane_count = FormatPlaneCount(pCreateInfo->format);
-            static const std::array<VkImageAspectFlagBits, 3> aspects{VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT,
-                                                                      VK_IMAGE_ASPECT_PLANE_2_BIT};
-            assert(plane_count <= aspects.size());
-            VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO, nullptr};
-            VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, &image_plane_req,
-                                                            *pImage};
-
-            for (uint32_t i = 0; i < plane_count; i++) {
-                VkMemoryRequirements2 mem_reqs2 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, nullptr};
-
-                image_plane_req.planeAspect = aspects[i];
-                switch (device_extensions.vk_khr_get_memory_requirements2) {
-                    case kEnabledByApiLevel:
-                        DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
-                        break;
-                    case kEnabledByCreateinfo:
-                        DispatchGetImageMemoryRequirements2KHR(device, &mem_req_info2, &mem_reqs2);
-                        break;
-                    default:
-                        // The VK_KHR_sampler_ycbcr_conversion extension requires VK_KHR_get_memory_requirements2,
-                        // so validation of this vkCreateImage call should have already failed.
-                        assert(false);
-                }
-                is_node->requirements[i] = mem_reqs2.memoryRequirements;
-            }
-        }
-    }
-
-    imageMap[*pImage] = std::move(is_node);
+    imageMap[*pImage] = std::make_shared<IMAGE_STATE>(this, *pImage, pCreateInfo, format_features);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
@@ -2072,23 +2035,11 @@ void ValidationStateTracker::PostCallRecordGetImageMemoryRequirements2KHR(VkDevi
     RecordGetImageMemoryRequirementsState(pInfo->image, pInfo);
 }
 
-static void RecordGetImageSparseMemoryRequirementsState(IMAGE_STATE *image_state,
-                                                        VkSparseImageMemoryRequirements *sparse_image_memory_requirements) {
-    image_state->sparse_requirements.emplace_back(*sparse_image_memory_requirements);
-    if (sparse_image_memory_requirements->formatProperties.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
-        image_state->sparse_metadata_required = true;
-    }
-}
-
 void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements(
     VkDevice device, VkImage image, uint32_t *pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements *pSparseMemoryRequirements) {
     auto image_state = GetImageState(image);
     image_state->get_sparse_reqs_called = true;
-    if (!pSparseMemoryRequirements) return;
-    for (uint32_t i = 0; i < *pSparseMemoryRequirementCount; i++) {
-        RecordGetImageSparseMemoryRequirementsState(image_state, &pSparseMemoryRequirements[i]);
-    }
 }
 
 void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2(
@@ -2096,11 +2047,6 @@ void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2(
     VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) {
     auto image_state = GetImageState(pInfo->image);
     image_state->get_sparse_reqs_called = true;
-    if (!pSparseMemoryRequirements) return;
-    for (uint32_t i = 0; i < *pSparseMemoryRequirementCount; i++) {
-        assert(!pSparseMemoryRequirements[i].pNext);  // TODO: If an extension is ever added here we need to handle it
-        RecordGetImageSparseMemoryRequirementsState(image_state, &pSparseMemoryRequirements[i].memoryRequirements);
-    }
 }
 
 void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2KHR(
@@ -2108,11 +2054,6 @@ void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2KHR(
     VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) {
     auto image_state = GetImageState(pInfo->image);
     image_state->get_sparse_reqs_called = true;
-    if (!pSparseMemoryRequirements) return;
-    for (uint32_t i = 0; i < *pSparseMemoryRequirementCount; i++) {
-        assert(!pSparseMemoryRequirements[i].pNext);  // TODO: If an extension is ever added here we need to handle it
-        RecordGetImageSparseMemoryRequirementsState(image_state, &pSparseMemoryRequirements[i].memoryRequirements);
-    }
 }
 
 void ValidationStateTracker::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
@@ -4412,7 +4353,7 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
                 GetImageFormatFeatures(physical_device, device, pSwapchainImages[i], swapchain_state->image_create_info.format,
                                        swapchain_state->image_create_info.tiling);
 
-            auto image_state = std::make_shared<IMAGE_STATE>(device, pSwapchainImages[i], swapchain_state->image_create_info.ptr(),
+            auto image_state = std::make_shared<IMAGE_STATE>(this, pSwapchainImages[i], swapchain_state->image_create_info.ptr(),
                                                              swapchain, i, format_features);
             if (!swapchain_image.fake_base_address) {
                 auto size = image_state->fragment_encoder->TotalSize();
