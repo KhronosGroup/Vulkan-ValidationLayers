@@ -9220,7 +9220,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                         // Verify that image memory is valid
                         auto image_data = GetImageState(ivci.image);
                         skip |= ValidateMemoryIsBoundToImage(image_data, "vkCreateFramebuffer()",
-                                                             "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess");
+                                                             kVUID_Core_Bound_Resource_FreedMemoryAccess);
 
                         // Verify that view only has a single mip level
                         if (subresource_range.levelCount != 1) {

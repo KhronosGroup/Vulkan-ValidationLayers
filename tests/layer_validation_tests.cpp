@@ -658,8 +658,6 @@ void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, st
     VkImage image = VK_NULL_HANDLE;
     if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
-        // Very possible a test didn't check for VK_ERROR_FORMAT_NOT_SUPPORTED
-        test.Monitor().SetUnexpectedError("UNASSIGNED-CoreValidation-Image-FormatNotSupported");
     } else {
         test.Monitor().ExpectSuccess();
     }
