@@ -14256,6 +14256,62 @@ TEST_F(VkLayerTest, TestPipelineRasterizationStateStreamCreateInfoEXT) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, PipelineAdvancedBlendIndependentBlend) {
+    TEST_DESCRIPTION("Create a graphics pipeline with invalid independent advanced blend");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto blend_operation_advanced = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&blend_operation_advanced);
+    vk::GetPhysicalDeviceProperties2(gpu(), &properties2);
+
+    if (blend_operation_advanced.advancedBlendIndependentBlend == VK_TRUE) {
+        printf("%s blend_operation_advanced.advancedBlendAllOperations is VK_TRUE.\n", kSkipPrefix);
+        return;
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+
+    VkPipelineColorBlendAttachmentState attachment_states[2] = {};
+    attachment_states[0].blendEnable = VK_TRUE;
+    attachment_states[0].colorBlendOp = VK_BLEND_OP_DIFFERENCE_EXT;
+    attachment_states[0].alphaBlendOp = VK_BLEND_OP_ADD;
+    attachment_states[1].blendEnable = VK_TRUE;
+    attachment_states[1].colorBlendOp = VK_BLEND_OP_ADD;
+    attachment_states[1].alphaBlendOp = VK_BLEND_OP_ADD;
+
+    VkPipelineColorBlendStateCreateInfo color_blend_state = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+    color_blend_state.attachmentCount = 2;
+    color_blend_state.pAttachments = attachment_states;
+    pipe.gp_ci_.pColorBlendState = &color_blend_state;
+
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01407");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    attachment_states[0].colorBlendOp = VK_BLEND_OP_ADD;
+    attachment_states[1].alphaBlendOp = VK_BLEND_OP_DIFFERENCE_EXT;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01408");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, NoUniformBufferStandardLayout10) {
     TEST_DESCRIPTION("Don't enable uniformBufferStandardLayout in Vulkan 1.0 and have spirv-val catch invalid shader");
     SetTargetApiVersion(VK_API_VERSION_1_0);
