@@ -1760,26 +1760,26 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
     // Geometry shaders not enabled source
     dependency = {0, 1, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcStageMask-00860",
-                         "VUID-VkSubpassDependency2-srcStageMask-03080");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcStageMask-04090",
+                         "VUID-VkSubpassDependency2-srcStageMask-04090");
 
     // Geometry shaders not enabled destination
     dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-dstStageMask-00861",
-                         "VUID-VkSubpassDependency2-dstStageMask-03081");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-dstStageMask-04090",
+                         "VUID-VkSubpassDependency2-dstStageMask-04090");
 
     // Tessellation not enabled source
     dependency = {0, 1, VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcStageMask-00862",
-                         "VUID-VkSubpassDependency2-srcStageMask-03082");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcStageMask-04091",
+                         "VUID-VkSubpassDependency2-srcStageMask-04091");
 
     // Tessellation not enabled destination
     dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-dstStageMask-00863",
-                         "VUID-VkSubpassDependency2-dstStageMask-03083");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-dstStageMask-04091",
+                         "VUID-VkSubpassDependency2-dstStageMask-04091");
 
     // Potential cyclical dependency
     dependency = {1, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
