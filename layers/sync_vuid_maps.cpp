@@ -696,12 +696,10 @@ static const std::map<QueueError, std::vector<Entry>> kBarrierQueueErrors{
      }},
     {QueueError::kSubmitQueueMustMatchSrcOrDst,
      {
-         {Key(Struct::VkImageMemoryBarrier), "UNASSIGNED-CoreValidation-VkImageMemoryBarrier-sharing-mode-exclusive-same-family"},
-         {Key(Struct::VkImageMemoryBarrier2KHR),
-          "UNASSIGNED-CoreValidation-VkImageMemoryBarrier2KHR-sharing-mode-exclusive-same-family"},
-         {Key(Struct::VkBufferMemoryBarrier), "UNASSIGNED-CoreValidation-VkBufferMemoryBarrier-sharing-mode-exclusive-same-family"},
-         {Key(Struct::VkBufferMemoryBarrier2KHR),
-          "UNASSIGNED-CoreValidation-VkBufferMemoryBarrier2KHR-sharing-mode-exclusive-same-family"},
+         {Key(Struct::VkImageMemoryBarrier), kVUID_Core_ImageMemoryBarrier_SharingModeExclusiveSameFamily},
+         {Key(Struct::VkImageMemoryBarrier2KHR), kVUID_Core_ImageMemoryBarrier2_SharingModeExclusiveSameFamily},
+         {Key(Struct::VkBufferMemoryBarrier), kVUID_Core_BufferMemoryBarrier_SharingModeExclusiveSameFamily},
+         {Key(Struct::VkBufferMemoryBarrier2KHR), kVUID_Core_BufferMemoryBarrier2_SharingModeExclusiveSameFamily},
      }},
 };
 

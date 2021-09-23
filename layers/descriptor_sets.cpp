@@ -2078,8 +2078,8 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     }
 
     // Validate that memory is bound to image
-    if (ValidateMemoryIsBoundToImage(image_node, func_name, "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess")) {
-        *error_code = "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess";
+    if (ValidateMemoryIsBoundToImage(image_node, func_name, kVUID_Core_Bound_Resource_FreedMemoryAccess)) {
+        *error_code = kVUID_Core_Bound_Resource_FreedMemoryAccess;
         *error_msg = "No memory bound to image.";
         return false;
     }
@@ -2094,7 +2094,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
 
     // TODO : The various image aspect and format checks here are based on general spec language in 11.5 Image Views section under
     // vkCreateImageView(). What's the best way to create unique id for these cases?
-    *error_code = "UNASSIGNED-CoreValidation-DrawState-InvalidImageView";
+    *error_code = kVUID_Core_DrawState_InvalidImageView;
     bool ds = FormatIsDepthOrStencil(format);
     switch (image_layout) {
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
