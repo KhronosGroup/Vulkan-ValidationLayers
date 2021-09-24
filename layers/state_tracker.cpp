@@ -266,7 +266,7 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
                                                         VkResult result) {
     if (result != VK_SUCCESS) return;
 
-    auto buffer_state = std::make_shared<BUFFER_STATE>(*pBuffer, pCreateInfo);
+    auto buffer_state = std::make_shared<BUFFER_STATE>(this, *pBuffer, pCreateInfo);
 
     if (pCreateInfo) {
         const auto *opaque_capture_address = LvlFindInChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
@@ -276,10 +276,6 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
             buffer_address_map_.emplace(opaque_capture_address->opaqueCaptureAddress, buffer_state.get());
         }
     }
-
-    // Get a set of requirements in the case the app does not
-    DispatchGetBufferMemoryRequirements(device, *pBuffer, &buffer_state->requirements);
-
     bufferMap.emplace(*pBuffer, std::move(buffer_state));
 }
 

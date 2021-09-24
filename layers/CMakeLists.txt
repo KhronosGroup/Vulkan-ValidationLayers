@@ -165,6 +165,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     device_memory_state.h
     device_memory_state.cpp
     buffer_state.h
+    buffer_state.cpp
     cmd_buffer_state.h
     cmd_buffer_state.cpp
     image_state.h
