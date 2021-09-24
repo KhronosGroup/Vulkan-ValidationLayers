@@ -83,6 +83,7 @@ config("vulkan_layer_config") {
 core_validation_sources = [
   "layers/android_ndk_types.h",
   "layers/base_node.h",
+  "layers/buffer_state.cpp",
   "layers/buffer_state.h",
   "layers/buffer_validation.cpp",
   "layers/buffer_validation.h",

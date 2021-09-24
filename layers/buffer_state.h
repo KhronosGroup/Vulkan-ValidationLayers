@@ -28,32 +28,22 @@
 #pragma once
 #include "device_memory_state.h"
 
+class ValidationStateTracker;
+
 class BUFFER_STATE : public BINDABLE {
   public:
     const safe_VkBufferCreateInfo safe_create_info;
     const VkBufferCreateInfo &createInfo;
     VkDeviceAddress deviceAddress;
-    VkMemoryRequirements requirements;
+    const VkMemoryRequirements requirements;
     bool memory_requirements_checked;
 
-    BUFFER_STATE(VkBuffer buff, const VkBufferCreateInfo *pCreateInfo)
-        : BINDABLE(buff, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
-                   (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
-          safe_create_info(pCreateInfo),
-          createInfo(*safe_create_info.ptr()),
-          deviceAddress(0),
-          requirements(),
-          memory_requirements_checked(false) {}
+    BUFFER_STATE(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo);
 
     BUFFER_STATE(BUFFER_STATE const &rh_obj) = delete;
 
     VkBuffer buffer() const { return handle_.Cast<VkBuffer>(); }
 
-  private:
-    static inline VkExternalMemoryHandleTypeFlags GetExternalHandleType(const VkBufferCreateInfo *pCreateInfo) {
-        auto *external_memory_info = LvlFindInChain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
-        return external_memory_info ? external_memory_info->handleTypes : 0;
-    }
 };
 
 class BUFFER_VIEW_STATE : public BASE_NODE {
