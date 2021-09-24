@@ -115,13 +115,9 @@ target_include_directories(vk_layer_validation_tests
                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
                                   ${PROJECT_SOURCE_DIR}/layers
                                   ${PROJECT_SOURCE_DIR}/layers/generated
-                                  ${GLSLANG_INCLUDE_DIR}
-                                  ${SPIRV_TOOLS_INCLUDE_DIR}
-                                  ${SPIRV_HEADERS_INCLUDE_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}
                                   ${CMAKE_BINARY_DIR}
                                   ${PROJECT_BINARY_DIR}
-                                  ${VulkanHeaders_INCLUDE_DIR}
                                   ${PROJECT_BINARY_DIR}/layers)
 if (USE_ROBIN_HOOD_HASHING)
     target_include_directories(vk_layer_validation_tests PUBLIC ${ROBIN_HOOD_HASHING_INCLUDE_DIR})
@@ -149,8 +145,11 @@ target_link_libraries(vk_layer_validation_tests
                       PRIVATE VkLayer_utils
                               gtest
                               gtest_main
-                              ${GLSLANG_LIBRARIES}
-                              ${SPIRV_TOOLS_LIBRARIES})
+                              glslang
+                              SPIRV-Tools
+                              SPVRemapper
+                              SPIRV
+                              Vulkan::Headers)
 
 if(NOT WIN32)
     target_link_libraries(vk_layer_validation_tests PRIVATE dl)
@@ -164,7 +163,7 @@ endif()
 if(WIN32)
     # For Windows, copy necessary gtest DLLs to the right spot for the vk_layer_tests...
     if(NOT GTEST_IS_STATIC_LIB)
-        file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/googletest/googletest/$<CONFIG>/*.dll SRC_GTEST_DLLS)
+        file(TO_NATIVE_PATH ${googletest_BINARY_DIR}/googletest/$<CONFIG>/*.dll SRC_GTEST_DLLS)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> DST_GTEST_DLLS)
         add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
                            COMMAND xcopy /Y /I ${SRC_GTEST_DLLS} ${DST_GTEST_DLLS})

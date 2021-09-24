@@ -18,7 +18,7 @@
 # CMake project initialization ---------------------------------------------------------------------------------------------------
 # This section contains pre-project() initialization, and ends with the project() command.
 
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.11.0)
 
 # Apple: Must be set before enable_language() or project() as it may influence configuration of the toolchain and flags.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
@@ -49,72 +49,15 @@ add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-if (UPDATE_DEPS)
-    find_package(PythonInterp 3 REQUIRED)
+include(cmake/known_good.cmake)
+include(cmake/fetch_content.cmake)
 
-    if (CMAKE_GENERATOR_PLATFORM)
-        set(_target_arch ${CMAKE_GENERATOR_PLATFORM})
-    else()
-        message(WARNING "CMAKE_GENERATOR_PLATFORM not set. Using x64 as target architecture.")
-        set(_target_arch x64)
-    endif()
+FetchRepo(Vulkan-Headers ${VVL_VULKAN_HEADERS_URL} ${VVL_VULKAN_HEADERS_REF})
 
-    if (NOT CMAKE_BUILD_TYPE)
-        message(WARNING "CMAKE_BUILD_TYPE not set. Using Debug for dependency build type")
-        set(_build_type Debug)
-    else()
-        set(_build_type ${CMAKE_BUILD_TYPE})
-    endif()
+set(SPIRV_HEADERS_SKIP_EXAMPLES OFF CACHE BOOL INTERNAL FORCE)
+FetchRepo(SPIRV-Headers ${VVL_SPIRV_HEADERS_URL} ${VVL_SPIRV_HEADERS_REF})
 
-    message("********************************************************************************")
-    message("* NOTE: Adding target vvl_update_deps to run as needed for updating            *")
-    message("*       dependencies.                                                          *")
-    message("********************************************************************************")
-
-    set(_build_tests_arg "")
-    if (NOT BUILD_TESTS)
-        set(_build_tests_arg "--optional=tests")
-    endif()
-
-    # Add a target so that update_deps.py will run when necessary
-    # NOTE: This is triggered off of the timestamps of known_good.json and helper.cmake
-    add_custom_command(OUTPUT ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake
-                       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_build_tests_arg}
-                       DEPENDS ${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json)
-
-    add_custom_target(vvl_update_deps DEPENDS ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
-
-    # Check if update_deps.py needs to be run on first cmake run
-    if (${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json IS_NEWER_THAN ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
-        execute_process(
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_build_tests_arg}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-            RESULT_VARIABLE _update_deps_result
-        )
-        if (NOT (${_update_deps_result} EQUAL 0))
-            message(FATAL_ERROR "Could not run update_deps.py which is necessary to download dependencies.")
-        endif()
-    endif()
-    include(${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
-else()
-    message("********************************************************************************")
-    message("* NOTE: Not adding target to run update_deps.py automatically.                 *")
-    message("********************************************************************************")
-    find_package(PythonInterp 3 QUIET)
-endif()
-
-if (TARGET Vulkan::Headers)
-    message(STATUS "Using Vulkan headers from Vulkan::Headers target")
-    get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
-    get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
-else()
-    find_package(VulkanHeaders REQUIRED)
-
-    # xxxnsubtil: this should eventually be replaced by exported targets
-    add_library(Vulkan-Headers INTERFACE)
-    target_include_directories(Vulkan-Headers INTERFACE ${VulkanHeaders_INCLUDE_DIRS})
-    add_library(Vulkan::Headers ALIAS Vulkan-Headers)
-endif()
+FetchRepo(SPIRV-Tools ${VVL_SPIRV_TOOLS_URL} ${VVL_SPIRV_TOOLS_REF})
 
 option(USE_CCACHE "Use ccache" OFF)
 if(USE_CCACHE)
@@ -237,97 +180,28 @@ option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
 option(USE_ROBIN_HOOD_HASHING "Use robin-hood-hashing" ON)
 if (USE_ROBIN_HOOD_HASHING)
-    if(NOT ROBIN_HOOD_HASHING_INSTALL_DIR)
-	set(ROBIN_HOOD_HASHING_INSTALL_DIR $ENV{ROBIN_HOOD_HASHING_INSTALL_DIR} PATH "Path to robin-hood-hashing repository")
-    endif()
-    set(ROBIN_HOOD_HASHING_INCLUDE_DIR "${ROBIN_HOOD_HASHING_INSTALL_DIR}/src/include" PATH "Path to robin-hood-hashing/src/include")
+    FetchRepo(robin-hood-hashing ${VVL_ROBIN_HOOD_HASHING_URL} ${VVL_ROBIN_HOOD_HASHING_REF})
 endif()
 
 if(BUILD_TESTS)
-    set(GLSLANG_INSTALL_DIR "GLSLANG-NOTFOUND" CACHE PATH "Absolute path to a glslang install directory")
-    if(NOT GLSLANG_INSTALL_DIR AND NOT DEFINED ENV{GLSLANG_INSTALL_DIR} AND NOT TARGET glslang)
-        message(FATAL_ERROR "Must define location of glslang binaries -- see BUILD.md")
+    set(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
+    set(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject")
+    set(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically")
+
+    set(build_shared_libs_tmp_ ${BUILD_SHARED_LIBS})
+    if (NOT ${build_shared_libs_tmp_})
+        set(build_shared_libs_tmp_ OFF)
     endif()
+    set(BUILD_SHARED_LIBS ON CACHE INTERNAL BOOL FORCE)
+    FetchRepo(googletest ${VVL_GOOGLETEST_URL} ${VVL_GOOGLETEST_REF})
+    set(BUILD_SHARED_LIBS ${build_shared_libs_tmp_} CACHE INTERNAL BOOL FORCE)
 
-    # CMake command line option overrides environment variable
-    if(NOT GLSLANG_INSTALL_DIR)
-        set(GLSLANG_INSTALL_DIR $ENV{GLSLANG_INSTALL_DIR})
-    endif()
-
-    # CMake command line option overrides environment variable
-    if(NOT SPIRV_HEADERS_INSTALL_DIR)
-        set(SPIRV_HEADERS_INSTALL_DIR $ENV{SPIRV_HEADERS_INSTALL_DIR})
-    endif()
-
-    if(NOT SPIRV_TOOLS_INSTALL_DIR)
-        set(SPIRV_TOOLS_INSTALL_DIR $ENV{SPIRV_TOOLS_INSTALL_DIR})
-    endif()
-
-    if (NOT TARGET glslang)
-        if(NOT SPIRV_HEADERS_INSTALL_DIR)
-            message(FATAL_ERROR "Must define location of SPIRV-Headers -- see BUILD.md")
-        endif()
-
-        message(STATUS "Using glslang install located at ${GLSLANG_INSTALL_DIR}")
-        set(GLSLANG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-        set(GLSLANG_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-        set(GLSLANG_INCLUDE_DIR "${GLSLANG_INSTALL_DIR}/include" CACHE PATH "Path to glslang headers")
-
-        set(GLSLANG_LIBRARIES glslang OGLCompiler OSDependent MachineIndependent GenericCodeGen HLSL SPIRV SPVRemapper)
-
-        # Add glslang static libraries as imported targets
-        foreach(GLSLANG_LIBRARY ${GLSLANG_LIBRARIES})
-            add_library(${GLSLANG_LIBRARY} STATIC IMPORTED)
-            find_library("${GLSLANG_LIBRARY}_PATH" NAMES "${GLSLANG_LIBRARY}" HINTS ${GLSLANG_SEARCH_PATH})
-            set_target_properties(${GLSLANG_LIBRARY}
-                                  PROPERTIES IMPORTED_LOCATION
-                                             "${${GLSLANG_LIBRARY}_PATH}")
-            if (WIN32)
-                find_library("${GLSLANG_LIBRARY}_DEBUG_PATH" NAMES "${GLSLANG_LIBRARY}d" HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-                set_target_properties(${GLSLANG_LIBRARY}
-                                      PROPERTIES IMPORTED_LOCATION_DEBUG
-                                                 "${${GLSLANG_LIBRARY}_DEBUG_PATH}")
-            endif()
-        endforeach()
-
-        # Circular dependencies exist between glslang static libs, add them all as link dependencies for each other
-        foreach(GLSLANG_LIBRARY ${GLSLANG_LIBRARIES})
-            set_target_properties(${GLSLANG_LIBRARY}
-                                  PROPERTIES INTERFACE_LINK_LIBRARIES
-                                             "${GLSLANG_LIBRARIES}")
-        endforeach()
-    else()
-        set(GLSLANG_INCLUDE_DIR "${glslang_SOURCE_DIR}" CACHE PATH "Path to glslang headers")
-        set(GLSLANG_LIBRARIES glslang SPIRV SPVRemapper)
-    endif()
+    set(ENABLE_CTEST OFF CACHE BOOL INTERNAL FORCE)
+    FetchRepo(glslang ${VVL_GLSLANG_URL} ${VVL_GLSLANG_REF})
 endif()
 
 if(BUILD_TESTS OR BUILD_LAYERS)
-    # spirv-tools
-    if (NOT TARGET SPIRV-Tools)
-        if(NOT SPIRV_TOOLS_INSTALL_DIR)
-            set(SPIRV_TOOLS_INSTALL_DIR "${GLSLANG_INSTALL_DIR}")
-        endif()
-
-        set(SPIRV_HEADERS_INCLUDE_DIR "${SPIRV_HEADERS_INSTALL_DIR}/include" CACHE PATH "Path to spirv-headers")
-        set(SPIRV_TOOLS_BINARY_ROOT "${SPIRV_TOOLS_INSTALL_DIR}/lib"
-            CACHE PATH "User defined path to the SPIRV-Tools binaries for this project")
-        set(SPIRV_TOOLS_OPT_BINARY_ROOT "${SPIRV_TOOLS_INSTALL_DIR}/lib"
-            CACHE PATH "User defined path to the SPIRV-Tools-opt binaries for this project")
-        set(SPIRV_TOOLS_INCLUDE_DIR "${SPIRV_TOOLS_INSTALL_DIR}/include" CACHE PATH "Path to spirv tools headers")
-        set(SPIRV_TOOLS_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
-        set(SPIRV_TOOLS_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
-        set(SPIRV_TOOLS_OPT_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
-        set(SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
-
-        find_library(SPIRV_TOOLS_LIB NAMES SPIRV-Tools HINTS ${SPIRV_TOOLS_SEARCH_PATH})
-        find_library(SPIRV_TOOLS_OPT_LIB NAMES SPIRV-Tools-opt HINTS ${SPIRV_TOOLS_OPT_SEARCH_PATH})
-
-        set(SPIRV_TOOLS_LIBRARIES ${SPIRV_TOOLS_OPT_LIB} ${SPIRV_TOOLS_LIB})
-    else()
-        set(SPIRV_TOOLS_LIBRARIES SPIRV-Tools SPIRV-Tools-opt)
-        set(SPIRV_TOOLS_INCLUDE_DIR "${spirv-tools_SOURCE_DIR}/include" CACHE PATH "Path to spirv tools headers")
-    endif()
+    set(SPIRV_TOOLS_LIBRARIES SPIRV-Tools SPIRV-Tools-opt)
 endif()
 
 # Generate dependent helper files ------------------------------------------------------------------------------------------------
@@ -372,7 +246,7 @@ target_include_directories(VkLayer_utils
                                   ${VulkanHeaders_INCLUDE_DIR})
 
 if (USE_ROBIN_HOOD_HASHING)
-    target_include_directories(VkLayer_utils PUBLIC ${ROBIN_HOOD_HASHING_INCLUDE_DIR})
+    target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
     target_compile_definitions(VkLayer_utils PUBLIC USE_ROBIN_HOOD_HASHING)
 endif()
 
@@ -387,7 +261,7 @@ if(NOT TARGET uninstall)
 endif()
 
 # Fetch header version from vulkan_core.h ----------------------------------------------------------------------------------------
-file(STRINGS "${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
+file(STRINGS "${vulkan-headers_SOURCE_DIR}/include/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
 list(LENGTH lines len)
 if(${len} EQUAL 1)
     string(REGEX MATCHALL
@@ -414,19 +288,7 @@ endif()
 if(BUILD_TESTS)
     # Attempt to enable googletest if available.
 
-    if(TARGET gtest_main)
-        # Already enabled as a target (perhaps by a project enclosing this one)
-        message(STATUS "Vulkan-ValidationLayers/external: " "googletest already configured - using it")
-    elseif(IS_DIRECTORY "${GOOGLETEST_INSTALL_DIR}")
-        # The googletest directory exists, so enable it as a target.
-        message(STATUS "Vulkan-ValidationLayers/external: " "googletest found - configuring it for tests")
-        set(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
-        set(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject")
-        set(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically")
-        set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
-        # EXCLUDE_FROM_ALL keeps the install target from installing GTEST files.
-        add_subdirectory("${GOOGLETEST_INSTALL_DIR}" ${CMAKE_BINARY_DIR}/googletest)
-    else()
+    if(NOT (TARGET gtest_main))
         message(SEND_ERROR "Could not find googletest directory. Be sure to run update_deps.py with the --tests option to download the appropriate version of googletest")
         set(BUILD_TESTS OFF)
     endif()

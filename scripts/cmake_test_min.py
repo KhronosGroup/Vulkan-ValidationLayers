@@ -32,7 +32,7 @@ def get_cmake_min_version():
         if m is not None:
             return m.group(1)
         else:
-            return '3.10.2'
+            return '3.11.0'
 
 
 curr_platform = platform.system().lower()
