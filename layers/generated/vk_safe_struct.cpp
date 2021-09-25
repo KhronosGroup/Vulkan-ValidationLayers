@@ -43392,7 +43392,7 @@ safe_VkAccelerationStructureBuildGeometryInfoKHR& safe_VkAccelerationStructureBu
              delete ppGeometries[i];
         }
         delete[] ppGeometries;
-    } else {
+    } else if(pGeometries) {
         delete[] pGeometries;
     }
     if (pNext)
@@ -43432,7 +43432,7 @@ safe_VkAccelerationStructureBuildGeometryInfoKHR::~safe_VkAccelerationStructureB
              delete ppGeometries[i];
         }
         delete[] ppGeometries;
-    } else {
+    } else if(pGeometries) {
         delete[] pGeometries;
     }
     if (pNext)

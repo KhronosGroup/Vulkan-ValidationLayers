@@ -1679,7 +1679,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '             delete ppGeometries[i];\n'
                     '        }\n'
                     '        delete[] ppGeometries;\n'
-                    '    } else {\n'
+                    '    } else if(pGeometries) {\n'
                     '        delete[] pGeometries;\n'
                     '    }\n'
            }
