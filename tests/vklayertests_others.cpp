@@ -13074,3 +13074,66 @@ TEST_F(VkLayerTest, InvalidCopyQueryResults) {
     vk::DestroyQueryPool(device(), query_pool_encode, nullptr);
     vk::DestroyQueryPool(device(), query_pool_result, nullptr);
 }
+
+TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {
+    TEST_DESCRIPTION("Test CmdCopyQueryPoolResults with unsupported query type");
+
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto vkCmdCopyAccelerationStructureKHR = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureKHR>(
+        vk::GetDeviceProcAddr(device(), "vkCmdCopyAccelerationStructureKHR"));
+    assert(vkCmdCopyAccelerationStructureKHR != nullptr);
+
+    auto vkGetBufferDeviceAddressKHR =
+        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    assert(vkGetBufferDeviceAddressKHR != nullptr);
+
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+    VkBufferObj buffer_no_mem;
+    buffer_no_mem.init_no_mem(*m_device, buffer_ci);
+
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_ci);
+
+    VkBufferDeviceAddressInfo device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
+    device_address_info.buffer = buffer_no_mem.handle();
+    VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
+
+    auto as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
+    as_create_info.buffer = buffer_no_mem.handle();
+    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    as_create_info.deviceAddress = device_address;
+
+    vk_testing::AccelerationStructureKHR invalid_as(*m_device, as_create_info);
+
+    device_address_info.buffer = buffer.handle();
+    as_create_info.buffer = buffer.handle();
+    vk_testing::AccelerationStructureKHR valid_as(*m_device, as_create_info);
+
+    auto copy_info = LvlInitStruct<VkCopyAccelerationStructureInfoKHR>();
+    copy_info.src = invalid_as.handle();
+    copy_info.dst = valid_as.handle();
+    copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
+    vkCmdCopyAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
+    m_errorMonitor->VerifyFound();
+
+    copy_info.src = valid_as.handle();
+    copy_info.dst = invalid_as.handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
+    vkCmdCopyAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
