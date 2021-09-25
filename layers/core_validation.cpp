@@ -15593,15 +15593,27 @@ bool CoreChecks::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerati
                              api_name);
         }
     }
+    const auto *src_accel_state = GetAccelerationStructureStateKHR(pInfo->src);
+    if (src_accel_state) {
+        const auto *buffer_state = GetBufferState(src_accel_state->create_infoKHR.buffer);
+        skip |= ValidateMemoryIsBoundToBuffer(buffer_state, api_name, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
+    }
+    const auto *dst_accel_state = GetAccelerationStructureStateKHR(pInfo->dst);
+    if (dst_accel_state) {
+        const auto *buffer_state = GetBufferState(dst_accel_state->create_infoKHR.buffer);
+        skip |= ValidateMemoryIsBoundToBuffer(buffer_state, api_name, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
+    }
     return skip;
 }
+
 bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                 const VkCopyAccelerationStructureInfoKHR *pInfo) const {
+    bool skip = false;
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
-    ValidateCmd(cb_state, CMD_COPYACCELERATIONSTRUCTUREKHR, "vkCmdCopyAccelerationStructureKHR()");
-    ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCmdCopyAccelerationStructureKHR");
-    return false;
+    skip |= ValidateCmd(cb_state, CMD_COPYACCELERATIONSTRUCTUREKHR, "vkCmdCopyAccelerationStructureKHR()");
+    skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCmdCopyAccelerationStructureKHR");
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
