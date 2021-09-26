@@ -6394,6 +6394,16 @@ TEST_F(VkPositiveLayerTest, CreatePipelineGeometryInputBlockPositive) {
         return;
     }
 
+    char const *vsSource = R"glsl(
+        #version 450
+
+        layout(location = 0) out VertexData { vec4 x; } gs_out;
+
+        void main(){
+           gs_out.x = vec4(1.0f);
+        }
+    )glsl";
+
     char const *gsSource = R"glsl(
         #version 450
         layout(triangles) in;
@@ -6405,7 +6415,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineGeometryInputBlockPositive) {
         }
     )glsl";
 
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj gs(m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, this);
     VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
@@ -15771,5 +15781,79 @@ TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer, &offset);
     vkCmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer, &offset, nullptr, nullptr);
     m_commandBuffer->end();
+    m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkPositiveLayerTest, TestPervertexNVShaderAttributes) {
+    TEST_DESCRIPTION("Test using TestRasterizationStateStreamCreateInfoEXT with invalid rasterizationStream.");
+
+    AddRequiredExtensions(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
+        return;
+    }
+
+    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features =
+        LvlInitStruct<VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV>();
+    fragment_shader_barycentric_features.fragmentShaderBarycentric = VK_TRUE;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&fragment_shader_barycentric_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+                #version 450
+
+                layout(location = 0) out PerVertex {
+                    vec3 vtxPos;
+                } outputs;
+
+                vec2 triangle_positions[3] = vec2[](
+                    vec2(0.5, -0.5),
+                    vec2(0.5, 0.5),
+                    vec2(-0.5, 0.5)
+                );
+
+                void main() {
+                    gl_Position = vec4(triangle_positions[gl_VertexIndex], 0.0, 1.0);
+                    outputs.vtxPos = gl_Position.xyz;
+                }
+            )glsl";
+
+    char const *fsSource = R"glsl(
+                #version 450
+
+                #extension GL_NV_fragment_shader_barycentric : enable
+
+                layout(location = 0) in pervertexNV PerVertex {
+                    vec3 vtxPos;
+                } inputs[3];
+
+                layout(location = 0) out vec4 out_color;
+
+                void main() {
+                    vec3 b = gl_BaryCoordNV;
+                    if (b.x > b.y && b.x > b.z) {
+                        out_color = vec4(inputs[0].vtxPos, 1.0);
+                    }
+                    else if(b.y > b.z) {
+                        out_color = vec4(inputs[1].vtxPos, 1.0);
+                    }
+                    else {
+                        out_color = vec4(inputs[2].vtxPos, 1.0);
+                    }
+                }
+            )glsl";
+
+    m_errorMonitor->ExpectSuccess();
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }

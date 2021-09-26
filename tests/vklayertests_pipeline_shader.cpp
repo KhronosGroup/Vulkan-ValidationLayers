@@ -5357,7 +5357,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxComponentsBlocks) {
 
     // 1 for maxVertexOutputComponents and 1 for maxFragmentInputComponents
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
+                                      vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                                     "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
 }
 
 TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputComponents) {
