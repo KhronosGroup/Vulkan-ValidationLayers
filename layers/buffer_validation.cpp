@@ -6227,6 +6227,50 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                              string_VkSampleCountFlagBits(image_state->createInfo.samples), string_VkImageViewType(view_type));
         }
 
+        if (image_state->createInfo.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
+                                             VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR)) {
+            if (view_type != VK_IMAGE_VIEW_TYPE_2D && view_type != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04817",
+                                 "vkCreateImageView(): Image created with video decode usage flags, but pCreateInfo->viewType (%s) "
+                                 "is not VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY.",
+                                 string_VkImageViewType(view_type));
+            }
+            if (!IsIdentitySwizzle(pCreateInfo->components)) {
+                skip |= LogError(
+                    pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04817",
+                    "vkCreateImageView(): Image created with video decode usage flags, but not all members of "
+                    "pCreateInfo->components have identity swizzle. Here are the actual swizzle values:\n"
+                    "r swizzle = %s\n"
+                    "g swizzle = %s\n"
+                    "b swizzle = %s\n"
+                    "a swizzle = %s\n",
+                    string_VkComponentSwizzle(pCreateInfo->components.r), string_VkComponentSwizzle(pCreateInfo->components.g),
+                    string_VkComponentSwizzle(pCreateInfo->components.b), string_VkComponentSwizzle(pCreateInfo->components.a));
+            }
+        }
+
+        if (image_state->createInfo.usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+                                             VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
+            if (view_type != VK_IMAGE_VIEW_TYPE_2D && view_type != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04818",
+                                 "vkCreateImageView(): Image created with video encode usage flags, but pCreateInfo->viewType (%s) "
+                                 "is not VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY.",
+                                 string_VkImageViewType(view_type));
+            }
+            if (!IsIdentitySwizzle(pCreateInfo->components)) {
+                skip |= LogError(
+                    pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04818",
+                    "vkCreateImageView(): Image created with video encode usage flags, but not all members of "
+                    "pCreateInfo->components have identity swizzle. Here are the actual swizzle values:\n"
+                    "r swizzle = %s\n"
+                    "g swizzle = %s\n"
+                    "b swizzle = %s\n"
+                    "a swizzle = %s\n",
+                    string_VkComponentSwizzle(pCreateInfo->components.r), string_VkComponentSwizzle(pCreateInfo->components.g),
+                    string_VkComponentSwizzle(pCreateInfo->components.b), string_VkComponentSwizzle(pCreateInfo->components.a));
+            }
+        }
+
         // Validate correct image aspect bits for desired formats and format consistency
         skip |=
             ValidateImageAspectMask(image_state->image(), image_format, aspect_mask, image_state->disjoint, "vkCreateImageView()");
@@ -6978,7 +7022,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
                              "width (%" PRIu32 ").",
                              function, i, region.imageOffset.x, block_size.width);
         }
-       
+
         //  image offsets y must be multiple of block height
         if (SafeModulo(region.imageOffset.y, block_size.height) != 0) {
             skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("07275", image_to_buffer, is_2),
