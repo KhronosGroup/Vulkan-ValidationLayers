@@ -79,6 +79,12 @@ void decoration_set::add(uint32_t decoration, uint32_t value) {
         case spv::DecorationNonReadable:
             flags |= nonreadable_bit;
             break;
+        case spv::DecorationPerVertexNV:
+            flags |= per_vertex_bit;
+            break;
+        case spv::DecorationPassthroughNV:
+            flags |= passthrough_bit;
+            break;
     }
 }
 
@@ -1547,7 +1553,8 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLo
 }
 
 bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, interface_var> *out, bool is_array_of_verts,
-                                                       uint32_t id, uint32_t type_id, bool is_patch, int /*first_location*/) const {
+                                                       uint32_t id, uint32_t type_id, bool is_patch,
+                                                       uint32_t /*first_location*/) const {
     // Walk down the type_id presented, trying to determine whether it's actually an interface block.
     auto type = GetStructType(get_def(type_id), is_array_of_verts && !is_patch);
     if (type == end() || !(get_decorations(type.word(1)).flags & decoration_set::block_bit)) {
@@ -1625,23 +1632,27 @@ std::map<location_t, interface_var> SHADER_MODULE_STATE::CollectInterfaceByLocat
         assert(insn != end());
         assert(insn.opcode() == spv::OpVariable);
 
-        if (insn.word(3) == static_cast<uint32_t>(sinterface)) {
-            auto d = get_decorations(iid);
+        const auto d = get_decorations(iid);
+        bool passthrough = sinterface == spv::StorageClassOutput && insn.word(3) == spv::StorageClassInput &&
+                           (d.flags & decoration_set::passthrough_bit) != 0;
+        if (insn.word(3) == static_cast<uint32_t>(sinterface) || passthrough) {
             unsigned id = insn.word(2);
             unsigned type = insn.word(1);
 
-            int location = d.location;
+            auto location = d.location;
             int builtin = d.builtin;
             unsigned component = d.component;
             bool is_patch = (d.flags & decoration_set::patch_bit) != 0;
             bool is_relaxed_precision = (d.flags & decoration_set::relaxed_precision_bit) != 0;
+            bool is_per_vertex = (d.flags & decoration_set::per_vertex_bit) != 0;
 
             if (builtin != -1) {
                 continue;
-            } else if (!CollectInterfaceBlockMembers(&out, is_array_of_verts, id, type, is_patch, location)) {
+            } else if (!CollectInterfaceBlockMembers(&out, is_array_of_verts, id, type, is_patch, location) ||
+                       location != decoration_set::kInvalidValue) {
                 // A user-defined interface variable, with a location. Where a variable occupied multiple locations, emit
                 // one result for each.
-                unsigned num_locations = GetLocationsConsumedByType(type, is_array_of_verts && !is_patch);
+                unsigned num_locations = GetLocationsConsumedByType(type, (is_array_of_verts && !is_patch) || is_per_vertex);
                 for (unsigned int offset = 0; offset < num_locations; offset++) {
                     interface_var v = {};
                     v.id = id;
