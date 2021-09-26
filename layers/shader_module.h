@@ -133,6 +133,8 @@ struct decoration_set {
         nonwritable_bit = 1 << 9,
         builtin_bit = 1 << 10,
         nonreadable_bit = 1 << 11,
+        per_vertex_bit = 1 << 12,
+        passthrough_bit = 1 << 13,
     };
     static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
@@ -324,7 +326,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         layer_data::unordered_set<uint32_t> const &accessible_ids) const;
     layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const spirv_inst_iter &entrypoint) const;
     bool CollectInterfaceBlockMembers(std::map<location_t, interface_var> *out, bool is_array_of_verts, uint32_t id,
-                                      uint32_t type_id, bool is_patch, int first_location) const;
+                                      uint32_t type_id, bool is_patch, uint32_t first_location) const;
     std::map<location_t, interface_var> CollectInterfaceByLocation(spirv_inst_iter entrypoint, spv::StorageClass sinterface,
                                                                    bool is_array_of_verts) const;
     std::vector<uint32_t> CollectBuiltinBlockMembers(spirv_inst_iter entrypoint, uint32_t storageClass) const;
