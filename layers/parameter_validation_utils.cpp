@@ -1195,7 +1195,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                     skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-04737",
                                      "vkCreateImage(): VkImageFormatListCreateInfo::pViewFormats[%u] (%s) and "
                                      "VkImageCreateInfo::format (%s) are not compatible.",
-                                     i, string_VkFormat(format_list_info->pViewFormats[0]), string_VkFormat(image_format));
+                                     i, string_VkFormat(format_list_info->pViewFormats[i]), string_VkFormat(image_format));
                 }
             }
         }
