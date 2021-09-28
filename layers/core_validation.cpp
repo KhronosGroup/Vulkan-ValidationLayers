@@ -57,6 +57,11 @@
 #include <string>
 #include <valarray>
 
+#if defined(__linux__)
+#include <unistd.h>
+#include <sys/types.h>
+#endif
+
 #include "vk_loader_platform.h"
 #include "vk_enum_string_helper.h"
 #include "chassis.h"
@@ -2818,7 +2823,11 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         if (!tmp_path.size()) tmp_path = GetEnvironment("TMP");
         if (!tmp_path.size()) tmp_path = GetEnvironment("TEMP");
         if (!tmp_path.size()) tmp_path = "//tmp";
-        core_checks->validation_cache_path = tmp_path + "//shader_validation_cache.bin";
+        core_checks->validation_cache_path = tmp_path + "//shader_validation_cache";
+#if defined(__linux__)
+        core_checks->validation_cache_path += "-" + std::to_string(getuid());
+#endif
+        core_checks->validation_cache_path += ".bin";
 
         std::vector<char> validation_cache_data;
         std::ifstream read_file(core_checks->validation_cache_path.c_str(), std::ios::in | std::ios::binary);
