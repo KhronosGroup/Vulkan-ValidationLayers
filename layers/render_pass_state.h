@@ -90,9 +90,9 @@ class RENDER_PASS_STATE : public BASE_NODE {
     };
     const bool use_dynamic_rendering;
     const bool use_dynamic_rendering_inherited;
-    const safe_VkRenderingInfoKHR dynamic_rendering_begin_rendering_info;
-    const safe_VkPipelineRenderingCreateInfoKHR dynamic_rendering_pipeline_create_info;
-    const safe_VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info;
+    const safe_VkRenderingInfo dynamic_rendering_begin_rendering_info;
+    const safe_VkPipelineRenderingCreateInfo dynamic_rendering_pipeline_create_info;
+    const safe_VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info;
     const safe_VkRenderPassCreateInfo2 createInfo;
     using SubpassVec = std::vector<uint32_t>;
     using SelfDepVec = std::vector<SubpassVec>;

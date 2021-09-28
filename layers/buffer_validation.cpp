@@ -1368,7 +1368,7 @@ VkImageLayout NormalizeSynchronization2Layout(const VkImageAspectFlags aspect_ma
 template <typename ImgBarrier>
 void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE *image_state,
                                              const ImgBarrier &mem_barrier, bool is_release_op) {
-    if (enabled_features.synchronization2_features.synchronization2) {
+    if (enabled_features.core13.synchronization2) {
         if (mem_barrier.oldLayout == mem_barrier.newLayout) {
             return;
         }
@@ -5136,7 +5136,7 @@ bool Validate(const CoreChecks *device_data, const CMD_BUFFER_STATE *cb_state, c
     const bool dst_ignored = QueueFamilyIsIgnored(dst_queue_family);
     if (val.KhrExternalMem()) {
         if (mode_concurrent) {
-            bool sync2 = device_data->enabled_features.synchronization2_features.synchronization2 != 0;
+            bool sync2 = device_data->enabled_features.core13.synchronization2 != 0;
             // this requirement is removed by VK_KHR_synchronization2
             if (!(src_ignored || dst_ignored) && !sync2) {
                 skip |= val.LogMsg(QueueError::kSrcOrDstMustBeIgnore, src_queue_family, dst_queue_family);
@@ -5159,7 +5159,7 @@ bool Validate(const CoreChecks *device_data, const CMD_BUFFER_STATE *cb_state, c
     } else {
         // No memory extension
         if (mode_concurrent) {
-            bool sync2 = device_data->enabled_features.synchronization2_features.synchronization2 != 0;
+            bool sync2 = device_data->enabled_features.core13.synchronization2 != 0;
             // this requirement is removed by VK_KHR_synchronization2
             if ((!src_ignored || !dst_ignored) && !sync2) {
                 skip |= val.LogMsg(QueueError::kSrcAndDestMustBeIgnore, src_queue_family, dst_queue_family);
@@ -5272,7 +5272,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
     skip |= ValidateQFOTransferBarrierUniqueness(loc, cb_state, mem_barrier, cb_state->qfo_transfer_image_barriers);
 
     bool is_ilt = true;
-    if (enabled_features.synchronization2_features.synchronization2) {
+    if (enabled_features.core13.synchronization2) {
         is_ilt = mem_barrier.oldLayout != mem_barrier.newLayout;
     }
 
@@ -5424,7 +5424,7 @@ bool CoreChecks::ValidateSubpassDependency(const LogObjectList &objects, const L
     VkMemoryBarrier2KHR converted_barrier;
     const auto *mem_barrier = LvlFindInChain<VkMemoryBarrier2KHR>(dependency.pNext);
 
-    if (mem_barrier && enabled_features.synchronization2_features.synchronization2) {
+    if (mem_barrier && enabled_features.core13.synchronization2) {
         if (dependency.srcAccessMask != 0) {
             skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-srcAccessMask",
                              "%s is non-zero when a VkMemoryBarrier2KHR is present in pNext.",

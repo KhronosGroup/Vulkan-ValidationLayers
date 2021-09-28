@@ -1412,7 +1412,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
             }
 
             // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
-            if (!cb_node->push_constant_data_ranges && !enabled_features.maintenance4_features.maintenance4) {
+            if (!cb_node->push_constant_data_ranges && !enabled_features.core13.maintenance4) {
                 LogObjectList objlist(cb_node->commandBuffer());
                 objlist.add(pipeline_layout->layout());
                 objlist.add(pipe->pipeline());
@@ -3983,7 +3983,7 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
         return true;
     }
 
-    if (!enabled_features.synchronization2_features.synchronization2) {
+    if (!enabled_features.core13.synchronization2) {
         skip |= LogError(queue, "VUID-vkQueueSubmit2KHR-synchronization2-03866",
                          "vkQueueSubmit2KHR(): Synchronization2 feature is not enabled");
     }
@@ -5661,7 +5661,7 @@ bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPE
 bool CoreChecks::ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, uint32_t index, const char *caller_name,
                                                    const char *vuid) const {
     bool skip = false;
-    if (enabled_features.pipeline_creation_cache_control_features.pipelineCreationCacheControl == VK_FALSE) {
+    if (enabled_features.core13.pipelineCreationCacheControl == VK_FALSE) {
         const VkPipelineCreateFlags invalid_flags =
             VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT | VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT;
         if ((flags & invalid_flags) != 0) {
@@ -5679,7 +5679,7 @@ bool CoreChecks::PreCallValidateCreatePipelineCache(VkDevice device, const VkPip
                                                     const VkAllocationCallbacks *pAllocator,
                                                     VkPipelineCache *pPipelineCache) const {
     bool skip = false;
-    if (enabled_features.pipeline_creation_cache_control_features.pipelineCreationCacheControl == VK_FALSE) {
+    if (enabled_features.core13.pipelineCreationCacheControl == VK_FALSE) {
         if ((pCreateInfo->flags & VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT) != 0) {
             skip |= LogError(device, "VUID-VkPipelineCacheCreateInfo-pipelineCreationCacheControl-02892",
                              "vkCreatePipelineCache(): pipelineCreationCacheControl is turned off but pCreateInfo::flags contains "
@@ -5699,7 +5699,7 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
 
     for (uint32_t i = 0; i < count; i++) {
         if (pCreateInfos[i].renderPass == VK_NULL_HANDLE) {
-            if (!enabled_features.dynamic_rendering_features.dynamicRendering) {
+            if (!enabled_features.core13.dynamicRendering) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06052",
                                  "vkCreateGraphicsPipeline: pCreateInfos[%" PRIu32
                                  "].renderPass is VK_NULL_HANDLE but dynamicRendering is not enabled.",
@@ -5970,7 +5970,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
     return cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
         this, pCreateInfo, IsExtEnabled(device_extensions.vk_khr_push_descriptor),
         phys_dev_ext_props.push_descriptor_props.maxPushDescriptors, IsExtEnabled(device_extensions.vk_ext_descriptor_indexing),
-        &enabled_features.core12, &enabled_features.inline_uniform_block_features, &phys_dev_ext_props.inline_uniform_block_props,
+        &enabled_features.core12, &enabled_features.core13, &phys_dev_ext_props.inline_uniform_block_props,
         &enabled_features.ray_tracing_acceleration_structure_features, &device_extensions);
 }
 
@@ -6657,7 +6657,7 @@ bool CoreChecks::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuff
     if (!cb_state) return false;
     bool skip = false;
 
-    if (!enabled_features.dynamic_rendering_features.dynamicRendering) {
+    if (!enabled_features.core13.dynamicRendering) {
         skip |= LogError(commandBuffer, "VUID-vkCmdBeginRenderingKHR-dynamicRendering-06446",
                          "vkCmdBeginRenderingKHR(): dynamicRendering is not enabled.");
     }
@@ -8919,7 +8919,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, V
     const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    if (!enabled_features.synchronization2_features.synchronization2) {
+    if (!enabled_features.core13.synchronization2) {
         skip |= LogError(commandBuffer, "VUID-vkCmdSetEvent2KHR-synchronization2-03824",
                          "vkCmdSetEvent2KHR(): Synchronization2 feature is not enabled");
     }
@@ -8955,7 +8955,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer,
     Location loc(Func::vkCmdResetEvent2KHR, Field::stageMask);
 
     bool skip = false;
-    if (!enabled_features.synchronization2_features.synchronization2) {
+    if (!enabled_features.core13.synchronization2) {
         skip |= LogError(commandBuffer, "VUID-vkCmdResetEvent2KHR-synchronization2-03829",
                          "vkCmdResetEvent2KHR(): Synchronization2 feature is not enabled");
     }
@@ -9258,7 +9258,7 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList 
 bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &objects, const Location &loc,
                                                      VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
-    if (!enabled_features.synchronization2_features.synchronization2 && stage_mask == 0) {
+    if (!enabled_features.core13.synchronization2 && stage_mask == 0) {
         const auto& vuid = sync_vuid_maps::GetBadFeatureVUID(loc, 0);
         std::stringstream msg;
         msg << loc.Message() << " must not be 0 unless synchronization2 is enabled.";
@@ -9403,7 +9403,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer,
     assert(cb_state);
 
     bool skip = false;
-    if (!enabled_features.synchronization2_features.synchronization2) {
+    if (!enabled_features.core13.synchronization2) {
         skip |= LogError(commandBuffer, "VUID-vkCmdWaitEvents2KHR-synchronization2-03836",
                          "vkCmdWaitEvents2KHR(): Synchronization2 feature is not enabled");
     }
@@ -9519,7 +9519,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBu
     LogObjectList objects(commandBuffer);
 
     Location loc(Func::vkCmdPipelineBarrier2KHR, Field::pDependencyInfo);
-    if (!enabled_features.synchronization2_features.synchronization2) {
+    if (!enabled_features.core13.synchronization2) {
         skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier2KHR-synchronization2-03848",
                          "vkCmdPipelineBarrier2KHR(): Synchronization2 feature is not enabled");
     }
@@ -10154,7 +10154,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
     const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    if (!enabled_features.synchronization2_features.synchronization2) {
+    if (!enabled_features.core13.synchronization2) {
         skip |= LogError(commandBuffer, "VUID-vkCmdWriteTimestamp2KHR-synchronization2-03858",
                          "vkCmdWriteTimestamp2KHR(): Synchronization2 feature is not enabled");
     }

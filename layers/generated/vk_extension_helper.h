@@ -26,6 +26,7 @@
  * Author: Tobin Ehlis <tobine@google.com>
  * Author: Chris Forbes <chrisforbes@google.com>
  * Author: John Zulauf<jzulauf@lunarg.com>
+ * Author: Tony Barbour <tony@lunarg.com>
  *
  ****************************************************************************/
 
@@ -63,10 +64,12 @@ static bool DECORATE_UNUSED IsExtEnabledByCreateinfo(ExtEnabled extension) {
     return (extension == kEnabledByCreateinfo);
 };
 #define VK_VERSION_1_2_NAME "VK_VERSION_1_2"
+#define VK_VERSION_1_3_NAME "VK_VERSION_1_3"
 
 struct InstanceExtensions {
     ExtEnabled vk_feature_version_1_1{kNotEnabled};
     ExtEnabled vk_feature_version_1_2{kNotEnabled};
+    ExtEnabled vk_feature_version_1_3{kNotEnabled};
     ExtEnabled vk_ext_acquire_drm_display{kNotEnabled};
     ExtEnabled vk_ext_acquire_xlib_display{kNotEnabled};
     ExtEnabled vk_ext_debug_report{kNotEnabled};
@@ -119,6 +122,7 @@ struct InstanceExtensions {
         static const InstanceInfoMap info_map = {
             {"VK_VERSION_1_1", InstanceInfo(&InstanceExtensions::vk_feature_version_1_1, {})},
             {"VK_VERSION_1_2", InstanceInfo(&InstanceExtensions::vk_feature_version_1_2, {})},
+            {"VK_VERSION_1_3", InstanceInfo(&InstanceExtensions::vk_feature_version_1_3, {})},
             {VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_acquire_drm_display, {{
                            {&InstanceExtensions::vk_ext_direct_mode_display, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
@@ -230,8 +234,10 @@ struct InstanceExtensions {
             return VK_API_VERSION_1_0;
         else if (specified_version < VK_API_VERSION_1_2)
             return VK_API_VERSION_1_1;
-        else
+        else if (specified_version < VK_API_VERSION_1_3)
             return VK_API_VERSION_1_2;
+        else
+            return VK_API_VERSION_1_3;
     }
 
     uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
@@ -244,6 +250,8 @@ struct InstanceExtensions {
             VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
         };
         static const std::vector<const char *> V_1_2_promoted_instance_apis = {
+        };
+        static const std::vector<const char *> V_1_3_promoted_instance_apis = {
         };
 
         // Initialize struct data, robust to invalid pCreateInfo
@@ -261,6 +269,15 @@ struct InstanceExtensions {
             auto info = get_info("VK_VERSION_1_2");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
             for (auto promoted_ext : V_1_2_promoted_instance_apis) {
+                info = get_info(promoted_ext);
+                assert(info.state);
+                if (info.state) this->*(info.state) = kEnabledByApiLevel;
+            }
+        }
+        if (api_version >= VK_API_VERSION_1_3) {
+            auto info = get_info("VK_VERSION_1_3");
+            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+            for (auto promoted_ext : V_1_3_promoted_instance_apis) {
                 info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
@@ -347,6 +364,7 @@ static const std::set<std::string> kInstanceExtensionNames = {
 struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_feature_version_1_1{kNotEnabled};
     ExtEnabled vk_feature_version_1_2{kNotEnabled};
+    ExtEnabled vk_feature_version_1_3{kNotEnabled};
     ExtEnabled vk_amd_buffer_marker{kNotEnabled};
     ExtEnabled vk_amd_device_coherent_memory{kNotEnabled};
     ExtEnabled vk_amd_display_native_hdr{kNotEnabled};
@@ -491,6 +509,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_format_feature_flags2{kNotEnabled};
     ExtEnabled vk_khr_fragment_shading_rate{kNotEnabled};
     ExtEnabled vk_khr_get_memory_requirements2{kNotEnabled};
+    ExtEnabled vk_khr_global_priority{kNotEnabled};
     ExtEnabled vk_khr_image_format_list{kNotEnabled};
     ExtEnabled vk_khr_imageless_framebuffer{kNotEnabled};
     ExtEnabled vk_khr_incremental_present{kNotEnabled};
@@ -600,6 +619,7 @@ struct DeviceExtensions : public InstanceExtensions {
         static const DeviceInfoMap info_map = {
             {"VK_VERSION_1_1", DeviceInfo(&DeviceExtensions::vk_feature_version_1_1, {})},
             {"VK_VERSION_1_2", DeviceInfo(&DeviceExtensions::vk_feature_version_1_2, {})},
+            {"VK_VERSION_1_3", DeviceInfo(&DeviceExtensions::vk_feature_version_1_3, {})},
             {VK_AMD_BUFFER_MARKER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_buffer_marker, {})},
             {VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_device_coherent_memory, {})},
             {VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_display_native_hdr, {{
@@ -891,6 +911,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_create_renderpass2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_get_memory_requirements2, {})},
+            {VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_global_priority, {})},
             {VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_image_format_list, {})},
             {VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_imageless_framebuffer, {{
                            {&DeviceExtensions::vk_khr_maintenance2, VK_KHR_MAINTENANCE_2_EXTENSION_NAME},
@@ -1159,6 +1180,29 @@ struct DeviceExtensions : public InstanceExtensions {
             VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME,
             VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
         };
+        static const std::vector<const char *> V_1_3_promoted_device_apis = {
+            VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
+            VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+            VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME,
+            VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
+            VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME,
+            VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
+            VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME,
+            VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+            VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME,
+            VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
+            VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
+            VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME,
+            VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME,
+            VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME,
+            VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME,
+            VK_EXT_PRIVATE_DATA_EXTENSION_NAME,
+            VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
+            VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
+            VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME,
+            VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME,
+            VK_EXT_TOOLING_INFO_EXTENSION_NAME,
+        };
 
         // Initialize struct data, robust to invalid pCreateInfo
         uint32_t api_version = NormalizeApiVersion(requested_api_version);
@@ -1175,6 +1219,15 @@ struct DeviceExtensions : public InstanceExtensions {
             auto info = get_info("VK_VERSION_1_2");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
             for (auto promoted_ext : V_1_2_promoted_device_apis) {
+                info = get_info(promoted_ext);
+                assert(info.state);
+                if (info.state) this->*(info.state) = kEnabledByApiLevel;
+            }
+        }
+        if (api_version >= VK_API_VERSION_1_3) {
+            auto info = get_info("VK_VERSION_1_3");
+            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+            for (auto promoted_ext : V_1_3_promoted_device_apis) {
                 info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
@@ -1363,6 +1416,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME,
     VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
     VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+    VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME,
     VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
     VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME,
     VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME,

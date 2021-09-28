@@ -26,6 +26,7 @@
  * Author: Tobin Ehlis <tobine@google.com>
  * Author: Chris Forbes <chrisforbes@google.com>
  * Author: John Zulauf<jzulauf@lunarg.com>
+ * Author: Tony Barbour <tony@lunarg.com>
  *
  ****************************************************************************/
 
@@ -231,8 +232,8 @@ extern const layer_data::unordered_map<SyncStageAccessFlags, SyncStageAccessInde
 
 struct SyncStageAccessInfoType {
     const char *name;
-    VkPipelineStageFlags2KHR stage_mask;
-    VkAccessFlags2KHR access_mask;
+    VkPipelineStageFlags2 stage_mask;
+    VkAccessFlags2 access_mask;
     SyncStageAccessIndex stage_access_index;
     SyncStageAccessFlags stage_access_bit;
 };
@@ -337,28 +338,28 @@ static const SyncStageAccessFlags syncStageAccessWriteMask = ( //  Mask of all w
 );
 
 // Bit order mask of stage_access bit for each stage
-extern const std::map<VkPipelineStageFlags2KHR, SyncStageAccessFlags> syncStageAccessMaskByStageBit;
+extern const std::map<VkPipelineStageFlags2, SyncStageAccessFlags> syncStageAccessMaskByStageBit;
 
 // Bit order mask of stage_access bit for each access
-extern const std::map<VkAccessFlags2KHR, SyncStageAccessFlags> syncStageAccessMaskByAccessBit;
+extern const std::map<VkAccessFlags2, SyncStageAccessFlags> syncStageAccessMaskByAccessBit;
 
 // stage_access index for each stage and access
-extern const std::map<VkPipelineStageFlags2KHR, std::map<VkAccessFlags2KHR, SyncStageAccessIndex>> syncStageAccessIndexByStageAndAccess;
+extern const std::map<VkPipelineStageFlags2, std::map<VkAccessFlags2, SyncStageAccessIndex>> syncStageAccessIndexByStageAndAccess;
 
 // Direct VkPipelineStageFlags to valid VkAccessFlags lookup table
-extern const std::map<VkPipelineStageFlags2KHR, VkAccessFlags2KHR> syncDirectStageToAccessMask;
+extern const std::map<VkPipelineStageFlags2, VkAccessFlags2> syncDirectStageToAccessMask;
 
-// Pipeline stages corresponding to VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR for each VkQueueFlagBits
-extern const std::map<VkQueueFlagBits, VkPipelineStageFlags2KHR> syncAllCommandStagesByQueueFlags;
+// Pipeline stages corresponding to VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT for each VkQueueFlagBits
+extern const std::map<VkQueueFlagBits, VkPipelineStageFlags2> syncAllCommandStagesByQueueFlags;
 
 // Masks of logically earlier stage flags for a given stage flag
-extern const std::map<VkPipelineStageFlags2KHR, VkPipelineStageFlags2KHR> syncLogicallyEarlierStages;
+extern const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2> syncLogicallyEarlierStages;
 
 // Masks of logically later stage flags for a given stage flag
-extern const std::map<VkPipelineStageFlags2KHR, VkPipelineStageFlags2KHR> syncLogicallyLaterStages;
+extern const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2> syncLogicallyLaterStages;
 
 // Lookup table of stage orderings
-extern const std::map<VkPipelineStageFlags2KHR, int> syncStageOrder;
+extern const std::map<VkPipelineStageFlags2, int> syncStageOrder;
 
 struct SyncShaderStageAccess {
     SyncStageAccessIndex sampled_read;

@@ -33,11 +33,11 @@ struct DeviceFeatures {
     VkPhysicalDeviceFeatures core;
     VkPhysicalDeviceVulkan11Features core11;
     VkPhysicalDeviceVulkan12Features core12;
+    VkPhysicalDeviceVulkan13Features core13;
 
     VkPhysicalDeviceExclusiveScissorFeaturesNV exclusive_scissor_features;
     VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_features;
     VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features;
-    VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block_features;
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features;
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vtx_attrib_divisor_features;
     VkPhysicalDeviceBufferDeviceAddressFeaturesEXT buffer_device_address_ext_features;
@@ -46,7 +46,6 @@ struct DeviceFeatures {
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features;
     VkPhysicalDeviceShaderImageFootprintFeaturesNV shader_image_footprint_features;
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragment_shader_interlock_features;
-    VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote_to_helper_invocation_features;
     VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT texel_buffer_alignment_features;
     VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_props_features;
     VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV dedicated_allocation_image_aliasing_features;
@@ -61,7 +60,6 @@ struct DeviceFeatures {
     VkPhysicalDeviceFragmentDensityMap2FeaturesEXT fragment_density_map2_features;
     VkPhysicalDeviceASTCDecodeFeaturesEXT astc_decode_features;
     VkPhysicalDeviceCustomBorderColorFeaturesEXT custom_border_color_features;
-    VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT pipeline_creation_cache_control_features;
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features;
     VkPhysicalDeviceMultiviewFeatures multiview_features;
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features;
@@ -73,7 +71,6 @@ struct DeviceFeatures {
     VkPhysicalDeviceShaderClockFeaturesKHR shader_clock_features;
     VkPhysicalDeviceConditionalRenderingFeaturesEXT conditional_rendering_features;
     VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR workgroup_memory_explicit_layout_features;
-    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2_features;
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features;
     VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic_state_features;
     VkPhysicalDeviceInheritedViewportScissorFeaturesNV inherited_viewport_scissor_features;
@@ -84,12 +81,8 @@ struct DeviceFeatures {
     VkPhysicalDevicePresentIdFeaturesKHR present_id_features;
     VkPhysicalDevicePresentWaitFeaturesKHR present_wait_features;
     VkPhysicalDeviceRayTracingMotionBlurFeaturesNV ray_tracing_motion_blur_features;
-    VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR shader_integer_dot_product_features;
     VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT primitive_topology_list_restart_features;
-    VkPhysicalDeviceSubgroupSizeControlFeaturesEXT subgroup_size_control_features;
     VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT rgba10x6_formats_features;
-    VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4_features;
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features;
     VkPhysicalDeviceImageViewMinLodFeaturesEXT image_view_min_lod_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml

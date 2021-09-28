@@ -473,7 +473,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
     const ValidationObject *val_obj, const VkDescriptorSetLayoutCreateInfo *create_info, const bool push_descriptor_ext,
     const uint32_t max_push_descriptors, const bool descriptor_indexing_ext,
     const VkPhysicalDeviceVulkan12Features *core12_features,
-    const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
+    const VkPhysicalDeviceVulkan13Features* core13_features,
     const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
     const VkPhysicalDeviceAccelerationStructureFeaturesKHR *acceleration_structure_features,
     const DeviceExtensions *device_extensions) {
@@ -532,7 +532,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
         }
 
         if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
-            if (!inline_uniform_block_features->inlineUniformBlock) {
+            if (!core13_features->inlineUniformBlock) {
                 skip |= val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutBinding-descriptorType-04604",
                                           "vkCreateDescriptorSetLayout(): pBindings[%u] is creating VkDescriptorSetLayout with "
                                           "descriptor type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT "
@@ -679,7 +679,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                     }
 
                     if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT &&
-                        !inline_uniform_block_features->descriptorBindingInlineUniformBlockUpdateAfterBind) {
+                        !core13_features->descriptorBindingInlineUniformBlockUpdateAfterBind) {
                         skip |= val_obj->LogError(
                             val_obj->device,
                             "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-"

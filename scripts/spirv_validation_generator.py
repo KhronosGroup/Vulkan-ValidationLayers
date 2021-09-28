@@ -107,13 +107,13 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             {'vulkan' : 'VkPhysicalDeviceFeatures', 'layer' : 'core'},
             {'vulkan' : 'VkPhysicalDeviceVulkan11Features', 'layer' : 'core11'},
             {'vulkan' : 'VkPhysicalDeviceVulkan12Features', 'layer' : 'core12'},
+            {'vulkan' : 'VkPhysicalDeviceVulkan13Features', 'layer' : 'core13'},
             {'vulkan' : 'VkPhysicalDeviceTransformFeedbackFeaturesEXT', 'layer' : 'transform_feedback_features'},
             {'vulkan' : 'VkPhysicalDeviceCooperativeMatrixFeaturesNV', 'layer' : 'cooperative_matrix_features'},
             {'vulkan' : 'VkPhysicalDeviceComputeShaderDerivativesFeaturesNV', 'layer' : 'compute_shader_derivatives_features'},
             {'vulkan' : 'VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV', 'layer' : 'fragment_shader_barycentric_features'},
             {'vulkan' : 'VkPhysicalDeviceShaderImageFootprintFeaturesNV', 'layer' : 'shader_image_footprint_features'},
             {'vulkan' : 'VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT', 'layer' : 'fragment_shader_interlock_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT', 'layer' : 'demote_to_helper_invocation_features'},
             {'vulkan' : 'VkPhysicalDeviceRayQueryFeaturesKHR', 'layer' : 'ray_query_features'},
             {'vulkan' : 'VkPhysicalDeviceRayTracingPipelineFeaturesKHR', 'layer' : 'ray_tracing_pipeline_features'},
             {'vulkan' : 'VkPhysicalDeviceAccelerationStructureFeaturesKHR', 'layer' : 'ray_tracing_acceleration_structure_features'},
@@ -128,7 +128,6 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             {'vulkan' : 'VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR', 'layer' : 'workgroup_memory_explicit_layout_features'},
             {'vulkan' : 'VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT', 'layer' : 'shader_atomic_float2_features'},
             {'vulkan' : 'VkPhysicalDeviceRayTracingMotionBlurFeaturesNV', 'layer' : 'ray_tracing_motion_blur_features'},
-            {'vulkan' : 'VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR', 'layer' : 'shader_integer_dot_product_features'},
         ]
 
         # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs
@@ -155,6 +154,9 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             "VkPhysicalDeviceBufferDeviceAddressFeatures",
             "VkPhysicalDeviceShaderAtomicInt64Features",
             "VkPhysicalDeviceVulkanMemoryModelFeatures",
+            # 1.3
+            "VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT",
+            "VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR",
         ]
 
         # Properties are harder to handle genearted without generating a template for every property struct type

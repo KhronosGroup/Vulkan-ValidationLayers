@@ -919,8 +919,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         api_version = VK_API_VERSION_1_0;
     else if (specified_version < VK_API_VERSION_1_2)
         api_version = VK_API_VERSION_1_1;
-    else
+    else if (specified_version < VK_API_VERSION_1_3)
         api_version = VK_API_VERSION_1_2;
+    else
+        api_version = VK_API_VERSION_1_3;
     auto report_data = new debug_report_data{};
     report_data->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
     ActivateInstanceDebugCallbacks(report_data);

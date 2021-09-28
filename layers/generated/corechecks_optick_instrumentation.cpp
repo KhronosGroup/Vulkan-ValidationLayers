@@ -26,6 +26,7 @@
  * Author: Tobin Ehlis <tobine@google.com>
  * Author: Chris Forbes <chrisforbes@google.com>
  * Author: John Zulauf<jzulauf@lunarg.com>
+ * Author: Tony Barbour <tony@lunarg.com>
  *
  ****************************************************************************/
 
@@ -2855,6 +2856,598 @@ void CoreChecksOptickInstrumented::PostCallRecordGetDeviceMemoryOpaqueCaptureAdd
     CoreChecks::PostCallRecordGetDeviceMemoryOpaqueCaptureAddress(device, pInfo);
 }
 
+bool CoreChecksOptickInstrumented::PreCallValidateGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t* pToolCount, VkPhysicalDeviceToolProperties* pToolProperties) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t* pToolCount, VkPhysicalDeviceToolProperties* pToolProperties) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t* pToolCount, VkPhysicalDeviceToolProperties* pToolProperties, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, result);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, result);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateDestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateDestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordDestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordDestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordDestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordDestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateSetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t data) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateSetPrivateData(device, objectType, objectHandle, privateDataSlot, data);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordSetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t data) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordSetPrivateData(device, objectType, objectHandle, privateDataSlot, data);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordSetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t data, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordSetPrivateData(device, objectType, objectHandle, privateDataSlot, data, result);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateGetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t* pData) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t* pData) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t* pData) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetEvent2(VkCommandBuffer                   commandBuffer, VkEvent                                             event, const VkDependencyInfo*                             pDependencyInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetEvent2(VkCommandBuffer                   commandBuffer, VkEvent                                             event, const VkDependencyInfo*                             pDependencyInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetEvent2(VkCommandBuffer                   commandBuffer, VkEvent                                             event, const VkDependencyInfo*                             pDependencyInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdResetEvent2(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2               stageMask) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdResetEvent2(commandBuffer, event, stageMask);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdResetEvent2(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2               stageMask) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdResetEvent2(commandBuffer, event, stageMask);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdResetEvent2(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2               stageMask) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdResetEvent2(commandBuffer, event, stageMask);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdWaitEvents2(VkCommandBuffer                   commandBuffer, uint32_t                                            eventCount, const VkEvent*                     pEvents, const VkDependencyInfo*            pDependencyInfos) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdWaitEvents2(VkCommandBuffer                   commandBuffer, uint32_t                                            eventCount, const VkEvent*                     pEvents, const VkDependencyInfo*            pDependencyInfos) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdWaitEvents2(VkCommandBuffer                   commandBuffer, uint32_t                                            eventCount, const VkEvent*                     pEvents, const VkDependencyInfo*            pDependencyInfos) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer                   commandBuffer, const VkDependencyInfo*                             pDependencyInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer                   commandBuffer, const VkDependencyInfo*                             pDependencyInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer                   commandBuffer, const VkDependencyInfo*                             pDependencyInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2               stage, VkQueryPool                                         queryPool, uint32_t                                            query) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdWriteTimestamp2(commandBuffer, stage, queryPool, query);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdWriteTimestamp2(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2               stage, VkQueryPool                                         queryPool, uint32_t                                            query) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdWriteTimestamp2(commandBuffer, stage, queryPool, query);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdWriteTimestamp2(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2               stage, VkQueryPool                                         queryPool, uint32_t                                            query) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdWriteTimestamp2(commandBuffer, stage, queryPool, query);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateQueueSubmit2(VkQueue                           queue, uint32_t                            submitCount, const VkSubmitInfo2*              pSubmits, VkFence           fence) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordQueueSubmit2(VkQueue                           queue, uint32_t                            submitCount, const VkSubmitInfo2*              pSubmits, VkFence           fence) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordQueueSubmit2(VkQueue                           queue, uint32_t                            submitCount, const VkSubmitInfo2*              pSubmits, VkFence           fence, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdCopyImage2(commandBuffer, pCopyImageInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdBlitImage2(commandBuffer, pBlitImageInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdResolveImage2(commandBuffer, pResolveImageInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdResolveImage2(commandBuffer, pResolveImageInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdResolveImage2(commandBuffer, pResolveImageInfo);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdBeginRendering(VkCommandBuffer                   commandBuffer, const VkRenderingInfo*                              pRenderingInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdBeginRendering(VkCommandBuffer                   commandBuffer, const VkRenderingInfo*                              pRenderingInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdBeginRendering(VkCommandBuffer                   commandBuffer, const VkRenderingInfo*                              pRenderingInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdEndRendering(VkCommandBuffer                   commandBuffer) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdEndRendering(commandBuffer);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdEndRendering(VkCommandBuffer                   commandBuffer) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdEndRendering(commandBuffer);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdEndRendering(VkCommandBuffer                   commandBuffer) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdEndRendering(commandBuffer);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetCullMode(commandBuffer, cullMode);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetCullMode(commandBuffer, cullMode);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetCullMode(commandBuffer, cullMode);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetFrontFace(commandBuffer, frontFace);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetFrontFace(commandBuffer, frontFace);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetFrontFace(commandBuffer, frontFace);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetPrimitiveTopology(commandBuffer, primitiveTopology);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetPrimitiveTopology(commandBuffer, primitiveTopology);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetPrimitiveTopology(commandBuffer, primitiveTopology);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport* pViewports) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport* pViewports) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport* pViewports) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes, const VkDeviceSize* pStrides) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes, const VkDeviceSize* pStrides) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes, const VkDeviceSize* pStrides) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetDepthTestEnable(commandBuffer, depthTestEnable);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetDepthCompareOp(commandBuffer, depthCompareOp);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetStencilTestEnable(commandBuffer, stencilTestEnable);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetStencilTestEnable(commandBuffer, stencilTestEnable);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetStencilTestEnable(commandBuffer, stencilTestEnable);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+}
+
 bool CoreChecksOptickInstrumented::PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateDestroySurfaceKHR(instance, surface, pAllocator);
@@ -3587,18 +4180,18 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdDecodeVideoKHR(VkCommandBuff
 }
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
-bool CoreChecksOptickInstrumented::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer                   commandBuffer, const VkRenderingInfoKHR*                           pRenderingInfo) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer                   commandBuffer, const VkRenderingInfo*                              pRenderingInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer                   commandBuffer, const VkRenderingInfoKHR*                           pRenderingInfo) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer                   commandBuffer, const VkRenderingInfo*                              pRenderingInfo) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer                   commandBuffer, const VkRenderingInfoKHR*                           pRenderingInfo) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer                   commandBuffer, const VkRenderingInfo*                              pRenderingInfo) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
 }
@@ -4833,114 +5426,114 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdEncodeVideoKHR(VkCommandBuff
 }
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
-bool CoreChecksOptickInstrumented::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, const VkDependencyInfoKHR*                          pDependencyInfo) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, const VkDependencyInfo*                             pDependencyInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdSetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, const VkDependencyInfoKHR*                          pDependencyInfo) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdSetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, const VkDependencyInfo*                             pDependencyInfo) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, const VkDependencyInfoKHR*                          pDependencyInfo) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, const VkDependencyInfo*                             pDependencyInfo) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2KHR            stageMask) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2               stageMask) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdResetEvent2KHR(commandBuffer, event, stageMask);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdResetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2KHR            stageMask) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdResetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2               stageMask) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdResetEvent2KHR(commandBuffer, event, stageMask);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2KHR            stageMask) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2               stageMask) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdResetEvent2KHR(commandBuffer, event, stageMask);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer                   commandBuffer, uint32_t                                            eventCount, const VkEvent*                     pEvents, const VkDependencyInfoKHR*         pDependencyInfos) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer                   commandBuffer, uint32_t                                            eventCount, const VkEvent*                     pEvents, const VkDependencyInfo*            pDependencyInfos) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer                   commandBuffer, uint32_t                                            eventCount, const VkEvent*                     pEvents, const VkDependencyInfoKHR*         pDependencyInfos) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer                   commandBuffer, uint32_t                                            eventCount, const VkEvent*                     pEvents, const VkDependencyInfo*            pDependencyInfos) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer                   commandBuffer, uint32_t                                            eventCount, const VkEvent*                     pEvents, const VkDependencyInfoKHR*         pDependencyInfos) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer                   commandBuffer, uint32_t                                            eventCount, const VkEvent*                     pEvents, const VkDependencyInfo*            pDependencyInfos) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer                   commandBuffer, const VkDependencyInfoKHR*                                pDependencyInfo) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer                   commandBuffer, const VkDependencyInfo*                             pDependencyInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer                   commandBuffer, const VkDependencyInfoKHR*                                pDependencyInfo) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer                   commandBuffer, const VkDependencyInfo*                             pDependencyInfo) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer                   commandBuffer, const VkDependencyInfoKHR*                                pDependencyInfo) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer                   commandBuffer, const VkDependencyInfo*                             pDependencyInfo) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR            stage, VkQueryPool                                         queryPool, uint32_t                                            query) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2               stage, VkQueryPool                                         queryPool, uint32_t                                            query) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR            stage, VkQueryPool                                         queryPool, uint32_t                                            query) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2               stage, VkQueryPool                                         queryPool, uint32_t                                            query) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR            stage, VkQueryPool                                         queryPool, uint32_t                                            query) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2               stage, VkQueryPool                                         queryPool, uint32_t                                            query) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateQueueSubmit2KHR(VkQueue                           queue, uint32_t                            submitCount, const VkSubmitInfo2KHR*           pSubmits, VkFence           fence) const {
+bool CoreChecksOptickInstrumented::PreCallValidateQueueSubmit2KHR(VkQueue                           queue, uint32_t                            submitCount, const VkSubmitInfo2*              pSubmits, VkFence           fence) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateQueueSubmit2KHR(queue, submitCount, pSubmits, fence);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordQueueSubmit2KHR(VkQueue                           queue, uint32_t                            submitCount, const VkSubmitInfo2KHR*           pSubmits, VkFence           fence) {
+void CoreChecksOptickInstrumented::PreCallRecordQueueSubmit2KHR(VkQueue                           queue, uint32_t                            submitCount, const VkSubmitInfo2*              pSubmits, VkFence           fence) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordQueueSubmit2KHR(VkQueue                           queue, uint32_t                            submitCount, const VkSubmitInfo2KHR*           pSubmits, VkFence           fence, VkResult result) {
+void CoreChecksOptickInstrumented::PostCallRecordQueueSubmit2KHR(VkQueue                           queue, uint32_t                            submitCount, const VkSubmitInfo2*              pSubmits, VkFence           fence, VkResult result) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR            stage, VkBuffer                                            dstBuffer, VkDeviceSize                                        dstOffset, uint32_t                                            marker) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2               stage, VkBuffer                                            dstBuffer, VkDeviceSize                                        dstOffset, uint32_t                                            marker) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR            stage, VkBuffer                                            dstBuffer, VkDeviceSize                                        dstOffset, uint32_t                                            marker) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2               stage, VkBuffer                                            dstBuffer, VkDeviceSize                                        dstOffset, uint32_t                                            marker) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR            stage, VkBuffer                                            dstBuffer, VkDeviceSize                                        dstOffset, uint32_t                                            marker) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2               stage, VkBuffer                                            dstBuffer, VkDeviceSize                                        dstOffset, uint32_t                                            marker) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
 }
@@ -4961,146 +5554,146 @@ void CoreChecksOptickInstrumented::PostCallRecordGetQueueCheckpointData2NV(VkQue
     CoreChecks::PostCallRecordGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInfo) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInfo) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInfo) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR* pResolveImageInfo) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR* pResolveImageInfo) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR* pResolveImageInfo) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirementsKHR* pInfo, VkMemoryRequirements2* pMemoryRequirements) const {
+bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordGetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirementsKHR* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+void CoreChecksOptickInstrumented::PreCallRecordGetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordGetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirementsKHR* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+void CoreChecksOptickInstrumented::PostCallRecordGetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirementsKHR* pInfo, VkMemoryRequirements2* pMemoryRequirements) const {
+bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirementsKHR* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+void CoreChecksOptickInstrumented::PreCallRecordGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirementsKHR* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+void CoreChecksOptickInstrumented::PostCallRecordGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirementsKHR* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) const {
+bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordGetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirementsKHR* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+void CoreChecksOptickInstrumented::PreCallRecordGetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordGetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirementsKHR* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+void CoreChecksOptickInstrumented::PostCallRecordGetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
@@ -6727,18 +7320,18 @@ void CoreChecksOptickInstrumented::PostCallRecordGetBufferDeviceAddressEXT(VkDev
     CoreChecks::PostCallRecordGetBufferDeviceAddressEXT(device, pInfo, result);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateGetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount, VkPhysicalDeviceToolPropertiesEXT* pToolProperties) const {
+bool CoreChecksOptickInstrumented::PreCallValidateGetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount, VkPhysicalDeviceToolProperties* pToolProperties) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordGetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount, VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
+void CoreChecksOptickInstrumented::PreCallRecordGetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount, VkPhysicalDeviceToolProperties* pToolProperties) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordGetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount, VkPhysicalDeviceToolPropertiesEXT* pToolProperties, VkResult result) {
+void CoreChecksOptickInstrumented::PostCallRecordGetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount, VkPhysicalDeviceToolProperties* pToolProperties, VkResult result) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, result);
 }
@@ -7215,66 +7808,66 @@ void CoreChecksOptickInstrumented::PostCallRecordGetDrmDisplayEXT(VkPhysicalDevi
     CoreChecks::PostCallRecordGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, result);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlotEXT* pPrivateDataSlot) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlotEXT* pPrivateDataSlot) {
+void CoreChecksOptickInstrumented::PreCallRecordCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlotEXT* pPrivateDataSlot, VkResult result) {
+void CoreChecksOptickInstrumented::PostCallRecordCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot, VkResult result) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot, result);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlotEXT privateDataSlot, const VkAllocationCallbacks* pAllocator) const {
+bool CoreChecksOptickInstrumented::PreCallValidateDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateDestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlotEXT privateDataSlot, const VkAllocationCallbacks* pAllocator) {
+void CoreChecksOptickInstrumented::PreCallRecordDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordDestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlotEXT privateDataSlot, const VkAllocationCallbacks* pAllocator) {
+void CoreChecksOptickInstrumented::PostCallRecordDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordDestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t data) const {
+bool CoreChecksOptickInstrumented::PreCallValidateSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t data) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t data) {
+void CoreChecksOptickInstrumented::PreCallRecordSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t data) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t data, VkResult result) {
+void CoreChecksOptickInstrumented::PostCallRecordSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t data, VkResult result) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data, result);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t* pData) const {
+bool CoreChecksOptickInstrumented::PreCallValidateGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t* pData) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t* pData) {
+void CoreChecksOptickInstrumented::PreCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t* pData) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t* pData) {
+void CoreChecksOptickInstrumented::PostCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t* pData) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
 }
