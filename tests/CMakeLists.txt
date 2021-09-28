@@ -105,6 +105,7 @@ add_executable(vk_layer_validation_tests
                ../layers/generated/vk_safe_struct.cpp
                ../layers/generated/lvt_function_pointers.cpp
                ${COMMON_CPP})
+list(APPEND VVL_COMPILED_TARGETS vk_layer_validation_tests)
 add_test(NAME vk_layer_validation_tests COMMAND vk_layer_validation_tests)
 add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation VkLayer_khronos_validation-json)
 if(NOT GTEST_IS_STATIC_LIB)

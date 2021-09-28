@@ -81,6 +81,7 @@ set(TARGET_NAMES
 # System-specific macro to create a library target.
 macro(AddVkLayer target LAYER_COMPILE_DEFINITIONS)
     add_library(VkLayer_${target} SHARED ${ARGN})
+    list(APPEND VVL_COMPILED_TARGETS VkLayer_${target})
     set_target_properties(VkLayer_${target} PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
     target_compile_definitions(VkLayer_${target} PUBLIC ${LAYER_COMPILE_DEFINITIONS})
     target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
