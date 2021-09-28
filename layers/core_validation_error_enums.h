@@ -290,6 +290,8 @@ static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithout
 // static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageReadWithoutFormat_NonReadable = "UNASSIGNED-features-shaderStorageImageReadWithoutFormat-NonReadable";
 // static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithoutFormat_NonWritable = "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat-NonWritable";
 
+static const char DECORATE_UNUSED *kVUID_Core_invalidDepthStencilFormat = "UNASSIGNED-CoreValidation-depthStencil-format";
+
 // clang-format on
 
 #undef DECORATE_UNUSED
