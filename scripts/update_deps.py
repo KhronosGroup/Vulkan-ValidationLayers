@@ -301,7 +301,7 @@ def command_output(cmd, directory, fail_ok=False):
     return stdout
 
 def escape(path):
-    return path.replace('\\', '\\\\')
+    return path.replace('\\', '/')
 
 class GoodRepo(object):
     """Represents a repository at a known-good commit."""
@@ -464,7 +464,7 @@ class GoodRepo(object):
 
         # Use the CMake -A option to select the platform architecture
         # without needing a Visual Studio generator.
-        if platform.system() == 'Windows':
+        if platform.system() == 'Windows' and self._args.generator != "Ninja":
             if self._args.arch.lower() == '64' or self._args.arch == 'x64' or self._args.arch == 'win64':
                 cmake_cmd.append('-A')
                 cmake_cmd.append('x64')
@@ -507,7 +507,7 @@ class GoodRepo(object):
                     print('warning: environment variable MAKE_JOBS has non-numeric value "{}".  '
                           'Using {} (CPU count) instead.'.format(env_make_jobs, num_make_jobs))
             cmake_cmd.append('-j{}'.format(num_make_jobs))
-        if platform.system() == 'Windows':
+        if platform.system() == 'Windows' and self._args.generator != "Ninja":
             cmake_cmd.append('--')
             cmake_cmd.append('/maxcpucount')
 
@@ -745,3 +745,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
