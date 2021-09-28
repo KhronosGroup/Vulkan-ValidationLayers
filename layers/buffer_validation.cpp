@@ -1868,19 +1868,23 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                static_cast<uint64_t>(pCreateInfo->extent.height) *
                                static_cast<uint64_t>(pCreateInfo->extent.depth) * static_cast<uint64_t>(pCreateInfo->arrayLayers) *
                                static_cast<uint64_t>(pCreateInfo->samples);
-        uint64_t total_size =
-            static_cast<uint64_t>(std::ceil(FormatTexelSize(pCreateInfo->format) * static_cast<double>(texel_count)));
 
-        // Round up to imageGranularity boundary
-        VkDeviceSize image_granularity = phys_dev_props.limits.bufferImageGranularity;
-        uint64_t ig_mask = image_granularity - 1;
-        total_size = (total_size + ig_mask) & ~ig_mask;
+        // Depth/Stencil formats size can't be accurately calculated
+        if (!FormatIsDepthAndStencil(pCreateInfo->format)) {
+            uint64_t total_size =
+                static_cast<uint64_t>(std::ceil(FormatTexelSize(pCreateInfo->format) * static_cast<double>(texel_count)));
 
-        if (total_size > format_limits.maxResourceSize) {
-            skip |= LogWarning(device, kVUID_Core_Image_InvalidFormatLimitsViolation,
-                               "vkCreateImage(): resource size exceeds allowable maximum Image resource size = 0x%" PRIxLEAST64
-                               ", maximum resource size = 0x%" PRIxLEAST64 " ",
-                               total_size, format_limits.maxResourceSize);
+            // Round up to imageGranularity boundary
+            VkDeviceSize image_granularity = phys_dev_props.limits.bufferImageGranularity;
+            uint64_t ig_mask = image_granularity - 1;
+            total_size = (total_size + ig_mask) & ~ig_mask;
+
+            if (total_size > format_limits.maxResourceSize) {
+                skip |= LogWarning(device, kVUID_Core_Image_InvalidFormatLimitsViolation,
+                                   "vkCreateImage(): resource size exceeds allowable maximum Image resource size = 0x%" PRIxLEAST64
+                                   ", maximum resource size = 0x%" PRIxLEAST64 " ",
+                                   total_size, format_limits.maxResourceSize);
+            }
         }
 
         if (pCreateInfo->arrayLayers > format_limits.maxArrayLayers) {
@@ -4657,6 +4661,16 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
                                                  const VkAllocationCallbacks *pAllocator, VkBufferView *pView) const {
     bool skip = false;
     const BUFFER_STATE *buffer_state = GetBufferState(pCreateInfo->buffer);
+
+    if (FormatIsDepthOrStencil(pCreateInfo->format)) {
+        // Should never hopefully get here, but there are known driver advertising the wrong feature flags
+        // see https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4849
+        skip |= LogError(device, kVUID_Core_invalidDepthStencilFormat,
+                         "vkCreateBufferView(): format is a depth/stencil format (%s) but depth/stencil formats do not have a "
+                         "defined sizes for alignment, replace with a color format.",
+                         string_VkFormat(pCreateInfo->format));
+    }
+
     // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
     if (buffer_state) {
         skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCreateBufferView()", "VUID-VkBufferViewCreateInfo-buffer-00935");

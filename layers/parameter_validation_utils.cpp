@@ -24,6 +24,7 @@
 #include "chassis.h"
 #include "stateless_validation.h"
 #include "layer_chassis_dispatch.h"
+#include "core_validation_error_enums.h"
 
 static const int kMaxParamCheckerStringLength = 256;
 
@@ -2128,6 +2129,10 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     for (uint32_t vertex_attribute_description_index = 0;
                          vertex_attribute_description_index < pCreateInfos[i].pVertexInputState->vertexAttributeDescriptionCount;
                          ++vertex_attribute_description_index) {
+                        const VkFormat format =
+                            pCreateInfos[i]
+                                .pVertexInputState->pVertexAttributeDescriptions[vertex_attribute_description_index]
+                                .format;
                         skip |= validate_ranged_enum(
                             "vkCreateGraphicsPipelines",
                             "pCreateInfos[i].pVertexInputState->pVertexAttributeDescriptions[i].format", "VkFormat",
@@ -2136,6 +2141,16 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                 .pVertexInputState->pVertexAttributeDescriptions[vertex_attribute_description_index]
                                 .format,
                             "VUID-VkVertexInputAttributeDescription-format-parameter");
+                        if (FormatIsDepthOrStencil(format)) {
+                            // Should never hopefully get here, but there are known driver advertising the wrong feature flags
+                            // see https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4849
+                            skip |= LogError(device, kVUID_Core_invalidDepthStencilFormat,
+                                             "vkCreateGraphicsPipelines: "
+                                             "pCreateInfos[%d].pVertexInputState->pVertexAttributeDescriptions[%d].format is a "
+                                             "depth/stencil format (%s) but depth/stencil formats do not have a defined sizes for "
+                                             "alignment, replace with a color format.",
+                                             i, vertex_attribute_description_index, string_VkFormat(format));
+                        }
                     }
                 }
 
