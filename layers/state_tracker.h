@@ -1160,6 +1160,7 @@ class ValidationStateTracker : public ValidationObject {
     VkPhysicalDeviceProperties phys_dev_props = {};
     VkPhysicalDeviceVulkan11Properties phys_dev_props_core11 = {};
     VkPhysicalDeviceVulkan12Properties phys_dev_props_core12 = {};
+    VkPhysicalDeviceVulkan13Properties phys_dev_props_core13 = {};
     VkDeviceGroupDeviceCreateInfo device_group_create_info = {};
     uint32_t physical_device_count;
     uint32_t custom_border_color_sampler_count = 0;

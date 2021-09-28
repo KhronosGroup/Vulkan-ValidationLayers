@@ -6000,7 +6000,7 @@ SyncOpSetEvent::SyncOpSetEvent(CMD_TYPE cmd, const SyncValidator &sync_state, Vk
     : SyncOpBase(cmd),
       event_(sync_state.Get<EVENT_STATE>(event)),
       src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, sync_utils::GetGlobalStageMasks(dep_info).src)),
-      dep_info_(new safe_VkDependencyInfoKHR(&dep_info)) {}
+      dep_info_(new safe_VkDependencyInfo(&dep_info)) {}
 
 bool SyncOpSetEvent::Validate(const CommandBufferAccessContext &cb_context) const {
     return DoValidate(cb_context, ResourceUsageRecord::kMaxIndex);

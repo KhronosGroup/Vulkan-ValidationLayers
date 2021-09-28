@@ -622,7 +622,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # Get base list of extension dependencies for all items in this extension
         base_required_extensions = []
         if "VK_VERSION_1" not in self.featureName:
-            nameElem = interface[0][1]
+            index = 0
+            while interface[0][index].tag == 'comment':
+                index += 1
+            nameElem = interface[0][index + 1]
             name = nameElem.get('name')
             # Save Name Define to get correct enable name later
             self.extension_names[self.featureName] = name
@@ -648,6 +651,13 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # And note if this is an Instance or Device extension
         self.extension_type = interface.get('type')
         if interface.tag == 'extension':
+            index = 0
+            while interface[0][index].tag == 'comment':
+                index += 1
+            name_elem = interface[0][index + 1]
+            name_definition = name_elem.get('name')
+            if 'EXTENSION_NAME' not in name_definition:
+                print("Error in vk.xml file -- extension name is not available")
             if interface.get('type') == 'instance':
                 self.instance_extension_list += '%s, ' % GetNameDefine(interface)
             else:

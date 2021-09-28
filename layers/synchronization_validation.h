@@ -667,7 +667,7 @@ class SyncOpSetEvent : public SyncOpBase {
     std::shared_ptr<const EVENT_STATE> event_;
     SyncExecScope src_exec_scope_;
     // Note that the dep info is *not* dehandled, but retained for comparison with a future WaitEvents2
-    std::shared_ptr<safe_VkDependencyInfoKHR> dep_info_;
+    std::shared_ptr<safe_VkDependencyInfo> dep_info_;
 };
 
 class SyncOpBeginRenderPass : public SyncOpBase {

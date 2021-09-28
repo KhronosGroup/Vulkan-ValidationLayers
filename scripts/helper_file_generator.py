@@ -199,6 +199,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         copyright += ' * Author: Tobin Ehlis <tobine@google.com>\n'
         copyright += ' * Author: Chris Forbes <chrisforbes@google.com>\n'
         copyright += ' * Author: John Zulauf<jzulauf@lunarg.com>\n'
+        copyright += ' * Author: Tony Barbour <tony@lunarg.com>\n'
         copyright += ' *\n'
         copyright += ' ****************************************************************************/\n'
         write(copyright, file=self.outFile)
@@ -223,6 +224,13 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         if interface.tag != 'extension':
             return
         name = self.featureName
+        index = 0
+        while interface[0][index].tag == 'comment':
+            index += 1
+        nameElem = interface[0][index + 1]
+        name_define = nameElem.get('name')
+        if 'EXTENSION_NAME' not in name_define:
+            print("Error in vk.xml file -- extension name is not available")
         requires = interface.get('requires')
         if requires is not None:
             required_extensions = requires.split(',')
@@ -798,6 +806,33 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             'VK_EXT_shader_viewport_index_layer',
             ]
 
+        V_1_2_instance_extensions_promoted_to_V_1_3_core = [
+            ]
+
+        V_1_2_device_extensions_promoted_to_V_1_3_core = [
+            'VK_KHR_copy_commands2',
+            'VK_KHR_dynamic_rendering',
+            'VK_KHR_format_feature_flags2',
+            'VK_KHR_maintenance4',
+            'VK_KHR_shader_integer_dot_product',
+            'VK_KHR_shader_non_semantic_info',
+            'VK_KHR_shader_terminate_invocation',
+            'VK_KHR_synchronization2',
+            'VK_KHR_zero_initialize_workgroup_memory',
+            'VK_EXT_extended_dynamic_state',
+            'VK_EXT_extended_dynamic_state2',
+            'VK_EXT_image_robustness',
+            'VK_EXT_inline_uniform_block',
+            'VK_EXT_pipeline_creation_cache_control',
+            'VK_EXT_pipeline_creation_feedback',
+            'VK_EXT_private_data',
+            'VK_EXT_shader_demote_to_helper_invocation',      
+            'VK_EXT_subgroup_size_control',
+            'VK_EXT_texel_buffer_alignment',
+            'VK_EXT_texture_compression_astc_hdr',
+            'VK_EXT_tooling_info',
+            ]
+
         output = [
             '',
             '#ifndef VK_EXTENSION_HELPER_H_',
@@ -834,6 +869,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             '    return (extension == kEnabledByCreateinfo);',
             '};',
             '#define VK_VERSION_1_2_NAME "VK_VERSION_1_2"',
+            '#define VK_VERSION_1_3_NAME "VK_VERSION_1_3"',
             '']
 
         for type in ['Instance', 'Device']:
@@ -842,12 +878,14 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 extension_dict = self.instance_extension_info
                 promoted_1_1_ext_list = V_1_0_instance_extensions_promoted_to_V_1_1_core
                 promoted_1_2_ext_list = V_1_1_instance_extensions_promoted_to_V_1_2_core
+                promoted_1_3_ext_list = V_1_2_instance_extensions_promoted_to_V_1_3_core
                 struct_decl = 'struct %s {' % struct_type
                 instance_struct_type = struct_type
             else:
                 extension_dict = self.device_extension_info
                 promoted_1_1_ext_list = V_1_0_device_extensions_promoted_to_V_1_1_core
                 promoted_1_2_ext_list = V_1_1_device_extensions_promoted_to_V_1_2_core
+                promoted_1_3_ext_list = V_1_2_device_extensions_promoted_to_V_1_3_core
                 struct_decl = 'struct %s : public %s {' % (struct_type, instance_struct_type)
 
             extension_items = sorted(extension_dict.items())
@@ -855,6 +893,8 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             field_name = { ext_name: ext_name.lower() for ext_name, info in extension_items }
 
             # Add in pseudo-extensions for core API versions so real extensions can depend on them
+            extension_dict['VK_VERSION_1_3'] = {'define':"VK_VERSION_1_3_NAME", 'ifdef':None, 'reqs':[]}
+            field_name['VK_VERSION_1_3'] = "vk_feature_version_1_3"
             extension_dict['VK_VERSION_1_2'] = {'define':"VK_VERSION_1_2_NAME", 'ifdef':None, 'reqs':[]}
             field_name['VK_VERSION_1_2'] = "vk_feature_version_1_2"
             extension_dict['VK_VERSION_1_1'] = {'define':"VK_VERSION_1_1_NAME", 'ifdef':None, 'reqs':[]}
@@ -873,6 +913,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             struct  = [struct_decl]
             struct.extend([ '    ExtEnabled vk_feature_version_1_1{kNotEnabled};'])
             struct.extend([ '    ExtEnabled vk_feature_version_1_2{kNotEnabled};'])
+            struct.extend([ '    ExtEnabled vk_feature_version_1_3{kNotEnabled};'])
             struct.extend([ '    ExtEnabled %s{kNotEnabled};' % field_name[ext_name] for ext_name, info in extension_items])
 
             # Construct the extension information map -- mapping name to data member (field), and required extensions
@@ -901,6 +942,8 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 '            {"VK_VERSION_1_1", %sInfo(&%sExtensions::vk_feature_version_1_1, {})},' % (type, type)])
             struct.extend([
                 '            {"VK_VERSION_1_2", %sInfo(&%sExtensions::vk_feature_version_1_2, {})},' % (type, type)])
+            struct.extend([
+                '            {"VK_VERSION_1_3", %sInfo(&%sExtensions::vk_feature_version_1_3, {})},' % (type, type)])
 
             field_format = '&' + struct_type + '::%s'
             req_format = '{' + field_format+ ', %s}'
@@ -936,8 +979,10 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '            return VK_API_VERSION_1_0;',
                     '        else if (specified_version < VK_API_VERSION_1_2)',
                     '            return VK_API_VERSION_1_1;',
-                    '        else',
+                    '        else if (specified_version < VK_API_VERSION_1_3)',
                     '            return VK_API_VERSION_1_2;',
+                    '        else',
+                    '            return VK_API_VERSION_1_3;',
                     '    }',
                     '',
                     '    uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {'])
@@ -962,6 +1007,10 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             struct.extend(['            %s,' % extension_dict[ext_name]['define'] for ext_name in promoted_1_2_ext_list])
             struct.extend([
                 '        };',
+                '        static const std::vector<const char *> V_1_3_promoted_%s_apis = {' % type.lower() ])
+            struct.extend(['            %s,' % extension_dict[ext_name]['define'] for ext_name in promoted_1_3_ext_list])
+            struct.extend([
+                '        };',
                 '',
                 '        // Initialize struct data, robust to invalid pCreateInfo',
                 '        uint32_t api_version = NormalizeApiVersion(requested_api_version);',
@@ -978,6 +1027,15 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 '            auto info = get_info("VK_VERSION_1_2");',
                 '            if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
                 '            for (auto promoted_ext : V_1_2_promoted_%s_apis) {' % type.lower(),
+                '                info = get_info(promoted_ext);',
+                '                assert(info.state);',
+                '                if (info.state) this->*(info.state) = kEnabledByApiLevel;',
+                '            }',
+                '        }',
+                '        if (api_version >= VK_API_VERSION_1_3) {',
+                '            auto info = get_info("VK_VERSION_1_3");',
+                '            if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
+                '            for (auto promoted_ext : V_1_3_promoted_%s_apis) {' % type.lower(),
                 '                info = get_info(promoted_ext);',
                 '                assert(info.state);',
                 '                if (info.state) this->*(info.state) = kEnabledByApiLevel;',

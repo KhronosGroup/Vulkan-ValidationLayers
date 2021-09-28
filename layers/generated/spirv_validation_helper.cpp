@@ -51,6 +51,8 @@ struct FeaturePointer {
         : IsEnabled([=](const DeviceFeatures &features) { return features.core11.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceVulkan12Features::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.core12.*ptr; }) {}
+    FeaturePointer(VkBool32 VkPhysicalDeviceVulkan13Features::*ptr)
+        : IsEnabled([=](const DeviceFeatures &features) { return features.core13.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceTransformFeedbackFeaturesEXT::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.transform_feedback_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceCooperativeMatrixFeaturesNV::*ptr)
@@ -63,8 +65,6 @@ struct FeaturePointer {
         : IsEnabled([=](const DeviceFeatures &features) { return features.shader_image_footprint_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.fragment_shader_interlock_features.*ptr; }) {}
-    FeaturePointer(VkBool32 VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::*ptr)
-        : IsEnabled([=](const DeviceFeatures &features) { return features.demote_to_helper_invocation_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceRayQueryFeaturesKHR::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.ray_query_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceRayTracingPipelineFeaturesKHR::*ptr)
@@ -93,8 +93,6 @@ struct FeaturePointer {
         : IsEnabled([=](const DeviceFeatures &features) { return features.shader_atomic_float2_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceRayTracingMotionBlurFeaturesNV::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.ray_tracing_motion_blur_features.*ptr; }) {}
-    FeaturePointer(VkBool32 VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::*ptr)
-        : IsEnabled([=](const DeviceFeatures &features) { return features.shader_integer_dot_product_features.*ptr; }) {}
 };
 
 // Each instance of the struct will only have a singel field non-null
@@ -126,7 +124,7 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityComputeDerivativeGroupQuadsNV, {0, &VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads, nullptr, ""}},
     {spv::CapabilityCooperativeMatrixNV, {0, &VkPhysicalDeviceCooperativeMatrixFeaturesNV::cooperativeMatrix, nullptr, ""}},
     {spv::CapabilityCullDistance, {0, &VkPhysicalDeviceFeatures::shaderCullDistance, nullptr, ""}},
-    {spv::CapabilityDemoteToHelperInvocationEXT, {0, &VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::shaderDemoteToHelperInvocation, nullptr, ""}},
+    {spv::CapabilityDemoteToHelperInvocationEXT, {0, &VkPhysicalDeviceVulkan13Features::shaderDemoteToHelperInvocation, nullptr, ""}},
     {spv::CapabilityDenormFlushToZero, {0, nullptr, nullptr, "(VkPhysicalDeviceVulkan12Properties::shaderDenormFlushToZeroFloat16 & VK_TRUE) != 0"}},
     {spv::CapabilityDenormFlushToZero, {0, nullptr, nullptr, "(VkPhysicalDeviceVulkan12Properties::shaderDenormFlushToZeroFloat32 & VK_TRUE) != 0"}},
     {spv::CapabilityDenormFlushToZero, {0, nullptr, nullptr, "(VkPhysicalDeviceVulkan12Properties::shaderDenormFlushToZeroFloat64 & VK_TRUE) != 0"}},
@@ -136,10 +134,10 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityDerivativeControl, {VK_API_VERSION_1_0, nullptr, nullptr, ""}},
     {spv::CapabilityDeviceGroup, {VK_API_VERSION_1_1, nullptr, nullptr, ""}},
     {spv::CapabilityDeviceGroup, {0, nullptr, &DeviceExtensions::vk_khr_device_group, ""}},
-    {spv::CapabilityDotProductInput4x8BitKHR, {0, &VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::shaderIntegerDotProduct, nullptr, ""}},
-    {spv::CapabilityDotProductInput4x8BitPackedKHR, {0, &VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::shaderIntegerDotProduct, nullptr, ""}},
-    {spv::CapabilityDotProductInputAllKHR, {0, &VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::shaderIntegerDotProduct, nullptr, ""}},
-    {spv::CapabilityDotProductKHR, {0, &VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::shaderIntegerDotProduct, nullptr, ""}},
+    {spv::CapabilityDotProductInput4x8BitKHR, {0, &VkPhysicalDeviceVulkan13Features::shaderIntegerDotProduct, nullptr, ""}},
+    {spv::CapabilityDotProductInput4x8BitPackedKHR, {0, &VkPhysicalDeviceVulkan13Features::shaderIntegerDotProduct, nullptr, ""}},
+    {spv::CapabilityDotProductInputAllKHR, {0, &VkPhysicalDeviceVulkan13Features::shaderIntegerDotProduct, nullptr, ""}},
+    {spv::CapabilityDotProductKHR, {0, &VkPhysicalDeviceVulkan13Features::shaderIntegerDotProduct, nullptr, ""}},
     {spv::CapabilityDrawParameters, {0, &VkPhysicalDeviceVulkan11Features::shaderDrawParameters, nullptr, ""}},
     {spv::CapabilityDrawParameters, {0, nullptr, &DeviceExtensions::vk_khr_shader_draw_parameters, ""}},
     {spv::CapabilityFloat16, {0, &VkPhysicalDeviceVulkan12Features::shaderFloat16, nullptr, ""}},
@@ -242,8 +240,10 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityStorageImageExtendedFormats, {VK_API_VERSION_1_0, nullptr, nullptr, ""}},
     {spv::CapabilityStorageImageMultisample, {0, &VkPhysicalDeviceFeatures::shaderStorageImageMultisample, nullptr, ""}},
     {spv::CapabilityStorageImageReadWithoutFormat, {0, &VkPhysicalDeviceFeatures::shaderStorageImageReadWithoutFormat, nullptr, ""}},
+    {spv::CapabilityStorageImageReadWithoutFormat, {VK_API_VERSION_1_3, nullptr, nullptr, ""}},
     {spv::CapabilityStorageImageReadWithoutFormat, {0, nullptr, &DeviceExtensions::vk_khr_format_feature_flags2, ""}},
     {spv::CapabilityStorageImageWriteWithoutFormat, {0, &VkPhysicalDeviceFeatures::shaderStorageImageWriteWithoutFormat, nullptr, ""}},
+    {spv::CapabilityStorageImageWriteWithoutFormat, {VK_API_VERSION_1_3, nullptr, nullptr, ""}},
     {spv::CapabilityStorageImageWriteWithoutFormat, {0, nullptr, &DeviceExtensions::vk_khr_format_feature_flags2, ""}},
     {spv::CapabilityStorageInputOutput16, {0, &VkPhysicalDeviceVulkan11Features::storageInputOutput16, nullptr, ""}},
     {spv::CapabilityStoragePushConstant16, {0, &VkPhysicalDeviceVulkan11Features::storagePushConstant16, nullptr, ""}},
@@ -282,6 +282,7 @@ static const std::unordered_multimap<std::string, RequiredSpirvInfo> spirvExtens
     {"SPV_AMD_shader_image_load_store_lod", {0, nullptr, &DeviceExtensions::vk_amd_shader_image_load_store_lod, ""}},
     {"SPV_AMD_shader_trinary_minmax", {0, nullptr, &DeviceExtensions::vk_amd_shader_trinary_minmax, ""}},
     {"SPV_AMD_texture_gather_bias_lod", {0, nullptr, &DeviceExtensions::vk_amd_texture_gather_bias_lod, ""}},
+    {"SPV_EXT_demote_to_helper_invocation", {VK_API_VERSION_1_3, nullptr, nullptr, ""}},
     {"SPV_EXT_demote_to_helper_invocation", {0, nullptr, &DeviceExtensions::vk_ext_shader_demote_to_helper_invocation, ""}},
     {"SPV_EXT_descriptor_indexing", {VK_API_VERSION_1_2, nullptr, nullptr, ""}},
     {"SPV_EXT_descriptor_indexing", {0, nullptr, &DeviceExtensions::vk_ext_descriptor_indexing, ""}},
@@ -305,9 +306,11 @@ static const std::unordered_multimap<std::string, RequiredSpirvInfo> spirvExtens
     {"SPV_KHR_float_controls", {VK_API_VERSION_1_2, nullptr, nullptr, ""}},
     {"SPV_KHR_float_controls", {0, nullptr, &DeviceExtensions::vk_khr_shader_float_controls, ""}},
     {"SPV_KHR_fragment_shading_rate", {0, nullptr, &DeviceExtensions::vk_khr_fragment_shading_rate, ""}},
+    {"SPV_KHR_integer_dot_product", {VK_API_VERSION_1_3, nullptr, nullptr, ""}},
     {"SPV_KHR_integer_dot_product", {0, nullptr, &DeviceExtensions::vk_khr_shader_integer_dot_product, ""}},
     {"SPV_KHR_multiview", {VK_API_VERSION_1_1, nullptr, nullptr, ""}},
     {"SPV_KHR_multiview", {0, nullptr, &DeviceExtensions::vk_khr_multiview, ""}},
+    {"SPV_KHR_non_semantic_info", {VK_API_VERSION_1_3, nullptr, nullptr, ""}},
     {"SPV_KHR_non_semantic_info", {0, nullptr, &DeviceExtensions::vk_khr_shader_non_semantic_info, ""}},
     {"SPV_KHR_physical_storage_buffer", {VK_API_VERSION_1_2, nullptr, nullptr, ""}},
     {"SPV_KHR_physical_storage_buffer", {0, nullptr, &DeviceExtensions::vk_khr_buffer_device_address, ""}},
@@ -320,8 +323,10 @@ static const std::unordered_multimap<std::string, RequiredSpirvInfo> spirvExtens
     {"SPV_KHR_shader_draw_parameters", {0, nullptr, &DeviceExtensions::vk_khr_shader_draw_parameters, ""}},
     {"SPV_KHR_storage_buffer_storage_class", {VK_API_VERSION_1_1, nullptr, nullptr, ""}},
     {"SPV_KHR_storage_buffer_storage_class", {0, nullptr, &DeviceExtensions::vk_khr_storage_buffer_storage_class, ""}},
+    {"SPV_KHR_subgroup_uniform_control_flow", {VK_API_VERSION_1_3, nullptr, nullptr, ""}},
     {"SPV_KHR_subgroup_uniform_control_flow", {0, nullptr, &DeviceExtensions::vk_khr_shader_subgroup_uniform_control_flow, ""}},
     {"SPV_KHR_subgroup_vote", {0, nullptr, &DeviceExtensions::vk_ext_shader_subgroup_vote, ""}},
+    {"SPV_KHR_terminate_invocation", {VK_API_VERSION_1_3, nullptr, nullptr, ""}},
     {"SPV_KHR_terminate_invocation", {0, nullptr, &DeviceExtensions::vk_khr_shader_terminate_invocation, ""}},
     {"SPV_KHR_variable_pointers", {VK_API_VERSION_1_1, nullptr, nullptr, ""}},
     {"SPV_KHR_variable_pointers", {0, nullptr, &DeviceExtensions::vk_khr_variable_pointers, ""}},

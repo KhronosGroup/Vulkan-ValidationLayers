@@ -1531,7 +1531,7 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(VkPipelineShaderStageCreateIn
     bool skip = false;
 
     if ((pStage->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0 &&
-        !enabled_features.subgroup_size_control_features.subgroupSizeControl) {
+        !enabled_features.core13.subgroupSizeControl) {
         skip |= LogError(
             device, "VUID-VkPipelineShaderStageCreateInfo-flags-02784",
             "VkPipelineShaderStageCreateInfo flags contain VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT, "
@@ -1539,7 +1539,7 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(VkPipelineShaderStageCreateIn
     }
 
     if ((pStage->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0 &&
-        !enabled_features.subgroup_size_control_features.computeFullSubgroups) {
+        !enabled_features.core13.computeFullSubgroups) {
         skip |= LogError(
             device, "VUID-VkPipelineShaderStageCreateInfo-flags-02785",
             "VkPipelineShaderStageCreateInfo flags contain VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but the "
@@ -2060,7 +2060,7 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
                 }
 
                 case spv::ExecutionModeLocalSizeId: {
-                    if (!enabled_features.maintenance4_features.maintenance4) {
+                    if (!enabled_features.core13.maintenance4) {
                         skip |= LogError(device, "VUID-RuntimeSpirv-LocalSizeId-06434",
                                          "LocalSizeId execution mode used but maintenance4 feature not enabled");
                     }
@@ -3334,7 +3334,7 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
         // --workgroup-scalar-block-layout
         options.SetWorkgroupScalarBlockLayout(true);
     }
-    if (enabled_features.maintenance4_features.maintenance4) {
+    if (enabled_features.core13.maintenance4) {
         // --allow-localsizeid
         options.SetAllowLocalSizeId(true);
     }

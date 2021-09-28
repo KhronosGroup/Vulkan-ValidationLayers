@@ -432,7 +432,7 @@ bool ValidateDescriptorSetLayoutCreateInfo(const ValidationObject *val_obj, cons
                                            const bool push_descriptor_ext, const uint32_t max_push_descriptors,
                                            const bool descriptor_indexing_ext,
                                            const VkPhysicalDeviceVulkan12Features *core12_features,
-                                           const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
+                                           const VkPhysicalDeviceVulkan13Features *core13_features,
                                            const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
                                            const VkPhysicalDeviceAccelerationStructureFeaturesKHR *acceleration_structure_features,
                                            const DeviceExtensions *device_extensions);

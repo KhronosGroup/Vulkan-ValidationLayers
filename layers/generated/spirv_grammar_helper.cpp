@@ -645,6 +645,7 @@ uint32_t ImageOperandsParamCount(uint32_t image_operand) {
         case spv::ImageOperandsVolatileTexelMask:
         case spv::ImageOperandsSignExtendMask:
         case spv::ImageOperandsZeroExtendMask:
+        case spv::ImageOperandsNontemporalMask:
             return 0;
         case spv::ImageOperandsBiasMask:
         case spv::ImageOperandsLodMask:

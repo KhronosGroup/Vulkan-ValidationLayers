@@ -533,6 +533,93 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     // Save local link to this device's physical device state
     state_tracker->physical_device_state = Get<PHYSICAL_DEVICE_STATE>(gpu).get();
 
+    const auto *vulkan_13_features = LvlFindInChain<VkPhysicalDeviceVulkan13Features>(pCreateInfo->pNext);
+    if (vulkan_13_features) {
+        state_tracker->enabled_features.core13 = *vulkan_13_features;
+    } else {
+        state_tracker->enabled_features.core13 = {};
+        const auto *image_robustness_features = LvlFindInChain<VkPhysicalDeviceImageRobustnessFeatures>(pCreateInfo->pNext);
+        if (image_robustness_features) {
+            state_tracker->enabled_features.core13.robustImageAccess = image_robustness_features->robustImageAccess;
+        }
+
+        const auto *inline_uniform_block_features = LvlFindInChain<VkPhysicalDeviceInlineUniformBlockFeatures>(pCreateInfo->pNext);
+        if (inline_uniform_block_features) {
+            state_tracker->enabled_features.core13.inlineUniformBlock = inline_uniform_block_features->inlineUniformBlock;
+            state_tracker->enabled_features.core13.descriptorBindingInlineUniformBlockUpdateAfterBind =
+                inline_uniform_block_features->descriptorBindingInlineUniformBlockUpdateAfterBind;
+        }
+
+        const auto *pipeline_creation_cache_control_features =
+            LvlFindInChain<VkPhysicalDevicePipelineCreationCacheControlFeatures>(pCreateInfo->pNext);
+        if (pipeline_creation_cache_control_features) {
+            state_tracker->enabled_features.core13.pipelineCreationCacheControl =
+                pipeline_creation_cache_control_features->pipelineCreationCacheControl;
+        }
+
+        const auto *private_data_features = LvlFindInChain<VkPhysicalDevicePrivateDataFeatures>(pCreateInfo->pNext);
+        if (private_data_features) {
+            state_tracker->enabled_features.core13.privateData = private_data_features->privateData;
+        }
+
+        const auto *demote_to_helper_invocation_features =
+            LvlFindInChain<VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures>(pCreateInfo->pNext);
+        if (demote_to_helper_invocation_features) {
+            state_tracker->enabled_features.core13.shaderDemoteToHelperInvocation =
+                demote_to_helper_invocation_features->shaderDemoteToHelperInvocation;
+        }
+
+        const auto *terminate_invocation_features =
+            LvlFindInChain<VkPhysicalDeviceShaderTerminateInvocationFeatures>(pCreateInfo->pNext);
+        if (terminate_invocation_features) {
+            state_tracker->enabled_features.core13.shaderTerminateInvocation =
+                terminate_invocation_features->shaderTerminateInvocation;
+        }
+
+        const auto *subgroup_size_control_features =
+            LvlFindInChain<VkPhysicalDeviceSubgroupSizeControlFeatures>(pCreateInfo->pNext);
+        if (subgroup_size_control_features) {
+            state_tracker->enabled_features.core13.subgroupSizeControl = subgroup_size_control_features->subgroupSizeControl;
+            state_tracker->enabled_features.core13.computeFullSubgroups = subgroup_size_control_features->computeFullSubgroups;
+        }
+
+        const auto *synchronization2_features = LvlFindInChain<VkPhysicalDeviceSynchronization2Features>(pCreateInfo->pNext);
+        if (synchronization2_features) {
+            state_tracker->enabled_features.core13.synchronization2 = synchronization2_features->synchronization2;
+        }
+
+        const auto *texture_compression_astchdr_features =
+            LvlFindInChain<VkPhysicalDeviceTextureCompressionASTCHDRFeatures>(pCreateInfo->pNext);
+        if (texture_compression_astchdr_features) {
+            state_tracker->enabled_features.core13.textureCompressionASTC_HDR =
+                texture_compression_astchdr_features->textureCompressionASTC_HDR;
+        }
+
+        const auto *initialize_workgroup_memory_features =
+            LvlFindInChain<VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures>(pCreateInfo->pNext);
+        if (initialize_workgroup_memory_features) {
+            state_tracker->enabled_features.core13.shaderZeroInitializeWorkgroupMemory =
+                initialize_workgroup_memory_features->shaderZeroInitializeWorkgroupMemory;
+        }
+
+        const auto *dynamic_rendering_features = LvlFindInChain<VkPhysicalDeviceDynamicRenderingFeatures>(pCreateInfo->pNext);
+        if (dynamic_rendering_features) {
+            state_tracker->enabled_features.core13.dynamicRendering = dynamic_rendering_features->dynamicRendering;
+        }
+
+        const auto *shader_integer_dot_product_features =
+            LvlFindInChain<VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR>(pCreateInfo->pNext);
+        if (shader_integer_dot_product_features) {
+            state_tracker->enabled_features.core13.shaderIntegerDotProduct =
+                shader_integer_dot_product_features->shaderIntegerDotProduct;
+        }
+
+        const auto *maintenance4_features = LvlFindInChain<VkPhysicalDeviceMaintenance4FeaturesKHR>(pCreateInfo->pNext);
+        if (maintenance4_features) {
+            state_tracker->enabled_features.core13.maintenance4 = maintenance4_features->maintenance4;
+        }
+    }
+
     const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(pCreateInfo->pNext);
     if (vulkan_12_features) {
         state_tracker->enabled_features.core12 = *vulkan_12_features;
@@ -744,12 +831,6 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
             state_tracker->enabled_features.mesh_shader_features = *mesh_shader_features;
         }
 
-        const auto *inline_uniform_block_features =
-            LvlFindInChain<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(pCreateInfo->pNext);
-        if (inline_uniform_block_features) {
-            state_tracker->enabled_features.inline_uniform_block_features = *inline_uniform_block_features;
-        }
-
         const auto *transform_feedback_features = LvlFindInChain<VkPhysicalDeviceTransformFeedbackFeaturesEXT>(pCreateInfo->pNext);
         if (transform_feedback_features) {
             state_tracker->enabled_features.transform_feedback_features = *transform_feedback_features;
@@ -793,12 +874,6 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
             LvlFindInChain<VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT>(pCreateInfo->pNext);
         if (fragment_shader_interlock_features) {
             state_tracker->enabled_features.fragment_shader_interlock_features = *fragment_shader_interlock_features;
-        }
-
-        const auto *demote_to_helper_invocation_features =
-            LvlFindInChain<VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT>(pCreateInfo->pNext);
-        if (demote_to_helper_invocation_features) {
-            state_tracker->enabled_features.demote_to_helper_invocation_features = *demote_to_helper_invocation_features;
         }
 
         const auto *texel_buffer_alignment_features =
@@ -880,12 +955,6 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
             state_tracker->enabled_features.custom_border_color_features = *custom_border_color_features;
         }
 
-        const auto *pipeline_creation_cache_control_features =
-            LvlFindInChain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(pCreateInfo->pNext);
-        if (pipeline_creation_cache_control_features) {
-            state_tracker->enabled_features.pipeline_creation_cache_control_features = *pipeline_creation_cache_control_features;
-        }
-
         const auto *fragment_shading_rate_features =
             LvlFindInChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
         if (fragment_shading_rate_features) {
@@ -953,11 +1022,6 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
             state_tracker->enabled_features.workgroup_memory_explicit_layout_features = *workgroup_memory_explicit_layout_features;
         }
 
-        const auto *synchronization2_features = LvlFindInChain<VkPhysicalDeviceSynchronization2FeaturesKHR>(pCreateInfo->pNext);
-        if (synchronization2_features) {
-            state_tracker->enabled_features.synchronization2_features = *synchronization2_features;
-        }
-
         const auto *provoking_vertex_features = lvl_find_in_chain<VkPhysicalDeviceProvokingVertexFeaturesEXT>(pCreateInfo->pNext);
         if (provoking_vertex_features) {
             state_tracker->enabled_features.provoking_vertex_features = *provoking_vertex_features;
@@ -1007,12 +1071,6 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
             state_tracker->enabled_features.ray_tracing_motion_blur_features = *ray_tracing_motion_blur_features;
         }
 
-        const auto *shader_integer_dot_product_features =
-            LvlFindInChain<VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR>(pCreateInfo->pNext);
-        if (shader_integer_dot_product_features) {
-            state_tracker->enabled_features.shader_integer_dot_product_features = *shader_integer_dot_product_features;
-        }
-
         const auto *primitive_topology_list_restart_features =
             LvlFindInChain<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT>(pCreateInfo->pNext);
         if (primitive_topology_list_restart_features) {
@@ -1024,25 +1082,10 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
             state_tracker->enabled_features.rgba10x6_formats_features = *rgba10x6_formats_features;
         }
 
-        const auto *maintenance4_features = LvlFindInChain<VkPhysicalDeviceMaintenance4FeaturesKHR>(pCreateInfo->pNext);
-        if (maintenance4_features) {
-            state_tracker->enabled_features.maintenance4_features = *maintenance4_features;
-        }
-
-        const auto *dynamic_rendering_features = LvlFindInChain<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(pCreateInfo->pNext);
-        if (dynamic_rendering_features) {
-            state_tracker->enabled_features.dynamic_rendering_features = *dynamic_rendering_features;
-        }
-
         const auto *image_view_min_lod_features = LvlFindInChain<VkPhysicalDeviceImageViewMinLodFeaturesEXT>(pCreateInfo->pNext);
         if (image_view_min_lod_features) {
             state_tracker->enabled_features.image_view_min_lod_features = *image_view_min_lod_features;
         }
-    }
-
-    const auto *subgroup_size_control_features = LvlFindInChain<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>(pCreateInfo->pNext);
-    if (subgroup_size_control_features) {
-        state_tracker->enabled_features.subgroup_size_control_features = *subgroup_size_control_features;
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
@@ -1074,10 +1117,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     const auto &dev_ext = state_tracker->device_extensions;
     auto *phys_dev_props = &state_tracker->phys_dev_ext_props;
 
-    // Vulkan 1.2 can get properties from single struct, otherwise need to add to it per extension
-    if (dev_ext.vk_feature_version_1_2) {
+    // Vulkan 1.2 / 1.3 can get properties from single struct, otherwise need to add to it per extension
+    if (dev_ext.vk_feature_version_1_2 || dev_ext.vk_feature_version_1_3) {
         GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_feature_version_1_2, &state_tracker->phys_dev_props_core11);
         GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_feature_version_1_2, &state_tracker->phys_dev_props_core12);
+        if (dev_ext.vk_feature_version_1_3)
+            GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_feature_version_1_3, &state_tracker->phys_dev_props_core13);
     } else {
         // VkPhysicalDeviceVulkan11Properties
         //
@@ -1924,7 +1969,7 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
             cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i],
                                                                               Get<RENDER_PASS_STATE>(pCreateInfos[i].renderPass),
                                                                               Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
-        } else if (enabled_features.dynamic_rendering_features.dynamicRendering) {
+        } else if (enabled_features.core13.dynamicRendering) {
             auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfoKHR>(pCreateInfos[i].pNext);
             cgpl_state->pipe_state.push_back(
                 std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], std::make_shared<RENDER_PASS_STATE>(dynamic_rendering),

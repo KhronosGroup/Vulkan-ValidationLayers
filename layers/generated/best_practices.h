@@ -499,6 +499,38 @@ void PostCallRecordSignalSemaphore(
     VkResult                                    result) override;
 
 
+void PostCallRecordGetPhysicalDeviceToolProperties(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pToolCount,
+    VkPhysicalDeviceToolProperties*             pToolProperties,
+    VkResult                                    result) override;
+
+
+void PostCallRecordCreatePrivateDataSlot(
+    VkDevice                                    device,
+    const VkPrivateDataSlotCreateInfo*          pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPrivateDataSlot*                          pPrivateDataSlot,
+    VkResult                                    result) override;
+
+
+void PostCallRecordSetPrivateData(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlot                           privateDataSlot,
+    uint64_t                                    data,
+    VkResult                                    result) override;
+
+
+void PostCallRecordQueueSubmit2(
+    VkQueue                                     queue,
+    uint32_t                                    submitCount,
+    const VkSubmitInfo2*                        pSubmits,
+    VkFence                                     fence,
+    VkResult                                    result) override;
+
+
 void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
@@ -1100,7 +1132,7 @@ void PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(
 void PostCallRecordQueueSubmit2KHR(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
-    const VkSubmitInfo2KHR*                     pSubmits,
+    const VkSubmitInfo2*                        pSubmits,
     VkFence                                     fence,
     VkResult                                    result) override;
 
@@ -1518,7 +1550,7 @@ void PostCallRecordCreateMetalSurfaceEXT(
 void PostCallRecordGetPhysicalDeviceToolPropertiesEXT(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pToolCount,
-    VkPhysicalDeviceToolPropertiesEXT*          pToolProperties,
+    VkPhysicalDeviceToolProperties*             pToolProperties,
     VkResult                                    result) override;
 
 
@@ -1612,9 +1644,9 @@ void PostCallRecordGetDrmDisplayEXT(
 
 void PostCallRecordCreatePrivateDataSlotEXT(
     VkDevice                                    device,
-    const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
+    const VkPrivateDataSlotCreateInfo*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkPrivateDataSlotEXT*                       pPrivateDataSlot,
+    VkPrivateDataSlot*                          pPrivateDataSlot,
     VkResult                                    result) override;
 
 
@@ -1622,7 +1654,7 @@ void PostCallRecordSetPrivateDataEXT(
     VkDevice                                    device,
     VkObjectType                                objectType,
     uint64_t                                    objectHandle,
-    VkPrivateDataSlotEXT                        privateDataSlot,
+    VkPrivateDataSlot                           privateDataSlot,
     uint64_t                                    data,
     VkResult                                    result) override;
 
@@ -1855,22 +1887,39 @@ const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extens
     {"VK_AMD_gpu_shader_half_float", {kExtDeprecated, "VK_KHR_shader_float16_int8"}},
     {"VK_AMD_gpu_shader_int16", {kExtDeprecated, "VK_KHR_shader_float16_int8"}},
     {"VK_AMD_negative_viewport_height", {kExtObsoleted, "VK_KHR_maintenance1"}},
+    {"VK_EXT_4444_formats", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_EXT_buffer_device_address", {kExtDeprecated, "VK_KHR_buffer_device_address"}},
     {"VK_EXT_debug_marker", {kExtPromoted, "VK_EXT_debug_utils"}},
     {"VK_EXT_debug_report", {kExtDeprecated, "VK_EXT_debug_utils"}},
     {"VK_EXT_descriptor_indexing", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_EXT_extended_dynamic_state", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_extended_dynamic_state2", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_global_priority", {kExtPromoted, "VK_KHR_global_priority"}},
+    {"VK_EXT_global_priority_query", {kExtPromoted, "VK_KHR_global_priority"}},
     {"VK_EXT_host_query_reset", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_EXT_image_robustness", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_inline_uniform_block", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_pipeline_creation_cache_control", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_pipeline_creation_feedback", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_private_data", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_EXT_sampler_filter_minmax", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_EXT_scalar_block_layout", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_EXT_separate_stencil_usage", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_EXT_shader_demote_to_helper_invocation", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_EXT_shader_subgroup_ballot", {kExtDeprecated, "VK_VERSION_1_2"}},
     {"VK_EXT_shader_subgroup_vote", {kExtDeprecated, "VK_VERSION_1_1"}},
     {"VK_EXT_shader_viewport_index_layer", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_EXT_subgroup_size_control", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_texel_buffer_alignment", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_texture_compression_astc_hdr", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_tooling_info", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_EXT_validation_flags", {kExtDeprecated, "VK_EXT_validation_features"}},
+    {"VK_EXT_ycbcr_2plane_444_formats", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_KHR_16bit_storage", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_8bit_storage", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_KHR_bind_memory2", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_buffer_device_address", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_copy_commands2", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_KHR_create_renderpass2", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_KHR_dedicated_allocation", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_depth_stencil_resolve", {kExtPromoted, "VK_VERSION_1_2"}},
@@ -1879,12 +1928,14 @@ const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extens
     {"VK_KHR_device_group_creation", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_draw_indirect_count", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_KHR_driver_properties", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_dynamic_rendering", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_KHR_external_fence", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_external_fence_capabilities", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_external_memory", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_external_memory_capabilities", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_external_semaphore", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_external_semaphore_capabilities", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_format_feature_flags2", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_KHR_get_memory_requirements2", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_get_physical_device_properties2", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_image_format_list", {kExtPromoted, "VK_VERSION_1_2"}},
@@ -1892,6 +1943,7 @@ const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extens
     {"VK_KHR_maintenance1", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_maintenance2", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_maintenance3", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_maintenance4", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_KHR_multiview", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_relaxed_block_layout", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_sampler_mirror_clamp_to_edge", {kExtPromoted, "VK_VERSION_1_2"}},
@@ -1901,13 +1953,18 @@ const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extens
     {"VK_KHR_shader_draw_parameters", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_shader_float16_int8", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_KHR_shader_float_controls", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_shader_integer_dot_product", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_KHR_shader_non_semantic_info", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_KHR_shader_subgroup_extended_types", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_shader_terminate_invocation", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_KHR_spirv_1_4", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_KHR_storage_buffer_storage_class", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_synchronization2", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_KHR_timeline_semaphore", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_KHR_uniform_buffer_standard_layout", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_KHR_variable_pointers", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_vulkan_memory_model", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_zero_initialize_workgroup_memory", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_MVK_ios_surface", {kExtDeprecated, "VK_EXT_metal_surface"}},
     {"VK_MVK_macos_surface", {kExtDeprecated, "VK_EXT_metal_surface"}},
     {"VK_NV_dedicated_allocation", {kExtDeprecated, "VK_KHR_dedicated_allocation"}},
