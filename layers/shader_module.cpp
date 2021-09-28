@@ -288,6 +288,7 @@ layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const
 
                 case spv::ExecutionModeIsolines:
                 case spv::ExecutionModeOutputLineStrip:
+                case spv::ExecutionModeOutputLinesNV:
                     result.emplace(VK_PRIMITIVE_TOPOLOGY_LINE_STRIP);
                     break;
 
