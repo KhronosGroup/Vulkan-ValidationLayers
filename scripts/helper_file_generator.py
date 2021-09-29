@@ -838,12 +838,6 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             '#define VK_VERSION_1_2_NAME "VK_VERSION_1_2"',
             '']
 
-        def guarded(ifdef, value):
-            if ifdef is not None:
-                return '\n'.join([ '#ifdef %s' % ifdef, value, '#endif' ])
-            else:
-                return value
-
         for type in ['Instance', 'Device']:
             struct_type = '%sExtensions' % type
             if type == 'Instance':
@@ -919,7 +913,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 reqs = req_join.join([req_format % (field_name[req], extension_dict[req]['define']) for req in info['reqs']])
                 return info_format % (info['define'], field_name[ext_name], '{%s}' % (req_indent + reqs) if reqs else '')
 
-            struct.extend([guarded(info['ifdef'], format_info(ext_name, info)) for ext_name, info in extension_items])
+            struct.extend([Guarded(info['ifdef'], format_info(ext_name, info)) for ext_name, info in extension_items])
             struct.extend([
                 '        };',
                 '',
@@ -1005,7 +999,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
 
             # Output reference lists of instance/device extension names
             struct.extend(['', 'static const std::set<std::string> k%sExtensionNames = {' % type])
-            struct.extend([guarded(info['ifdef'], '    %s,' % info['define']) for ext_name, info in extension_items])
+            struct.extend([Guarded(info['ifdef'], '    %s,' % info['define']) for ext_name, info in extension_items])
             struct.extend(['};', ''])
             output.extend(struct)
 

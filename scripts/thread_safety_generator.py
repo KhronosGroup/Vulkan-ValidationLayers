@@ -429,11 +429,6 @@ public:
     read_lock_guard_t read_lock() override;
     write_lock_guard_t write_lock() override;
 
-    // If this ThreadSafety is for a VkDevice, then parent_instance points to the
-    // ThreadSafety object of its parent VkInstance. This is used to get to the counters
-    // for objects created with the instance as parent.
-    ThreadSafety *parent_instance;
-
     vl_concurrent_unordered_map<VkCommandBuffer, VkCommandPool, 6> command_pool_map;
     layer_data::unordered_map<VkCommandPool, layer_data::unordered_set<VkCommandBuffer>> pool_command_buffers_map;
     layer_data::unordered_map<VkDevice, layer_data::unordered_set<VkQueue>> device_queues_map;
@@ -469,9 +464,13 @@ COUNTER_CLASS_DEFINITIONS_TEMPLATE
     counter<uint64_t> c_uint64_t;
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
 
+    // If this ThreadSafety is for a VkDevice, then parent_instance points to the
+    // ThreadSafety object of its parent VkInstance. This is used to get to the counters
+    // for objects created with the instance as parent.
+    ThreadSafety *parent_instance;
+
     ThreadSafety(ThreadSafety *parent)
-        : parent_instance(parent),
-          c_VkCommandBuffer("VkCommandBuffer", kVulkanObjectTypeCommandBuffer, this),
+        : c_VkCommandBuffer("VkCommandBuffer", kVulkanObjectTypeCommandBuffer, this),
           c_VkDevice("VkDevice", kVulkanObjectTypeDevice, this),
           c_VkInstance("VkInstance", kVulkanObjectTypeInstance, this),
           c_VkQueue("VkQueue", kVulkanObjectTypeQueue, this),
@@ -482,8 +481,9 @@ COUNTER_CLASS_INSTANCES_TEMPLATE
 
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
-          c_uint64_t("NON_DISPATCHABLE_HANDLE", kVulkanObjectTypeUnknown, this)
+          c_uint64_t("NON_DISPATCHABLE_HANDLE", kVulkanObjectTypeUnknown, this),
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
+          parent_instance(parent)
     {
         container_type = LayerObjectTypeThreading;
     };
@@ -1558,6 +1558,7 @@ void ThreadSafety::PostCallRecordDeviceWaitIdle(
         # Initialize members that require the tree
         self.handle_types = GetHandleTypes(self.registry.tree)
         self.is_aliased_type = GetHandleAliased(self.registry.tree)
+        self.type_guards = GetTypeGuards(self.registry.tree)
 
         # TODO: LUGMAL -- remove this and add our copyright
         # User-supplied prefix text, if any (list of strings)
@@ -1586,16 +1587,17 @@ void ThreadSafety::PostCallRecordDeviceWaitIdle(
 
         for obj in sorted(self.non_dispatchable_types):
             if (not self.is_aliased_type[obj]):
-                counter_class_defs += '    counter<%s> c_%s;\n' % (obj, obj)
+                obj_guard = self.type_guards.get(obj)
+                counter_class_defs += Guarded(obj_guard, '    counter<%s> c_%s;\n' % (obj, obj))
                 obj_type = 'kVulkanObjectType' + obj[2:]
-                counter_class_instances += '          c_%s("%s", %s, this),\n' % (obj, obj, obj_type)
+                counter_class_instances += Guarded(obj_guard, '          c_%s("%s", %s, this),\n' % (obj, obj, obj_type))
                 if 'VkSurface' in obj or 'VkSwapchainKHR' in obj or 'VkDebugReportCallback' in obj or 'VkDebugUtilsMessenger' in obj:
                     counter_class_bodies += 'WRAPPER_PARENT_INSTANCE(%s)\n' % obj
                 else:
-                    counter_class_bodies += 'WRAPPER(%s)\n' % obj
+                    counter_class_bodies += Guarded(obj_guard, 'WRAPPER(%s)\n' % obj)
         if self.header_file:
             class_def = self.inline_custom_header_preamble.replace('COUNTER_CLASS_DEFINITIONS_TEMPLATE', counter_class_defs)
-            class_def = class_def.replace('COUNTER_CLASS_INSTANCES_TEMPLATE', counter_class_instances[:-2]) # Kill last comma
+            class_def = class_def.replace('COUNTER_CLASS_INSTANCES_TEMPLATE', counter_class_instances)
             class_def = class_def.replace('COUNTER_CLASS_BODIES_TEMPLATE', counter_class_bodies)
             write(class_def, file=self.outFile)
         write('\n'.join(self.sections['command']), file=self.outFile)

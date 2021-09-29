@@ -288,11 +288,6 @@ public:
     read_lock_guard_t read_lock() override;
     write_lock_guard_t write_lock() override;
 
-    // If this ThreadSafety is for a VkDevice, then parent_instance points to the
-    // ThreadSafety object of its parent VkInstance. This is used to get to the counters
-    // for objects created with the instance as parent.
-    ThreadSafety *parent_instance;
-
     vl_concurrent_unordered_map<VkCommandBuffer, VkCommandPool, 6> command_pool_map;
     layer_data::unordered_map<VkCommandPool, layer_data::unordered_set<VkCommandBuffer>> pool_command_buffers_map;
     layer_data::unordered_map<VkDevice, layer_data::unordered_set<VkQueue>> device_queues_map;
@@ -356,8 +351,12 @@ public:
     counter<VkSurfaceKHR> c_VkSurfaceKHR;
     counter<VkSwapchainKHR> c_VkSwapchainKHR;
     counter<VkValidationCacheEXT> c_VkValidationCacheEXT;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
     counter<VkVideoSessionKHR> c_VkVideoSessionKHR;
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
     counter<VkVideoSessionParametersKHR> c_VkVideoSessionParametersKHR;
+#endif
 
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
@@ -367,9 +366,13 @@ public:
     counter<uint64_t> c_uint64_t;
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
 
+    // If this ThreadSafety is for a VkDevice, then parent_instance points to the
+    // ThreadSafety object of its parent VkInstance. This is used to get to the counters
+    // for objects created with the instance as parent.
+    ThreadSafety *parent_instance;
+
     ThreadSafety(ThreadSafety *parent)
-        : parent_instance(parent),
-          c_VkCommandBuffer("VkCommandBuffer", kVulkanObjectTypeCommandBuffer, this),
+        : c_VkCommandBuffer("VkCommandBuffer", kVulkanObjectTypeCommandBuffer, this),
           c_VkDevice("VkDevice", kVulkanObjectTypeDevice, this),
           c_VkInstance("VkInstance", kVulkanObjectTypeInstance, this),
           c_VkQueue("VkQueue", kVulkanObjectTypeQueue, this),
@@ -413,13 +416,19 @@ public:
           c_VkSurfaceKHR("VkSurfaceKHR", kVulkanObjectTypeSurfaceKHR, this),
           c_VkSwapchainKHR("VkSwapchainKHR", kVulkanObjectTypeSwapchainKHR, this),
           c_VkValidationCacheEXT("VkValidationCacheEXT", kVulkanObjectTypeValidationCacheEXT, this),
+#ifdef VK_ENABLE_BETA_EXTENSIONS
           c_VkVideoSessionKHR("VkVideoSessionKHR", kVulkanObjectTypeVideoSessionKHR, this),
-          c_VkVideoSessionParametersKHR("VkVideoSessionParametersKHR", kVulkanObjectTypeVideoSessionParametersKHR, this)
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+          c_VkVideoSessionParametersKHR("VkVideoSessionParametersKHR", kVulkanObjectTypeVideoSessionParametersKHR, this),
+#endif
+
 
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
-          c_uint64_t("NON_DISPATCHABLE_HANDLE", kVulkanObjectTypeUnknown, this)
+          c_uint64_t("NON_DISPATCHABLE_HANDLE", kVulkanObjectTypeUnknown, this),
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
+          parent_instance(parent)
     {
         container_type = LayerObjectTypeThreading;
     };
@@ -506,8 +515,12 @@ WRAPPER(VkShaderModule)
 WRAPPER_PARENT_INSTANCE(VkSurfaceKHR)
 WRAPPER_PARENT_INSTANCE(VkSwapchainKHR)
 WRAPPER(VkValidationCacheEXT)
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 WRAPPER(VkVideoSessionKHR)
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 WRAPPER(VkVideoSessionParametersKHR)
+#endif
 
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
