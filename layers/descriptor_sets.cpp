@@ -1300,8 +1300,9 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                 }
 
                 if (IsExtEnabled(device_extensions.vk_img_filter_cubic)) {
-                    if (image_view_state->create_info.viewType &
-                        (VK_IMAGE_VIEW_TYPE_3D | VK_IMAGE_VIEW_TYPE_CUBE | VK_IMAGE_VIEW_TYPE_CUBE_ARRAY)) {
+                    if (image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_3D ||
+                        image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
+                        image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
                         auto set = descriptor_set->GetSet();
                         LogObjectList objlist(set);
                         objlist.add(sampler_state->sampler());
