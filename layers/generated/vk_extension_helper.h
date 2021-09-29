@@ -439,6 +439,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_video_encode_h264{kNotEnabled};
     ExtEnabled vk_ext_ycbcr_2plane_444_formats{kNotEnabled};
     ExtEnabled vk_ext_ycbcr_image_arrays{kNotEnabled};
+    ExtEnabled vk_fuchsia_buffer_collection{kNotEnabled};
     ExtEnabled vk_fuchsia_external_memory{kNotEnabled};
     ExtEnabled vk_fuchsia_external_semaphore{kNotEnabled};
     ExtEnabled vk_ggp_frame_token{kNotEnabled};
@@ -762,6 +763,11 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_ycbcr_image_arrays, {{
                            {&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_FUCHSIA
+            {VK_FUCHSIA_BUFFER_COLLECTION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_fuchsia_buffer_collection, {{
+                           {&DeviceExtensions::vk_fuchsia_external_memory, VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}})},
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
             {VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_fuchsia_external_memory, {{
                            {&DeviceExtensions::vk_khr_external_memory_capabilities, VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
@@ -988,6 +994,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_device_diagnostics_config, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_device_generated_commands, {{
+                           {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME},
                            {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
             {VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_external_memory, {{
                            {&DeviceExtensions::vk_nv_external_memory_capabilities, VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME}}})},
@@ -1253,6 +1260,9 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #endif
     VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME,
     VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME,
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    VK_FUCHSIA_BUFFER_COLLECTION_EXTENSION_NAME,
+#endif
 #ifdef VK_USE_PLATFORM_FUCHSIA
     VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME,
 #endif

@@ -196,6 +196,18 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_BIND_SPARSE_INFO";
         case VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR:
             return "VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR";
+        case VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA:
+            return "VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA";
+        case VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CONSTRAINTS_INFO_FUCHSIA:
+            return "VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CONSTRAINTS_INFO_FUCHSIA";
+        case VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CREATE_INFO_FUCHSIA:
+            return "VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CREATE_INFO_FUCHSIA";
+        case VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA:
+            return "VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA";
+        case VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES_FUCHSIA:
+            return "VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES_FUCHSIA";
+        case VK_STRUCTURE_TYPE_BUFFER_CONSTRAINTS_INFO_FUCHSIA:
+            return "VK_STRUCTURE_TYPE_BUFFER_CONSTRAINTS_INFO_FUCHSIA";
         case VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR:
             return "VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR";
         case VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO:
@@ -456,6 +468,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA";
         case VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR:
             return "VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR";
+        case VK_STRUCTURE_TYPE_IMAGE_CONSTRAINTS_INFO_FUCHSIA:
+            return "VK_STRUCTURE_TYPE_IMAGE_CONSTRAINTS_INFO_FUCHSIA";
         case VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR:
             return "VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR";
         case VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO:
@@ -466,6 +480,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT:
             return "VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT";
+        case VK_STRUCTURE_TYPE_IMAGE_FORMAT_CONSTRAINTS_INFO_FUCHSIA:
+            return "VK_STRUCTURE_TYPE_IMAGE_FORMAT_CONSTRAINTS_INFO_FUCHSIA";
         case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO";
         case VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2:
@@ -502,6 +518,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_IMPORT_FENCE_FD_INFO_KHR";
         case VK_STRUCTURE_TYPE_IMPORT_FENCE_WIN32_HANDLE_INFO_KHR:
             return "VK_STRUCTURE_TYPE_IMPORT_FENCE_WIN32_HANDLE_INFO_KHR";
+        case VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA:
+            return "VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA";
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR:
             return "VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR";
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT:
@@ -1158,6 +1176,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR";
         case VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD:
             return "VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD";
+        case VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA:
+            return "VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA";
         case VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD:
             return "VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD";
         case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO:
@@ -1582,6 +1602,8 @@ static inline const char* string_VkObjectType(VkObjectType input_value)
             return "VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV";
         case VK_OBJECT_TYPE_BUFFER:
             return "VK_OBJECT_TYPE_BUFFER";
+        case VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA:
+            return "VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA";
         case VK_OBJECT_TYPE_BUFFER_VIEW:
             return "VK_OBJECT_TYPE_BUFFER_VIEW";
         case VK_OBJECT_TYPE_COMMAND_BUFFER:
@@ -6710,6 +6732,8 @@ static inline const char* string_VkDebugReportObjectTypeEXT(VkDebugReportObjectT
             return "VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT";
         case VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT:
             return "VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT";
+        case VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT:
+            return "VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT";
         case VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT:
             return "VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT";
         case VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT:
@@ -8302,6 +8326,45 @@ static inline const char* string_VkAccelerationStructureMotionInstanceTypeNV(VkA
             return "Unhandled VkAccelerationStructureMotionInstanceTypeNV";
     }
 }
+
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+static inline const char* string_VkImageConstraintsInfoFlagBitsFUCHSIA(VkImageConstraintsInfoFlagBitsFUCHSIA input_value)
+{
+    switch (input_value)
+    {
+        case VK_IMAGE_CONSTRAINTS_INFO_CPU_READ_OFTEN_FUCHSIA:
+            return "VK_IMAGE_CONSTRAINTS_INFO_CPU_READ_OFTEN_FUCHSIA";
+        case VK_IMAGE_CONSTRAINTS_INFO_CPU_READ_RARELY_FUCHSIA:
+            return "VK_IMAGE_CONSTRAINTS_INFO_CPU_READ_RARELY_FUCHSIA";
+        case VK_IMAGE_CONSTRAINTS_INFO_CPU_WRITE_OFTEN_FUCHSIA:
+            return "VK_IMAGE_CONSTRAINTS_INFO_CPU_WRITE_OFTEN_FUCHSIA";
+        case VK_IMAGE_CONSTRAINTS_INFO_CPU_WRITE_RARELY_FUCHSIA:
+            return "VK_IMAGE_CONSTRAINTS_INFO_CPU_WRITE_RARELY_FUCHSIA";
+        case VK_IMAGE_CONSTRAINTS_INFO_PROTECTED_OPTIONAL_FUCHSIA:
+            return "VK_IMAGE_CONSTRAINTS_INFO_PROTECTED_OPTIONAL_FUCHSIA";
+        default:
+            return "Unhandled VkImageConstraintsInfoFlagBitsFUCHSIA";
+    }
+}
+
+static inline std::string string_VkImageConstraintsInfoFlagsFUCHSIA(VkImageConstraintsInfoFlagsFUCHSIA input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkImageConstraintsInfoFlagBitsFUCHSIA(static_cast<VkImageConstraintsInfoFlagBitsFUCHSIA>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkImageConstraintsInfoFlagBitsFUCHSIA(static_cast<VkImageConstraintsInfoFlagBitsFUCHSIA>(0)));
+    return ret;
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
 
 static inline const char* string_VkBuildAccelerationStructureModeKHR(VkBuildAccelerationStructureModeKHR input_value)
 {

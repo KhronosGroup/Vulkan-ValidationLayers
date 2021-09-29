@@ -317,6 +317,9 @@ public:
     counter<VkAccelerationStructureKHR> c_VkAccelerationStructureKHR;
     counter<VkAccelerationStructureNV> c_VkAccelerationStructureNV;
     counter<VkBuffer> c_VkBuffer;
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    counter<VkBufferCollectionFUCHSIA> c_VkBufferCollectionFUCHSIA;
+#endif
     counter<VkBufferView> c_VkBufferView;
     counter<VkCommandPool> c_VkCommandPool;
     counter<VkCuFunctionNVX> c_VkCuFunctionNVX;
@@ -382,6 +385,9 @@ public:
           c_VkAccelerationStructureKHR("VkAccelerationStructureKHR", kVulkanObjectTypeAccelerationStructureKHR, this),
           c_VkAccelerationStructureNV("VkAccelerationStructureNV", kVulkanObjectTypeAccelerationStructureNV, this),
           c_VkBuffer("VkBuffer", kVulkanObjectTypeBuffer, this),
+#ifdef VK_USE_PLATFORM_FUCHSIA
+          c_VkBufferCollectionFUCHSIA("VkBufferCollectionFUCHSIA", kVulkanObjectTypeBufferCollectionFUCHSIA, this),
+#endif
           c_VkBufferView("VkBufferView", kVulkanObjectTypeBufferView, this),
           c_VkCommandPool("VkCommandPool", kVulkanObjectTypeCommandPool, this),
           c_VkCuFunctionNVX("VkCuFunctionNVX", kVulkanObjectTypeCuFunctionNVX, this),
@@ -481,6 +487,9 @@ WRAPPER(VkQueue)
 WRAPPER(VkAccelerationStructureKHR)
 WRAPPER(VkAccelerationStructureNV)
 WRAPPER(VkBuffer)
+#ifdef VK_USE_PLATFORM_FUCHSIA
+WRAPPER(VkBufferCollectionFUCHSIA)
+#endif
 WRAPPER(VkBufferView)
 WRAPPER(VkCommandPool)
 WRAPPER(VkCuFunctionNVX)
@@ -5289,6 +5298,65 @@ void PostCallRecordGetSemaphoreZirconHandleFUCHSIA(
     VkDevice                                    device,
     const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
     zx_handle_t*                                pZirconHandle,
+    VkResult                                    result) override;
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+void PreCallRecordCreateBufferCollectionFUCHSIA(
+    VkDevice                                    device,
+    const VkBufferCollectionCreateInfoFUCHSIA*  pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkBufferCollectionFUCHSIA*                  pCollection) override;
+
+void PostCallRecordCreateBufferCollectionFUCHSIA(
+    VkDevice                                    device,
+    const VkBufferCollectionCreateInfoFUCHSIA*  pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkBufferCollectionFUCHSIA*                  pCollection,
+    VkResult                                    result) override;
+
+void PreCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkImageConstraintsInfoFUCHSIA*        pImageConstraintsInfo) override;
+
+void PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkImageConstraintsInfoFUCHSIA*        pImageConstraintsInfo,
+    VkResult                                    result) override;
+
+void PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkBufferConstraintsInfoFUCHSIA*       pBufferConstraintsInfo) override;
+
+void PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkBufferConstraintsInfoFUCHSIA*       pBufferConstraintsInfo,
+    VkResult                                    result) override;
+
+void PreCallRecordDestroyBufferCollectionFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkAllocationCallbacks*                pAllocator) override;
+
+void PostCallRecordDestroyBufferCollectionFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkAllocationCallbacks*                pAllocator) override;
+
+void PreCallRecordGetBufferCollectionPropertiesFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    VkBufferCollectionPropertiesFUCHSIA*        pProperties) override;
+
+void PostCallRecordGetBufferCollectionPropertiesFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    VkBufferCollectionPropertiesFUCHSIA*        pProperties,
     VkResult                                    result) override;
 #endif // VK_USE_PLATFORM_FUCHSIA
 

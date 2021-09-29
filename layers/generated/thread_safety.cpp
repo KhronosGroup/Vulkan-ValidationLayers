@@ -7788,6 +7788,96 @@ void ThreadSafety::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+void ThreadSafety::PreCallRecordCreateBufferCollectionFUCHSIA(
+    VkDevice                                    device,
+    const VkBufferCollectionCreateInfoFUCHSIA*  pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkBufferCollectionFUCHSIA*                  pCollection) {
+    StartReadObjectParentInstance(device, "vkCreateBufferCollectionFUCHSIA");
+}
+
+void ThreadSafety::PostCallRecordCreateBufferCollectionFUCHSIA(
+    VkDevice                                    device,
+    const VkBufferCollectionCreateInfoFUCHSIA*  pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkBufferCollectionFUCHSIA*                  pCollection,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkCreateBufferCollectionFUCHSIA");
+    if (result == VK_SUCCESS) {
+        CreateObject(*pCollection);
+    }
+}
+
+void ThreadSafety::PreCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkImageConstraintsInfoFUCHSIA*        pImageConstraintsInfo) {
+    StartReadObjectParentInstance(device, "vkSetBufferCollectionImageConstraintsFUCHSIA");
+    StartReadObject(collection, "vkSetBufferCollectionImageConstraintsFUCHSIA");
+}
+
+void ThreadSafety::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkImageConstraintsInfoFUCHSIA*        pImageConstraintsInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkSetBufferCollectionImageConstraintsFUCHSIA");
+    FinishReadObject(collection, "vkSetBufferCollectionImageConstraintsFUCHSIA");
+}
+
+void ThreadSafety::PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkBufferConstraintsInfoFUCHSIA*       pBufferConstraintsInfo) {
+    StartReadObjectParentInstance(device, "vkSetBufferCollectionBufferConstraintsFUCHSIA");
+    StartReadObject(collection, "vkSetBufferCollectionBufferConstraintsFUCHSIA");
+}
+
+void ThreadSafety::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkBufferConstraintsInfoFUCHSIA*       pBufferConstraintsInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkSetBufferCollectionBufferConstraintsFUCHSIA");
+    FinishReadObject(collection, "vkSetBufferCollectionBufferConstraintsFUCHSIA");
+}
+
+void ThreadSafety::PreCallRecordDestroyBufferCollectionFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkAllocationCallbacks*                pAllocator) {
+    StartReadObjectParentInstance(device, "vkDestroyBufferCollectionFUCHSIA");
+    StartReadObject(collection, "vkDestroyBufferCollectionFUCHSIA");
+}
+
+void ThreadSafety::PostCallRecordDestroyBufferCollectionFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkAllocationCallbacks*                pAllocator) {
+    FinishReadObjectParentInstance(device, "vkDestroyBufferCollectionFUCHSIA");
+    FinishReadObject(collection, "vkDestroyBufferCollectionFUCHSIA");
+}
+
+void ThreadSafety::PreCallRecordGetBufferCollectionPropertiesFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    VkBufferCollectionPropertiesFUCHSIA*        pProperties) {
+    StartReadObjectParentInstance(device, "vkGetBufferCollectionPropertiesFUCHSIA");
+    StartReadObject(collection, "vkGetBufferCollectionPropertiesFUCHSIA");
+}
+
+void ThreadSafety::PostCallRecordGetBufferCollectionPropertiesFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    VkBufferCollectionPropertiesFUCHSIA*        pProperties,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetBufferCollectionPropertiesFUCHSIA");
+    FinishReadObject(collection, "vkGetBufferCollectionPropertiesFUCHSIA");
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
 void ThreadSafety::PreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(
     VkDevice                                    device,
     VkRenderPass                                renderpass,
