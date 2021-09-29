@@ -15784,6 +15784,49 @@ TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, TestMappingMemoryWithMultiInstanceHeapFlag) {
+    TEST_DESCRIPTION("Test mapping memory that uses memory heap with VK_MEMORY_HEAP_MULTI_INSTANCE_BIT");
+
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkPhysicalDeviceMemoryProperties memory_info;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
+
+    uint32_t memory_index = std::numeric_limits<uint32_t>::max();
+    for (uint32_t i = 0; i < memory_info.memoryTypeCount; ++i) {
+        if ((memory_info.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+            if (memory_info.memoryHeaps[memory_info.memoryTypes[i].heapIndex].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) {
+                memory_index = i;
+                break;
+            }
+        }
+    }
+
+    if (memory_index == std::numeric_limits<uint32_t>::max()) {
+        printf("%s Did not host visible memory from memory heap with VK_MEMORY_HEAP_MULTI_INSTANCE_BIT bit ; skipped.\n",
+               kSkipPrefix);
+        return;
+    }
+
+    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    mem_alloc.allocationSize = 64;
+    mem_alloc.memoryTypeIndex = memory_index;
+
+    VkDeviceMemory memory;
+    vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &memory);
+
+    uint32_t* pData;
+    m_errorMonitor->ExpectSuccess();
+    vk::MapMemory(device(), memory, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, TestPervertexNVShaderAttributes) {
     TEST_DESCRIPTION("Test using TestRasterizationStateStreamCreateInfoEXT with invalid rasterizationStream.");
 
