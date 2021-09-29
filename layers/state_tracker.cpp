@@ -1103,6 +1103,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         if (primitive_topology_list_restart_features) {
             state_tracker->enabled_features.primitive_topology_list_restart_features = *primitive_topology_list_restart_features;
         }
+
+        const auto *rgba10x6_formats_features = LvlFindInChain<VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT>(pCreateInfo->pNext);
+        if (rgba10x6_formats_features) {
+            state_tracker->enabled_features.rgba10x6_formats_features = *rgba10x6_formats_features;
+        }
     }
 
     const auto *subgroup_size_control_features = LvlFindInChain<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>(pCreateInfo->pNext);

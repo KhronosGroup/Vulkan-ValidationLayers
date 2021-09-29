@@ -742,6 +742,17 @@ bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
     return true;
 }
 
+// There is a table in the Vulkan spec to list all formats that implicitly require YCbCr conversion,
+// but some features/extensions can explicitly turn that restriction off
+// The implicit check is done in format utils, while feature checks are done here in CoreChecks
+bool CoreChecks::FormatRequiresYcbcrConversionExplicitly(const VkFormat format) const {
+    if (format == VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16 &&
+        enabled_features.rgba10x6_formats_features.formatRgba10x6WithoutYCbCrSampler) {
+        return false;
+    }
+    return FormatRequiresYcbcrConversion(format);
+}
+
 // Verify an ImageMemoryBarrier's old/new ImageLayouts are compatible with the Image's ImageUsageFlags.
 bool CoreChecks::ValidateBarrierLayoutToImageUsage(const Location &loc, VkImage image, VkImageLayout layout,
                                                    VkImageUsageFlags usage_flags) const {
@@ -1919,7 +1930,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     // Tests for "Formats requiring sampler YCBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views"
-    if (FormatRequiresYcbcrConversion(pCreateInfo->format)) {
+    if (FormatRequiresYcbcrConversionExplicitly(pCreateInfo->format)) {
         if (!enabled_features.ycbcr_image_array_features.ycbcrImageArrays && pCreateInfo->arrayLayers != 1) {
             const char *error_vuid = IsExtEnabled(device_extensions.vk_ext_ycbcr_image_arrays)
                                          ? "VUID-VkImageCreateInfo-format-06414"
@@ -2216,7 +2227,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
             skip |= VerifyClearImageLayout(cb_node, image_state, pRanges[i], imageLayout, "vkCmdClearColorImage()");
         }
         // Tests for "Formats requiring sampler Y’CBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views"
-        if (FormatRequiresYcbcrConversion(image_state->createInfo.format)) {
+        if (FormatRequiresYcbcrConversionExplicitly(image_state->createInfo.format)) {
             skip |= LogError(device, "VUID-vkCmdClearColorImage-image-01545",
                              "vkCmdClearColorImage(): format (%s) must not be one of the formats requiring sampler YCBCR "
                              "conversion for VK_IMAGE_ASPECT_COLOR_BIT image views",
@@ -3909,7 +3920,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                                     func_name, vuid);
         }
 
-        if (FormatRequiresYcbcrConversion(src_format)) {
+        if (FormatRequiresYcbcrConversionExplicitly(src_format)) {
             vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-srcImage-06421" : "VUID-vkCmdBlitImage-srcImage-06421";
             skip |= LogError(device, vuid,
                              "%s: srcImage format (%s) must not be one of the formats requiring sampler YCBCR "
@@ -3917,7 +3928,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                              func_name, string_VkFormat(src_format));
         }
 
-        if (FormatRequiresYcbcrConversion(dst_format)) {
+        if (FormatRequiresYcbcrConversionExplicitly(dst_format)) {
             vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-dstImage-06422" : "VUID-vkCmdBlitImage-dstImage-06422";
             skip |= LogError(device, vuid,
                              "%s: dstImage format (%s) must not be one of the formats requiring sampler YCBCR "
