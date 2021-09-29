@@ -646,14 +646,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # And note if this is an Instance or Device extension
         self.extension_type = interface.get('type')
         if interface.tag == 'extension':
-            name_elem = interface[0][1]
-            name_definition = name_elem.get('name')
-            if 'EXTENSION_NAME' not in name_definition:
-                print("Error in vk.xml file -- extension name is not available")
             if interface.get('type') == 'instance':
-                self.instance_extension_list += '%s, ' % name_definition
+                self.instance_extension_list += '%s, ' % GetNameDefine(interface)
             else:
-                self.device_extension_list += '%s, ' % name_definition
+                self.device_extension_list += '%s, ' % GetNameDefine(interface)
 
     #
     # Called at the end of each extension (feature)
@@ -1544,7 +1540,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     ext_name_define = ''
                     for extension in self.registry.extensions:
                         if extension.attrib['name'] == ext:
-                            ext_name_define = extension[0][1].get('name')
+                            ext_name_define = GetNameDefine(extension)
                             break
                     ext_test = ''
                     if command.params[0].type in ["VkInstance", "VkPhysicalDevice"] or command.name == 'vkCreateInstance':
