@@ -10178,12 +10178,22 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
 #endif
 
     // Import memory
-    alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_import.memory_requirements(), mem_flags);
+    VkMemoryRequirements buffer_import_reqs = buffer_import.memory_requirements();
+    if (buffer_import_reqs.memoryTypeBits == 0) {
+        printf("%s no suitable memory found, skipping test\n", kSkipPrefix);
+        return;
+    }
+    alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_import_reqs, mem_flags);
     alloc_info.pNext = &import_info_buffer;
     vk_testing::DeviceMemory memory_buffer_import;
     memory_buffer_import.init(*m_device, alloc_info);
 
-    alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image_import.memory_requirements(), mem_flags);
+    VkMemoryRequirements image_import_reqs = image_import.memory_requirements();
+    if (image_import_reqs.memoryTypeBits == 0) {
+        printf("%s no suitable memory found, skipping test\n", kSkipPrefix);
+        return;
+    }
+    alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image_import_reqs, mem_flags);
     alloc_info.pNext = &import_info_image;
     vk_testing::DeviceMemory memory_image_import;
     memory_image_import.init(*m_device, alloc_info);
@@ -10194,9 +10204,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     vk::BindBufferMemory(device(), buffer_import.handle(), memory_buffer_import.handle(), 0);
     m_errorMonitor->VerifyFound();
 
-    VkBindBufferMemoryInfo bind_buffer_info = {};
-    bind_buffer_info.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
-    bind_buffer_info.pNext = nullptr;
+    VkBindBufferMemoryInfo bind_buffer_info = LvlInitStruct<VkBindBufferMemoryInfo>();
     bind_buffer_info.buffer = buffer_import.handle();
     bind_buffer_info.memory = memory_buffer_import.handle();
     bind_buffer_info.memoryOffset = 0;
@@ -10211,11 +10219,9 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     vk::BindImageMemory(device(), image_import.handle(), memory_image_import.handle(), 0);
     m_errorMonitor->VerifyFound();
 
-    VkBindImageMemoryInfo bind_image_info = {};
-    bind_image_info.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
-    bind_image_info.pNext = nullptr;
+    VkBindImageMemoryInfo bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>();
     bind_image_info.image = image_import.handle();
-    bind_image_info.memory = memory_buffer_import.handle();
+    bind_image_info.memory = memory_image_import.handle();
     bind_image_info.memoryOffset = 0;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02729");
