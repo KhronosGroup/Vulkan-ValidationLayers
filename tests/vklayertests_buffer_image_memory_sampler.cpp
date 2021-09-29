@@ -1232,9 +1232,7 @@ TEST_F(VkLayerTest, BindImageInvalidMemoryType) {
     const int32_t tex_width = 32;
     const int32_t tex_height = 32;
 
-    VkImageCreateInfo image_create_info = {};
-    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_create_info.pNext = NULL;
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = tex_format;
     image_create_info.extent.width = tex_width;
@@ -1247,13 +1245,11 @@ TEST_F(VkLayerTest, BindImageInvalidMemoryType) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
 
-    VkMemoryAllocateInfo mem_alloc = {};
-    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    mem_alloc.pNext = NULL;
+    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
     mem_alloc.allocationSize = 0;
     mem_alloc.memoryTypeIndex = 0;
 
-    err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+    err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
     ASSERT_VK_SUCCESS(err);
 
     vk::GetImageMemoryRequirements(m_device->device(), image, &mem_reqs);
@@ -1263,8 +1259,12 @@ TEST_F(VkLayerTest, BindImageInvalidMemoryType) {
     VkPhysicalDeviceMemoryProperties memory_info;
 
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
-    unsigned int i;
-    for (i = 0; i < memory_info.memoryTypeCount; i++) {
+    uint32_t i = 0;
+    for (; i < memory_info.memoryTypeCount; i++) {
+        // Would require deviceCoherentMemory feature
+        if (memory_info.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) {
+            continue;
+        }
         if ((mem_reqs.memoryTypeBits & (1 << i)) == 0) {
             mem_alloc.memoryTypeIndex = i;
             break;
@@ -1272,13 +1272,13 @@ TEST_F(VkLayerTest, BindImageInvalidMemoryType) {
     }
     if (i >= memory_info.memoryTypeCount) {
         printf("%s No invalid memory type index could be found; skipped.\n", kSkipPrefix);
-        vk::DestroyImage(m_device->device(), image, NULL);
+        vk::DestroyImage(m_device->device(), image, nullptr);
         return;
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "for this object type are not compatible with the memory");
 
-    err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+    err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
     ASSERT_VK_SUCCESS(err);
 
     err = vk::BindImageMemory(m_device->device(), image, mem, 0);
@@ -1286,8 +1286,8 @@ TEST_F(VkLayerTest, BindImageInvalidMemoryType) {
 
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyImage(m_device->device(), image, NULL);
-    vk::FreeMemory(m_device->device(), mem, NULL);
+    vk::DestroyImage(m_device->device(), image, nullptr);
+    vk::FreeMemory(m_device->device(), mem, nullptr);
 }
 
 TEST_F(VkLayerTest, BindInvalidMemory) {
