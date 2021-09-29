@@ -65,7 +65,7 @@ static bool IsMultiInstance(const VkMemoryAllocateInfo *p_alloc_info, const VkMe
         auto dev_mask = alloc_flags->deviceMask;
         return ((dev_mask != 0) && (dev_mask & (dev_mask - 1))) != 0;
     } else {
-        return (memory_heap.flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) != 0;
+        return false;
     }
 }
 
