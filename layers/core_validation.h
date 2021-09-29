@@ -400,6 +400,8 @@ class CoreChecks : public ValidationStateTracker {
     VkFormatProperties GetPDFormatProperties(const VkFormat format) const;
     const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties();
 
+    bool FormatRequiresYcbcrConversionExplicitly(const VkFormat format) const;
+
     template <typename TransferBarrier>
     bool ValidateQueuedQFOTransferBarriers(const CMD_BUFFER_STATE* cb_state, QFOTransferCBScoreboards<TransferBarrier>* scoreboards,
                                            const GlobalQFOTransferBarrierMap<TransferBarrier>& global_release_barriers) const;
