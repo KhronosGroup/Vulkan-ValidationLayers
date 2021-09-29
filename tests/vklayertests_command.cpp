@@ -8485,11 +8485,10 @@ TEST_F(VkLayerTest, VerifyFilterCubicSamplerInCmdDraw) {
 
 TEST_F(VkLayerTest, VerifyImgFilterCubicSamplerInCmdDraw) {
     TEST_DESCRIPTION("Verify if sampler is filter cubic with the VK_IMG_filter cubic extension that it's a valid ImageViewType.");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_IMG_FILTER_CUBIC_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
-    } else {
+    AddRequiredExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
         return;
     }
@@ -8499,8 +8498,17 @@ TEST_F(VkLayerTest, VerifyImgFilterCubicSamplerInCmdDraw) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
-    VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+    auto image_ci = vk_testing::Image::create_info();
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = format;
+    image_ci.extent.width = 128;
+    image_ci.extent.height = 128;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.usage = usage;
+    VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_3D;
 
     VkImageObj image(m_device);
     image.Init(image_ci);
@@ -8513,7 +8521,15 @@ TEST_F(VkLayerTest, VerifyImgFilterCubicSamplerInCmdDraw) {
     VkSampler sampler;
     vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
 
-    VkShaderObj fs(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    static const char fs_src[] = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform sampler3D s;
+        layout(location=0) out vec4 x;
+        void main(){
+            x = texture(s, vec3(1));
+        }
+    )glsl";
+    VkShaderObj fs(m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();
