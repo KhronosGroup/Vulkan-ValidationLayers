@@ -225,10 +225,6 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         if interface.tag != 'extension':
             return
         name = self.featureName
-        nameElem = interface[0][1]
-        name_define = nameElem.get('name')
-        if 'EXTENSION_NAME' not in name_define:
-            print("Error in vk.xml file -- extension name is not available")
         requires = interface.get('requires')
         if requires is not None:
             required_extensions = requires.split(',')
@@ -237,7 +233,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         requiresCore = interface.get('requiresCore')
         if requiresCore is not None:
             required_extensions.append('VK_VERSION_%s' % ('_'.join(requiresCore.split('.'))))
-        info = { 'define': name_define, 'ifdef':self.featureExtraProtect, 'reqs':required_extensions }
+        info = { 'define': GetNameDefine(interface), 'ifdef':self.featureExtraProtect, 'reqs':required_extensions }
         if interface.get('type') == 'instance':
             self.instance_extension_info[name] = info
         else:

@@ -74,6 +74,13 @@ def GetFeatureProtect(interface):
         protect = platform_dict[platform]
     return protect
 
+# Return the _EXTENSION_NAME define for the given extension block
+def GetNameDefine(interface):
+    for enum in interface.findall('require/enum'):
+        if enum.get('name', '').endswith('_EXTENSION_NAME'):
+            return enum.get('name')
+    raise Exception(f'Could find name define for {extension.get("name")}')
+
 # Return a dict containing the dispatchable/non-dispatchable type of every handle
 def GetHandleTypes(tree):
     # Extend OrderedDict with common handle operations
