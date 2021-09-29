@@ -9772,6 +9772,203 @@ struct safe_VkSemaphoreGetZirconHandleInfoFUCHSIA {
 };
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+#ifdef VK_USE_PLATFORM_FUCHSIA
+struct safe_VkBufferCollectionCreateInfoFUCHSIA {
+    VkStructureType sType;
+    const void* pNext;
+    zx_handle_t collectionToken;
+    safe_VkBufferCollectionCreateInfoFUCHSIA(const VkBufferCollectionCreateInfoFUCHSIA* in_struct);
+    safe_VkBufferCollectionCreateInfoFUCHSIA(const safe_VkBufferCollectionCreateInfoFUCHSIA& copy_src);
+    safe_VkBufferCollectionCreateInfoFUCHSIA& operator=(const safe_VkBufferCollectionCreateInfoFUCHSIA& copy_src);
+    safe_VkBufferCollectionCreateInfoFUCHSIA();
+    ~safe_VkBufferCollectionCreateInfoFUCHSIA();
+    void initialize(const VkBufferCollectionCreateInfoFUCHSIA* in_struct);
+    void initialize(const safe_VkBufferCollectionCreateInfoFUCHSIA* copy_src);
+    VkBufferCollectionCreateInfoFUCHSIA *ptr() { return reinterpret_cast<VkBufferCollectionCreateInfoFUCHSIA *>(this); }
+    VkBufferCollectionCreateInfoFUCHSIA const *ptr() const { return reinterpret_cast<VkBufferCollectionCreateInfoFUCHSIA const *>(this); }
+};
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+struct safe_VkImportMemoryBufferCollectionFUCHSIA {
+    VkStructureType sType;
+    const void* pNext;
+    VkBufferCollectionFUCHSIA collection;
+    uint32_t index;
+    safe_VkImportMemoryBufferCollectionFUCHSIA(const VkImportMemoryBufferCollectionFUCHSIA* in_struct);
+    safe_VkImportMemoryBufferCollectionFUCHSIA(const safe_VkImportMemoryBufferCollectionFUCHSIA& copy_src);
+    safe_VkImportMemoryBufferCollectionFUCHSIA& operator=(const safe_VkImportMemoryBufferCollectionFUCHSIA& copy_src);
+    safe_VkImportMemoryBufferCollectionFUCHSIA();
+    ~safe_VkImportMemoryBufferCollectionFUCHSIA();
+    void initialize(const VkImportMemoryBufferCollectionFUCHSIA* in_struct);
+    void initialize(const safe_VkImportMemoryBufferCollectionFUCHSIA* copy_src);
+    VkImportMemoryBufferCollectionFUCHSIA *ptr() { return reinterpret_cast<VkImportMemoryBufferCollectionFUCHSIA *>(this); }
+    VkImportMemoryBufferCollectionFUCHSIA const *ptr() const { return reinterpret_cast<VkImportMemoryBufferCollectionFUCHSIA const *>(this); }
+};
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+struct safe_VkBufferCollectionImageCreateInfoFUCHSIA {
+    VkStructureType sType;
+    const void* pNext;
+    VkBufferCollectionFUCHSIA collection;
+    uint32_t index;
+    safe_VkBufferCollectionImageCreateInfoFUCHSIA(const VkBufferCollectionImageCreateInfoFUCHSIA* in_struct);
+    safe_VkBufferCollectionImageCreateInfoFUCHSIA(const safe_VkBufferCollectionImageCreateInfoFUCHSIA& copy_src);
+    safe_VkBufferCollectionImageCreateInfoFUCHSIA& operator=(const safe_VkBufferCollectionImageCreateInfoFUCHSIA& copy_src);
+    safe_VkBufferCollectionImageCreateInfoFUCHSIA();
+    ~safe_VkBufferCollectionImageCreateInfoFUCHSIA();
+    void initialize(const VkBufferCollectionImageCreateInfoFUCHSIA* in_struct);
+    void initialize(const safe_VkBufferCollectionImageCreateInfoFUCHSIA* copy_src);
+    VkBufferCollectionImageCreateInfoFUCHSIA *ptr() { return reinterpret_cast<VkBufferCollectionImageCreateInfoFUCHSIA *>(this); }
+    VkBufferCollectionImageCreateInfoFUCHSIA const *ptr() const { return reinterpret_cast<VkBufferCollectionImageCreateInfoFUCHSIA const *>(this); }
+};
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+struct safe_VkBufferCollectionConstraintsInfoFUCHSIA {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t minBufferCount;
+    uint32_t maxBufferCount;
+    uint32_t minBufferCountForCamping;
+    uint32_t minBufferCountForDedicatedSlack;
+    uint32_t minBufferCountForSharedSlack;
+    safe_VkBufferCollectionConstraintsInfoFUCHSIA(const VkBufferCollectionConstraintsInfoFUCHSIA* in_struct);
+    safe_VkBufferCollectionConstraintsInfoFUCHSIA(const safe_VkBufferCollectionConstraintsInfoFUCHSIA& copy_src);
+    safe_VkBufferCollectionConstraintsInfoFUCHSIA& operator=(const safe_VkBufferCollectionConstraintsInfoFUCHSIA& copy_src);
+    safe_VkBufferCollectionConstraintsInfoFUCHSIA();
+    ~safe_VkBufferCollectionConstraintsInfoFUCHSIA();
+    void initialize(const VkBufferCollectionConstraintsInfoFUCHSIA* in_struct);
+    void initialize(const safe_VkBufferCollectionConstraintsInfoFUCHSIA* copy_src);
+    VkBufferCollectionConstraintsInfoFUCHSIA *ptr() { return reinterpret_cast<VkBufferCollectionConstraintsInfoFUCHSIA *>(this); }
+    VkBufferCollectionConstraintsInfoFUCHSIA const *ptr() const { return reinterpret_cast<VkBufferCollectionConstraintsInfoFUCHSIA const *>(this); }
+};
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+struct safe_VkBufferConstraintsInfoFUCHSIA {
+    VkStructureType sType;
+    const void* pNext;
+    safe_VkBufferCreateInfo createInfo;
+    VkFormatFeatureFlags requiredFormatFeatures;
+    safe_VkBufferCollectionConstraintsInfoFUCHSIA bufferCollectionConstraints;
+    safe_VkBufferConstraintsInfoFUCHSIA(const VkBufferConstraintsInfoFUCHSIA* in_struct);
+    safe_VkBufferConstraintsInfoFUCHSIA(const safe_VkBufferConstraintsInfoFUCHSIA& copy_src);
+    safe_VkBufferConstraintsInfoFUCHSIA& operator=(const safe_VkBufferConstraintsInfoFUCHSIA& copy_src);
+    safe_VkBufferConstraintsInfoFUCHSIA();
+    ~safe_VkBufferConstraintsInfoFUCHSIA();
+    void initialize(const VkBufferConstraintsInfoFUCHSIA* in_struct);
+    void initialize(const safe_VkBufferConstraintsInfoFUCHSIA* copy_src);
+    VkBufferConstraintsInfoFUCHSIA *ptr() { return reinterpret_cast<VkBufferConstraintsInfoFUCHSIA *>(this); }
+    VkBufferConstraintsInfoFUCHSIA const *ptr() const { return reinterpret_cast<VkBufferConstraintsInfoFUCHSIA const *>(this); }
+};
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+struct safe_VkBufferCollectionBufferCreateInfoFUCHSIA {
+    VkStructureType sType;
+    const void* pNext;
+    VkBufferCollectionFUCHSIA collection;
+    uint32_t index;
+    safe_VkBufferCollectionBufferCreateInfoFUCHSIA(const VkBufferCollectionBufferCreateInfoFUCHSIA* in_struct);
+    safe_VkBufferCollectionBufferCreateInfoFUCHSIA(const safe_VkBufferCollectionBufferCreateInfoFUCHSIA& copy_src);
+    safe_VkBufferCollectionBufferCreateInfoFUCHSIA& operator=(const safe_VkBufferCollectionBufferCreateInfoFUCHSIA& copy_src);
+    safe_VkBufferCollectionBufferCreateInfoFUCHSIA();
+    ~safe_VkBufferCollectionBufferCreateInfoFUCHSIA();
+    void initialize(const VkBufferCollectionBufferCreateInfoFUCHSIA* in_struct);
+    void initialize(const safe_VkBufferCollectionBufferCreateInfoFUCHSIA* copy_src);
+    VkBufferCollectionBufferCreateInfoFUCHSIA *ptr() { return reinterpret_cast<VkBufferCollectionBufferCreateInfoFUCHSIA *>(this); }
+    VkBufferCollectionBufferCreateInfoFUCHSIA const *ptr() const { return reinterpret_cast<VkBufferCollectionBufferCreateInfoFUCHSIA const *>(this); }
+};
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+struct safe_VkSysmemColorSpaceFUCHSIA {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t colorSpace;
+    safe_VkSysmemColorSpaceFUCHSIA(const VkSysmemColorSpaceFUCHSIA* in_struct);
+    safe_VkSysmemColorSpaceFUCHSIA(const safe_VkSysmemColorSpaceFUCHSIA& copy_src);
+    safe_VkSysmemColorSpaceFUCHSIA& operator=(const safe_VkSysmemColorSpaceFUCHSIA& copy_src);
+    safe_VkSysmemColorSpaceFUCHSIA();
+    ~safe_VkSysmemColorSpaceFUCHSIA();
+    void initialize(const VkSysmemColorSpaceFUCHSIA* in_struct);
+    void initialize(const safe_VkSysmemColorSpaceFUCHSIA* copy_src);
+    VkSysmemColorSpaceFUCHSIA *ptr() { return reinterpret_cast<VkSysmemColorSpaceFUCHSIA *>(this); }
+    VkSysmemColorSpaceFUCHSIA const *ptr() const { return reinterpret_cast<VkSysmemColorSpaceFUCHSIA const *>(this); }
+};
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+struct safe_VkBufferCollectionPropertiesFUCHSIA {
+    VkStructureType sType;
+    void* pNext;
+    uint32_t memoryTypeBits;
+    uint32_t bufferCount;
+    uint32_t createInfoIndex;
+    uint64_t sysmemPixelFormat;
+    VkFormatFeatureFlags formatFeatures;
+    safe_VkSysmemColorSpaceFUCHSIA sysmemColorSpaceIndex;
+    VkComponentMapping samplerYcbcrConversionComponents;
+    VkSamplerYcbcrModelConversion suggestedYcbcrModel;
+    VkSamplerYcbcrRange suggestedYcbcrRange;
+    VkChromaLocation suggestedXChromaOffset;
+    VkChromaLocation suggestedYChromaOffset;
+    safe_VkBufferCollectionPropertiesFUCHSIA(const VkBufferCollectionPropertiesFUCHSIA* in_struct);
+    safe_VkBufferCollectionPropertiesFUCHSIA(const safe_VkBufferCollectionPropertiesFUCHSIA& copy_src);
+    safe_VkBufferCollectionPropertiesFUCHSIA& operator=(const safe_VkBufferCollectionPropertiesFUCHSIA& copy_src);
+    safe_VkBufferCollectionPropertiesFUCHSIA();
+    ~safe_VkBufferCollectionPropertiesFUCHSIA();
+    void initialize(const VkBufferCollectionPropertiesFUCHSIA* in_struct);
+    void initialize(const safe_VkBufferCollectionPropertiesFUCHSIA* copy_src);
+    VkBufferCollectionPropertiesFUCHSIA *ptr() { return reinterpret_cast<VkBufferCollectionPropertiesFUCHSIA *>(this); }
+    VkBufferCollectionPropertiesFUCHSIA const *ptr() const { return reinterpret_cast<VkBufferCollectionPropertiesFUCHSIA const *>(this); }
+};
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+struct safe_VkImageFormatConstraintsInfoFUCHSIA {
+    VkStructureType sType;
+    const void* pNext;
+    safe_VkImageCreateInfo imageCreateInfo;
+    VkFormatFeatureFlags requiredFormatFeatures;
+    VkImageFormatConstraintsFlagsFUCHSIA flags;
+    uint64_t sysmemPixelFormat;
+    uint32_t colorSpaceCount;
+    safe_VkSysmemColorSpaceFUCHSIA* pColorSpaces;
+    safe_VkImageFormatConstraintsInfoFUCHSIA(const VkImageFormatConstraintsInfoFUCHSIA* in_struct);
+    safe_VkImageFormatConstraintsInfoFUCHSIA(const safe_VkImageFormatConstraintsInfoFUCHSIA& copy_src);
+    safe_VkImageFormatConstraintsInfoFUCHSIA& operator=(const safe_VkImageFormatConstraintsInfoFUCHSIA& copy_src);
+    safe_VkImageFormatConstraintsInfoFUCHSIA();
+    ~safe_VkImageFormatConstraintsInfoFUCHSIA();
+    void initialize(const VkImageFormatConstraintsInfoFUCHSIA* in_struct);
+    void initialize(const safe_VkImageFormatConstraintsInfoFUCHSIA* copy_src);
+    VkImageFormatConstraintsInfoFUCHSIA *ptr() { return reinterpret_cast<VkImageFormatConstraintsInfoFUCHSIA *>(this); }
+    VkImageFormatConstraintsInfoFUCHSIA const *ptr() const { return reinterpret_cast<VkImageFormatConstraintsInfoFUCHSIA const *>(this); }
+};
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+struct safe_VkImageConstraintsInfoFUCHSIA {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t formatConstraintsCount;
+    safe_VkImageFormatConstraintsInfoFUCHSIA* pFormatConstraints;
+    safe_VkBufferCollectionConstraintsInfoFUCHSIA bufferCollectionConstraints;
+    VkImageConstraintsInfoFlagsFUCHSIA flags;
+    safe_VkImageConstraintsInfoFUCHSIA(const VkImageConstraintsInfoFUCHSIA* in_struct);
+    safe_VkImageConstraintsInfoFUCHSIA(const safe_VkImageConstraintsInfoFUCHSIA& copy_src);
+    safe_VkImageConstraintsInfoFUCHSIA& operator=(const safe_VkImageConstraintsInfoFUCHSIA& copy_src);
+    safe_VkImageConstraintsInfoFUCHSIA();
+    ~safe_VkImageConstraintsInfoFUCHSIA();
+    void initialize(const VkImageConstraintsInfoFUCHSIA* in_struct);
+    void initialize(const safe_VkImageConstraintsInfoFUCHSIA* copy_src);
+    VkImageConstraintsInfoFUCHSIA *ptr() { return reinterpret_cast<VkImageConstraintsInfoFUCHSIA *>(this); }
+    VkImageConstraintsInfoFUCHSIA const *ptr() const { return reinterpret_cast<VkImageConstraintsInfoFUCHSIA const *>(this); }
+};
+#endif // VK_USE_PLATFORM_FUCHSIA
+
 struct safe_VkSubpassShadingPipelineCreateInfoHUAWEI {
     VkStructureType sType;
     void* pNext;

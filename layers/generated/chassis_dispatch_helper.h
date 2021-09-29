@@ -1064,6 +1064,21 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetSemaphoreZirconHandleFUCHSIA,
     InterceptIdPreCallRecordGetSemaphoreZirconHandleFUCHSIA,
     InterceptIdPostCallRecordGetSemaphoreZirconHandleFUCHSIA,
+    InterceptIdPreCallValidateCreateBufferCollectionFUCHSIA,
+    InterceptIdPreCallRecordCreateBufferCollectionFUCHSIA,
+    InterceptIdPostCallRecordCreateBufferCollectionFUCHSIA,
+    InterceptIdPreCallValidateSetBufferCollectionImageConstraintsFUCHSIA,
+    InterceptIdPreCallRecordSetBufferCollectionImageConstraintsFUCHSIA,
+    InterceptIdPostCallRecordSetBufferCollectionImageConstraintsFUCHSIA,
+    InterceptIdPreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA,
+    InterceptIdPreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA,
+    InterceptIdPostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA,
+    InterceptIdPreCallValidateDestroyBufferCollectionFUCHSIA,
+    InterceptIdPreCallRecordDestroyBufferCollectionFUCHSIA,
+    InterceptIdPostCallRecordDestroyBufferCollectionFUCHSIA,
+    InterceptIdPreCallValidateGetBufferCollectionPropertiesFUCHSIA,
+    InterceptIdPreCallRecordGetBufferCollectionPropertiesFUCHSIA,
+    InterceptIdPostCallRecordGetBufferCollectionPropertiesFUCHSIA,
     InterceptIdPreCallValidateGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI,
     InterceptIdPreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI,
     InterceptIdPostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI,
@@ -2367,6 +2382,31 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetSemaphoreZirconHandleFUCHSIA);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetSemaphoreZirconHandleFUCHSIA);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetSemaphoreZirconHandleFUCHSIA);
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateBufferCollectionFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateBufferCollectionFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateBufferCollectionFUCHSIA);
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    BUILD_DISPATCH_VECTOR(PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PreCallRecordSetBufferCollectionImageConstraintsFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA);
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    BUILD_DISPATCH_VECTOR(PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA);
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyBufferCollectionFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyBufferCollectionFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyBufferCollectionFUCHSIA);
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetBufferCollectionPropertiesFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetBufferCollectionPropertiesFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetBufferCollectionPropertiesFUCHSIA);
 #endif
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI);

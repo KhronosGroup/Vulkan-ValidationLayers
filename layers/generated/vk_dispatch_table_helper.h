@@ -456,6 +456,21 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubImportSemaphoreZirconHandleFUCHSIA(VkD
 #ifdef VK_USE_PLATFORM_FUCHSIA
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetSemaphoreZirconHandleFUCHSIA(VkDevice device, const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle) { return VK_SUCCESS; };
 #endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateBufferCollectionFUCHSIA(VkDevice device, const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkBufferCollectionFUCHSIA* pCollection) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+static VKAPI_ATTR VkResult VKAPI_CALL StubSetBufferCollectionImageConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+static VKAPI_ATTR VkResult VKAPI_CALL StubSetBufferCollectionBufferConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+static VKAPI_ATTR void VKAPI_CALL StubDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkAllocationCallbacks* pAllocator) {  };
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, VkBufferCollectionPropertiesFUCHSIA* pProperties) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_FUCHSIA
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass, VkExtent2D* pMaxWorkgroupSize) { return VK_SUCCESS; };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout) {  };
@@ -626,6 +641,7 @@ const layer_data::unordered_map<std::string, std::string> api_extension_map {
     {"vkCopyMemoryToAccelerationStructureKHR", "VK_KHR_acceleration_structure"},
     {"vkCreateAccelerationStructureKHR", "VK_KHR_acceleration_structure"},
     {"vkCreateAccelerationStructureNV", "VK_NV_ray_tracing"},
+    {"vkCreateBufferCollectionFUCHSIA", "VK_FUCHSIA_buffer_collection"},
     {"vkCreateCuFunctionNVX", "VK_NVX_binary_import"},
     {"vkCreateCuModuleNVX", "VK_NVX_binary_import"},
     {"vkCreateDeferredOperationKHR", "VK_KHR_deferred_host_operations"},
@@ -649,6 +665,7 @@ const layer_data::unordered_map<std::string, std::string> api_extension_map {
     {"vkDeferredOperationJoinKHR", "VK_KHR_deferred_host_operations"},
     {"vkDestroyAccelerationStructureKHR", "VK_KHR_acceleration_structure"},
     {"vkDestroyAccelerationStructureNV", "VK_NV_ray_tracing"},
+    {"vkDestroyBufferCollectionFUCHSIA", "VK_FUCHSIA_buffer_collection"},
     {"vkDestroyCuFunctionNVX", "VK_NVX_binary_import"},
     {"vkDestroyCuModuleNVX", "VK_NVX_binary_import"},
     {"vkDestroyDeferredOperationKHR", "VK_KHR_deferred_host_operations"},
@@ -668,6 +685,7 @@ const layer_data::unordered_map<std::string, std::string> api_extension_map {
     {"vkGetAccelerationStructureHandleNV", "VK_NV_ray_tracing"},
     {"vkGetAccelerationStructureMemoryRequirementsNV", "VK_NV_ray_tracing"},
     {"vkGetAndroidHardwareBufferPropertiesANDROID", "VK_ANDROID_external_memory_android_hardware_buffer"},
+    {"vkGetBufferCollectionPropertiesFUCHSIA", "VK_FUCHSIA_buffer_collection"},
     {"vkGetBufferDeviceAddress", "VK_VERSION_1_2"},
     {"vkGetBufferDeviceAddressEXT", "VK_EXT_buffer_device_address"},
     {"vkGetBufferDeviceAddressKHR", "VK_KHR_buffer_device_address"},
@@ -754,6 +772,8 @@ const layer_data::unordered_map<std::string, std::string> api_extension_map {
     {"vkReleaseProfilingLockKHR", "VK_KHR_performance_query"},
     {"vkResetQueryPool", "VK_VERSION_1_2"},
     {"vkResetQueryPoolEXT", "VK_EXT_host_query_reset"},
+    {"vkSetBufferCollectionBufferConstraintsFUCHSIA", "VK_FUCHSIA_buffer_collection"},
+    {"vkSetBufferCollectionImageConstraintsFUCHSIA", "VK_FUCHSIA_buffer_collection"},
     {"vkSetDebugUtilsObjectNameEXT", "VK_EXT_debug_utils"},
     {"vkSetDebugUtilsObjectTagEXT", "VK_EXT_debug_utils"},
     {"vkSetDeviceMemoryPriorityEXT", "VK_EXT_pageable_device_local_memory"},
@@ -1444,6 +1464,26 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
 #ifdef VK_USE_PLATFORM_FUCHSIA
     table->GetSemaphoreZirconHandleFUCHSIA = (PFN_vkGetSemaphoreZirconHandleFUCHSIA) gpa(device, "vkGetSemaphoreZirconHandleFUCHSIA");
     if (table->GetSemaphoreZirconHandleFUCHSIA == nullptr) { table->GetSemaphoreZirconHandleFUCHSIA = (PFN_vkGetSemaphoreZirconHandleFUCHSIA)StubGetSemaphoreZirconHandleFUCHSIA; }
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    table->CreateBufferCollectionFUCHSIA = (PFN_vkCreateBufferCollectionFUCHSIA) gpa(device, "vkCreateBufferCollectionFUCHSIA");
+    if (table->CreateBufferCollectionFUCHSIA == nullptr) { table->CreateBufferCollectionFUCHSIA = (PFN_vkCreateBufferCollectionFUCHSIA)StubCreateBufferCollectionFUCHSIA; }
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    table->SetBufferCollectionImageConstraintsFUCHSIA = (PFN_vkSetBufferCollectionImageConstraintsFUCHSIA) gpa(device, "vkSetBufferCollectionImageConstraintsFUCHSIA");
+    if (table->SetBufferCollectionImageConstraintsFUCHSIA == nullptr) { table->SetBufferCollectionImageConstraintsFUCHSIA = (PFN_vkSetBufferCollectionImageConstraintsFUCHSIA)StubSetBufferCollectionImageConstraintsFUCHSIA; }
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    table->SetBufferCollectionBufferConstraintsFUCHSIA = (PFN_vkSetBufferCollectionBufferConstraintsFUCHSIA) gpa(device, "vkSetBufferCollectionBufferConstraintsFUCHSIA");
+    if (table->SetBufferCollectionBufferConstraintsFUCHSIA == nullptr) { table->SetBufferCollectionBufferConstraintsFUCHSIA = (PFN_vkSetBufferCollectionBufferConstraintsFUCHSIA)StubSetBufferCollectionBufferConstraintsFUCHSIA; }
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    table->DestroyBufferCollectionFUCHSIA = (PFN_vkDestroyBufferCollectionFUCHSIA) gpa(device, "vkDestroyBufferCollectionFUCHSIA");
+    if (table->DestroyBufferCollectionFUCHSIA == nullptr) { table->DestroyBufferCollectionFUCHSIA = (PFN_vkDestroyBufferCollectionFUCHSIA)StubDestroyBufferCollectionFUCHSIA; }
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    table->GetBufferCollectionPropertiesFUCHSIA = (PFN_vkGetBufferCollectionPropertiesFUCHSIA) gpa(device, "vkGetBufferCollectionPropertiesFUCHSIA");
+    if (table->GetBufferCollectionPropertiesFUCHSIA == nullptr) { table->GetBufferCollectionPropertiesFUCHSIA = (PFN_vkGetBufferCollectionPropertiesFUCHSIA)StubGetBufferCollectionPropertiesFUCHSIA; }
 #endif // VK_USE_PLATFORM_FUCHSIA
     table->GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI = (PFN_vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI) gpa(device, "vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI");
     if (table->GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI == nullptr) { table->GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI = (PFN_vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI)StubGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI; }

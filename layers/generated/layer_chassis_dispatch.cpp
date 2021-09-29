@@ -79,6 +79,15 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                     }
                 } break;
 
+#ifdef VK_USE_PLATFORM_FUCHSIA 
+            case VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA: {
+                    safe_VkImportMemoryBufferCollectionFUCHSIA *safe_struct = reinterpret_cast<safe_VkImportMemoryBufferCollectionFUCHSIA *>(cur_pnext);
+                    if (safe_struct->collection) {
+                        safe_struct->collection = layer_data->Unwrap(safe_struct->collection);
+                    }
+                } break;
+#endif // VK_USE_PLATFORM_FUCHSIA 
+
             case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO: {
                     safe_VkMemoryDedicatedAllocateInfo *safe_struct = reinterpret_cast<safe_VkMemoryDedicatedAllocateInfo *>(cur_pnext);
                     if (safe_struct->image) {
@@ -88,6 +97,24 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                         safe_struct->buffer = layer_data->Unwrap(safe_struct->buffer);
                     }
                 } break;
+
+#ifdef VK_USE_PLATFORM_FUCHSIA 
+            case VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA: {
+                    safe_VkBufferCollectionBufferCreateInfoFUCHSIA *safe_struct = reinterpret_cast<safe_VkBufferCollectionBufferCreateInfoFUCHSIA *>(cur_pnext);
+                    if (safe_struct->collection) {
+                        safe_struct->collection = layer_data->Unwrap(safe_struct->collection);
+                    }
+                } break;
+#endif // VK_USE_PLATFORM_FUCHSIA 
+
+#ifdef VK_USE_PLATFORM_FUCHSIA 
+            case VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA: {
+                    safe_VkBufferCollectionImageCreateInfoFUCHSIA *safe_struct = reinterpret_cast<safe_VkBufferCollectionImageCreateInfoFUCHSIA *>(cur_pnext);
+                    if (safe_struct->collection) {
+                        safe_struct->collection = layer_data->Unwrap(safe_struct->collection);
+                    }
+                } break;
+#endif // VK_USE_PLATFORM_FUCHSIA 
 
             case VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR: {
                     safe_VkImageSwapchainCreateInfoKHR *safe_struct = reinterpret_cast<safe_VkImageSwapchainCreateInfoKHR *>(cur_pnext);
@@ -1948,7 +1975,16 @@ VkResult DispatchCreateBuffer(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
-    VkResult result = layer_data->device_dispatch_table.CreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
+    safe_VkBufferCreateInfo var_local_pCreateInfo;
+    safe_VkBufferCreateInfo *local_pCreateInfo = NULL;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+            WrapPnextChainHandles(layer_data, local_pCreateInfo->pNext);
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.CreateBuffer(device, (const VkBufferCreateInfo*)local_pCreateInfo, pAllocator, pBuffer);
     if (VK_SUCCESS == result) {
         *pBuffer = layer_data->WrapNew(*pBuffer);
     }
@@ -8613,6 +8649,99 @@ VkResult DispatchGetSemaphoreZirconHandleFUCHSIA(
         }
     }
     VkResult result = layer_data->device_dispatch_table.GetSemaphoreZirconHandleFUCHSIA(device, (const VkSemaphoreGetZirconHandleInfoFUCHSIA*)local_pGetZirconHandleInfo, pZirconHandle);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+VkResult DispatchCreateBufferCollectionFUCHSIA(
+    VkDevice                                    device,
+    const VkBufferCollectionCreateInfoFUCHSIA*  pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkBufferCollectionFUCHSIA*                  pCollection)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
+    VkResult result = layer_data->device_dispatch_table.CreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
+    if (VK_SUCCESS == result) {
+        *pCollection = layer_data->WrapNew(*pCollection);
+    }
+    return result;
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+VkResult DispatchSetBufferCollectionImageConstraintsFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkImageConstraintsInfoFUCHSIA*        pImageConstraintsInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.SetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo);
+    {
+        collection = layer_data->Unwrap(collection);
+    }
+    VkResult result = layer_data->device_dispatch_table.SetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+VkResult DispatchSetBufferCollectionBufferConstraintsFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkBufferConstraintsInfoFUCHSIA*       pBufferConstraintsInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.SetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo);
+    {
+        collection = layer_data->Unwrap(collection);
+    }
+    VkResult result = layer_data->device_dispatch_table.SetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+void DispatchDestroyBufferCollectionFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkAllocationCallbacks*                pAllocator)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.DestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
+    uint64_t collection_id = reinterpret_cast<uint64_t &>(collection);
+    auto iter = unique_id_mapping.pop(collection_id);
+    if (iter != unique_id_mapping.end()) {
+        collection = (VkBufferCollectionFUCHSIA)iter->second;
+    } else {
+        collection = (VkBufferCollectionFUCHSIA)0;
+    }
+    layer_data->device_dispatch_table.DestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
+
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+VkResult DispatchGetBufferCollectionPropertiesFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    VkBufferCollectionPropertiesFUCHSIA*        pProperties)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties);
+    {
+        collection = layer_data->Unwrap(collection);
+    }
+    VkResult result = layer_data->device_dispatch_table.GetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties);
 
     return result;
 }

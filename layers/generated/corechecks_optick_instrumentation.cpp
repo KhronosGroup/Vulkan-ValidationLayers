@@ -7375,6 +7375,96 @@ void CoreChecksOptickInstrumented::PostCallRecordGetSemaphoreZirconHandleFUCHSIA
 }
 
 #endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+bool CoreChecksOptickInstrumented::PreCallValidateCreateBufferCollectionFUCHSIA(VkDevice device, const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkBufferCollectionFUCHSIA* pCollection) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCreateBufferCollectionFUCHSIA(VkDevice device, const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkBufferCollectionFUCHSIA* pCollection) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCreateBufferCollectionFUCHSIA(VkDevice device, const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkBufferCollectionFUCHSIA* pCollection, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection, result);
+}
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+bool CoreChecksOptickInstrumented::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordSetBufferCollectionImageConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo, result);
+}
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+bool CoreChecksOptickInstrumented::PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo, result);
+}
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+bool CoreChecksOptickInstrumented::PreCallValidateDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkAllocationCallbacks* pAllocator) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateDestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkAllocationCallbacks* pAllocator) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordDestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, const VkAllocationCallbacks* pAllocator) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordDestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
+}
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+bool CoreChecksOptickInstrumented::PreCallValidateGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, VkBufferCollectionPropertiesFUCHSIA* pProperties) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, VkBufferCollectionPropertiesFUCHSIA* pProperties) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection, VkBufferCollectionPropertiesFUCHSIA* pProperties, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties, result);
+}
+
+#endif // VK_USE_PLATFORM_FUCHSIA
 bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass, VkExtent2D* pMaxWorkgroupSize) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize);

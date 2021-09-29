@@ -5019,6 +5019,116 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SEMAPHORE_GET_ZIRCON_HANDLE_INF
 };
 
 #endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+// Map type VkBufferCollectionCreateInfoFUCHSIA to id VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CREATE_INFO_FUCHSIA
+template <> struct LvlTypeMap<VkBufferCollectionCreateInfoFUCHSIA> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CREATE_INFO_FUCHSIA;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CREATE_INFO_FUCHSIA> {
+    typedef VkBufferCollectionCreateInfoFUCHSIA Type;
+};
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+// Map type VkImportMemoryBufferCollectionFUCHSIA to id VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA
+template <> struct LvlTypeMap<VkImportMemoryBufferCollectionFUCHSIA> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA> {
+    typedef VkImportMemoryBufferCollectionFUCHSIA Type;
+};
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+// Map type VkBufferCollectionImageCreateInfoFUCHSIA to id VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA
+template <> struct LvlTypeMap<VkBufferCollectionImageCreateInfoFUCHSIA> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA> {
+    typedef VkBufferCollectionImageCreateInfoFUCHSIA Type;
+};
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+// Map type VkBufferCollectionConstraintsInfoFUCHSIA to id VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CONSTRAINTS_INFO_FUCHSIA
+template <> struct LvlTypeMap<VkBufferCollectionConstraintsInfoFUCHSIA> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CONSTRAINTS_INFO_FUCHSIA;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CONSTRAINTS_INFO_FUCHSIA> {
+    typedef VkBufferCollectionConstraintsInfoFUCHSIA Type;
+};
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+// Map type VkBufferConstraintsInfoFUCHSIA to id VK_STRUCTURE_TYPE_BUFFER_CONSTRAINTS_INFO_FUCHSIA
+template <> struct LvlTypeMap<VkBufferConstraintsInfoFUCHSIA> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_CONSTRAINTS_INFO_FUCHSIA;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_CONSTRAINTS_INFO_FUCHSIA> {
+    typedef VkBufferConstraintsInfoFUCHSIA Type;
+};
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+// Map type VkBufferCollectionBufferCreateInfoFUCHSIA to id VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA
+template <> struct LvlTypeMap<VkBufferCollectionBufferCreateInfoFUCHSIA> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA> {
+    typedef VkBufferCollectionBufferCreateInfoFUCHSIA Type;
+};
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+// Map type VkSysmemColorSpaceFUCHSIA to id VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA
+template <> struct LvlTypeMap<VkSysmemColorSpaceFUCHSIA> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA> {
+    typedef VkSysmemColorSpaceFUCHSIA Type;
+};
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+// Map type VkBufferCollectionPropertiesFUCHSIA to id VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES_FUCHSIA
+template <> struct LvlTypeMap<VkBufferCollectionPropertiesFUCHSIA> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES_FUCHSIA;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES_FUCHSIA> {
+    typedef VkBufferCollectionPropertiesFUCHSIA Type;
+};
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+// Map type VkImageFormatConstraintsInfoFUCHSIA to id VK_STRUCTURE_TYPE_IMAGE_FORMAT_CONSTRAINTS_INFO_FUCHSIA
+template <> struct LvlTypeMap<VkImageFormatConstraintsInfoFUCHSIA> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_CONSTRAINTS_INFO_FUCHSIA;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_FORMAT_CONSTRAINTS_INFO_FUCHSIA> {
+    typedef VkImageFormatConstraintsInfoFUCHSIA Type;
+};
+
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
+// Map type VkImageConstraintsInfoFUCHSIA to id VK_STRUCTURE_TYPE_IMAGE_CONSTRAINTS_INFO_FUCHSIA
+template <> struct LvlTypeMap<VkImageConstraintsInfoFUCHSIA> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_CONSTRAINTS_INFO_FUCHSIA;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_CONSTRAINTS_INFO_FUCHSIA> {
+    typedef VkImageConstraintsInfoFUCHSIA Type;
+};
+
+#endif // VK_USE_PLATFORM_FUCHSIA
 // Map type VkSubpassShadingPipelineCreateInfoHUAWEI to id VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI
 template <> struct LvlTypeMap<VkSubpassShadingPipelineCreateInfoHUAWEI> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI;

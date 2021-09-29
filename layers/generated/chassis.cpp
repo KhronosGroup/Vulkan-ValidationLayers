@@ -11276,6 +11276,124 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreZirconHandleFUCHSIA(
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateBufferCollectionFUCHSIA(
+    VkDevice                                    device,
+    const VkBufferCollectionCreateInfoFUCHSIA*  pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkBufferCollectionFUCHSIA*                  pCollection) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreateBufferCollectionFUCHSIA]) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateBufferCollectionFUCHSIA]) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
+    }
+    VkResult result = DispatchCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateBufferCollectionFUCHSIA]) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionImageConstraintsFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkImageConstraintsInfoFUCHSIA*        pImageConstraintsInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateSetBufferCollectionImageConstraintsFUCHSIA]) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetBufferCollectionImageConstraintsFUCHSIA]) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo);
+    }
+    VkResult result = DispatchSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetBufferCollectionImageConstraintsFUCHSIA]) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionBufferConstraintsFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkBufferConstraintsInfoFUCHSIA*       pBufferConstraintsInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA]) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA]) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo);
+    }
+    VkResult result = DispatchSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA]) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyBufferCollectionFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    const VkAllocationCallbacks*                pAllocator) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateDestroyBufferCollectionFUCHSIA]) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateDestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyBufferCollectionFUCHSIA]) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordDestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
+    }
+    DispatchDestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyBufferCollectionFUCHSIA]) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordDestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetBufferCollectionPropertiesFUCHSIA(
+    VkDevice                                    device,
+    VkBufferCollectionFUCHSIA                   collection,
+    VkBufferCollectionPropertiesFUCHSIA*        pProperties) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetBufferCollectionPropertiesFUCHSIA]) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferCollectionPropertiesFUCHSIA]) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties);
+    }
+    VkResult result = DispatchGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferCollectionPropertiesFUCHSIA]) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties, result);
+    }
+    return result;
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(
     VkDevice                                    device,
@@ -12686,6 +12804,21 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
 #endif
 #ifdef VK_USE_PLATFORM_FUCHSIA
     {"vkGetSemaphoreZirconHandleFUCHSIA", {kFuncTypeDev, (void*)GetSemaphoreZirconHandleFUCHSIA}},
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    {"vkCreateBufferCollectionFUCHSIA", {kFuncTypeDev, (void*)CreateBufferCollectionFUCHSIA}},
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    {"vkSetBufferCollectionImageConstraintsFUCHSIA", {kFuncTypeDev, (void*)SetBufferCollectionImageConstraintsFUCHSIA}},
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    {"vkSetBufferCollectionBufferConstraintsFUCHSIA", {kFuncTypeDev, (void*)SetBufferCollectionBufferConstraintsFUCHSIA}},
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    {"vkDestroyBufferCollectionFUCHSIA", {kFuncTypeDev, (void*)DestroyBufferCollectionFUCHSIA}},
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    {"vkGetBufferCollectionPropertiesFUCHSIA", {kFuncTypeDev, (void*)GetBufferCollectionPropertiesFUCHSIA}},
 #endif
     {"vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI", {kFuncTypeDev, (void*)GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI}},
     {"vkCmdSubpassShadingHUAWEI", {kFuncTypeDev, (void*)CmdSubpassShadingHUAWEI}},
