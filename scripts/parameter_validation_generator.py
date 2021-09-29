@@ -681,7 +681,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     for bit in bits[1:]:
                         decl += '|' + bit
                     decl += ';'
-                    self.flag_values_definitions[flag] = decl
+                    self.flag_values_definitions[flag] = Guarded(self.featureExtraProtect, decl)
             endif = '\n'
             if (self.featureExtraProtect is not None):
                 endif = '#endif // %s\n' % self.featureExtraProtect
