@@ -606,11 +606,6 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         const auto *features2 = LvlFindInChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
         if (features2) {
             enabled_features_found = &(features2->features);
-
-            const auto *provoking_vertex_features = lvl_find_in_chain<VkPhysicalDeviceProvokingVertexFeaturesEXT>(features2->pNext);
-            if (provoking_vertex_features) {
-                state_tracker->enabled_features.provoking_vertex_features = *provoking_vertex_features;
-            }
         }
     }
 
