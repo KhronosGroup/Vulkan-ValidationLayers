@@ -2061,7 +2061,7 @@ void CreateNVRayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
 }
 
 void CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo() {
-    rp_ci_KHR_.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+    rp_ci_KHR_.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
     rp_ci_KHR_.maxPipelineRayRecursionDepth = 0;
     rp_ci_KHR_.stageCount = shader_stages_.size();
     rp_ci_KHR_.pStages = shader_stages_.data();
