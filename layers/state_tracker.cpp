@@ -3627,12 +3627,20 @@ std::shared_ptr<PHYSICAL_DEVICE_STATE> ValidationStateTracker::CreatePhysicalDev
     return std::make_shared<PHYSICAL_DEVICE_STATE>(phys_dev);
 }
 
-void ValidationStateTracker::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
-                                                                    VkPhysicalDevice *pPhysicalDevices, VkResult result) {
-    if ((NULL != pPhysicalDevices) && ((result == VK_SUCCESS || result == VK_INCOMPLETE))) {
-        for (uint32_t i = 0; i < *pPhysicalDeviceCount; i++) {
-            physical_device_map.emplace(pPhysicalDevices[i], CreatePhysicalDeviceState(pPhysicalDevices[i]));
-        }
+void ValidationStateTracker::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
+                                                          const VkAllocationCallbacks *pAllocator, VkInstance *pInstance,
+                                                          VkResult result) {
+    if (result != VK_SUCCESS) {
+        return;
+    }
+    uint32_t count = 0;
+    DispatchEnumeratePhysicalDevices(*pInstance, &count, nullptr);
+    std::vector<VkPhysicalDevice> physdev_handles(count);
+    DispatchEnumeratePhysicalDevices(*pInstance, &count, physdev_handles.data());
+
+    physical_device_map.reserve(count);
+    for (auto physdev : physdev_handles) {
+        physical_device_map.emplace(physdev, CreatePhysicalDeviceState(physdev));
     }
 }
 
@@ -3796,33 +3804,6 @@ void ValidationStateTracker::PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandB
     cb_state->RecordCmd(CMD_INSERTDEBUGUTILSLABELEXT);
     // Squirrel away an easily accessible copy.
     cb_state->debug_label = LoggingLabel(pLabelInfo);
-}
-
-void ValidationStateTracker::RecordEnumeratePhysicalDeviceGroupsState(
-    uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties) {
-    if (NULL != pPhysicalDeviceGroupProperties) {
-        for (uint32_t i = 0; i < *pPhysicalDeviceGroupCount; i++) {
-            for (uint32_t j = 0; j < pPhysicalDeviceGroupProperties[i].physicalDeviceCount; j++) {
-                VkPhysicalDevice cur_phys_dev = pPhysicalDeviceGroupProperties[i].physicalDevices[j];
-
-                physical_device_map.emplace(cur_phys_dev, CreatePhysicalDeviceState(cur_phys_dev));
-            }
-        }
-    }
-}
-
-void ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceGroups(
-    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
-    VkResult result) {
-    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
-    RecordEnumeratePhysicalDeviceGroupsState(pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
-}
-
-void ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(
-    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
-    VkResult result) {
-    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
-    RecordEnumeratePhysicalDeviceGroupsState(pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
 }
 
 void ValidationStateTracker::RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(VkPhysicalDevice physicalDevice,
