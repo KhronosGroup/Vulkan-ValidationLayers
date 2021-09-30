@@ -1509,7 +1509,15 @@ OneOffDescriptorSet::OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bi
     image_infos.reserve(image_info_size);
     buffer_views.reserve(buffer_view_size);
     std::vector<VkDescriptorPoolSize> sizes;
-    for (const auto &b : bindings) sizes.push_back({b.descriptorType, std::max(1u, b.descriptorCount)});
+    for (const auto &b : bindings) {
+        uint32_t count = b.descriptorCount;
+        // AMD will report VK_ERROR_OUT_OF_POOL_MEMORY in vkAllocateDescriptorSets if b.pImmutableSamplers is used and pool size is
+        // equal to descriptorCount
+        if (b.pImmutableSamplers) {
+            count *= 2;
+        }
+        sizes.push_back({b.descriptorType, std::max(1u, count)});
+    }
 
     VkDescriptorPoolCreateInfo dspci = {
         VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, nullptr, poolFlags, 1, uint32_t(sizes.size()), sizes.data()};
