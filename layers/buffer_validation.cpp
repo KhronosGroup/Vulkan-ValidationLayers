@@ -3143,20 +3143,15 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
         // Check for multi-plane format compatiblity
         if (FormatIsMultiplane(src_format) || FormatIsMultiplane(dst_format)) {
-            size_t src_format_size = 0;
-            size_t dst_format_size = 0;
-            if (FormatIsMultiplane(src_format)) {
-                const VkFormat plane_format = FindMultiplaneCompatibleFormat(src_format, region.srcSubresource.aspectMask);
-                src_format_size = FormatElementSize(plane_format);
-            } else {
-                src_format_size = FormatElementSize(src_format);
-            }
-            if (FormatIsMultiplane(dst_format)) {
-                const VkFormat plane_format = FindMultiplaneCompatibleFormat(dst_format, region.dstSubresource.aspectMask);
-                dst_format_size = FormatElementSize(plane_format);
-            } else {
-                dst_format_size = FormatElementSize(dst_format);
-            }
+            const VkFormat src_plane_format = FormatIsMultiplane(src_format)
+                                                  ? FindMultiplaneCompatibleFormat(src_format, region.srcSubresource.aspectMask)
+                                                  : src_format;
+            const VkFormat dst_plane_format = FormatIsMultiplane(dst_format)
+                                                  ? FindMultiplaneCompatibleFormat(dst_format, region.dstSubresource.aspectMask)
+                                                  : dst_format;
+            const size_t src_format_size = FormatElementSize(src_plane_format);
+            const size_t dst_format_size = FormatElementSize(dst_plane_format);
+
             // If size is still zero, then format is invalid and will be caught in another VU
             if ((src_format_size != dst_format_size) && (src_format_size != 0) && (dst_format_size != 0)) {
                 vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-None-01549" : "VUID-vkCmdCopyImage-None-01549";
@@ -6180,7 +6175,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
 
         // If the the calling command's VkImage parameter's format is not a depth/stencil format,
         // then bufferOffset must be a multiple of the calling command's VkImage parameter's element size
-        const uint32_t element_size = FormatElementSize(image_format, region_aspect_mask);
+        const uint32_t element_size =
+            FormatIsDepthOrStencil(image_format) ? 0 : FormatElementSize(image_format, region_aspect_mask);
         const VkDeviceSize bufferOffset = pRegions[i].bufferOffset;
 
         if (FormatIsDepthOrStencil(image_format)) {
@@ -6306,12 +6302,11 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             }
 
             // bufferOffset must be a multiple of block size (linear bytes)
-            uint32_t block_size_in_bytes = FormatElementSize(image_format);
-            if (SafeModulo(bufferOffset, block_size_in_bytes) != 0) {
+            if (SafeModulo(bufferOffset, element_size) != 0) {
                 skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00206", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] bufferOffset (0x%" PRIxLEAST64
                                  ") must be a multiple of the compressed image's texel block size (%" PRIu32 ").",
-                                 function, i, bufferOffset, block_size_in_bytes);
+                                 function, i, bufferOffset, element_size);
             }
 
             // imageExtent width must be a multiple of block width, or extent+offset width must equal subresource width
