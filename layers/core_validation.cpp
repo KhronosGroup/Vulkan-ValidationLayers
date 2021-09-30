@@ -1209,6 +1209,31 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     return result;
 }
 
+bool CoreChecks::ValidateCmdRayQueryState(const CMD_BUFFER_STATE *cb_state, CMD_TYPE cmd_type,
+                                          const VkPipelineBindPoint bind_point) const {
+    bool skip = false;
+    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
+    const auto &state = cb_state->lastBound[lv_bind_point];
+    const auto *pipe = state.pipeline_state;
+
+    bool ray_query_shader = false;
+    if (nullptr != pipe) {
+        if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+            ray_query_shader = true;
+        } else {
+            // TODO - Loop through shader for RayQueryKHR for draw/dispatch commands
+        }
+    }
+
+    if (cb_state->unprotected == false && ray_query_shader) {
+        skip |= LogError(cb_state->commandBuffer(), vuid.ray_query_protected_cb,
+                         "%s(): can't use in protected command buffers for RayQuery operations.", CommandTypeString(cmd_type));
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE *pPipeline) const {
     bool skip = false;
     const auto& create_info = pPipeline->create_info.graphics;
@@ -15545,6 +15570,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkComm
     assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(cb_state, CMD_BUILDACCELERATIONSTRUCTURESINDIRECTKHR, "vkCmdBuildAccelerationStructuresIndirectKHR()");
+    skip |= ValidateCmdRayQueryState(cb_state, CMD_BUILDACCELERATIONSTRUCTURESINDIRECTKHR, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
     for (uint32_t i = 0; i < infoCount; ++i) {
         const ACCELERATION_STRUCTURE_STATE_KHR *src_as_state = GetAccelerationStructureStateKHR(pInfos[i].srcAccelerationStructure);
         const ACCELERATION_STRUCTURE_STATE_KHR *dst_as_state = GetAccelerationStructureStateKHR(pInfos[i].dstAccelerationStructure);

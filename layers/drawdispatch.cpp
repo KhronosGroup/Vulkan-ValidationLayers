@@ -483,7 +483,7 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdTraceRaysNV-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdTraceRaysNV-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdTraceRaysNV-commandBuffer-02707";
-        protected_command_buffer           = "VUID-vkCmdTraceRaysNV-commandBuffer-04624";
+        ray_query_protected_cb             = "VUID-vkCmdTraceRaysNV-commandBuffer-04624";
         img_filter_cubic                   = "VUID-vkCmdTraceRaysNV-None-02693";
         filter_cubic                       = "VUID-vkCmdTraceRaysNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdTraceRaysNV-filterCubicMinmax-02695";
@@ -506,7 +506,7 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdTraceRaysKHR-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdTraceRaysKHR-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdTraceRaysKHR-commandBuffer-02707";
-        protected_command_buffer           = "VUID-vkCmdTraceRaysKHR-commandBuffer-04625";
+        ray_query_protected_cb              = "VUID-vkCmdTraceRaysKHR-commandBuffer-04625";
         img_filter_cubic                   = "VUID-vkCmdTraceRaysKHR-None-02693";
         filter_cubic                       = "VUID-vkCmdTraceRaysKHR-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdTraceRaysKHR-filterCubicMinmax-02695";
@@ -520,7 +520,6 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
         compatible_pipeline                = "VUID-vkCmdTraceRaysIndirectKHR-None-02697";
         linear_sampler                     = "VUID-vkCmdTraceRaysIndirectKHR-magFilter-04553";
         cubic_sampler                      = "VUID-vkCmdTraceRaysIndirectKHR-None-02692";
-        indirect_protected_cb              = "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-03635";
         indirect_contiguous_memory         = "VUID-vkCmdTraceRaysIndirectKHR-indirectDeviceAddress-03632";
         indirect_buffer_bit                = "VUID-vkCmdTraceRaysIndirectKHR-indirectDeviceAddress-03633";
         corner_sampled_address_mode        = "VUID-vkCmdTraceRaysIndirectKHR-flags-02696";
@@ -532,6 +531,7 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdTraceRaysIndirectKHR-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdTraceRaysIndirectKHR-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-02707";
+        ray_query_protected_cb             = "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-03635";
         img_filter_cubic                   = "VUID-vkCmdTraceRaysIndirectKHR-None-02693";
         filter_cubic                       = "VUID-vkCmdTraceRaysIndirectKHR-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdTraceRaysIndirectKHR-filterCubicMinmax-02695";
@@ -783,6 +783,7 @@ bool CoreChecks::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, V
     if (cb_state) {
         skip |= ValidateCmd(cb_state, cmd_type, caller);
         skip |= ValidateCmdBufDrawState(cb_state, cmd_type, indexed, bind_point, caller);
+        skip |= ValidateCmdRayQueryState(cb_state, cmd_type, bind_point);
     }
     return skip;
 }
