@@ -236,7 +236,7 @@ static void InitRenderPassState(RENDER_PASS_STATE *render_pass) {
 
         const auto last_use = attachment_tracker.last[attachment];
         if (last_use != VK_SUBPASS_EXTERNAL) {
-            auto &subpass_dep = const_cast<SubpassDependencyGraphNode &>(render_pass->subpass_dependencies[first_use]);
+            auto &subpass_dep = const_cast<SubpassDependencyGraphNode &>(render_pass->subpass_dependencies[last_use]);
             if (render_pass->subpass_dependencies[last_use].barrier_to_external.size() == 0) {
                 // Add implicit to barrier  if they're aren't any
                 subpass_dep.implicit_barrier_to_external.reset(new VkSubpassDependency2(ImplicitDependencyToExternal(last_use)));
