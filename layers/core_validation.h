@@ -70,6 +70,7 @@ struct DrawDispatchVuid {
     const char* rasterization_samples = kVUIDUndefined;
     const char* unprotected_command_buffer = kVUIDUndefined;
     const char* protected_command_buffer = kVUIDUndefined;
+    const char* ray_query_protected_cb = kVUIDUndefined;
     // TODO: Some instance values are in VkBuffer. The validation in those Cmds is skipped.
     const char* max_multiview_instance_index = kVUIDUndefined;
     const char* img_filter_cubic = kVUIDUndefined;
@@ -426,6 +427,7 @@ class CoreChecks : public ValidationStateTracker {
                                        const PIPELINE_STATE* pPipeline, const char* caller) const;
     bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE* cb_node, CMD_TYPE cmd_type, const bool indexed,
                                  const VkPipelineBindPoint bind_point, const char* function) const;
+    bool ValidateCmdRayQueryState(const CMD_BUFFER_STATE* cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) const;
     static bool ValidateEventStageMask(const ValidationStateTracker* state_data, const CMD_BUFFER_STATE* pCB, size_t eventCount,
                                        size_t firstEventIndex, VkPipelineStageFlags2KHR sourceStageMask,
                                        EventToStageMap* localEventToStageMap);
