@@ -2077,13 +2077,14 @@ bool CoreChecks::ValidateTexelGatherOffset(SHADER_MODULE_STATE const *src, spirv
                                     uint32_t comp_id = constant.word(j);
                                     const auto &comp = src->get_def(comp_id);
                                     // Get operand value
-                                    int offset = comp.word(3);
+                                    auto offset = static_cast<int32_t>(comp.word(3));
                                     if (offset < phys_dev_props.limits.minTexelGatherOffset) {
                                         skip |= LogError(device, "VUID-RuntimeSpirv-OpImage-06376",
                                                          "vkCreateShaderModule(): Shader uses OpImageGather with offset (%" PRIi32
                                                          ") less than VkPhysicalDeviceLimits::minTexelGatherOffset (%" PRIu32 ").",
                                                          offset, phys_dev_props.limits.minTexelGatherOffset);
-                                    } else if (static_cast<uint32_t>(offset) > phys_dev_props.limits.maxTexelGatherOffset) {
+                                    } else if ((offset > 0) &&
+                                               (static_cast<uint32_t>(offset) > phys_dev_props.limits.maxTexelGatherOffset)) {
                                         skip |=
                                             LogError(device, "VUID-RuntimeSpirv-OpImage-06377",
                                                      "vkCreateShaderModule(): Shader uses OpImageGather with offset (%" PRIi32
