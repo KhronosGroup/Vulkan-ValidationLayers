@@ -59,25 +59,28 @@ static VkExternalMemoryHandleTypeFlags GetImportHandleType(const VkMemoryAllocat
     return 0;
 }
 
-static bool IsMultiInstance(const VkMemoryAllocateInfo *p_alloc_info, const VkMemoryHeap &memory_heap) {
+static bool IsMultiInstance(const VkMemoryAllocateInfo *p_alloc_info, const VkMemoryHeap &memory_heap, uint32_t physical_device_count) {
     auto alloc_flags = LvlFindInChain<VkMemoryAllocateFlagsInfo>(p_alloc_info->pNext);
-    if (alloc_flags) {
+    if (alloc_flags && (alloc_flags->flags & VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT)) {
         auto dev_mask = alloc_flags->deviceMask;
         return ((dev_mask != 0) && (dev_mask & (dev_mask - 1))) != 0;
-    } else {
-        return false;
+    } else if (memory_heap.flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) {
+        return physical_device_count > 1;
     }
+    return false;
 }
 
-DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
+DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info,
+                                         uint64_t fake_address,
                                          const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
-                                         layer_data::optional<DedicatedBinding> &&dedicated_binding)
+                                         layer_data::optional<DedicatedBinding> &&dedicated_binding,
+                                         uint32_t physical_device_count)
     : BASE_NODE(mem, kVulkanObjectTypeDeviceMemory),
       alloc_info(p_alloc_info),
       export_handle_type_flags(GetExportHandleType(p_alloc_info)),
       import_handle_type_flags(GetImportHandleType(p_alloc_info)),
       unprotected((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) == 0),
-      multi_instance(IsMultiInstance(p_alloc_info, memory_heap)),
+      multi_instance(IsMultiInstance(p_alloc_info, memory_heap, physical_device_count)),
       dedicated(std::move(dedicated_binding)),
       mapped_range{},
       p_driver_data(nullptr),

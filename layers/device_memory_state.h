@@ -67,7 +67,7 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
 
     DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
                         const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
-                        layer_data::optional<DedicatedBinding> &&dedicated_binding);
+                        layer_data::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count);
 
     bool IsImport() const { return import_handle_type_flags != 0; }
     bool IsImportAHB() const {

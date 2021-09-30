@@ -1673,7 +1673,7 @@ void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const
         }
     }
     memObjMap[*pMemory] = std::make_shared<DEVICE_MEMORY_STATE>(*pMemory, pAllocateInfo, fake_address, memory_type, memory_heap,
-                                                                std::move(dedicated_binding));
+                                                                std::move(dedicated_binding), physical_device_count);
     return;
 }
 
