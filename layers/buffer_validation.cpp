@@ -6446,14 +6446,20 @@ bool CoreChecks::ValidateBufferBounds(const IMAGE_STATE *image_state, const BUFF
                                       const char *msg_code) const {
     bool skip = false;
 
-    VkDeviceSize buffer_size = buff_state->createInfo.size;
+    const VkDeviceSize buffer_size = buff_state->createInfo.size;
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        VkDeviceSize max_buffer_offset =
-            GetBufferSizeFromCopyImage(pRegions[i], image_state->createInfo.format) + pRegions[i].bufferOffset;
-        if (buffer_size < max_buffer_offset) {
-            skip |=
-                LogError(device, msg_code, "%s: pRegion[%d] exceeds buffer size of %" PRIu64 " bytes.", func_name, i, buffer_size);
+        const VkDeviceSize buffer_copy_size = GetBufferSizeFromCopyImage(pRegions[i], image_state->createInfo.format);
+        // This blocks against invalid VkBufferCopyImage that already have been caught elsewhere
+        if (buffer_copy_size != 0) {
+            const VkDeviceSize max_buffer_copy = buffer_copy_size + pRegions[i].bufferOffset;
+            if (buffer_size < max_buffer_copy) {
+                skip |= LogError(device, msg_code,
+                                 "%s: pRegion[%" PRIu32 "] is trying to copy  %" PRIu64 " bytes plus %" PRIu64
+                                 " offset to/from the VkBuffer (%s) which exceeds the VkBuffer total size of %" PRIu64 " bytes.",
+                                 func_name, i, buffer_copy_size, pRegions[i].bufferOffset,
+                                 report_data->FormatHandle(buff_state->buffer()).c_str(), buffer_size);
+            }
         }
     }
 
