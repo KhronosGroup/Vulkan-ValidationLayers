@@ -1314,11 +1314,31 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 
     // Store queue family data
     if (pCreateInfo->pQueueCreateInfos != nullptr) {
+        uint32_t total_count = 0;
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
             const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
             state_tracker->queue_family_index_set.insert(queue_create_info.queueFamilyIndex);
             state_tracker->device_queue_info_list.push_back(
                 {i, queue_create_info.queueFamilyIndex, queue_create_info.flags, queue_create_info.queueCount});
+            total_count += queue_create_info.queueCount;
+        }
+        queueMap.reserve(total_count);
+        for (const auto &queue_info : state_tracker->device_queue_info_list) {
+            for (uint32_t i = 0; i < queue_info.queue_count; i++) {
+                VkQueue queue = VK_NULL_HANDLE;
+                // vkGetDeviceQueue2() was added in vulkan 1.1, and there was never a KHR version of it.
+                if (api_version >= VK_API_VERSION_1_1 && queue_info.flags != 0) {
+                    auto get_info = LvlInitStruct<VkDeviceQueueInfo2>();
+                    get_info.flags = queue_info.flags;
+                    get_info.queueFamilyIndex = queue_info.queue_family_index;
+                    get_info.queueIndex = i;
+                    DispatchGetDeviceQueue2(*pDevice, &get_info, &queue);
+                } else {
+                    DispatchGetDeviceQueue(*pDevice, queue_info.queue_family_index, i, &queue);
+                }
+                assert(queue != VK_NULL_HANDLE);
+                state_tracker->queueMap.emplace(queue, std::make_shared<QUEUE_STATE>(queue, queue_info.queue_family_index));
+            }
         }
     }
 }
@@ -1886,19 +1906,6 @@ void ValidationStateTracker::PostCallRecordGetSemaphoreCounterValueKHR(VkDevice 
 void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
     if (VK_SUCCESS != result) return;
     RetireFence(fence);
-}
-
-void ValidationStateTracker::RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue) {
-    queueMap.emplace(queue, std::make_shared<QUEUE_STATE>(queue, queue_family_index));
-}
-
-void ValidationStateTracker::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
-                                                          VkQueue *pQueue) {
-    RecordGetDeviceQueueState(queueFamilyIndex, *pQueue);
-}
-
-void ValidationStateTracker::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) {
-    RecordGetDeviceQueueState(pQueueInfo->queueFamilyIndex, *pQueue);
 }
 
 void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
