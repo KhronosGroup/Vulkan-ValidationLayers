@@ -173,8 +173,35 @@ static inline VkDeviceSize GetBufferSizeFromCopyImage(const BufferImageCopyRegio
     VkExtent3D copy_extent = region.imageExtent;
     VkDeviceSize buffer_width = (0 == region.bufferRowLength ? copy_extent.width : region.bufferRowLength);
     VkDeviceSize buffer_height = (0 == region.bufferImageHeight ? copy_extent.height : region.bufferImageHeight);
-    VkDeviceSize unit_size = FormatElementSize(image_format,
-                                               region.imageSubresource.aspectMask);  // size (bytes) of texel or block
+
+    VkDeviceSize unit_size = 0;
+    if (region.imageSubresource.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
+        // Spec in vkBufferImageCopy section list special cases for each format
+        if (region.imageSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
+            unit_size = 1;
+        } else {
+            // VK_IMAGE_ASPECT_DEPTH_BIT
+            switch (image_format) {
+                case VK_FORMAT_D16_UNORM:
+                case VK_FORMAT_D16_UNORM_S8_UINT:
+                    unit_size = 2;
+                    break;
+                case VK_FORMAT_D32_SFLOAT:
+                case VK_FORMAT_D32_SFLOAT_S8_UINT:
+                // packed with the D24 value in the LSBs of the word, and undefined values in the eight MSBs
+                case VK_FORMAT_X8_D24_UNORM_PACK32:
+                case VK_FORMAT_D24_UNORM_S8_UINT:
+                    unit_size = 4;
+                    break;
+                default:
+                    // Any misuse of formats vs aspect mask should be caught before here
+                    return 0;
+            }
+        }
+    } else {
+        // size (bytes) of texel or block
+        unit_size = FormatElementSize(image_format, region.imageSubresource.aspectMask);
+    }
 
     if (FormatIsCompressed(image_format) || FormatIsSinglePlane_422(image_format)) {
         // Switch to texel block units, rounding up for any partially-used blocks
