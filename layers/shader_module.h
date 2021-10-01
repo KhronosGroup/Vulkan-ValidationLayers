@@ -317,7 +317,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     uint32_t DescriptorTypeToReqs(uint32_t type_id) const;
 
-    bool IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_inst_iter entrypoint) const;
+    bool IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_inst_iter entrypoint, uint32_t* object_id = nullptr) const;
 
     // State tracking helpers for collecting interface information
     void IsSpecificDescriptorType(const spirv_inst_iter &id_it, bool is_storage_buffer, bool is_check_writable,

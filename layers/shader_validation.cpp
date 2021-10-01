@@ -1966,16 +1966,25 @@ bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, SH
     }
 
     bool pointsize_written = false;
+    bool primitive_count_nv_written = false;
+    uint32_t primitive_count_nv = 0;
     bool skip = false;
 
     // Search for PointSize built-in decorations
     for (auto set : src->builtin_decoration_list) {
         auto insn = src->at(set.offset);
-        if (set.builtin == spv::BuiltInPointSize) {
+        if (set.builtin == spv::BuiltInPointSize && !pointsize_written) {
             pointsize_written = src->IsBuiltInWritten(insn, entrypoint);
-            if (pointsize_written) {
-                break;
+        }
+        if (set.builtin == spv::BuiltInPrimitiveCountNV) {
+            uint32_t object_id = 0;
+            primitive_count_nv_written = src->IsBuiltInWritten(insn, entrypoint, &object_id);
+            if (primitive_count_nv_written) {
+                primitive_count_nv = src->GetConstantValueById(object_id);
             }
+        }
+        if (pointsize_written && primitive_count_nv_written) {
+            break;
         }
     }
 
@@ -1986,7 +1995,7 @@ bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, SH
                              "Pipeline topology is set to POINT_LIST and geometry or tessellation shaders write PointSize which "
                              "is prohibited when the shaderTessellationAndGeometryPointSize feature is not enabled.");
         }
-    } else if (!pointsize_written) {
+    } else if (!pointsize_written && !(primitive_count_nv_written && primitive_count_nv == 0)) {
         skip |=
             LogError(pipeline->pipeline(), kVUID_Core_Shader_MissingPointSizeBuiltIn,
                      "Pipeline topology is set to POINT_LIST, but PointSize is not written to in the shader corresponding to %s.",

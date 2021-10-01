@@ -1112,7 +1112,7 @@ uint32_t SHADER_MODULE_STATE::DescriptorTypeToReqs(uint32_t type_id) const {
 
 // For some built-in analysis we need to know if the variable decorated with as the built-in was actually written to.
 // This function examines instructions in the static call tree for a write to this variable.
-bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_inst_iter entrypoint) const {
+bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_inst_iter entrypoint, uint32_t* object_id) const {
     auto type = builtin_instr.opcode();
     uint32_t target_id = builtin_instr.word(1);
     bool init_complete = false;
@@ -1184,6 +1184,9 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_
                     case spv::OpStore:
                         if (insn.word(1) == target_id) {
                             found_write = true;
+                            if (object_id) {
+                                *object_id = insn.word(2);
+                            }
                         }
                         break;
                     case spv::OpFunctionCall:
