@@ -15900,3 +15900,61 @@ TEST_F(VkPositiveLayerTest, TestPervertexNVShaderAttributes) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, TestMeshShaderPoints) {
+    TEST_DESCRIPTION("Test mesh shader with not emiiting any points.");
+
+    AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_NV_MESH_SHADER_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device that enables mesh_shader
+    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    if (mesh_shader_features.meshShader != VK_TRUE) {
+        printf("%sMesh shader feature not supported\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    static const char meshShaderText[] = R"glsl(
+        #version 450
+        #extension GL_NV_mesh_shader : enable
+
+        layout (local_size_x=1) in;
+        layout (points) out;
+        layout (max_vertices=1, max_primitives=1) out;
+
+        void main () {
+            gl_PrimitiveCountNV = 0u;
+        }
+    )glsl";
+
+    VkShaderObj ms(m_device, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    CreatePipelineHelper helper(*this);
+    helper.InitInfo();
+    helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+
+    // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
+    helper.gp_ci_.pVertexInputState = nullptr;
+    helper.gp_ci_.pInputAssemblyState = nullptr;
+
+    helper.InitState();
+
+    m_errorMonitor->ExpectSuccess();
+    helper.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
+}
