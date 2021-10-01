@@ -839,8 +839,7 @@ TEST_F(VkLayerTest, CommandBufferPrimaryFlags) {
 TEST_F(VkLayerTest, ClearColorAttachmentsOutsideRenderPass) {
     // Call CmdClearAttachmentss outside of an active RenderPass
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "vkCmdClearAttachments(): This call must be issued inside an active render pass");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdClearAttachments: This call must be issued inside an active render pass");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2558,8 +2557,8 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     blitRegion.dstOffsets[1] = {128, 128, 1};
 
     // Look for NULL-blit warning
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "vkCmdBlitImage(): pRegions[0].srcOffsets specify a zero-volume area.");
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "vkCmdBlitImage(): pRegions[0].dstOffsets specify a zero-volume area.");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "vkCmdBlitImage: pRegions[0].srcOffsets specify a zero-volume area.");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "vkCmdBlitImage: pRegions[0].dstOffsets specify a zero-volume area.");
     vk::CmdBlitImage(m_commandBuffer->handle(), intImage1.handle(), intImage1.Layout(), intImage2.handle(), intImage2.Layout(), 1,
                      &blitRegion, VK_FILTER_LINEAR);
     m_errorMonitor->VerifyFound();
@@ -5647,7 +5646,7 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     // This is a test for VUID-vkCmdPushDescriptorSetKHR-commandBuffer-recording
     // TODO: Add VALIDATION_ERROR_ code support to core_validation::ValidateCmd
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "You must call vkBeginCommandBuffer() before this call to vkCmdPushDescriptorSetKHR()");
+                                         "You must call vkBeginCommandBuffer() before this call to vkCmdPushDescriptorSetKHR");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00330");
     vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_write);

@@ -206,7 +206,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     struct CmdDrawDispatchInfo {
         CMD_TYPE cmd_type;
-        std::string function;
         std::vector<std::pair<const uint32_t, DescriptorRequirement>> binding_infos;
         VkFramebuffer framebuffer;
         std::shared_ptr<std::vector<SUBPASS_INFO>> subpasses;
@@ -415,9 +414,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, PIPELINE_LAYOUT_STATE *pipeline_layout, uint32_t set,
                                 uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites);
 
-    void UpdateStateCmdDrawDispatchType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point, const char *function);
-    void UpdateStateCmdDrawType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point, const char *function);
-    void UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point, const char *function);
+    void UpdateStateCmdDrawDispatchType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point);
+    void UpdateStateCmdDrawType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point);
+    void UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point);
 
     virtual void RecordCmd(CMD_TYPE cmd_type);
     void RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits);

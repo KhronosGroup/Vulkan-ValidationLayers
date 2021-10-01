@@ -741,7 +741,7 @@ class DescriptorSet : public BASE_NODE {
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *, CMD_TYPE cmd_type, const PIPELINE_STATE *,
-                         const BindingReqMap &, const char *function);
+                         const BindingReqMap &);
 
     // Track work that has been bound or validated to avoid duplicate work, important when large descriptor arrays
     // are present
@@ -798,7 +798,7 @@ class DescriptorSet : public BASE_NODE {
     struct DescriptorDeleter {
         void operator()(Descriptor *desc) { desc->~Descriptor(); }
     };
- 
+
     void Destroy() override;
 
     void Reset() {

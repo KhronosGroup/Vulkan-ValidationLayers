@@ -166,7 +166,9 @@ static const std::map<CMD_TYPE, GpuVuid> gpu_vuid = {
     {CMD_DISPATCH, GpuVuidsCmdDispatch()},
     {CMD_DISPATCHINDIRECT, GpuVuidsCmdDispatchIndirect()},
     {CMD_DRAWINDIRECTCOUNT, GpuVuidsCmdDrawIndirectCount()},
+    {CMD_DRAWINDIRECTCOUNTKHR, GpuVuidsCmdDrawIndirectCount()},
     {CMD_DRAWINDEXEDINDIRECTCOUNT, GpuVuidsCmdDrawIndexedIndirectCount()},
+    {CMD_DRAWINDEXEDINDIRECTCOUNTKHR, GpuVuidsCmdDrawIndexedIndirectCount()},
     {CMD_TRACERAYSNV, GpuVuidsCmdTraceRaysNV()},
     {CMD_TRACERAYSKHR, GpuVuidsCmdTraceRaysKHR()},
     {CMD_TRACERAYSINDIRECTKHR, GpuVuidsCmdTraceRaysIndirectKHR()},
@@ -175,6 +177,7 @@ static const std::map<CMD_TYPE, GpuVuid> gpu_vuid = {
     {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, GpuVuidsCmdDrawMeshTasksIndirectCountNV()},
     {CMD_DRAWINDIRECTBYTECOUNTEXT, GpuVuidsCmdDrawIndirectByteCountEXT()},
     {CMD_DISPATCHBASE, GpuVuidsCmdDispatchBase()},
+    {CMD_DISPATCHBASEKHR, GpuVuidsCmdDispatchBase()},
     // Used if invalid cmd_type is used
     {CMD_NONE, GpuVuid()}
 };

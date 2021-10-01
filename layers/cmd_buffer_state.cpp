@@ -775,14 +775,14 @@ void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPo
 }
 
 // Generic function to handle state update for all CmdDraw* and CmdDispatch* type functions
-void CMD_BUFFER_STATE::UpdateStateCmdDrawDispatchType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point, const char *function) {
-    UpdateDrawState(cmd_type, bind_point, function);
+void CMD_BUFFER_STATE::UpdateStateCmdDrawDispatchType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point) {
+    UpdateDrawState(cmd_type, bind_point);
     hasDispatchCmd = true;
 }
 
 // Generic function to handle state update for all CmdDraw* type functions
-void CMD_BUFFER_STATE::UpdateStateCmdDrawType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point, const char *function) {
-    UpdateStateCmdDrawDispatchType(cmd_type, bind_point, function);
+void CMD_BUFFER_STATE::UpdateStateCmdDrawType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point) {
+    UpdateStateCmdDrawDispatchType(cmd_type, bind_point);
     hasDrawCmd = true;
 
     // Update the consumed viewport/scissor count.
@@ -793,7 +793,7 @@ void CMD_BUFFER_STATE::UpdateStateCmdDrawType(CMD_TYPE cmd_type, VkPipelineBindP
     usedDynamicScissorCount |= !!(dynamic_status & CBSTATUS_SCISSOR_WITH_COUNT_SET);
 }
 
-void CMD_BUFFER_STATE::UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point, const char *function) {
+void CMD_BUFFER_STATE::UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) {
     RecordCmd(cmd_type);
 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
@@ -841,9 +841,9 @@ void CMD_BUFFER_STATE::UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPo
                                         state.per_set[set_index].validated_set_binding_req_map.begin(),
                                         state.per_set[set_index].validated_set_binding_req_map.end(),
                                         layer_data::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
-                    descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, delta_reqs, function);
+                    descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, delta_reqs);
                 } else {
-                    descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, binding_req_map, function);
+                    descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, binding_req_map);
                 }
 
                 state.per_set[set_index].validated_set = descriptor_set;

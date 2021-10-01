@@ -488,16 +488,14 @@ struct SyncImageMemoryBarrier {
 
 class SyncOpBase {
   public:
-    SyncOpBase() : cmd_(CMD_NONE), name_override_(nullptr) {}
-    SyncOpBase(CMD_TYPE cmd, const char *name_override = nullptr) : cmd_(cmd), name_override_(name_override) {}
-    const char *CmdName() const { return name_override_ ? name_override_ : CommandTypeString(cmd_); }
+    SyncOpBase() : cmd_(CMD_NONE) {}
+    SyncOpBase(CMD_TYPE cmd) : cmd_(cmd) {}
+    const char *CmdName() const { return CommandTypeString(cmd_); }
     virtual bool Validate(const CommandBufferAccessContext &cb_context) const = 0;
     virtual void Record(CommandBufferAccessContext *cb_context) const = 0;
 
   protected:
     CMD_TYPE cmd_;
-    // Some promoted commands alias CMD_TYPE for KHR and non-KHR versions,  also callers to preserve the cmd name as needed
-    const char *name_override_;
 };
 
 class SyncOpBarriers : public SyncOpBase {
@@ -609,7 +607,7 @@ class SyncOpSetEvent : public SyncOpBase {
 class SyncOpBeginRenderPass : public SyncOpBase {
   public:
     SyncOpBeginRenderPass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkRenderPassBeginInfo *pRenderPassBegin,
-                          const VkSubpassBeginInfo *pSubpassBeginInfo, const char *command_name = nullptr);
+                          const VkSubpassBeginInfo *pSubpassBeginInfo);
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     void Record(CommandBufferAccessContext *cb_context) const override;
 
@@ -624,7 +622,7 @@ class SyncOpBeginRenderPass : public SyncOpBase {
 class SyncOpNextSubpass : public SyncOpBase {
   public:
     SyncOpNextSubpass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                      const VkSubpassEndInfo *pSubpassEndInfo, const char *name_override = nullptr);
+                      const VkSubpassEndInfo *pSubpassEndInfo);
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     void Record(CommandBufferAccessContext *cb_context) const override;
 
@@ -635,8 +633,7 @@ class SyncOpNextSubpass : public SyncOpBase {
 
 class SyncOpEndRenderPass : public SyncOpBase {
   public:
-    SyncOpEndRenderPass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkSubpassEndInfo *pSubpassEndInfo,
-                        const char *name_override = nullptr);
+    SyncOpEndRenderPass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkSubpassEndInfo *pSubpassEndInfo);
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     void Record(CommandBufferAccessContext *cb_context) const override;
 
@@ -1042,18 +1039,17 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void ResetCommandBufferCallback(VkCommandBuffer command_buffer);
     void FreeCommandBufferCallback(VkCommandBuffer command_buffer);
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                  const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd, const char *cmd_name = nullptr);
+                                  const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd);
     void RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                              const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE command, const char *command_name = nullptr);
-    void RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd,
-                                const char *cmd_name = nullptr);
+                              const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE command);
+    void RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd);
     bool SupressedBoundDescriptorWAW(const HazardResult &hazard) const;
 
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) override;
 
     bool ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                 const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd, const char *cmd_name = nullptr) const;
+                                 const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd) const;
 
     bool PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                            VkSubpassContents contents) const override;
@@ -1114,7 +1110,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                               const VkSubpassBeginInfo *pSubpassBeginInfo) override;
 
     bool ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd, const char *cmd_name = nullptr) const;
+                                const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd) const;
     bool PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) const override;
     bool PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                         const VkSubpassEndInfo *pSubpassEndInfo) const override;
@@ -1127,8 +1123,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                           const VkSubpassEndInfo *pSubpassEndInfo) override;
 
-    bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd,
-                                  const char *cmd_name = nullptr) const;
+    bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd) const;
     bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) const override;
     bool PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) const override;
     bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) const override;
@@ -1236,6 +1231,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     bool PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                              uint32_t stride) const override;
+    void RecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
+                                    VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride, CMD_TYPE cmd_type);
     void PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                            uint32_t stride) override;
@@ -1258,6 +1255,9 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     bool PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                     uint32_t stride) const override;
+    void RecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                           uint32_t stride, CMD_TYPE cmd_type);
     void PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                   VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                   uint32_t stride) override;
