@@ -14382,6 +14382,16 @@ TEST_F(VkLayerTest, InvalidMultiSampleImageView) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
+    VkImageFormatProperties image_format_properties;
+    vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_create_info.format, image_create_info.imageType,
+                                               image_create_info.tiling, image_create_info.usage, image_create_info.flags,
+                                               &image_format_properties);
+
+    if (image_format_properties.sampleCounts < 2) {
+        printf("%s Required VkSampleCountFlagBits for image format are not supported; skipping\n", kSkipPrefix);
+        return;
+    }
+
     VkImageObj image(m_device);
     image.init(&image_create_info);
 
