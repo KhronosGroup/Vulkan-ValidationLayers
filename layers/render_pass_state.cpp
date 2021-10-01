@@ -31,6 +31,37 @@
 
 static const VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 
+static VkSubpassDependency2 ImplicitDependencyFromExternal(uint32_t subpass) {
+    VkSubpassDependency2 from_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
+                                          nullptr,
+                                          VK_SUBPASS_EXTERNAL,
+                                          subpass,
+                                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                          0,
+                                          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                          0,
+                                          0};
+    return from_external;
+}
+
+static VkSubpassDependency2 ImplicitDependencyToExternal(uint32_t subpass) {
+    VkSubpassDependency2 to_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
+                                        nullptr,
+                                        subpass,
+                                        VK_SUBPASS_EXTERNAL,
+                                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                                        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                        0,
+                                        0,
+                                        0};
+    return to_external;
+}
 // NOTE: The functions below are only called from the RENDER_PASS_STATE constructor, and use const_cast<> to set up
 // members that never change after construction is finished.
 static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, RENDER_PASS_STATE *render_pass) {
@@ -70,6 +101,23 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, REND
         }
     }
 
+    // If no barriers to external are provided for a given subpass, add them.
+    for (auto &subpass_dep : subpass_dependencies) {
+        const uint32_t pass = subpass_dep.pass;
+        if (subpass_dep.barrier_from_external.size() == 0) {
+            // Add implicit from barrier if they're aren't any
+            subpass_dep.implicit_barrier_from_external =
+                layer_data::make_unique<VkSubpassDependency2>(ImplicitDependencyFromExternal(pass));
+            subpass_dep.barrier_from_external.emplace_back(subpass_dep.implicit_barrier_from_external.get());
+        }
+        if (subpass_dep.barrier_to_external.size() == 0) {
+            // Add implicit to barrier  if they're aren't any
+            subpass_dep.implicit_barrier_to_external =
+                layer_data::make_unique<VkSubpassDependency2>(ImplicitDependencyToExternal(pass));
+            subpass_dep.barrier_to_external.emplace_back(subpass_dep.implicit_barrier_to_external.get());
+        }
+    }
+
     //
     // Determine "asynchrononous" subpassess
     // syncronization is only interested in asyncronous stages *earlier* that the current one... so we'll only look towards those.
@@ -94,38 +142,6 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, REND
             }
         }
     }
-}
-
-static VkSubpassDependency2 ImplicitDependencyFromExternal(uint32_t subpass) {
-    VkSubpassDependency2 from_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
-                                          nullptr,
-                                          VK_SUBPASS_EXTERNAL,
-                                          subpass,
-                                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                          0,
-                                          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                          0,
-                                          0};
-    return from_external;
-}
-
-static VkSubpassDependency2 ImplicitDependencyToExternal(uint32_t subpass) {
-    VkSubpassDependency2 to_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
-                                        nullptr,
-                                        subpass,
-                                        VK_SUBPASS_EXTERNAL,
-                                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                                        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                        0,
-                                        0,
-                                        0};
-    return to_external;
 }
 
 struct AttachmentTracker {  // This is really only of local interest, but a bit big for a lambda
@@ -220,30 +236,6 @@ static void InitRenderPassState(RENDER_PASS_STATE *render_pass) {
         attachment_tracker.Update(subpass_index, subpass.pInputAttachments, subpass.inputAttachmentCount, true);
     }
     attachment_tracker.FinalTransitions();
-
-    // Add implicit dependencies
-    for (uint32_t attachment = 0; attachment < attachment_tracker.attachment_count; attachment++) {
-        const auto first_use = attachment_tracker.first[attachment];
-        if (first_use != VK_SUBPASS_EXTERNAL) {
-            auto &subpass_dep = const_cast<SubpassDependencyGraphNode &>(render_pass->subpass_dependencies[first_use]);
-            if (subpass_dep.barrier_from_external.size() == 0) {
-                // Add implicit from barrier if they're aren't any
-                subpass_dep.implicit_barrier_from_external.reset(
-                    new VkSubpassDependency2(ImplicitDependencyFromExternal(first_use)));
-                subpass_dep.barrier_from_external.emplace_back(subpass_dep.implicit_barrier_from_external.get());
-            }
-        }
-
-        const auto last_use = attachment_tracker.last[attachment];
-        if (last_use != VK_SUBPASS_EXTERNAL) {
-            auto &subpass_dep = const_cast<SubpassDependencyGraphNode &>(render_pass->subpass_dependencies[last_use]);
-            if (render_pass->subpass_dependencies[last_use].barrier_to_external.size() == 0) {
-                // Add implicit to barrier  if they're aren't any
-                subpass_dep.implicit_barrier_to_external.reset(new VkSubpassDependency2(ImplicitDependencyToExternal(last_use)));
-                subpass_dep.barrier_to_external.emplace_back(subpass_dep.implicit_barrier_to_external.get());
-            }
-        }
-    }
 }
 
 RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo2 const *pCreateInfo)
