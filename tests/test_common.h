@@ -137,7 +137,7 @@ static inline void test_error_callback(const char *expr, const char *file, unsig
     ADD_FAILURE_AT(file, line) << "Assertion: `" << expr << "'";
 }
 
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 /* Linux-specific common code: */
 
 #include <pthread.h>
