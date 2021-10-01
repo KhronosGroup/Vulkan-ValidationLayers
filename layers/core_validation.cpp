@@ -57,7 +57,8 @@
 #include <string>
 #include <valarray>
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
+
 #include <unistd.h>
 #include <sys/types.h>
 #endif
@@ -2852,7 +2853,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         if (!tmp_path.size()) tmp_path = GetEnvironment("TEMP");
         if (!tmp_path.size()) tmp_path = "//tmp";
         core_checks->validation_cache_path = tmp_path + "//shader_validation_cache";
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
         core_checks->validation_cache_path += "-" + std::to_string(getuid());
 #endif
         core_checks->validation_cache_path += ".bin";
