@@ -79,7 +79,7 @@ def main(argv):
                  '-export_header'],
                 [common_codegen.repo_relative('scripts/external_revision_generator.py'),
                  '--json_file', common_codegen.repo_relative('scripts/known_good.json'),
-                 '--json_keys', 'repos,0,commit',
+                 '--json_keys', 'repos,3,commit',
                  '-s', 'SPIRV_TOOLS_COMMIT_ID',
                  '-o', 'spirv_tools_commit_id.h']]
 
