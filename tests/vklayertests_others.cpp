@@ -9594,24 +9594,27 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
     stridebufregion.stride = ray_tracing_properties.shaderGroupHandleAlignment;
     stridebufregion.size = stridebufregion.stride;
 
+    m_commandBuffer->begin();
     // Invalid stride multiplier
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         invalid_stride.stride = (stridebufregion.size + 1) % stridebufregion.size;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-03694");
-        vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride, 100,
-                          100, 1);
-        m_errorMonitor->VerifyFound();
+        if (invalid_stride.stride > 0) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-03694");
+            vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride, 100,
+                              100, 1);
+            m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-03690");
-        vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion, 100,
-                          100, 1);
-        m_errorMonitor->VerifyFound();
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-03690");
+            vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion, 100,
+                              100, 1);
+            m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-03686");
-        vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion, 100,
-                          100, 1);
-        m_errorMonitor->VerifyFound();
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-03686");
+            vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion, 100,
+                              100, 1);
+            m_errorMonitor->VerifyFound();
+        }
     }
     // Invalid stride, greater than maxShaderGroupStride
     {
@@ -9634,6 +9637,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
                           100, 1);
         m_errorMonitor->VerifyFound();
     }
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
@@ -9694,24 +9698,28 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     stridebufregion.deviceAddress = device_address;
     stridebufregion.stride = ray_tracing_properties.shaderGroupHandleAlignment;
     stridebufregion.size = stridebufregion.stride;
+
+    m_commandBuffer->begin();
     // Invalid stride multiplier
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         invalid_stride.stride = (stridebufregion.size + 1) % stridebufregion.size;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirectKHR-stride-03694");
-        vkCmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride,
-                                  device_address);
-        m_errorMonitor->VerifyFound();
+        if (invalid_stride.stride > 0) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirectKHR-stride-03694");
+            vkCmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion,
+                                      &invalid_stride, device_address);
+            m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirectKHR-stride-03690");
-        vkCmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion,
-                                  device_address);
-        m_errorMonitor->VerifyFound();
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirectKHR-stride-03690");
+            vkCmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride,
+                                      &stridebufregion, device_address);
+            m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirectKHR-stride-03686");
-        vkCmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion,
-                                  device_address);
-        m_errorMonitor->VerifyFound();
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirectKHR-stride-03686");
+            vkCmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion,
+                                      &stridebufregion, device_address);
+            m_errorMonitor->VerifyFound();
+        }
     }
     // Invalid stride, greater than maxShaderGroupStride
     {
@@ -9734,6 +9742,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
                                   device_address);
         m_errorMonitor->VerifyFound();
     }
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, ValidateVkAccelerationStructureVersionInfoKHR) {
