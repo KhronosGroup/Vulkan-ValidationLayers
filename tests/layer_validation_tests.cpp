@@ -1503,7 +1503,7 @@ OneOffDescriptorSet::OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bi
                                          VkDescriptorSetLayoutCreateFlags layout_flags, void *layout_pnext,
                                          VkDescriptorPoolCreateFlags poolFlags, void *allocate_pnext, int buffer_info_size,
                                          int image_info_size, int buffer_view_size)
-    : device_{device}, pool_{}, layout_(device, bindings, layout_flags, layout_pnext), set_{} {
+    : device_{device}, pool_{}, layout_(device, bindings, layout_flags, layout_pnext), set_(VK_NULL_HANDLE) {
     VkResult err;
     buffer_infos.reserve(buffer_info_size);
     image_infos.reserve(image_info_size);
