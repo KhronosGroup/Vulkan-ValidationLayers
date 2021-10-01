@@ -10307,6 +10307,11 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, samplers},
                                        });
 
+    if (!descriptor_set.set_) {
+        printf("%s Failed to allocate descriptor set, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
     // Use the same image view twice, using the same sampler, with the *second* mismatched with the *second* immutable sampler
     VkDescriptorImageInfo image_infos[2];
     image_infos[0] = {};
