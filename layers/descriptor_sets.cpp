@@ -1904,7 +1904,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
 //   to be used in a draw by the given cb_node
 void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, CMD_BUFFER_STATE *cb_node,
                                                      CMD_TYPE cmd_type, const PIPELINE_STATE *pipe,
-                                                     const BindingReqMap &binding_req_map, const char *function) {
+                                                     const BindingReqMap &binding_req_map) {
     if (!device_data->disabled[command_buffer_state] && !IsPushDescriptor()) {
         cb_node->AddChild(this);
     }
@@ -1946,7 +1946,6 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
 
     if (cmd_info.binding_infos.size() > 0) {
         cmd_info.cmd_type = cmd_type;
-        cmd_info.function = function;
         if (cb_node->activeFramebuffer) {
             cmd_info.framebuffer = cb_node->activeFramebuffer->framebuffer();
             cmd_info.attachments = cb_node->active_attachments;
