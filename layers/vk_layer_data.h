@@ -104,16 +104,12 @@ template <typename T>
 using insert_iterator = std::insert_iterator<T>;
 #endif
 
-#if __cplusplus < 201402L
-// Temporary workaround for c++11. Remove with std >= c++14.
+// Can't alias variadic functions even on C++14, and wrapping the 14 implementation wouldn't gain us anything...
+// leave it in unconditionally and for backwards compatibility
 template<typename T, typename... Args>
 constexpr std::unique_ptr<T> make_unique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
-#else
-template <typename T>
-constexpr auto make_unique = std::make_unique<T>;
-#endif
 
 }  // namespace layer_data
 
