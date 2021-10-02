@@ -1729,7 +1729,7 @@ TEST_F(VkLayerTest, DeviceGroupSubmitInfoSemaphoreCount) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkDeviceGroupCommandBufferBeginInfo dev_grp_cmd_buf_info = LvlInitStruct<VkDeviceGroupCommandBufferBeginInfo>();
-    dev_grp_cmd_buf_info.deviceMask = 0x00000000;
+    dev_grp_cmd_buf_info.deviceMask = 0x1;
     VkCommandBufferBeginInfo cmd_buf_info = LvlInitStruct<VkCommandBufferBeginInfo>(&dev_grp_cmd_buf_info);
 
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
