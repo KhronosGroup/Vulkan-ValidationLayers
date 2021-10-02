@@ -13922,3 +13922,42 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
     vk::DestroyPipeline(m_device->handle(), library, nullptr);
     vk::DestroyPipeline(m_device->handle(), invalid_library, nullptr);
 }
+
+TEST_F(VkLayerTest, WritingToBuiltInLayerWithIncompatibleFramebuffer) {
+    TEST_DESCRIPTION("Validate using BuiltInLayer in spirv with a framebuffer that is not a cube map.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-BuiltInLayerIncompatibleFramebuffer");
+
+    static char const *gsSource = R"glsl(
+        #version 450
+        layout (triangles) in;
+        layout (triangle_strip) out;
+        layout (max_vertices = 1) out;
+        void main() {
+            gl_Position = vec4(1.0, 0.5, 0.5, 0.0);
+            EmitVertex();
+            gl_Layer = 4;
+        }
+    )glsl";
+
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj gs(m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, this);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_commandBuffer->Draw(3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
