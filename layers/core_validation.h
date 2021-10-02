@@ -794,6 +794,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, const char* func_name,
                                  const char* vuid = kVUID_Core_DrawState_InvalidImageAspect) const;
 
+    bool ValidateImageAcquired(IMAGE_STATE const& image_state, const char* func_name) const;
+
     bool ValidateCreateImageViewSubresourceRange(const IMAGE_STATE* image_state, bool is_imageview_2d_type,
                                                  const VkImageSubresourceRange& subresourceRange) const;
 
