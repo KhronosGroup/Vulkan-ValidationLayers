@@ -13122,6 +13122,10 @@ TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {
     VkBufferDeviceAddressInfo device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
     device_address_info.buffer = buffer_no_mem.handle();
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
+    if (device_address == 0) {
+        printf("%s Failed to get device address, skipping test.\n", kSkipPrefix);
+        return;
+    }
 
     auto as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
     as_create_info.buffer = buffer_no_mem.handle();
