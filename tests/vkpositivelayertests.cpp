@@ -11320,9 +11320,7 @@ TEST_F(VkPositiveLayerTest, SwapchainExclusiveModeQueueFamilyPropertiesReference
     VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 
-    VkSwapchainCreateInfoKHR swapchain_create_info = {};
-    swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchain_create_info.pNext = 0;
+    VkSwapchainCreateInfoKHR swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
     swapchain_create_info.surface = surface;
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
@@ -11346,14 +11344,12 @@ TEST_F(VkPositiveLayerTest, SwapchainExclusiveModeQueueFamilyPropertiesReference
     // Create another device, create another swapchain, and use this one for oldSwapchain
     // It is legal to include an 'oldSwapchain' object that is from a different device
     const float q_priority[] = {1.0f};
-    VkDeviceQueueCreateInfo queue_ci = {};
-    queue_ci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    VkDeviceQueueCreateInfo queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_ci.queueFamilyIndex = 0;
     queue_ci.queueCount = 1;
     queue_ci.pQueuePriorities = q_priority;
 
-    VkDeviceCreateInfo device_ci = {};
-    device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
@@ -11363,10 +11359,12 @@ TEST_F(VkPositiveLayerTest, SwapchainExclusiveModeQueueFamilyPropertiesReference
     vk::CreateDevice(gpu(), &device_ci, nullptr, &test_device);
 
     swapchain_create_info.oldSwapchain = m_swapchain;
-    VkSwapchainKHR new_swapchain;
+    VkSwapchainKHR new_swapchain = VK_NULL_HANDLE;
     vk::CreateSwapchainKHR(test_device, &swapchain_create_info, nullptr, &new_swapchain);
 
-    vk::DestroySwapchainKHR(test_device, new_swapchain, nullptr);
+    if (new_swapchain != VK_NULL_HANDLE) {
+        vk::DestroySwapchainKHR(test_device, new_swapchain, nullptr);
+    }
 
     vk::DestroyDevice(test_device, nullptr);
 
