@@ -156,6 +156,7 @@ struct PipelineStageState {
     std::vector<DescriptorUse> descriptor_uses;
     bool has_writable_descriptor;
     bool has_atomic_descriptor;
+    bool writes_to_gl_layer;
 
     PipelineStageState(const VkPipelineShaderStageCreateInfo *stage, std::shared_ptr<const SHADER_MODULE_STATE> &module);
 };

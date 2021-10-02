@@ -194,6 +194,7 @@ static const char DECORATE_UNUSED *kVUID_Core_Shader_CooperativeMatrixMulAdd = "
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InvalidExtension = "UNASSIGNED-CoreValidation-Shader-InvalidSpirvExtension";
 // static const char DECORATE_UNUSED *kVUID_Core_Shader_ResolveQCOM_InvalidCapability = "UNASSIGNED-CoreValidation-Shader-ResolveQCOM-InvalidCapability";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_MaxComputeWorkGroupSize = "UNASSIGNED-CoreValidation-Shader-MaxComputeWorkGroupSize";
+static const char DECORATE_UNUSED *kVUID_Core_Shader_BuiltInLayerIncompatibleFramebuffer = "UNASSIGNED-CoreValidation-Shader-BuiltInLayerIncompatibleFramebuffer";
 // Previously defined but unused - uncomment as needed
 //static const char DECORATE_UNUSED *kVUID_Core_Shader_BadCapability = "UNASSIGNED-CoreValidation-Shader-BadCapability";
 //static const char DECORATE_UNUSED *kVUID_Core_Shader_BadSpecialization = "UNASSIGNED-CoreValidation-Shader-BadSpecialization";

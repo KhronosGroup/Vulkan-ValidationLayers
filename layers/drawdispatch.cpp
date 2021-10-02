@@ -775,6 +775,42 @@ const DrawDispatchVuid &CoreChecks::GetDrawDispatchVuid(CMD_TYPE cmd_type) const
     }
 }
 
+bool CoreChecks::ValidateCmdDrawFramebuffer(const CMD_BUFFER_STATE *cb_state, const char *caller) const {
+    bool skip = false;
+
+    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
+    const auto &render_pass_state = cb_state->activeRenderPass;
+    if (pipeline_state && render_pass_state) {
+        bool writes_to_gl_layer = false;
+        for (const auto &stage : pipeline_state->stage_state) {
+            if (stage.writes_to_gl_layer) {
+                writes_to_gl_layer = true;
+                break;
+            }
+        }
+        if (writes_to_gl_layer) {
+            const auto subpass_desc = &render_pass_state->createInfo.pSubpasses[cb_state->activeSubpass];
+            for (const auto &output_location : pipeline_state->fragmentShader_writable_output_location_list) {
+                if (output_location >= subpass_desc->colorAttachmentCount) {
+                    continue;
+                }
+                uint32_t attachment = subpass_desc->pColorAttachments[output_location].attachment;
+                const IMAGE_VIEW_STATE *image_view_state =
+                    GetImageViewState(cb_state->activeFramebuffer->createInfo.pAttachments[attachment]);
+                if (image_view_state->normalized_subresource_range.layerCount == 1) {
+                    skip |=
+                        LogError(cb_state->Handle(), "UNASSIGNED-CoreValidation-Shader-BuiltInLayerIncompatibleFramebuffer",
+                                 "%s: bound pipeline has a geometry shader that write to gl_Layer, but currently bound framebuffer "
+                                 "is not a multi-layer framebuffer attachment.",
+                                 caller);
+                }
+            }
+        }
+    }
+    return skip;
+}
+
 // Generic function to handle validation for all CmdDraw* type functions
 bool CoreChecks::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
                                      const char *caller) const {
@@ -805,6 +841,9 @@ bool CoreChecks::ValidateCmdDrawInstance(VkCommandBuffer commandBuffer, uint32_t
                          caller, report_data->FormatHandle(cb_node->activeRenderPass->renderPass()).c_str(),
                          phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex, instanceCount, firstInstance);
     }
+
+    skip |= ValidateCmdDrawFramebuffer(cb_node, caller);
+
     return skip;
 }
 

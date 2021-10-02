@@ -249,6 +249,10 @@ static bool HasAtomicDescriptor(const std::vector<PipelineStageState::Descriptor
                        [](const PipelineStageState::DescriptorUse &use) { return use.second.is_writable; });
 }
 
+static bool WritesToGlLayer(const std::vector<builtin_set> &decorations) {
+    return std::any_of(decorations.begin(), decorations.end(), [](const builtin_set &built_in) { return built_in.builtin == spv::BuiltInLayer; });
+}
+
 PipelineStageState::PipelineStageState(const VkPipelineShaderStageCreateInfo *stage,
                                        std::shared_ptr<const SHADER_MODULE_STATE> &module_)
     : module(module_),
@@ -258,7 +262,9 @@ PipelineStageState::PipelineStageState(const VkPipelineShaderStageCreateInfo *st
       accessible_ids(module->MarkAccessibleIds(entrypoint)),
       descriptor_uses(module->CollectInterfaceByDescriptorSlot(accessible_ids)),
       has_writable_descriptor(HasWriteableDescriptor(descriptor_uses)),
-      has_atomic_descriptor(HasAtomicDescriptor(descriptor_uses)) {}
+      has_atomic_descriptor(HasAtomicDescriptor(descriptor_uses)),
+      writes_to_gl_layer(WritesToGlLayer(module->builtin_decoration_list)) {
+}
 
 static PIPELINE_STATE::StageStateVec GetStageStates(const ValidationStateTracker *state_data,
                                                     const safe_VkPipelineShaderStageCreateInfo *stages, uint32_t stage_count) {
