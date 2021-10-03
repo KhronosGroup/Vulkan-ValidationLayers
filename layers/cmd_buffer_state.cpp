@@ -861,7 +861,7 @@ void CMD_BUFFER_STATE::UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPo
             }
         }
     }
-    if (!pipe->vertex_binding_descriptions_.empty()) {
+    if (pipe && !pipe->vertex_binding_descriptions_.empty()) {
         vertex_buffer_used = true;
     }
 }
