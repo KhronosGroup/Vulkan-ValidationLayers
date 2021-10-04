@@ -2651,6 +2651,35 @@ uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE *pipeline, VkShad
     return total;
 }
 
+bool CoreChecks::GroupHasValidIndex(const PIPELINE_STATE *pipeline, uint32_t group, uint32_t stage) const {
+    if (group == VK_SHADER_UNUSED_NV) {
+        return true;
+    }
+
+    const auto &create_info = pipeline->create_info.raytracing;
+    const auto *stages = create_info.ptr()->pStages;
+
+    if (group < create_info.stageCount) {
+        return (stages[group].stage & stage) != 0;
+    }
+    group -= create_info.stageCount;
+
+    // Search libraries
+    if (create_info.pLibraryInfo) {
+        for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
+            const PIPELINE_STATE *library_pipeline = GetPipelineState(create_info.pLibraryInfo->pLibraries[i]);
+            const uint32_t stage_count = library_pipeline->create_info.raytracing.ptr()->stageCount;
+            if (group < stage_count) {
+                return (library_pipeline->create_info.raytracing.ptr()->pStages[group].stage & stage) != 0;
+            }
+            group -= stage_count;
+        }
+    }
+
+    // group index too large
+    return false;
+}
+
 bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipelineCreateFlags flags, bool isKHR) const {
     bool skip = false;
 
@@ -2701,7 +2730,6 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
                              create_info.maxRecursionDepth, phys_dev_ext_props.ray_tracing_propsNV.maxRecursionDepth);
         }
     }
-    const auto *stages = create_info.ptr()->pStages;
     const auto *groups = create_info.ptr()->pGroups;
 
     for (uint32_t stage_index = 0; stage_index < create_info.stageCount; stage_index++) {
@@ -2722,10 +2750,9 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
         const auto &group = groups[group_index];
 
         if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV) {
-            if (group.generalShader >= create_info.stageCount ||
-                (stages[group.generalShader].stage != VK_SHADER_STAGE_RAYGEN_BIT_NV &&
-                 stages[group.generalShader].stage != VK_SHADER_STAGE_MISS_BIT_NV &&
-                 stages[group.generalShader].stage != VK_SHADER_STAGE_CALLABLE_BIT_NV)) {
+            if (!GroupHasValidIndex(
+                    pipeline, group.generalShader,
+                    VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV)) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03474"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02413",
@@ -2739,8 +2766,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
                                  ": pGroups[%d]", group_index);
             }
         } else if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV) {
-            if (group.intersectionShader >= create_info.stageCount ||
-                stages[group.intersectionShader].stage != VK_SHADER_STAGE_INTERSECTION_BIT_NV) {
+            if (!GroupHasValidIndex(pipeline, group.intersectionShader, VK_SHADER_STAGE_INTERSECTION_BIT_NV)) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03476"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02415",
@@ -2757,16 +2783,13 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
 
         if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV ||
             group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV) {
-            if (group.anyHitShader != VK_SHADER_UNUSED_NV && (group.anyHitShader >= create_info.stageCount ||
-                                                              stages[group.anyHitShader].stage != VK_SHADER_STAGE_ANY_HIT_BIT_NV)) {
+            if (!GroupHasValidIndex(pipeline, group.anyHitShader, VK_SHADER_STAGE_ANY_HIT_BIT_NV)) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-anyHitShader-03479"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-anyHitShader-02418",
                                  ": pGroups[%d]", group_index);
             }
-            if (group.closestHitShader != VK_SHADER_UNUSED_NV &&
-                (group.closestHitShader >= create_info.stageCount ||
-                 stages[group.closestHitShader].stage != VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)) {
+            if (!GroupHasValidIndex(pipeline, group.closestHitShader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-closestHitShader-03478"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-closestHitShader-02417",
