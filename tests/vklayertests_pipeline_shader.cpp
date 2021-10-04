@@ -11753,9 +11753,15 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
 
     VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
     sscf.subgroupSizeControl = VK_TRUE;
+    sscf.computeFullSubgroups = VK_TRUE;
 
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sscf);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+
+    if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE) {
+        printf("%s Required features are not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
 
     auto subgroup_properties = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
     auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_properties);
@@ -11824,12 +11830,17 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
 TEST_F(VkLayerTest, SubgroupSizeControlFeaturesNotEnabled) {
     TEST_DESCRIPTION("Use subgroup size control features when they are not enabled");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)) {
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
 
     VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
     sscf.subgroupSizeControl = VK_FALSE;
@@ -11838,8 +11849,29 @@ TEST_F(VkLayerTest, SubgroupSizeControlFeaturesNotEnabled) {
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sscf);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
+    VkPhysicalDeviceVulkan11Properties props11 = LvlInitStruct<VkPhysicalDeviceVulkan11Properties>();
+    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&props11);
+    vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
+
+    if (props11.subgroupSize == 0) {
+        printf("%s subgroupSize is 0, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    std::stringstream csSource;
+    // Make sure compute pipeline has a compute shader stage set
+    csSource << R"(
+        #version 450
+        layout(local_size_x = )";
+    csSource << props11.subgroupSize;
+    csSource << R"() in;
+        void main(){
+        }
+    )";
+
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(m_device, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, this));
     pipe.InitState();
     pipe.LateBindPipelineInfo();
     pipe.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
