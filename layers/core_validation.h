@@ -525,6 +525,7 @@ class CoreChecks : public ValidationStateTracker {
     void RecordGraphicsPipelineShaderDynamicState(PIPELINE_STATE *pipeline);
     bool ValidateComputePipelineShaderState(PIPELINE_STATE* pPipeline) const;
     uint32_t CalcShaderStageCount(const PIPELINE_STATE* pipeline, VkShaderStageFlagBits stageBit) const;
+    bool GroupHasValidIndex(const PIPELINE_STATE* pipeline, uint32_t group, uint32_t stage) const;
     bool ValidateRayTracingPipeline(PIPELINE_STATE* pipeline, VkPipelineCreateFlags flags, bool isKHR) const;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const override;
