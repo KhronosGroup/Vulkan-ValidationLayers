@@ -3289,6 +3289,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  "VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR.",
                                  i, flags);
             }
+            if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_ALLOW_MOTION_BIT_NV) != 0) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-04947",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "]->flags (0x%x) must not include "
+                                 "VK_PIPELINE_CREATE_RAY_TRACING_ALLOW_MOTION_BIT_NV.",
+                                 i, flags);
+            }
         }
     }
 
