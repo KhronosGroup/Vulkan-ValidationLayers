@@ -1104,6 +1104,14 @@ TEST_F(VkSyncValTest, SyncBlitImageHazards) {
 TEST_F(VkSyncValTest, SyncRenderPassBeginTransitionHazard) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
+    const VkSubpassDependency external_subpass_dependency = {VK_SUBPASS_EXTERNAL,
+                                                             0,
+                                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                             VK_DEPENDENCY_BY_REGION_BIT};
+    m_additionalSubpassDependencies.push_back(external_subpass_dependency);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(2));
 
     // Render Target Information
@@ -1147,13 +1155,13 @@ TEST_F(VkSyncValTest, SyncRenderPassBeginTransitionHazard) {
     VkImageSubresourceRange rt_full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    image_barrier.dstAccessMask = 0;
+    image_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     image_barrier.image = rt_0->handle();
     image_barrier.subresourceRange = rt_full_subresource_range;
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                           &image_barrier);
+    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &image_barrier);
     vk::CmdCopyImage(cb, rt_1->handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_to_copy);
     m_errorMonitor->VerifyNotFound();
 

@@ -1058,8 +1058,17 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
                                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         // Must include dep_by_region bit when src & dst both include framebuffer-space stages
         subpass_dep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-        rp_info.dependencyCount = 1;
-        rp_info.pDependencies = &subpass_dep;
+    }
+
+    if (m_additionalSubpassDependencies.size()) {
+        m_renderPass_dependencies.reserve(m_additionalSubpassDependencies.size() + m_renderPass_dependencies.size());
+        m_renderPass_dependencies.insert(m_renderPass_dependencies.end(), m_additionalSubpassDependencies.begin(),
+                                         m_additionalSubpassDependencies.end());
+    }
+
+    if (m_renderPass_dependencies.size()) {
+        rp_info.dependencyCount = static_cast<uint32_t>(m_renderPass_dependencies.size());
+        rp_info.pDependencies = m_renderPass_dependencies.data();
     } else {
         rp_info.dependencyCount = 0;
         rp_info.pDependencies = nullptr;
