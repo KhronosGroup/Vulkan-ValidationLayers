@@ -372,6 +372,7 @@ class VkRenderFramework : public VkTestFramework {
     uint32_t m_writeMask;
     uint32_t m_reference;
     bool m_addRenderPassSelfDependency;
+    std::vector<VkSubpassDependency> m_additionalSubpassDependencies;
     std::vector<VkClearValue> m_renderPassClearValues;
     VkRenderPassBeginInfo m_renderPassBeginInfo;
     std::vector<std::unique_ptr<VkImageObj>> m_renderTargets;
