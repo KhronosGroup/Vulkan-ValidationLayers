@@ -3105,8 +3105,8 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
         ycbcr_image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
         // Src, dst is ycbcr format
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-srcImage-01561");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-dstImage-01562");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-srcImage-06421");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-dstImage-06422");
         if (ycbcrsrc) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
         if (ycbcrdst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
         vk::CmdBlitImage(m_commandBuffer->handle(), ycbcr_image.image(), ycbcr_image.Layout(), ycbcr_image.image(),
@@ -11650,7 +11650,7 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
     } else {
         image_create_info.arrayLayers = img_limits.maxArrayLayers;
         const char *error_vuid =
-            (ycbcr_array_extension) ? "VUID-VkImageCreateInfo-format-02653" : "VUID-VkImageCreateInfo-format-02564";
+            (ycbcr_array_extension) ? "VUID-VkImageCreateInfo-format-06414" : "VUID-VkImageCreateInfo-format-06413";
         CreateImageTest(*this, &image_create_info, error_vuid);
         image_create_info = reset_create_info;
     }
@@ -11663,7 +11663,7 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
         // if more then 2 the VU since its larger the (depth^2 + 1)
         // if up the depth the VU for IMAGE_TYPE_2D and depth != 1 hits
         image_create_info.mipLevels = 2;
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02561");
+        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-06410");
         image_create_info = reset_create_info;
     }
 
@@ -11676,7 +11676,7 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
     if ((image_format_props.sampleCounts & VK_SAMPLE_COUNT_4_BIT) == 0) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-samples-02258");
     }
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02562");
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-06411");
     image_create_info = reset_create_info;
 
     // invalid width
@@ -11694,7 +11694,7 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
     // Can't just set height to 1 as stateless valdiation will hit 04713 first
     m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-imageType-00956");
     m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-extent-02253");
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02563");
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-06412");
     image_create_info = reset_create_info;
 
     // Test using a format that doesn't support disjoint

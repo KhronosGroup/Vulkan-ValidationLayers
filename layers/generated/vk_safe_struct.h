@@ -5321,6 +5321,84 @@ struct safe_VkResolveImageInfo2KHR {
     VkResolveImageInfo2KHR const *ptr() const { return reinterpret_cast<VkResolveImageInfo2KHR const *>(this); }
 };
 
+struct safe_VkFormatProperties3KHR {
+    VkStructureType sType;
+    void* pNext;
+    VkFormatFeatureFlags2KHR linearTilingFeatures;
+    VkFormatFeatureFlags2KHR optimalTilingFeatures;
+    VkFormatFeatureFlags2KHR bufferFeatures;
+    safe_VkFormatProperties3KHR(const VkFormatProperties3KHR* in_struct);
+    safe_VkFormatProperties3KHR(const safe_VkFormatProperties3KHR& copy_src);
+    safe_VkFormatProperties3KHR& operator=(const safe_VkFormatProperties3KHR& copy_src);
+    safe_VkFormatProperties3KHR();
+    ~safe_VkFormatProperties3KHR();
+    void initialize(const VkFormatProperties3KHR* in_struct);
+    void initialize(const safe_VkFormatProperties3KHR* copy_src);
+    VkFormatProperties3KHR *ptr() { return reinterpret_cast<VkFormatProperties3KHR *>(this); }
+    VkFormatProperties3KHR const *ptr() const { return reinterpret_cast<VkFormatProperties3KHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceMaintenance4FeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 maintenance4;
+    safe_VkPhysicalDeviceMaintenance4FeaturesKHR(const VkPhysicalDeviceMaintenance4FeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceMaintenance4FeaturesKHR(const safe_VkPhysicalDeviceMaintenance4FeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceMaintenance4FeaturesKHR& operator=(const safe_VkPhysicalDeviceMaintenance4FeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceMaintenance4FeaturesKHR();
+    ~safe_VkPhysicalDeviceMaintenance4FeaturesKHR();
+    void initialize(const VkPhysicalDeviceMaintenance4FeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceMaintenance4FeaturesKHR* copy_src);
+    VkPhysicalDeviceMaintenance4FeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceMaintenance4FeaturesKHR *>(this); }
+    VkPhysicalDeviceMaintenance4FeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceMaintenance4FeaturesKHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceMaintenance4PropertiesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkDeviceSize maxBufferSize;
+    safe_VkPhysicalDeviceMaintenance4PropertiesKHR(const VkPhysicalDeviceMaintenance4PropertiesKHR* in_struct);
+    safe_VkPhysicalDeviceMaintenance4PropertiesKHR(const safe_VkPhysicalDeviceMaintenance4PropertiesKHR& copy_src);
+    safe_VkPhysicalDeviceMaintenance4PropertiesKHR& operator=(const safe_VkPhysicalDeviceMaintenance4PropertiesKHR& copy_src);
+    safe_VkPhysicalDeviceMaintenance4PropertiesKHR();
+    ~safe_VkPhysicalDeviceMaintenance4PropertiesKHR();
+    void initialize(const VkPhysicalDeviceMaintenance4PropertiesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceMaintenance4PropertiesKHR* copy_src);
+    VkPhysicalDeviceMaintenance4PropertiesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceMaintenance4PropertiesKHR *>(this); }
+    VkPhysicalDeviceMaintenance4PropertiesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceMaintenance4PropertiesKHR const *>(this); }
+};
+
+struct safe_VkDeviceBufferMemoryRequirementsKHR {
+    VkStructureType sType;
+    const void* pNext;
+    safe_VkBufferCreateInfo* pCreateInfo;
+    safe_VkDeviceBufferMemoryRequirementsKHR(const VkDeviceBufferMemoryRequirementsKHR* in_struct);
+    safe_VkDeviceBufferMemoryRequirementsKHR(const safe_VkDeviceBufferMemoryRequirementsKHR& copy_src);
+    safe_VkDeviceBufferMemoryRequirementsKHR& operator=(const safe_VkDeviceBufferMemoryRequirementsKHR& copy_src);
+    safe_VkDeviceBufferMemoryRequirementsKHR();
+    ~safe_VkDeviceBufferMemoryRequirementsKHR();
+    void initialize(const VkDeviceBufferMemoryRequirementsKHR* in_struct);
+    void initialize(const safe_VkDeviceBufferMemoryRequirementsKHR* copy_src);
+    VkDeviceBufferMemoryRequirementsKHR *ptr() { return reinterpret_cast<VkDeviceBufferMemoryRequirementsKHR *>(this); }
+    VkDeviceBufferMemoryRequirementsKHR const *ptr() const { return reinterpret_cast<VkDeviceBufferMemoryRequirementsKHR const *>(this); }
+};
+
+struct safe_VkDeviceImageMemoryRequirementsKHR {
+    VkStructureType sType;
+    const void* pNext;
+    safe_VkImageCreateInfo* pCreateInfo;
+    VkImageAspectFlagBits planeAspect;
+    safe_VkDeviceImageMemoryRequirementsKHR(const VkDeviceImageMemoryRequirementsKHR* in_struct);
+    safe_VkDeviceImageMemoryRequirementsKHR(const safe_VkDeviceImageMemoryRequirementsKHR& copy_src);
+    safe_VkDeviceImageMemoryRequirementsKHR& operator=(const safe_VkDeviceImageMemoryRequirementsKHR& copy_src);
+    safe_VkDeviceImageMemoryRequirementsKHR();
+    ~safe_VkDeviceImageMemoryRequirementsKHR();
+    void initialize(const VkDeviceImageMemoryRequirementsKHR* in_struct);
+    void initialize(const safe_VkDeviceImageMemoryRequirementsKHR* copy_src);
+    VkDeviceImageMemoryRequirementsKHR *ptr() { return reinterpret_cast<VkDeviceImageMemoryRequirementsKHR *>(this); }
+    VkDeviceImageMemoryRequirementsKHR const *ptr() const { return reinterpret_cast<VkDeviceImageMemoryRequirementsKHR const *>(this); }
+};
+
 struct safe_VkDebugReportCallbackCreateInfoEXT {
     VkStructureType sType;
     const void* pNext;
@@ -6714,6 +6792,30 @@ struct safe_VkExternalFormatANDROID {
 };
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+struct safe_VkAndroidHardwareBufferFormatProperties2ANDROID {
+    VkStructureType sType;
+    void* pNext;
+    VkFormat format;
+    uint64_t externalFormat;
+    VkFormatFeatureFlags2KHR formatFeatures;
+    VkComponentMapping samplerYcbcrConversionComponents;
+    VkSamplerYcbcrModelConversion suggestedYcbcrModel;
+    VkSamplerYcbcrRange suggestedYcbcrRange;
+    VkChromaLocation suggestedXChromaOffset;
+    VkChromaLocation suggestedYChromaOffset;
+    safe_VkAndroidHardwareBufferFormatProperties2ANDROID(const VkAndroidHardwareBufferFormatProperties2ANDROID* in_struct);
+    safe_VkAndroidHardwareBufferFormatProperties2ANDROID(const safe_VkAndroidHardwareBufferFormatProperties2ANDROID& copy_src);
+    safe_VkAndroidHardwareBufferFormatProperties2ANDROID& operator=(const safe_VkAndroidHardwareBufferFormatProperties2ANDROID& copy_src);
+    safe_VkAndroidHardwareBufferFormatProperties2ANDROID();
+    ~safe_VkAndroidHardwareBufferFormatProperties2ANDROID();
+    void initialize(const VkAndroidHardwareBufferFormatProperties2ANDROID* in_struct);
+    void initialize(const safe_VkAndroidHardwareBufferFormatProperties2ANDROID* copy_src);
+    VkAndroidHardwareBufferFormatProperties2ANDROID *ptr() { return reinterpret_cast<VkAndroidHardwareBufferFormatProperties2ANDROID *>(this); }
+    VkAndroidHardwareBufferFormatProperties2ANDROID const *ptr() const { return reinterpret_cast<VkAndroidHardwareBufferFormatProperties2ANDROID const *>(this); }
+};
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+
 struct safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT {
     VkStructureType sType;
     void* pNext;
@@ -7065,6 +7167,22 @@ struct safe_VkImageDrmFormatModifierPropertiesEXT {
     void initialize(const safe_VkImageDrmFormatModifierPropertiesEXT* copy_src);
     VkImageDrmFormatModifierPropertiesEXT *ptr() { return reinterpret_cast<VkImageDrmFormatModifierPropertiesEXT *>(this); }
     VkImageDrmFormatModifierPropertiesEXT const *ptr() const { return reinterpret_cast<VkImageDrmFormatModifierPropertiesEXT const *>(this); }
+};
+
+struct safe_VkDrmFormatModifierPropertiesList2EXT {
+    VkStructureType sType;
+    void* pNext;
+    uint32_t drmFormatModifierCount;
+    VkDrmFormatModifierProperties2EXT* pDrmFormatModifierProperties;
+    safe_VkDrmFormatModifierPropertiesList2EXT(const VkDrmFormatModifierPropertiesList2EXT* in_struct);
+    safe_VkDrmFormatModifierPropertiesList2EXT(const safe_VkDrmFormatModifierPropertiesList2EXT& copy_src);
+    safe_VkDrmFormatModifierPropertiesList2EXT& operator=(const safe_VkDrmFormatModifierPropertiesList2EXT& copy_src);
+    safe_VkDrmFormatModifierPropertiesList2EXT();
+    ~safe_VkDrmFormatModifierPropertiesList2EXT();
+    void initialize(const VkDrmFormatModifierPropertiesList2EXT* in_struct);
+    void initialize(const safe_VkDrmFormatModifierPropertiesList2EXT* copy_src);
+    VkDrmFormatModifierPropertiesList2EXT *ptr() { return reinterpret_cast<VkDrmFormatModifierPropertiesList2EXT *>(this); }
+    VkDrmFormatModifierPropertiesList2EXT const *ptr() const { return reinterpret_cast<VkDrmFormatModifierPropertiesList2EXT const *>(this); }
 };
 
 struct safe_VkValidationCacheCreateInfoEXT {
@@ -9528,6 +9646,21 @@ struct safe_VkPhysicalDevice4444FormatsFeaturesEXT {
     void initialize(const safe_VkPhysicalDevice4444FormatsFeaturesEXT* copy_src);
     VkPhysicalDevice4444FormatsFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDevice4444FormatsFeaturesEXT *>(this); }
     VkPhysicalDevice4444FormatsFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevice4444FormatsFeaturesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 formatRgba10x6WithoutYCbCrSampler;
+    safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT(const VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT(const safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT& operator=(const safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT();
+    ~safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT();
+    void initialize(const VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT* copy_src);
+    VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT *>(this); }
+    VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT const *>(this); }
 };
 
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT

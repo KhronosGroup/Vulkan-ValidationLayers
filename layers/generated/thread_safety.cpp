@@ -5314,6 +5314,50 @@ void ThreadSafety::PostCallRecordCmdResolveImage2KHR(
     // Host access to commandBuffer must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordGetDeviceBufferMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceBufferMemoryRequirementsKHR*  pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) {
+    StartReadObjectParentInstance(device, "vkGetDeviceBufferMemoryRequirementsKHR");
+}
+
+void ThreadSafety::PostCallRecordGetDeviceBufferMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceBufferMemoryRequirementsKHR*  pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) {
+    FinishReadObjectParentInstance(device, "vkGetDeviceBufferMemoryRequirementsKHR");
+}
+
+void ThreadSafety::PreCallRecordGetDeviceImageMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) {
+    StartReadObjectParentInstance(device, "vkGetDeviceImageMemoryRequirementsKHR");
+}
+
+void ThreadSafety::PostCallRecordGetDeviceImageMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) {
+    FinishReadObjectParentInstance(device, "vkGetDeviceImageMemoryRequirementsKHR");
+}
+
+void ThreadSafety::PreCallRecordGetDeviceImageSparseMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    uint32_t*                                   pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {
+    StartReadObjectParentInstance(device, "vkGetDeviceImageSparseMemoryRequirementsKHR");
+}
+
+void ThreadSafety::PostCallRecordGetDeviceImageSparseMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    uint32_t*                                   pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {
+    FinishReadObjectParentInstance(device, "vkGetDeviceImageSparseMemoryRequirementsKHR");
+}
+
 void ThreadSafety::PreCallRecordCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,

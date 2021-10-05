@@ -725,6 +725,15 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdResolveImage2KHR,
     InterceptIdPreCallRecordCmdResolveImage2KHR,
     InterceptIdPostCallRecordCmdResolveImage2KHR,
+    InterceptIdPreCallValidateGetDeviceBufferMemoryRequirementsKHR,
+    InterceptIdPreCallRecordGetDeviceBufferMemoryRequirementsKHR,
+    InterceptIdPostCallRecordGetDeviceBufferMemoryRequirementsKHR,
+    InterceptIdPreCallValidateGetDeviceImageMemoryRequirementsKHR,
+    InterceptIdPreCallRecordGetDeviceImageMemoryRequirementsKHR,
+    InterceptIdPostCallRecordGetDeviceImageMemoryRequirementsKHR,
+    InterceptIdPreCallValidateGetDeviceImageSparseMemoryRequirementsKHR,
+    InterceptIdPreCallRecordGetDeviceImageSparseMemoryRequirementsKHR,
+    InterceptIdPostCallRecordGetDeviceImageSparseMemoryRequirementsKHR,
     InterceptIdPreCallValidateDebugMarkerSetObjectTagEXT,
     InterceptIdPreCallRecordDebugMarkerSetObjectTagEXT,
     InterceptIdPostCallRecordDebugMarkerSetObjectTagEXT,
@@ -1998,6 +2007,15 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdResolveImage2KHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdResolveImage2KHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdResolveImage2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceBufferMemoryRequirementsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceBufferMemoryRequirementsKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceBufferMemoryRequirementsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceImageMemoryRequirementsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceImageMemoryRequirementsKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceImageMemoryRequirementsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceImageSparseMemoryRequirementsKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceImageSparseMemoryRequirementsKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateDebugMarkerSetObjectTagEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordDebugMarkerSetObjectTagEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordDebugMarkerSetObjectTagEXT);

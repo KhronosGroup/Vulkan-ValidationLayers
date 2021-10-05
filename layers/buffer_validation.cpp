@@ -1922,8 +1922,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     if (FormatRequiresYcbcrConversion(pCreateInfo->format)) {
         if (!enabled_features.ycbcr_image_array_features.ycbcrImageArrays && pCreateInfo->arrayLayers != 1) {
             const char *error_vuid = IsExtEnabled(device_extensions.vk_ext_ycbcr_image_arrays)
-                                         ? "VUID-VkImageCreateInfo-format-02653"
-                                         : "VUID-VkImageCreateInfo-format-02564";
+                                         ? "VUID-VkImageCreateInfo-format-06414"
+                                         : "VUID-VkImageCreateInfo-format-06413";
             skip |= LogError(device, error_vuid,
                              "vkCreateImage(): arrayLayers = %d, but when the ycbcrImagesArrays feature is not enabled and using a "
                              "YCbCr Conversion format, arrayLayers must be 1",
@@ -1931,21 +1931,21 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
 
         if (pCreateInfo->mipLevels != 1) {
-            skip |= LogError(device, "VUID-VkImageCreateInfo-format-02561",
+            skip |= LogError(device, "VUID-VkImageCreateInfo-format-06410",
                              "vkCreateImage(): mipLevels = %d, but when using a YCbCr Conversion format, mipLevels must be 1",
                              pCreateInfo->arrayLayers);
         }
 
         if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
             skip |= LogError(
-                device, "VUID-VkImageCreateInfo-format-02562",
+                device, "VUID-VkImageCreateInfo-format-06411",
                 "vkCreateImage(): samples = %s, but when using a YCbCr Conversion format, samples must be VK_SAMPLE_COUNT_1_BIT",
                 string_VkSampleCountFlagBits(pCreateInfo->samples));
         }
 
         if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
             skip |= LogError(
-                device, "VUID-VkImageCreateInfo-format-02563",
+                device, "VUID-VkImageCreateInfo-format-06412",
                 "vkCreateImage(): imageType = %s, but when using a YCbCr Conversion format, imageType must be VK_IMAGE_TYPE_2D ",
                 string_VkImageType(pCreateInfo->imageType));
         }
@@ -3910,7 +3910,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         if (FormatRequiresYcbcrConversion(src_format)) {
-            vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-srcImage-01561" : "VUID-vkCmdBlitImage-srcImage-01561";
+            vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-srcImage-06421" : "VUID-vkCmdBlitImage-srcImage-06421";
             skip |= LogError(device, vuid,
                              "%s: srcImage format (%s) must not be one of the formats requiring sampler YCBCR "
                              "conversion for VK_IMAGE_ASPECT_COLOR_BIT image views",
@@ -3918,7 +3918,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         if (FormatRequiresYcbcrConversion(dst_format)) {
-            vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-dstImage-01562" : "VUID-vkCmdBlitImage-dstImage-01562";
+            vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-dstImage-06422" : "VUID-vkCmdBlitImage-dstImage-06422";
             skip |= LogError(device, vuid,
                              "%s: dstImage format (%s) must not be one of the formats requiring sampler YCBCR "
                              "conversion for VK_IMAGE_ASPECT_COLOR_BIT image views",

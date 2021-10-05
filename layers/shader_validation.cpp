@@ -2879,19 +2879,19 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
     uint32_t local_size_z = 0;
     if (shader->FindLocalSize(entrypoint, local_size_x, local_size_y, local_size_z)) {
         if (local_size_x > phys_dev_props.limits.maxComputeWorkGroupSize[0]) {
-            skip |= LogError(shader->vk_shader_module(), "VUID-RuntimeSpirv-x-06368",
+            skip |= LogError(shader->vk_shader_module(), "VUID-RuntimeSpirv-x-06429",
                              "%s local_size_x (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[0] (%" PRIu32 ").",
                              report_data->FormatHandle(shader->vk_shader_module()).c_str(), local_size_x,
                              phys_dev_props.limits.maxComputeWorkGroupSize[0]);
         }
         if (local_size_y > phys_dev_props.limits.maxComputeWorkGroupSize[1]) {
-            skip |= LogError(shader->vk_shader_module(), "VUID-RuntimeSpirv-y-06369",
+            skip |= LogError(shader->vk_shader_module(), "VUID-RuntimeSpirv-y-06430",
                              "%s local_size_y (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[1] (%" PRIu32 ").",
                              report_data->FormatHandle(shader->vk_shader_module()).c_str(), local_size_x,
                              phys_dev_props.limits.maxComputeWorkGroupSize[1]);
         }
         if (local_size_z > phys_dev_props.limits.maxComputeWorkGroupSize[2]) {
-            skip |= LogError(shader->vk_shader_module(), "VUID-RuntimeSpirv-z-06370",
+            skip |= LogError(shader->vk_shader_module(), "VUID-RuntimeSpirv-z-06431",
                              "%s local_size_z (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[2] (%" PRIu32 ").",
                              report_data->FormatHandle(shader->vk_shader_module()).c_str(), local_size_x,
                              phys_dev_props.limits.maxComputeWorkGroupSize[2]);
@@ -2911,7 +2911,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
             }
         }
         if (fail) {
-            skip |= LogError(shader->vk_shader_module(), "VUID-RuntimeSpirv-x-06371",
+            skip |= LogError(shader->vk_shader_module(), "VUID-RuntimeSpirv-x-06432",
                              "%s local_size (%" PRIu32 ", %" PRIu32 ", %" PRIu32
                              ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
                              report_data->FormatHandle(shader->vk_shader_module()).c_str(), local_size_x, local_size_y,
