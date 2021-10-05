@@ -364,11 +364,13 @@ class ResourceAccessState : public SyncStageAccess {
     bool IsWriteHazard(SyncStageAccessFlags usage) const { return (usage & ~write_barriers).any(); }
     bool IsRAWHazard(VkPipelineStageFlags2KHR usage_stage, const SyncStageAccessFlags &usage) const;
     bool IsWriteBarrierHazard(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope) const {
-        // If the previous write is *not* in the 1st access scope
+        // If the previous write is *not* a layout transition
+        // *AND* is *not* in the 1st access scope
         // *AND* the current barrier is not in the dependency chain
         // *AND* the there is no prior memory barrier for the previous write in the dependency chain
         // then the barrier access is unsafe (R/W after W)
-        return ((last_write & src_access_scope) == 0) && ((src_exec_scope & write_dependency_chain) == 0) && (write_barriers == 0);
+        return (last_write != SYNC_IMAGE_LAYOUT_TRANSITION_BIT) && (last_write & src_access_scope).none() &&
+               (((src_exec_scope & write_dependency_chain) == 0) || (write_barriers & src_access_scope).none());
     }
     bool ReadInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope) const {
         return (0 != (src_exec_scope & (last_read_stages | read_execution_barriers)));
