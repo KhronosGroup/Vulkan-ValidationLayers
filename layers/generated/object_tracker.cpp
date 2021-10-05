@@ -6826,61 +6826,6 @@ void ObjectLifetimes::PreCallRecordDestroyAccelerationStructureKHR(
 
 }
 
-bool ObjectLifetimes::PreCallValidateCmdBuildAccelerationStructuresKHR(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    infoCount,
-    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) const {
-    bool skip = false;
-    skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBuildAccelerationStructuresKHR-commandBuffer-parameter", kVUIDUndefined);
-    if (pInfos) {
-        for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
-            skip |= ValidateObject(pInfos[index0].srcAccelerationStructure, kVulkanObjectTypeAccelerationStructureKHR, true, kVUIDUndefined, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-commonparent");
-            skip |= ValidateObject(pInfos[index0].dstAccelerationStructure, kVulkanObjectTypeAccelerationStructureKHR, true, kVUIDUndefined, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-commonparent");
-        }
-    }
-
-    return skip;
-}
-
-bool ObjectLifetimes::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    infoCount,
-    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkDeviceAddress*                      pIndirectDeviceAddresses,
-    const uint32_t*                             pIndirectStrides,
-    const uint32_t* const*                      ppMaxPrimitiveCounts) const {
-    bool skip = false;
-    skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-commandBuffer-parameter", kVUIDUndefined);
-    if (pInfos) {
-        for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
-            skip |= ValidateObject(pInfos[index0].srcAccelerationStructure, kVulkanObjectTypeAccelerationStructureKHR, true, kVUIDUndefined, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-commonparent");
-            skip |= ValidateObject(pInfos[index0].dstAccelerationStructure, kVulkanObjectTypeAccelerationStructureKHR, true, kVUIDUndefined, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-commonparent");
-        }
-    }
-
-    return skip;
-}
-
-bool ObjectLifetimes::PreCallValidateBuildAccelerationStructuresKHR(
-    VkDevice                                    device,
-    VkDeferredOperationKHR                      deferredOperation,
-    uint32_t                                    infoCount,
-    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) const {
-    bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkBuildAccelerationStructuresKHR-device-parameter", kVUIDUndefined);
-    skip |= ValidateObject(deferredOperation, kVulkanObjectTypeDeferredOperationKHR, true, "VUID-vkBuildAccelerationStructuresKHR-deferredOperation-parameter", "VUID-vkBuildAccelerationStructuresKHR-deferredOperation-parent");
-    if (pInfos) {
-        for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
-            skip |= ValidateObject(pInfos[index0].srcAccelerationStructure, kVulkanObjectTypeAccelerationStructureKHR, true, kVUIDUndefined, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-commonparent");
-            skip |= ValidateObject(pInfos[index0].dstAccelerationStructure, kVulkanObjectTypeAccelerationStructureKHR, true, kVUIDUndefined, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-commonparent");
-        }
-    }
-
-    return skip;
-}
-
 bool ObjectLifetimes::PreCallValidateCopyAccelerationStructureKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      deferredOperation,
