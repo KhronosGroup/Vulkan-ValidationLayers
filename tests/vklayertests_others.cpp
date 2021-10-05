@@ -9790,17 +9790,31 @@ TEST_F(VkLayerTest, ValidateVkAccelerationStructureVersionInfoKHR) {
 
 TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
-    if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+
+    auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    accel_features.accelerationStructureIndirectBuild = VK_TRUE;
+    accel_features.accelerationStructureHostCommands = VK_TRUE;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&accel_features);
+    if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
+                                        false, false, &features2)) {
         return;
     }
 
     PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR =
         (PFN_vkCmdBuildAccelerationStructuresKHR)vk::GetDeviceProcAddr(device(), "vkCmdBuildAccelerationStructuresKHR");
+    assert(vkCmdBuildAccelerationStructuresKHR != nullptr);
 
     PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
         (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
 
-    assert(vkCmdBuildAccelerationStructuresKHR != nullptr);
+    auto vkCmdBuildAccelerationStructuresIndirectKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresIndirectKHR>(
+        vk::GetDeviceProcAddr(device(), "vkCmdBuildAccelerationStructuresIndirectKHR"));
+    assert(vkCmdBuildAccelerationStructuresKHR);
+
+    auto vkBuildAccelerationStructuresKHR =
+        reinterpret_cast<PFN_vkBuildAccelerationStructuresKHR>(vk::GetDeviceProcAddr(device(), "vkBuildAccelerationStructuresKHR"));
+    assert(vkBuildAccelerationStructuresKHR);
+
     VkBufferObj vbo;
     VkBufferObj ibo;
     VkGeometryNV geometryNV;
@@ -9882,6 +9896,33 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-commandBuffer-recording");
     vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &pBuildRangeInfos);
     m_errorMonitor->VerifyFound();
+
+    {  // dstAccelerationStructure == VK_NULL_HANDLE
+        auto build_info_null_dst_handle = build_info_khr;
+        build_info_null_dst_handle.dstAccelerationStructure = VK_NULL_HANDLE;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03800");
+        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_null_dst_handle, &pBuildRangeInfos);
+        m_errorMonitor->VerifyFound();
+
+        if (accel_features.accelerationStructureIndirectBuild == VK_TRUE) {
+            VkDeviceAddress range_ptrs{};
+            uint32_t indirect_strides = sizeof(VkAccelerationStructureBuildRangeInfoKHR);
+            uint32_t max_prim_counts[1] = {1};
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                                 "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-dstAccelerationStructure-03800");
+            vkCmdBuildAccelerationStructuresIndirectKHR(m_commandBuffer->handle(), 1, &build_info_null_dst_handle, &range_ptrs,
+                                                        &indirect_strides, reinterpret_cast<uint32_t **>(&max_prim_counts));
+            m_errorMonitor->VerifyFound();
+        }
+
+        if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-dstAccelerationStructure-03800");
+            vkBuildAccelerationStructuresKHR(m_device->handle(), VK_NULL_HANDLE, 1, &build_info_null_dst_handle, &pBuildRangeInfos);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
     m_commandBuffer->begin();
 
     m_errorMonitor->ExpectSuccess(kErrorBit);
