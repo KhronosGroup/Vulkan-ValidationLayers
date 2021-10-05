@@ -256,12 +256,21 @@ class DebugPrintf : public ValidationStateTracker {
                                        VkResult result) override;
     void AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point);
 
-    CMD_BUFFER_STATE_PRINTF* GetCBState(VkCommandBuffer commandBuffer) {
-        return static_cast<CMD_BUFFER_STATE_PRINTF*>(Get<CMD_BUFFER_STATE>(commandBuffer));
+    std::shared_ptr<CMD_BUFFER_STATE_PRINTF> GetCBState(VkCommandBuffer commandBuffer) {
+        return std::static_pointer_cast<CMD_BUFFER_STATE_PRINTF>(Get<CMD_BUFFER_STATE>(commandBuffer));
     }
-    const CMD_BUFFER_STATE_PRINTF* GetCBState(VkCommandBuffer commandBuffer) const {
-        return static_cast<const CMD_BUFFER_STATE_PRINTF*>(Get<CMD_BUFFER_STATE>(commandBuffer));
+    std::shared_ptr<const CMD_BUFFER_STATE_PRINTF> GetCBState(VkCommandBuffer commandBuffer) const {
+        return std::static_pointer_cast<const CMD_BUFFER_STATE_PRINTF>(Get<CMD_BUFFER_STATE>(commandBuffer));
     }
+    std::shared_ptr<SHADER_MODULE_STATE> GetShaderModuleState(VkShaderModule shader_module) {
+        return Get<SHADER_MODULE_STATE>(shader_module);
+    }
+    std::shared_ptr<const SHADER_MODULE_STATE> GetShaderModuleState(VkShaderModule shader_module) const {
+        return Get<SHADER_MODULE_STATE>(shader_module);
+    }
+    std::shared_ptr<const PIPELINE_STATE> GetPipelineState(VkPipeline pipeline) const { return Get<PIPELINE_STATE>(pipeline); }
+    std::shared_ptr<PIPELINE_STATE> GetPipelineState(VkPipeline pipeline) { return Get<PIPELINE_STATE>(pipeline); }
+
     const std::vector<DPFBufferInfo>& GetBufferInfo(const CMD_BUFFER_STATE* cb_node) const {
         assert(cb_node);
         return static_cast<const CMD_BUFFER_STATE_PRINTF*>(cb_node)->buffer_infos;

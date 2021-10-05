@@ -85,9 +85,9 @@ std::vector<ImageViewPointer> GetAttachmentViewsImpl(const VkRenderPassBeginInfo
     return views;
 }
 
-std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> ValidationStateTracker::GetSharedAttachmentViews(
+std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> ValidationStateTracker::GetAttachmentViews(
     const VkRenderPassBeginInfo &rp_begin, const FRAMEBUFFER_STATE &fb_state) const {
-    auto get_fn = [this](VkImageView handle) { return this->GetShared<IMAGE_VIEW_STATE>(handle); };
+    auto get_fn = [this](VkImageView handle) { return this->Get<IMAGE_VIEW_STATE>(handle); };
     return GetAttachmentViewsImpl<std::shared_ptr<const IMAGE_VIEW_STATE>>(rp_begin, fb_state, get_fn);
 }
 
@@ -280,7 +280,7 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
                                                             VkResult result) {
     if (result != VK_SUCCESS) return;
 
-    auto buffer_state = GetShared<BUFFER_STATE>(pCreateInfo->buffer);
+    auto buffer_state = Get<BUFFER_STATE>(pCreateInfo->buffer);
 
     VkFormatProperties format_properties;
     DispatchGetPhysicalDeviceFormatProperties(physical_device, pCreateInfo->format, &format_properties);
@@ -292,7 +292,7 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
                                                            const VkAllocationCallbacks *pAllocator, VkImageView *pView,
                                                            VkResult result) {
     if (result != VK_SUCCESS) return;
-    auto image_state = GetShared<IMAGE_STATE>(pCreateInfo->image);
+    auto image_state = Get<IMAGE_STATE>(pCreateInfo->image);
 
     VkFormatFeatureFlags format_features = 0;
     if (image_state->HasAHBFormat() == true) {
@@ -461,7 +461,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     }
 
     // Save local link to this device's physical device state
-    state_tracker->physical_device_state = Get<PHYSICAL_DEVICE_STATE>(gpu);
+    state_tracker->physical_device_state = Get<PHYSICAL_DEVICE_STATE>(gpu).get();
 
     const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(pCreateInfo->pNext);
     if (vulkan_12_features) {
@@ -1241,7 +1241,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
 
     if (submitCount == 0) {
         CB_SUBMISSION submission;
-        submission.AddFence(GetShared<FENCE_STATE>(fence));
+        submission.AddFence(Get<FENCE_STATE>(fence));
         early_retire_seq = queue_state->Submit(std::move(submission));
     }
 
@@ -1256,7 +1256,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                 (i < timeline_semaphore_submit->waitSemaphoreValueCount)) {
                 value = timeline_semaphore_submit->pWaitSemaphoreValues[i];
             }
-            submission.AddWaitSemaphore(GetShared<SEMAPHORE_STATE>(submit->pWaitSemaphores[i]), value);
+            submission.AddWaitSemaphore(Get<SEMAPHORE_STATE>(submit->pWaitSemaphores[i]), value);
         }
 
         for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
@@ -1265,17 +1265,17 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                 (i < timeline_semaphore_submit->signalSemaphoreValueCount)) {
                 value = timeline_semaphore_submit->pSignalSemaphoreValues[i];
             }
-            submission.AddSignalSemaphore(GetShared<SEMAPHORE_STATE>(submit->pSignalSemaphores[i]), value);
+            submission.AddSignalSemaphore(Get<SEMAPHORE_STATE>(submit->pSignalSemaphores[i]), value);
         }
 
         const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
         submission.perf_submit_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            submission.AddCommandBuffer(GetShared<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]));
+            submission.AddCommandBuffer(Get<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]));
         }
         if (submit_idx == (submitCount - 1) && fence != VK_NULL_HANDLE) {
-            submission.AddFence(GetShared<FENCE_STATE>(fence));
+            submission.AddFence(Get<FENCE_STATE>(fence));
         }
         auto submit_seq = queue_state->Submit(std::move(submission));
         early_retire_seq = std::max(early_retire_seq, submit_seq);
@@ -1293,7 +1293,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32
     uint64_t early_retire_seq = 0;
     if (submitCount == 0) {
         CB_SUBMISSION submission;
-        submission.AddFence(GetShared<FENCE_STATE>(fence));
+        submission.AddFence(Get<FENCE_STATE>(fence));
         early_retire_seq = queue_state->Submit(std::move(submission));
     }
 
@@ -1302,20 +1302,20 @@ void ValidationStateTracker::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32
         const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->waitSemaphoreInfoCount; ++i) {
             const auto &sem_info = submit->pWaitSemaphoreInfos[i];
-            submission.AddWaitSemaphore(GetShared<SEMAPHORE_STATE>(sem_info.semaphore), sem_info.value);
+            submission.AddWaitSemaphore(Get<SEMAPHORE_STATE>(sem_info.semaphore), sem_info.value);
         }
         for (uint32_t i = 0; i < submit->signalSemaphoreInfoCount; ++i) {
             const auto &sem_info = submit->pSignalSemaphoreInfos[i];
-            submission.AddSignalSemaphore(GetShared<SEMAPHORE_STATE>(sem_info.semaphore), sem_info.value);
+            submission.AddSignalSemaphore(Get<SEMAPHORE_STATE>(sem_info.semaphore), sem_info.value);
         }
         const auto perf_submit = lvl_find_in_chain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
         submission.perf_submit_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
-            submission.AddCommandBuffer(GetShared<CMD_BUFFER_STATE>(submit->pCommandBufferInfos[i].commandBuffer));
+            submission.AddCommandBuffer(Get<CMD_BUFFER_STATE>(submit->pCommandBufferInfos[i].commandBuffer));
         }
         if (submit_idx == (submitCount - 1)) {
-            submission.AddFence(GetShared<FENCE_STATE>(fence));
+            submission.AddFence(Get<FENCE_STATE>(fence));
         }
         auto submit_seq = queue_state->Submit(std::move(submission));
         early_retire_seq = std::max(early_retire_seq, submit_seq);
@@ -1382,7 +1382,7 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
             for (uint32_t k = 0; k < bind_info.pBufferBinds[j].bindCount; k++) {
                 auto sparse_binding = bind_info.pBufferBinds[j].pBinds[k];
                 auto buffer_state = Get<BUFFER_STATE>(bind_info.pBufferBinds[j].buffer);
-                auto mem_state = GetShared<DEVICE_MEMORY_STATE>(sparse_binding.memory);
+                auto mem_state = Get<DEVICE_MEMORY_STATE>(sparse_binding.memory);
                 if (buffer_state && mem_state) {
                     buffer_state->SetSparseMemBinding(mem_state, sparse_binding.memoryOffset, sparse_binding.size);
                 }
@@ -1392,7 +1392,7 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
             for (uint32_t k = 0; k < bind_info.pImageOpaqueBinds[j].bindCount; k++) {
                 auto sparse_binding = bind_info.pImageOpaqueBinds[j].pBinds[k];
                 auto image_state = Get<IMAGE_STATE>(bind_info.pImageOpaqueBinds[j].image);
-                auto mem_state = GetShared<DEVICE_MEMORY_STATE>(sparse_binding.memory);
+                auto mem_state = Get<DEVICE_MEMORY_STATE>(sparse_binding.memory);
                 if (image_state && mem_state) {
                     image_state->SetSparseMemBinding(mem_state, sparse_binding.memoryOffset, sparse_binding.size);
                 }
@@ -1404,7 +1404,7 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
                 // TODO: This size is broken for non-opaque bindings, need to update to comprehend full sparse binding data
                 VkDeviceSize size = sparse_binding.extent.depth * sparse_binding.extent.height * sparse_binding.extent.width * 4;
                 auto image_state = Get<IMAGE_STATE>(bind_info.pImageBinds[j].image);
-                auto mem_state = GetShared<DEVICE_MEMORY_STATE>(sparse_binding.memory);
+                auto mem_state = Get<DEVICE_MEMORY_STATE>(sparse_binding.memory);
                 if (image_state && mem_state) {
                     image_state->SetSparseMemBinding(mem_state, sparse_binding.memoryOffset, size);
                 }
@@ -1412,13 +1412,13 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
         }
         CB_SUBMISSION submission;
         for (uint32_t i = 0; i < bind_info.waitSemaphoreCount; ++i) {
-            submission.AddWaitSemaphore(GetShared<SEMAPHORE_STATE>(bind_info.pWaitSemaphores[i]), 0);
+            submission.AddWaitSemaphore(Get<SEMAPHORE_STATE>(bind_info.pWaitSemaphores[i]), 0);
         }
         for (uint32_t i = 0; i < bind_info.signalSemaphoreCount; ++i) {
-            submission.AddSignalSemaphore(GetShared<SEMAPHORE_STATE>(bind_info.pSignalSemaphores[i]), 0);
+            submission.AddSignalSemaphore(Get<SEMAPHORE_STATE>(bind_info.pSignalSemaphores[i]), 0);
         }
         if (bind_idx == (bindInfoCount - 1)) {
-            submission.AddFence(GetShared<FENCE_STATE>(fence));
+            submission.AddFence(Get<FENCE_STATE>(fence));
         }
         auto submit_seq = queue_state->Submit(std::move(submission));
         early_retire_seq = std::max(early_retire_seq, submit_seq);
@@ -1568,7 +1568,7 @@ void ValidationStateTracker::UpdateBindBufferMemoryState(VkBuffer buffer, VkDevi
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     if (buffer_state) {
         // Track objects tied to memory
-        auto mem_state = GetShared<DEVICE_MEMORY_STATE>(mem);
+        auto mem_state = Get<DEVICE_MEMORY_STATE>(mem);
         if (mem_state) {
             buffer_state->SetMemBinding(mem_state, memoryOffset);
         }
@@ -1820,14 +1820,14 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
     cgpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         if (pCreateInfos[i].renderPass != VK_NULL_HANDLE) {
-            cgpl_state->pipe_state.push_back(
-                std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], GetShared<RENDER_PASS_STATE>(pCreateInfos[i].renderPass),
-                                                 GetShared<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+            cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i],
+                                                                              Get<RENDER_PASS_STATE>(pCreateInfos[i].renderPass),
+                                                                              Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
         } else if (enabled_features.dynamic_rendering_features.dynamicRendering) {
             auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfoKHR>(pCreateInfos[i].pNext);
             cgpl_state->pipe_state.push_back(
                 std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], std::make_shared<RENDER_PASS_STATE>(dynamic_rendering),
-                                                 GetShared<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+                                                 Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
         }
     }
     return false;
@@ -1858,7 +1858,7 @@ bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice devi
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         ccpl_state->pipe_state.push_back(
-            std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], GetShared<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+            std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -1889,7 +1889,7 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(VkDevice
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         crtpl_state->pipe_state.push_back(
-            std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], GetShared<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+            std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -1918,7 +1918,7 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevic
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         crtpl_state->pipe_state.push_back(
-            std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], GetShared<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+            std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -2025,7 +2025,7 @@ void ValidationStateTracker::PreCallRecordUpdateDescriptorSets(VkDevice device, 
 void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
                                                                   VkCommandBuffer *pCommandBuffers, VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto pool = GetShared<COMMAND_POOL_STATE>(pCreateInfo->commandPool);
+    auto pool = Get<COMMAND_POOL_STATE>(pCreateInfo->commandPool);
     if (pool) {
         pool->Allocate(pCreateInfo, pCommandBuffers);
     }
@@ -2116,7 +2116,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         }
     }
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-    cb_state->lastBound[lv_bind_point].pipeline_state = pipe_state;
+    cb_state->lastBound[lv_bind_point].pipeline_state = pipe_state.get();
     if (!disabled[command_buffer_state]) {
         cb_state->AddChild(pipe_state);
     }
@@ -2223,7 +2223,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos) {
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    if (cb_state == nullptr) {
+    if (!cb_state) {
         return;
     }
     cb_state->RecordCmd(CMD_BUILDACCELERATIONSTRUCTURESKHR);
@@ -2297,7 +2297,7 @@ void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
         auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(info.accelerationStructure);
         if (as_state) {
             // Track objects tied to memory
-            auto mem_state = GetShared<DEVICE_MEMORY_STATE>(info.memory);
+            auto mem_state = Get<DEVICE_MEMORY_STATE>(info.memory);
             if (mem_state) {
                 as_state->SetMemBinding(mem_state, info.memoryOffset);
             }
@@ -2324,7 +2324,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
     if (dst_as_state != nullptr) {
         dst_as_state->Build(pInfo);
         if (!disabled[command_buffer_state]) {
-           cb_state->AddChild(dst_as_state);
+            cb_state->AddChild(dst_as_state);
         }
     }
     if (!disabled[command_buffer_state]) {
@@ -2438,7 +2438,7 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
     cb_state->RecordCmd(CMD_BINDDESCRIPTORSETS);
     auto pipeline_layout = Get<PIPELINE_LAYOUT_STATE>(layout);
 
-    cb_state->UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, firstSet, setCount, pDescriptorSets, nullptr,
+    cb_state->UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout.get(), firstSet, setCount, pDescriptorSets, nullptr,
                                             dynamicOffsetCount, pDynamicOffsets);
 }
 
@@ -2448,7 +2448,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffe
                                                                   const VkWriteDescriptorSet *pDescriptorWrites) {
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     auto pipeline_layout = Get<PIPELINE_LAYOUT_STATE>(layout);
-    cb_state->PushDescriptorSetState(pipelineBindPoint, pipeline_layout, set, descriptorWriteCount, pDescriptorWrites);
+    cb_state->PushDescriptorSetState(pipelineBindPoint, pipeline_layout.get(), set, descriptorWriteCount, pDescriptorWrites);
 }
 
 void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
@@ -2457,7 +2457,8 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_state != nullptr) {
         cb_state->RecordCmd(CMD_PUSHCONSTANTS);
-        cb_state->ResetPushConstantDataIfIncompatible(Get<PIPELINE_LAYOUT_STATE>(layout));
+        auto layout_state = Get<PIPELINE_LAYOUT_STATE>(layout);
+        cb_state->ResetPushConstantDataIfIncompatible(layout_state.get());
 
         auto &push_constant_data = cb_state->push_constant_data;
         assert((offset + size) <= static_cast<uint32_t>(push_constant_data.size()));
@@ -2486,13 +2487,13 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer com
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
 
     cb_state->RecordStateCmd(CMD_BINDINDEXBUFFER, CBSTATUS_INDEX_BUFFER_BOUND);
-    cb_state->index_buffer_binding.buffer_state = GetShared<BUFFER_STATE>(buffer);
+    cb_state->index_buffer_binding.buffer_state = Get<BUFFER_STATE>(buffer);
     cb_state->index_buffer_binding.size = cb_state->index_buffer_binding.buffer_state->createInfo.size;
     cb_state->index_buffer_binding.offset = offset;
     cb_state->index_buffer_binding.index_type = indexType;
     // Add binding for this index buffer to this commandbuffer
     if (!disabled[command_buffer_state]) {
-        cb_state->AddChild(cb_state->index_buffer_binding.buffer_state.get());
+        cb_state->AddChild(cb_state->index_buffer_binding.buffer_state);
     }
 }
 
@@ -2509,13 +2510,13 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer c
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings[i + firstBinding];
-        vertex_buffer_binding.buffer_state = GetShared<BUFFER_STATE>(pBuffers[i]);
+        vertex_buffer_binding.buffer_state = Get<BUFFER_STATE>(pBuffers[i]);
         vertex_buffer_binding.offset = pOffsets[i];
         vertex_buffer_binding.size = VK_WHOLE_SIZE;
         vertex_buffer_binding.stride = 0;
         // Add binding for this vertex buffer to this commandbuffer
         if (pBuffers[i] && !disabled[command_buffer_state]) {
-            cb_state->AddChild(vertex_buffer_binding.buffer_state.get());
+            cb_state->AddChild(vertex_buffer_binding.buffer_state);
         }
     }
 }
@@ -2691,11 +2692,11 @@ void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, co
         views.resize(pCreateInfo->attachmentCount);
 
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
-            views[i] = GetShared<IMAGE_VIEW_STATE>(pCreateInfo->pAttachments[i]);
+            views[i] = Get<IMAGE_VIEW_STATE>(pCreateInfo->pAttachments[i]);
         }
     }
 
-    Add(std::make_shared<FRAMEBUFFER_STATE>(*pFramebuffer, pCreateInfo, GetShared<RENDER_PASS_STATE>(pCreateInfo->renderPass),
+    Add(std::make_shared<FRAMEBUFFER_STATE>(*pFramebuffer, pCreateInfo, Get<RENDER_PASS_STATE>(pCreateInfo->renderPass),
                                             std::move(views)));
 }
 
@@ -2854,7 +2855,7 @@ void ValidationStateTracker::PreCallRecordUnmapMemory(VkDevice device, VkDeviceM
 }
 
 void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryInfo &bindInfo) {
-    auto image_state = GetShared<IMAGE_STATE>(bindInfo.image);
+    auto image_state = Get<IMAGE_STATE>(bindInfo.image);
     if (image_state) {
         // An Android sepcial image cannot get VkSubresourceLayout until the image binds a memory.
         // See: VUID-vkGetImageSubresourceLayout-image-01895
@@ -2862,7 +2863,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
             std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*image_state));
         const auto swapchain_info = LvlFindInChain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
         if (swapchain_info) {
-            auto swapchain = GetShared<SWAPCHAIN_NODE>(swapchain_info->swapchain);
+            auto swapchain = Get<SWAPCHAIN_NODE>(swapchain_info->swapchain);
             if (swapchain) {
                 SWAPCHAIN_IMAGE &swapchain_image = swapchain->images[swapchain_info->imageIndex];
 
@@ -2875,7 +2876,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
             }
         } else {
             // Track bound memory range information
-            auto mem_info = GetShared<DEVICE_MEMORY_STATE>(bindInfo.memory);
+            auto mem_info = Get<DEVICE_MEMORY_STATE>(bindInfo.memory);
             if (mem_info) {
                 image_state->SetMemBinding(mem_info, bindInfo.memoryOffset);
             }
@@ -3039,9 +3040,9 @@ void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const V
 void ValidationStateTracker::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
                                                               VkResult result) {
-    auto surface_state = GetShared<SURFACE_STATE>(pCreateInfo->surface);
+    auto surface_state = Get<SURFACE_STATE>(pCreateInfo->surface);
     auto old_swapchain_state = Get<SWAPCHAIN_NODE>(pCreateInfo->oldSwapchain);
-    RecordCreateSwapchainState(result, pCreateInfo, pSwapchain, std::move(surface_state), old_swapchain_state);
+    RecordCreateSwapchainState(result, pCreateInfo, pSwapchain, std::move(surface_state), old_swapchain_state.get());
 }
 
 void ValidationStateTracker::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
@@ -3095,9 +3096,10 @@ void ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(VkDevice de
                                                                      VkSwapchainKHR *pSwapchains, VkResult result) {
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
-            auto surface_state = GetShared<SURFACE_STATE>(pCreateInfos[i].surface);
+            auto surface_state = Get<SURFACE_STATE>(pCreateInfos[i].surface);
             auto old_swapchain_state = Get<SWAPCHAIN_NODE>(pCreateInfos[i].oldSwapchain);
-            RecordCreateSwapchainState(result, &pCreateInfos[i], &pSwapchains[i], std::move(surface_state), old_swapchain_state);
+            RecordCreateSwapchainState(result, &pCreateInfos[i], &pSwapchains[i], std::move(surface_state),
+                                       old_swapchain_state.get());
         }
     }
 }
@@ -3180,21 +3182,21 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyPropertie
                                                                                   VkQueueFamilyProperties *pQueueFamilyProperties) {
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
     assert(pd_state);
-    StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state, *pQueueFamilyPropertyCount);
+    StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state.get(), *pQueueFamilyPropertyCount);
 }
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(
     VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties) {
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
     assert(pd_state);
-    StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state, *pQueueFamilyPropertyCount);
+    StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state.get(), *pQueueFamilyPropertyCount);
 }
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(
     VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties) {
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
     assert(pd_state);
-    StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state, *pQueueFamilyPropertyCount);
+    StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state.get(), *pQueueFamilyPropertyCount);
 }
 void ValidationStateTracker::PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                                             const VkAllocationCallbacks *pAllocator) {
@@ -3479,7 +3481,7 @@ void ValidationStateTracker::RecordUpdateDescriptorSetWithTemplateState(VkDescri
     if (template_state) {
         // TODO: Record template push descriptor updates
         if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
-            PerformUpdateDescriptorSetsWithTemplateKHR(descriptorSet, template_state, pData);
+            PerformUpdateDescriptorSetsWithTemplateKHR(descriptorSet, template_state.get(), pData);
         }
     }
 }
@@ -3509,9 +3511,9 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
         auto dsl = layout_data ? layout_data->GetDsl(set) : nullptr;
         const auto &template_ci = template_state->create_info;
         // Decode the template into a set of write updates
-        cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state, pData,
+        cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state.get(), pData,
                                                                 dsl->GetDescriptorSetLayout());
-        cb_state->PushDescriptorSetState(template_ci.pipelineBindPoint, layout_data, set,
+        cb_state->PushDescriptorSetState(template_ci.pipelineBindPoint, layout_data.get(), set,
                                          static_cast<uint32_t>(decoded_template.desc_writes.size()),
                                          decoded_template.desc_writes.data());
     }
@@ -3648,7 +3650,7 @@ void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescri
 void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *p_alloc_info,
                                                               cvdescriptorset::AllocateDescriptorSetsData *ds_data) const {
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
-        auto layout = GetShared<cvdescriptorset::DescriptorSetLayout>(p_alloc_info->pSetLayouts[i]);
+        auto layout = Get<cvdescriptorset::DescriptorSetLayout>(p_alloc_info->pSetLayouts[i]);
         if (layout) {
             ds_data->layout_nodes[i] = layout;
             // Count total descriptors required per type
@@ -3881,7 +3883,7 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
                                                                  uint32_t *pSwapchainImageCount, VkImage *pSwapchainImages,
                                                                  VkResult result) {
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
-    auto swapchain_state = GetShared<SWAPCHAIN_NODE>(swapchain);
+    auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
 
     if (*pSwapchainImageCount > swapchain_state->images.size()) swapchain_state->images.resize(*pSwapchainImageCount);
 
@@ -3999,13 +4001,13 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers2EXT(VkCommandBuff
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings[i + firstBinding];
-        vertex_buffer_binding.buffer_state = GetShared<BUFFER_STATE>(pBuffers[i]);
+        vertex_buffer_binding.buffer_state = Get<BUFFER_STATE>(pBuffers[i]);
         vertex_buffer_binding.offset = pOffsets[i];
         vertex_buffer_binding.size = (pSizes) ? pSizes[i] : VK_WHOLE_SIZE;
         vertex_buffer_binding.stride = (pStrides) ? pStrides[i] : 0;
         // Add binding for this vertex buffer to this commandbuffer
         if (!disabled[command_buffer_state] && pBuffers[i]) {
-            cb_state->AddChild(vertex_buffer_binding.buffer_state.get());
+            cb_state->AddChild(vertex_buffer_binding.buffer_state);
         }
     }
 }
@@ -4118,7 +4120,7 @@ void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAd
     if (buffer_state) {
         // address is used for GPU-AV and ray tracing buffer validation
         buffer_state->deviceAddress = address;
-        buffer_address_map_.emplace(address, buffer_state);
+        buffer_address_map_.emplace(address, buffer_state.get());
     }
 }
 

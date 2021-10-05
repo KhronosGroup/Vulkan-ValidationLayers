@@ -333,6 +333,11 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     void AddChild(BASE_NODE *child_node);
 
+    template <typename StateObject>
+    void AddChild(std::shared_ptr<StateObject> &child_node) {
+        AddChild(child_node.get());
+    }
+
     void RemoveChild(BASE_NODE *child_node);
 
     virtual void Reset();
@@ -420,7 +425,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     virtual void RecordCmd(CMD_TYPE cmd_type);
     void RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits);
-    void RecordTransferCmd(CMD_TYPE cmd_type, BINDABLE *buf1, BINDABLE *buf2 = nullptr);
+    void RecordTransferCmd(CMD_TYPE cmd_type, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2 = nullptr);
     void RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, const VkEvent *pEvents);

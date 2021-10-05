@@ -268,7 +268,7 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
     }
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
         auto pipeline_state = object_ptr->template Get<PIPELINE_STATE>(pPipelines[pipeline]);
-        if (nullptr == pipeline_state) continue;
+        if (!pipeline_state) continue;
 
         uint32_t stageCount = 0;
         if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
@@ -287,7 +287,7 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
                                             pAllocator);
             }
 
-            const SHADER_MODULE_STATE *shader_state = nullptr;
+            std::shared_ptr<const SHADER_MODULE_STATE> shader_state;
             if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
                 shader_state =
                     object_ptr->template Get<SHADER_MODULE_STATE>(pipeline_state->create_info.graphics.pStages[stage].module);
@@ -393,7 +393,7 @@ void UtilSubmitBarrier(VkQueue queue, ObjectType *object_ptr) {
 
         uint32_t queue_family_index = 0;
 
-        auto queue_state = object_ptr->template Get<QUEUE_STATE>(queue);
+        auto queue_state = object_ptr->ValidationStateTracker::template Get<QUEUE_STATE>(queue);
         if (queue_state) {
             queue_family_index = queue_state->queueFamilyIndex;
         }

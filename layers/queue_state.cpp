@@ -115,7 +115,7 @@ void QUEUE_STATE::Retire(uint64_t next_seq) {
             signal.semaphore->EndUse();
         }
 
-        for (auto cb_node : submission.cbs) {
+        for (auto &cb_node : submission.cbs) {
             for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
                 secondary_cmd_buffer->Retire(submission.perf_submit_pass);
             }

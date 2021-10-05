@@ -326,27 +326,7 @@ class ValidationStateTracker : public ValidationObject {
     }
 
     template <typename State>
-    typename AccessorTraits<State>::ReturnType Get(typename AccessorTraits<State>::HandleType handle) {
-        const auto& map = GetStateMap<State>();
-        const auto found_it = map.find(handle);
-        if (found_it == map.end()) {
-            return nullptr;
-        }
-        return found_it->second.get();
-    };
-
-    template <typename State>
-    const typename AccessorTraits<State>::ReturnType Get(typename AccessorTraits<State>::HandleType handle) const {
-        const auto& map = GetStateMap<State>();
-        const auto found_it = map.find(handle);
-        if (found_it == map.cend()) {
-            return nullptr;
-        }
-        return found_it->second.get();
-    };
-
-    template <typename State>
-    typename AccessorTraits<State>::SharedType GetShared(typename AccessorTraits<State>::HandleType handle) {
+    typename AccessorTraits<State>::SharedType Get(typename AccessorTraits<State>::HandleType handle) {
         const auto& map = GetStateMap<State>();
         const auto found_it = map.find(handle);
         if (found_it == map.end()) {
@@ -356,7 +336,7 @@ class ValidationStateTracker : public ValidationObject {
     };
 
     template <typename State>
-    typename AccessorTraits<State>::ConstSharedType GetShared(typename AccessorTraits<State>::HandleType handle) const {
+    typename AccessorTraits<State>::ConstSharedType Get(typename AccessorTraits<State>::HandleType handle) const {
         const auto& map = GetStateMap<State>();
         const auto found_it = map.find(handle);
         if (found_it == map.cend()) {
@@ -1014,8 +994,8 @@ class ValidationStateTracker : public ValidationObject {
                                                 VkResult result) override;
 
     // State Utilty functions
-    std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> GetSharedAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
-                                                                                  const FRAMEBUFFER_STATE& fb_state) const;
+    std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> GetAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
+                                                                            const FRAMEBUFFER_STATE& fb_state) const;
 
     VkFormatFeatureFlags GetPotentialFormatFeatures(VkFormat format) const;
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const UPDATE_TEMPLATE_STATE* template_state,

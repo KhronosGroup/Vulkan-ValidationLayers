@@ -118,7 +118,7 @@ static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(ValidationStateTrack
     PIPELINE_LAYOUT_STATE::SetLayoutVector set_layouts(pCreateInfo->setLayoutCount);
 
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-        set_layouts[i] = dev_data->GetShared<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
+        set_layouts[i] = dev_data->Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
     }
     return set_layouts;
 }
@@ -286,7 +286,7 @@ static PIPELINE_STATE::StageStateVec GetStageStates(const ValidationStateTracker
     for (uint32_t stage_idx = 0; stage_idx < 32; ++stage_idx) {
         for (uint32_t i = 0; i < stage_count; i++) {
             if (stages[i].stage == (1 << stage_idx)) {
-                auto module = state_data->GetShared<SHADER_MODULE_STATE>(stages[i].module);
+                auto module = state_data->Get<SHADER_MODULE_STATE>(stages[i].module);
                 stage_states.emplace_back(stages[i].ptr(), module);
             }
         }
