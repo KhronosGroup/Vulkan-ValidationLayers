@@ -932,7 +932,7 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
 
     // Save a copy of the compute pipeline state that needs to be restored.
     GPUAV_RESTORABLE_PIPELINE_STATE restorable_state;
-    restorable_state.Create(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
+    restorable_state.Create(cb_state.get(), VK_PIPELINE_BIND_POINT_COMPUTE);
 
     // Switch to and launch the validation compute shader to find, replace, and report invalid acceleration structure handles.
     DispatchCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, as_validation_state.pipeline);
@@ -1530,7 +1530,7 @@ void GpuAssisted::UpdateInstrumentationBuffer(CMD_BUFFER_STATE_GPUAV *cb_node) {
 
 void GpuAssisted::PreRecordCommandBuffer(VkCommandBuffer command_buffer) {
     auto cb_node = GetCBState(command_buffer);
-    UpdateInstrumentationBuffer(cb_node);
+    UpdateInstrumentationBuffer(cb_node.get());
     for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
         UpdateInstrumentationBuffer(static_cast<CMD_BUFFER_STATE_GPUAV *>(secondary_cmd_buffer));
     }
@@ -1575,11 +1575,11 @@ bool GpuAssisted::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
 void GpuAssisted::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) {
     auto cb_node = GetCBState(command_buffer);
 
-    UtilProcessInstrumentationBuffer(queue, cb_node, this);
-    ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
+    UtilProcessInstrumentationBuffer(queue, cb_node.get(), this);
+    ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node.get());
     for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
         UtilProcessInstrumentationBuffer(queue, secondary_cmd_buffer, this);
-        ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
+        ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node.get());
     }
 }
 
@@ -1805,7 +1805,7 @@ void GpuAssisted::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
         missShaderBindingOffset, missShaderBindingStride, hitShaderBindingTableBuffer, hitShaderBindingOffset,
         hitShaderBindingStride, callableShaderBindingTableBuffer, callableShaderBindingOffset, callableShaderBindingStride, width,
         height, depth);
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
@@ -1829,7 +1829,7 @@ void GpuAssisted::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
     ValidationStateTracker::PostCallRecordCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                                           pHitShaderBindingTable, pCallableShaderBindingTable, width, height,
                                                           depth);
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
@@ -1854,7 +1854,7 @@ void GpuAssisted::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
     ValidationStateTracker::PostCallRecordCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                                                   pHitShaderBindingTable, pCallableShaderBindingTable,
                                                                   indirectDeviceAddress);
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
@@ -2072,7 +2072,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
 
         // Save current graphics pipeline state
         GPUAV_RESTORABLE_PIPELINE_STATE restorable_state;
-        restorable_state.Create(cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS);
+        restorable_state.Create(cb_node.get(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
         // Save parameters for error message
         pre_draw_resources.buffer = cdi_state->buffer;

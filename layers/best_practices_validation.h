@@ -674,11 +674,11 @@ class BestPractices : public ValidationStateTracker {
     void RecordCmdDrawTypeArm(RenderPassState& render_pass_state, uint32_t draw_count, const char* caller);
 
     // Get BestPractices-specific state for the given physical devices
-    PHYSICAL_DEVICE_STATE_BP* GetPhysicalDeviceState(const VkPhysicalDevice& phys_device) {
-        return static_cast<PHYSICAL_DEVICE_STATE_BP*>(Get<PHYSICAL_DEVICE_STATE>(phys_device));
+    std::shared_ptr<PHYSICAL_DEVICE_STATE_BP> GetPhysicalDeviceState(const VkPhysicalDevice& phys_device) {
+        return std::static_pointer_cast<PHYSICAL_DEVICE_STATE_BP>(Get<PHYSICAL_DEVICE_STATE>(phys_device));
     }
-    const PHYSICAL_DEVICE_STATE_BP* GetPhysicalDeviceState(const VkPhysicalDevice& phys_device) const {
-        return static_cast<const PHYSICAL_DEVICE_STATE_BP*>(Get<PHYSICAL_DEVICE_STATE>(phys_device));
+    std::shared_ptr<const PHYSICAL_DEVICE_STATE_BP> GetPhysicalDeviceState(const VkPhysicalDevice& phys_device) const {
+        return std::static_pointer_cast<const PHYSICAL_DEVICE_STATE_BP>(Get<PHYSICAL_DEVICE_STATE>(phys_device));
     }
 
     // Get BestPractices-specific for the current instance
@@ -704,11 +704,11 @@ class BestPractices : public ValidationStateTracker {
     bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) const;
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin);
 
-    const CMD_BUFFER_STATE_BP* GetCBState(const VkCommandBuffer cb) const {
-        return static_cast<const CMD_BUFFER_STATE_BP*>(Get<CMD_BUFFER_STATE>(cb));
+    std::shared_ptr<const CMD_BUFFER_STATE_BP> GetCBState(const VkCommandBuffer cb) const {
+        return std::static_pointer_cast<const CMD_BUFFER_STATE_BP>(Get<CMD_BUFFER_STATE>(cb));
     }
-    CMD_BUFFER_STATE_BP* GetCBState(const VkCommandBuffer cb) {
-        return static_cast<CMD_BUFFER_STATE_BP*>(Get<CMD_BUFFER_STATE>(cb));
+    std::shared_ptr<CMD_BUFFER_STATE_BP> GetCBState(const VkCommandBuffer cb) {
+        return std::static_pointer_cast<CMD_BUFFER_STATE_BP>(Get<CMD_BUFFER_STATE>(cb));
     }
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;

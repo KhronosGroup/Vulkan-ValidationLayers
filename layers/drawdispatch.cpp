@@ -970,7 +970,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
                                                 "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand));
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-00488", stride,
                                                 "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand), drawCount, offset,
-                                                buffer_state);
+                                                buffer_state.get());
     } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndirectCommand)) > buffer_state->createInfo.size) {
         skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-00487",
                          "CmdDrawIndirect: drawCount equals 1 and (offset + sizeof(VkDrawIndirectCommand)) (%" PRIu64 ") is not less than "
@@ -993,7 +993,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
                                                 "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand));
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-00540", stride,
                                                 "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand), drawCount,
-                                                offset, buffer_state);
+                                                offset, buffer_state.get());
     } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndexedIndirectCommand)) > buffer_state->createInfo.size) {
         skip |= LogError(
             commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-00539",
@@ -1080,7 +1080,7 @@ bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
         const auto buffer_state = Get<BUFFER_STATE>(buffer);
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndirectCount-maxDrawCount-03111", stride,
                                                 "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand), maxDrawCount, offset,
-                                                buffer_state);
+                                                buffer_state.get());
     }
 
     const auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
@@ -1088,9 +1088,9 @@ bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
     const auto buffer_state = Get<BUFFER_STATE>(buffer);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, cmd_type);
     const auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
-    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, apiName, "VUID-vkCmdDrawIndirectCount-countBuffer-02714");
+    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state.get(), apiName, "VUID-vkCmdDrawIndirectCount-countBuffer-02714");
     skip |=
-        ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+        ValidateBufferUsageFlags(count_buffer_state.get(), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
                                  "VUID-vkCmdDrawIndirectCount-countBuffer-02715", apiName, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     return skip;
 }
@@ -1127,14 +1127,15 @@ bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuff
     if (maxDrawCount > 1) {
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143", stride,
                                                 "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand), maxDrawCount,
-                                                offset, buffer_state);
+                                                offset, buffer_state.get());
     }
     const auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     skip |= ValidateCmdDrawType(*cb_state, true, VK_PIPELINE_BIND_POINT_GRAPHICS, cmd_type);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, cmd_type);
     const auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
-    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, apiName, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
-    skip |= ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+    skip |=
+        ValidateMemoryIsBoundToBuffer(count_buffer_state.get(), apiName, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
+    skip |= ValidateBufferUsageFlags(count_buffer_state.get(), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
                                      "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02715", apiName,
                                      "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     return skip;
@@ -1354,7 +1355,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
     if (drawCount > 1) {
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02157", stride,
                                                 "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV),
-                                                drawCount, offset, buffer_state);
+                                                drawCount, offset, buffer_state.get());
     }
     return skip;
 }
@@ -1367,9 +1368,9 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     const auto buffer_state = Get<BUFFER_STATE>(buffer);
     const auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, CMD_DRAWMESHTASKSINDIRECTCOUNTNV);
-    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
+    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state.get(), "vkCmdDrawMeshTasksIndirectCountNV()",
                                           "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02714");
-    skip |= ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+    skip |= ValidateBufferUsageFlags(count_buffer_state.get(), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
                                      "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02715",
                                      "vkCmdDrawMeshTasksIndirectCountNV()", "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182", stride,
@@ -1377,7 +1378,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     if (maxDrawCount > 1) {
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxDrawCount-02183", stride,
                                                 "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV),
-                                                maxDrawCount, offset, buffer_state);
+                                                maxDrawCount, offset, buffer_state.get());
     }
     return skip;
 }

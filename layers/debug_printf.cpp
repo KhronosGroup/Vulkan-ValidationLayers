@@ -639,7 +639,7 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
 bool DebugPrintf::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
     bool buffers_present = false;
     auto cb_node = GetCBState(command_buffer);
-    if (GetBufferInfo(cb_node).size()) {
+    if (GetBufferInfo(cb_node.get()).size()) {
         buffers_present = true;
     }
     for (const auto *secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
@@ -652,7 +652,7 @@ bool DebugPrintf::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
 
 void DebugPrintf::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) {
     auto cb_node = GetCBState(command_buffer);
-    UtilProcessInstrumentationBuffer(queue, cb_node, this);
+    UtilProcessInstrumentationBuffer(queue, cb_node.get(), this);
     for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
         UtilProcessInstrumentationBuffer(queue, secondary_cmd_buffer, this);
     }
@@ -848,7 +848,7 @@ void DebugPrintf::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                                                VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                                VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
                                                uint32_t width, uint32_t height, uint32_t depth) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    auto cb_state = GetCBState(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
@@ -867,7 +867,7 @@ void DebugPrintf::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                 const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
                                                 uint32_t height, uint32_t depth) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    auto cb_state = GetCBState(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
@@ -886,7 +886,7 @@ void DebugPrintf::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
                                                         const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                         const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
                                                         VkDeviceAddress indirectDeviceAddress) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    auto cb_state = GetCBState(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
