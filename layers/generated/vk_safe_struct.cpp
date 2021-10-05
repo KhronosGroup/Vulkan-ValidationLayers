@@ -23815,6 +23815,316 @@ void safe_VkResolveImageInfo2KHR::initialize(const safe_VkResolveImageInfo2KHR* 
     }
 }
 
+safe_VkFormatProperties3KHR::safe_VkFormatProperties3KHR(const VkFormatProperties3KHR* in_struct) :
+    sType(in_struct->sType),
+    linearTilingFeatures(in_struct->linearTilingFeatures),
+    optimalTilingFeatures(in_struct->optimalTilingFeatures),
+    bufferFeatures(in_struct->bufferFeatures)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkFormatProperties3KHR::safe_VkFormatProperties3KHR() :
+    sType(VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkFormatProperties3KHR::safe_VkFormatProperties3KHR(const safe_VkFormatProperties3KHR& copy_src)
+{
+    sType = copy_src.sType;
+    linearTilingFeatures = copy_src.linearTilingFeatures;
+    optimalTilingFeatures = copy_src.optimalTilingFeatures;
+    bufferFeatures = copy_src.bufferFeatures;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkFormatProperties3KHR& safe_VkFormatProperties3KHR::operator=(const safe_VkFormatProperties3KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    linearTilingFeatures = copy_src.linearTilingFeatures;
+    optimalTilingFeatures = copy_src.optimalTilingFeatures;
+    bufferFeatures = copy_src.bufferFeatures;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkFormatProperties3KHR::~safe_VkFormatProperties3KHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkFormatProperties3KHR::initialize(const VkFormatProperties3KHR* in_struct)
+{
+    sType = in_struct->sType;
+    linearTilingFeatures = in_struct->linearTilingFeatures;
+    optimalTilingFeatures = in_struct->optimalTilingFeatures;
+    bufferFeatures = in_struct->bufferFeatures;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkFormatProperties3KHR::initialize(const safe_VkFormatProperties3KHR* copy_src)
+{
+    sType = copy_src->sType;
+    linearTilingFeatures = copy_src->linearTilingFeatures;
+    optimalTilingFeatures = copy_src->optimalTilingFeatures;
+    bufferFeatures = copy_src->bufferFeatures;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMaintenance4FeaturesKHR::safe_VkPhysicalDeviceMaintenance4FeaturesKHR(const VkPhysicalDeviceMaintenance4FeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    maintenance4(in_struct->maintenance4)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMaintenance4FeaturesKHR::safe_VkPhysicalDeviceMaintenance4FeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceMaintenance4FeaturesKHR::safe_VkPhysicalDeviceMaintenance4FeaturesKHR(const safe_VkPhysicalDeviceMaintenance4FeaturesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    maintenance4 = copy_src.maintenance4;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMaintenance4FeaturesKHR& safe_VkPhysicalDeviceMaintenance4FeaturesKHR::operator=(const safe_VkPhysicalDeviceMaintenance4FeaturesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maintenance4 = copy_src.maintenance4;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMaintenance4FeaturesKHR::~safe_VkPhysicalDeviceMaintenance4FeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMaintenance4FeaturesKHR::initialize(const VkPhysicalDeviceMaintenance4FeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    maintenance4 = in_struct->maintenance4;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMaintenance4FeaturesKHR::initialize(const safe_VkPhysicalDeviceMaintenance4FeaturesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    maintenance4 = copy_src->maintenance4;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMaintenance4PropertiesKHR::safe_VkPhysicalDeviceMaintenance4PropertiesKHR(const VkPhysicalDeviceMaintenance4PropertiesKHR* in_struct) :
+    sType(in_struct->sType),
+    maxBufferSize(in_struct->maxBufferSize)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMaintenance4PropertiesKHR::safe_VkPhysicalDeviceMaintenance4PropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_PROPERTIES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceMaintenance4PropertiesKHR::safe_VkPhysicalDeviceMaintenance4PropertiesKHR(const safe_VkPhysicalDeviceMaintenance4PropertiesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    maxBufferSize = copy_src.maxBufferSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMaintenance4PropertiesKHR& safe_VkPhysicalDeviceMaintenance4PropertiesKHR::operator=(const safe_VkPhysicalDeviceMaintenance4PropertiesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxBufferSize = copy_src.maxBufferSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMaintenance4PropertiesKHR::~safe_VkPhysicalDeviceMaintenance4PropertiesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMaintenance4PropertiesKHR::initialize(const VkPhysicalDeviceMaintenance4PropertiesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    maxBufferSize = in_struct->maxBufferSize;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMaintenance4PropertiesKHR::initialize(const safe_VkPhysicalDeviceMaintenance4PropertiesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    maxBufferSize = copy_src->maxBufferSize;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDeviceBufferMemoryRequirementsKHR::safe_VkDeviceBufferMemoryRequirementsKHR(const VkDeviceBufferMemoryRequirementsKHR* in_struct) :
+    sType(in_struct->sType),
+    pCreateInfo(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pCreateInfo)
+        pCreateInfo = new safe_VkBufferCreateInfo(in_struct->pCreateInfo);
+}
+
+safe_VkDeviceBufferMemoryRequirementsKHR::safe_VkDeviceBufferMemoryRequirementsKHR() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS_KHR),
+    pNext(nullptr),
+    pCreateInfo(nullptr)
+{}
+
+safe_VkDeviceBufferMemoryRequirementsKHR::safe_VkDeviceBufferMemoryRequirementsKHR(const safe_VkDeviceBufferMemoryRequirementsKHR& copy_src)
+{
+    sType = copy_src.sType;
+    pCreateInfo = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pCreateInfo)
+        pCreateInfo = new safe_VkBufferCreateInfo(*copy_src.pCreateInfo);
+}
+
+safe_VkDeviceBufferMemoryRequirementsKHR& safe_VkDeviceBufferMemoryRequirementsKHR::operator=(const safe_VkDeviceBufferMemoryRequirementsKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pCreateInfo)
+        delete pCreateInfo;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pCreateInfo = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pCreateInfo)
+        pCreateInfo = new safe_VkBufferCreateInfo(*copy_src.pCreateInfo);
+
+    return *this;
+}
+
+safe_VkDeviceBufferMemoryRequirementsKHR::~safe_VkDeviceBufferMemoryRequirementsKHR()
+{
+    if (pCreateInfo)
+        delete pCreateInfo;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDeviceBufferMemoryRequirementsKHR::initialize(const VkDeviceBufferMemoryRequirementsKHR* in_struct)
+{
+    sType = in_struct->sType;
+    pCreateInfo = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pCreateInfo)
+        pCreateInfo = new safe_VkBufferCreateInfo(in_struct->pCreateInfo);
+}
+
+void safe_VkDeviceBufferMemoryRequirementsKHR::initialize(const safe_VkDeviceBufferMemoryRequirementsKHR* copy_src)
+{
+    sType = copy_src->sType;
+    pCreateInfo = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pCreateInfo)
+        pCreateInfo = new safe_VkBufferCreateInfo(*copy_src->pCreateInfo);
+}
+
+safe_VkDeviceImageMemoryRequirementsKHR::safe_VkDeviceImageMemoryRequirementsKHR(const VkDeviceImageMemoryRequirementsKHR* in_struct) :
+    sType(in_struct->sType),
+    pCreateInfo(nullptr),
+    planeAspect(in_struct->planeAspect)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pCreateInfo)
+        pCreateInfo = new safe_VkImageCreateInfo(in_struct->pCreateInfo);
+}
+
+safe_VkDeviceImageMemoryRequirementsKHR::safe_VkDeviceImageMemoryRequirementsKHR() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS_KHR),
+    pNext(nullptr),
+    pCreateInfo(nullptr)
+{}
+
+safe_VkDeviceImageMemoryRequirementsKHR::safe_VkDeviceImageMemoryRequirementsKHR(const safe_VkDeviceImageMemoryRequirementsKHR& copy_src)
+{
+    sType = copy_src.sType;
+    pCreateInfo = nullptr;
+    planeAspect = copy_src.planeAspect;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pCreateInfo)
+        pCreateInfo = new safe_VkImageCreateInfo(*copy_src.pCreateInfo);
+}
+
+safe_VkDeviceImageMemoryRequirementsKHR& safe_VkDeviceImageMemoryRequirementsKHR::operator=(const safe_VkDeviceImageMemoryRequirementsKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pCreateInfo)
+        delete pCreateInfo;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pCreateInfo = nullptr;
+    planeAspect = copy_src.planeAspect;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pCreateInfo)
+        pCreateInfo = new safe_VkImageCreateInfo(*copy_src.pCreateInfo);
+
+    return *this;
+}
+
+safe_VkDeviceImageMemoryRequirementsKHR::~safe_VkDeviceImageMemoryRequirementsKHR()
+{
+    if (pCreateInfo)
+        delete pCreateInfo;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDeviceImageMemoryRequirementsKHR::initialize(const VkDeviceImageMemoryRequirementsKHR* in_struct)
+{
+    sType = in_struct->sType;
+    pCreateInfo = nullptr;
+    planeAspect = in_struct->planeAspect;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pCreateInfo)
+        pCreateInfo = new safe_VkImageCreateInfo(in_struct->pCreateInfo);
+}
+
+void safe_VkDeviceImageMemoryRequirementsKHR::initialize(const safe_VkDeviceImageMemoryRequirementsKHR* copy_src)
+{
+    sType = copy_src->sType;
+    pCreateInfo = nullptr;
+    planeAspect = copy_src->planeAspect;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pCreateInfo)
+        pCreateInfo = new safe_VkImageCreateInfo(*copy_src->pCreateInfo);
+}
+
 safe_VkDebugReportCallbackCreateInfoEXT::safe_VkDebugReportCallbackCreateInfoEXT(const VkDebugReportCallbackCreateInfoEXT* in_struct) :
     sType(in_struct->sType),
     flags(in_struct->flags),
@@ -29715,6 +30025,98 @@ void safe_VkExternalFormatANDROID::initialize(const safe_VkExternalFormatANDROID
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+
+safe_VkAndroidHardwareBufferFormatProperties2ANDROID::safe_VkAndroidHardwareBufferFormatProperties2ANDROID(const VkAndroidHardwareBufferFormatProperties2ANDROID* in_struct) :
+    sType(in_struct->sType),
+    format(in_struct->format),
+    externalFormat(in_struct->externalFormat),
+    formatFeatures(in_struct->formatFeatures),
+    samplerYcbcrConversionComponents(in_struct->samplerYcbcrConversionComponents),
+    suggestedYcbcrModel(in_struct->suggestedYcbcrModel),
+    suggestedYcbcrRange(in_struct->suggestedYcbcrRange),
+    suggestedXChromaOffset(in_struct->suggestedXChromaOffset),
+    suggestedYChromaOffset(in_struct->suggestedYChromaOffset)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAndroidHardwareBufferFormatProperties2ANDROID::safe_VkAndroidHardwareBufferFormatProperties2ANDROID() :
+    sType(VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID),
+    pNext(nullptr)
+{}
+
+safe_VkAndroidHardwareBufferFormatProperties2ANDROID::safe_VkAndroidHardwareBufferFormatProperties2ANDROID(const safe_VkAndroidHardwareBufferFormatProperties2ANDROID& copy_src)
+{
+    sType = copy_src.sType;
+    format = copy_src.format;
+    externalFormat = copy_src.externalFormat;
+    formatFeatures = copy_src.formatFeatures;
+    samplerYcbcrConversionComponents = copy_src.samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src.suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src.suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src.suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src.suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkAndroidHardwareBufferFormatProperties2ANDROID& safe_VkAndroidHardwareBufferFormatProperties2ANDROID::operator=(const safe_VkAndroidHardwareBufferFormatProperties2ANDROID& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    format = copy_src.format;
+    externalFormat = copy_src.externalFormat;
+    formatFeatures = copy_src.formatFeatures;
+    samplerYcbcrConversionComponents = copy_src.samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src.suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src.suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src.suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src.suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkAndroidHardwareBufferFormatProperties2ANDROID::~safe_VkAndroidHardwareBufferFormatProperties2ANDROID()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAndroidHardwareBufferFormatProperties2ANDROID::initialize(const VkAndroidHardwareBufferFormatProperties2ANDROID* in_struct)
+{
+    sType = in_struct->sType;
+    format = in_struct->format;
+    externalFormat = in_struct->externalFormat;
+    formatFeatures = in_struct->formatFeatures;
+    samplerYcbcrConversionComponents = in_struct->samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = in_struct->suggestedYcbcrModel;
+    suggestedYcbcrRange = in_struct->suggestedYcbcrRange;
+    suggestedXChromaOffset = in_struct->suggestedXChromaOffset;
+    suggestedYChromaOffset = in_struct->suggestedYChromaOffset;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAndroidHardwareBufferFormatProperties2ANDROID::initialize(const safe_VkAndroidHardwareBufferFormatProperties2ANDROID* copy_src)
+{
+    sType = copy_src->sType;
+    format = copy_src->format;
+    externalFormat = copy_src->externalFormat;
+    formatFeatures = copy_src->formatFeatures;
+    samplerYcbcrConversionComponents = copy_src->samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src->suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src->suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src->suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src->suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+
 
 safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT::safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT(const VkPhysicalDeviceInlineUniformBlockFeaturesEXT* in_struct) :
     sType(in_struct->sType),
@@ -31228,6 +31630,89 @@ void safe_VkImageDrmFormatModifierPropertiesEXT::initialize(const safe_VkImageDr
     sType = copy_src->sType;
     drmFormatModifier = copy_src->drmFormatModifier;
     pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDrmFormatModifierPropertiesList2EXT::safe_VkDrmFormatModifierPropertiesList2EXT(const VkDrmFormatModifierPropertiesList2EXT* in_struct) :
+    sType(in_struct->sType),
+    drmFormatModifierCount(in_struct->drmFormatModifierCount),
+    pDrmFormatModifierProperties(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pDrmFormatModifierProperties) {
+        pDrmFormatModifierProperties = new VkDrmFormatModifierProperties2EXT[in_struct->drmFormatModifierCount];
+        memcpy ((void *)pDrmFormatModifierProperties, (void *)in_struct->pDrmFormatModifierProperties, sizeof(VkDrmFormatModifierProperties2EXT)*in_struct->drmFormatModifierCount);
+    }
+}
+
+safe_VkDrmFormatModifierPropertiesList2EXT::safe_VkDrmFormatModifierPropertiesList2EXT() :
+    sType(VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_2_EXT),
+    pNext(nullptr),
+    pDrmFormatModifierProperties(nullptr)
+{}
+
+safe_VkDrmFormatModifierPropertiesList2EXT::safe_VkDrmFormatModifierPropertiesList2EXT(const safe_VkDrmFormatModifierPropertiesList2EXT& copy_src)
+{
+    sType = copy_src.sType;
+    drmFormatModifierCount = copy_src.drmFormatModifierCount;
+    pDrmFormatModifierProperties = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pDrmFormatModifierProperties) {
+        pDrmFormatModifierProperties = new VkDrmFormatModifierProperties2EXT[copy_src.drmFormatModifierCount];
+        memcpy ((void *)pDrmFormatModifierProperties, (void *)copy_src.pDrmFormatModifierProperties, sizeof(VkDrmFormatModifierProperties2EXT)*copy_src.drmFormatModifierCount);
+    }
+}
+
+safe_VkDrmFormatModifierPropertiesList2EXT& safe_VkDrmFormatModifierPropertiesList2EXT::operator=(const safe_VkDrmFormatModifierPropertiesList2EXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pDrmFormatModifierProperties)
+        delete[] pDrmFormatModifierProperties;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    drmFormatModifierCount = copy_src.drmFormatModifierCount;
+    pDrmFormatModifierProperties = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pDrmFormatModifierProperties) {
+        pDrmFormatModifierProperties = new VkDrmFormatModifierProperties2EXT[copy_src.drmFormatModifierCount];
+        memcpy ((void *)pDrmFormatModifierProperties, (void *)copy_src.pDrmFormatModifierProperties, sizeof(VkDrmFormatModifierProperties2EXT)*copy_src.drmFormatModifierCount);
+    }
+
+    return *this;
+}
+
+safe_VkDrmFormatModifierPropertiesList2EXT::~safe_VkDrmFormatModifierPropertiesList2EXT()
+{
+    if (pDrmFormatModifierProperties)
+        delete[] pDrmFormatModifierProperties;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDrmFormatModifierPropertiesList2EXT::initialize(const VkDrmFormatModifierPropertiesList2EXT* in_struct)
+{
+    sType = in_struct->sType;
+    drmFormatModifierCount = in_struct->drmFormatModifierCount;
+    pDrmFormatModifierProperties = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pDrmFormatModifierProperties) {
+        pDrmFormatModifierProperties = new VkDrmFormatModifierProperties2EXT[in_struct->drmFormatModifierCount];
+        memcpy ((void *)pDrmFormatModifierProperties, (void *)in_struct->pDrmFormatModifierProperties, sizeof(VkDrmFormatModifierProperties2EXT)*in_struct->drmFormatModifierCount);
+    }
+}
+
+void safe_VkDrmFormatModifierPropertiesList2EXT::initialize(const safe_VkDrmFormatModifierPropertiesList2EXT* copy_src)
+{
+    sType = copy_src->sType;
+    drmFormatModifierCount = copy_src->drmFormatModifierCount;
+    pDrmFormatModifierProperties = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pDrmFormatModifierProperties) {
+        pDrmFormatModifierProperties = new VkDrmFormatModifierProperties2EXT[copy_src->drmFormatModifierCount];
+        memcpy ((void *)pDrmFormatModifierProperties, (void *)copy_src->pDrmFormatModifierProperties, sizeof(VkDrmFormatModifierProperties2EXT)*copy_src->drmFormatModifierCount);
+    }
 }
 
 safe_VkValidationCacheCreateInfoEXT::safe_VkValidationCacheCreateInfoEXT(const VkValidationCacheCreateInfoEXT* in_struct) :
@@ -41142,6 +41627,59 @@ void safe_VkPhysicalDevice4444FormatsFeaturesEXT::initialize(const safe_VkPhysic
     formatA4B4G4R4 = copy_src->formatA4B4G4R4;
     pNext = SafePnextCopy(copy_src->pNext);
 }
+
+safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT::safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT(const VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    formatRgba10x6WithoutYCbCrSampler(in_struct->formatRgba10x6WithoutYCbCrSampler)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT::safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RGBA10X6_FORMATS_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT::safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT(const safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    formatRgba10x6WithoutYCbCrSampler = copy_src.formatRgba10x6WithoutYCbCrSampler;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT& safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT::operator=(const safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    formatRgba10x6WithoutYCbCrSampler = copy_src.formatRgba10x6WithoutYCbCrSampler;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT::~safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT::initialize(const VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    formatRgba10x6WithoutYCbCrSampler = in_struct->formatRgba10x6WithoutYCbCrSampler;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT::initialize(const safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    formatRgba10x6WithoutYCbCrSampler = copy_src->formatRgba10x6WithoutYCbCrSampler;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 
 
@@ -45896,6 +46434,15 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3_KHR:
+            safe_pNext = new safe_VkFormatProperties3KHR(reinterpret_cast<const VkFormatProperties3KHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceMaintenance4FeaturesKHR(reinterpret_cast<const VkPhysicalDeviceMaintenance4FeaturesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_PROPERTIES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceMaintenance4PropertiesKHR(reinterpret_cast<const VkPhysicalDeviceMaintenance4PropertiesKHR *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
             safe_pNext = new safe_VkDebugReportCallbackCreateInfoEXT(reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT *>(pNext));
             break;
@@ -46042,6 +46589,9 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT:
             safe_pNext = new safe_VkImageDrmFormatModifierExplicitCreateInfoEXT(reinterpret_cast<const VkImageDrmFormatModifierExplicitCreateInfoEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_2_EXT:
+            safe_pNext = new safe_VkDrmFormatModifierPropertiesList2EXT(reinterpret_cast<const VkDrmFormatModifierPropertiesList2EXT *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT:
             safe_pNext = new safe_VkShaderModuleValidationCacheCreateInfoEXT(reinterpret_cast<const VkShaderModuleValidationCacheCreateInfoEXT *>(pNext));
@@ -46343,6 +46893,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDevice4444FormatsFeaturesEXT(reinterpret_cast<const VkPhysicalDevice4444FormatsFeaturesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RGBA10X6_FORMATS_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE:
             safe_pNext = new safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE(reinterpret_cast<const VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE *>(pNext));
             break;
@@ -46513,6 +47066,9 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID:
             safe_pNext = new safe_VkExternalFormatANDROID(reinterpret_cast<const VkExternalFormatANDROID *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID:
+            safe_pNext = new safe_VkAndroidHardwareBufferFormatProperties2ANDROID(reinterpret_cast<const VkAndroidHardwareBufferFormatProperties2ANDROID *>(pNext));
             break;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_FUCHSIA
@@ -46937,6 +47493,15 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR *>(header);
             break;
+        case VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3_KHR:
+            delete reinterpret_cast<const safe_VkFormatProperties3KHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceMaintenance4FeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_PROPERTIES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceMaintenance4PropertiesKHR *>(header);
+            break;
         case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkDebugReportCallbackCreateInfoEXT *>(header);
             break;
@@ -47083,6 +47648,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkImageDrmFormatModifierExplicitCreateInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_2_EXT:
+            delete reinterpret_cast<const safe_VkDrmFormatModifierPropertiesList2EXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkShaderModuleValidationCacheCreateInfoEXT *>(header);
@@ -47384,6 +47952,9 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDevice4444FormatsFeaturesEXT *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RGBA10X6_FORMATS_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE:
             delete reinterpret_cast<const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE *>(header);
             break;
@@ -47554,6 +48125,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID:
             delete reinterpret_cast<const safe_VkExternalFormatANDROID *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID:
+            delete reinterpret_cast<const safe_VkAndroidHardwareBufferFormatProperties2ANDROID *>(header);
             break;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_FUCHSIA

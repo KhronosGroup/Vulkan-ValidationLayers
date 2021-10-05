@@ -620,6 +620,11 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdBlitImage2KHR CmdBlitImage2KHR;
     PFN_vkCmdResolveImage2KHR CmdResolveImage2KHR;
 
+    // ---- VK_KHR_maintenance4 extension commands
+    PFN_vkGetDeviceBufferMemoryRequirementsKHR GetDeviceBufferMemoryRequirementsKHR;
+    PFN_vkGetDeviceImageMemoryRequirementsKHR GetDeviceImageMemoryRequirementsKHR;
+    PFN_vkGetDeviceImageSparseMemoryRequirementsKHR GetDeviceImageSparseMemoryRequirementsKHR;
+
     // ---- VK_EXT_debug_marker extension commands
     PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT;
     PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT;

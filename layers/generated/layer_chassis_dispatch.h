@@ -1487,6 +1487,19 @@ void DispatchCmdBlitImage2KHR(
 void DispatchCmdResolveImage2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkResolveImageInfo2KHR*               pResolveImageInfo);
+void DispatchGetDeviceBufferMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceBufferMemoryRequirementsKHR*  pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements);
+void DispatchGetDeviceImageMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements);
+void DispatchGetDeviceImageSparseMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    uint32_t*                                   pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements);
 VkResult DispatchCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,

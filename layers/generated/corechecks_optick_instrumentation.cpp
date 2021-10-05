@@ -5025,6 +5025,54 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdResolveImage2KHR(VkCommandBu
     CoreChecks::PostCallRecordCmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
 }
 
+bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirementsKHR* pInfo, VkMemoryRequirements2* pMemoryRequirements) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirementsKHR* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirementsKHR* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirementsKHR* pInfo, VkMemoryRequirements2* pMemoryRequirements) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirementsKHR* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirementsKHR* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirementsKHR* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirementsKHR* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirementsKHR* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+}
+
 bool CoreChecksOptickInstrumented::PreCallValidateCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);

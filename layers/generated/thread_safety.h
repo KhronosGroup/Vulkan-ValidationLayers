@@ -3713,6 +3713,38 @@ void PostCallRecordCmdResolveImage2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkResolveImageInfo2KHR*               pResolveImageInfo) override;
 
+void PreCallRecordGetDeviceBufferMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceBufferMemoryRequirementsKHR*  pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) override;
+
+void PostCallRecordGetDeviceBufferMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceBufferMemoryRequirementsKHR*  pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) override;
+
+void PreCallRecordGetDeviceImageMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) override;
+
+void PostCallRecordGetDeviceImageMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) override;
+
+void PreCallRecordGetDeviceImageSparseMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    uint32_t*                                   pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) override;
+
+void PostCallRecordGetDeviceImageSparseMemoryRequirementsKHR(
+    VkDevice                                    device,
+    const VkDeviceImageMemoryRequirementsKHR*   pInfo,
+    uint32_t*                                   pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) override;
+
 void PreCallRecordCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
