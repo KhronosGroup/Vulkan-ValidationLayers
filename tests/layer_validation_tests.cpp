@@ -2327,7 +2327,7 @@ void Barrier2QueueFamilyTestHelper::operator()(std::string img_err, std::string 
 bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isKHR,
                                     std::vector<const char *> &instance_extension_names,
                                     std::vector<const char *> &device_extension_names, void *user_data, bool need_gpu_validation,
-                                    bool need_push_descriptors, bool deferred_state_init) {
+                                    bool need_push_descriptors, bool deferred_state_init, VkPhysicalDeviceFeatures2KHR *features2) {
     const std::array<const char *, 1> required_instance_extensions = {{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}};
     for (const char *required_instance_extension : required_instance_extensions) {
         if (renderFramework->InstanceExtensionSupported(required_instance_extension)) {
@@ -2385,7 +2385,14 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isK
             return false;
         }
     }
-    if (!deferred_state_init) renderFramework->InitState();
+    if (features2) {
+        // extension enabled as dependency of RT extension
+        auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+            vk::GetInstanceProcAddr(renderFramework->instance(), "vkGetPhysicalDeviceFeatures2KHR"));
+        assert(vkGetPhysicalDeviceFeatures2KHR);
+        vkGetPhysicalDeviceFeatures2KHR(renderFramework->gpu(), features2);
+    }
+    if (!deferred_state_init) renderFramework->InitState(nullptr, features2);
     return true;
 }
 
