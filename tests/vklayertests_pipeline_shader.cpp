@@ -13961,3 +13961,13 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
     vk::DestroyPipeline(m_device->handle(), library, nullptr);
     vk::DestroyPipeline(m_device->handle(), invalid_library, nullptr);
 }
+
+TEST_F(VkLayerTest, InvalidBlendAttachmentCount) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const auto set_attachment_count = [&](CreatePipelineHelper &helper) { helper.cb_ci_.attachmentCount = 0; };
+    CreatePipelineHelper::OneshotTest(*this, set_attachment_count, kErrorBit,
+                                      std::vector<std::string>{"VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-04493",
+                                                               "VUID-VkGraphicsPipelineCreateInfo-attachmentCount-00746"});
+}
