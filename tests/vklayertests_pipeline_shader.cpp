@@ -13780,8 +13780,8 @@ TEST_F(VkLayerTest, TestMinAndMaxTexelGatherOffset) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     if (m_device->phy().properties().limits.minTexelGatherOffset <= -100 ||
-        m_device->phy().properties().limits.minTexelGatherOffset >= 100) {
-        printf("%s test needs minTexelGatherOffset less than -100 and maxTexelGatherOffset greater than 100. Skipping.\n",
+        m_device->phy().properties().limits.maxTexelGatherOffset >= 100) {
+        printf("%s test needs minTexelGatherOffset greater than -100 and maxTexelGatherOffset less than 100. Skipping.\n",
                kSkipPrefix);
         return;
     }
@@ -13792,12 +13792,7 @@ TEST_F(VkLayerTest, TestMinAndMaxTexelGatherOffset) {
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main"
                OpExecutionMode %main LocalSize 1 1 1
-
-               ; Debug Information
                OpSource GLSL 450
-               OpName %main "main"  ; id %4
-               OpName %color "color"  ; id %9
-               OpName %samp "samp"  ; id %13
 
                ; Annotations
                OpDecorate %samp DescriptorSet 0
@@ -13816,19 +13811,26 @@ TEST_F(VkLayerTest, TestMinAndMaxTexelGatherOffset) {
     %v2float = OpTypeVector %float 2
   %float_0_5 = OpConstant %float 0.5
          %17 = OpConstantComposite %v2float %float_0_5 %float_0_5
+              ; set up composite to be validated
+       %uint = OpTypeInt 32 0
         %int = OpTypeInt 32 1
       %v2int = OpTypeVector %int 2
    %int_n100 = OpConstant %int -100
+  %uint_n100 = OpConstant %uint 4294967196
     %int_100 = OpConstant %int 100
-         %22 = OpConstantComposite %v2int %int_n100 %int_100
       %int_0 = OpConstant %int 0
+         %22 = OpConstantComposite %v2int %int_n100 %int_100
+         %23 = OpConstantComposite %v2int %int_0 %uint_n100
 
                ; Function main
        %main = OpFunction %void None %3
           %5 = OpLabel
       %color = OpVariable %_ptr_Function_v4float Function
          %14 = OpLoad %11 %samp
+               ; Should trigger min and max
          %24 = OpImageGather %v4float %14 %17 %int_0 ConstOffset %22
+               ; Should only trigger max since uint
+         %25 = OpImageGather %v4float %14 %17 %int_0 ConstOffset %23
                OpStore %color %24
                OpReturn
                OpFunctionEnd
@@ -13847,7 +13849,9 @@ TEST_F(VkLayerTest, TestMinAndMaxTexelGatherOffset) {
     cs_pipeline.InitState();
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
     cs_pipeline.LateBindPipelineInfo();
+    // as commented in SPIR-V should trigger the limits as following
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06376");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06377");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06377");
     cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
 
