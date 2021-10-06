@@ -1381,6 +1381,20 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                              pipelineIndex, report_data->FormatHandle(pPipeline->rp_state->renderPass()).c_str(),
                              create_info.subpass, subpass_desc->colorAttachmentCount, color_blend_state->attachmentCount);
         }
+        for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; ++i) {
+            if (subpass_desc->pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
+                if (color_blend_state->attachmentCount <= subpass_desc->pColorAttachments[i].attachment) {
+                    skip |=
+                        LogError(device, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-04493",
+                                 "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32 "]: pColorBlendState->attachmentCount (%" PRIu32
+                                 ") is not greater than VkRenderPass %s subpass %" PRIu32 " pColorAttachments[%" PRIu32
+                                 "].attachment (%" PRIu32 ").",
+                                 pipelineIndex, color_blend_state->attachmentCount,
+                                 report_data->FormatHandle(pPipeline->rp_state->renderPass()).c_str(), create_info.subpass, i,
+                                 subpass_desc->pColorAttachments[i].attachment);
+                }
+            }
+        }
         if (!enabled_features.core.independentBlend) {
             if (pPipeline->attachments.size() > 1) {
                 const VkPipelineColorBlendAttachmentState *const attachments = &pPipeline->attachments[0];
