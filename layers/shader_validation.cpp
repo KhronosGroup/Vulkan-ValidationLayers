@@ -2094,7 +2094,8 @@ bool CoreChecks::ValidateTexelGatherOffset(SHADER_MODULE_STATE const *src, spirv
                         if (insn.len() > index && (i & offset_bits)) {
                             uint32_t constant_id = insn.word(index);
                             const auto &constant = src->get_def(constant_id);
-                            if (constant.opcode() == spv::OpConstantComposite) {
+                            const bool is_dynamic_offset = constant == src->end();
+                            if (!is_dynamic_offset && constant.opcode() == spv::OpConstantComposite) {
                                 for (uint32_t j = 3; j < constant.len(); ++j) {
                                     uint32_t comp_id = constant.word(j);
                                     const auto &comp = src->get_def(comp_id);
