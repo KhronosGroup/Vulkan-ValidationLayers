@@ -4554,6 +4554,13 @@ void ValidationStateTracker::PreCallRecordCmdSetVertexInputEXT(
     cb_state->RecordStateCmd(CMD_SETVERTEXINPUTEXT, status_flags);
 }
 
+void ValidationStateTracker::PreCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                                                    const VkBool32 *pColorWriteEnables) {
+    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    const CBStatusFlags status_flags = CBSTATUS_COLOR_WRITE_ENABLE_SET;
+    cb_state->RecordColorWriteEnableStateCmd(CMD_SETCOLORWRITEENABLEEXT, status_flags, attachmentCount);
+}
+
 void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAddressInfo *pInfo, VkDeviceAddress address) {
     BUFFER_STATE *buffer_state = GetBufferState(pInfo->buffer);
     if (buffer_state) {

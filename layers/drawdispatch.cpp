@@ -86,6 +86,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDraw-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDraw_VertexInput;
         blend_enable                       = "VUID-vkCmdDraw-blendEnable-04727";
+        color_write_enable                 = kVUID_Core_CmdDraw_ColorWriteEnable;
     }
 };
 
@@ -132,6 +133,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawMultiEXT-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawMultiEXT_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawMultiEXT-blendEnable-04727";
+        color_write_enable                 = kVUID_Core_CmdDrawMultiEXT_ColorWriteEnable;
     }
 };
 
@@ -178,6 +180,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexed-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawIndexed_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawIndexed-blendEnable-04727";
+        color_write_enable                 = kVUID_Core_CmdDrawIndexed_ColorWriteEnable;
     }
 };
 
@@ -224,6 +227,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         vertex_input_binding_stride = "VUID-vkCmdDrawMultiIndexedEXT-pStrides-04884";
         vertex_input = kVUID_Core_CmdDrawMultiIndexedEXT_VertexInput;
         blend_enable = "VUID-vkCmdDrawMultiIndexedEXT-blendEnable-04727";
+        color_write_enable = kVUID_Core_CmdDrawMultiIndexedEXT_ColorWriteEnable;
     }
 };
 
@@ -272,6 +276,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirect-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawIndirect_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawIndirect-blendEnable-04727";
+        color_write_enable                 = kVUID_Core_CmdDrawIndirect_ColorWriteEnable;
     }
 };
 
@@ -320,6 +325,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexedIndirect-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawIndexedIndirect_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawIndexedIndirect-blendEnable-04727";
+        color_write_enable                 = kVUID_Core_CmdDrawIndexedIndirect_ColorWriteEnable;
     }
 };
 
@@ -416,6 +422,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirectCount-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawIndirectCount_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawIndirectCount-blendEnable-04727";
+        color_write_enable                 = kVUID_Core_CmdDrawIndirectCount_ColorWriteEnable;
     }
 };
 
@@ -464,6 +471,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexedIndirectCount-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawIndexedIndirectCount_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawIndexedIndirectCount-blendEnable-04727";
+        color_write_enable                 = kVUID_Core_CmdDrawIndexedIndirectCount_ColorWriteEnable;
     }
 };
 
@@ -577,6 +585,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawMeshTasksNV-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawMeshTasksNV_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawMeshTasksNV-blendEnable-04727";
+        color_write_enable                 = kVUID_Core_CmdDrawMeshTasksNV_ColorWriteEnable;
     }
 };
 
@@ -622,6 +631,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawMeshTasksIndirectNV-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawMeshTasksIndirectNV_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawMeshTasksIndirectNV-blendEnable-04727";
+        color_write_enable                 = kVUID_Core_CmdDrawMeshTasksIndirectNV_ColorWriteEnable;
     }
 };
 
@@ -667,6 +677,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawMeshTasksIndirectCountNV_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-blendEnable-04727";
+        color_write_enable                 = kVUID_Core_CmdDrawMeshTasksIndirectCountNV_ColorWriteEnable;
     }
 };
 
@@ -715,6 +726,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirectByteCountEXT-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawIndirectByteCountEXT_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawIndirectByteCountEXT-blendEnable-04727";
+        color_write_enable                 = kVUID_Core_CmdDrawIndirectByteCountEXT_ColorWriteEnable;
     }
 };
 

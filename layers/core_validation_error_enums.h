@@ -284,6 +284,19 @@ static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectNV_VertexI
 static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectCountNV_VertexInput = "UNASSIGNED-vkCmdDrawMeshTasksIndirectCountNV-vertexInput-not-specified";
 static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirectByteCountEXT_VertexInput = "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-vertexInput-not-specified";
 
+static const char DECORATE_UNUSED *kVUID_Core_CmdDraw_ColorWriteEnable = "UNASSIGNED-vkCmdDraw-ColorWriteEnable-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMultiEXT_ColorWriteEnable = "UNASSIGNED-vkCmdDrawMultiEXT-ColorWriteEnable-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndexed_ColorWriteEnable = "UNASSIGNED-vkCmdDrawIndexed-ColorWriteEnable-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMultiIndexedEXT_ColorWriteEnable = "UNASSIGNED-vkCmdDrawMultiIndexedEXT-ColorWriteEnable-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirect_ColorWriteEnable = "UNASSIGNED-vkCmdDrawIndirect-ColorWriteEnable-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndexedIndirect_ColorWriteEnable = "UNASSIGNED-vkCmdDrawIndexedIndirect-ColorWriteEnable-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirectCount_ColorWriteEnable = "UNASSIGNED-vkCmdDrawIndirectCount-ColorWriteEnable-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndexedIndirectCount_ColorWriteEnable = "UNASSIGNED-vkCmdDrawIndexedIndirectCount-ColorWriteEnable-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksNV_ColorWriteEnable = "UNASSIGNED-vkCmdDrawMeshTasksNV-ColorWriteEnable-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectNV_ColorWriteEnable = "UNASSIGNED-vkCmdDrawMeshTasksIndirectNV-ColorWriteEnable-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectCountNV_ColorWriteEnable = "UNASSIGNED-vkCmdDrawMeshTasksIndirectCountNV-ColorWriteEnable-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirectByteCountEXT_ColorWriteEnable = "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-ColorWriteEnable-not-specified";
+
 // Format features VUs
 static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageReadWithoutFormat = "UNASSIGNED-features-shaderStorageImageReadWithoutFormat";
 static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithoutFormat = "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat";

@@ -137,7 +137,8 @@ enum CBStatusFlagBits : uint64_t {
     CBSTATUS_LOGIC_OP_SET                    = 0x100000000,
     CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET    = 0x200000000,
     CBSTATUS_VERTEX_INPUT_SET                = 0x400000000,
-    CBSTATUS_ALL_STATE_SET                   = 0x7FFFFFDFF,   // All state set (intentionally exclude index buffer)
+    CBSTATUS_COLOR_WRITE_ENABLE_SET          = 0x800000000,
+    CBSTATUS_ALL_STATE_SET                   = 0xFFFFFFDFF,   // All state set (intentionally exclude index buffer)
     // clang-format on
 };
 
@@ -321,6 +322,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool conditional_rendering_active{false};
     bool conditional_rendering_inside_render_pass{false};
     uint32_t conditional_rendering_subpass{0};
+    uint32_t dynamic_color_write_enable_attachment_count{0};
 
     CMD_BUFFER_STATE(ValidationStateTracker *, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                      std::shared_ptr<COMMAND_POOL_STATE> &cmd_pool);
@@ -420,6 +422,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     virtual void RecordCmd(CMD_TYPE cmd_type);
     void RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits);
+    void RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits, uint32_t attachment_count);
     void RecordTransferCmd(CMD_TYPE cmd_type, BINDABLE *buf1, BINDABLE *buf2 = nullptr);
     void RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);

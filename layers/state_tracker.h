@@ -1040,6 +1040,8 @@ class ValidationStateTracker : public ValidationObject {
                                            const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
                                            uint32_t vertexAttributeDescriptionCount,
                                            const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) override;
+    void PreCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                                const VkBool32* pColorWriteEnables) override;
     template <typename CreateInfo>
     VkFormatFeatureFlags GetExternalFormatFeaturesANDROID(const CreateInfo* create_info) const;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR

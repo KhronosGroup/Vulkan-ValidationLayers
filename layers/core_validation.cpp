@@ -953,6 +953,20 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                            "Dynamic vertex input binding stride not set for this command buffer", vuid.vertex_input_binding_stride);
     skip |=
         ValidateStatus(pCB, CBSTATUS_VERTEX_INPUT_SET, "Dynamic vertex input not set for this command buffer", vuid.vertex_input);
+    skip |= ValidateStatus(pCB, CBSTATUS_COLOR_WRITE_ENABLE_SET, "Dynamic color write enable not set for this command buffer",
+                           vuid.color_write_enable);
+    if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) && pCB->status & CBSTATUS_COLOR_WRITE_ENABLE_SET) {
+        uint32_t blend_attachment_count =
+            pCB->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS)->create_info.graphics.pColorBlendState->attachmentCount;
+        if (pCB->dynamic_color_write_enable_attachment_count < blend_attachment_count) {
+            skip |=
+                LogError(pCB->commandBuffer(), vuid.color_write_enable,
+                         "Currently bound pipeline was created with VkPipelineColorBlendStateCreateInfo::attachmentCount %" PRIu32
+                         " and VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT, but the number of attachments written by "
+                         "vkCmdSetColorWriteEnableEXT() is %" PRIu32 ".",
+                         blend_attachment_count, pCB->dynamic_color_write_enable_attachment_count);
+        }
+    }
 
     // VUID {refpage}-primitiveTopology-03420
     skip |= ValidateStatus(pCB, CBSTATUS_PRIMITIVE_TOPOLOGY_SET, "Dynamic primitive topology state not set for this command buffer",
