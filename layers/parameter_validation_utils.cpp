@@ -4337,6 +4337,13 @@ bool StatelessValidation::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhys
                     "but tiling (%s) is not VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.",
                     apiName, string_VkImageTiling(pImageFormatInfo->tiling));
             }
+            if (image_drm_format->sharingMode == VK_SHARING_MODE_CONCURRENT && image_drm_format->queueFamilyIndexCount <= 1) {
+                skip |= LogError(
+                    physicalDevice, "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315",
+                    "%s: pNext chain of VkPhysicalDeviceImageFormatInfo2 includes VkPhysicalDeviceImageDrmFormatModifierInfoEXT, "
+                    "with sharing mode VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32 ".",
+                    apiName, image_drm_format->queueFamilyIndexCount);
+            }
         } else {
             if (pImageFormatInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
                 skip |= LogError(
