@@ -14128,3 +14128,114 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
     vk::DestroyPipeline(m_device->handle(), library, nullptr);
     vk::DestroyPipeline(m_device->handle(), invalid_library, nullptr);
 }
+
+TEST_F(VkLayerTest, TestUsingDisabledMultiviewFeatures) {
+    TEST_DESCRIPTION("Create graphics pipeline using multiview features which are not enabled.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Vulkan 1.2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    VkPhysicalDeviceMultiviewFeatures multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    multiview_features.multiviewTessellationShader = VK_FALSE;
+    multiview_features.multiviewGeometryShader = VK_FALSE;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&multiview_features);
+    features2.features.geometryShader = VK_TRUE;
+    features2.features.tessellationShader = VK_TRUE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkAttachmentReference2 color_attachment = LvlInitStruct<VkAttachmentReference2>();
+    color_attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentDescription2 description = LvlInitStruct<VkAttachmentDescription2>();
+    description.samples = VK_SAMPLE_COUNT_1_BIT;
+    description.format = VK_FORMAT_B8G8R8A8_UNORM;
+    description.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription2 subpass = LvlInitStruct<VkSubpassDescription2>();
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.viewMask = 0x3u;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_attachment;
+
+    VkRenderPassCreateInfo2 rpci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &description;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+
+    VkRenderPass render_pass;
+    vk::CreateRenderPass2(m_device->device(), &rpci, nullptr, &render_pass);
+
+    if (features2.features.tessellationShader) {
+        char const *tcsSource = R"glsl(
+        #version 450
+        layout(vertices=3) out;
+        void main(){
+           gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;
+           gl_TessLevelInner[0] = 1;
+        }
+        )glsl";
+        char const *tesSource = R"glsl(
+        #version 450
+        layout(triangles, equal_spacing, cw) in;
+        void main(){
+           gl_Position.xyz = gl_TessCoord;
+           gl_Position.w = 1.0f;
+        }
+        )glsl";
+
+        VkShaderObj tcs(m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+        VkShaderObj tes(m_device, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+
+        VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                     VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+
+        VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.gp_ci_.renderPass = render_pass;
+        pipe.gp_ci_.subpass = 0;
+        pipe.cb_ci_.attachmentCount = 1;
+        pipe.gp_ci_.pTessellationState = &tsci;
+        pipe.gp_ci_.pInputAssemblyState = &iasci;
+        pipe.shader_stages_.emplace_back(tcs.GetStageCreateInfo());
+        pipe.shader_stages_.emplace_back(tes.GetStageCreateInfo());
+        pipe.InitState();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-00760");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+    if (features2.features.geometryShader) {
+        static char const *gsSource = R"glsl(
+        #version 450
+        layout (points) in;
+        layout (triangle_strip) out;
+        layout (max_vertices = 3) out;
+        void main() {
+           gl_Position = vec4(1.0, 0.5, 0.5, 0.0);
+           EmitVertex();
+        }
+        )glsl";
+
+        VkShaderObj vs(m_device, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj gs(m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.gp_ci_.renderPass = render_pass;
+        pipe.gp_ci_.subpass = 0;
+        pipe.cb_ci_.attachmentCount = 1;
+        pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        pipe.InitState();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-00761");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+    vk::DestroyRenderPass(m_device->device(), render_pass, nullptr);
+}
