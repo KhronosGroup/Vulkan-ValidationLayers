@@ -1781,6 +1781,29 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                      pipelineIndex);
                 }
             }
+
+            constexpr int num_bits = sizeof(subpass_desc->viewMask) * CHAR_BIT;
+            std::bitset<num_bits> view_bits(subpass_desc->viewMask);
+            uint32_t view_bits_count = static_cast<uint32_t>(view_bits.count());
+            if (view_bits_count > 1) {
+                if (!enabled_features.multiview_features.multiviewTessellationShader &&
+                    (pPipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
+                     pPipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-00760",
+                                     "Invalid Pipeline CreateInfo[%" PRIu32 "] State: subpass has %" PRIu32
+                                     " bits set in viewMask and pStages includes tessellation shaders, but the "
+                                     "VkPhysicalDeviceMultiviewFeatures::multiviewTessellationShader features is not enabled.",
+                                     pipelineIndex, view_bits_count);
+                }
+                if (!enabled_features.multiview_features.multiviewGeometryShader &&
+                    pPipeline->active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-00761",
+                                     "Invalid Pipeline CreateInfo[%" PRIu32 "] State: subpass has %" PRIu32
+                                     " bits set in viewMask and pStages includes geometry shader, but the "
+                                     "VkPhysicalDeviceMultiviewFeatures::multiviewGeometryShader features is not enabled.",
+                                     pipelineIndex, view_bits_count);
+                }
+            }
         }
 
         auto provoking_vertex_state_ci =
