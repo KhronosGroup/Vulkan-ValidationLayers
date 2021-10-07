@@ -14177,6 +14177,13 @@ TEST_F(VkLayerTest, ImageFormatInfoDrmFormatModifier) {
     vkGetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 
+    image_format_info.pNext = &image_drm_format_modifier;
+    image_drm_format_modifier.sharingMode = VK_SHARING_MODE_CONCURRENT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315");
+    vkGetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+    m_errorMonitor->VerifyFound();
+    image_drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
     VkImageFormatListCreateInfo format_list = LvlInitStruct<VkImageFormatListCreateInfo>(&image_drm_format_modifier);
     format_list.viewFormatCount = 0; // Invalid
     image_format_info.pNext = &format_list;
