@@ -10109,6 +10109,11 @@ TEST_F(VkLayerTest, DepthStencilResolveAttachmentInvalidFormat) {
 TEST_F(VkLayerTest, ValidateDescriptorBindingUpdateAfterBindWithAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure descriptor writing.");
 
+    if (IsDriver(VK_DRIVER_ID_NVIDIA_PROPRIETARY)) {
+        printf("%s This test is being skipped on the Nvidia driver\n", kSkipPrefix);
+        return;
+    }
+
     if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;

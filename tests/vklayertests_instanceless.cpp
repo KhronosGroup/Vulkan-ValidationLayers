@@ -236,7 +236,10 @@ TEST_F(VkLayerTest, DestroyInstanceAllocationCallbacksCompatibility) {
 
 TEST_F(VkLayerTest, DestroyInstanceHandleLeak) {
     TEST_DESCRIPTION("Test vkDestroyInstance while leaking a VkDevice object.");
-
+    if (IsDriver(VK_DRIVER_ID_NVIDIA_PROPRIETARY)) {
+        printf("%s This test is being skipped on the Nvidia driver\n", kSkipPrefix);
+        return;
+    }
     const auto ici = GetInstanceCreateInfo();
 
     VkInstance instance;

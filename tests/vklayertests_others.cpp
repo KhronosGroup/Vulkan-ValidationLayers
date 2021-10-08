@@ -1358,7 +1358,10 @@ TEST_F(VkLayerTest, SubmitSignaledFence) {
 
 TEST_F(VkLayerTest, LeakAnObject) {
     TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the fence.");
-
+    if (IsDriver(VK_DRIVER_ID_NVIDIA_PROPRIETARY)) {
+        printf("%s This test is being skipped on the Nvidia driver\n", kSkipPrefix);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Workaround for overzealous layers checking even the guaranteed 0th queue family
@@ -1804,6 +1807,12 @@ TEST_F(VkLayerTest, InvalidCmdBufferEventDestroyed) {
 
 TEST_F(VkLayerTest, InvalidCmdBufferQueryPoolDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a query pool dependency being destroyed.");
+
+    if (IsDriver(VK_DRIVER_ID_NVIDIA_PROPRIETARY)) {
+        printf("%s This test is being skipped on the Nvidia driver\n", kSkipPrefix);
+        return;
+    }
+
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkQueryPool query_pool;
@@ -12165,6 +12174,10 @@ TEST_F(VkLayerTest, WriteTimeStampInvalidQuery) {
 TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
     TEST_DESCRIPTION("Duplicated physical devices in DeviceGroupDeviceCreateInfo.");
 
+    if (IsDriver(VK_DRIVER_ID_NVIDIA_PROPRIETARY)) {
+        printf("%s This test is being skipped on the Nvidia driver\n", kSkipPrefix);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
