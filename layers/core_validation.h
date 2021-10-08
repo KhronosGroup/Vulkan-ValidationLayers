@@ -1593,6 +1593,9 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                 uint32_t* pPresentModeCount,
                                                                 VkPresentModeKHR* pPresentModes) const override;
+    void PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                           size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
+                                           VkResult result) override;
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
