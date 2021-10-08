@@ -13198,3 +13198,40 @@ TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, DestroyActiveQueryPool) {
+    TEST_DESCRIPTION("Destroy query pool after GetQueryPoolResults() without VK_QUERY_RESULT_PARTIAL_BIT returns VK_SUCCESS");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_create_info.queryCount = 1;
+
+    VkQueryPool query_pool;
+    vk::CreateQueryPool(device(), &query_pool_create_info, nullptr, &query_pool);
+
+    m_commandBuffer->begin();
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    const size_t out_data_size = 16;
+    uint8_t data[out_data_size];
+    VkResult res;
+    do {
+        res = vk::GetQueryPoolResults(m_device->device(), query_pool, 0, 1, out_data_size, &data, 4, 0);
+    } while (res != VK_SUCCESS);
+
+    // Submit the command buffer again, making query pool in use and invalid to destroy
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyQueryPool-queryPool-00793");
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+    m_errorMonitor->VerifyFound();
+}
