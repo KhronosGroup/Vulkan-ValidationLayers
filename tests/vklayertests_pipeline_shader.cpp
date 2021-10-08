@@ -11741,29 +11741,32 @@ TEST_F(VkLayerTest, CreatePipelineWithDuplicatedSpecializationConstantID) {
 TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
     TEST_DESCRIPTION("Test Subgroub Size Control");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         printf("%s Test requires Vulkan >= 1.1\n", kSkipPrefix);
         return;
     }
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)) {
+
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
 
     VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
     sscf.subgroupSizeControl = VK_TRUE;
     sscf.computeFullSubgroups = VK_TRUE;
 
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sscf);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
-
+    vk::GetPhysicalDeviceFeatures2(gpu(), &pd_features2);
     if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE) {
         printf("%s Required features are not supported, skipping test.\n", kSkipPrefix);
         return;
     }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
     auto subgroup_properties = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
     auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_properties);
@@ -12874,18 +12877,15 @@ TEST_F(VkLayerTest, ColorBlendAdvanced) {
 TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     TEST_DESCRIPTION("Validate using VkPhysicalDeviceSampleLocationsPropertiesEXT");
 
-    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension(s); skipped.\n", kSkipPrefix);
         return;
     }
-    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME)) {
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations = LvlInitStruct<VkPhysicalDeviceSampleLocationsPropertiesEXT>();
@@ -12928,7 +12928,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView image_view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     VkFramebufferCreateInfo framebuffer_info = LvlInitStruct<VkFramebufferCreateInfo>();
     framebuffer_info.renderPass = render_pass;
@@ -13153,13 +13153,10 @@ TEST_F(VkLayerTest, SpecializationInvalidSizeMismatch) {
     }
 
     auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    features12.shaderInt8 = VK_TRUE;
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
-    auto float16int8_shader_features = LvlInitStruct<VkPhysicalDeviceShaderFloat16Int8Features>();
-    auto float16int8_features = LvlInitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>(&float16int8_shader_features);
-    features12.pNext = &float16int8_features;
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
-    if ((features12.shaderInt8 == VK_TRUE) && (float16int8_features.shaderInt8 == VK_TRUE) &&
-        (float16int8_shader_features.shaderInt8 == VK_TRUE)) {
+    if (features12.shaderInt8 == VK_TRUE) {
         int8_support = true;
     }
 
@@ -13426,26 +13423,24 @@ TEST_F(VkLayerTest, ValidateComputeShaderLocalSize) {
 TEST_F(VkLayerTest, UsingRasterizationStateStreamExtWithoutEnabled) {
     TEST_DESCRIPTION("Test using TestRasterizationStateStreamCreateInfoEXT but it doesn't enable geometryStreams.");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
+        printf("%s Required instance extension(s) not supported.\n", kSkipPrefix);
         return;
     }
-
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
+
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
 
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
         LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
     transform_feedback_features.geometryStreams = VK_FALSE; // Invalid
 
-    VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>(&transform_feedback_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
+    // Extension enabled via VK_EXT_transform_feedback dependency
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&transform_feedback_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
@@ -13463,26 +13458,24 @@ TEST_F(VkLayerTest, UsingRasterizationStateStreamExtWithoutEnabled) {
 TEST_F(VkLayerTest, TestPipelineRasterizationStateStreamCreateInfoEXT) {
     TEST_DESCRIPTION("Test using TestRasterizationStateStreamCreateInfoEXT with invalid rasterizationStream.");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
+        printf("%s Instance extension(s) not supported.\n", kSkipPrefix);
         return;
     }
-
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
+
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
 
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
         LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
     transform_feedback_features.geometryStreams = VK_TRUE;
 
-    VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>(&transform_feedback_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
+    // Extension enabled via dependencies
+    VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&transform_feedback_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transfer_feedback_props =

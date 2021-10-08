@@ -13544,7 +13544,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
         printf("%s Missing required instance extensions\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     const bool bind_memory_2_extension = CanEnableDeviceExtension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     const bool device_group_extension = CanEnableDeviceExtension(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
@@ -13567,11 +13567,25 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
     std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
                                                                        {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
-    VkDeviceGroupDeviceCreateInfo create_device_pnext = {};
-    create_device_pnext.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
-    create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
-    create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext));
+    auto create_device_pnext = LvlInitStruct<VkDeviceGroupDeviceCreateInfo>();
+    create_device_pnext.physicalDeviceCount = 0;
+    create_device_pnext.pPhysicalDevices = nullptr;
+    for (const auto &dg : physical_device_group) {
+        if (dg.physicalDeviceCount > 1) {
+            create_device_pnext.physicalDeviceCount = dg.physicalDeviceCount;
+            create_device_pnext.pPhysicalDevices = dg.physicalDevices;
+            break;
+        }
+    }
+    if (create_device_pnext.pPhysicalDevices) {
+        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext));
+    } else {
+        printf(
+            "%s Test requires a physical device group with more than 1 device to use "
+            "VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT.\n",
+            kSkipPrefix);
+        return;
+    }
 
     PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
 
