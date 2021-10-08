@@ -132,7 +132,7 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, REND
             const auto prev_pass = prev.first->pass;
             const auto &prev_depends = pass_depends[prev_pass];
             for (uint32_t j = 0; j < prev_pass; j++) {
-                depends[j] = depends[j] | prev_depends[j];
+                depends[j] = depends[j] || prev_depends[j];
             }
             depends[prev_pass] = true;
         }
