@@ -458,6 +458,13 @@ VkExtent3D IMAGE_VIEW_STATE::GetExtent() const {
     return result;
 }
 
+uint32_t IMAGE_VIEW_STATE::GetAttachmentLayerCount() const {
+    if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS && !IsDepthSliced()) {
+        return image_state->createInfo.arrayLayers;
+    }
+    return create_info.subresourceRange.layerCount;
+}
+
 static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR *pCreateInfo) {
     auto image_ci = LvlInitStruct<VkImageCreateInfo>();
     // Pull out the format list only. This stack variable will get copied onto the heap

@@ -3371,7 +3371,7 @@ bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, u
         if (image_view_state) {
             // The layers specified by a given element of pRects must be contained within every attachment that
             // pAttachments refers to
-            const auto attachment_layer_count = image_view_state->normalized_subresource_range.layerCount;
+            const uint32_t attachment_layer_count = image_view_state->GetAttachmentLayerCount();
             if ((clear_rects[j].baseArrayLayer >= attachment_layer_count) ||
                 (clear_rects[j].baseArrayLayer + clear_rects[j].layerCount > attachment_layer_count)) {
                 skip |= LogError(command_buffer, "VUID-vkCmdClearAttachments-pRects-00017",
