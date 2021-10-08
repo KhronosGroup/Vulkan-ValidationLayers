@@ -4604,7 +4604,18 @@ bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool qu
     const QUERY_POOL_STATE *qp_state = GetQueryPoolState(queryPool);
     bool skip = false;
     if (qp_state) {
-        skip |= ValidateObjectNotInUse(qp_state, "vkDestroyQueryPool", "VUID-vkDestroyQueryPool-queryPool-00793");
+        bool completed_by_get_results = true;
+        for (uint32_t i = 0; i < qp_state->createInfo.queryCount; ++i) {
+            QueryObject obj(qp_state->pool(), i);
+            auto query_pass_iter = queryToStateMap.find(obj);
+            if (query_pass_iter != queryToStateMap.end() && query_pass_iter->second != QUERYSTATE_AVAILABLE) {
+                completed_by_get_results = false;
+                break;
+            }
+        }
+        if (!completed_by_get_results) {
+            skip |= ValidateObjectNotInUse(qp_state, "vkDestroyQueryPool", "VUID-vkDestroyQueryPool-queryPool-00793");
+        }
     }
     return skip;
 }
@@ -16553,4 +16564,21 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysic
                                                  "vkGetPhysicalDeviceSurfacePresentModesKHR");
 
     return skip;
+}
+
+void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+    size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
+    VkResult result) {
+    if (result != VK_SUCCESS) {
+        return;
+    }
+    if ((flags & VK_QUERY_RESULT_PARTIAL_BIT) == 0) {
+        for (uint32_t i = firstQuery; i < queryCount; ++i) {
+            QueryObject obj(queryPool, i);
+            auto query_pass_iter = queryToStateMap.find(obj);
+            if (query_pass_iter != queryToStateMap.end()) {
+                query_pass_iter->second = QUERYSTATE_AVAILABLE;
+            }
+        }
+    }
 }
