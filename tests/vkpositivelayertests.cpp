@@ -16012,3 +16012,48 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
     vkDestroyPipeline(m_device->handle(), pipeline, nullptr);
     vkDestroyPipeline(m_device->handle(), library, nullptr);
 }
+
+TEST_F(VkPositiveLayerTest, DestroyQueryPoolAfterGetQueryPoolResults) {
+    TEST_DESCRIPTION("Destroy query pool after GetQueryPoolResults() without VK_QUERY_RESULT_PARTIAL_BIT returns VK_SUCCESS");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    m_errorMonitor->ExpectSuccess();
+
+    uint32_t queue_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
+    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+        printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_create_info.queryCount = 1;
+
+    VkQueryPool query_pool;
+    vk::CreateQueryPool(device(), &query_pool_create_info, nullptr, &query_pool);
+
+    m_commandBuffer->begin();
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    const size_t out_data_size = 16;
+    uint8_t data[out_data_size];
+    VkResult res;
+    do {
+        res = vk::GetQueryPoolResults(m_device->device(), query_pool, 0, 1, out_data_size, &data, 4, 0);
+    } while (res != VK_SUCCESS);
+
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+
+    m_errorMonitor->VerifyNotFound();
+}
