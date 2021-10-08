@@ -245,6 +245,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 
     VkOffset3D GetOffset() const;
     VkExtent3D GetExtent() const;
+    uint32_t GetAttachmentLayerCount() const;
 };
 
 struct SWAPCHAIN_IMAGE {

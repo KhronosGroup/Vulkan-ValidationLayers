@@ -10723,9 +10723,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                                  "height (%u) smaller than the corresponding framebuffer height (%u).",
                                                  i, mip_level, mip_height, pCreateInfo->height);
                             }
-                            uint32_t layerCount = view_state->create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS
-                                                      ? view_state->image_state->createInfo.arrayLayers
-                                                      : view_state->create_info.subresourceRange.layerCount;
+                            uint32_t layerCount = view_state->GetAttachmentLayerCount();
                             if (layerCount < pCreateInfo->layers) {
                                 skip |=
                                     LogError(device, "VUID-VkFramebufferCreateInfo-flags-04535",
