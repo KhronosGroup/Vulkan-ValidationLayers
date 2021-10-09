@@ -13240,3 +13240,47 @@ TEST_F(VkLayerTest, DestroyActiveQueryPool) {
     vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, ValidateExternalMemoryImageLayout) {
+    TEST_DESCRIPTION("Validate layout of image with external memory");
+
+#ifdef _WIN32
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+#else
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+#endif
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1 extensions, not available, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    VkExternalMemoryImageCreateInfo external_mem = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
+    external_mem.handleTypes = handle_type;
+
+    VkExternalMemoryImageCreateInfoNV external_mem_nv = LvlInitStruct<VkExternalMemoryImageCreateInfoNV>();
+    external_mem_nv.handleTypes = handle_type;
+
+    VkImageCreateInfo ici = LvlInitStruct<VkImageCreateInfo>(&external_mem);
+    ici.imageType = VK_IMAGE_TYPE_2D;
+    ici.arrayLayers = 1;
+    ici.extent = {32, 32, 1};
+    ici.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ici.mipLevels = 1;
+    ici.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    ici.samples = VK_SAMPLE_COUNT_1_BIT;
+    ici.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VkImage test_image;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01443");
+    vk::CreateImage(device(), &ici, nullptr, &test_image);
+    m_errorMonitor->VerifyFound();
+
+    ici.pNext = &external_mem_nv;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01443");
+    vk::CreateImage(device(), &ici, nullptr, &test_image);
+    m_errorMonitor->VerifyFound();
+}
