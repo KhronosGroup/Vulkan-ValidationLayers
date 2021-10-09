@@ -2060,12 +2060,27 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     const auto external_memory_create_info_nv = LvlFindInChain<VkExternalMemoryImageCreateInfoNV>(pCreateInfo->pNext);
-    if (external_memory_create_info_nv != nullptr) {
-        const auto external_memory_create_info = LvlFindInChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
-        if (external_memory_create_info != nullptr) {
-            skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-00988",
-                             "vkCreateImage(): VkImageCreateInfo struct has both VkExternalMemoryImageCreateInfoNV and "
-                             "VkExternalMemoryImageCreateInfo chained structs.");
+    const auto external_memory_create_info = LvlFindInChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
+    if (external_memory_create_info_nv != nullptr && external_memory_create_info != nullptr) {
+        skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-00988",
+                         "vkCreateImage(): VkImageCreateInfo struct has both VkExternalMemoryImageCreateInfoNV and "
+                         "VkExternalMemoryImageCreateInfo chained structs.");
+    }
+    if (external_memory_create_info) {
+        if (external_memory_create_info->handleTypes != 0 && pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
+            skip |= LogError(
+                device, "VUID-VkImageCreateInfo-pNext-01443",
+                "vkCreateImage: VkImageCreateInfo pNext chain includes VkExternalMemoryImageCreateInfo with handleTypes %" PRIu32
+                " but pCreateInfo->initialLayout is %s.",
+                external_memory_create_info->handleTypes, string_VkImageLayout(pCreateInfo->initialLayout));
+        }
+    } else if (external_memory_create_info_nv) {
+        if (external_memory_create_info_nv->handleTypes != 0 && pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
+            skip |= LogError(
+                device, "VUID-VkImageCreateInfo-pNext-01443",
+                "vkCreateImage: VkImageCreateInfo pNext chain includes VkExternalMemoryImageCreateInfoNV with handleTypes %" PRIu32
+                " but pCreateInfo->initialLayout is %s.",
+                external_memory_create_info_nv->handleTypes, string_VkImageLayout(pCreateInfo->initialLayout));
         }
     }
 
