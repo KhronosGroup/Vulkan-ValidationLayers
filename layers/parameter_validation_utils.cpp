@@ -5582,6 +5582,11 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
             skip |= LogError(device, "VUID-vkCreateRayTracingPipelinesNV-flags-03816",
                              "vkCreateRayTracingPipelinesNV: flags must not contain the VK_PIPELINE_CREATE_DISPATCH_BASE flag.");
         }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_ALLOW_MOTION_BIT_NV) {
+            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-04948",
+                             "vkCreateRayTracingPipelinesNV: flags must not contain the "
+                             "VK_PIPELINE_CREATE_RAY_TRACING_ALLOW_MOTION_BIT_NV flag.");
+        }
     }
 
     return skip;
