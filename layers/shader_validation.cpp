@@ -669,6 +669,37 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *m
     return skip;
 }
 
+bool CoreChecks::ValidateMemoryScope(SHADER_MODULE_STATE const *src, const spirv_inst_iter &insn) const {
+    bool skip = false;
+
+    const auto &entry = MemoryScopeParam(insn.opcode());
+    if (entry > 0) {
+        const uint32_t scope_id = insn.word(entry);
+        if (enabled_features.core12.vulkanMemoryModel && !enabled_features.core12.vulkanMemoryModelDeviceScope) {
+            const auto &iter = src->GetConstantDef(scope_id);
+            if (iter != src->end()) {
+                if (GetConstantValue(iter) == spv::Scope::ScopeDevice) {
+                    skip |= LogError(device, "VUID-RuntimeSpirv-vulkanMemoryModel-06265",
+                                     "VkPhysicalDeviceVulkan12Features::vulkanMemoryModel is enabled and "
+                                     "VkPhysicalDeviceVulkan12Features::vulkanMemoryModelDeviceScope is disabled, but Device "
+                                     "memory scope is used.");
+                }
+            }
+        } else if (!enabled_features.core12.vulkanMemoryModel) {
+            const auto &iter = src->GetConstantDef(scope_id);
+            if (iter != src->end()) {
+                if (GetConstantValue(iter) == spv::Scope::ScopeQueueFamily) {
+                    skip |= LogError(device, "VUID-RuntimeSpirv-vulkanMemoryModel-06266",
+                                     "VkPhysicalDeviceVulkan12Features::vulkanMemoryModel is not enabled, but QueueFamily "
+                                     "memory scope is used.");
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateWorkgroupSize(SHADER_MODULE_STATE const *src, VkPipelineShaderStageCreateInfo const *pStage,
                                        const std::unordered_map<uint32_t, std::vector<uint32_t>>& id_value_map) const {
     bool skip = false;
@@ -2382,6 +2413,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         skip |= ValidateShaderCapabilitiesAndExtensions(module, insn);
         skip |= ValidateShaderClock(module, insn);
         skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage, insn);
+        skip |= ValidateMemoryScope(module, insn);
         total_shared_size += module->CalcComputeSharedMemory(pStage->stage, insn);
     }
 
