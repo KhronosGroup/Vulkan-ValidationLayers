@@ -10106,7 +10106,8 @@ TEST_F(VkLayerTest, ValidateDescriptorBindingUpdateAfterBindWithAccelerationStru
         return;
     }
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
+                                        false, true)) {
         return;
     }
 
