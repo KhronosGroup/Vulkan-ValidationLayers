@@ -3319,11 +3319,11 @@ class ValidationObject {
         void InitObjectDispatchVectors();
 
         ReadWriteLock validation_object_mutex;
-        virtual read_lock_guard_t read_lock() {
-            return read_lock_guard_t(validation_object_mutex);
+        virtual ReadLockGuard ReadLock() {
+            return ReadLockGuard(validation_object_mutex);
         }
-        virtual write_lock_guard_t write_lock() {
-            return write_lock_guard_t(validation_object_mutex);
+        virtual WriteLockGuard WriteLock() {
+            return WriteLockGuard(validation_object_mutex);
         }
 
         void RegisterValidationObject(bool vo_enabled, uint32_t instance_api_version,
