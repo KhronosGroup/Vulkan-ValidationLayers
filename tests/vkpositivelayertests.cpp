@@ -15891,6 +15891,97 @@ TEST_F(VkPositiveLayerTest, TestPervertexNVShaderAttributes) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, ClearRectWith2DArray) {
+    TEST_DESCRIPTION("Test using VkClearRect with an image that is of a 2D array type.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_ci.extent.width = 32;
+    image_ci.extent.height = 32;
+    image_ci.extent.depth = 4;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageObj image(m_device);
+    image.init(&image_ci);
+    VkImageView image_view =
+        image.targetView(image_ci.format, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, image_ci.extent.depth, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = image_ci.format;
+    attach_desc.samples = image_ci.samples;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference attachment = {};
+    attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.attachment = 0;
+
+    VkSubpassDescription subpass = {};
+    subpass.pColorAttachments = &attachment;
+    subpass.colorAttachmentCount = 1;
+
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+
+    vk_testing::RenderPass render_pass;
+    render_pass.init(*m_device, rpci);
+
+    VkFramebufferCreateInfo fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fbci.renderPass = render_pass.handle();
+    fbci.attachmentCount = 1;
+    fbci.pAttachments = &image_view;
+    fbci.width = image_ci.extent.width;
+    fbci.height = image_ci.extent.height;
+    fbci.layers = 1;
+
+    vk_testing::Framebuffer framebuffer;
+    framebuffer.init(*m_device, fbci);
+
+    VkClearAttachment color_attachment;
+    color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    color_attachment.clearValue.color.float32[0] = 0.0;
+    color_attachment.clearValue.color.float32[1] = 0.0;
+    color_attachment.clearValue.color.float32[2] = 0.0;
+    color_attachment.clearValue.color.float32[3] = 0.0;
+    color_attachment.colorAttachment = 0;
+
+    VkClearValue clearValue;
+    clearValue.color = {{0, 0, 0, 0}};
+
+    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    rpbi.renderPass = render_pass.handle();
+    rpbi.framebuffer = framebuffer.handle();
+    rpbi.renderArea = {{0, 0}, {image_ci.extent.width, image_ci.extent.height}};
+    rpbi.clearValueCount = 1;
+    rpbi.pClearValues = &clearValue;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rpbi);
+
+    /*m_errorMonitor->ExpectSuccess();
+    VkClearRect clear_rect = {{{0, 0}, {image_ci.extent.width, image_ci.extent.height}}, 0, image_ci.extent.depth};
+    //vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyNotFound();*/
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
