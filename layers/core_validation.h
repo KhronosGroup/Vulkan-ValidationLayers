@@ -545,6 +545,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const PIPELINE_STATE* pipeline) const;
     bool ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const* src, VkShaderStageFlagBits stage,
                                             spirv_inst_iter& insn) const;
+    bool ValidateMemoryScope(SHADER_MODULE_STATE const* src, const spirv_inst_iter& insn) const;
     bool ValidateWorkgroupSize(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
                                const std::unordered_map<uint32_t, std::vector<uint32_t>>& id_value_map) const;
     bool ValidateCooperativeMatrix(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
