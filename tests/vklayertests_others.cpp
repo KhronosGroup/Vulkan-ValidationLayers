@@ -1360,6 +1360,11 @@ TEST_F(VkLayerTest, LeakAnObject) {
     TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the fence.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!IsPlatform(kMockICD)) {
+        // This test leaks a fence (on purpose) and should not be run on a real driver
+        printf("%s This test only runs on the mock ICD\n", kSkipPrefix);
+        return;
+    }
 
     // Workaround for overzealous layers checking even the guaranteed 0th queue family
     const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
@@ -12182,22 +12187,22 @@ TEST_F(VkLayerTest, WriteTimeStampInvalidQuery) {
         return;
     }
 
-    VkQueryPool query_pool;
+    vk_testing::QueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_ci.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+    query_pool.init(*m_device, query_pool_ci);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-query-04904");
-    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 1);
+    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool.handle(), 1);
     m_errorMonitor->VerifyFound();
     if (sync2) {
         auto vkCmdWriteTimestamp2KHR =
             (PFN_vkCmdWriteTimestamp2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteTimestamp2KHR");
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2KHR-query-04903");
-        vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 1);
+        vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool.handle(), 1);
         m_errorMonitor->VerifyFound();
     }
     m_commandBuffer->end();
@@ -12205,7 +12210,7 @@ TEST_F(VkLayerTest, WriteTimeStampInvalidQuery) {
 
 TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
     TEST_DESCRIPTION("Duplicated physical devices in DeviceGroupDeviceCreateInfo.");
-
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
@@ -12239,7 +12244,7 @@ TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
     create_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice device;
-    m_errorMonitor->SetUnexpectedError("VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375");
     vk::CreateDevice(gpu(), &create_info, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
@@ -12479,18 +12484,18 @@ TEST_F(VkLayerTest, QueueSubmitWaitingSameSemaphore) {
 
     VkSemaphoreCreateInfo sem_info = LvlInitStruct<VkSemaphoreCreateInfo>();
 
-    VkSemaphore semaphore;
-    vk::CreateSemaphore(device(), &sem_info, NULL, &semaphore);
+    vk_testing::Semaphore semaphore;
+    semaphore.init(*m_device, sem_info);
 
     VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
     VkSubmitInfo signalSubmitInfo = LvlInitStruct<VkSubmitInfo>();
     signalSubmitInfo.signalSemaphoreCount = 1;
-    signalSubmitInfo.pSignalSemaphores = &semaphore;
+    signalSubmitInfo.pSignalSemaphores = &semaphore.handle();
 
     VkSubmitInfo waitSubmitInfo = LvlInitStruct<VkSubmitInfo>();
     waitSubmitInfo.waitSemaphoreCount = 1;
-    waitSubmitInfo.pWaitSemaphores = &semaphore;
+    waitSubmitInfo.pWaitSemaphores = &semaphore.handle();
     waitSubmitInfo.pWaitDstStageMask = &stageFlags;
 
     VkQueue other = m_device->graphics_queues()[1]->handle();
