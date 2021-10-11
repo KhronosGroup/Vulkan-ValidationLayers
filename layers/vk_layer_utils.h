@@ -281,9 +281,11 @@ static inline int u_ffs(int val) {
 #endif
 #elif __cplusplus >= 201703
 #define VVL_USE_SHARED_MUTEX 1
+#elif __cplusplus >= 201402
+#define VVL_USE_SHARED_TIMED_MUTEX 1
 #endif
 
-#if defined(VVL_USE_SHARED_MUTEX)
+#if defined(VVL_USE_SHARED_MUTEX) || defined(VVL_USE_SHARED_TIMED_MUTEX)
 #include <shared_mutex>
 #endif
 
@@ -291,6 +293,8 @@ class ReadWriteLock {
   private:
 #if defined(VVL_USE_SHARED_MUTEX)
     typedef std::shared_mutex lock_t;
+#elif defined(VVL_USE_SHARED_TIMED_MUTEX)
+    typedef std::shared_timed_mutex lock_t;
 #else
     typedef std::mutex lock_t;
 #endif
@@ -299,7 +303,7 @@ class ReadWriteLock {
     void lock() { m_lock.lock(); }
     bool try_lock() { return m_lock.try_lock(); }
     void unlock() { m_lock.unlock(); }
-#if defined(VVL_USE_SHARED_MUTEX)
+#if defined(VVL_USE_SHARED_MUTEX) || defined(VVL_USE_SHARED_TIMED_MUTEX)
     void lock_shared() { m_lock.lock_shared(); }
     bool try_lock_shared() { return m_lock.try_lock_shared(); }
     void unlock_shared() { m_lock.unlock_shared(); }
@@ -312,13 +316,12 @@ class ReadWriteLock {
     lock_t m_lock;
 };
 
-#if defined(VVL_USE_SHARED_MUTEX)
+#if defined(VVL_USE_SHARED_MUTEX) || defined(VVL_USE_SHARED_TIMED_MUTEX)
 typedef std::shared_lock<ReadWriteLock> read_lock_guard_t;
-typedef std::unique_lock<ReadWriteLock> write_lock_guard_t;
 #else
 typedef std::unique_lock<ReadWriteLock> read_lock_guard_t;
-typedef std::unique_lock<ReadWriteLock> write_lock_guard_t;
 #endif
+typedef std::unique_lock<ReadWriteLock> write_lock_guard_t;
 
 // Limited concurrent_unordered_map that supports internally-synchronized
 // insert/erase/access. Splits locking across N buckets and uses shared_mutex
