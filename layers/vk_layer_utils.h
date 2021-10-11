@@ -292,11 +292,11 @@ static inline int u_ffs(int val) {
 class ReadWriteLock {
   private:
 #if defined(VVL_USE_SHARED_MUTEX)
-    typedef std::shared_mutex lock_t;
+    typedef std::shared_mutex Lock;
 #elif defined(VVL_USE_SHARED_TIMED_MUTEX)
-    typedef std::shared_timed_mutex lock_t;
+    typedef std::shared_timed_mutex Lock;
 #else
-    typedef std::mutex lock_t;
+    typedef std::mutex Lock;
 #endif
 
   public:
@@ -313,15 +313,15 @@ class ReadWriteLock {
     void unlock_shared() { unlock(); }
 #endif
   private:
-    lock_t m_lock;
+    Lock m_lock;
 };
 
 #if defined(VVL_USE_SHARED_MUTEX) || defined(VVL_USE_SHARED_TIMED_MUTEX)
-typedef std::shared_lock<ReadWriteLock> read_lock_guard_t;
+typedef std::shared_lock<ReadWriteLock> ReadLockGuard;
 #else
-typedef std::unique_lock<ReadWriteLock> read_lock_guard_t;
+typedef std::unique_lock<ReadWriteLock> ReadLockGuard;
 #endif
-typedef std::unique_lock<ReadWriteLock> write_lock_guard_t;
+typedef std::unique_lock<ReadWriteLock> WriteLockGuard;
 
 // Limited concurrent_unordered_map that supports internally-synchronized
 // insert/erase/access. Splits locking across N buckets and uses shared_mutex
@@ -352,13 +352,13 @@ class vl_concurrent_unordered_map {
   public:
     void insert_or_assign(const Key &key, const T &value) {
         uint32_t h = ConcurrentMapHashObject(key);
-        write_lock_guard_t lock(locks[h].lock);
+        WriteLockGuard lock(locks[h].lock);
         maps[h][key] = value;
     }
 
     bool insert(const Key &key, const T &value) {
         uint32_t h = ConcurrentMapHashObject(key);
-        write_lock_guard_t lock(locks[h].lock);
+        WriteLockGuard lock(locks[h].lock);
         auto ret = maps[h].emplace(key, value);
         return ret.second;
     }
@@ -366,13 +366,13 @@ class vl_concurrent_unordered_map {
     // returns size_type
     size_t erase(const Key &key) {
         uint32_t h = ConcurrentMapHashObject(key);
-        write_lock_guard_t lock(locks[h].lock);
+        WriteLockGuard lock(locks[h].lock);
         return maps[h].erase(key);
     }
 
     bool contains(const Key &key) const {
         uint32_t h = ConcurrentMapHashObject(key);
-        read_lock_guard_t lock(locks[h].lock);
+        ReadLockGuard lock(locks[h].lock);
         return maps[h].count(key) != 0;
     }
 
@@ -405,7 +405,7 @@ class vl_concurrent_unordered_map {
 
     FindResult find(const Key &key) const {
         uint32_t h = ConcurrentMapHashObject(key);
-        read_lock_guard_t lock(locks[h].lock);
+        ReadLockGuard lock(locks[h].lock);
 
         auto itr = maps[h].find(key);
         bool found = itr != maps[h].end();
@@ -419,7 +419,7 @@ class vl_concurrent_unordered_map {
 
     FindResult pop(const Key &key) {
         uint32_t h = ConcurrentMapHashObject(key);
-        write_lock_guard_t lock(locks[h].lock);
+        WriteLockGuard lock(locks[h].lock);
 
         auto itr = maps[h].find(key);
         bool found = itr != maps[h].end();
@@ -436,7 +436,7 @@ class vl_concurrent_unordered_map {
     std::vector<std::pair<const Key, T>> snapshot(std::function<bool(T)> f = nullptr) const {
         std::vector<std::pair<const Key, T>> ret;
         for (int h = 0; h < BUCKETS; ++h) {
-            read_lock_guard_t lock(locks[h].lock);
+            ReadLockGuard lock(locks[h].lock);
             for (const auto &j : maps[h]) {
                 if (!f || f(j.second)) {
                     ret.emplace_back(j.first, j.second);

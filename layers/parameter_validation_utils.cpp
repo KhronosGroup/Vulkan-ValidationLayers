@@ -34,13 +34,13 @@ inline bool in_inclusive_range(const T &value, const T &min, const T &max) {
     return !((value < min) || (max < value));
 }
 
-read_lock_guard_t StatelessValidation::read_lock() { return read_lock_guard_t(validation_object_mutex, std::defer_lock); }
-write_lock_guard_t StatelessValidation::write_lock() { return write_lock_guard_t(validation_object_mutex, std::defer_lock); }
+ReadLockGuard StatelessValidation::ReadLock() { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
+WriteLockGuard StatelessValidation::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
 
 static layer_data::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
 static ReadWriteLock secondary_cb_map_mutex;
-static read_lock_guard_t cb_read_lock() { return read_lock_guard_t(secondary_cb_map_mutex); }
-static write_lock_guard_t cb_write_lock() { return write_lock_guard_t(secondary_cb_map_mutex); }
+static ReadLockGuard CBReadLock() { return ReadLockGuard(secondary_cb_map_mutex); }
+static WriteLockGuard CBWriteLock() { return WriteLockGuard(secondary_cb_map_mutex); }
 
 bool StatelessValidation::validate_string(const char *apiName, const ParameterName &stringName, const std::string &vuid,
                                           const char *validateString) const {
@@ -4109,7 +4109,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
     const char *cmd_name = "vkBeginCommandBuffer";
     bool cb_is_secondary;
     {
-        auto lock = cb_read_lock();
+        auto lock = CBReadLock();
         cb_is_secondary = (secondary_cb_map.find(commandBuffer) != secondary_cb_map.end());
     }
 
@@ -5317,7 +5317,7 @@ void StatelessValidation::PostCallRecordDestroyRenderPass(VkDevice device, VkRen
 void StatelessValidation::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
                                                                VkCommandBuffer *pCommandBuffers, VkResult result) {
     if ((result == VK_SUCCESS) && pAllocateInfo && (pAllocateInfo->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
-        auto lock = cb_write_lock();
+        auto lock = CBWriteLock();
         for (uint32_t cb_index = 0; cb_index < pAllocateInfo->commandBufferCount; cb_index++) {
             secondary_cb_map.emplace(pCommandBuffers[cb_index], pAllocateInfo->commandPool);
         }
@@ -5326,7 +5326,7 @@ void StatelessValidation::PostCallRecordAllocateCommandBuffers(VkDevice device, 
 
 void StatelessValidation::PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                                            const VkCommandBuffer *pCommandBuffers) {
-    auto lock = cb_write_lock();
+    auto lock = CBWriteLock();
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; cb_index++) {
         secondary_cb_map.erase(pCommandBuffers[cb_index]);
     }
@@ -5334,7 +5334,7 @@ void StatelessValidation::PostCallRecordFreeCommandBuffers(VkDevice device, VkCo
 
 void StatelessValidation::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                            const VkAllocationCallbacks *pAllocator) {
-    auto lock = cb_write_lock();
+    auto lock = CBWriteLock();
     for (auto item = secondary_cb_map.begin(); item != secondary_cb_map.end();) {
         if (item->second == commandPool) {
             item = secondary_cb_map.erase(item);

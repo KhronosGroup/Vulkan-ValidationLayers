@@ -443,8 +443,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         self.otwrite('cpp', '#include "chassis.h"')
         self.otwrite('cpp', '#include "object_lifetime_validation.h"')
         self.newline()
-        self.otwrite('cpp', 'read_lock_guard_t ObjectLifetimes::read_lock() { return read_lock_guard_t(validation_object_mutex, std::defer_lock); }')
-        self.otwrite('cpp', 'write_lock_guard_t ObjectLifetimes::write_lock() { return write_lock_guard_t(validation_object_mutex, std::defer_lock); }')
+        self.otwrite('cpp', 'ReadLockGuard ObjectLifetimes::ReadLock() { return ReadLockGuard(validation_object_mutex, std::defer_lock); }')
+        self.otwrite('cpp', 'WriteLockGuard ObjectLifetimes::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }')
 
 
     #
