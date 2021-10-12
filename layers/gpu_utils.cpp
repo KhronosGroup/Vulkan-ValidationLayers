@@ -493,8 +493,7 @@ void UtilGenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint
     using namespace spvtools;
     std::ostringstream filename_stream;
     std::ostringstream source_stream;
-    SHADER_MODULE_STATE shader;
-    shader.words = pgm;
+    SHADER_MODULE_STATE shader(pgm);
     // Find the OpLine just before the failing instruction indicated by the debug info.
     // SPIR-V can only be iterated in the forward direction due to its opcode/length encoding.
     uint32_t instruction_index = 0;
