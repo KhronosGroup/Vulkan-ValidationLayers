@@ -320,7 +320,7 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, SHADE
     bool skip = false;
     // Temp workaround to prevent false positive errors
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450
-    if (src->multiple_entry_points) {
+    if (src->HasMultipleEntryPoints()) {
         return skip;
     }
 
@@ -469,7 +469,7 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(SHADER_MODULE_STATE const *mod
 
     switch (type.opcode()) {
         case spv::OpTypeStruct: {
-            for (auto insn : module->decoration_inst) {
+            for (const auto insn : module->GetDecorationInstructions()) {
                 if (insn.word(1) == type.word(1)) {
                     if (insn.word(2) == spv::DecorationBlock) {
                         if (is_storage_buffer) {
@@ -1509,7 +1509,7 @@ bool CoreChecks::ValidateAtomicsTypes(SHADER_MODULE_STATE const *src) const {
         (float2_features.shaderSharedFloat64AtomicMinMax == VK_TRUE));
     // clang-format on
 
-    for (auto &atomic_inst : src->atomic_inst) {
+    for (const auto &atomic_inst : src->GetAtomicInstructions()) {
         const atomic_instruction &atomic = atomic_inst.second;
         const uint32_t opcode = src->at(atomic_inst.first).opcode();
 
@@ -1729,8 +1729,9 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
     uint32_t vertices_out = 0;
     uint32_t invocations = 0;
 
-    auto it = src->execution_mode_inst.find(entrypoint_id);
-    if (it != src->execution_mode_inst.end()) {
+    const auto &execution_mode_inst = src->GetExecutionModeInstructions();
+    auto it = execution_mode_inst.find(entrypoint_id);
+    if (it != execution_mode_inst.end()) {
         for (auto insn : it->second) {
             auto mode = insn.word(2);
             switch (mode) {
@@ -1991,7 +1992,7 @@ bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, SH
     bool skip = false;
 
     // Search for PointSize built-in decorations
-    for (auto set : src->builtin_decoration_list) {
+    for (const auto &set : src->GetBuiltinDecorationList()) {
         auto insn = src->at(set.offset);
         if (set.builtin == spv::BuiltInPointSize) {
             pointsize_written = src->IsBuiltInWritten(insn, entrypoint);
@@ -2025,7 +2026,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
     bool skip = false;
 
     // Check if the primitive shading rate is written
-    for (auto set : src->builtin_decoration_list) {
+    for (const auto &set : src->GetBuiltinDecorationList()) {
         auto insn = src->at(set.offset);
         if (set.builtin == spv::BuiltInPrimitiveShadingRateKHR) {
             primitiverate_written = src->IsBuiltInWritten(insn, entrypoint);
@@ -2075,7 +2076,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
 bool CoreChecks::ValidateDecorations(SHADER_MODULE_STATE const* module) const {
     bool skip = false;
 
-    for (const auto &op_decorate : module->decoration_inst) {
+    for (const auto &op_decorate : module->GetDecorationInstructions()) {
         uint32_t decoration = op_decorate.word(2);
         if (decoration == spv::DecorationXfbStride) {
             uint32_t stride = op_decorate.word(3);
@@ -2213,7 +2214,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     // If specialization-constant values are given and specialization-constant instructions are present in the shader, the
     // specializations should be applied and validated.
     if (pStage->pSpecializationInfo != nullptr && pStage->pSpecializationInfo->mapEntryCount > 0 &&
-        pStage->pSpecializationInfo->pMapEntries != nullptr && module->has_specialization_constants) {
+        pStage->pSpecializationInfo->pMapEntries != nullptr && module->HasSpecConstants()) {
         // Gather the specialization-constant values.
         auto const &specialization_info = pStage->pSpecializationInfo;
         auto const &specialization_data = reinterpret_cast<uint8_t const *>(specialization_info->pData);
@@ -2221,10 +2222,10 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         id_value_map.reserve(specialization_info->mapEntryCount);
         for (auto i = 0u; i < specialization_info->mapEntryCount; ++i) {
             auto const &map_entry = specialization_info->pMapEntries[i];
-            auto itr = module->spec_const_map.find(map_entry.constantID);
+            const auto itr = module->GetSpecConstMap().find(map_entry.constantID);
             // "If a constantID value is not a specialization constant ID used in the shader, that map entry does not affect the
             // behavior of the pipeline."
-            if (itr != module->spec_const_map.cend()) {
+            if (itr != module->GetSpecConstMap().cend()) {
                 // Make sure map_entry.size matches the spec constant's size
                 uint32_t spec_const_size = decoration_set::kInvalidValue;
                 const auto def_ins = module->get_def(itr->second);
@@ -2663,7 +2664,7 @@ void CoreChecks::RecordGraphicsPipelineShaderDynamicState(PIPELINE_STATE *pipeli
             stage.stage_flag == VK_SHADER_STAGE_MESH_BIT_NV) {
             bool primitiverate_written = false;
 
-            for (auto set : stage.module->builtin_decoration_list) {
+            for (const auto &set : stage.module->GetBuiltinDecorationList()) {
                 auto insn = stage.module->at(set.offset);
                 if (set.builtin == spv::BuiltInPrimitiveShadingRateKHR) {
                     primitiverate_written = stage.module->IsBuiltInWritten(insn, stage.entrypoint);

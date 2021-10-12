@@ -4330,7 +4330,6 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
     auto new_shader_module = is_spirv ? std::make_shared<SHADER_MODULE_STATE>(pCreateInfo, *pShaderModule, spirv_environment,
                                                                               csm_state->unique_shader_id)
                                       : std::make_shared<SHADER_MODULE_STATE>();
-    new_shader_module->SetPushConstantUsedInShader();
     shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
 }
 
