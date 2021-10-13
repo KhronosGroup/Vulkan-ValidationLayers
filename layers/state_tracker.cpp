@@ -1410,6 +1410,9 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
             for (auto &function : cb_node->queryUpdates) {
                 function(nullptr, /*do_validate*/ false, first_pool, submission.perf_submit_pass, &local_query_to_state_map);
             }
+            for (const auto &function : cb_node->barrierUpdates) {
+                function();
+            }
 
             for (const auto &query_state_pair : local_query_to_state_map) {
                 if (query_state_pair.second == QUERYSTATE_ENDED) {

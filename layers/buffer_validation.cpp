@@ -4838,14 +4838,16 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
     return skip;
 }
 
-bool CoreChecks::ValidateImageAcquired(IMAGE_STATE const &image_state, const char *func_name) const {
+bool CoreChecks::ValidateImageAcquired(VkImage image, const char *func_name) const {
     bool skip = false;
 
-    if (image_state.create_from_swapchain) {
-        if (!image_state.bind_swapchain->images[image_state.swapchain_image_index].acquired) {
-            skip |= LogError(image_state.Handle(), kVUID_Core_NonAcquiredSwapchainImageUsed,
+    const auto *image_state = GetImageState(image);
+
+    if (image_state && image_state->create_from_swapchain) {
+        if (!image_state->bind_swapchain->images[image_state->swapchain_image_index].acquired) {
+            skip |= LogError(image_state->Handle(), kVUID_Core_NonAcquiredSwapchainImageUsed,
                              "%s: Image %s is a presentable image, but it is currently not acquired from swapchain.", func_name,
-                             report_data->FormatHandle(image_state.Handle()).c_str());
+                             report_data->FormatHandle(image_state->Handle()).c_str());
         }
     }
     return skip;
@@ -5267,7 +5269,6 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
                                         loc.StringFunc().c_str());
 
         skip |= ValidateImageBarrierSubresourceRange(loc.dot(Field::subresourceRange), image_data, mem_barrier.subresourceRange);
-        skip |= ValidateImageAcquired(*image_data, loc.StringFunc().c_str());
     }
     return skip;
 }

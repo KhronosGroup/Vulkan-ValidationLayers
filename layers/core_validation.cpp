@@ -8500,6 +8500,27 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBu
     return skip;
 }
 
+void CoreChecks::EnqueueVerifyPipelineBarrier(VkCommandBuffer command_buffer, uint32_t imageMemoryBarrierCount,
+                                              const VkImageMemoryBarrier *pImageMemoryBarriers, const char *func_name) {
+    if (imageMemoryBarrierCount == 0) {
+        return;
+    }
+    CMD_BUFFER_STATE *cb_state = GetCBState(command_buffer);
+
+    // Enqueue the submit time validation here, ahead of the submit time state update in the StateTracker's PostCallRecord
+    std::vector<VkImage> images(imageMemoryBarrierCount);
+    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+        images[i] = pImageMemoryBarriers[i].image;
+    }
+    cb_state->barrierUpdates.emplace_back([this, images, func_name]() {
+        bool skip = false;
+        for (const auto image : images) {
+            skip |= ValidateImageAcquired(image, func_name);
+        }
+        return skip;
+    });
+}
+
 void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                                  VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                                  uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
@@ -8516,6 +8537,8 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
     StateTracker::PreCallRecordCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
                                                   pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                   imageMemoryBarrierCount, pImageMemoryBarriers);
+
+    EnqueueVerifyPipelineBarrier(commandBuffer, imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdPipelineBarrier()");
 }
 
 void CoreChecks::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo) {
