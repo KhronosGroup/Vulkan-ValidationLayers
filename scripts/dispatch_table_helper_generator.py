@@ -33,23 +33,22 @@ class DispatchTableHelperOutputGeneratorOptions(GeneratorOptions):
                  filename = None,
                  directory = '.',
                  genpath = None,
-                 apiname = None,
+                 apiname = 'vulkan',
                  profile = None,
                  versions = '.*',
                  emitversions = '.*',
-                 defaultExtensions = None,
+                 defaultExtensions = 'vulkan',
                  addExtensions = None,
                  removeExtensions = None,
                  emitExtensions = None,
                  emitSpirv = None,
                  sortProcedure = regSortFeatures,
-                 prefixText = "",
                  genFuncPointers = True,
-                 apicall = '',
-                 apientry = '',
-                 apientryp = '',
-                 alignFuncParam = 0,
-                 expandEnumerants = True):
+                 apicall = 'VKAPI_ATTR ',
+                 apientry = 'VKAPI_CALL ',
+                 apientryp = 'VKAPI_PTR *',
+                 alignFuncParam = 48,
+                 expandEnumerants = False):
         GeneratorOptions.__init__(self,
                 conventions = conventions,
                 filename = filename,
@@ -65,9 +64,7 @@ class DispatchTableHelperOutputGeneratorOptions(GeneratorOptions):
                 emitExtensions = emitExtensions,
                 emitSpirv = emitSpirv,
                 sortProcedure = sortProcedure)
-        self.prefixText      = prefixText
         self.genFuncPointers = genFuncPointers
-        self.prefixText      = None
         self.apicall         = apicall
         self.apientry        = apientry
         self.apientryp       = apientryp
@@ -98,10 +95,6 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         self.handle_types = GetHandleTypes(self.registry.tree)
 
         write("#pragma once", file=self.outFile)
-        # User-supplied prefix text, if any (list of strings)
-        if (genOpts.prefixText):
-            for s in genOpts.prefixText:
-                write(s, file=self.outFile)
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
         file_comment += '// See dispatch_helper_generator.py for modifications\n'
