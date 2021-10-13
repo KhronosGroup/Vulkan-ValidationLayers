@@ -13766,10 +13766,15 @@ TEST_F(VkLayerTest, TestPipelineRasterizationConservativeStateCreateInfo) {
 TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
     TEST_DESCRIPTION("Test runtime spirv transform feedback.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Vulkan 1.2 not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s not supported, skipping tests\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+        printf("%s Extension %s not supported, skipping test.\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
         return;
     }
 
@@ -13785,8 +13790,10 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
     transform_feedback_features.transformFeedback = VK_TRUE;
     transform_feedback_features.geometryStreams = VK_TRUE;
     VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>(&transform_feedback_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
-    if ((!m_device->phy().features().geometryShader)) {
+
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (features2.features.geometryShader == VK_FALSE) {
         printf("%s Device does not support the required geometry shader features; skipped.\n", kSkipPrefix);
         return;
     }
@@ -13795,14 +13802,15 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
         return;
     }
 
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
         (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-    VkPhysicalDeviceTransformFeedbackPropertiesEXT transfer_feedback_props =
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props =
         LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
-    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transfer_feedback_props);
+    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &pd_props2);
 
     {
@@ -13824,7 +13832,7 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
                OpDecorate %tf Location 0
                OpDecorate %tf XfbBuffer 0
                OpDecorate %tf XfbStride )asm";
-        vsSource << transfer_feedback_props.maxTransformFeedbackBufferDataStride + 4;
+        vsSource << transform_feedback_props.maxTransformFeedbackBufferDataStride + 4;
         vsSource << R"asm(
                ; Types, variables and constants
        %void = OpTypeVoid
@@ -13879,7 +13887,7 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
           %3 = OpTypeFunction %void
         %int = OpTypeInt 32 1
      %int_17 = OpConstant %int )asm";
-        gsSource << transfer_feedback_props.maxTransformFeedbackStreams;
+        gsSource << transform_feedback_props.maxTransformFeedbackStreams;
         gsSource << R"asm(
       %float = OpTypeFloat 32
 %_ptr_Output_float = OpTypePointer Output %float
@@ -13900,6 +13908,68 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEmitStreamVertex-06310");
+    }
+
+    if (transform_feedback_props.transformFeedbackStreamsLinesTriangles == VK_FALSE) {
+        const char* gsSource = R"asm(
+               OpCapability Geometry
+               OpCapability TransformFeedback
+               OpCapability GeometryStreams
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Geometry %main "main" %a %b
+               OpExecutionMode %main Xfb
+               OpExecutionMode %main Triangles
+               OpExecutionMode %main Invocations 1
+               OpExecutionMode %main OutputLineStrip
+               OpExecutionMode %main OutputVertices 6
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %a "a"  ; id %11
+               OpName %b "b"  ; id %12
+
+               ; Annotations
+               OpDecorate %a Location 0
+               OpDecorate %a Stream 0
+               OpDecorate %a XfbBuffer 0
+               OpDecorate %a XfbStride 4
+               OpDecorate %a Offset 0
+               OpDecorate %b Location 1
+               OpDecorate %b Stream 0
+               OpDecorate %b XfbBuffer 1
+               OpDecorate %b XfbStride 4
+               OpDecorate %b Offset 0
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %float = OpTypeFloat 32
+%_ptr_Output_float = OpTypePointer Output %float
+          %a = OpVariable %_ptr_Output_float Output
+          %b = OpVariable %_ptr_Output_float Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpEmitStreamVertex %int_0
+               OpEmitStreamVertex %int_1
+               OpReturn
+               OpFunctionEnd
+        )asm";
+
+        auto gs =
+            VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_GEOMETRY_BIT, gsSource, "main", nullptr);
+
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                          "VUID-RuntimeSpirv-transformFeedbackStreamsLinesTriangles-06311");
     }
 }
 
