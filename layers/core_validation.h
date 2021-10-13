@@ -573,7 +573,7 @@ class CoreChecks : public ValidationStateTracker {
                                         shader_stage_attributes const* producer_stage, SHADER_MODULE_STATE const* consumer,
                                         spirv_inst_iter consumer_entrypoint, shader_stage_attributes const* consumer_stage) const;
     bool ValidateDecorations(SHADER_MODULE_STATE const* module) const;
-    bool ValidateTransformFeedback(SHADER_MODULE_STATE const* module, spirv_inst_iter& insn) const;
+    bool ValidateTransformFeedback(SHADER_MODULE_STATE const* src) const;
     bool ValidateShaderClock(SHADER_MODULE_STATE const* module, spirv_inst_iter& insn) const;
 
     template <typename RegionType>

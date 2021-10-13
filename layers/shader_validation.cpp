@@ -2095,20 +2095,45 @@ bool CoreChecks::ValidateDecorations(SHADER_MODULE_STATE const* module) const {
     return skip;
 }
 
-bool CoreChecks::ValidateTransformFeedback(SHADER_MODULE_STATE const *module, spirv_inst_iter &insn) const {
+bool CoreChecks::ValidateTransformFeedback(SHADER_MODULE_STATE const *src) const {
     bool skip = false;
 
-    uint32_t opcode = insn.opcode();
-    if (opcode == spv::OpEmitStreamVertex || opcode == spv::OpEndStreamPrimitive) {
-        uint32_t stream = static_cast<uint32_t>(module->GetConstantValueById(insn.word(1)));
-        if (stream >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
-            skip |= LogError(
-                device, "VUID-RuntimeSpirv-OpEmitStreamVertex-06310",
-                "vkCreateGraphicsPipelines(): shader uses transform feedback stream with index %" PRIu32
-                ", which is not less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32
-                ").",
-                stream, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+    // Temp workaround to prevent false positive errors
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450
+    if (src->HasMultipleEntryPoints()) {
+        return skip;
+    }
+
+    layer_data::unordered_set<uint32_t> emitted_streams;
+    bool output_points = false;
+    for (const auto& insn : *src) {
+        const uint32_t opcode = insn.opcode();
+        if (opcode == spv::OpEmitStreamVertex) {
+            emitted_streams.emplace(static_cast<uint32_t>(src->GetConstantValueById(insn.word(1))));
         }
+        if (opcode == spv::OpEmitStreamVertex || opcode == spv::OpEndStreamPrimitive) {
+            uint32_t stream = static_cast<uint32_t>(src->GetConstantValueById(insn.word(1)));
+            if (stream >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
+                skip |= LogError(
+                    device, "VUID-RuntimeSpirv-OpEmitStreamVertex-06310",
+                    "vkCreateGraphicsPipelines(): shader uses transform feedback stream with index %" PRIu32
+                    ", which is not less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32
+                    ").",
+                    stream, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+            }
+        }
+        if (opcode == spv::OpExecutionMode && insn.word(2) == spv::ExecutionModeOutputPoints) {
+            output_points = true;
+        }
+    }
+
+    const uint32_t emitted_streams_size = static_cast<uint32_t>(emitted_streams.size());
+    if (emitted_streams_size > 1 && !output_points &&
+        phys_dev_ext_props.transform_feedback_props.transformFeedbackStreamsLinesTriangles == VK_FALSE) {
+        skip |= LogError(
+            device, "VUID-RuntimeSpirv-transformFeedbackStreamsLinesTriangles-06311",
+            "vkCreateGraphicsPipelines(): shader emits to %" PRIu32 " vertex streams and VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackStreamsLinesTriangles is VK_FALSE, but execution mode is not OutputPoints.",
+                     emitted_streams_size);
     }
 
     return skip;
@@ -2324,7 +2349,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     // and mainly only checking the instruction in detail for a single operation
     uint32_t total_shared_size = 0;
     for (auto insn : *module) {
-        skip |= ValidateTransformFeedback(module, insn);
         skip |= ValidateTexelGatherOffset(module, insn);
         skip |= ValidateShaderCapabilitiesAndExtensions(module, insn);
         skip |= ValidateShaderClock(module, insn);
@@ -2338,6 +2362,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
                          total_shared_size, phys_dev_props.limits.maxComputeSharedMemorySize);
     }
 
+    skip |= ValidateTransformFeedback(module);
     skip |= ValidateShaderStageWritableOrAtomicDescriptor(pStage->stage, stage_state.has_writable_descriptor,
                                                           stage_state.has_atomic_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline, entrypoint);
