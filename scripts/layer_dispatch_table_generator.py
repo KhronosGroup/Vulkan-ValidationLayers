@@ -39,27 +39,26 @@ class LayerDispatchTableGeneratorOptions(GeneratorOptions):
                  filename = None,
                  directory = '.',
                  genpath = None,
-                 apiname = None,
+                 apiname = 'vulkan',
                  profile = None,
                  versions = '.*',
                  emitversions = '.*',
-                 defaultExtensions = None,
+                 defaultExtensions = 'vulkan',
                  addExtensions = None,
                  removeExtensions = None,
                  emitExtensions = None,
                  emitSpirv = None,
                  sortProcedure = regSortFeatures,
-                 prefixText = "",
                  genFuncPointers = True,
                  protectFile = True,
                  protectFeature = True,
-                 apicall = '',
-                 apientry = '',
-                 apientryp = '',
+                 apicall = 'VKAPI_ATTR ',
+                 apientry = 'VKAPI_CALL ',
+                 apientryp = 'VKAPI_PTR *',
                  indentFuncProto = True,
                  indentFuncPointer = False,
-                 alignFuncParam = 0,
-                 expandEnumerants = True):
+                 alignFuncParam = 48,
+                 expandEnumerants = False):
         GeneratorOptions.__init__(self,
                 conventions = conventions,
                 filename = filename,
@@ -75,8 +74,6 @@ class LayerDispatchTableGeneratorOptions(GeneratorOptions):
                 emitExtensions = emitExtensions,
                 emitSpirv = emitSpirv,
                 sortProcedure = sortProcedure)
-        self.prefixText      = prefixText
-        self.prefixText      = None
         self.apicall         = apicall
         self.apientry        = apientry
         self.apientryp       = apientryp
@@ -109,11 +106,6 @@ class LayerDispatchTableOutputGenerator(OutputGenerator):
 
         # Initialize members that require the tree
         self.handle_types = GetHandleTypes(self.registry.tree)
-
-        # User-supplied prefix text, if any (list of strings)
-        if (genOpts.prefixText):
-            for s in genOpts.prefixText:
-                write(s, file=self.outFile)
 
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'

@@ -31,8 +31,6 @@ from common_codegen import *
 # layer generation.
 #
 # Additional members
-#   prefixText - list of strings to prefix generated header with
-#     (usually a copyright statement + calling convention macros).
 #   protectFile - True if multiple inclusion protection should be
 #     generated (based on the filename) around the entire header.
 #   protectFeature - True if #ifndef..#endif protection should be
@@ -64,27 +62,26 @@ class ThreadGeneratorOptions(GeneratorOptions):
                  filename = None,
                  directory = '.',
                  genpath = None,
-                 apiname = None,
+                 apiname = 'vulkan',
                  profile = None,
                  versions = '.*',
                  emitversions = '.*',
-                 defaultExtensions = None,
+                 defaultExtensions = 'vulkan',
                  addExtensions = None,
                  removeExtensions = None,
                  emitExtensions = None,
                  emitSpirv = None,
                  sortProcedure = regSortFeatures,
-                 prefixText = "",
                  genFuncPointers = True,
                  protectFile = True,
-                 protectFeature = True,
-                 apicall = '',
-                 apientry = '',
-                 apientryp = '',
+                 protectFeature = False,
+                 apicall = 'VKAPI_ATTR ',
+                 apientry = 'VKAPI_CALL ',
+                 apientryp = 'VKAPI_PTR *',
                  indentFuncProto = True,
                  indentFuncPointer = False,
-                 alignFuncParam = 0,
-                 expandEnumerants = True):
+                 alignFuncParam = 48,
+                 expandEnumerants = False):
         GeneratorOptions.__init__(self,
                 conventions = conventions,
                 filename = filename,
@@ -100,7 +97,6 @@ class ThreadGeneratorOptions(GeneratorOptions):
                 emitExtensions = emitExtensions,
                 emitSpirv = emitSpirv,
                 sortProcedure = sortProcedure)
-        self.prefixText      = prefixText
         self.genFuncPointers = genFuncPointers
         self.protectFile     = protectFile
         self.protectFeature  = protectFeature
