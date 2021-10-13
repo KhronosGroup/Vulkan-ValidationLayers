@@ -3646,6 +3646,86 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
     return skip;
 }
 
+bool StatelessValidation::ValidateMutableDescriptorTypeCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
+                                                                  const VkMutableDescriptorTypeCreateInfoVALVE &mutable_create_info,
+                                                                  const char *func_name) const {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < create_info.bindingCount; ++i) {
+        uint32_t mutable_type_count = 0;
+        if (mutable_create_info.mutableDescriptorTypeListCount > i) {
+            mutable_type_count = mutable_create_info.pMutableDescriptorTypeLists[i].descriptorTypeCount;
+        }
+        if (create_info.pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+            if (mutable_type_count == 0) {
+                skip |= LogError(device, "VUID-VkMutableDescriptorTypeListVALVE-descriptorTypeCount-04597",
+                                 "%s: VkDescriptorSetLayoutCreateInfo::pBindings[%" PRIu32
+                                 "].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_VALVE, but "
+                                 "VkMutableDescriptorTypeCreateInfoVALVE::pMutableDescriptorTypeLists[%" PRIu32
+                                 "].descriptorTypeCount is 0.",
+                                 func_name, i, i);
+            }
+        } else {
+            if (mutable_type_count > 0) {
+                skip |= LogError(device, "VUID-VkMutableDescriptorTypeListVALVE-descriptorTypeCount-04599",
+                                 "%s: VkDescriptorSetLayoutCreateInfo::pBindings[%" PRIu32
+                                 "].descriptorType is %s, but "
+                                 "VkMutableDescriptorTypeCreateInfoVALVE::pMutableDescriptorTypeLists[%" PRIu32
+                                 "].descriptorTypeCount is not 0.",
+                                 func_name, i, string_VkDescriptorType(create_info.pBindings[i].descriptorType), i);
+            }
+        }
+    }
+
+    for (uint32_t j = 0; j < mutable_create_info.mutableDescriptorTypeListCount; ++j) {
+        for (uint32_t k = 0; k < mutable_create_info.pMutableDescriptorTypeLists[j].descriptorTypeCount; ++k) {
+            switch (mutable_create_info.pMutableDescriptorTypeLists[j].pDescriptorTypes[k]) {
+                case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE:
+                    skip |= LogError(device, "VUID-VkMutableDescriptorTypeListVALVE-pDescriptorTypes-04600",
+                                     "%s: VkMutableDescriptorTypeCreateInfoVALVE::pMutableDescriptorTypeLists[%" PRIu32
+                                     "].pDescriptorTypes[%" PRIu32 "] is VK_DESCRIPTOR_TYPE_MUTABLE_VALVE.",
+                                     func_name, j, k);
+                    break;
+                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+                    skip |= LogError(device, "VUID-VkMutableDescriptorTypeListVALVE-pDescriptorTypes-04601",
+                                     "%s: VkMutableDescriptorTypeCreateInfoVALVE::pMutableDescriptorTypeLists[%" PRIu32
+                                     "].pDescriptorTypes[%" PRIu32 "] is VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC.",
+                                     func_name, j, k);
+                    break;
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+                    skip |= LogError(device, "VUID-VkMutableDescriptorTypeListVALVE-pDescriptorTypes-04602",
+                                     "%s: VkMutableDescriptorTypeCreateInfoVALVE::pMutableDescriptorTypeLists[%" PRIu32
+                                     "].pDescriptorTypes[%" PRIu32 "] is VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC.",
+                                     func_name, j, k);
+                    break;
+                case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
+                    skip |= LogError(device, "VUID-VkMutableDescriptorTypeListVALVE-pDescriptorTypes-04603",
+                                     "%s: VkMutableDescriptorTypeCreateInfoVALVE::pMutableDescriptorTypeLists[%" PRIu32
+                                     "].pDescriptorTypes[%" PRIu32 "] is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT.",
+                                     func_name, j, k);
+                    break;
+                default:
+                    break;
+            }
+            for (uint32_t l = k + 1; l < mutable_create_info.pMutableDescriptorTypeLists[j].descriptorTypeCount; ++l) {
+                if (mutable_create_info.pMutableDescriptorTypeLists[j].pDescriptorTypes[k] ==
+                    mutable_create_info.pMutableDescriptorTypeLists[j].pDescriptorTypes[l]) {
+                    skip |=
+                        LogError(device, "VUID-VkMutableDescriptorTypeListVALVE-pDescriptorTypes-04598",
+                                 "%s: VkMutableDescriptorTypeCreateInfoVALVE::pMutableDescriptorTypeLists[%" PRIu32
+                                 "].pDescriptorTypes[%" PRIu32
+                                 "] and VkMutableDescriptorTypeCreateInfoVALVE::pMutableDescriptorTypeLists[%" PRIu32
+                                 "].pDescriptorTypes[%" PRIu32 "] are both %s.",
+                                 func_name, j, k, j, l,
+                                 string_VkDescriptorType(mutable_create_info.pMutableDescriptorTypeLists[j].pDescriptorTypes[k]));
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevice device,
                                                                           const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                                           const VkAllocationCallbacks *pAllocator,
@@ -3733,6 +3813,11 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                                      "].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_VALVE.", i);
                 }
             }
+        }
+
+        if (mutable_descriptor_type) {
+            ValidateMutableDescriptorTypeCreateInfo(*pCreateInfo, *mutable_descriptor_type,
+                                                    "vkDescriptorSetLayoutCreateInfo");
         }
     }
     if (pCreateInfo) {
