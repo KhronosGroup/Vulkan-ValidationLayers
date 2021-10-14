@@ -1272,7 +1272,8 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     optimizer.SetMessageConsumer(gpu_console_message_consumer);
     optimizer.RegisterPass(CreateInstBindlessCheckPass(desc_set_bind_index, unique_shader_module_id, descriptor_indexing,
                                                        descriptor_indexing, buffer_oob_enabled, buffer_oob_enabled));
-    optimizer.RegisterPass(CreateAggressiveDCEPass());
+    // Call CreateAggressiveDCEPass with preserve_interface == true
+    optimizer.RegisterPass(CreateAggressiveDCEPass(true));
     if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
          IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
         shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
