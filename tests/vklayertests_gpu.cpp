@@ -2267,10 +2267,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     buffer0.memory().unmap();
 
     // Also verify that binding slot reservation is working
-    VkInstanceCreateInfo inst_info = {};
+    auto ici = GetInstanceCreateInfo();
     VkInstance test_inst;
-    inst_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    vk::CreateInstance(&inst_info, NULL, &test_inst);
+    vk::CreateInstance(&ici, nullptr, &test_inst);
     uint32_t gpu_count;
     vk::EnumeratePhysicalDevices(test_inst, &gpu_count, nullptr);
     std::vector<VkPhysicalDevice> phys_devices(gpu_count);

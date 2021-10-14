@@ -506,6 +506,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     if ((phys_device_index >= 0) && (phys_device_index < static_cast<int>(gpu_count))) {
         gpu_ = phys_devices[phys_device_index];
         vk::GetPhysicalDeviceProperties(gpu_, &physDevProps_);
+        m_gpu_index = phys_device_index;
     } else {
         // Specify a "physical device priority" with larger values meaning higher priority.
         std::array<int, VK_PHYSICAL_DEVICE_TYPE_CPU + 1> device_type_rank;
