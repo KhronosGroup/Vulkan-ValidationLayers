@@ -65,7 +65,7 @@ def IsWindows(): return 'windows' == platform.system().lower()
 # Verify consistency of generated source code
 def CheckVVLCodegenConsistency():
     print("Check Generated Source Code Consistency")
-    gen_check_cmd = 'python3 scripts/generate_source.py --verify %s/Vulkan-Headers/registry' % EXTERNAL_DIR
+    gen_check_cmd = 'python3 scripts/generate_source.py --verify %s/Vulkan-Headers/registry %s/SPIRV-Headers/include/spirv/unified1/' % (EXTERNAL_DIR, EXTERNAL_DIR)
     RunShellCmd(gen_check_cmd)
 
 #

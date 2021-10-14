@@ -36,6 +36,7 @@
 #include "vk_layer_utils.h"
 #include "chassis.h"
 #include "core_validation.h"
+#include "spirv_grammar_helper.h"
 
 #include "xxhash.h"
 

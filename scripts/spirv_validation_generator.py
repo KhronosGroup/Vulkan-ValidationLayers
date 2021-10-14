@@ -195,6 +195,9 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
         copyright += ' *\n'
         copyright += ' * Author: Spencer Fricke <s.fricke@samsung.com>\n'
         copyright += ' *\n'
+        copyright += ' * This file is related to anything that is found in the Vulkan XML related\n'
+        copyright += ' * to SPIR-V. Anything related to the SPIR-V grammar belongs in spirv_grammar_helper\n'
+        copyright += ' *\n'
         copyright += ' ****************************************************************************/\n'
         write(copyright, file=self.outFile)
         write('#include <string>', file=self.outFile)

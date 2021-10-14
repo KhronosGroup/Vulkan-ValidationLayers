@@ -391,10 +391,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     static std::unordered_multimap<std::string, EntryPoint> ProcessEntryPoints(const SHADER_MODULE_STATE &mod);
 };
 
-// TODO - Most things below are agnostic of even the shader module and more of pure SPIR-V utils
-//        Stuff like this could be part of a future auto-generated file from the spirv grammar json
-bool AtomicOperation(uint32_t opcode);
-bool GroupOperation(uint32_t opcode);
+// String helpers functions to give better error messages
 char const *StorageClassName(unsigned sc);
 
 #endif  // VULKAN_SHADER_MODULE_H

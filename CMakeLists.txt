@@ -402,7 +402,7 @@ endif()
 if(PYTHONINTERP_FOUND)
     add_custom_target(VulkanVL_generated_source
                       COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
-                              ${VulkanRegistry_DIR} --incremental
+                              ${VulkanRegistry_DIR} ${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1/ --incremental
                       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/layers/generated
                       )
 else()

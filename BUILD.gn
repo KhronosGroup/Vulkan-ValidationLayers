@@ -116,6 +116,8 @@ core_validation_sources = [
   "layers/generated/corechecks_optick_instrumentation.cpp",
   "layers/generated/corechecks_optick_instrumentation.h",
   "layers/generated/spirv_validation_helper.cpp",
+  "layers/generated/spirv_grammar_helper.cpp",
+  "layers/generated/spirv_grammar_helper.h",
   "layers/generated/command_validation.cpp",
   "layers/generated/command_validation.h",
   "layers/generated/gpu_pre_draw_shader.h",
