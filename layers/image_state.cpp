@@ -249,11 +249,6 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
 }
 
 void IMAGE_STATE::Unlink() {
-    for (auto *alias_state : aliasing_images) {
-        assert(alias_state);
-        alias_state->aliasing_images.erase(this);
-    }
-    aliasing_images.clear();
     if (bind_swapchain) {
         bind_swapchain->RemoveParent(this);
         bind_swapchain = nullptr;
@@ -312,32 +307,11 @@ bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) const {
         (binding->offset == other_binding->offset) && IsCreateInfoEqual(other_image_state->createInfo)) {
         return true;
     }
-    if (bind_swapchain && (bind_swapchain == other_image_state->bind_swapchain)) {
+    if (bind_swapchain && (bind_swapchain == other_image_state->bind_swapchain) &&
+        (swapchain_image_index == other_image_state->swapchain_image_index)) {
         return true;
     }
     return false;
-}
-
-void IMAGE_STATE::AddAliasingImage(IMAGE_STATE *bound_image) {
-    assert(bound_image);
-    if (bound_image != this && bound_image->IsCompatibleAliasing(this)) {
-        auto inserted = bound_image->aliasing_images.emplace(this);
-        if (inserted.second) {
-            aliasing_images.emplace(bound_image);
-        }
-    }
-}
-
-void IMAGE_STATE::SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset) {
-    if ((createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) != 0) {
-        for (auto *base_node : mem->ObjectBindings()) {
-            if (base_node->Type() == kVulkanObjectTypeImage) {
-                auto other_image = static_cast<IMAGE_STATE *>(base_node);
-                AddAliasingImage(other_image);
-            }
-        }
-    }
-    BINDABLE::SetMemBinding(mem, memory_offset);
 }
 
 void IMAGE_STATE::SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint32_t swapchain_index) {
@@ -345,14 +319,6 @@ void IMAGE_STATE::SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint3
     bind_swapchain = swapchain;
     swapchain_image_index = swapchain_index;
     bind_swapchain->AddParent(this);
-    for (auto *base_node : swapchain->ObjectBindings()) {
-        if (base_node->Type() == kVulkanObjectTypeImage) {
-            auto other_image = static_cast<IMAGE_STATE *>(base_node);
-            if (swapchain_image_index == other_image->swapchain_image_index) {
-                AddAliasingImage(other_image);
-            }
-        }
-    }
 }
 
 VkDeviceSize IMAGE_STATE::GetFakeBaseAddress() const {
@@ -363,6 +329,41 @@ VkDeviceSize IMAGE_STATE::GetFakeBaseAddress() const {
         return 0;
     }
     return bind_swapchain->images[swapchain_image_index].fake_base_address;
+}
+
+void IMAGE_STATE::SetInitialLayoutMap() {
+    if ((createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) != 0) {
+        const auto *binding = Binding();
+        if (binding && binding->mem_state) {
+            for (auto *base_node : binding->mem_state->ObjectBindings()) {
+                if (base_node->Type() == kVulkanObjectTypeImage) {
+                    auto other_image = static_cast<IMAGE_STATE *>(base_node);
+                    if (other_image != this && other_image->IsCompatibleAliasing(this)) {
+                        assert(other_image->layout_range_map);
+                        layout_range_map = other_image->layout_range_map;
+                        return;
+                    }
+                }
+            }
+        }
+    } else if (bind_swapchain) {
+        for (auto *base_node : bind_swapchain->ObjectBindings()) {
+            if (base_node->Type() == kVulkanObjectTypeImage) {
+                auto other_image = static_cast<IMAGE_STATE *>(base_node);
+                if (other_image != this && other_image->IsCompatibleAliasing(this)) {
+                    assert(other_image->layout_range_map);
+                    layout_range_map = other_image->layout_range_map;
+                    return;
+                }
+            }
+        }
+    }
+    assert(!layout_range_map);
+    layout_range_map = std::make_shared<GlobalImageLayoutRangeMap>(subresource_encoder.SubresourceCount());
+    auto range_gen = subresource_adapter::RangeGenerator(subresource_encoder);
+    for (; range_gen->non_empty(); ++range_gen) {
+        layout_range_map->insert(layout_range_map->end(), std::make_pair(*range_gen, createInfo.initialLayout));
+    }
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.

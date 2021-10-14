@@ -98,14 +98,6 @@ using std::stringstream;
 using std::unique_ptr;
 using std::vector;
 
-void CoreChecks::AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, GlobalImageLayoutMap &image_layout_map) {
-    auto *range_map = GetLayoutRangeMap(image_layout_map, image_state);
-    auto range_gen = subresource_adapter::RangeGenerator(image_state.subresource_encoder);
-    for (; range_gen->non_empty(); ++range_gen) {
-        range_map->insert(range_map->end(), std::make_pair(*range_gen, image_state.createInfo.initialLayout));
-    }
-}
-
 // Override base class, we have some extra work to do here
 void CoreChecks::InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
     if (add_obj) {
@@ -3135,7 +3127,6 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
 
 void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     if (!device) return;
-    imageLayoutMap.clear();
 
     StateTracker::PreCallRecordDestroyDevice(device, pAllocator);
 
@@ -3741,7 +3732,7 @@ struct CommandBufferSubmitState {
 
     bool Validate(const core_error::Location &loc, const CMD_BUFFER_STATE &cb_node, uint32_t perf_pass) {
         bool skip = false;
-        skip |= core->ValidateCmdBufImageLayouts(loc, &cb_node, core->imageLayoutMap, overlay_image_layout_map);
+        skip |= core->ValidateCmdBufImageLayouts(loc, &cb_node, overlay_image_layout_map);
         auto cmd = cb_node.commandBuffer();
         current_cmds.push_back(cmd);
         skip |= core->ValidatePrimaryCommandBufferState(loc, &cb_node,
@@ -15244,7 +15235,6 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
         if (swapchain_data) {
             for (const auto &swapchain_image : swapchain_data->images) {
                 if (!swapchain_image.image_state) continue;
-                imageLayoutMap.erase(swapchain_image.image_state);
                 qfo_release_image_barrier_map.erase(swapchain_image.image_state->image());
             }
         }
@@ -15262,8 +15252,8 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
     // pSwapchainImages is not nullptr and it needs to wait until StateTracker::PostCallRecordGetSwapchainImagesKHR.
 
     uint32_t new_swapchain_image_index = 0;
+    auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
     if (((result == VK_SUCCESS) || (result == VK_INCOMPLETE)) && pSwapchainImages) {
-        auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
         const auto image_vector_size = swapchain_state->images.size();
 
         for (; new_swapchain_image_index < *pSwapchainImageCount; ++new_swapchain_image_index) {
@@ -15277,8 +15267,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
 
     if (((result == VK_SUCCESS) || (result == VK_INCOMPLETE)) && pSwapchainImages) {
         for (; new_swapchain_image_index < *pSwapchainImageCount; ++new_swapchain_image_index) {
-            auto image_state = Get<IMAGE_STATE>(pSwapchainImages[new_swapchain_image_index]);
-            AddInitialLayoutintoImageLayoutMap(*image_state, imageLayoutMap);
+            swapchain_state->images[new_swapchain_image_index].image_state->SetInitialLayoutMap();
         }
     }
 }

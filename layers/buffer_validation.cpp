@@ -334,7 +334,7 @@ uint32_t FullMipChainLevels(VkExtent3D extent) { return FullMipChainLevels(exten
 uint32_t FullMipChainLevels(VkExtent2D extent) { return FullMipChainLevels(extent.height, extent.width); }
 
 bool CoreChecks::FindLayouts(const IMAGE_STATE &image_state, std::vector<VkImageLayout> &layouts) const {
-    const auto *layout_range_map = GetLayoutRangeMap(imageLayoutMap, image_state);
+    const auto *layout_range_map = image_state.layout_range_map.get();
     if (!layout_range_map) return false;
     // TODO: FindLayouts function should mutate into a ValidatePresentableLayout with the loop wrapping the LogError
     //       from the caller. You can then use decode to add the subresource of the range::begin to the error message.
@@ -2060,7 +2060,42 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
 
     StateTracker::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, result);
     auto image_state = Get<IMAGE_STATE>(*pImage);
-    AddInitialLayoutintoImageLayoutMap(*image_state, imageLayoutMap);
+    if (!image_state->IsSwapchainImage()) {
+        image_state->SetInitialLayoutMap();
+    }
+}
+void CoreChecks::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
+                                               VkResult result) {
+    if (VK_SUCCESS != result) return;
+    ValidationStateTracker::PostCallRecordBindImageMemory(device, image, mem, memoryOffset, result);
+    auto image_state = Get<IMAGE_STATE>(image);
+    if (image_state && image_state->IsSwapchainImage()) {
+        image_state->SetInitialLayoutMap();
+    }
+}
+
+void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
+                                                VkResult result) {
+    if (VK_SUCCESS != result) return;
+    ValidationStateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, result);
+    for (uint32_t i = 0; i < bindInfoCount; i++) {
+        auto image_state = Get<IMAGE_STATE>(pBindInfos[i].image);
+        if (image_state && image_state->IsSwapchainImage()) {
+            image_state->SetInitialLayoutMap();
+        }
+    }
+}
+
+void CoreChecks::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
+                                                   VkResult result) {
+    if (VK_SUCCESS != result) return;
+    ValidationStateTracker::PostCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, result);
+    for (uint32_t i = 0; i < bindInfoCount; i++) {
+        auto image_state = Get<IMAGE_STATE>(pBindInfos[i].image);
+        if (image_state && image_state->IsSwapchainImage()) {
+            image_state->SetInitialLayoutMap();
+        }
+    }
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) const {
@@ -2080,11 +2115,7 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
 
 void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
     // Clean up validation specific data
-    auto image_state = Get<IMAGE_STATE>(image);
     qfo_release_image_barrier_map.erase(image);
-
-    imageLayoutMap.erase(image_state);
-
     // Clean up generic image state
     StateTracker::PreCallRecordDestroyImage(device, image, pAllocator);
 }
@@ -4253,17 +4284,17 @@ void CoreChecks::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, co
                        pBlitImageInfo->filter);
 }
 
-GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
+static GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
     // This approach allows for a single hash lookup or/create new
-    auto &layout_map = map[&image_state];
+    auto &layout_map = map[reinterpret_cast<uintptr_t>(image_state.layout_range_map.get())];
     if (!layout_map) {
         layout_map.emplace(image_state.subresource_encoder.SubresourceCount());
     }
     return &layout_map;
 }
 
-const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
-    auto it = map.find(&image_state);
+static const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
+    auto it = map.find(reinterpret_cast<uintptr_t>(image_state.layout_range_map.get()));
     if (it != map.end()) {
         return &it->second;
     }
@@ -4291,7 +4322,6 @@ struct GlobalLayoutUpdater {
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
 bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFER_STATE *pCB,
-                                            const GlobalImageLayoutMap &globalImageLayoutMap,
                                             GlobalImageLayoutMap &overlayLayoutMap) const {
     if (disabled[image_layout_validation]) return false;
     bool skip = false;
@@ -4305,10 +4335,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
         if (layout_map.empty()) continue;
 
         auto *overlay_map = GetLayoutRangeMap(overlayLayoutMap, *image_state);
-        const auto *global_map = GetLayoutRangeMap(globalImageLayoutMap, *image_state);
-        if (global_map == nullptr) {
-            global_map = &empty_map;
-        }
+        const auto *global_map = image_state->layout_range_map.get();
+        assert(global_map);
 
         // Note: don't know if it would matter
         // if (global_map->empty() && overlay_map->empty()) // skip this next loop...;
@@ -4372,8 +4400,7 @@ void CoreChecks::UpdateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB) {
     for (const auto &layout_map_entry : pCB->image_layout_map) {
         const auto *image_state = layout_map_entry.first;
         const auto &subres_map = layout_map_entry.second;
-        auto *global_map = GetLayoutRangeMap(imageLayoutMap, *image_state);
-        sparse_container::splice(*global_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
+        sparse_container::splice(*image_state->layout_range_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
     }
 }
 

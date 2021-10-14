@@ -1093,13 +1093,6 @@ void CMD_BUFFER_STATE::SetImageLayout(const IMAGE_STATE &image_state, const VkIm
     if (subresource_map->SetSubresourceRangeLayout(*this, image_subresource_range, layout, expected_layout)) {
         image_layout_change_count++;  // Change the version of this data to force revalidation
     }
-    for (const auto *alias_state : image_state.aliasing_images) {
-        assert(alias_state);
-        // The map state of the aliases should all be in sync, so no need to check the return value
-        subresource_map = GetImageSubresourceLayoutMap(*alias_state);
-        assert(subresource_map);
-        subresource_map->SetSubresourceRangeLayout(*this, image_subresource_range, layout, expected_layout);
-    }
 }
 
 // Set the initial image layout for all slices of an image view
@@ -1110,11 +1103,6 @@ void CMD_BUFFER_STATE::SetImageViewInitialLayout(const IMAGE_VIEW_STATE &view_st
     IMAGE_STATE *image_state = view_state.image_state.get();
     auto *subresource_map = GetImageSubresourceLayoutMap(*image_state);
     subresource_map->SetSubresourceRangeInitialLayout(*this, layout, view_state);
-    for (const auto *alias_state : image_state->aliasing_images) {
-        assert(alias_state);
-        subresource_map = GetImageSubresourceLayoutMap(*alias_state);
-        subresource_map->SetSubresourceRangeInitialLayout(*this, layout, view_state);
-    }
 }
 
 // Set the initial image layout for a passed non-normalized subresource range
@@ -1123,12 +1111,6 @@ void CMD_BUFFER_STATE::SetImageInitialLayout(const IMAGE_STATE &image_state, con
     auto *subresource_map = GetImageSubresourceLayoutMap(image_state);
     assert(subresource_map);
     subresource_map->SetSubresourceRangeInitialLayout(*this, image_state.NormalizeSubresourceRange(range), layout);
-    for (const auto *alias_state : image_state.aliasing_images) {
-        assert(alias_state);
-        subresource_map = GetImageSubresourceLayoutMap(*alias_state);
-        assert(subresource_map);
-        subresource_map->SetSubresourceRangeInitialLayout(*this, alias_state->NormalizeSubresourceRange(range), layout);
-    }
 }
 
 void CMD_BUFFER_STATE::SetImageInitialLayout(VkImage image, const VkImageSubresourceRange &range, VkImageLayout layout) {

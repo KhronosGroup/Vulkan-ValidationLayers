@@ -65,6 +65,8 @@ static inline VkImageSubresourceRange RangeFromLayers(const VkImageSubresourceLa
     return subresource_range;
 }
 
+typedef subresource_adapter::BothRangeMap<VkImageLayout, 16> GlobalImageLayoutRangeMap;
+
 // State for VkImage objects.
 // Parent -> child relationships in the object usage tree:
 // 1. Normal images:
@@ -111,7 +113,7 @@ class IMAGE_STATE : public BINDABLE {
     std::unique_ptr<const subresource_adapter::ImageRangeEncoder> fragment_encoder;  // Fragment resolution encoder
     const VkDevice store_device_as_workaround;                                       // TODO REMOVE WHEN encoder can be const
 
-    layer_data::unordered_set<IMAGE_STATE *> aliasing_images;
+    std::shared_ptr<GlobalImageLayoutRangeMap> layout_range_map;
 
     IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags features);
     IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
@@ -171,8 +173,6 @@ class IMAGE_STATE : public BINDABLE {
         }
     }
 
-    void SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset) override;
-
     void SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint32_t swapchain_index);
 
     VkDeviceSize GetFakeBaseAddress() const override;
@@ -185,8 +185,10 @@ class IMAGE_STATE : public BINDABLE {
         return ::NormalizeSubresourceRange(createInfo, range);
     }
 
+    void SetInitialLayoutMap();
+
+    uintptr_t GetLayoutId() const { return reinterpret_cast<uintptr_t>(layout_range_map.get()); }
   protected:
-    void AddAliasingImage(IMAGE_STATE *bound_image);
     void Unlink();
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
 };
