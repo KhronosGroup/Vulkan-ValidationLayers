@@ -298,7 +298,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     std::vector<std::function<bool(const ValidationStateTracker *device_data, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                    uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
         queryUpdates;
-    layer_data::unordered_set<cvdescriptorset::DescriptorSet *> validated_descriptor_sets;
+    layer_data::unordered_set<const cvdescriptorset::DescriptorSet *> validated_descriptor_sets;
+    layer_data::unordered_map<const cvdescriptorset::DescriptorSet *, cvdescriptorset::DescriptorSet::CachedValidation>
+        descriptorset_cache;
     // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)
     IndexBufferBinding index_buffer_binding;
     bool performance_lock_acquired = false;

@@ -759,12 +759,8 @@ class DescriptorSet : public BASE_NODE {
                                     const TrackedBindings &set, uint32_t limit);
     void FilterBindingReqs(const CMD_BUFFER_STATE &, const PIPELINE_STATE &, const BindingReqMap &in_req,
                            BindingReqMap *out_req) const;
-    void UpdateValidationCache(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
-                               const BindingReqMap &updated_bindings);
-    void ClearCachedDynamicDescriptorValidation(CMD_BUFFER_STATE *cb_state) {
-        cached_validation_[cb_state].dynamic_buffers.clear();
-    }
-    void ClearCachedValidation(CMD_BUFFER_STATE *cb_state) { cached_validation_.erase(cb_state); }
+    void UpdateValidationCache(CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline, const BindingReqMap &updated_bindings);
+
     VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t index) const {
         return layout_->GetImmutableSamplerPtrFromBinding(index);
     };
@@ -813,6 +809,19 @@ class DescriptorSet : public BASE_NODE {
     void Reset() {
         parent_nodes_.clear();
     }
+    // Cached binding and validation support:
+    //
+    // For the lifespan of a given command buffer recording, do lazy evaluation, caching, and dirtying of
+    // expensive validation operation (typically per-draw)
+    // Track the validation caching of bindings vs. the command buffer and draw state
+    typedef layer_data::unordered_map<uint32_t, uint64_t> VersionedBindings;
+    // this structure is stored in a map in CMD_BUFFER_STATE, with an entry for every descriptor set.
+    struct CachedValidation {
+        TrackedBindings command_binding_and_usage;                                     // Persistent for the life of the recording
+        TrackedBindings non_dynamic_buffers;                                           // Persistent for the life of the recording
+        TrackedBindings dynamic_buffers;                                               // Dirtied (flushed) each BindDescriptorSet
+        layer_data::unordered_map<const PIPELINE_STATE *, VersionedBindings> image_samplers;  // Tested vs. changes to CB's ImageLayout
+    };
   private:
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers(ValidationStateTracker *state_data);
@@ -833,24 +842,8 @@ class DescriptorSet : public BASE_NODE {
     // If this descriptor set is a push descriptor set, the descriptor
     // set writes that were last pushed.
     std::vector<safe_VkWriteDescriptorSet> push_descriptor_set_writes;
-
-    // Cached binding and validation support:
-    //
-    // For the lifespan of a given command buffer recording, do lazy evaluation, caching, and dirtying of
-    // expensive validation operation (typically per-draw)
-    typedef layer_data::unordered_map<CMD_BUFFER_STATE *, TrackedBindings> TrackedBindingMap;
-    // Track the validation caching of bindings vs. the command buffer and draw state
-    typedef layer_data::unordered_map<uint32_t, uint64_t> VersionedBindings;
-    struct CachedValidation {
-        TrackedBindings command_binding_and_usage;                                     // Persistent for the life of the recording
-        TrackedBindings non_dynamic_buffers;                                           // Persistent for the life of the recording
-        TrackedBindings dynamic_buffers;                                               // Dirtied (flushed) each BindDescriptorSet
-        layer_data::unordered_map<const PIPELINE_STATE *, VersionedBindings> image_samplers;  // Tested vs. changes to CB's ImageLayout
-    };
-    typedef layer_data::unordered_map<const CMD_BUFFER_STATE *, CachedValidation> CachedValidationMap;
-    // Image and ImageView bindings are validated per pipeline and not invalidate by repeated binding
-    CachedValidationMap cached_validation_;
 };
+
 // For the "bindless" style resource usage with many descriptors, need to optimize binding and validation
 class PrefilterBindRequestMap {
   public:
