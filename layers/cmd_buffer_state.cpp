@@ -691,9 +691,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
 
 void CMD_BUFFER_STATE::End(VkResult result) {
     // Cached validation is specific to a specific recording of a specific command buffer.
-    for (auto *descriptor_set : validated_descriptor_sets) {
-        descriptor_set->ClearCachedValidation(this);
-    }
+    descriptorset_cache.clear();
     validated_descriptor_sets.clear();
     if (VK_SUCCESS == result) {
         state = CB_RECORDED;

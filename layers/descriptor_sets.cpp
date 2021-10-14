@@ -2057,8 +2057,8 @@ void cvdescriptorset::DescriptorSet::FilterOneBindingReq(const BindingReqMap::va
 void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
                                                        const BindingReqMap &in_req, BindingReqMap *out_req) const {
     // For const cleanliness we have to find in the maps...
-    const auto validated_it = cached_validation_.find(&cb_state);
-    if (validated_it == cached_validation_.cend()) {
+    const auto validated_it = cb_state.descriptorset_cache.find(this);
+    if (validated_it == cb_state.descriptorset_cache.end()) {
         // We have nothing validated, copy in to out
         for (const auto &binding_req_pair : in_req) {
             out_req->emplace(binding_req_pair);
@@ -2106,10 +2106,9 @@ void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &c
     }
 }
 
-void cvdescriptorset::DescriptorSet::UpdateValidationCache(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
+void cvdescriptorset::DescriptorSet::UpdateValidationCache(CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
                                                            const BindingReqMap &updated_bindings) {
-    // For const cleanliness we have to find in the maps...
-    auto &validated = cached_validation_[&cb_state];
+    auto &validated = cb_state.descriptorset_cache[this];
 
     auto &image_sample_version = validated.image_samplers[&pipeline];
     auto &dynamic_buffers = validated.dynamic_buffers;
