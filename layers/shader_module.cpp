@@ -1106,6 +1106,7 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_
     auto type = builtin_instr.opcode();
     uint32_t target_id = builtin_instr.word(1);
     bool init_complete = false;
+    uint32_t target_member_offset = 0;
 
     if (type == spv::OpMemberDecorate) {
         // Built-in is part of a structure -- examine instructions up to first function body to get initial IDs
@@ -1122,6 +1123,7 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_
                             const auto type_insn = get_def(type_id);
                             if ((type_insn.opcode() == spv::OpTypeArray) && (type_insn.word(2) == target_id)) {
                                 target_id = insn.word(1);
+                                target_member_offset = 1;
                             }
                         }
                     }
@@ -1161,10 +1163,15 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_
                     case spv::OpAccessChain:
                         if (insn.word(3) == target_id) {
                             if (type == spv::OpMemberDecorate) {
-                                // The last member offset in the chain should match the decorator offset
-                                auto value = GetConstantValueById(insn.word(insn.len() - 1));
-                                if (value == builtin_instr.word(2)) {
-                                    target_id = insn.word(2);
+                                // Get the target member of the struct
+                                // NOTE: this will only work for structs and arrays of structs. Deeper levels of nesting (e.g.,
+                                // arrays of structs of structs) is not currently supported.
+                                const auto value_itr = GetConstantDef(insn.word(4 + target_member_offset));
+                                if (value_itr != end()) {
+                                    auto value = GetConstantValue(value_itr);
+                                    if (value == builtin_instr.word(2)) {
+                                        target_id = insn.word(2);
+                                    }
                                 }
                             } else {
                                 target_id = insn.word(2);
