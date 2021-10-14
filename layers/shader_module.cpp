@@ -24,6 +24,7 @@
 #include "vk_layer_utils.h"
 #include "pipeline_state.h"
 #include "descriptor_sets.h"
+#include "spirv_grammar_helper.h"
 
 void decoration_set::merge(decoration_set const &other) {
     if (other.flags & location_bit) location = other.location;
@@ -1951,78 +1952,4 @@ std::vector<uint32_t> FindEntrypointInterfaces(const spirv_inst_iter &entrypoint
     for (; word < entrypoint.len(); word++) interfaces.push_back(entrypoint.word(word));
 
     return interfaces;
-}
-
-bool AtomicOperation(uint32_t opcode) {
-    switch (opcode) {
-        case spv::OpAtomicLoad:
-        case spv::OpAtomicStore:
-        case spv::OpAtomicExchange:
-        case spv::OpAtomicCompareExchange:
-        case spv::OpAtomicCompareExchangeWeak:
-        case spv::OpAtomicIIncrement:
-        case spv::OpAtomicIDecrement:
-        case spv::OpAtomicIAdd:
-        case spv::OpAtomicISub:
-        case spv::OpAtomicSMin:
-        case spv::OpAtomicUMin:
-        case spv::OpAtomicSMax:
-        case spv::OpAtomicUMax:
-        case spv::OpAtomicAnd:
-        case spv::OpAtomicOr:
-        case spv::OpAtomicXor:
-        case spv::OpAtomicFAddEXT:
-        case spv::OpAtomicFMinEXT:
-        case spv::OpAtomicFMaxEXT:
-            return true;
-        default:
-            return false;
-    }
-    return false;
-}
-
-// Only includes valid group operations used in Vulkan (for now thats only subgroup ops) and any non supported operation will be
-// covered with VUID 01090
-bool GroupOperation(uint32_t opcode) {
-    switch (opcode) {
-        case spv::OpGroupNonUniformElect:
-        case spv::OpGroupNonUniformAll:
-        case spv::OpGroupNonUniformAny:
-        case spv::OpGroupNonUniformAllEqual:
-        case spv::OpGroupNonUniformBroadcast:
-        case spv::OpGroupNonUniformBroadcastFirst:
-        case spv::OpGroupNonUniformBallot:
-        case spv::OpGroupNonUniformInverseBallot:
-        case spv::OpGroupNonUniformBallotBitExtract:
-        case spv::OpGroupNonUniformBallotBitCount:
-        case spv::OpGroupNonUniformBallotFindLSB:
-        case spv::OpGroupNonUniformBallotFindMSB:
-        case spv::OpGroupNonUniformShuffle:
-        case spv::OpGroupNonUniformShuffleXor:
-        case spv::OpGroupNonUniformShuffleUp:
-        case spv::OpGroupNonUniformShuffleDown:
-        case spv::OpGroupNonUniformIAdd:
-        case spv::OpGroupNonUniformFAdd:
-        case spv::OpGroupNonUniformIMul:
-        case spv::OpGroupNonUniformFMul:
-        case spv::OpGroupNonUniformSMin:
-        case spv::OpGroupNonUniformUMin:
-        case spv::OpGroupNonUniformFMin:
-        case spv::OpGroupNonUniformSMax:
-        case spv::OpGroupNonUniformUMax:
-        case spv::OpGroupNonUniformFMax:
-        case spv::OpGroupNonUniformBitwiseAnd:
-        case spv::OpGroupNonUniformBitwiseOr:
-        case spv::OpGroupNonUniformBitwiseXor:
-        case spv::OpGroupNonUniformLogicalAnd:
-        case spv::OpGroupNonUniformLogicalOr:
-        case spv::OpGroupNonUniformLogicalXor:
-        case spv::OpGroupNonUniformQuadBroadcast:
-        case spv::OpGroupNonUniformQuadSwap:
-        case spv::OpGroupNonUniformPartitionNV:
-            return true;
-        default:
-            return false;
-    }
-    return false;
 }

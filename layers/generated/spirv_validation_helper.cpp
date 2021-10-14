@@ -20,6 +20,9 @@
  *
  * Author: Spencer Fricke <s.fricke@samsung.com>
  *
+ * This file is related to anything that is found in the Vulkan XML related
+ * to SPIR-V. Anything related to the SPIR-V grammar belongs in spirv_grammar_helper
+ *
  ****************************************************************************/
 
 #include <string>

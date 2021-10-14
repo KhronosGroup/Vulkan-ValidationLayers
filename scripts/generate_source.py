@@ -36,6 +36,7 @@ verify_exclude = ['.clang-format',
 def main(argv):
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
     parser.add_argument('registry', metavar='REGISTRY_PATH', help='path to the Vulkan-Headers registry directory')
+    parser.add_argument('grammar', metavar='GRAMMAR_PATH', help='path to the SPIRV-Headers grammar directory')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--incremental', action='store_true', help='only update repo files that change')
     group.add_argument('-v', '--verify', action='store_true', help='verify repo files match generator output')
@@ -43,6 +44,7 @@ def main(argv):
 
     gen_cmds = [*[[common_codegen.repo_relative('scripts/lvl_genvk.py'),
                    '-registry', os.path.abspath(os.path.join(args.registry,  'vk.xml')),
+                   '-grammar', os.path.abspath(os.path.join(args.grammar,  'spirv.core.grammar.json')),
                    '-quiet',
                    filename] for filename in ["chassis.cpp",
                                               "chassis.h",
@@ -70,6 +72,8 @@ def main(argv):
                                               "best_practices.h",
                                               "best_practices.cpp",
                                               "spirv_validation_helper.cpp",
+                                              "spirv_grammar_helper.cpp",
+                                              "spirv_grammar_helper.h",
                                               "command_validation.cpp",
                                               "command_validation.h",
                                               "corechecks_optick_instrumentation.cpp",

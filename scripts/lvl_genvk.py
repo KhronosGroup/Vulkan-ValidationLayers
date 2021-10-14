@@ -512,6 +512,28 @@ def makeGenOpts(args):
             emitSpirv         = emitSpirvPat)
         ]
 
+    # Options for spirv_grammar_helper code-generated source
+    # Only uses spirv grammar and not the vk.xml
+    genOpts['spirv_grammar_helper.cpp'] = [
+          SpirvGrammarHelperOutputGenerator,
+          SpirvGrammarHelperOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'spirv_grammar_helper.cpp',
+            directory         = directory,
+            grammar           = args.grammar)
+        ]
+
+    # Options for spirv_grammar_helper code-generated header
+    # Only uses spirv grammar and not the vk.xml
+    genOpts['spirv_grammar_helper.h'] = [
+          SpirvGrammarHelperOutputGenerator,
+          SpirvGrammarHelperOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'spirv_grammar_helper.h',
+            directory         = directory,
+            grammar           = args.grammar)
+        ]
+
     # Options for command_validation code-generated header
     genOpts['command_validation.cpp'] = [
           CommandValidationOutputGenerator,
@@ -624,6 +646,9 @@ if __name__ == '__main__':
     parser.add_argument('-registry', action='store',
                         default='vk.xml',
                         help='Use specified registry file instead of vk.xml')
+    parser.add_argument('-grammar', action='store',
+                        default='spirv.core.grammar.json',
+                        help='Use specified grammar file instead of spirv.core.grammar.json')
     parser.add_argument('-time', action='store_true',
                         help='Enable timing')
     parser.add_argument('-validate', action='store_true',
@@ -670,6 +695,7 @@ if __name__ == '__main__':
     from lvt_file_generator import LvtFileOutputGenerator, LvtFileOutputGeneratorOptions
     from best_practices_generator import BestPracticesOutputGenerator, BestPracticesOutputGeneratorOptions
     from spirv_validation_generator import SpirvValidationHelperOutputGenerator, SpirvValidationHelperOutputGeneratorOptions
+    from spirv_grammar_generator import SpirvGrammarHelperOutputGenerator, SpirvGrammarHelperOutputGeneratorOptions
     from command_validation_generator import CommandValidationOutputGenerator, CommandValidationOutputGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility

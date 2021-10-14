@@ -274,7 +274,10 @@ directory which is not intended to be modified directly. Instead, changes should
 made to the corresponding generator in the `scripts` directory. The source files can
 then be regenerated using `scripts/generate_source.py`:
 
-    python3 scripts/generate_source.py PATH_TO_VULKAN_HEADERS_REGISTRY_DIR
+    python3 scripts/generate_source.py PATH_TO_VULKAN_HEADERS_REGISTRY_DIR PATH_TO_SPIRV_HEADERS_GRAMMAR_DIR
+
+    // Example
+    python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/
 
 A helper CMake target `VulkanVL_generated_source` is also provided to simplify
 the invocation of `scripts/generate_source.py` from the build directory:
