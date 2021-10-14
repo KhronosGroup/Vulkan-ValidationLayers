@@ -271,12 +271,15 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
     } else {
         std::string bufferoob_string = getLayerOption("khronos_validation.gpuav_buffer_oob");
         transform(bufferoob_string.begin(), bufferoob_string.end(), bufferoob_string.begin(), ::tolower);
-        device_gpu_assisted->buffer_oob_enabled = bufferoob_string.length() ? !bufferoob_string.compare("true") : true;
+        device_gpu_assisted->buffer_oob_enabled = !bufferoob_string.empty() ? !bufferoob_string.compare("true") : true;
     }
+    std::string descriptor_indexing_string = getLayerOption("khronos_validation.gpuav_descriptor_indexing");
+    transform(descriptor_indexing_string.begin(), descriptor_indexing_string.end(), descriptor_indexing_string.begin(), ::tolower);
+    bool validate_descriptor_indexing = !descriptor_indexing_string.empty() ? !descriptor_indexing_string.compare("true") : true;
 
     std::string draw_indirect_string = getLayerOption("khronos_validation.validate_draw_indirect");
     transform(draw_indirect_string.begin(), draw_indirect_string.end(), draw_indirect_string.begin(), ::tolower);
-    device_gpu_assisted->validate_draw_indirect = draw_indirect_string.length() ? !draw_indirect_string.compare("true") : true;
+    device_gpu_assisted->validate_draw_indirect = !draw_indirect_string.empty() ? !draw_indirect_string.compare("true") : true;
 
     if (device_gpu_assisted->phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(device, "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
@@ -302,7 +305,9 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
     device_gpu_assisted->physicalDevice = physicalDevice;
     device_gpu_assisted->device = *pDevice;
     device_gpu_assisted->output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + 1);
-    device_gpu_assisted->descriptor_indexing = CheckForDescriptorIndexing(device_gpu_assisted->enabled_features);
+    if (validate_descriptor_indexing) {
+        device_gpu_assisted->descriptor_indexing = CheckForDescriptorIndexing(device_gpu_assisted->enabled_features);
+    }
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
                                             VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT |

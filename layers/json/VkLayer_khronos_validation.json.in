@@ -484,6 +484,23 @@
                             "platforms": [ "WINDOWS", "LINUX" ],
                             "settings": [
                                 {
+                                    "key": "gpuav_descriptor_indexing",
+                                    "label": "Check descriptor indexing accesses",
+                                    "description": "Enable descriptor indexing access checking",
+                                    "type": "BOOL",
+                                    "default": true,
+                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "dependence": {
+                                        "mode": "ANY",
+                                        "settings": [
+                                            {
+                                                "key": "enables",
+                                                "value": [ "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT" ]
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
                                     "key": "gpuav_buffer_oob",
                                     "label": "Check Out of Bounds ",
                                     "description": "Enable buffer out of bounds checking",

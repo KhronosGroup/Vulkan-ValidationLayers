@@ -142,6 +142,8 @@ khronos_validation.log_filename = stdout
 #khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT
 # Example entry showing how to disable buffer out of bounds checking
 #khronos_validation.gpuav_buffer_oob = false
+# Example entry showing how to disable descriptor indexing access checking
+#khronos_validation.gpuav_descriptor_indexing = false
 
 # Example entry showing how to Enable Best Practices Validation
 #khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT
