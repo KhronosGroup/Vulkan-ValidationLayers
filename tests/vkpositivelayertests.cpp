@@ -16054,6 +16054,137 @@ TEST_F(VkPositiveLayerTest, DestroyQueryPoolAfterGetQueryPoolResults) {
     } while (res != VK_SUCCESS);
 
     vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+}
 
+TEST_F(VkPositiveLayerTest, ShaderPointSizeStructMemeberWritten) {
+    TEST_DESCRIPTION("Write built-in PointSize within a struct");
+    m_errorMonitor->ExpectSuccess();
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const std::string vs_src = R"asm(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %14 %25 %47 %52
+               OpSource GLSL 450
+               OpMemberDecorate %12 0 BuiltIn Position
+               OpMemberDecorate %12 1 BuiltIn PointSize
+               OpMemberDecorate %12 2 BuiltIn ClipDistance
+               OpMemberDecorate %12 3 BuiltIn CullDistance
+               OpDecorate %12 Block
+               OpMemberDecorate %18 0 ColMajor
+               OpMemberDecorate %18 0 Offset 0
+               OpMemberDecorate %18 0 MatrixStride 16
+               OpMemberDecorate %18 1 Offset 64
+               OpMemberDecorate %18 2 Offset 80
+               OpDecorate %18 Block
+               OpDecorate %25 Location 0
+               OpDecorate %47 Location 1
+               OpDecorate %52 Location 0
+          %3 = OpTypeVoid
+          %4 = OpTypeFunction %3
+          %7 = OpTypeFloat 32
+          %8 = OpTypeVector %7 4
+          %9 = OpTypeInt 32 0
+         %10 = OpConstant %9 1
+         %11 = OpTypeArray %7 %10
+         %12 = OpTypeStruct %8 %7 %11 %11
+         %13 = OpTypePointer Output %12
+         %14 = OpVariable %13 Output
+         %15 = OpTypeInt 32 1
+         %16 = OpConstant %15 0
+         %17 = OpTypeMatrix %8 4
+         %18 = OpTypeStruct %17 %7 %8
+         %19 = OpTypePointer PushConstant %18
+         %20 = OpVariable %19 PushConstant
+         %21 = OpTypePointer PushConstant %17
+         %24 = OpTypePointer Input %8
+         %25 = OpVariable %24 Input
+         %28 = OpTypePointer Output %8
+         %30 = OpConstant %7 0.5
+         %31 = OpConstant %9 2
+         %32 = OpTypePointer Output %7
+         %36 = OpConstant %9 3
+         %46 = OpConstant %15 1
+         %47 = OpVariable %24 Input
+         %48 = OpTypePointer Input %7
+         %52 = OpVariable %28 Output
+         %53 = OpTypeVector %7 3
+         %56 = OpConstant %7 1
+          %main = OpFunction %3 None %4
+          %6 = OpLabel
+
+               ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+               ; For the following, only the _first_ index of the access chain
+               ; should be used for output validation, as subsequent indices refer
+               ; to individual components within the output variable of interest.
+               ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+         %22 = OpAccessChain %21 %20 %16
+         %23 = OpLoad %17 %22
+         %26 = OpLoad %8 %25
+         %27 = OpMatrixTimesVector %8 %23 %26
+         %29 = OpAccessChain %28 %14 %16
+               OpStore %29 %27
+         %33 = OpAccessChain %32 %14 %16 %31
+         %34 = OpLoad %7 %33
+         %35 = OpFMul %7 %30 %34
+         %37 = OpAccessChain %32 %14 %16 %36
+         %38 = OpLoad %7 %37
+         %39 = OpFMul %7 %30 %38
+         %40 = OpFAdd %7 %35 %39
+         %41 = OpAccessChain %32 %14 %16 %31
+               OpStore %41 %40
+         %42 = OpAccessChain %32 %14 %16 %10
+         %43 = OpLoad %7 %42
+         %44 = OpFNegate %7 %43
+         %45 = OpAccessChain %32 %14 %16 %10
+               OpStore %45 %44
+         %49 = OpAccessChain %48 %47 %36
+         %50 = OpLoad %7 %49
+         %51 = OpAccessChain %32 %14 %46
+               OpStore %51 %50
+
+         %54 = OpLoad %8 %47
+         %55 = OpVectorShuffle %53 %54 %54 0 1 2
+         %57 = OpCompositeExtract %7 %55 0
+         %58 = OpCompositeExtract %7 %55 1
+         %59 = OpCompositeExtract %7 %55 2
+         %60 = OpCompositeConstruct %8 %57 %58 %59 %56
+               OpStore %52 %60
+               OpReturn
+               OpFunctionEnd
+    )asm";
+    auto vs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_VERTEX_BIT, vs_src, "main");
+
+    if (vs) {
+        VkPushConstantRange push_constant_ranges[1]{{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * (16 + 4 + 1)}};
+
+        VkPipelineLayoutCreateInfo const pipeline_layout_info{
+            VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, push_constant_ranges};
+
+        VkVertexInputBindingDescription input_binding[2] = {
+            {0, 16, VK_VERTEX_INPUT_RATE_VERTEX},
+            {1, 16, VK_VERTEX_INPUT_RATE_VERTEX},
+        };
+        VkVertexInputAttributeDescription input_attribs[2] = {
+            {0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+            {1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+        };
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {vs->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        pipe.pipeline_layout_ci_ = pipeline_layout_info;
+        pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        pipe.vi_ci_.pVertexBindingDescriptions = input_binding;
+        pipe.vi_ci_.vertexBindingDescriptionCount = 2;
+        pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
+        pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+    } else {
+        printf("%s Error creating shader from assembly\n", kSkipPrefix);
+    }
     m_errorMonitor->VerifyNotFound();
 }
