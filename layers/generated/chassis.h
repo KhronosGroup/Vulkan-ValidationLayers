@@ -2074,6 +2074,9 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountAMD(
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
 
 
 VKAPI_ATTR VkResult VKAPI_CALL GetShaderInfoAMD(
@@ -3045,6 +3048,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiIndexedEXT(
     uint32_t                                    firstInstance,
     uint32_t                                    stride,
     const int32_t*                              pVertexOffset);
+
 
 
 

@@ -368,6 +368,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_4444_formats{kNotEnabled};
     ExtEnabled vk_ext_astc_decode_mode{kNotEnabled};
     ExtEnabled vk_ext_blend_operation_advanced{kNotEnabled};
+    ExtEnabled vk_ext_border_color_swizzle{kNotEnabled};
     ExtEnabled vk_ext_buffer_device_address{kNotEnabled};
     ExtEnabled vk_ext_calibrated_timestamps{kNotEnabled};
     ExtEnabled vk_ext_color_write_enable{kNotEnabled};
@@ -438,6 +439,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_video_decode_h264{kNotEnabled};
     ExtEnabled vk_ext_video_decode_h265{kNotEnabled};
     ExtEnabled vk_ext_video_encode_h264{kNotEnabled};
+    ExtEnabled vk_ext_video_encode_h265{kNotEnabled};
     ExtEnabled vk_ext_ycbcr_2plane_444_formats{kNotEnabled};
     ExtEnabled vk_ext_ycbcr_image_arrays{kNotEnabled};
     ExtEnabled vk_fuchsia_buffer_collection{kNotEnabled};
@@ -627,6 +629,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_astc_decode_mode, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_blend_operation_advanced, {})},
+            {VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_border_color_swizzle, {{
+                           {&DeviceExtensions::vk_ext_custom_border_color, VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME}}})},
             {VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_buffer_device_address, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_calibrated_timestamps, {{
@@ -761,6 +765,10 @@ struct DeviceExtensions : public InstanceExtensions {
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             {VK_EXT_VIDEO_ENCODE_H264_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_video_encode_h264, {{
+                           {&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}}})},
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            {VK_EXT_VIDEO_ENCODE_H265_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_video_encode_h265, {{
                            {&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}}})},
 #endif
             {VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_ycbcr_2plane_444_formats, {{
@@ -1190,6 +1198,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_4444_FORMATS_EXTENSION_NAME,
     VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME,
     VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME,
+    VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME,
     VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
     VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
     VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME,
@@ -1267,6 +1276,9 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     VK_EXT_VIDEO_ENCODE_H264_EXTENSION_NAME,
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    VK_EXT_VIDEO_ENCODE_H265_EXTENSION_NAME,
 #endif
     VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME,
     VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME,

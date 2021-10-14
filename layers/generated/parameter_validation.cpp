@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 195;
+const uint32_t GeneratedVulkanHeaderVersion = 196;
 
 const VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR|VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV|VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV|VK_ACCESS_NONE_KHR;
 const VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -82,7 +82,7 @@ const VkDisplayPlaneAlphaFlagsKHR AllVkDisplayPlaneAlphaFlagBitsKHR = VK_DISPLAY
 const VkVideoChromaSubsamplingFlagsKHR AllVkVideoChromaSubsamplingFlagBitsKHR = VK_VIDEO_CHROMA_SUBSAMPLING_INVALID_BIT_KHR|VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR|VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR|VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR|VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR;
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-const VkVideoCodecOperationFlagsKHR AllVkVideoCodecOperationFlagBitsKHR = VK_VIDEO_CODEC_OPERATION_INVALID_BIT_KHR|VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_EXT|VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_EXT|VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_EXT;
+const VkVideoCodecOperationFlagsKHR AllVkVideoCodecOperationFlagBitsKHR = VK_VIDEO_CODEC_OPERATION_INVALID_BIT_KHR|VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_EXT|VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_EXT|VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_EXT|VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_EXT;
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 const VkVideoCodingControlFlagsKHR AllVkVideoCodingControlFlagBitsKHR = VK_VIDEO_CODING_CONTROL_DEFAULT_KHR|VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR;
@@ -123,6 +123,18 @@ const VkVideoEncodeH264InputModeFlagsEXT AllVkVideoEncodeH264InputModeFlagBitsEX
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 const VkVideoEncodeH264OutputModeFlagsEXT AllVkVideoEncodeH264OutputModeFlagBitsEXT = VK_VIDEO_ENCODE_H264_OUTPUT_MODE_FRAME_BIT_EXT|VK_VIDEO_ENCODE_H264_OUTPUT_MODE_SLICE_BIT_EXT|VK_VIDEO_ENCODE_H264_OUTPUT_MODE_NON_VCL_BIT_EXT;
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+const VkVideoEncodeH265CapabilityFlagsEXT AllVkVideoEncodeH265CapabilityFlagBitsEXT = VK_VIDEO_ENCODE_H265_CAPABILITY_WEIGHTED_BI_PRED_IMPLICIT_BIT_EXT|VK_VIDEO_ENCODE_H265_CAPABILITY_TRANSFORM_8X8_BIT_EXT|VK_VIDEO_ENCODE_H265_CAPABILITY_CHROMA_QP_OFFSET_BIT_EXT|VK_VIDEO_ENCODE_H265_CAPABILITY_SECOND_CHROMA_QP_OFFSET_BIT_EXT|VK_VIDEO_ENCODE_H265_CAPABILITY_DEBLOCKING_FILTER_DISABLED_BIT_EXT|VK_VIDEO_ENCODE_H265_CAPABILITY_DEBLOCKING_FILTER_ENABLED_BIT_EXT|VK_VIDEO_ENCODE_H265_CAPABILITY_DEBLOCKING_FILTER_PARTIAL_BIT_EXT|VK_VIDEO_ENCODE_H265_CAPABILITY_MULTIPLE_SLICE_PER_FRAME_BIT_EXT|VK_VIDEO_ENCODE_H265_CAPABILITY_EVENLY_DISTRIBUTED_SLICE_SIZE_BIT_EXT;
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+const VkVideoEncodeH265CtbSizeFlagsEXT AllVkVideoEncodeH265CtbSizeFlagBitsEXT = VK_VIDEO_ENCODE_H265_CTB_SIZE_8_BIT_EXT|VK_VIDEO_ENCODE_H265_CTB_SIZE_16_BIT_EXT|VK_VIDEO_ENCODE_H265_CTB_SIZE_32_BIT_EXT|VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_EXT;
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+const VkVideoEncodeH265InputModeFlagsEXT AllVkVideoEncodeH265InputModeFlagBitsEXT = VK_VIDEO_ENCODE_H265_INPUT_MODE_FRAME_BIT_EXT|VK_VIDEO_ENCODE_H265_INPUT_MODE_SLICE_BIT_EXT|VK_VIDEO_ENCODE_H265_INPUT_MODE_NON_VCL_BIT_EXT;
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+const VkVideoEncodeH265OutputModeFlagsEXT AllVkVideoEncodeH265OutputModeFlagBitsEXT = VK_VIDEO_ENCODE_H265_OUTPUT_MODE_FRAME_BIT_EXT|VK_VIDEO_ENCODE_H265_OUTPUT_MODE_SLICE_BIT_EXT|VK_VIDEO_ENCODE_H265_OUTPUT_MODE_NON_VCL_BIT_EXT;
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 const VkVideoDecodeH264PictureLayoutFlagsEXT AllVkVideoDecodeH264PictureLayoutFlagBitsEXT = VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_PROGRESSIVE_EXT|VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_INTERLACED_INTERLEAVED_LINES_BIT_EXT|VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_INTERLACED_SEPARATE_PLANES_BIT_EXT;
@@ -2510,6 +2522,162 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // No Validation code for VkVideoEncodeH264ProfileEXT structure members  -- Covers VUID-VkVideoEncodeH264ProfileEXT-sType-sType
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+        // Validation code for VkVideoEncodeH265CapabilitiesEXT structure members
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_CAPABILITIES_EXT: { // Covers VUID-VkVideoEncodeH265CapabilitiesEXT-sType-sType
+            if (is_const_param) {
+                VkVideoEncodeH265CapabilitiesEXT *structure = (VkVideoEncodeH265CapabilitiesEXT *) header;
+                skip |= validate_flags("VkVideoEncodeH265CapabilitiesEXT", "flags", "VkVideoEncodeH265CapabilityFlagBitsEXT", AllVkVideoEncodeH265CapabilityFlagBitsEXT, structure->flags, kRequiredFlags, "VUID-VkVideoEncodeH265CapabilitiesEXT-flags-parameter", "VUID-VkVideoEncodeH265CapabilitiesEXT-flags-requiredbitmask");
+
+                skip |= validate_flags("VkVideoEncodeH265CapabilitiesEXT", "inputModeFlags", "VkVideoEncodeH265InputModeFlagBitsEXT", AllVkVideoEncodeH265InputModeFlagBitsEXT, structure->inputModeFlags, kRequiredFlags, "VUID-VkVideoEncodeH265CapabilitiesEXT-inputModeFlags-parameter", "VUID-VkVideoEncodeH265CapabilitiesEXT-inputModeFlags-requiredbitmask");
+
+                skip |= validate_flags("VkVideoEncodeH265CapabilitiesEXT", "outputModeFlags", "VkVideoEncodeH265OutputModeFlagBitsEXT", AllVkVideoEncodeH265OutputModeFlagBitsEXT, structure->outputModeFlags, kRequiredFlags, "VUID-VkVideoEncodeH265CapabilitiesEXT-outputModeFlags-parameter", "VUID-VkVideoEncodeH265CapabilitiesEXT-outputModeFlags-requiredbitmask");
+
+                skip |= validate_flags("VkVideoEncodeH265CapabilitiesEXT", "ctbSizes", "VkVideoEncodeH265CtbSizeFlagBitsEXT", AllVkVideoEncodeH265CtbSizeFlagBitsEXT, structure->ctbSizes, kRequiredFlags, "VUID-VkVideoEncodeH265CapabilitiesEXT-ctbSizes-parameter", "VUID-VkVideoEncodeH265CapabilitiesEXT-ctbSizes-requiredbitmask");
+
+            }
+        } break;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        // Validation code for VkVideoEncodeH265SessionCreateInfoEXT structure members
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_CREATE_INFO_EXT: { // Covers VUID-VkVideoEncodeH265SessionCreateInfoEXT-sType-sType
+            if (is_const_param) {
+                VkVideoEncodeH265SessionCreateInfoEXT *structure = (VkVideoEncodeH265SessionCreateInfoEXT *) header;
+                skip |= validate_reserved_flags("VkVideoEncodeH265SessionCreateInfoEXT", "flags", structure->flags, "VUID-VkVideoEncodeH265SessionCreateInfoEXT-flags-zerobitmask");
+
+                skip |= validate_required_pointer("VkVideoEncodeH265SessionCreateInfoEXT", "pStdExtensionVersion", structure->pStdExtensionVersion, "VUID-VkVideoEncodeH265SessionCreateInfoEXT-pStdExtensionVersion-parameter");
+
+                if (structure->pStdExtensionVersion != NULL)
+                {
+                }
+            }
+        } break;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        // Validation code for VkVideoEncodeH265SessionParametersAddInfoEXT structure members
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT: { // Covers VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-sType-sType
+            if (is_const_param) {
+                VkVideoEncodeH265SessionParametersAddInfoEXT *structure = (VkVideoEncodeH265SessionParametersAddInfoEXT *) header;
+                skip |= validate_array("VkVideoEncodeH265SessionParametersAddInfoEXT", "vpsStdCount", "pVpsStd", structure->vpsStdCount, &structure->pVpsStd, true, false, "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-vpsStdCount-arraylength", "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-pVpsStd-parameter");
+
+                skip |= validate_array("VkVideoEncodeH265SessionParametersAddInfoEXT", "spsStdCount", "pSpsStd", structure->spsStdCount, &structure->pSpsStd, true, false, "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-pSpsStd-parameter");
+
+                skip |= validate_array("VkVideoEncodeH265SessionParametersAddInfoEXT", "ppsStdCount", "pPpsStd", structure->ppsStdCount, &structure->pPpsStd, true, false, "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-pPpsStd-parameter");
+            }
+        } break;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        // Validation code for VkVideoEncodeH265SessionParametersCreateInfoEXT structure members
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_CREATE_INFO_EXT: { // Covers VUID-VkVideoEncodeH265SessionParametersCreateInfoEXT-sType-sType
+            if (is_const_param) {
+                VkVideoEncodeH265SessionParametersCreateInfoEXT *structure = (VkVideoEncodeH265SessionParametersCreateInfoEXT *) header;
+                skip |= validate_struct_type("VkVideoEncodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT", structure->pParametersAddInfo, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT, false, "VUID-VkVideoEncodeH265SessionParametersCreateInfoEXT-pParametersAddInfo-parameter", "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-sType-sType");
+
+                if (structure->pParametersAddInfo != NULL)
+                {
+                    skip |= validate_array("VkVideoEncodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo->vpsStdCount", "pParametersAddInfo->pVpsStd", structure->pParametersAddInfo->vpsStdCount, &structure->pParametersAddInfo->pVpsStd, true, false, "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-vpsStdCount-arraylength", "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-pVpsStd-parameter");
+
+                    skip |= validate_array("VkVideoEncodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo->spsStdCount", "pParametersAddInfo->pSpsStd", structure->pParametersAddInfo->spsStdCount, &structure->pParametersAddInfo->pSpsStd, true, false, "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-pSpsStd-parameter");
+
+                    skip |= validate_array("VkVideoEncodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo->ppsStdCount", "pParametersAddInfo->pPpsStd", structure->pParametersAddInfo->ppsStdCount, &structure->pParametersAddInfo->pPpsStd, true, false, "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoEncodeH265SessionParametersAddInfoEXT-pPpsStd-parameter");
+                }
+            }
+        } break;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        // Validation code for VkVideoEncodeH265VclFrameInfoEXT structure members
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_VCL_FRAME_INFO_EXT: { // Covers VUID-VkVideoEncodeH265VclFrameInfoEXT-sType-sType
+            if (is_const_param) {
+                VkVideoEncodeH265VclFrameInfoEXT *structure = (VkVideoEncodeH265VclFrameInfoEXT *) header;
+                skip |= validate_struct_type("VkVideoEncodeH265VclFrameInfoEXT", "pReferenceFinalLists", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_REFERENCE_LISTS_EXT", structure->pReferenceFinalLists, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_REFERENCE_LISTS_EXT, false, "VUID-VkVideoEncodeH265VclFrameInfoEXT-pReferenceFinalLists-parameter", "VUID-VkVideoEncodeH265ReferenceListsEXT-sType-sType");
+
+                if (structure->pReferenceFinalLists != NULL)
+                {
+                    skip |= validate_struct_type_array("VkVideoEncodeH265VclFrameInfoEXT", "pReferenceFinalLists->referenceList0EntryCount", "pReferenceFinalLists->pReferenceList0Entries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT", structure->pReferenceFinalLists->referenceList0EntryCount, structure->pReferenceFinalLists->pReferenceList0Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT, false, true, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceList0Entries-parameter", kVUIDUndefined);
+
+                    if (structure->pReferenceFinalLists->pReferenceList0Entries != NULL)
+                    {
+                        for (uint32_t referenceList0EntryIndex = 0; referenceList0EntryIndex < structure->pReferenceFinalLists->referenceList0EntryCount; ++referenceList0EntryIndex)
+                        {
+                            skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pReferenceFinalLists->pReferenceList0Entries[%i].pStdReferenceInfo", ParameterName::IndexVector{ referenceList0EntryIndex }), structure->pReferenceFinalLists->pReferenceList0Entries[referenceList0EntryIndex].pStdReferenceInfo, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+                        }
+                    }
+
+                    skip |= validate_struct_type_array("VkVideoEncodeH265VclFrameInfoEXT", "pReferenceFinalLists->referenceList1EntryCount", "pReferenceFinalLists->pReferenceList1Entries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT", structure->pReferenceFinalLists->referenceList1EntryCount, structure->pReferenceFinalLists->pReferenceList1Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT, false, true, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceList1Entries-parameter", kVUIDUndefined);
+
+                    if (structure->pReferenceFinalLists->pReferenceList1Entries != NULL)
+                    {
+                        for (uint32_t referenceList1EntryIndex = 0; referenceList1EntryIndex < structure->pReferenceFinalLists->referenceList1EntryCount; ++referenceList1EntryIndex)
+                        {
+                            skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pReferenceFinalLists->pReferenceList1Entries[%i].pStdReferenceInfo", ParameterName::IndexVector{ referenceList1EntryIndex }), structure->pReferenceFinalLists->pReferenceList1Entries[referenceList1EntryIndex].pStdReferenceInfo, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+                        }
+                    }
+
+                    skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", "pReferenceFinalLists->pReferenceModifications", structure->pReferenceFinalLists->pReferenceModifications, "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceModifications-parameter");
+                }
+
+                skip |= validate_struct_type_array("VkVideoEncodeH265VclFrameInfoEXT", "naluSliceEntryCount", "pNaluSliceEntries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_EXT", structure->naluSliceEntryCount, structure->pNaluSliceEntries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_EXT, true, true, "VUID-VkVideoEncodeH265NaluSliceEXT-sType-sType", "VUID-VkVideoEncodeH265VclFrameInfoEXT-pNaluSliceEntries-parameter", "VUID-VkVideoEncodeH265VclFrameInfoEXT-naluSliceEntryCount-arraylength");
+
+                if (structure->pNaluSliceEntries != NULL)
+                {
+                    for (uint32_t naluSliceEntryIndex = 0; naluSliceEntryIndex < structure->naluSliceEntryCount; ++naluSliceEntryIndex)
+                    {
+                        skip |= validate_struct_type("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_REFERENCE_LISTS_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_REFERENCE_LISTS_EXT, false, "VUID-VkVideoEncodeH265NaluSliceEXT-pReferenceFinalLists-parameter", "VUID-VkVideoEncodeH265ReferenceListsEXT-sType-sType");
+
+                        if (structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists != NULL)
+                        {
+                            skip |= validate_struct_type_array("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->referenceList0EntryCount", ParameterName::IndexVector{ naluSliceEntryIndex }), ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceList0Entries", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->referenceList0EntryCount, structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList0Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT, false, true, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceList0Entries-parameter", kVUIDUndefined);
+
+                            if (structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList0Entries != NULL)
+                            {
+                                for (uint32_t referenceList0EntryIndex = 0; referenceList0EntryIndex < structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->referenceList0EntryCount; ++referenceList0EntryIndex)
+                                {
+                                    skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceList0Entries[%i].pStdReferenceInfo", ParameterName::IndexVector{ naluSliceEntryIndex, referenceList0EntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList0Entries[referenceList0EntryIndex].pStdReferenceInfo, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+                                }
+                            }
+
+                            skip |= validate_struct_type_array("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->referenceList1EntryCount", ParameterName::IndexVector{ naluSliceEntryIndex }), ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceList1Entries", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->referenceList1EntryCount, structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList1Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT, false, true, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceList1Entries-parameter", kVUIDUndefined);
+
+                            if (structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList1Entries != NULL)
+                            {
+                                for (uint32_t referenceList1EntryIndex = 0; referenceList1EntryIndex < structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->referenceList1EntryCount; ++referenceList1EntryIndex)
+                                {
+                                    skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceList1Entries[%i].pStdReferenceInfo", ParameterName::IndexVector{ naluSliceEntryIndex, referenceList1EntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList1Entries[referenceList1EntryIndex].pStdReferenceInfo, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+                                }
+                            }
+
+                            skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceModifications", ParameterName::IndexVector{ naluSliceEntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceModifications, "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceModifications-parameter");
+                        }
+
+                        skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pSliceHeaderStd", ParameterName::IndexVector{ naluSliceEntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pSliceHeaderStd, "VUID-VkVideoEncodeH265NaluSliceEXT-pSliceHeaderStd-parameter");
+                    }
+                }
+
+                skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", "pCurrentPictureInfo", structure->pCurrentPictureInfo, "VUID-VkVideoEncodeH265VclFrameInfoEXT-pCurrentPictureInfo-parameter");
+            }
+        } break;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        // Validation code for VkVideoEncodeH265EmitPictureParametersEXT structure members
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_EMIT_PICTURE_PARAMETERS_EXT: { // Covers VUID-VkVideoEncodeH265EmitPictureParametersEXT-sType-sType
+            if (is_const_param) {
+                VkVideoEncodeH265EmitPictureParametersEXT *structure = (VkVideoEncodeH265EmitPictureParametersEXT *) header;
+                skip |= validate_bool32("VkVideoEncodeH265EmitPictureParametersEXT", "emitVpsEnable", structure->emitVpsEnable);
+
+                skip |= validate_bool32("VkVideoEncodeH265EmitPictureParametersEXT", "emitSpsEnable", structure->emitSpsEnable);
+
+                skip |= validate_array("VkVideoEncodeH265EmitPictureParametersEXT", "ppsIdEntryCount", "ppsIdEntries", structure->ppsIdEntryCount, &structure->ppsIdEntries, false, true, kVUIDUndefined, "VUID-VkVideoEncodeH265EmitPictureParametersEXT-ppsIdEntries-parameter");
+            }
+        } break;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+        // No Validation code for VkVideoEncodeH265ProfileEXT structure members  -- Covers VUID-VkVideoEncodeH265ProfileEXT-sType-sType
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH264ProfileEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_EXT: { // Covers VUID-VkVideoDecodeH264ProfileEXT-sType-sType
             if (is_const_param) {
@@ -4112,6 +4280,32 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // No Validation code for VkPhysicalDeviceMultiDrawPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceMultiDrawPropertiesEXT-sType-sType
 
+        // Validation code for VkPhysicalDeviceBorderColorSwizzleFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BORDER_COLOR_SWIZZLE_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceBorderColorSwizzleFeaturesEXT-sType-sType
+            if (is_const_param) {
+                VkPhysicalDeviceBorderColorSwizzleFeaturesEXT *structure = (VkPhysicalDeviceBorderColorSwizzleFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceBorderColorSwizzleFeaturesEXT", "borderColorSwizzle", structure->borderColorSwizzle);
+
+                skip |= validate_bool32("VkPhysicalDeviceBorderColorSwizzleFeaturesEXT", "borderColorSwizzleFromImage", structure->borderColorSwizzleFromImage);
+            }
+        } break;
+
+        // Validation code for VkSamplerBorderColorComponentMappingCreateInfoEXT structure members
+        case VK_STRUCTURE_TYPE_SAMPLER_BORDER_COLOR_COMPONENT_MAPPING_CREATE_INFO_EXT: { // Covers VUID-VkSamplerBorderColorComponentMappingCreateInfoEXT-sType-sType
+            if (is_const_param) {
+                VkSamplerBorderColorComponentMappingCreateInfoEXT *structure = (VkSamplerBorderColorComponentMappingCreateInfoEXT *) header;
+                skip |= validate_ranged_enum("VkSamplerBorderColorComponentMappingCreateInfoEXT", "components.r", "VkComponentSwizzle", AllVkComponentSwizzleEnums, structure->components.r, "VUID-VkComponentMapping-r-parameter");
+
+                skip |= validate_ranged_enum("VkSamplerBorderColorComponentMappingCreateInfoEXT", "components.g", "VkComponentSwizzle", AllVkComponentSwizzleEnums, structure->components.g, "VUID-VkComponentMapping-g-parameter");
+
+                skip |= validate_ranged_enum("VkSamplerBorderColorComponentMappingCreateInfoEXT", "components.b", "VkComponentSwizzle", AllVkComponentSwizzleEnums, structure->components.b, "VUID-VkComponentMapping-b-parameter");
+
+                skip |= validate_ranged_enum("VkSamplerBorderColorComponentMappingCreateInfoEXT", "components.a", "VkComponentSwizzle", AllVkComponentSwizzleEnums, structure->components.a, "VUID-VkComponentMapping-a-parameter");
+
+                skip |= validate_bool32("VkSamplerBorderColorComponentMappingCreateInfoEXT", "srgb", structure->srgb);
+            }
+        } break;
+
         // Validation code for VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT: { // Covers VUID-VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT-sType-sType
             if (is_const_param) {
@@ -4365,9 +4559,9 @@ bool StatelessValidation::PreCallValidateCreateDevice(
     skip |= validate_struct_type("vkCreateDevice", "pCreateInfo", "VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, true, "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
     {
-        const VkStructureType allowed_structs_VkDeviceCreateInfo[] = { VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV, VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO, VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD, VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DIAGNOSTICS_CONFIG_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INHERITED_VIEWPORT_SCISSOR_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INVOCATION_MASK_FEATURES_HUAWEI, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RGBA10X6_FORMATS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MOTION_BLUR_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_FEATURES_HUAWEI, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_2_PLANE_444_FORMATS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_IMAGE_ARRAYS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR };
+        const VkStructureType allowed_structs_VkDeviceCreateInfo[] = { VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV, VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO, VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD, VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BORDER_COLOR_SWIZZLE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DIAGNOSTICS_CONFIG_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INHERITED_VIEWPORT_SCISSOR_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INVOCATION_MASK_FEATURES_HUAWEI, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RGBA10X6_FORMATS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MOTION_BLUR_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_FEATURES_NV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_FEATURES_HUAWEI, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_2_PLANE_444_FORMATS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_IMAGE_ARRAYS_FEATURES_EXT, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR };
 
-        skip |= validate_struct_pnext("vkCreateDevice", "pCreateInfo->pNext", "VkDeviceDeviceMemoryReportCreateInfoEXT, VkDeviceDiagnosticsConfigCreateInfoNV, VkDeviceGroupDeviceCreateInfo, VkDeviceMemoryOverallocationCreateInfoAMD, VkDevicePrivateDataCreateInfoEXT, VkPhysicalDevice16BitStorageFeatures, VkPhysicalDevice4444FormatsFeaturesEXT, VkPhysicalDevice8BitStorageFeatures, VkPhysicalDeviceASTCDecodeFeaturesEXT, VkPhysicalDeviceAccelerationStructureFeaturesKHR, VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT, VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceBufferDeviceAddressFeaturesEXT, VkPhysicalDeviceCoherentMemoryFeaturesAMD, VkPhysicalDeviceColorWriteEnableFeaturesEXT, VkPhysicalDeviceComputeShaderDerivativesFeaturesNV, VkPhysicalDeviceConditionalRenderingFeaturesEXT, VkPhysicalDeviceCooperativeMatrixFeaturesNV, VkPhysicalDeviceCornerSampledImageFeaturesNV, VkPhysicalDeviceCoverageReductionModeFeaturesNV, VkPhysicalDeviceCustomBorderColorFeaturesEXT, VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV, VkPhysicalDeviceDepthClipEnableFeaturesEXT, VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV, VkPhysicalDeviceDeviceMemoryReportFeaturesEXT, VkPhysicalDeviceDiagnosticsConfigFeaturesNV, VkPhysicalDeviceExclusiveScissorFeaturesNV, VkPhysicalDeviceExtendedDynamicState2FeaturesEXT, VkPhysicalDeviceExtendedDynamicStateFeaturesEXT, VkPhysicalDeviceExternalMemoryRDMAFeaturesNV, VkPhysicalDeviceFeatures2, VkPhysicalDeviceFragmentDensityMap2FeaturesEXT, VkPhysicalDeviceFragmentDensityMapFeaturesEXT, VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV, VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT, VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV, VkPhysicalDeviceFragmentShadingRateFeaturesKHR, VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT, VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceImageRobustnessFeaturesEXT, VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceIndexTypeUint8FeaturesEXT, VkPhysicalDeviceInheritedViewportScissorFeaturesNV, VkPhysicalDeviceInlineUniformBlockFeaturesEXT, VkPhysicalDeviceInvocationMaskFeaturesHUAWEI, VkPhysicalDeviceLineRasterizationFeaturesEXT, VkPhysicalDeviceMaintenance4FeaturesKHR, VkPhysicalDeviceMemoryPriorityFeaturesEXT, VkPhysicalDeviceMeshShaderFeaturesNV, VkPhysicalDeviceMultiDrawFeaturesEXT, VkPhysicalDeviceMultiviewFeatures, VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE, VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT, VkPhysicalDevicePerformanceQueryFeaturesKHR, VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT, VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR, VkPhysicalDevicePortabilitySubsetFeaturesKHR, VkPhysicalDevicePresentIdFeaturesKHR, VkPhysicalDevicePresentWaitFeaturesKHR, VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT, VkPhysicalDevicePrivateDataFeaturesEXT, VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceProvokingVertexFeaturesEXT, VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT, VkPhysicalDeviceRayQueryFeaturesKHR, VkPhysicalDeviceRayTracingMotionBlurFeaturesNV, VkPhysicalDeviceRayTracingPipelineFeaturesKHR, VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV, VkPhysicalDeviceRobustness2FeaturesEXT, VkPhysicalDeviceSamplerYcbcrConversionFeatures, VkPhysicalDeviceScalarBlockLayoutFeatures, VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT, VkPhysicalDeviceShaderAtomicFloatFeaturesEXT, VkPhysicalDeviceShaderAtomicInt64Features, VkPhysicalDeviceShaderClockFeaturesKHR, VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT, VkPhysicalDeviceShaderDrawParametersFeatures, VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT, VkPhysicalDeviceShaderImageFootprintFeaturesNV, VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR, VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL, VkPhysicalDeviceShaderSMBuiltinsFeaturesNV, VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR, VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR, VkPhysicalDeviceShadingRateImageFeaturesNV, VkPhysicalDeviceSubgroupSizeControlFeaturesEXT, VkPhysicalDeviceSubpassShadingFeaturesHUAWEI, VkPhysicalDeviceSynchronization2FeaturesKHR, VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT, VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT, VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceTransformFeedbackFeaturesEXT, VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT, VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT, VkPhysicalDeviceVulkan11Features, VkPhysicalDeviceVulkan12Features, VkPhysicalDeviceVulkanMemoryModelFeatures, VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR, VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT, VkPhysicalDeviceYcbcrImageArraysFeaturesEXT, VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDeviceCreateInfo), allowed_structs_VkDeviceCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDeviceCreateInfo-pNext-pNext", "VUID-VkDeviceCreateInfo-sType-unique", true, true);
+        skip |= validate_struct_pnext("vkCreateDevice", "pCreateInfo->pNext", "VkDeviceDeviceMemoryReportCreateInfoEXT, VkDeviceDiagnosticsConfigCreateInfoNV, VkDeviceGroupDeviceCreateInfo, VkDeviceMemoryOverallocationCreateInfoAMD, VkDevicePrivateDataCreateInfoEXT, VkPhysicalDevice16BitStorageFeatures, VkPhysicalDevice4444FormatsFeaturesEXT, VkPhysicalDevice8BitStorageFeatures, VkPhysicalDeviceASTCDecodeFeaturesEXT, VkPhysicalDeviceAccelerationStructureFeaturesKHR, VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT, VkPhysicalDeviceBorderColorSwizzleFeaturesEXT, VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceBufferDeviceAddressFeaturesEXT, VkPhysicalDeviceCoherentMemoryFeaturesAMD, VkPhysicalDeviceColorWriteEnableFeaturesEXT, VkPhysicalDeviceComputeShaderDerivativesFeaturesNV, VkPhysicalDeviceConditionalRenderingFeaturesEXT, VkPhysicalDeviceCooperativeMatrixFeaturesNV, VkPhysicalDeviceCornerSampledImageFeaturesNV, VkPhysicalDeviceCoverageReductionModeFeaturesNV, VkPhysicalDeviceCustomBorderColorFeaturesEXT, VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV, VkPhysicalDeviceDepthClipEnableFeaturesEXT, VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV, VkPhysicalDeviceDeviceMemoryReportFeaturesEXT, VkPhysicalDeviceDiagnosticsConfigFeaturesNV, VkPhysicalDeviceExclusiveScissorFeaturesNV, VkPhysicalDeviceExtendedDynamicState2FeaturesEXT, VkPhysicalDeviceExtendedDynamicStateFeaturesEXT, VkPhysicalDeviceExternalMemoryRDMAFeaturesNV, VkPhysicalDeviceFeatures2, VkPhysicalDeviceFragmentDensityMap2FeaturesEXT, VkPhysicalDeviceFragmentDensityMapFeaturesEXT, VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV, VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT, VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV, VkPhysicalDeviceFragmentShadingRateFeaturesKHR, VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT, VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceImageRobustnessFeaturesEXT, VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceIndexTypeUint8FeaturesEXT, VkPhysicalDeviceInheritedViewportScissorFeaturesNV, VkPhysicalDeviceInlineUniformBlockFeaturesEXT, VkPhysicalDeviceInvocationMaskFeaturesHUAWEI, VkPhysicalDeviceLineRasterizationFeaturesEXT, VkPhysicalDeviceMaintenance4FeaturesKHR, VkPhysicalDeviceMemoryPriorityFeaturesEXT, VkPhysicalDeviceMeshShaderFeaturesNV, VkPhysicalDeviceMultiDrawFeaturesEXT, VkPhysicalDeviceMultiviewFeatures, VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE, VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT, VkPhysicalDevicePerformanceQueryFeaturesKHR, VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT, VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR, VkPhysicalDevicePortabilitySubsetFeaturesKHR, VkPhysicalDevicePresentIdFeaturesKHR, VkPhysicalDevicePresentWaitFeaturesKHR, VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT, VkPhysicalDevicePrivateDataFeaturesEXT, VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceProvokingVertexFeaturesEXT, VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT, VkPhysicalDeviceRayQueryFeaturesKHR, VkPhysicalDeviceRayTracingMotionBlurFeaturesNV, VkPhysicalDeviceRayTracingPipelineFeaturesKHR, VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV, VkPhysicalDeviceRobustness2FeaturesEXT, VkPhysicalDeviceSamplerYcbcrConversionFeatures, VkPhysicalDeviceScalarBlockLayoutFeatures, VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT, VkPhysicalDeviceShaderAtomicFloatFeaturesEXT, VkPhysicalDeviceShaderAtomicInt64Features, VkPhysicalDeviceShaderClockFeaturesKHR, VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT, VkPhysicalDeviceShaderDrawParametersFeatures, VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT, VkPhysicalDeviceShaderImageFootprintFeaturesNV, VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR, VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL, VkPhysicalDeviceShaderSMBuiltinsFeaturesNV, VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR, VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR, VkPhysicalDeviceShadingRateImageFeaturesNV, VkPhysicalDeviceSubgroupSizeControlFeaturesEXT, VkPhysicalDeviceSubpassShadingFeaturesHUAWEI, VkPhysicalDeviceSynchronization2FeaturesKHR, VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT, VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT, VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceTransformFeedbackFeaturesEXT, VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT, VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT, VkPhysicalDeviceVulkan11Features, VkPhysicalDeviceVulkan12Features, VkPhysicalDeviceVulkanMemoryModelFeatures, VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR, VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT, VkPhysicalDeviceYcbcrImageArraysFeaturesEXT, VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkDeviceCreateInfo), allowed_structs_VkDeviceCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkDeviceCreateInfo-pNext-pNext", "VUID-VkDeviceCreateInfo-sType-unique", true, true);
 
         skip |= validate_reserved_flags("vkCreateDevice", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkDeviceCreateInfo-flags-zerobitmask");
 
@@ -6059,9 +6253,9 @@ bool StatelessValidation::PreCallValidateCreateSampler(
     skip |= validate_struct_type("vkCreateSampler", "pCreateInfo", "VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, true, "VUID-vkCreateSampler-pCreateInfo-parameter", "VUID-VkSamplerCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
     {
-        const VkStructureType allowed_structs_VkSamplerCreateInfo[] = { VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO };
+        const VkStructureType allowed_structs_VkSamplerCreateInfo[] = { VK_STRUCTURE_TYPE_SAMPLER_BORDER_COLOR_COMPONENT_MAPPING_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO };
 
-        skip |= validate_struct_pnext("vkCreateSampler", "pCreateInfo->pNext", "VkSamplerCustomBorderColorCreateInfoEXT, VkSamplerReductionModeCreateInfo, VkSamplerYcbcrConversionInfo", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkSamplerCreateInfo), allowed_structs_VkSamplerCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkSamplerCreateInfo-pNext-pNext", "VUID-VkSamplerCreateInfo-sType-unique", false, true);
+        skip |= validate_struct_pnext("vkCreateSampler", "pCreateInfo->pNext", "VkSamplerBorderColorComponentMappingCreateInfoEXT, VkSamplerCustomBorderColorCreateInfoEXT, VkSamplerReductionModeCreateInfo, VkSamplerYcbcrConversionInfo", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkSamplerCreateInfo), allowed_structs_VkSamplerCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkSamplerCreateInfo-pNext-pNext", "VUID-VkSamplerCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateSampler", "pCreateInfo->flags", "VkSamplerCreateFlagBits", AllVkSamplerCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkSamplerCreateInfo-flags-parameter");
 
@@ -9274,9 +9468,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(
     skip |= validate_struct_type("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pVideoProfile", "VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR", pVideoProfile, VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR, true, "VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-parameter", "VUID-VkVideoProfileKHR-sType-sType");
     if (pVideoProfile != NULL)
     {
-        const VkStructureType allowed_structs_VkVideoProfileKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PROFILE_EXT };
+        const VkStructureType allowed_structs_VkVideoProfileKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PROFILE_EXT };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pVideoProfile->pNext", "VkVideoDecodeH264ProfileEXT, VkVideoDecodeH265ProfileEXT, VkVideoEncodeH264ProfileEXT", pVideoProfile->pNext, ARRAY_SIZE(allowed_structs_VkVideoProfileKHR), allowed_structs_VkVideoProfileKHR, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, true, true);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pVideoProfile->pNext", "VkVideoDecodeH264ProfileEXT, VkVideoDecodeH265ProfileEXT, VkVideoEncodeH264ProfileEXT, VkVideoEncodeH265ProfileEXT", pVideoProfile->pNext, ARRAY_SIZE(allowed_structs_VkVideoProfileKHR), allowed_structs_VkVideoProfileKHR, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, true, true);
 
         skip |= validate_flags("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pVideoProfile->videoCodecOperation", "VkVideoCodecOperationFlagBitsKHR", AllVkVideoCodecOperationFlagBitsKHR, pVideoProfile->videoCodecOperation, kRequiredSingleBit, "VUID-VkVideoProfileKHR-videoCodecOperation-parameter", "VUID-VkVideoProfileKHR-videoCodecOperation-parameter");
 
@@ -9289,9 +9483,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(
     skip |= validate_struct_type("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pCapabilities", "VK_STRUCTURE_TYPE_VIDEO_CAPABILITIES_KHR", pCapabilities, VK_STRUCTURE_TYPE_VIDEO_CAPABILITIES_KHR, true, "VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pCapabilities-parameter", "VUID-VkVideoCapabilitiesKHR-sType-sType");
     if (pCapabilities != NULL)
     {
-        const VkStructureType allowed_structs_VkVideoCapabilitiesKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_CAPABILITIES_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_CAPABILITIES_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_CAPABILITIES_EXT };
+        const VkStructureType allowed_structs_VkVideoCapabilitiesKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_CAPABILITIES_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_CAPABILITIES_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_CAPABILITIES_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_CAPABILITIES_EXT };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pCapabilities->pNext", "VkVideoDecodeH264CapabilitiesEXT, VkVideoDecodeH265CapabilitiesEXT, VkVideoEncodeH264CapabilitiesEXT", pCapabilities->pNext, ARRAY_SIZE(allowed_structs_VkVideoCapabilitiesKHR), allowed_structs_VkVideoCapabilitiesKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoCapabilitiesKHR-pNext-pNext", "VUID-VkVideoCapabilitiesKHR-sType-unique", true, false);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pCapabilities->pNext", "VkVideoDecodeH264CapabilitiesEXT, VkVideoDecodeH265CapabilitiesEXT, VkVideoEncodeH264CapabilitiesEXT, VkVideoEncodeH265CapabilitiesEXT", pCapabilities->pNext, ARRAY_SIZE(allowed_structs_VkVideoCapabilitiesKHR), allowed_structs_VkVideoCapabilitiesKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoCapabilitiesKHR-pNext-pNext", "VUID-VkVideoCapabilitiesKHR-sType-unique", true, false);
     }
     return skip;
 }
@@ -9331,9 +9525,9 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionKHR(
     skip |= validate_struct_type("vkCreateVideoSessionKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_VIDEO_SESSION_CREATE_INFO_KHR", pCreateInfo, VK_STRUCTURE_TYPE_VIDEO_SESSION_CREATE_INFO_KHR, true, "VUID-vkCreateVideoSessionKHR-pCreateInfo-parameter", "VUID-VkVideoSessionCreateInfoKHR-sType-sType");
     if (pCreateInfo != NULL)
     {
-        const VkStructureType allowed_structs_VkVideoSessionCreateInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_CREATE_INFO_EXT };
+        const VkStructureType allowed_structs_VkVideoSessionCreateInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_CREATE_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkCreateVideoSessionKHR", "pCreateInfo->pNext", "VkVideoDecodeH264SessionCreateInfoEXT, VkVideoDecodeH265SessionCreateInfoEXT, VkVideoEncodeH264SessionCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionCreateInfoKHR), allowed_structs_VkVideoSessionCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionCreateInfoKHR-pNext-pNext", "VUID-VkVideoSessionCreateInfoKHR-sType-unique", false, true);
+        skip |= validate_struct_pnext("vkCreateVideoSessionKHR", "pCreateInfo->pNext", "VkVideoDecodeH264SessionCreateInfoEXT, VkVideoDecodeH265SessionCreateInfoEXT, VkVideoEncodeH264SessionCreateInfoEXT, VkVideoEncodeH265SessionCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionCreateInfoKHR), allowed_structs_VkVideoSessionCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionCreateInfoKHR-pNext-pNext", "VUID-VkVideoSessionCreateInfoKHR-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateVideoSessionKHR", "pCreateInfo->flags", "VkVideoSessionCreateFlagBitsKHR", AllVkVideoSessionCreateFlagBitsKHR, pCreateInfo->flags, kOptionalFlags, "VUID-VkVideoSessionCreateInfoKHR-flags-parameter");
 
@@ -9341,9 +9535,9 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionKHR(
 
         if (pCreateInfo->pVideoProfile != NULL)
         {
-            const VkStructureType allowed_structs_VkVideoProfileKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PROFILE_EXT };
+            const VkStructureType allowed_structs_VkVideoProfileKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PROFILE_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PROFILE_EXT };
 
-            skip |= validate_struct_pnext("vkCreateVideoSessionKHR", "pCreateInfo->pVideoProfile->pNext", "VkVideoDecodeH264ProfileEXT, VkVideoDecodeH265ProfileEXT, VkVideoEncodeH264ProfileEXT", pCreateInfo->pVideoProfile->pNext, ARRAY_SIZE(allowed_structs_VkVideoProfileKHR), allowed_structs_VkVideoProfileKHR, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
+            skip |= validate_struct_pnext("vkCreateVideoSessionKHR", "pCreateInfo->pVideoProfile->pNext", "VkVideoDecodeH264ProfileEXT, VkVideoDecodeH265ProfileEXT, VkVideoEncodeH264ProfileEXT, VkVideoEncodeH265ProfileEXT", pCreateInfo->pVideoProfile->pNext, ARRAY_SIZE(allowed_structs_VkVideoProfileKHR), allowed_structs_VkVideoProfileKHR, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
 
             skip |= validate_flags("vkCreateVideoSessionKHR", "pCreateInfo->pVideoProfile->videoCodecOperation", "VkVideoCodecOperationFlagBitsKHR", AllVkVideoCodecOperationFlagBitsKHR, pCreateInfo->pVideoProfile->videoCodecOperation, kRequiredSingleBit, "VUID-VkVideoProfileKHR-videoCodecOperation-parameter", "VUID-VkVideoProfileKHR-videoCodecOperation-parameter");
 
@@ -9465,11 +9659,9 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionParametersKHR(
     skip |= validate_struct_type("vkCreateVideoSessionParametersKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_VIDEO_SESSION_PARAMETERS_CREATE_INFO_KHR", pCreateInfo, VK_STRUCTURE_TYPE_VIDEO_SESSION_PARAMETERS_CREATE_INFO_KHR, true, "VUID-vkCreateVideoSessionParametersKHR-pCreateInfo-parameter", "VUID-VkVideoSessionParametersCreateInfoKHR-sType-sType");
     if (pCreateInfo != NULL)
     {
-        const VkStructureType allowed_structs_VkVideoSessionParametersCreateInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT };
+        const VkStructureType allowed_structs_VkVideoSessionParametersCreateInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_CREATE_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkCreateVideoSessionParametersKHR", "pCreateInfo->pNext", "VkVideoDecodeH264SessionParametersCreateInfoEXT, VkVideoDecodeH265SessionParametersCreateInfoEXT, VkVideoEncodeH264SessionParametersCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionParametersCreateInfoKHR), allowed_structs_VkVideoSessionParametersCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionParametersCreateInfoKHR-pNext-pNext", "VUID-VkVideoSessionParametersCreateInfoKHR-sType-unique", false, true);
-
-        skip |= validate_required_handle("vkCreateVideoSessionParametersKHR", "pCreateInfo->videoSessionParametersTemplate", pCreateInfo->videoSessionParametersTemplate);
+        skip |= validate_struct_pnext("vkCreateVideoSessionParametersKHR", "pCreateInfo->pNext", "VkVideoDecodeH264SessionParametersCreateInfoEXT, VkVideoDecodeH265SessionParametersCreateInfoEXT, VkVideoEncodeH264SessionParametersCreateInfoEXT, VkVideoEncodeH265SessionParametersCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionParametersCreateInfoKHR), allowed_structs_VkVideoSessionParametersCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionParametersCreateInfoKHR-pNext-pNext", "VUID-VkVideoSessionParametersCreateInfoKHR-sType-unique", false, true);
 
         skip |= validate_required_handle("vkCreateVideoSessionParametersKHR", "pCreateInfo->videoSession", pCreateInfo->videoSession);
     }
@@ -9509,9 +9701,9 @@ bool StatelessValidation::PreCallValidateUpdateVideoSessionParametersKHR(
     skip |= validate_struct_type("vkUpdateVideoSessionParametersKHR", "pUpdateInfo", "VK_STRUCTURE_TYPE_VIDEO_SESSION_PARAMETERS_UPDATE_INFO_KHR", pUpdateInfo, VK_STRUCTURE_TYPE_VIDEO_SESSION_PARAMETERS_UPDATE_INFO_KHR, true, "VUID-vkUpdateVideoSessionParametersKHR-pUpdateInfo-parameter", "VUID-VkVideoSessionParametersUpdateInfoKHR-sType-sType");
     if (pUpdateInfo != NULL)
     {
-        const VkStructureType allowed_structs_VkVideoSessionParametersUpdateInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT };
+        const VkStructureType allowed_structs_VkVideoSessionParametersUpdateInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkUpdateVideoSessionParametersKHR", "pUpdateInfo->pNext", "VkVideoDecodeH264SessionParametersAddInfoEXT, VkVideoDecodeH265SessionParametersAddInfoEXT, VkVideoEncodeH264SessionParametersAddInfoEXT", pUpdateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionParametersUpdateInfoKHR), allowed_structs_VkVideoSessionParametersUpdateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionParametersUpdateInfoKHR-pNext-pNext", "VUID-VkVideoSessionParametersUpdateInfoKHR-sType-unique", false, true);
+        skip |= validate_struct_pnext("vkUpdateVideoSessionParametersKHR", "pUpdateInfo->pNext", "VkVideoDecodeH264SessionParametersAddInfoEXT, VkVideoDecodeH265SessionParametersAddInfoEXT, VkVideoEncodeH264SessionParametersAddInfoEXT, VkVideoEncodeH265SessionParametersAddInfoEXT", pUpdateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionParametersUpdateInfoKHR), allowed_structs_VkVideoSessionParametersUpdateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionParametersUpdateInfoKHR-pNext-pNext", "VUID-VkVideoSessionParametersUpdateInfoKHR-sType-unique", false, true);
     }
     return skip;
 }
@@ -11561,9 +11753,9 @@ bool StatelessValidation::PreCallValidateCmdEncodeVideoKHR(
     skip |= validate_struct_type("vkCmdEncodeVideoKHR", "pEncodeInfo", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_INFO_KHR", pEncodeInfo, VK_STRUCTURE_TYPE_VIDEO_ENCODE_INFO_KHR, true, "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-parameter", "VUID-VkVideoEncodeInfoKHR-sType-sType");
     if (pEncodeInfo != NULL)
     {
-        const VkStructureType allowed_structs_VkVideoEncodeInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_EMIT_PICTURE_PARAMETERS_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_VCL_FRAME_INFO_EXT };
+        const VkStructureType allowed_structs_VkVideoEncodeInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_EMIT_PICTURE_PARAMETERS_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_VCL_FRAME_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_EMIT_PICTURE_PARAMETERS_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_VCL_FRAME_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", "pEncodeInfo->pNext", "VkVideoEncodeH264EmitPictureParametersEXT, VkVideoEncodeH264VclFrameInfoEXT", pEncodeInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoEncodeInfoKHR), allowed_structs_VkVideoEncodeInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoEncodeInfoKHR-pNext-pNext", "VUID-VkVideoEncodeInfoKHR-sType-unique", false, true);
+        skip |= validate_struct_pnext("vkCmdEncodeVideoKHR", "pEncodeInfo->pNext", "VkVideoEncodeH264EmitPictureParametersEXT, VkVideoEncodeH264VclFrameInfoEXT, VkVideoEncodeH265EmitPictureParametersEXT, VkVideoEncodeH265VclFrameInfoEXT", pEncodeInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoEncodeInfoKHR), allowed_structs_VkVideoEncodeInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoEncodeInfoKHR-pNext-pNext", "VUID-VkVideoEncodeInfoKHR-sType-unique", false, true);
 
         skip |= validate_flags("vkCmdEncodeVideoKHR", "pEncodeInfo->flags", "VkVideoEncodeFlagBitsKHR", AllVkVideoEncodeFlagBitsKHR, pEncodeInfo->flags, kOptionalFlags, "VUID-VkVideoEncodeInfoKHR-flags-parameter");
 
@@ -12887,6 +13079,10 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCountAMD(
 
 
 
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
@@ -16220,6 +16416,8 @@ bool StatelessValidation::PreCallValidateCmdDrawMultiIndexedEXT(
     if (!skip) skip |= manual_PreCallValidateCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride, pVertexOffset);
     return skip;
 }
+
+
 
 
 
