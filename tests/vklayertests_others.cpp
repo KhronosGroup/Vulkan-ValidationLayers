@@ -12070,13 +12070,18 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
 
     // VUID-VkVertexInputAttributeDescription2EXT-format-04805
     {
-        VkVertexInputBindingDescription2EXT binding = {
-            VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
-        VkVertexInputAttributeDescription2EXT attribute = {
-            VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_FORMAT_D16_UNORM, 0};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-format-04805");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
-        m_errorMonitor->VerifyFound();
+        const VkFormat format = VK_FORMAT_D16_UNORM;
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_props);
+        if ((format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+            VkVertexInputBindingDescription2EXT binding = {
+                VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
+            VkVertexInputAttributeDescription2EXT attribute = {
+                VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, format, 0};
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-format-04805");
+            vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
+            m_errorMonitor->VerifyFound();
+        }
     }
 
     m_commandBuffer->end();
