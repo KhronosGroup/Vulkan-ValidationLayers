@@ -4680,6 +4680,69 @@ bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
+static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo *pCreateInfo, uint32_t i, uint32_t j) {
+    bool partial_overlap = false;
+
+    static const std::vector<VkDescriptorType> all_descriptor_types = {
+        VK_DESCRIPTOR_TYPE_SAMPLER,
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+        VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
+        VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+        VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT,
+        VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+        VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,
+    };
+
+    const auto *mutable_descriptor_type = LvlFindInChain<VkMutableDescriptorTypeCreateInfoVALVE>(pCreateInfo->pNext);
+    if (mutable_descriptor_type) {
+        std::vector<VkDescriptorType> first_types, second_types;
+        if (mutable_descriptor_type->mutableDescriptorTypeListCount > i) {
+            for (uint32_t k = 0; k < mutable_descriptor_type->pMutableDescriptorTypeLists[i].descriptorTypeCount; ++k) {
+                first_types.push_back(mutable_descriptor_type->pMutableDescriptorTypeLists[i].pDescriptorTypes[k]);
+            }
+        } else {
+            first_types = all_descriptor_types;
+        }
+        if (mutable_descriptor_type->mutableDescriptorTypeListCount > j) {
+            for (uint32_t k = 0; k < mutable_descriptor_type->pMutableDescriptorTypeLists[j].descriptorTypeCount; ++k) {
+                second_types.push_back(mutable_descriptor_type->pMutableDescriptorTypeLists[j].pDescriptorTypes[k]);
+            }
+        } else {
+            second_types = all_descriptor_types;
+        }
+
+        bool complete_overlap = first_types.size() == second_types.size();
+        bool disjoint = true;
+        for (const auto first_type : first_types) {
+            bool found = false;
+            for (const auto second_type : second_types) {
+                if (first_type == second_type) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                disjoint = false;
+            } else {
+                complete_overlap = false;
+            }
+            if (!disjoint && !complete_overlap) {
+                partial_overlap = true;
+                break;
+            }
+        }
+    }
+
+    return partial_overlap;
+}
+
 bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkDescriptorPool *pDescriptorPool) const {
@@ -4690,6 +4753,11 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
             skip |= LogError(device, "VUID-VkDescriptorPoolCreateInfo-maxSets-00301",
                              "vkCreateDescriptorPool(): pCreateInfo->maxSets is not greater than 0.");
         }
+
+        const auto *mutable_descriptor_type_features =
+            LvlFindInChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>(device_createinfo_pnext);
+        bool mutable_descriptor_type_enabled =
+            mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
 
         if (pCreateInfo->pPoolSizes) {
             for (uint32_t i = 0; i < pCreateInfo->poolSizeCount; ++i) {
@@ -4706,9 +4774,37 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                                      " and pCreateInfo->pPoolSizes[%" PRIu32 "].descriptorCount is not a multiple of 4.",
                                      i, i);
                 }
+                if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE && !mutable_descriptor_type_enabled) {
+                    skip |=
+                        LogError(device, "VUID-VkDescriptorPoolCreateInfo-mutableDescriptorType-04608",
+                                 "vkCreateDescriptorPool(): pCreateInfo->pPoolSizes[%" PRIu32
+                                 "].type is VK_DESCRIPTOR_TYPE_MUTABLE_VALVE "
+                                 ", but VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::mutableDescriptorType is not enabled.",
+                                 i);
+                }
+                if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+                    for (uint32_t j = i + 1; j < pCreateInfo->poolSizeCount; ++j) {
+                        if (pCreateInfo->pPoolSizes[j].type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+                            if (MutableDescriptorTypePartialOverlap(pCreateInfo, i, j)) {
+                                skip |= LogError(device, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-04787",
+                                                 "vkCreateDescriptorPool(): pCreateInfo->pPoolSizes[%" PRIu32
+                                                 "].type and pCreateInfo->pPoolSizes[%" PRIu32
+                                                 "].type are both VK_DESCRIPTOR_TYPE_MUTABLE_VALVE "
+                                                 " and have sets which partially overlap.",
+                                                 i, j);
+                            }
+                        }
+                    }
+                }
             }
         }
 
+        if (pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE && (!mutable_descriptor_type_enabled)) {
+            skip |=
+                LogError(device, "VUID-VkDescriptorPoolCreateInfo-flags-04609",
+                         "vkCreateDescriptorPool(): pCreateInfo->flags contains VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE, "
+                         "but VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::mutableDescriptorType is not enabled.");
+        }
         if ((pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE) &&
             (pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)) {
             skip |= LogError(device, "VUID-VkDescriptorPoolCreateInfo-flags-04607",
