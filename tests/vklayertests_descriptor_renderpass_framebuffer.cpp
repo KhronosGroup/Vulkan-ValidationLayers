@@ -9761,7 +9761,22 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewMasks) {
 TEST_F(VkLayerTest, InvalidCreateDescriptorPoolFlags) {
     TEST_DESCRIPTION("Create descriptor pool with invalid flags.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+        return;
+    }
+    auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mutable_descriptor_type_features);
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
+        printf("%s mutableDescriptorType feature not supported. Skipped.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorPoolSize ds_type_count = {};
@@ -9778,6 +9793,117 @@ TEST_F(VkLayerTest, InvalidCreateDescriptorPoolFlags) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-flags-04607");
     vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &bad_pool);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, MissingMutableDescriptorTypeFeature) {
+    TEST_DESCRIPTION("Create mutable descriptor pool with feature not enabled.");
+
+    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkDescriptorPoolSize ds_type_count = {};
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+    ds_type_count.descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE;
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    VkDescriptorPool bad_pool;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-flags-04609");
+    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &bad_pool);
+    m_errorMonitor->VerifyFound();
+
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+    ds_pool_ci.flags = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-mutableDescriptorType-04608");
+    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &bad_pool);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, MutableDescriptorPoolsWithPartialOverlap) {
+    TEST_DESCRIPTION("Create mutable descriptor pools with partial overlap.");
+
+    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+        return;
+    }
+    auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mutable_descriptor_type_features);
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
+        printf("%s mutableDescriptorType feature not supported. Skipped.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkDescriptorPoolSize pool_sizes[2] = {};
+    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+    pool_sizes[0].descriptorCount = 1;
+    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+    pool_sizes[1].descriptorCount = 1;
+
+    VkDescriptorType first_types[2] = {
+        VK_DESCRIPTOR_TYPE_SAMPLER,
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    };
+
+    VkDescriptorType second_types[2] = {
+        VK_DESCRIPTOR_TYPE_SAMPLER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    };
+
+    VkMutableDescriptorTypeListVALVE lists[2] = {};
+    lists[0].descriptorTypeCount = 2;
+    lists[0].pDescriptorTypes = first_types;
+    lists[1].descriptorTypeCount = 2;
+    lists[1].pDescriptorTypes = second_types;
+
+    VkMutableDescriptorTypeCreateInfoVALVE mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoVALVE>();
+    mdtci.mutableDescriptorTypeListCount = 2;
+    mdtci.pMutableDescriptorTypeLists = lists;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>(&mdtci);
+    ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE;
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 2;
+    ds_pool_ci.pPoolSizes = pool_sizes;
+
+    VkDescriptorPool pool;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-04787");
+    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &pool);
+    m_errorMonitor->VerifyFound();
+
+    lists[1].pDescriptorTypes = first_types;
+    mdtci.mutableDescriptorTypeListCount = 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-04787");
+    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &pool);
+    m_errorMonitor->VerifyFound();
+
+    mdtci.mutableDescriptorTypeListCount = 2;
+    m_errorMonitor->ExpectSuccess();
+    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &pool);
+    m_errorMonitor->VerifyNotFound();
+    vk::DestroyDescriptorPool(device(), pool, nullptr);
+
+    second_types[0] = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    lists[1].pDescriptorTypes = second_types;
+    m_errorMonitor->ExpectSuccess();
+    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &pool);
+    m_errorMonitor->VerifyNotFound();
+
+    vk::DestroyDescriptorPool(device(), pool, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidCreateDescriptorPoolAllocateFlags) {
