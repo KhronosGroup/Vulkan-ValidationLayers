@@ -3652,6 +3652,11 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                                                                           VkDescriptorSetLayout *pSetLayout) const {
     bool skip = false;
 
+    const auto *mutable_descriptor_type = LvlFindInChain<VkMutableDescriptorTypeCreateInfoVALVE>(pCreateInfo->pNext);
+    const auto *mutable_descriptor_type_features = LvlFindInChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>(device_createinfo_pnext);
+    bool mutable_descriptor_type_features_enabled =
+        mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
+
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if ((pCreateInfo != nullptr) && (pCreateInfo->pBindings != nullptr)) {
         for (uint32_t i = 0; i < pCreateInfo->bindingCount; ++i) {
@@ -3694,9 +3699,66 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                                      "must be 0 or VK_SHADER_STAGE_FRAGMENT_BIT but is currently %s",
                                      i, i, string_VkShaderStageFlags(pCreateInfo->pBindings[i].stageFlags).c_str());
                 }
+
+                if (pCreateInfo->pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+                    if (!mutable_descriptor_type) {
+                        skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04593",
+                                         "vkCreateDescriptorSetLayout(): pCreateInfo->pBindings[%" PRIu32
+                                         "].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_VALVE but "
+                                         "VkMutableDescriptorTypeCreateInfoVALVE is not included in the pNext chain.",
+                                         i);
+                    }
+                    if (pCreateInfo->pBindings[i].pImmutableSamplers) {
+                        skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04594",
+                                         "vkCreateDescriptorSetLayout(): pCreateInfo->pBindings[%" PRIu32
+                                         "].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_VALVE but "
+                                         "pImmutableSamplers is not NULL.",
+                                         i);
+                    }
+                    if (!mutable_descriptor_type_features_enabled) {
+                        skip |= LogError(
+                            device, "VUID-VkDescriptorSetLayoutCreateInfo-mutableDescriptorType-04595",
+                            "vkCreateDescriptorSetLayout(): pCreateInfo->pBindings[%" PRIu32
+                            "].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_VALVE but "
+                            "VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::mutableDescriptorType feature is not enabled.",
+                            i);
+                    }
+                }
+
+                if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR &&
+                    pCreateInfo->pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+                    skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04591",
+                                     "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains "
+                                     "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR, but pCreateInfo->pBindings[%" PRIu32
+                                     "].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_VALVE.", i);
+                }
             }
         }
     }
+    if (pCreateInfo) {
+        if ((pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) &&
+            (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) {
+            skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04590",
+                             "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains both "
+                             "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR and "
+                             "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE.");
+        }
+        if ((pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) &&
+            (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) {
+            skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04592",
+                             "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains both "
+                             "VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT and "
+                             "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE.");
+        }
+        if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE &&
+            !mutable_descriptor_type_features_enabled) {
+            skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04596",
+                             "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains "
+                             "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE, but "
+                             "VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::mutableDescriptorType feature is not enabled.");
+        }
+    }
+
     return skip;
 }
 
