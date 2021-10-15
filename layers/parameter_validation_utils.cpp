@@ -7130,64 +7130,78 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceAccelerationStructureCo
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                                           const VkViewport *pViewports) const {
+bool StatelessValidation::ValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+                                                          const VkViewport *pViewports, bool is_ext) const {
     bool skip = false;
+    const char *api_call = is_ext ? "vkCmdSetViewportWithCountEXT" : "vkCmdSetViewportWithCount";
 
     if (!physical_device_features.multiViewport) {
         if (viewportCount != 1) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportWithCountEXT-viewportCount-03395",
-                             "vkCmdSetViewportWithCountEXT: The multiViewport feature is disabled, but viewportCount (=%" PRIu32
-                             ") is not 1.",
+            skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportWithCount-viewportCount-03395",
+                             "%s: The multiViewport feature is disabled, but viewportCount (=%" PRIu32 ") is not 1.", api_call,
                              viewportCount);
         }
     } else {  // multiViewport enabled
         if (viewportCount < 1 || viewportCount > device_limits.maxViewports) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportWithCountEXT-viewportCount-03394",
-                             "vkCmdSetViewportWithCountEXT:  viewportCount (=%" PRIu32
+            skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportWithCount-viewportCount-03394",
+                             "%s:  viewportCount (=%" PRIu32
                              ") must "
                              "not be greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
-                             viewportCount, device_limits.maxViewports);
+                             api_call, viewportCount, device_limits.maxViewports);
         }
     }
 
     if (pViewports) {
         for (uint32_t viewport_i = 0; viewport_i < viewportCount; ++viewport_i) {
             const auto &viewport = pViewports[viewport_i];  // will crash on invalid ptr
-            const char *fn_name = "vkCmdSetViewportWithCountEXT";
             skip |= manual_PreCallValidateViewport(
-                viewport, fn_name, ParameterName("pViewports[%i]", ParameterName::IndexVector{viewport_i}), commandBuffer);
+                viewport, api_call, ParameterName("pViewports[%i]", ParameterName::IndexVector{viewport_i}), commandBuffer);
         }
     }
 
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
-                                                                          const VkRect2D *pScissors) const {
+bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+    const VkViewport *pViewports) const {
     bool skip = false;
+    skip = ValidateCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, true);
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+    const VkViewport *pViewports) const {
+    bool skip = false;
+    skip = ValidateCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, false);
+    return skip;
+}
+
+bool StatelessValidation::ValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
+                                                         const VkRect2D *pScissors, bool is_ext) const {
+    bool skip = false;
+    const char *api_call = is_ext ? "vkCmdSetScissorWithCountEXT" : "vkCmdSetScissorWithCount";
 
     if (!physical_device_features.multiViewport) {
         if (scissorCount != 1) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-scissorCount-03398",
-                             "vkCmdSetScissorWithCountEXT: scissorCount (=%" PRIu32
+            skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCount-scissorCount-03398",
+                             "%s: scissorCount (=%" PRIu32
                              ") must "
                              "be 1 when the multiViewport feature is disabled.",
-                             scissorCount);
+                             api_call, scissorCount);
         }
     } else {  // multiViewport enabled
         if (scissorCount == 0) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-scissorCount-03397",
-                             "vkCmdSetScissorWithCountEXT: scissorCount (=%" PRIu32
+            skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCount-scissorCount-03397",
+                             "%s: scissorCount (=%" PRIu32
                              ") must "
                              "be great than zero.",
-                             scissorCount);
+                             api_call, scissorCount);
         } else if (scissorCount > device_limits.maxViewports) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-scissorCount-03397",
-                             "vkCmdSetScissorWithCountEXT: scissorCount (=%" PRIu32
+            skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCount-scissorCount-03397",
+                             "%s: scissorCount (=%" PRIu32
                              ") must "
                              "not be greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
-                             scissorCount, device_limits.maxViewports);
+                             api_call, scissorCount, device_limits.maxViewports);
         }
     }
 
@@ -7196,31 +7210,88 @@ bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCountEXT(VkComm
             const auto &scissor = pScissors[scissor_i];  // will crash on invalid ptr
 
             if (scissor.offset.x < 0) {
-                skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-x-03399",
-                                 "vkCmdSetScissor: pScissors[%" PRIu32 "].offset.x (=%" PRIi32 ") is negative.", scissor_i,
-                                 scissor.offset.x);
+                skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCount-x-03399", "%s: pScissors[%" PRIu32 "].offset.x (=%" PRIi32 ") is negative.", api_call,
+                                 scissor_i, scissor.offset.x);
             }
 
             if (scissor.offset.y < 0) {
-                skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-x-03399",
-                                 "vkCmdSetScissor: pScissors[%" PRIu32 "].offset.y (=%" PRIi32 ") is negative.", scissor_i,
-                                 scissor.offset.y);
+                skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCount-x-03399", "%s: pScissors[%" PRIu32 "].offset.y (=%" PRIi32 ") is negative.", api_call,
+                                 scissor_i, scissor.offset.y);
             }
 
             const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
             if (x_sum > INT32_MAX) {
-                skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-offset-03400",
-                                 "vkCmdSetScissor: offset.x + extent.width (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
-                                 ") of pScissors[%" PRIu32 "] will overflow int32_t.",
-                                 scissor.offset.x, scissor.extent.width, x_sum, scissor_i);
+                skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCount-offset-03400",
+                                 "%s: offset.x + extent.width (=%" PRIi32 " + %" PRIu32 " = %" PRIi64 ") of pScissors[%" PRIu32
+                                 "] will overflow int32_t.",
+                                 api_call, scissor.offset.x, scissor.extent.width, x_sum, scissor_i);
             }
 
             const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
             if (y_sum > INT32_MAX) {
-                skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-offset-03401",
-                                 "vkCmdSetScissor: offset.y + extent.height (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
-                                 ") of pScissors[%" PRIu32 "] will overflow int32_t.",
-                                 scissor.offset.y, scissor.extent.height, y_sum, scissor_i);
+                skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCount-offset-03401",
+                                 "%s: offset.y + extent.height (=%" PRIi32 " + %" PRIu32 " = %" PRIi64 ") of pScissors[%" PRIu32
+                                 "] will overflow int32_t.",
+                                 api_call, scissor.offset.y, scissor.extent.height, y_sum, scissor_i);
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
+    const VkRect2D *pScissors) const {
+    bool skip = false;
+    skip = ValidateCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, true);
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
+    const VkRect2D *pScissors) const {
+    bool skip = false;
+    skip = ValidateCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, false);
+    return skip;
+}
+
+bool StatelessValidation::ValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                        const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
+                                                        const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
+                                                        bool is_2ext) const {
+    bool skip = false;
+    const char *api_call = is_2ext ? "vkCmdBindVertexBuffers2EXT()" : "vkCmdBindVertexBuffers2()";
+    if (firstBinding >= device_limits.maxVertexInputBindings) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2-firstBinding-03355",
+                         "%s firstBinding (%" PRIu32 ") must be less than maxVertexInputBindings (%" PRIu32 ")", api_call,
+                         firstBinding, device_limits.maxVertexInputBindings);
+    } else if ((firstBinding + bindingCount) > device_limits.maxVertexInputBindings) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2-firstBinding-03356",
+                         "%s sum of firstBinding (%" PRIu32 ") and bindingCount (%" PRIu32
+                         ") must be less than "
+                         "maxVertexInputBindings (%" PRIu32 ")",
+                         api_call, firstBinding, bindingCount, device_limits.maxVertexInputBindings);
+    }
+
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        if (pBuffers[i] == VK_NULL_HANDLE) {
+            const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+            if (!(robustness2_features && robustness2_features->nullDescriptor)) {
+                skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2-pBuffers-04111",
+                                 "%s required parameter pBuffers[%" PRIu32 "] specified as VK_NULL_HANDLE", api_call, i);
+            } else {
+                if (pOffsets[i] != 0) {
+                    skip |=
+                        LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2-pBuffers-04112",
+                                 "%s pBuffers[%" PRIu32 "] is VK_NULL_HANDLE, but pOffsets[%" PRIu32 "] is not 0", api_call, i, i);
+                }
+            }
+        }
+        if (pStrides) {
+            if (pStrides[i] > device_limits.maxVertexInputBindingStride) {
+                skip |=
+                    LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2-pStrides-03362",
+                             "%s pStrides[%" PRIu32 "] (%" PRIu64 ") must be less than maxVertexInputBindingStride (%" PRIu32 ")",
+                             api_call, i, pStrides[i], device_limits.maxVertexInputBindingStride);
             }
         }
     }
@@ -7233,45 +7304,16 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2EXT(VkComma
                                                                          const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
                                                                          const VkDeviceSize *pStrides) const {
     bool skip = false;
-    if (firstBinding >= device_limits.maxVertexInputBindings) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-firstBinding-03355",
-                         "vkCmdBindVertexBuffers2EXT() firstBinding (%" PRIu32
-                         ") must be less than maxVertexInputBindings (%" PRIu32 ")",
-                         firstBinding, device_limits.maxVertexInputBindings);
-    } else if ((firstBinding + bindingCount) > device_limits.maxVertexInputBindings) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-firstBinding-03356",
-                         "vkCmdBindVertexBuffers2EXT() sum of firstBinding (%" PRIu32 ") and bindingCount (%" PRIu32
-                         ") must be less than "
-                         "maxVertexInputBindings (%" PRIu32 ")",
-                         firstBinding, bindingCount, device_limits.maxVertexInputBindings);
-    }
+    skip = ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides, true);
+    return skip;
+}
 
-    for (uint32_t i = 0; i < bindingCount; ++i) {
-        if (pBuffers[i] == VK_NULL_HANDLE) {
-            const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
-            if (!(robustness2_features && robustness2_features->nullDescriptor)) {
-                skip |= LogError(
-                    commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-pBuffers-04111",
-                    "vkCmdBindVertexBuffers2EXT() required parameter pBuffers[%" PRIu32 "] specified as VK_NULL_HANDLE", i);
-            } else {
-                if (pOffsets[i] != 0) {
-                    skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-pBuffers-04112",
-                                     "vkCmdBindVertexBuffers2EXT() pBuffers[%" PRIu32 "] is VK_NULL_HANDLE, but pOffsets[%" PRIu32
-                                     "] is not 0",
-                                     i, i);
-                }
-            }
-        }
-        if (pStrides) {
-            if (pStrides[i] > device_limits.maxVertexInputBindingStride) {
-                skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-pStrides-03362",
-                                 "vkCmdBindVertexBuffers2EXT() pStrides[%" PRIu32 "] (%" PRIu64
-                                 ") must be less than maxVertexInputBindingStride (%" PRIu32 ")",
-                                 i, pStrides[i], device_limits.maxVertexInputBindingStride);
-            }
-        }
-    }
-
+bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                      uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                                      const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
+                                                                      const VkDeviceSize *pStrides) const {
+    bool skip = false;
+    skip = ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides, false);
     return skip;
 }
 
