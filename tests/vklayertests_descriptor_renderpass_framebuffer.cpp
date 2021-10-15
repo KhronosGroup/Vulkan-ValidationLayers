@@ -10395,6 +10395,82 @@ TEST_F(VkLayerTest, AccelerationStructureBindingsNV) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, DescriptorUpdateTemplate) {
+    TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s not supported, skipping tests\n", kSkipPrefix, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+        return;
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkDescriptorPoolSize ds_type_count = {};
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+    ds_type_count.descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    vk_testing::DescriptorPool pool;
+    pool.init(*m_device, ds_pool_ci);
+
+    VkDescriptorSetLayoutBinding dsl_binding = {};
+    dsl_binding.binding = 0;
+    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+    dsl_binding.descriptorCount = 1;
+    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
+    dsl_binding.pImmutableSamplers = nullptr;
+
+    VkDescriptorType types[2] = {
+        VK_DESCRIPTOR_TYPE_SAMPLER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    };
+
+    VkMutableDescriptorTypeListVALVE list = {};
+    list.descriptorTypeCount = 2;
+    list.pDescriptorTypes = types;
+
+    VkMutableDescriptorTypeCreateInfoVALVE mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoVALVE>();
+    mdtci.mutableDescriptorTypeListCount = 1;
+    mdtci.pMutableDescriptorTypeLists = &list;
+
+    auto ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(&mdtci);
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &dsl_binding;
+
+    vk_testing::DescriptorSetLayout ds_layout;
+    ds_layout.init(*m_device, ds_layout_ci);
+    VkDescriptorSetLayout ds_layout_handle = ds_layout.handle();
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    update_template_entry.offset = 0;
+    update_template_entry.stride = 16;
+
+    auto update_template_ci = LvlInitStruct<VkDescriptorUpdateTemplateCreateInfo>();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    update_template_ci.descriptorSetLayout = ds_layout_handle;
+
+    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-04615");
+    vk::CreateDescriptorUpdateTemplate(m_device->device(), &update_template_ci, nullptr, &update_template);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, MutableDescriptorSetLayout) {
     TEST_DESCRIPTION("Create mutable descriptor set layout.");
 
