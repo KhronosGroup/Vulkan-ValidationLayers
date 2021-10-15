@@ -10441,7 +10441,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     vk::CmdEndRenderPass(commandBuffer.handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCountEXT-viewportCount-03394");
-    m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetViewportWithCountEXT-viewportCount-arraylength");
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetViewportWithCount-viewportCount-arraylength");
     VkViewport viewport2 = {
         0, 0, 1, 1, 0.0f, 0.0f,
     };
@@ -10463,7 +10463,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCountEXT-scissorCount-03397");
-    m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetScissorWithCountEXT-scissorCount-arraylength");
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetScissorWithCount-scissorCount-arraylength");
     vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 0, 0);
     m_errorMonitor->VerifyFound();
 
