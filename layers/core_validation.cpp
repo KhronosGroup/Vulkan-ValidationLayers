@@ -14480,6 +14480,16 @@ bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
                                  func_name, pd_set, report_data->FormatHandle(pCreateInfo->pipelineLayout).c_str());
             }
         }
+    } else if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET == pCreateInfo->templateType) {
+        for (const auto &binding : layout->GetBindings()) {
+            if (binding.descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+                skip |= LogError(
+                    device, "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-04615",
+                    "%s: pCreateInfo->templateType is VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET, but "
+                    "pCreateInfo->descriptorSetLayout contains a binding with descriptor type VK_DESCRIPTOR_TYPE_MUTABLE_VALVE.",
+                    func_name);
+            }
+        }
     }
     for (uint32_t i = 0; i < pCreateInfo->descriptorUpdateEntryCount; ++i) {
         const auto &descriptor_update = pCreateInfo->pDescriptorUpdateEntries[i];
