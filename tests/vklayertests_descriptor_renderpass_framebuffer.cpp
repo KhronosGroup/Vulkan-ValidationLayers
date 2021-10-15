@@ -10394,3 +10394,34 @@ TEST_F(VkLayerTest, AccelerationStructureBindingsNV) {
     vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, nullptr, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidMutableDescriptorSetLayout) {
+    TEST_DESCRIPTION("Create pipeline layout with a descriptor set layout that has VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE bit set");
+
+    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s not supported, skipping test.\n", kSkipPrefix, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+
+    auto ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE;
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &binding;
+
+    vk_testing::DescriptorSetLayout ds_layout;
+    ds_layout.init(*m_device, ds_layout_ci);
+    VkDescriptorSetLayout dsl_handle = ds_layout.handle();
+
+    VkPipelineLayout pipeline_layout;
+    VkPipelineLayoutCreateInfo plci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    plci.setLayoutCount = 1;
+    plci.pSetLayouts = &dsl_handle;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-04606");
+    vk::CreatePipelineLayout(device(), &plci, nullptr, &pipeline_layout);
+    m_errorMonitor->VerifyFound();
+}
