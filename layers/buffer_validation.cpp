@@ -5971,16 +5971,18 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(const BUFFER_STATE *src_buffer_stat
         if (pRegions[i].srcOffset >= src_buffer_size) {
             vuid = is_2khr ? "VUID-VkCopyBufferInfo2KHR-srcOffset-00113" : "VUID-vkCmdCopyBuffer-srcOffset-00113";
             skip |= LogError(src_buffer_state->buffer(), vuid,
-                             "%s: pRegions[%d].srcOffset (%" PRIuLEAST64 ") is greater than pRegions[%d].size (%" PRIuLEAST64 ").",
-                             func_name, i, pRegions[i].srcOffset, i, pRegions[i].size);
+                             "%s: pRegions[%" PRIu32 "].srcOffset (%" PRIuLEAST64
+                             ") is greater than size of srcBuffer (%" PRIuLEAST64 ").",
+                             func_name, i, pRegions[i].srcOffset, src_buffer_size);
         }
 
         // The dstOffset member of each element of pRegions must be less than the size of dstBuffer
         if (pRegions[i].dstOffset >= dst_buffer_size) {
             vuid = is_2khr ? "VUID-VkCopyBufferInfo2KHR-dstOffset-00114" : "VUID-vkCmdCopyBuffer-dstOffset-00114";
             skip |= LogError(dst_buffer_state->buffer(), vuid,
-                             "%s: pRegions[%d].dstOffset (%" PRIuLEAST64 ") is greater than pRegions[%d].size (%" PRIuLEAST64 ").",
-                             func_name, i, pRegions[i].dstOffset, i, pRegions[i].size);
+                             "%s: pRegions[%" PRIu32 "].dstOffset (%" PRIuLEAST64
+                             ") is greater than size of dstBuffer (%" PRIuLEAST64 ").",
+                             func_name, i, pRegions[i].dstOffset, dst_buffer_size);
         }
 
         // The size member of each element of pRegions must be less than or equal to the size of srcBuffer minus srcOffset
