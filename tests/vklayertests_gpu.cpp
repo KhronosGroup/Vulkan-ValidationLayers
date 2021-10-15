@@ -315,6 +315,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         "   gl_Position = gs_in[0].x + adds[uniform_index_buffer.index].val.x;\n"
         "   EmitVertex();\n"
         "}\n";
+    static const char vsSourceForGS[] = R"glsl(
+        #version 450
+        layout(location=0) out foo {vec4 val;} gs_out[3];
+        void main() {
+           gs_out[0].val = vec4(0);
+           gl_Position = vec4(1);
+        })glsl";
     static const char *tesSource =
         "#version 450\n"
         "#extension GL_EXT_nonuniform_qualifier : enable\n "
@@ -368,10 +375,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
                          &descriptor_set_buffer, 5, "Descriptor index 5 is uninitialized"});
         if (m_device->phy().features().geometryShader) {
             // OOB Geometry
-            tests.push_back({bindStateVertShaderText, bindStateFragShaderText, gsSource, nullptr, nullptr, false,
+            tests.push_back({vsSourceForGS, bindStateFragShaderText, gsSource, nullptr, nullptr, false,
                              &pipeline_layout_buffer, &descriptor_set_buffer, 25, "Stage = Geometry"});
             // Uninitialized Geometry
-            tests.push_back({bindStateVertShaderText, bindStateFragShaderText, gsSource, nullptr, nullptr, false,
+            tests.push_back({vsSourceForGS, bindStateFragShaderText, gsSource, nullptr, nullptr, false,
                              &pipeline_layout_buffer, &descriptor_set_buffer, 5, "Stage = Geometry"});
         }
         if (m_device->phy().features().tessellationShader) {
