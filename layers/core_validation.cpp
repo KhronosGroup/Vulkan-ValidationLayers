@@ -7647,6 +7647,10 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                     total_dynamic_descriptors += set_dynamic_descriptor_count;
                 }
             }
+            if (descriptor_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE) {
+                skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-04616",
+                                 "vkCmdBindDescriptorSets(): pDescriptorSets[%" PRIu32 "] was allocated from a pool that was created with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE.", set_idx);
+            }
         } else {
             skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-parameter",
                              "vkCmdBindDescriptorSets(): Attempt to bind %s that doesn't exist!",
