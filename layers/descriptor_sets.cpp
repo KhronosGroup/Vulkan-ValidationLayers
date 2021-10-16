@@ -80,6 +80,18 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
         sorted_bindings.emplace(p_create_info->pBindings + i, flags);
     }
 
+    const auto *mutable_descriptor_type_create_info = LvlFindInChain<VkMutableDescriptorTypeCreateInfoVALVE>(p_create_info->pNext);
+    if (mutable_descriptor_type_create_info) {
+        mutable_types_.resize(mutable_descriptor_type_create_info->mutableDescriptorTypeListCount);
+        for (uint32_t i = 0; i < mutable_descriptor_type_create_info->mutableDescriptorTypeListCount; ++i) {
+            const auto &list = mutable_descriptor_type_create_info->pMutableDescriptorTypeLists[i];
+            mutable_types_[i].reserve(list.descriptorTypeCount);
+            for (uint32_t j = 0; j < list.descriptorTypeCount; ++j) {
+                mutable_types_[i].push_back(list.pDescriptorTypes[j]);
+            }
+        }
+    }
+
     // Store the create info in the sorted order from above
     uint32_t index = 0;
     binding_count_ = static_cast<uint32_t>(sorted_bindings.size());
@@ -204,6 +216,22 @@ VkSampler const *cvdescriptorset::DescriptorSetLayoutDef::GetImmutableSamplerPtr
         return bindings_[index].pImmutableSamplers;
     }
     return nullptr;
+}
+
+bool cvdescriptorset::DescriptorSetLayoutDef::IsTypeMutable(const VkDescriptorType type, uint32_t binding) const {
+    if (binding < mutable_types_.size()) {
+        if (mutable_types_[binding].size() > 0) {
+            for (const auto mutable_type : mutable_types_[binding]) {
+                if (type == mutable_type) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+    // If mutableDescriptorTypeListCount is zero or if VkMutableDescriptorTypeCreateInfoVALVE structure is not included in the pNext
+    // chain, the VkMutableDescriptorTypeListVALVE for each element is considered to be zero or NULL for each member.
+    return false;
 }
 
 // If our layout is compatible with rh_ds_layout, return true.
@@ -3435,6 +3463,19 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
                   << " failed with error message: " << error_msg->c_str();
         *error_msg = error_str.str();
         return false;
+    }
+    const auto orig_binding = DescriptorSetLayout::ConstBindingIterator(dest_set->GetLayout().get(), update->dstBinding);
+    if (!orig_binding.AtEnd() && orig_binding.GetType() == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+        // Check if the new descriptor descriptor type is in the list of allowed mutable types for this binding
+        if (!orig_binding.Layout()->IsTypeMutable(update->descriptorType, update->dstBinding)) {
+            *error_code = "VUID-VkWriteDescriptorSet-dstSet-04611";
+            std::stringstream error_str;
+            error_str << "Write update type is " << string_VkDescriptorType(update->descriptorType)
+                      << ", but descriptor set layout binding was created with type VK_DESCRIPTOR_TYPE_MUTABLE_VALVE and used type "
+                         "is not in VkMutableDescriptorTypeListVALVE::pDescriptorTypes for this binding.";
+            *error_msg = error_str.str();
+            return false;
+        }
     }
     // All checks passed, update is clean
     return true;
