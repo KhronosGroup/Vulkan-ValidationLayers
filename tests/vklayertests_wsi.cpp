@@ -2432,11 +2432,17 @@ TEST_F(VkLayerTest, UseNonAcquiredSwapchainImage) {
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_NonAcquiredSwapchainImageUsed);
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &img_barrier);
-    m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_NonAcquiredSwapchainImageUsed);
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+    m_errorMonitor->VerifyFound();
 
     m_errorMonitor->ExpectSuccess();
     uint32_t image_index;
@@ -2452,9 +2458,6 @@ TEST_F(VkLayerTest, UseNonAcquiredSwapchainImage) {
                            nullptr, 0, nullptr, 1, &img_barrier);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
 
@@ -2474,6 +2477,8 @@ TEST_F(VkLayerTest, UseNonAcquiredSwapchainImage) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &img_barrier);
     m_commandBuffer->end();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyFound();
 
     DestroySwapchain();
