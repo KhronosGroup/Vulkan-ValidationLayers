@@ -715,6 +715,8 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
         const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
+    vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, UINT64_MAX);
+
     VkFenceObj error_fence;
     error_fence.init(*m_device, VkFenceObj::create_info());
 
@@ -724,7 +726,6 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     m_errorMonitor->VerifyFound();
 
     // Cleanup
-    vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, UINT64_MAX);
     DestroySwapchain();
 }
 
@@ -843,6 +844,8 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
         const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
+    vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, UINT64_MAX);
+
     VkFenceObj error_fence;
     error_fence.init(*m_device, VkFenceObj::create_info());
 
@@ -858,7 +861,6 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     m_errorMonitor->VerifyFound();
 
     // Cleanup
-    vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, UINT64_MAX);
     DestroySwapchain();
 }
 
@@ -1874,6 +1876,11 @@ TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
     semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &image_acquired);
     vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, image_acquired, VK_NULL_HANDLE, &current_buffer);
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &image_acquired;
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
