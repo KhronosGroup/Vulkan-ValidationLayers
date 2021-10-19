@@ -808,64 +808,15 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
     bool skip = false;
     using sync_vuid_maps::GetImageBarrierVUID;
     using sync_vuid_maps::ImageError;
-    // Scoreboard for checking for duplicate and inconsistent barriers to images
-    struct ImageBarrierScoreboardEntry {
-        uint32_t index;
-        // This is designed for temporary storage within the scope of the API call.  If retained storage of the barriers is
-        // required, copies should be made and smart or unique pointers used in some other stucture (or this one refactored)
-        const ImageBarrier *barrier;
-    };
-    // Necessary to resolve warning C4503 when building with Visual Studio 2015.
-    // Adding a struct wrapper is their recommend solution for the expanded type name growing too long
-    // when creating maps full of maps.
-    struct ImageBarrierScoreboardSubresMap {
-        layer_data::unordered_map<VkImageSubresourceRange, ImageBarrierScoreboardEntry> map;
-    };
-    using ImageBarrierScoreboardImageMap = layer_data::unordered_map<VkImage, ImageBarrierScoreboardSubresMap>;
 
     // Scoreboard for duplicate layout transition barriers within the list
     // Pointers retained in the scoreboard only have the lifetime of *this* call (i.e. within the scope of the API call)
-    ImageBarrierScoreboardImageMap layout_transitions;
+    const CommandBufferImageLayoutMap &current_map = cb_state->GetImageSubresourceLayoutMap();
+    CommandBufferImageLayoutMap layout_updates;
 
     for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
         auto loc = outer_loc.dot(Field::pImageMemoryBarriers, i);
         const auto &img_barrier = pImageMemoryBarriers[i];
-
-        // Update the scoreboard of layout transitions and check for barriers affecting the same image and subresource
-        // TODO: a higher precision could be gained by adapting the command_buffer image_layout_map logic looking for conflicts
-        // at a per sub-resource level
-        if (img_barrier.oldLayout != img_barrier.newLayout) {
-            const ImageBarrierScoreboardEntry new_entry{i, &img_barrier};
-            const auto image_it = layout_transitions.find(img_barrier.image);
-            if (image_it != layout_transitions.end()) {
-                auto &subres_map = image_it->second.map;
-                auto subres_it = subres_map.find(img_barrier.subresourceRange);
-                if (subres_it != subres_map.end()) {
-                    auto &entry = subres_it->second;
-                    auto entry_layout =
-                        NormalizeSynchronization2Layout(entry.barrier->subresourceRange.aspectMask, entry.barrier->newLayout);
-                    auto old_layout =
-                        NormalizeSynchronization2Layout(img_barrier.subresourceRange.aspectMask, img_barrier.oldLayout);
-                    if ((entry_layout != old_layout) && (old_layout != VK_IMAGE_LAYOUT_UNDEFINED)) {
-                        const VkImageSubresourceRange &range = img_barrier.subresourceRange;
-                        const auto &vuid = GetImageBarrierVUID(loc, ImageError::kConflictingLayout);
-                        skip = LogError(
-                            cb_state->commandBuffer(), vuid,
-                            "%s conflicts with earlier entry pImageMemoryBarrier[%u]. %s"
-                            " subresourceRange: aspectMask=%u baseMipLevel=%u levelCount=%u, baseArrayLayer=%u, layerCount=%u; "
-                            "conflicting barrier transitions image layout from %s when earlier barrier transitioned to layout %s.",
-                            loc.Message().c_str(), entry.index, report_data->FormatHandle(img_barrier.image).c_str(),
-                            range.aspectMask, range.baseMipLevel, range.levelCount, range.baseArrayLayer, range.layerCount,
-                            string_VkImageLayout(img_barrier.oldLayout), string_VkImageLayout(entry.barrier->newLayout));
-                    }
-                    entry = new_entry;
-                } else {
-                    subres_map[img_barrier.subresourceRange] = new_entry;
-                }
-            } else {
-                layout_transitions[img_barrier.image].map[img_barrier.subresourceRange] = new_entry;
-            }
-        }
 
         auto image_state = GetImageState(img_barrier.image);
         if (image_state) {
@@ -917,14 +868,21 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                 }
             }
 
-            const auto *subresource_map = cb_state->GetImageSubresourceLayoutMap(img_barrier.image);
             if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 // TODO: Set memory invalid which is in mem_tracker currently
-                // Not sure if this needs to be in the ForRange traversal, pulling it out as it is currently invariant with
-                // subresource.
-            } else if (subresource_map && !QueueFamilyIsExternal(img_barrier.srcQueueFamilyIndex)) {
-                bool subres_skip = false;
+            } else if (!QueueFamilyIsExternal(img_barrier.srcQueueFamilyIndex)) {
+                auto &write_subresource_map = layout_updates[img_barrier.image];
+                bool new_write = false;
+                if (!write_subresource_map) {
+                    write_subresource_map.emplace(*image_state);
+                    new_write = true;
+                }
+                const auto &current_subresource_map = current_map.find(img_barrier.image);
+                const auto &read_subresource_map = (new_write && current_subresource_map != current_map.end())
+                                                       ? (*current_subresource_map).second
+                                                       : write_subresource_map;
 
+                bool subres_skip = false;
                 // Validate aspects in isolation.
                 // This is required when handling separate depth-stencil layouts.
                 for (uint32_t aspect_index = 0; aspect_index < 32; aspect_index++) {
@@ -933,15 +891,14 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                         continue;
                     }
 
-                    LayoutUseCheckAndMessage layout_check(subresource_map, test_aspect);
+                    LayoutUseCheckAndMessage layout_check(&read_subresource_map, test_aspect);
                     auto normalized_isr = image_state->NormalizeSubresourceRange(img_barrier.subresourceRange);
                     normalized_isr.aspectMask = test_aspect;
-
                     // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to the next "constant value" range
-                    for (auto pos = subresource_map->Find(normalized_isr); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
+                    for (auto pos = read_subresource_map->Find(normalized_isr); !(pos.AtEnd()) && !subres_skip;
+                         pos.IncrementInterval()) {
                         const auto &value = *pos;
-                        auto old_layout =
-                            NormalizeSynchronization2Layout(test_aspect, img_barrier.oldLayout);
+                        auto old_layout = NormalizeSynchronization2Layout(test_aspect, img_barrier.oldLayout);
                         if (!layout_check.Check(value.subresource, old_layout, value.current_layout, value.initial_layout)) {
                             const auto &vuid = GetImageBarrierVUID(loc, ImageError::kConflictingLayout);
                             subres_skip =
@@ -954,6 +911,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                                          string_VkImageLayout(layout_check.layout));
                         }
                     }
+                    write_subresource_map->SetSubresourceRangeLayout(*cb_state, normalized_isr, img_barrier.newLayout);
                 }
                 skip |= subres_skip;
             }

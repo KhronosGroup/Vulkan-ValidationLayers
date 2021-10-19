@@ -471,6 +471,8 @@ void CMD_BUFFER_STATE::NotifyInvalidate(const LogObjectList &invalid_handles, bo
     BASE_NODE::NotifyInvalidate(invalid_handles, unlink);
 }
 
+const CommandBufferImageLayoutMap& CMD_BUFFER_STATE::GetImageSubresourceLayoutMap() const { return image_layout_map; }
+
 // The const variant only need the image as it is the key for the map
 const ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(VkImage image) const {
     auto it = image_layout_map.find(image);
