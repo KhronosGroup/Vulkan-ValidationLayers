@@ -2269,6 +2269,10 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
             }
         }
 
+        // both spirv-opt and spirv-val will use the same flags
+        spvtools::ValidatorOptions options;
+        AdjustValidatorOptions(device_extensions, enabled_features, options);
+
         // Apply the specialization-constant values and revalidate the shader module.
         spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
@@ -2284,15 +2288,13 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         optimizer.RegisterPass(spvtools::CreateSetSpecConstantDefaultValuePass(id_value_map));
         optimizer.RegisterPass(spvtools::CreateFreezeSpecConstantValuePass());
         std::vector<uint32_t> specialized_spirv;
-        auto const optimized = optimizer.Run(module->words.data(), module->words.size(), &specialized_spirv);
+        auto const optimized = optimizer.Run(module->words.data(), module->words.size(), &specialized_spirv, options, false);
         assert(optimized == true);
 
         if (optimized) {
             spv_context ctx = spvContextCreate(spirv_environment);
             spv_const_binary_t binary{specialized_spirv.data(), specialized_spirv.size()};
             spv_diagnostic diag = nullptr;
-            spvtools::ValidatorOptions options;
-            AdjustValidatorOptions(device_extensions, enabled_features, options);
             auto const spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
             if (spv_valid != SPV_SUCCESS) {
                 skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-04145",
