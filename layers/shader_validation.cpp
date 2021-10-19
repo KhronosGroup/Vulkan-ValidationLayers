@@ -3065,4 +3065,8 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
         // --workgroup-scalar-block-layout
         options.SetWorkgroupScalarBlockLayout(true);
     }
+    if (enabled_features.maintenance4_features.maintenance4) {
+        // --allow-localsizeid
+        options.SetAllowLocalSizeId(true);
+    }
 }
