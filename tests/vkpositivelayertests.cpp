@@ -15036,7 +15036,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
 
                 layout(location = 5, component = 0) in vec2 st;
                 layout(location = 5, component = 2) in vec2 pq;
-                
+
                 layout(location = 6, component = 0) in vec4 cdef;
 
                 layout(location = 7, component = 0) in float ar1;
@@ -16186,5 +16186,147 @@ TEST_F(VkPositiveLayerTest, ShaderPointSizeStructMemeberWritten) {
     } else {
         printf("%s Error creating shader from assembly\n", kSkipPrefix);
     }
+    m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkPositiveLayerTest, Std430SpirvOptFlags10) {
+    TEST_DESCRIPTION("Reproduces issue 3442 where spirv-opt fails to set layout flags options using Vulkan 1.0");
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3442
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s test required extensions not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
+        (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+
+    auto uniform_buffer_standard_layout_features = LvlInitStruct<VkPhysicalDeviceUniformBufferStandardLayoutFeatures>();
+    auto scalar_block_layout_features =
+        LvlInitStruct<VkPhysicalDeviceScalarBlockLayoutFeatures>(&uniform_buffer_standard_layout_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&scalar_block_layout_features);
+    vkGetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (scalar_block_layout_features.scalarBlockLayout == VK_FALSE ||
+        uniform_buffer_standard_layout_features.uniformBufferStandardLayout == VK_FALSE) {
+        printf("%s scalarBlockLayout and uniformBufferStandardLayout are not supported Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    const char *fragment_source = R"glsl(
+#version 450
+#extension GL_ARB_separate_shader_objects:enable
+#extension GL_EXT_samplerless_texture_functions:require
+#extension GL_EXT_nonuniform_qualifier : require
+#extension GL_EXT_scalar_block_layout : require
+
+layout(std430, set=0,binding=0)uniform UniformBufferObject{
+    mat4 view;
+    mat4 proj;
+    vec4 lightPositions[1];
+    int SliceCutoffs[6];
+}ubo;
+
+// this specialization constant triggers the validation layer to recompile the shader
+// which causes the error related to the above uniform
+layout(constant_id = 0) const float spec = 10.0f;
+
+layout(location=0) out vec4 frag_color;
+void main() {
+    frag_color = vec4(ubo.lightPositions[0]) * spec;
+}
+    )glsl";
+
+    // Force a random value to replace the default to trigger shader val logic to replace it
+    float data = 2.0f;
+    VkSpecializationMapEntry entry = {0, 0, sizeof(float)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(float), &data};
+    const VkShaderObj fs(m_device, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main", false, &specialization_info,
+                         SPV_ENV_VULKAN_1_0);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkPositiveLayerTest, Std430SpirvOptFlags12) {
+    TEST_DESCRIPTION("Reproduces issue 3442 where spirv-opt fails to set layout flags options using Vulkan 1.2");
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3442
+
+    m_errorMonitor->ExpectSuccess();
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (features12.scalarBlockLayout == VK_FALSE || features12.uniformBufferStandardLayout == VK_FALSE) {
+        printf("%s scalarBlockLayout and uniformBufferStandardLayout are not supported Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    const char *fragment_source = R"glsl(
+#version 450
+#extension GL_ARB_separate_shader_objects:enable
+#extension GL_EXT_samplerless_texture_functions:require
+#extension GL_EXT_nonuniform_qualifier : require
+#extension GL_EXT_scalar_block_layout : require
+
+layout(std430, set=0,binding=0)uniform UniformBufferObject{
+    mat4 view;
+    mat4 proj;
+    vec4 lightPositions[1];
+    int SliceCutoffs[6];
+}ubo;
+
+// this specialization constant triggers the validation layer to recompile the shader
+// which causes the error related to the above uniform
+layout(constant_id = 0) const float spec = 10.0f;
+
+layout(location=0) out vec4 frag_color;
+void main() {
+    frag_color = vec4(ubo.lightPositions[0]) * spec;
+}
+    )glsl";
+
+    // Force a random value to replace the default to trigger shader val logic to replace it
+    float data = 2.0f;
+    VkSpecializationMapEntry entry = {0, 0, sizeof(float)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(float), &data};
+    const VkShaderObj fs(m_device, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main", false, &specialization_info,
+                         SPV_ENV_VULKAN_1_0);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
