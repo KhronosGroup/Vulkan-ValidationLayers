@@ -1108,6 +1108,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         if (rgba10x6_formats_features) {
             state_tracker->enabled_features.rgba10x6_formats_features = *rgba10x6_formats_features;
         }
+
+        const auto *maintenance4_features = LvlFindInChain<VkPhysicalDeviceMaintenance4FeaturesKHR>(pCreateInfo->pNext);
+        if (maintenance4_features) {
+            state_tracker->enabled_features.maintenance4_features = *maintenance4_features;
+        }
     }
 
     const auto *subgroup_size_control_features = LvlFindInChain<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>(pCreateInfo->pNext);
