@@ -44,6 +44,8 @@ class FENCE_STATE : public REFCOUNTED_NODE {
     FENCE_STATUS state;
     SyncScope scope;
 
+    std::vector<std::shared_ptr<std::function<void()>>> waiting_functions;
+
     // Default constructor
     FENCE_STATE(VkFence f, const VkFenceCreateInfo* pCreateInfo)
         : REFCOUNTED_NODE(f, kVulkanObjectTypeFence),
@@ -52,6 +54,15 @@ class FENCE_STATE : public REFCOUNTED_NODE {
           scope(kSyncScopeInternal) {}
 
     VkFence fence() const { return handle_.Cast<VkFence>(); }
+
+    void ExecuteWaitingFunctions() {
+        for (auto& func : waiting_functions) {
+            if (func.use_count() == 1) {
+                (*func)();
+            }
+        }
+        waiting_functions.clear();
+    }
 };
 
 class SEMAPHORE_STATE : public REFCOUNTED_NODE {
@@ -62,6 +73,8 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     VkSemaphoreType type;
     uint64_t payload;
 
+    std::vector<std::shared_ptr<std::function<void()>>> waiting_functions;
+
     SEMAPHORE_STATE(VkSemaphore sem, const VkSemaphoreTypeCreateInfo* type_create_info)
         : REFCOUNTED_NODE(sem, kVulkanObjectTypeSemaphore),
           signaler(VK_NULL_HANDLE, 0),
@@ -71,6 +84,19 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
           payload(type_create_info ? type_create_info->initialValue : 0) {}
 
     VkSemaphore semaphore() const { return handle_.Cast<VkSemaphore>(); }
+
+    void ExecuteWaitingFunctions() {
+        for (auto& func : waiting_functions) {
+            // Waiting functions are function that must be executed after all the semaphores that hold it get signaled
+            // The functions must be executed only once, so check if this is the last semaphore that is holding it
+            // If use_count() > 1, that means there are still other semaphores that need to be waited on before executing this
+            // function
+            if (func.use_count() == 1) {
+                (*func)();
+            }
+        }
+        waiting_functions.clear();
+    }
 };
 
 struct SEMAPHORE_WAIT {
