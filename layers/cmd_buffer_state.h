@@ -345,6 +345,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void ResetPushConstantDataIfIncompatible(const PIPELINE_LAYOUT_STATE *pipeline_layout_state);
 
     ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state);
+    const CommandBufferImageLayoutMap& GetImageSubresourceLayoutMap() const;
     const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(VkImage image) const;
 
     const QFOTransferBarrierSets<QFOImageTransferBarrier> &GetQFOBarrierSets(const QFOImageTransferBarrier &type_tag) const {
