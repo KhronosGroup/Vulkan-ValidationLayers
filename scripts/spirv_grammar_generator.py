@@ -92,6 +92,8 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
 
         self.atomicsOps = []
         self.groupOps = []
+        self.memoryScopeParam = [[] for i in range(5)]
+        self.executionScopeParam = [[] for i in range(5)]
 
         # Lots of switch statements share same ending
         self.commonBoolSwitch  = '''            found = true;
@@ -158,6 +160,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
     def endFile(self):
         write(self.atomicOperation(), file=self.outFile)
         write(self.groupOperation(), file=self.outFile)
+        write(self.scopeHelper(), file=self.outFile)
         # Finish processing in superclass
         OutputGenerator.endFile(self)
     #
@@ -171,13 +174,38 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             data = json.load(jsonFile)
             instructions = data['instructions']
             operandKinds = data['operand_kinds']
+
+            # Build list from json of all capabilities that are only for kernel
+            # This needs to be done before loop instructions
+            kernelCapability = ['Kernel']
+
+            for operandKind in operandKinds:
+                if operandKind['kind'] == 'Capability':
+                    for enum in operandKind['enumerants']:
+                        if 'capabilities' in enum and len(enum['capabilities']) == 1 and enum['capabilities'][0] == 'Kernel':
+                            kernelCapability.append(enum['enumerant'])
+
             for instruction in instructions:
-                if 'capabilities' in instruction and len(instruction['capabilities']) == 1 and instruction['capabilities'][0] == 'Kernel':
+                opname = instruction['opname']
+                if 'capabilities' in instruction and len(instruction['capabilities']) == 1 and instruction['capabilities'][0] in kernelCapability:
                     continue # If just 'Kernel' then op is ment for OpenCL
                 if instruction['class'] == 'Atomic':
-                    self.atomicsOps.append(instruction['opname'])
+                    self.atomicsOps.append(opname)
                 if instruction['class'] == 'Non-Uniform':
-                    self.groupOps.append(instruction['opname'])
+                    self.groupOps.append(opname)
+                if 'operands' in instruction:
+                    for index, operand in enumerate(instruction['operands']):
+                        # some instructions have both types of IdScope
+                        # OpReadClockKHR has the wrong 'name' as 'Scope'
+                        if operand['kind'] == 'IdScope':
+                            if operand['name'] == '\'Execution\'' or operand['name'] == '\'Scope\'':
+                                self.executionScopeParam[index + 1].append(opname)
+                            elif operand['name'] == '\'Memory\'':
+                                self.memoryScopeParam[index + 1].append(opname)
+                            else:
+                                print("Error: unknown operand {} not handled correctly\n".format(opname))
+                                sys.exit(1)
+
     #
     # Generate functions for numeric based functions
     def atomicOperation(self):
@@ -209,4 +237,45 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                 output += '        case spv::{}:\n'.format(f)
             output += self.commonBoolSwitch
 
+        return output;
+    #
+    # Generate functions for scope id
+    def scopeHelper(self):
+        output = ''
+        if self.headerFile:
+            output += 'uint32_t MemoryScopeParam(uint32_t opcode);\n'
+            output += 'uint32_t ExecutionScopeParam(uint32_t opcode);\n'
+        elif self.sourceFile:
+            output += '// Return paramater position of memory scope ID or zero if there is none\n'
+            output += 'uint32_t MemoryScopeParam(uint32_t opcode) {\n'
+            output += '    uint32_t position = 0;\n'
+            output += '    switch (opcode) {\n'
+            for index, operands in enumerate(self.memoryScopeParam):
+                for operand in operands:
+                    output += '        case spv::{}:\n'.format(operand)
+                if len(operands) != 0:
+                    output += '            return {};\n'.format(index)
+            output +='''            break;
+        default:
+            break;
+    }
+    return position;
+}\n
+'''
+            output += '// Return paramater position of execution scope ID or zero if there is none\n'
+            output += 'uint32_t ExecutionScopeParam(uint32_t opcode) {\n'
+            output += '    uint32_t position = 0;\n'
+            output += '    switch (opcode) {\n'
+            for index, operands in enumerate(self.executionScopeParam):
+                for operand in operands:
+                    output += '        case spv::{}:\n'.format(operand)
+                if len(operands) != 0:
+                    output += '            return {};\n'.format(index)
+            output +='''            break;
+        default:
+            break;
+    }
+    return position;
+}\n
+'''
         return output;
