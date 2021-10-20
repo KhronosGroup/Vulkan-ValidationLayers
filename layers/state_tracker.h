@@ -69,9 +69,15 @@ class EVENT_STATE;
 class SWAPCHAIN_NODE;
 class SURFACE_STATE;
 
+// These versions allow functions that are the same to share the same logic but can use different VUs
+// The common case are functions that were missing the pNext in Vulkan 1.0 and added via extension
+//
+// Added from VK_KHR_create_renderpass2
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
+// Added from VK_KHR_copy_commands2
 enum CopyCommandVersion { COPY_COMMAND_VERSION_1 = 0, COPY_COMMAND_VERSION_2 = 1 };
-enum CommandVersion { CMD_VERSION_1 = 0, CMD_VERSION_2 = 1 };
+// Added from VK_KHR_device_group but added to VK_KHR_swapchain with Vulkan 1.1
+enum AcquireVersion { ACQUIRE_VERSION_1 = 0, ACQUIRE_VERSION_2 = 1 };
 
 // This structure is used to save data across the CreateGraphicsPipelines down-chain API call
 struct create_graphics_pipeline_api_state {

@@ -14299,9 +14299,9 @@ bool CoreChecks::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint3
     return skip;
 }
 
-bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion cmd_version, VkSwapchainKHR swapchain,
-                                          uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
-                                          const char *func_name, const char *semaphore_type_vuid) const {
+bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const AcquireVersion version, VkSwapchainKHR swapchain, uint64_t timeout,
+                                          VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex, const char *func_name,
+                                          const char *semaphore_type_vuid) const {
     bool skip = false;
 
     auto semaphore_state = GetSemaphoreState(semaphore);
@@ -14310,7 +14310,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
                          report_data->FormatHandle(semaphore).c_str());
     }
     if (semaphore_state && semaphore_state->scope == kSyncScopeInternal && semaphore_state->signaled) {
-        const char *vuid = cmd_version == CMD_VERSION_2 ? "VUID-VkAcquireNextImageInfoKHR-semaphore-01288"
+        const char *vuid = version == ACQUIRE_VERSION_2 ? "VUID-VkAcquireNextImageInfoKHR-semaphore-01288"
                                                         : "VUID-vkAcquireNextImageKHR-semaphore-01286";
         skip |= LogError(semaphore, vuid, "%s: Semaphore must not be currently signaled or in a wait state.", func_name);
     }
@@ -14324,7 +14324,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
     const auto swapchain_data = GetSwapchainState(swapchain);
     if (swapchain_data) {
         if (swapchain_data->retired) {
-            const char *vuid = cmd_version == CMD_VERSION_2 ? "VUID-VkAcquireNextImageInfoKHR-swapchain-01675"
+            const char *vuid = version == ACQUIRE_VERSION_2 ? "VUID-VkAcquireNextImageInfoKHR-swapchain-01675"
                                                             : "VUID-vkAcquireNextImageKHR-swapchain-01285";
             skip |= LogError(swapchain, vuid,
                              "%s: This swapchain has been retired. The application can still present any images it "
@@ -14337,15 +14337,8 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
         const auto min_image_count = swapchain_data->surface_capabilities.minImageCount;
         const bool too_many_already_acquired = acquired_images > swapchain_image_count - min_image_count;
         if (timeout == UINT64_MAX && too_many_already_acquired) {
-            const char *vuid = "INVALID-vuid";
-            if (cmd_version == CMD_VERSION_1) {
-                vuid = "VUID-vkAcquireNextImageKHR-swapchain-01802";
-            } else if (cmd_version == CMD_VERSION_2) {
-                vuid = "VUID-vkAcquireNextImage2KHR-swapchain-01803";
-            } else {
-                assert(false);
-            }
-
+            const char *vuid = version == ACQUIRE_VERSION_2 ? "VUID-vkAcquireNextImage2KHR-swapchain-01803"
+                                                            : "VUID-vkAcquireNextImageKHR-swapchain-01802";
             const uint32_t acquirable = swapchain_image_count - min_image_count + 1;
             skip |= LogError(swapchain, vuid,
                              "%s: Application has already previously acquired %" PRIu32 " image%s from swapchain. Only %" PRIu32
@@ -14360,7 +14353,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
 
 bool CoreChecks::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                     VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) const {
-    return ValidateAcquireNextImage(device, CMD_VERSION_1, swapchain, timeout, semaphore, fence, pImageIndex,
+    return ValidateAcquireNextImage(device, ACQUIRE_VERSION_1, swapchain, timeout, semaphore, fence, pImageIndex,
                                     "vkAcquireNextImageKHR", "VUID-vkAcquireNextImageKHR-semaphore-03265");
 }
 
@@ -14371,8 +14364,8 @@ bool CoreChecks::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAc
                                                     "VUID-VkAcquireNextImageInfoKHR-deviceMask-01290");
     skip |= ValidateDeviceMaskToZero(pAcquireInfo->deviceMask, pAcquireInfo->swapchain,
                                      "VUID-VkAcquireNextImageInfoKHR-deviceMask-01291");
-    skip |= ValidateAcquireNextImage(device, CMD_VERSION_2, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
-                                     pAcquireInfo->fence, pImageIndex, "vkAcquireNextImage2KHR",
+    skip |= ValidateAcquireNextImage(device, ACQUIRE_VERSION_2, pAcquireInfo->swapchain, pAcquireInfo->timeout,
+                                     pAcquireInfo->semaphore, pAcquireInfo->fence, pImageIndex, "vkAcquireNextImage2KHR",
                                      "VUID-VkAcquireNextImageInfoKHR-semaphore-03266");
     return skip;
 }
