@@ -6027,57 +6027,53 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(const BUFFER_STATE *src_buffer_stat
 
     return skip;
 }
-
-bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                              uint32_t regionCount, const VkBufferCopy *pRegions) const {
+template <typename RegionType>
+bool CoreChecks::ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+                                       const RegionType *pRegions, CopyCommandVersion version) const {
     const auto cb_node = GetCBState(commandBuffer);
     const auto src_buffer_state = GetBufferState(srcBuffer);
     const auto dst_buffer_state = GetBufferState(dstBuffer);
 
+    const bool is_2khr = (version == COPY_COMMAND_VERSION_2);
+    const CMD_TYPE cmd_type = is_2khr ? CMD_COPYBUFFER2KHR : CMD_COPYBUFFER;
+    const char *func_name = CommandTypeString(cmd_type);
+    const char *vuid;
+
     bool skip = false;
-    skip |= ValidateMemoryIsBoundToBuffer(src_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-srcBuffer-00119");
-    skip |= ValidateMemoryIsBoundToBuffer(dst_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-dstBuffer-00121");
+    vuid = is_2khr ? "VUID-VkCopyBufferInfo2KHR-srcBuffer-00119" : "VUID-vkCmdCopyBuffer-srcBuffer-00119";
+    skip |= ValidateMemoryIsBoundToBuffer(src_buffer_state, func_name, vuid);
+    vuid = is_2khr ? "VUID-VkCopyBufferInfo2KHR-dstBuffer-00121" : "VUID-vkCmdCopyBuffer-dstBuffer-00121";
+    skip |= ValidateMemoryIsBoundToBuffer(dst_buffer_state, func_name, vuid);
+
     // Validate that SRC & DST buffers have correct usage flags set
-    skip |=
-        ValidateBufferUsageFlags(src_buffer_state, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, true, "VUID-vkCmdCopyBuffer-srcBuffer-00118",
-                                 "vkCmdCopyBuffer()", "VK_BUFFER_USAGE_TRANSFER_SRC_BIT");
-    skip |=
-        ValidateBufferUsageFlags(dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true, "VUID-vkCmdCopyBuffer-dstBuffer-00120",
-                                 "vkCmdCopyBuffer()", "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    skip |= ValidateCmd(cb_node, CMD_COPYBUFFER);
-    skip |= ValidateCmdCopyBufferBounds(src_buffer_state, dst_buffer_state, regionCount, pRegions, COPY_COMMAND_VERSION_1);
-    skip |= ValidateProtectedBuffer(cb_node, src_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-commandBuffer-01822");
-    skip |= ValidateProtectedBuffer(cb_node, dst_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-commandBuffer-01823");
-    skip |= ValidateUnprotectedBuffer(cb_node, dst_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-commandBuffer-01824");
+    vuid = is_2khr ? "VUID-VkCopyBufferInfo2KHR-srcBuffer-00118" : "VUID-vkCmdCopyBuffer-srcBuffer-00118";
+    skip |= ValidateBufferUsageFlags(src_buffer_state, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, true, vuid, func_name,
+                                     "VK_BUFFER_USAGE_TRANSFER_SRC_BIT");
+    vuid = is_2khr ? "VUID-VkCopyBufferInfo2KHR-dstBuffer-00120" : "VUID-vkCmdCopyBuffer-dstBuffer-00120";
+    skip |= ValidateBufferUsageFlags(dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true, vuid, func_name,
+                                     "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
+
+    skip |= ValidateCmd(cb_node, cmd_type);
+    skip |= ValidateCmdCopyBufferBounds(src_buffer_state, dst_buffer_state, regionCount, pRegions, version);
+
+    vuid = is_2khr ? "VUID-vkCmdCopyBuffer2KHR-commandBuffer-01822" : "VUID-vkCmdCopyBuffer-commandBuffer-01822";
+    skip |= ValidateProtectedBuffer(cb_node, src_buffer_state, func_name, vuid);
+    vuid = is_2khr ? "VUID-vkCmdCopyBuffer2KHR-commandBuffer-01823" : "VUID-vkCmdCopyBuffer-commandBuffer-01823";
+    skip |= ValidateProtectedBuffer(cb_node, dst_buffer_state, func_name, vuid);
+    vuid = is_2khr ? "VUID-vkCmdCopyBuffer2KHR-commandBuffer-01824" : "VUID-vkCmdCopyBuffer-commandBuffer-01824";
+    skip |= ValidateUnprotectedBuffer(cb_node, dst_buffer_state, func_name, vuid);
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                              uint32_t regionCount, const VkBufferCopy *pRegions) const {
+    return ValidateCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions, COPY_COMMAND_VERSION_1);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer,
                                                   const VkCopyBufferInfo2KHR *pCopyBufferInfos) const {
-    const auto cb_node = GetCBState(commandBuffer);
-    const auto src_buffer_state = GetBufferState(pCopyBufferInfos->srcBuffer);
-    const auto dst_buffer_state = GetBufferState(pCopyBufferInfos->dstBuffer);
-
-    bool skip = false;
-    skip |= ValidateMemoryIsBoundToBuffer(src_buffer_state, "vkCmdCopyBuffer2KHR()", "VUID-VkCopyBufferInfo2KHR-srcBuffer-00119");
-    skip |= ValidateMemoryIsBoundToBuffer(dst_buffer_state, "vkCmdCopyBuffer2KHR()", "VUID-VkCopyBufferInfo2KHR-dstBuffer-00121");
-    // Validate that SRC & DST buffers have correct usage flags set
-    skip |= ValidateBufferUsageFlags(src_buffer_state, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, true,
-                                     "VUID-VkCopyBufferInfo2KHR-srcBuffer-00118", "vkCmdCopyBuffer2KHR()",
-                                     "VK_BUFFER_USAGE_TRANSFER_SRC_BIT");
-    skip |= ValidateBufferUsageFlags(dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
-                                     "VUID-VkCopyBufferInfo2KHR-dstBuffer-00120", "vkCmdCopyBuffer2KHR()",
-                                     "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    skip |= ValidateCmd(cb_node, CMD_COPYBUFFER2KHR);
-    skip |= ValidateCmdCopyBufferBounds(src_buffer_state, dst_buffer_state, pCopyBufferInfos->regionCount,
-                                        pCopyBufferInfos->pRegions, COPY_COMMAND_VERSION_2);
-    skip |=
-        ValidateProtectedBuffer(cb_node, src_buffer_state, "vkCmdCopyBuffer2KHR()", "VUID-vkCmdCopyBuffer2KHR-commandBuffer-01822");
-    skip |=
-        ValidateProtectedBuffer(cb_node, dst_buffer_state, "vkCmdCopyBuffer2KHR()", "VUID-vkCmdCopyBuffer2KHR-commandBuffer-01823");
-    skip |= ValidateUnprotectedBuffer(cb_node, dst_buffer_state, "vkCmdCopyBuffer2KHR()",
-                                      "VUID-vkCmdCopyBuffer2KHR-commandBuffer-01824");
-    return skip;
+    return ValidateCmdCopyBuffer(commandBuffer, pCopyBufferInfos->srcBuffer, pCopyBufferInfos->dstBuffer,
+                                 pCopyBufferInfos->regionCount, pCopyBufferInfos->pRegions, COPY_COMMAND_VERSION_2);
 }
 
 bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) const {
