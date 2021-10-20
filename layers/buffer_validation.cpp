@@ -4844,7 +4844,7 @@ bool CoreChecks::ValidateImageAcquired(VkImage image, const char *func_name) con
     const auto *image_state = GetImageState(image);
 
     if (image_state && image_state->create_from_swapchain) {
-        if (!image_state->bind_swapchain->images[image_state->swapchain_image_index].acquired) {
+        if (image_state->bind_swapchain->images[image_state->swapchain_image_index].acquired == SwapchainImageState::NON_ACQUIRED) {
             skip |= LogError(image_state->Handle(), kVUID_Core_NonAcquiredSwapchainImageUsed,
                              "%s: Image %s is a presentable image, but it is currently not acquired from swapchain.", func_name,
                              report_data->FormatHandle(image_state->Handle()).c_str());

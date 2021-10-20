@@ -3601,6 +3601,13 @@ void ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(VkDevice de
 void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                          VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) {
     uint32_t image_index = *pImageIndex;
+    {
+        // Mark the image as waiting for a semaphore
+        auto swapchain_data = GetSwapchainState(swapchain);
+        if (swapchain_data) {
+            swapchain_data->AcquireImage(image_index);
+        }
+    }
     const auto acquire = [this, swapchain, image_index]() {
         // Mark the image as acquired.
         auto swapchain_data = GetSwapchainState(swapchain);
