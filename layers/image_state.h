@@ -250,7 +250,6 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     const safe_VkImageCreateInfo image_create_info;
     std::shared_ptr<SURFACE_STATE> surface;
     ValidationStateTracker *dev_data;
-    const VkSurfaceCapabilitiesKHR surface_capabilities;
     uint32_t acquired_images = 0;
 
     SWAPCHAIN_NODE(ValidationStateTracker *dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
@@ -298,10 +297,7 @@ struct hash<GpuQueue> {
 //    SURFACE_STATE -> nothing
 class SURFACE_STATE : public BASE_NODE {
   public:
-    SWAPCHAIN_NODE *swapchain;
-    layer_data::unordered_map<GpuQueue, bool> gpu_queue_support;
-
-    SURFACE_STATE(VkSurfaceKHR s) : BASE_NODE(s, kVulkanObjectTypeSurfaceKHR), swapchain(nullptr), gpu_queue_support() {}
+    SURFACE_STATE(VkSurfaceKHR s) : BASE_NODE(s, kVulkanObjectTypeSurfaceKHR) {}
 
     ~SURFACE_STATE() {
         if (!Destroyed()) {
@@ -316,4 +312,24 @@ class SURFACE_STATE : public BASE_NODE {
     VkImageCreateInfo GetImageCreateInfo() const;
 
     void RemoveParent(BASE_NODE *parent_node) override;
+
+    void SetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi, bool supported);
+    bool GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const;
+
+    void SetPresentModes(VkPhysicalDevice phys_dev, std::vector<VkPresentModeKHR> &&modes);
+    std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev) const;
+
+    void SetFormats(VkPhysicalDevice phys_dev, std::vector<VkSurfaceFormatKHR> &&fmts);
+    std::vector<VkSurfaceFormatKHR> GetFormats(VkPhysicalDevice phys_dev) const;
+
+    void SetCapabilities(VkPhysicalDevice phys_dev, const VkSurfaceCapabilitiesKHR &caps);
+    VkSurfaceCapabilitiesKHR GetCapabilities(VkPhysicalDevice phys_dev) const;
+
+    SWAPCHAIN_NODE *swapchain{nullptr};
+
+  private:
+    mutable layer_data::unordered_map<GpuQueue, bool> gpu_queue_support_;
+    mutable layer_data::unordered_map<VkPhysicalDevice, std::vector<VkPresentModeKHR>> present_modes_;
+    mutable layer_data::unordered_map<VkPhysicalDevice, std::vector<VkSurfaceFormatKHR>> formats_;
+    mutable layer_data::unordered_map<VkPhysicalDevice, VkSurfaceCapabilitiesKHR> capabilities_;
 };

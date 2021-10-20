@@ -3564,12 +3564,88 @@ void ValidationStateTracker::PostCallRecordCreateHeadlessSurfaceEXT(VkInstance i
     RecordVulkanSurface(pSurface);
 }
 
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice,
+                                                                                   VkSurfaceKHR surface,
+                                                                                   VkSurfaceCapabilitiesKHR *pSurfaceCapabilities,
+                                                                                   VkResult result) {
+    if (VK_SUCCESS != result) return;
+    auto surface_state = Get<SURFACE_STATE>(surface);
+    surface_state->SetCapabilities(physicalDevice, *pSurfaceCapabilities);
+}
+
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+    VkSurfaceCapabilities2KHR *pSurfaceCapabilities, VkResult result) {
+    if (VK_SUCCESS != result) return;
+    auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
+    surface_state->SetCapabilities(physicalDevice, pSurfaceCapabilities->surfaceCapabilities);
+}
+
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice,
+                                                                                    VkSurfaceKHR surface,
+                                                                                    VkSurfaceCapabilities2EXT *pSurfaceCapabilities,
+                                                                                    VkResult result) {
+    auto surface_state = Get<SURFACE_STATE>(surface);
+    VkSurfaceCapabilitiesKHR caps{
+        pSurfaceCapabilities->minImageCount,           pSurfaceCapabilities->maxImageCount,
+        pSurfaceCapabilities->currentExtent,           pSurfaceCapabilities->minImageExtent,
+        pSurfaceCapabilities->maxImageExtent,          pSurfaceCapabilities->maxImageArrayLayers,
+        pSurfaceCapabilities->supportedTransforms,     pSurfaceCapabilities->currentTransform,
+        pSurfaceCapabilities->supportedCompositeAlpha, pSurfaceCapabilities->supportedUsageFlags,
+    };
+    surface_state->SetCapabilities(physicalDevice, caps);
+}
+
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice,
                                                                               uint32_t queueFamilyIndex, VkSurfaceKHR surface,
                                                                               VkBool32 *pSupported, VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto surface_state = GetSurfaceState(surface);
-    surface_state->gpu_queue_support[{physicalDevice, queueFamilyIndex}] = (*pSupported == VK_TRUE);
+    auto surface_state = Get<SURFACE_STATE>(surface);
+    surface_state->SetQueueSupport(physicalDevice, queueFamilyIndex, (*pSupported == VK_TRUE));
+}
+
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
+                                                                                   VkSurfaceKHR surface,
+                                                                                   uint32_t *pPresentModeCount,
+                                                                                   VkPresentModeKHR *pPresentModes,
+                                                                                   VkResult result) {
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
+
+    if (pPresentModes) {
+        auto surface_state = Get<SURFACE_STATE>(surface);
+        surface_state->SetPresentModes(physicalDevice,
+                                       std::vector<VkPresentModeKHR>(pPresentModes, pPresentModes + *pPresentModeCount));
+    }
+}
+
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                              uint32_t *pSurfaceFormatCount,
+                                                                              VkSurfaceFormatKHR *pSurfaceFormats,
+                                                                              VkResult result) {
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
+
+    if (pSurfaceFormats) {
+        auto surface_state = Get<SURFACE_STATE>(surface);
+        surface_state->SetFormats(physicalDevice,
+                                  std::vector<VkSurfaceFormatKHR>(pSurfaceFormats, pSurfaceFormats + *pSurfaceFormatCount));
+    }
+}
+
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                                               const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                               uint32_t *pSurfaceFormatCount,
+                                                                               VkSurfaceFormat2KHR *pSurfaceFormats,
+                                                                               VkResult result) {
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
+
+    if (pSurfaceFormats) {
+        std::vector<VkSurfaceFormatKHR> fmts(*pSurfaceFormatCount);
+        auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
+        for (uint32_t i = 0; i < *pSurfaceFormatCount; i++) {
+            fmts[i] = pSurfaceFormats[i].surfaceFormat;
+        }
+        surface_state->SetFormats(physicalDevice, std::move(fmts));
+    }
 }
 
 void ValidationStateTracker::PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer,

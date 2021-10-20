@@ -13636,20 +13636,21 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     // All physical devices and queue families are required to be able to present to any native window on Android; require the
     // application to have established support on any other platform.
     if (!instance_extensions.vk_khr_android_surface) {
-        auto support_predicate = [this](decltype(surface_state->gpu_queue_support)::value_type qs) -> bool {
-            // TODO: should restrict search only to queue families of VkDeviceQueueCreateInfos, not whole phys. device
-            return (qs.first.gpu == physical_device) && qs.second;
-        };
-        const auto &support = surface_state->gpu_queue_support;
-        bool is_supported = std::any_of(support.begin(), support.end(), support_predicate);
+        // restrict search only to queue families of VkDeviceQueueCreateInfos, not the whole physical device
+        bool is_supported = false;
+        for (const auto &queue_entry : queueMap) {
+            auto qfi = queue_entry.second->queueFamilyIndex;
+            if (surface_state->GetQueueSupport(physical_device, qfi)) {
+                is_supported = true;
+                break;
+            }
+        }
 
         if (!is_supported) {
-            if (LogError(
-                    device, "VUID-VkSwapchainCreateInfoKHR-surface-01270",
-                    "%s: pCreateInfo->surface is not known at this time to be supported for presentation by this device. The "
-                    "vkGetPhysicalDeviceSurfaceSupportKHR() must be called beforehand, and it must return VK_TRUE support with "
-                    "this surface for at least one queue family of this device.",
-                    func_name)) {
+            LogObjectList objs(device);
+            objs.add(surface_state->Handle());
+            if (LogError(objs, "VUID-VkSwapchainCreateInfoKHR-surface-01270",
+                    "%s: pCreateInfo->surface is not supported for presentation by this device.", func_name)) {
                 return true;
             }
         }
@@ -13823,17 +13824,13 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     }
 
     // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfaceFormatsKHR():
-    std::vector<VkSurfaceFormatKHR> surface_formats;
-    uint32_t surface_format_count = 0;
-    DispatchGetPhysicalDeviceSurfaceFormatsKHR(physical_device, pCreateInfo->surface, &surface_format_count, nullptr);
-    surface_formats.resize(surface_format_count);
-    DispatchGetPhysicalDeviceSurfaceFormatsKHR(physical_device, pCreateInfo->surface, &surface_format_count, &surface_formats[0]);
     {
         // Validate pCreateInfo->imageFormat against VkSurfaceFormatKHR::format:
         bool found_format = false;
         bool found_color_space = false;
         bool found_match = false;
-        for (const auto &format : surface_formats) {
+        const auto formats = surface_state->GetFormats(physical_device);
+        for (const auto &format : formats) {
             if (pCreateInfo->imageFormat == format.format) {
                 // Validate pCreateInfo->imageColorSpace against VkSurfaceFormatKHR::colorSpace:
                 found_format = true;
@@ -13865,16 +13862,8 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         }
     }
 
-    // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfacePresentModesKHR():
-    std::vector<VkPresentModeKHR> present_modes;
-    uint32_t present_mode_count = 0;
-    DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->PhysDev(), pCreateInfo->surface, &present_mode_count,
-                                                    nullptr);
-    present_modes.resize(present_mode_count);
-    DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->PhysDev(), pCreateInfo->surface, &present_mode_count,
-                                                    &present_modes[0]);
-
     // Validate pCreateInfo->presentMode against vkGetPhysicalDeviceSurfacePresentModesKHR():
+    auto present_modes = surface_state->GetPresentModes(physical_device);
     bool found_match = std::find(present_modes.begin(), present_modes.end(), present_mode) != present_modes.end();
     if (!found_match) {
         if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-presentMode-01281",
@@ -14165,18 +14154,10 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 }
             }
 
-            // All physical devices and queue families are required to be able to present to any native window on Android; require
-            // the application to have established support on any other platform.
+            // All physical devices and queue families are required to be able to present to any native window on Android
             if (!instance_extensions.vk_khr_android_surface) {
                 const auto surface_state = GetSurfaceState(swapchain_data->createInfo.surface);
-                auto support_it = surface_state->gpu_queue_support.find({physical_device, queue_state->queueFamilyIndex});
-
-                if (support_it == surface_state->gpu_queue_support.end()) {
-                    skip |= LogError(
-                        pPresentInfo->pSwapchains[i], kVUID_Core_DrawState_SwapchainUnsupportedQueue,
-                        "vkQueuePresentKHR: Presenting pSwapchains[%u] image without calling vkGetPhysicalDeviceSurfaceSupportKHR",
-                        i);
-                } else if (!support_it->second) {
+                if (!surface_state->GetQueueSupport(physical_device, queue_state->queueFamilyIndex)) {
                     skip |= LogError(
                         pPresentInfo->pSwapchains[i], "VUID-vkQueuePresentKHR-pSwapchains-01292",
                         "vkQueuePresentKHR: Presenting pSwapchains[%u] image on queue that cannot present to this surface.", i);
@@ -14335,7 +14316,8 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const AcquireVersion 
 
         const uint32_t acquired_images = swapchain_data->acquired_images;
         const uint32_t swapchain_image_count = static_cast<uint32_t>(swapchain_data->images.size());
-        const auto min_image_count = swapchain_data->surface_capabilities.minImageCount;
+        auto caps = swapchain_data->surface->GetCapabilities(physical_device);
+        const auto min_image_count = caps.minImageCount;
         const bool too_many_already_acquired = acquired_images > swapchain_image_count - min_image_count;
         if (timeout == UINT64_MAX && too_many_already_acquired) {
             const char *vuid = version == ACQUIRE_VERSION_2 ? "VUID-vkAcquireNextImage2KHR-swapchain-01803"
@@ -16435,26 +16417,16 @@ bool CoreChecks::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalD
     bool skip = false;
 
     const auto *pd_state = GetPhysicalDeviceState(physicalDevice);
-    if (pd_state) {
-        const auto *surface_state = GetSurfaceState(surface);
-        VkBool32 supported = VK_FALSE;
-        for (uint32_t i = 0; i < pd_state->queue_family_known_count; ++i) {
-            bool checked = false;
-            if (surface_state) {
-                const auto support_it = surface_state->gpu_queue_support.find({physicalDevice, i});
-                if (support_it != surface_state->gpu_queue_support.end()) {
-                    supported = support_it->second;
-                    checked = true;
-                }
-            }
-            if (!checked) {
-                DispatchGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &supported);
-            }
-            if (supported) {
+    const auto *surface_state = GetSurfaceState(surface);
+    if (pd_state && surface_state) {
+        bool is_supported = false;
+        for (uint32_t i = 0; i < pd_state->queue_family_properties.size(); i++) {
+            if (surface_state->GetQueueSupport(physicalDevice, i)) {
+                is_supported = true;
                 break;
             }
         }
-        if (!supported) {
+        if (!is_supported) {
             skip |= LogError(physicalDevice, vuid, "%s(): surface is not supported by the physicalDevice.", func_name);
         }
     }

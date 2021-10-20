@@ -499,12 +499,6 @@ static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR 
     return safe_VkImageCreateInfo(&image_ci);
 }
 
-static VkSurfaceCapabilitiesKHR GetSurfaceCaps(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
-    VkSurfaceCapabilitiesKHR result{};
-    DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &result);
-    return result;
-}
-
 SWAPCHAIN_NODE::SWAPCHAIN_NODE(ValidationStateTracker *dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                VkSwapchainKHR swapchain)
     : BASE_NODE(swapchain, kVulkanObjectTypeSwapchainKHR),
@@ -512,8 +506,7 @@ SWAPCHAIN_NODE::SWAPCHAIN_NODE(ValidationStateTracker *dev_data_, const VkSwapch
       shared_presentable(VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
                          VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode),
       image_create_info(GetImageCreateInfo(pCreateInfo)),
-      dev_data(dev_data_),
-      surface_capabilities(GetSurfaceCaps(dev_data->physical_device, pCreateInfo->surface)) {}
+      dev_data(dev_data_) {}
 
 void SWAPCHAIN_NODE::PresentImage(uint32_t image_index) {
     if (image_index >= images.size()) return;
@@ -578,4 +571,79 @@ void SURFACE_STATE::RemoveParent(BASE_NODE *parent_node) {
         swapchain = nullptr;
     }
     BASE_NODE::RemoveParent(parent_node);
+}
+
+void SURFACE_STATE::SetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi, bool supported) {
+    assert(phys_dev);
+    GpuQueue key{phys_dev, qfi};
+    gpu_queue_support_[key] = supported;
+}
+
+bool SURFACE_STATE::GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const {
+    assert(phys_dev);
+    GpuQueue key{phys_dev, qfi};
+    auto iter = gpu_queue_support_.find(key);
+    if (iter != gpu_queue_support_.end()) {
+        return iter->second;
+    }
+    VkBool32 supported = VK_FALSE;
+    DispatchGetPhysicalDeviceSurfaceSupportKHR(phys_dev, qfi, surface(), &supported);
+    gpu_queue_support_[key] = (supported == VK_TRUE);
+    return supported == VK_TRUE;
+}
+
+void SURFACE_STATE::SetPresentModes(VkPhysicalDevice phys_dev, std::vector<VkPresentModeKHR> &&modes) {
+    assert(phys_dev);
+    present_modes_[phys_dev] = std::move(modes);
+}
+
+std::vector<VkPresentModeKHR> SURFACE_STATE::GetPresentModes(VkPhysicalDevice phys_dev) const {
+    assert(phys_dev);
+    auto iter = present_modes_.find(phys_dev);
+    if (iter != present_modes_.end()) {
+        return iter->second;
+    }
+    std::vector<VkPresentModeKHR> result;
+    uint32_t count = 0;
+    DispatchGetPhysicalDeviceSurfacePresentModesKHR(phys_dev, surface(), &count, nullptr);
+    result.resize(count);
+    DispatchGetPhysicalDeviceSurfacePresentModesKHR(phys_dev, surface(), &count, result.data());
+    return result;
+}
+
+void SURFACE_STATE::SetFormats(VkPhysicalDevice phys_dev, std::vector<VkSurfaceFormatKHR> &&fmts) {
+    assert(phys_dev);
+    formats_[phys_dev] = std::move(fmts);
+}
+
+std::vector<VkSurfaceFormatKHR> SURFACE_STATE::GetFormats(VkPhysicalDevice phys_dev) const {
+    assert(phys_dev);
+    auto iter = formats_.find(phys_dev);
+    if (iter != formats_.end()) {
+        return iter->second;
+    }
+    std::vector<VkSurfaceFormatKHR> result;
+    uint32_t count = 0;
+    DispatchGetPhysicalDeviceSurfaceFormatsKHR(phys_dev, surface(), &count, nullptr);
+    result.resize(count);
+    DispatchGetPhysicalDeviceSurfaceFormatsKHR(phys_dev, surface(), &count, result.data());
+    formats_[phys_dev] = result;
+    return result;
+}
+
+void SURFACE_STATE::SetCapabilities(VkPhysicalDevice phys_dev, const VkSurfaceCapabilitiesKHR &caps) {
+    assert(phys_dev);
+    capabilities_[phys_dev] = caps;
+}
+
+VkSurfaceCapabilitiesKHR SURFACE_STATE::GetCapabilities(VkPhysicalDevice phys_dev) const {
+    assert(phys_dev);
+    auto iter = capabilities_.find(phys_dev);
+    if (iter != capabilities_.end()) {
+        return iter->second;
+    }
+    VkSurfaceCapabilitiesKHR result{};
+    DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev, surface(), &result);
+    capabilities_[phys_dev] = result;
+    return result;
 }
