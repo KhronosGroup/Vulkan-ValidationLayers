@@ -545,9 +545,9 @@ void SWAPCHAIN_NODE::AcquireImage(uint32_t image_index) {
 void SWAPCHAIN_NODE::Destroy() {
     for (auto &swapchain_image : images) {
         if (swapchain_image.image_state) {
+            RemoveParent(swapchain_image.image_state);
             swapchain_image.image_state->Destroy();
             dev_data->imageMap.erase(swapchain_image.image_state->image());
-            swapchain_image.image_state = nullptr;
         }
         // NOTE: We don't have access to dev_data->fake_memory.Free() here, but it is currently a no-op
     }
