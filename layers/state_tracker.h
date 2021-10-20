@@ -580,6 +580,26 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                   uint32_t* pQueueFamilyPropertyCount,
                                                                   VkQueueFamilyProperties2* pQueueFamilyProperties) override;
+    void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                               VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
+                                                               VkResult result) override;
+    void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                VkSurfaceCapabilities2KHR* pSurfaceCapabilities,
+                                                                VkResult result) override;
+    void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
+                                                                VkResult result) override;
+    void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                          uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
+                                                          VkResult result) override;
+    void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                           const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                           uint32_t* pSurfaceFormatCount, VkSurfaceFormat2KHR* pSurfaceFormats,
+                                                           VkResult result) override;
+    void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                               uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
+                                                               VkResult result) override;
     void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                           VkSurfaceKHR surface, VkBool32* pSupported, VkResult result) override;
     void PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd,
