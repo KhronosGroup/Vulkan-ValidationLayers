@@ -152,6 +152,7 @@ VK_LAYER_EXPORT bool FormatIsCompressed_ASTC_HDR(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsCompressed_BC(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsCompressed_PVRTC(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsSinglePlane_422(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsBlockedImage(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsNorm(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsUNorm(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsSNorm(VkFormat format);

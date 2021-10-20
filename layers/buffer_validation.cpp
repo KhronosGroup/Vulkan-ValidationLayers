@@ -2483,7 +2483,7 @@ VkExtent3D CoreChecks::GetScaledItg(const CMD_BUFFER_STATE *cb_node, const IMAGE
     auto pool = cb_node->command_pool.get();
     if (pool) {
         granularity = GetPhysicalDeviceState()->queue_family_properties[pool->queueFamilyIndex].minImageTransferGranularity;
-        if (FormatIsCompressed(img->createInfo.format) || FormatIsSinglePlane_422(img->createInfo.format)) {
+        if (FormatIsBlockedImage(img->createInfo.format)) {
             auto block_size = FormatTexelBlockExtent(img->createInfo.format);
             granularity.width *= block_size.width;
             granularity.height *= block_size.height;
@@ -2718,10 +2718,8 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const ImageCo
                              func_name, i, region.srcOffset.z);
         }
 
-        // Source checks that apply only to compressed images (or to _422 images if ycbcr enabled)
-        bool ext_ycbcr = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion);
-        if (FormatIsCompressed(src_state->createInfo.format) ||
-            (ext_ycbcr && FormatIsSinglePlane_422(src_state->createInfo.format))) {
+        // Source checks that apply only to "blocked images"
+        if (FormatIsBlockedImage(src_state->createInfo.format)) {
             const VkExtent3D block_size = FormatTexelBlockExtent(src_state->createInfo.format);
             //  image offsets must be multiples of block dimensions
             if ((SafeModulo(region.srcOffset.x, block_size.width) != 0) ||
@@ -2729,7 +2727,7 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const ImageCo
                 (SafeModulo(region.srcOffset.z, block_size.depth) != 0)) {
                 vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01727" : "VUID-vkCmdCopyImage-srcImage-01727";
                 skip |= LogError(src_state->image(), vuid,
-                                 "%s: pRegion[%d] srcOffset (%d, %d) must be multiples of the compressed image's "
+                                 "%s: pRegion[%d] srcOffset (%d, %d) must be multiples of the blocked image's "
                                  "texel width & height (%d, %d).",
                                  func_name, i, region.srcOffset.x, region.srcOffset.y, block_size.width, block_size.height);
             }
@@ -2739,7 +2737,7 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const ImageCo
                 (src_copy_extent.width + region.srcOffset.x != mip_extent.width)) {
                 vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01728" : "VUID-vkCmdCopyImage-srcImage-01728";
                 skip |= LogError(src_state->image(), vuid,
-                                 "%s: pRegion[%d] extent width (%d) must be a multiple of the compressed texture block "
+                                 "%s: pRegion[%d] extent width (%d) must be a multiple of the blocked texture block "
                                  "width (%d), or when added to srcOffset.x (%d) must equal the image subresource width (%d).",
                                  func_name, i, src_copy_extent.width, block_size.width, region.srcOffset.x, mip_extent.width);
             }
@@ -2831,9 +2829,8 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const ImageCo
             }
         }
 
-        // Dest checks that apply only to compressed images (or to _422 images if ycbcr enabled)
-        if (FormatIsCompressed(dst_state->createInfo.format) ||
-            (ext_ycbcr && FormatIsSinglePlane_422(dst_state->createInfo.format))) {
+        // Dest checks that apply only to "blocked images"
+        if (FormatIsBlockedImage(dst_state->createInfo.format)) {
             const VkExtent3D block_size = FormatTexelBlockExtent(dst_state->createInfo.format);
 
             //  image offsets must be multiples of block dimensions
@@ -2842,7 +2839,7 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const ImageCo
                 (SafeModulo(region.dstOffset.z, block_size.depth) != 0)) {
                 vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01731" : "VUID-vkCmdCopyImage-dstImage-01731";
                 skip |= LogError(dst_state->image(), vuid,
-                                 "%s: pRegion[%d] dstOffset (%d, %d) must be multiples of the compressed image's "
+                                 "%s: pRegion[%d] dstOffset (%d, %d) must be multiples of the blocked image's "
                                  "texel width & height (%d, %d).",
                                  func_name, i, region.dstOffset.x, region.dstOffset.y, block_size.width, block_size.height);
             }
@@ -2852,7 +2849,7 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const ImageCo
                 (dst_copy_extent.width + region.dstOffset.x != mip_extent.width)) {
                 vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01732" : "VUID-vkCmdCopyImage-dstImage-01732";
                 skip |= LogError(dst_state->image(), vuid,
-                                 "%s: pRegion[%d] dst_copy_extent width (%d) must be a multiple of the compressed texture "
+                                 "%s: pRegion[%d] dst_copy_extent width (%d) must be a multiple of the blocked texture "
                                  "block width (%d), or when added to dstOffset.x (%d) must equal the image subresource width (%d).",
                                  func_name, i, dst_copy_extent.width, block_size.width, region.dstOffset.x, mip_extent.width);
             }
@@ -6313,23 +6310,22 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         }
 
         // Checks that apply only to compressed images
-        if (FormatIsCompressed(image_format) || FormatIsSinglePlane_422(image_format)) {
+        if (FormatIsBlockedImage(image_format)) {
             auto block_size = FormatTexelBlockExtent(image_format);
 
             //  BufferRowLength must be a multiple of block width
             if (SafeModulo(pRegions[i].bufferRowLength, block_size.width) != 0) {
-                skip |=
-                    LogError(image_state->image(), GetBufferImageCopyCommandVUID("00203", image_to_buffer, is_2khr),
-                             "%s: pRegion[%d] bufferRowLength (%d) must be a multiple of the compressed image's texel width (%d).",
-                             function, i, pRegions[i].bufferRowLength, block_size.width);
+                skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00203", image_to_buffer, is_2khr),
+                                 "%s: pRegion[%d] bufferRowLength (%d) must be a multiple of the blocked image's texel width (%d).",
+                                 function, i, pRegions[i].bufferRowLength, block_size.width);
             }
 
             //  BufferRowHeight must be a multiple of block height
             if (SafeModulo(pRegions[i].bufferImageHeight, block_size.height) != 0) {
-                skip |= LogError(
-                    image_state->image(), GetBufferImageCopyCommandVUID("00204", image_to_buffer, is_2khr),
-                    "%s: pRegion[%d] bufferImageHeight (%d) must be a multiple of the compressed image's texel height (%d).",
-                    function, i, pRegions[i].bufferImageHeight, block_size.height);
+                skip |=
+                    LogError(image_state->image(), GetBufferImageCopyCommandVUID("00204", image_to_buffer, is_2khr),
+                             "%s: pRegion[%d] bufferImageHeight (%d) must be a multiple of the blocked image's texel height (%d).",
+                             function, i, pRegions[i].bufferImageHeight, block_size.height);
             }
 
             //  image offsets must be multiples of block dimensions
@@ -6337,7 +6333,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
                 (SafeModulo(pRegions[i].imageOffset.y, block_size.height) != 0) ||
                 (SafeModulo(pRegions[i].imageOffset.z, block_size.depth) != 0)) {
                 skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00205", image_to_buffer, is_2khr),
-                                 "%s: pRegion[%d] imageOffset(x,y) (%d, %d) must be multiples of the compressed image's texel "
+                                 "%s: pRegion[%d] imageOffset(x,y) (%d, %d) must be multiples of the blocked image's texel "
                                  "width & height (%d, %d).",
                                  function, i, pRegions[i].imageOffset.x, pRegions[i].imageOffset.y, block_size.width,
                                  block_size.height);
@@ -6347,7 +6343,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             if (SafeModulo(bufferOffset, element_size) != 0) {
                 skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00206", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] bufferOffset (0x%" PRIxLEAST64
-                                 ") must be a multiple of the compressed image's texel block size (%" PRIu32 ").",
+                                 ") must be a multiple of the blocked image's texel block size (%" PRIu32 ").",
                                  function, i, bufferOffset, element_size);
             }
 
@@ -6356,7 +6352,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             if ((SafeModulo(pRegions[i].imageExtent.width, block_size.width) != 0) &&
                 (pRegions[i].imageExtent.width + pRegions[i].imageOffset.x != mip_extent.width)) {
                 skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00207", image_to_buffer, is_2khr),
-                                 "%s: pRegion[%d] extent width (%d) must be a multiple of the compressed texture block width "
+                                 "%s: pRegion[%d] extent width (%d) must be a multiple of the blocked texture block width "
                                  "(%d), or when added to offset.x (%d) must equal the image subresource width (%d).",
                                  function, i, pRegions[i].imageExtent.width, block_size.width, pRegions[i].imageOffset.x,
                                  mip_extent.width);
@@ -6366,7 +6362,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             if ((SafeModulo(pRegions[i].imageExtent.height, block_size.height) != 0) &&
                 (pRegions[i].imageExtent.height + pRegions[i].imageOffset.y != mip_extent.height)) {
                 skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00208", image_to_buffer, is_2khr),
-                                 "%s: pRegion[%d] extent height (%d) must be a multiple of the compressed texture block height "
+                                 "%s: pRegion[%d] extent height (%d) must be a multiple of the blocked texture block height "
                                  "(%d), or when added to offset.y (%d) must equal the image subresource height (%d).",
                                  function, i, pRegions[i].imageExtent.height, block_size.height, pRegions[i].imageOffset.y,
                                  mip_extent.height);
@@ -6376,7 +6372,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             if ((SafeModulo(pRegions[i].imageExtent.depth, block_size.depth) != 0) &&
                 (pRegions[i].imageExtent.depth + pRegions[i].imageOffset.z != mip_extent.depth)) {
                 skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00209", image_to_buffer, is_2khr),
-                                 "%s: pRegion[%d] extent width (%d) must be a multiple of the compressed texture block depth "
+                                 "%s: pRegion[%d] extent width (%d) must be a multiple of the blocked texture block depth "
                                  "(%d), or when added to offset.z (%d) must equal the image subresource depth (%d).",
                                  function, i, pRegions[i].imageExtent.depth, block_size.depth, pRegions[i].imageOffset.z,
                                  mip_extent.depth);
@@ -6455,8 +6451,9 @@ bool CoreChecks::ValidateImageBounds(const IMAGE_STATE *image_state, const uint3
 
         VkExtent3D image_extent = image_state->GetSubresourceExtent(pRegions[i].imageSubresource);
 
-        // If we're using a compressed format, valid extent is rounded up to multiple of block size (per 18.1)
-        if (FormatIsCompressed(image_info->format) || FormatIsSinglePlane_422(image_state->createInfo.format)) {
+        // If we're using a blocked image format, valid extent is rounded up to multiple of block size (per
+        // vkspec.html#_common_operation)
+        if (FormatIsBlockedImage(image_info->format)) {
             auto block_extent = FormatTexelBlockExtent(image_info->format);
             if (image_extent.width % block_extent.width) {
                 image_extent.width += (block_extent.width - (image_extent.width % block_extent.width));

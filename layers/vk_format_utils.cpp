@@ -472,6 +472,12 @@ VK_LAYER_EXPORT bool FormatIsCompressed(VkFormat format) {
     return (FormatIsCompressed_ASTC(format) || FormatIsCompressed_BC(format) || FormatIsCompressed_ETC2_EAC(format) ||
             FormatIsCompressed_PVRTC(format));
 }
+
+// "blocked image" are defined in the spec (vkspec.html#blocked-image)
+VK_LAYER_EXPORT bool FormatIsBlockedImage(VkFormat format) {
+    return (FormatIsCompressed(format) || FormatIsSinglePlane_422(format));
+}
+
 // Return true if format is packed
 VK_LAYER_EXPORT bool FormatIsPacked(VkFormat format) {
     bool found = false;
