@@ -892,7 +892,6 @@ bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags i
 bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,
                                       VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR &swapchain,
                                       VkSwapchainKHR oldSwapchain) {
-    InitSwapchainInfo();
 
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, surface, &supported);
@@ -900,6 +899,7 @@ bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags i
         // Graphics queue does not support present
         return false;
     }
+    InitSwapchainInfo();
 
     VkSwapchainCreateInfoKHR swapchain_create_info = {};
     swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
