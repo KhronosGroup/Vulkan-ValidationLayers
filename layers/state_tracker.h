@@ -145,14 +145,12 @@ struct create_shader_module_api_state {
 // Destination image texel extents must be adjusted by block size for the dest validation checks
 static inline VkExtent3D GetAdjustedDestImageExtent(VkFormat src_format, VkFormat dst_format, VkExtent3D extent) {
     VkExtent3D adjusted_extent = extent;
-    if ((FormatIsCompressed(src_format) || FormatIsSinglePlane_422(src_format)) &&
-        !(FormatIsCompressed(dst_format) || FormatIsSinglePlane_422(dst_format))) {
+    if (FormatIsBlockedImage(src_format) && !FormatIsBlockedImage(dst_format)) {
         VkExtent3D block_size = FormatTexelBlockExtent(src_format);
         adjusted_extent.width /= block_size.width;
         adjusted_extent.height /= block_size.height;
         adjusted_extent.depth /= block_size.depth;
-    } else if (!(FormatIsCompressed(src_format) || FormatIsSinglePlane_422(src_format)) &&
-               (FormatIsCompressed(dst_format) || FormatIsSinglePlane_422(dst_format))) {
+    } else if (!FormatIsBlockedImage(src_format) && FormatIsBlockedImage(dst_format)) {
         VkExtent3D block_size = FormatTexelBlockExtent(dst_format);
         adjusted_extent.width *= block_size.width;
         adjusted_extent.height *= block_size.height;
@@ -203,7 +201,7 @@ static inline VkDeviceSize GetBufferSizeFromCopyImage(const BufferImageCopyRegio
         unit_size = FormatElementSize(image_format, region.imageSubresource.aspectMask);
     }
 
-    if (FormatIsCompressed(image_format) || FormatIsSinglePlane_422(image_format)) {
+    if (FormatIsBlockedImage(image_format)) {
         // Switch to texel block units, rounding up for any partially-used blocks
         auto block_dim = FormatTexelBlockExtent(image_format);
         buffer_width = (buffer_width + block_dim.width - 1) / block_dim.width;
