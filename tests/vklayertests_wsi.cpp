@@ -750,8 +750,8 @@ TEST_F(VkLayerTest, GetSwapchainImageAndTryDestroy) {
     DestroySwapchain();
 }
 
-TEST_F(VkLayerTest, NotCheckingForSurfaceSupport) {
-    TEST_DESCRIPTION("Test not calling GetPhysicalDeviceSurfaceSupportKHR");
+TEST_F(VkLayerTest, SwapchainNotSupported) {
+    TEST_DESCRIPTION("Test creating a swapchain when GetPhysicalDeviceSurfaceSupportKHR returns VK_FALSE");
 
     if (!AddSurfaceInstanceExtension()) {
         printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
@@ -775,13 +775,52 @@ TEST_F(VkLayerTest, NotCheckingForSurfaceSupport) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    m_errorMonitor->ExpectSuccess();
     if (!InitSurface()) {
         printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
         return;
     }
     InitSwapchainInfo();
 
+    std::vector<VkQueueFamilyProperties> queue_families;
+    uint32_t count = 0;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &count, nullptr);
+    queue_families.resize(count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &count, queue_families.data());
+
+    bool found = false;
+    uint32_t qfi = 0;
+    for (uint32_t i = 0; i < queue_families.size(); i++) {
+        VkBool32 supported = VK_FALSE;
+        vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), i, m_surface, &supported);
+        if (!supported) {
+            found = true;
+            qfi = i;
+            break;
+        }
+    }
+    m_errorMonitor->VerifyNotFound();
+
+    if (!found) {
+        printf("%s All queues support surface present, skipping test\n", kSkipPrefix);
+        return;
+    }
+    float queue_priority = 1.0f;
+    auto queue_create_info = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    queue_create_info.queueFamilyIndex = qfi;
+    queue_create_info.queueCount = 1;
+    queue_create_info.pQueuePriorities = &queue_priority;
+
+    auto device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
+    device_create_info.queueCreateInfoCount = 1;
+    device_create_info.pQueueCreateInfos = &queue_create_info;
+    device_create_info.enabledExtensionCount = m_device_extension_names.size();
+    device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    vk_testing::Device test_device(gpu());
+    test_device.init(device_create_info);
+
+    // try creating a swapchain, using surface info queried from the default device
     VkSwapchainCreateInfoKHR swapchain_create_info = {};
     swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     swapchain_create_info.pNext = nullptr;
@@ -800,9 +839,8 @@ TEST_F(VkLayerTest, NotCheckingForSurfaceSupport) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 
-    // Never called GetPhysicalDeviceSurfaceSupportKHR
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-surface-01270");
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    vk::CreateSwapchainKHR(test_device.handle(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyFound();
 }
 
