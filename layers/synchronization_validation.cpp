@@ -3323,7 +3323,7 @@ void ResourceAccessState::TouchupFirstForLayoutTransition(ResourceUsageTag tag, 
     assert(first_accesses_.size());
     if (first_accesses_.back().tag == tag) {
         // If this layout transition is the the first write, add the additional ordering rules that guard the ILT
-        assert(first_accesses_.back().usage_index = SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
+        assert(first_accesses_.back().usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
         first_write_layout_ordering_ = layout_ordering;
     }
 }
