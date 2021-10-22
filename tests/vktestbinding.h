@@ -270,7 +270,7 @@ class Device : public internal::Handle<VkDevice> {
         QUEUE_COUNT,
     };
 
-    void init_queues();
+    void init_queues(const VkDeviceCreateInfo &info);
     void init_formats();
 
     PhysicalDevice phy_;
