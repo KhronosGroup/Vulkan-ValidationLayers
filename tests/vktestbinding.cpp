@@ -293,11 +293,11 @@ void Device::init(const VkDeviceCreateInfo &info) {
 
     if (EXPECT(vk::CreateDevice(phy_.handle(), &info, NULL, &dev) == VK_SUCCESS)) Handle::init(dev);
 
-    init_queues();
+    init_queues(info);
     init_formats();
 }
 
-void Device::init_queues() {
+void Device::init_queues(const VkDeviceCreateInfo &info) {
     uint32_t queue_node_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(phy_.handle(), &queue_node_count, NULL);
     EXPECT(queue_node_count >= 1);
@@ -306,12 +306,14 @@ void Device::init_queues() {
     vk::GetPhysicalDeviceQueueFamilyProperties(phy_.handle(), &queue_node_count, queue_props.data());
 
     queue_families_.resize(queue_node_count);
-    for (uint32_t queue_family_i = 0; queue_family_i < queue_node_count; ++queue_family_i) {
-        const auto &queue_prop = queue_props[queue_family_i];
+    for (uint32_t i = 0; i < info.queueCreateInfoCount; i++) {
+        const auto &queue_create_info = info.pQueueCreateInfos[i];
+        auto queue_family_i = queue_create_info.queueFamilyIndex;
+        const auto &queue_family_prop = queue_props[queue_family_i];
 
         QueueFamilyQueues &queue_storage = queue_families_[queue_family_i];
-        queue_storage.reserve(queue_prop.queueCount);
-        for (uint32_t queue_i = 0; queue_i < queue_prop.queueCount; ++queue_i) {
+        queue_storage.reserve(queue_create_info.queueCount);
+        for (uint32_t queue_i = 0; queue_i < queue_create_info.queueCount; ++queue_i) {
             // TODO: Need to add support for separate MEMMGR and work queues,
             // including synchronization
             VkQueue queue;
@@ -320,21 +322,21 @@ void Device::init_queues() {
             // Store single copy of the queue object that will self destruct
             queue_storage.emplace_back(new Queue(queue, queue_family_i));
 
-            if (queue_prop.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            if (queue_family_prop.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 queues_[GRAPHICS].push_back(queue_storage.back().get());
             }
 
-            if (queue_prop.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            if (queue_family_prop.queueFlags & VK_QUEUE_COMPUTE_BIT) {
                 queues_[COMPUTE].push_back(queue_storage.back().get());
             }
 
-            if (queue_prop.queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            if (queue_family_prop.queueFlags & VK_QUEUE_TRANSFER_BIT) {
                 queues_[DMA].push_back(queue_storage.back().get());
             }
         }
     }
 
-    EXPECT(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty());
+    EXPECT(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[DMA].empty());
 }
 
 const Device::QueueFamilyQueues &Device::queue_family_queues(uint32_t queue_family) const {
