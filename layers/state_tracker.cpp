@@ -3416,9 +3416,16 @@ void ValidationStateTracker::PostCallRecordCreateInstance(const VkInstanceCreate
         return;
     }
     uint32_t count = 0;
-    DispatchEnumeratePhysicalDevices(*pInstance, &count, nullptr);
+    // this can fail if the allocator fails
+    result = DispatchEnumeratePhysicalDevices(*pInstance, &count, nullptr);
+    if (result != VK_SUCCESS) {
+        return;
+    }
     std::vector<VkPhysicalDevice> physdev_handles(count);
-    DispatchEnumeratePhysicalDevices(*pInstance, &count, physdev_handles.data());
+    result = DispatchEnumeratePhysicalDevices(*pInstance, &count, physdev_handles.data());
+    if (result != VK_SUCCESS) {
+        return;
+    }
 
     physical_device_map.reserve(count);
     for (auto physdev : physdev_handles) {
