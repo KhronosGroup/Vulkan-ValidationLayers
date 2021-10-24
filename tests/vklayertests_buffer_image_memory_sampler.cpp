@@ -14504,3 +14504,288 @@ TEST_F(VkLayerTest, TestBindingDescriptorSetFromHostOnlyPool) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, CopyMutableDescriptors) {
+    TEST_DESCRIPTION("Copy mutable descriptors.");
+
+    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+        return;
+    }
+    auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mutable_descriptor_type_features);
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
+        printf("%s mutableDescriptorType feature not supported. Skipped.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    {
+        VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
+
+        VkMutableDescriptorTypeListVALVE mutable_descriptor_type_list = {};
+        mutable_descriptor_type_list.descriptorTypeCount = 1;
+        mutable_descriptor_type_list.pDescriptorTypes = descriptor_types;
+
+        VkMutableDescriptorTypeCreateInfoVALVE mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoVALVE>();
+        mdtci.mutableDescriptorTypeListCount = 1;
+        mdtci.pMutableDescriptorTypeLists = &mutable_descriptor_type_list;
+
+        VkDescriptorPoolSize pool_sizes[2] = {};
+        pool_sizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        pool_sizes[0].descriptorCount = 2;
+        pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        pool_sizes[1].descriptorCount = 2;
+
+        VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>(&mdtci);
+        ds_pool_ci.maxSets = 2;
+        ds_pool_ci.poolSizeCount = 2;
+        ds_pool_ci.pPoolSizes = pool_sizes;
+
+        vk_testing::DescriptorPool pool;
+        pool.init(*m_device, ds_pool_ci);
+
+        VkDescriptorSetLayoutBinding bindings[2] = {};
+        bindings[0].binding = 0;
+        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        bindings[0].descriptorCount = 1;
+        bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
+        bindings[0].pImmutableSamplers = nullptr;
+        bindings[1].binding = 1;
+        bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        bindings[1].descriptorCount = 1;
+        bindings[1].stageFlags = VK_SHADER_STAGE_ALL;
+        bindings[1].pImmutableSamplers = nullptr;
+
+        VkDescriptorSetLayoutCreateInfo create_info = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(&mdtci);
+        create_info.bindingCount = 2;
+        create_info.pBindings = bindings;
+
+        vk_testing::DescriptorSetLayout set_layout;
+        set_layout.init(*m_device, create_info);
+        VkDescriptorSetLayout set_layout_handle = set_layout.handle();
+
+        VkDescriptorSetLayout layouts[2] = {set_layout_handle, set_layout_handle};
+
+        VkDescriptorSetAllocateInfo allocate_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+        allocate_info.descriptorPool = pool.handle();
+        allocate_info.descriptorSetCount = 2;
+        allocate_info.pSetLayouts = layouts;
+
+        VkDescriptorSet descriptor_sets[2];
+        vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
+
+        VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+        buffer_ci.size = 32;
+        buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+        VkBufferObj buffer;
+        buffer.init(*m_device, buffer_ci);
+
+        VkDescriptorBufferInfo buffer_info = {};
+        buffer_info.buffer = buffer.handle();
+        buffer_info.offset = 0;
+        buffer_info.range = buffer_ci.size;
+
+        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        descriptor_write.dstSet = descriptor_sets[0];
+        descriptor_write.dstBinding = 0;
+        descriptor_write.descriptorCount = 1;
+        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_write.pBufferInfo = &buffer_info;
+
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+
+        VkCopyDescriptorSet copy_set = LvlInitStruct<VkCopyDescriptorSet>();
+        copy_set.srcSet = descriptor_sets[1];
+        copy_set.srcBinding = 1;
+        copy_set.dstSet = descriptor_sets[0];
+        copy_set.dstBinding = 0;
+        copy_set.descriptorCount = 1;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstSet-04612");
+        vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
+
+        VkMutableDescriptorTypeListVALVE mutable_descriptor_type_lists[2] = {};
+        mutable_descriptor_type_lists[0].descriptorTypeCount = 1;
+        mutable_descriptor_type_lists[0].pDescriptorTypes = descriptor_types;
+        mutable_descriptor_type_lists[1].descriptorTypeCount = 2;
+        mutable_descriptor_type_lists[1].pDescriptorTypes = descriptor_types;
+
+        VkMutableDescriptorTypeCreateInfoVALVE mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoVALVE>();
+        mdtci.mutableDescriptorTypeListCount = 2;
+        mdtci.pMutableDescriptorTypeLists = mutable_descriptor_type_lists;
+
+        VkDescriptorPoolSize pool_size = {};
+        pool_size.type = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        pool_size.descriptorCount = 4;
+
+        VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>(&mdtci);
+        ds_pool_ci.maxSets = 2;
+        ds_pool_ci.poolSizeCount = 1;
+        ds_pool_ci.pPoolSizes = &pool_size;
+
+        vk_testing::DescriptorPool pool;
+        pool.init(*m_device, ds_pool_ci);
+
+        VkDescriptorSetLayoutBinding bindings[2] = {};
+        bindings[0].binding = 0;
+        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        bindings[0].descriptorCount = 1;
+        bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
+        bindings[0].pImmutableSamplers = nullptr;
+        bindings[1].binding = 1;
+        bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        bindings[1].descriptorCount = 1;
+        bindings[1].stageFlags = VK_SHADER_STAGE_ALL;
+        bindings[1].pImmutableSamplers = nullptr;
+
+        VkDescriptorSetLayoutCreateInfo create_info = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(&mdtci);
+        create_info.bindingCount = 2;
+        create_info.pBindings = bindings;
+
+        vk_testing::DescriptorSetLayout set_layout;
+        set_layout.init(*m_device, create_info);
+        VkDescriptorSetLayout set_layout_handle = set_layout.handle();
+
+        VkDescriptorSetLayout layouts[2] = {set_layout_handle, set_layout_handle};
+
+        VkDescriptorSetAllocateInfo allocate_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+        allocate_info.descriptorPool = pool.handle();
+        allocate_info.descriptorSetCount = 2;
+        allocate_info.pSetLayouts = layouts;
+
+        VkDescriptorSet descriptor_sets[2];
+        vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
+
+        VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+        buffer_ci.size = 32;
+        buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+        VkBufferObj buffer;
+        buffer.init(*m_device, buffer_ci);
+
+        VkDescriptorBufferInfo buffer_info = {};
+        buffer_info.buffer = buffer.handle();
+        buffer_info.offset = 0;
+        buffer_info.range = buffer_ci.size;
+
+        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        descriptor_write.dstSet = descriptor_sets[0];
+        descriptor_write.dstBinding = 0;
+        descriptor_write.descriptorCount = 1;
+        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_write.pBufferInfo = &buffer_info;
+
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+
+        VkCopyDescriptorSet copy_set = LvlInitStruct<VkCopyDescriptorSet>();
+        copy_set.srcSet = descriptor_sets[1];
+        copy_set.srcBinding = 1;
+        copy_set.dstSet = descriptor_sets[0];
+        copy_set.dstBinding = 0;
+        copy_set.descriptorCount = 1;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstSet-04614");
+        vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
+
+        VkMutableDescriptorTypeListVALVE mutable_descriptor_type_lists[2] = {};
+        mutable_descriptor_type_lists[0].descriptorTypeCount = 2;
+        mutable_descriptor_type_lists[0].pDescriptorTypes = descriptor_types;
+        mutable_descriptor_type_lists[1].descriptorTypeCount = 0;
+        mutable_descriptor_type_lists[1].pDescriptorTypes = nullptr;
+
+        VkMutableDescriptorTypeCreateInfoVALVE mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoVALVE>();
+        mdtci.mutableDescriptorTypeListCount = 2;
+        mdtci.pMutableDescriptorTypeLists = mutable_descriptor_type_lists;
+
+        VkDescriptorPoolSize pool_sizes[2] = {};
+        pool_sizes[0].type = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        pool_sizes[0].descriptorCount = 2;
+        pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        pool_sizes[1].descriptorCount = 2;
+
+        VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>(&mdtci);
+        ds_pool_ci.maxSets = 2;
+        ds_pool_ci.poolSizeCount = 2;
+        ds_pool_ci.pPoolSizes = pool_sizes;
+
+        vk_testing::DescriptorPool pool;
+        pool.init(*m_device, ds_pool_ci);
+
+        VkDescriptorSetLayoutBinding bindings[2] = {};
+        bindings[0].binding = 0;
+        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        bindings[0].descriptorCount = 1;
+        bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
+        bindings[0].pImmutableSamplers = nullptr;
+        bindings[1].binding = 1;
+        bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        bindings[1].descriptorCount = 1;
+        bindings[1].stageFlags = VK_SHADER_STAGE_ALL;
+        bindings[1].pImmutableSamplers = nullptr;
+
+        VkDescriptorSetLayoutCreateInfo create_info = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(&mdtci);
+        create_info.bindingCount = 2;
+        create_info.pBindings = bindings;
+
+        vk_testing::DescriptorSetLayout set_layout;
+        set_layout.init(*m_device, create_info);
+        VkDescriptorSetLayout set_layout_handle = set_layout.handle();
+
+        VkDescriptorSetLayout layouts[2] = {set_layout_handle, set_layout_handle};
+
+        VkDescriptorSetAllocateInfo allocate_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+        allocate_info.descriptorPool = pool.handle();
+        allocate_info.descriptorSetCount = 2;
+        allocate_info.pSetLayouts = layouts;
+
+        VkDescriptorSet descriptor_sets[2];
+        vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
+
+        VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+        buffer_ci.size = 32;
+        buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+        VkBufferObj buffer;
+        buffer.init(*m_device, buffer_ci);
+
+        VkDescriptorBufferInfo buffer_info = {};
+        buffer_info.buffer = buffer.handle();
+        buffer_info.offset = 0;
+        buffer_info.range = buffer_ci.size;
+
+        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        descriptor_write.dstSet = descriptor_sets[0];
+        descriptor_write.dstBinding = 0;
+        descriptor_write.descriptorCount = 1;
+        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_write.pBufferInfo = &buffer_info;
+
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+
+        VkCopyDescriptorSet copy_set = LvlInitStruct<VkCopyDescriptorSet>();
+        copy_set.srcSet = descriptor_sets[0];
+        copy_set.srcBinding = 0;
+        copy_set.dstSet = descriptor_sets[1];
+        copy_set.dstBinding = 1;
+        copy_set.descriptorCount = 1;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcSet-04613");
+        vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
+        m_errorMonitor->VerifyFound();
+    }
+}
