@@ -176,6 +176,7 @@ class DescriptorSetLayoutDef {
     VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t) const;
     VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t) const;
     bool IsTypeMutable(const VkDescriptorType type, uint32_t binding) const;
+    const std::vector<VkDescriptorType> &GetMutableTypes(uint32_t binding) const;
     // For a particular binding, get the global index range
     //  This call should be guarded by a call to "HasBinding(binding)" to verify that the given binding exists
     const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t) const;
@@ -276,6 +277,7 @@ class DescriptorSetLayout : public BASE_NODE {
         return layout_id_->GetImmutableSamplerPtrFromIndex(index);
     }
     bool IsTypeMutable(const VkDescriptorType type, uint32_t binding) const { return layout_id_->IsTypeMutable(type, binding); }
+    const std::vector<VkDescriptorType> &GetMutableTypes(uint32_t binding) const { return layout_id_->GetMutableTypes(binding); }
     // For a particular binding, get the global index range
     //  This call should be guarded by a call to "HasBinding(binding)" to verify that the given binding exists
     const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t binding) const {
@@ -386,7 +388,7 @@ class DescriptorSet;
 
 class Descriptor {
   public:
-    Descriptor(DescriptorClass class_) : updated(false), descriptor_class(class_) {}
+    Descriptor(DescriptorClass class_) : updated(false), descriptor_class(class_), active_descriptor_type(VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {}
     virtual ~Descriptor(){};
     virtual void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) = 0;
     virtual void CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const Descriptor *) = 0;
@@ -396,9 +398,11 @@ class Descriptor {
     virtual bool IsImmutableSampler() const { return false; };
     virtual bool AddParent(BASE_NODE *base_node) { return false; }
     virtual void RemoveParent(BASE_NODE *base_node) {}
+    void SetDescriptorType(VkDescriptorType type) { active_descriptor_type = type; }
 
     bool updated;  // Has descriptor been updated?
     DescriptorClass descriptor_class;
+    VkDescriptorType active_descriptor_type;
 };
 
 // Return true if this layout is compatible with passed in layout from a pipelineLayout,
@@ -652,6 +656,7 @@ struct alignas(alignof(AnyDescriptor)) DescriptorBackingStore {
     AccelerationStructureDescriptor *AccelerationStructure() {
         return &(reinterpret_cast<AnyDescriptor *>(this)->accelerator_structure);
     }
+    MutableDescriptor *Mutable() { return &(reinterpret_cast<AnyDescriptor *>(this)->mutable_descriptor); }
 };
 
 // Structs to contain common elements that need to be shared between Validate* and Perform* calls below

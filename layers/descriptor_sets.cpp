@@ -234,6 +234,14 @@ bool cvdescriptorset::DescriptorSetLayoutDef::IsTypeMutable(const VkDescriptorTy
     return false;
 }
 
+const std::vector<VkDescriptorType> &cvdescriptorset::DescriptorSetLayoutDef::GetMutableTypes(uint32_t binding) const {
+    if (binding >= mutable_types_.size()) {
+        static const std::vector<VkDescriptorType> empty = {};
+        return empty;
+    }
+    return mutable_types_[binding];
+}
+
 // If our layout is compatible with rh_ds_layout, return true.
 bool cvdescriptorset::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_layout) const {
     bool compatible = (this == rh_ds_layout) || (GetLayoutDef() == rh_ds_layout->GetLayoutDef());
@@ -784,7 +792,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                 break;
             case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
-                    descriptors_.emplace_back(new ((free_descriptor++)->InlineUniform()) MutableDescriptor());
+                    descriptors_.emplace_back(new ((free_descriptor++)->Mutable()) MutableDescriptor());
                     descriptors_.back()->AddParent(this);
                 }
                 break;
@@ -1641,6 +1649,7 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(ValidationStateTracker *
         uint32_t update_count = std::min(descriptors_remaining, current_binding.GetDescriptorCount() - offset);
         for (uint32_t di = 0; di < update_count; ++di, ++update_index) {
             descriptors_[global_idx + di]->WriteUpdate(this, state_data_, update, update_index);
+            descriptors_[global_idx + di]->SetDescriptorType(update->descriptorType);
         }
         // Roll over to next binding in case of consecutive update
         descriptors_remaining -= update_count;
@@ -1891,6 +1900,58 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         }
     }
 
+    if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+        if (src_type != VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+            if (!dst_layout->IsTypeMutable(src_type, update->dstBinding)) {
+                *error_code = "VUID-VkCopyDescriptorSet-dstSet-04612";
+                std::stringstream error_str;
+                error_str << "Attempting copy update with dstBinding descriptor type VK_DESCRIPTOR_TYPE_MUTABLE_VALVE, but the new "
+                             "active descriptor type "
+                          << string_VkDescriptorType(src_type)
+                          << " is not in the corresponding pMutableDescriptorTypeLists list.";
+                *error_msg = error_str.str();
+                return false;
+            }
+        }
+    } else if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+        const auto *descriptor = src_set->GetDescriptorFromGlobalIndex(update->srcBinding);
+        if (descriptor->active_descriptor_type != dst_type) {
+            *error_code = "VUID-VkCopyDescriptorSet-srcSet-04613";
+            std::stringstream error_str;
+            error_str << "Attempting copy update with srcBinding descriptor type VK_DESCRIPTOR_TYPE_MUTABLE_VALVE, but the "
+                         "active descriptor type ("
+                      << string_VkDescriptorType(descriptor->active_descriptor_type)
+                      << ") does not match the dstBinding descriptor type " << string_VkDescriptorType(dst_type) << ".";
+            *error_msg = error_str.str();
+            return false;
+        }
+    }
+
+    if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+        if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+            const auto &mutable_src_types = src_layout->GetMutableTypes(update->srcBinding);
+            const auto &mutable_dst_types = dst_layout->GetMutableTypes(update->dstBinding);
+            bool complete_match = mutable_src_types.size() == mutable_dst_types.size();
+            if (complete_match) {
+                for (const auto mutable_src_type : mutable_src_types) {
+                    if (std::find(mutable_dst_types.begin(), mutable_dst_types.end(), mutable_src_type) ==
+                        mutable_dst_types.end()) {
+                        complete_match = false;
+                        break;
+                    }
+                }
+            }
+            if (!complete_match) {
+                *error_code = "VUID-VkCopyDescriptorSet-dstSet-04614";
+                std::stringstream error_str;
+                error_str << "Attempting copy update with dstBinding and new active descriptor type being "
+                             "VK_DESCRIPTOR_TYPE_MUTABLE_VALVE, but their corresponding pMutableDescriptorTypeLists do not match.";
+                *error_msg = error_str.str();
+                return false;
+            }
+        }
+    }
+
     // Update parameters all look good and descriptor updated so verify update contents
     if (!VerifyCopyUpdateContents(update, src_set, src_type, src_start_idx, dst_set, dst_type, dst_start_idx, func_name, error_code,
                                   error_msg)) {
@@ -1916,6 +1977,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
         } else {
             dst->updated = false;
         }
+        dst->active_descriptor_type = src->active_descriptor_type;
     }
 
     if (!(layout_->GetDescriptorBindingFlagsFromBinding(update->dstBinding) &
