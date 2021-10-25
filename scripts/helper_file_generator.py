@@ -1381,6 +1381,24 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                        'VkMetalSurfaceCreateInfoEXT'
                        ]
 
+        member_init_transforms = {
+            'queueFamilyIndexCount': lambda m: f'{m.name}(0)'
+        }
+
+        def qfi_construct(item, member):
+            true_index_setter = lambda i: f'{i}queueFamilyIndexCount = in_struct->queueFamilyIndexCount;\n'
+            false_index_setter = lambda i: f'{i}queueFamilyIndexCount = 0;\n'
+            if item.name == 'VkSwapchainCreateInfoKHR':
+                return (f'(in_struct->imageSharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->{member.name}', true_index_setter, false_index_setter)
+            else:
+                return (f'(in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->{member.name}', true_index_setter, false_index_setter)
+
+        # map of:
+        #  <member name>: function(item, member) -> (condition, true statement, false statement)
+        member_construct_conditions = {
+            'pQueueFamilyIndices': qfi_construct
+        }
+
         # For abstract types just want to save the pointer away
         # since we cannot make a copy.
         abstract_types = ['AHardwareBuffer',
@@ -1730,15 +1748,17 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                                 decorated_length = member.len
                                 for other_member in item.members:
                                     decorated_length = re.sub(r'\b({})\b'.format(other_member.name), r'in_struct->\1', decorated_length)
-                                concurrent_clause = ''
-                                sharing_mode_name = 's'
-                                if member.name == 'pQueueFamilyIndices':
-                                    if item.name == 'VkSwapchainCreateInfoKHR':
-                                        sharing_mode_name = 'imageS'
-                                    concurrent_clause = '(in_struct->%sharingMode == VK_SHARING_MODE_CONCURRENT) && ' % sharing_mode_name
-                                construct_txt += '    if (%sin_struct->%s) {\n' % (concurrent_clause, member.name)
+                                try:
+                                    concurrent_clause = member_construct_conditions[member.name](item, member)
+                                except:
+                                    concurrent_clause = (f'in_struct->{member.name}', lambda x: '')
+                                construct_txt += f'    if ({concurrent_clause[0]}) {{' + '\n'
                                 construct_txt += '        %s = new %s[%s];\n' % (member.name, m_type, decorated_length)
                                 construct_txt += '        memcpy ((void *)%s, (void *)in_struct->%s, sizeof(%s)*%s);\n' % (member.name, member.name, m_type, decorated_length)
+                                construct_txt += concurrent_clause[1]('        ')
+                                if len(concurrent_clause) > 2:
+                                    construct_txt += '    } else {\n'
+                                    construct_txt += concurrent_clause[2]('        ')
                                 construct_txt += '    }\n'
                                 destruct_txt += '    if (%s)\n' % member.name
                                 destruct_txt += '        delete[] %s;\n' % member.name
@@ -1782,8 +1802,11 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     init_list += '\n    %s(&in_struct->%s),' % (member.name, member.name)
                     init_func_txt += '    %s.initialize(&in_struct->%s);\n' % (member.name, member.name)
                 else:
-                    init_list += '\n    %s(in_struct->%s),' % (member.name, member.name)
-                    init_func_txt += '    %s = in_struct->%s;\n' % (member.name, member.name)
+                    try:
+                        init_list += f'\n    {member_init_transforms[member.name](member)},'
+                    except:
+                        init_list += '\n    %s(in_struct->%s),' % (member.name, member.name)
+                        init_func_txt += '    %s = in_struct->%s;\n' % (member.name, member.name)
             if '' != init_list:
                 init_list = init_list[:-1] # hack off final comma
 

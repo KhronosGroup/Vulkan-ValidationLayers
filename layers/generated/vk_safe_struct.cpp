@@ -1950,13 +1950,16 @@ safe_VkBufferCreateInfo::safe_VkBufferCreateInfo(const VkBufferCreateInfo* in_st
     size(in_struct->size),
     usage(in_struct->usage),
     sharingMode(in_struct->sharingMode),
-    queueFamilyIndexCount(in_struct->queueFamilyIndexCount),
+    queueFamilyIndexCount(0),
     pQueueFamilyIndices(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
     if ((in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)in_struct->pQueueFamilyIndices, sizeof(uint32_t)*in_struct->queueFamilyIndexCount);
+        queueFamilyIndexCount = in_struct->queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -1973,12 +1976,14 @@ safe_VkBufferCreateInfo::safe_VkBufferCreateInfo(const safe_VkBufferCreateInfo& 
     size = copy_src.size;
     usage = copy_src.usage;
     sharingMode = copy_src.sharingMode;
-    queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
     if ((copy_src.sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)copy_src.pQueueFamilyIndices, sizeof(uint32_t)*copy_src.queueFamilyIndexCount);
+        queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -1996,12 +2001,14 @@ safe_VkBufferCreateInfo& safe_VkBufferCreateInfo::operator=(const safe_VkBufferC
     size = copy_src.size;
     usage = copy_src.usage;
     sharingMode = copy_src.sharingMode;
-    queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
     if ((copy_src.sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)copy_src.pQueueFamilyIndices, sizeof(uint32_t)*copy_src.queueFamilyIndexCount);
+        queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 
     return *this;
@@ -2022,12 +2029,14 @@ void safe_VkBufferCreateInfo::initialize(const VkBufferCreateInfo* in_struct)
     size = in_struct->size;
     usage = in_struct->usage;
     sharingMode = in_struct->sharingMode;
-    queueFamilyIndexCount = in_struct->queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
     if ((in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)in_struct->pQueueFamilyIndices, sizeof(uint32_t)*in_struct->queueFamilyIndexCount);
+        queueFamilyIndexCount = in_struct->queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -2038,12 +2047,14 @@ void safe_VkBufferCreateInfo::initialize(const safe_VkBufferCreateInfo* copy_src
     size = copy_src->size;
     usage = copy_src->usage;
     sharingMode = copy_src->sharingMode;
-    queueFamilyIndexCount = copy_src->queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
     if ((copy_src->sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src->queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)copy_src->pQueueFamilyIndices, sizeof(uint32_t)*copy_src->queueFamilyIndexCount);
+        queueFamilyIndexCount = copy_src->queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -2132,7 +2143,7 @@ safe_VkImageCreateInfo::safe_VkImageCreateInfo(const VkImageCreateInfo* in_struc
     tiling(in_struct->tiling),
     usage(in_struct->usage),
     sharingMode(in_struct->sharingMode),
-    queueFamilyIndexCount(in_struct->queueFamilyIndexCount),
+    queueFamilyIndexCount(0),
     pQueueFamilyIndices(nullptr),
     initialLayout(in_struct->initialLayout)
 {
@@ -2140,6 +2151,9 @@ safe_VkImageCreateInfo::safe_VkImageCreateInfo(const VkImageCreateInfo* in_struc
     if ((in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)in_struct->pQueueFamilyIndices, sizeof(uint32_t)*in_struct->queueFamilyIndexCount);
+        queueFamilyIndexCount = in_struct->queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -2162,13 +2176,15 @@ safe_VkImageCreateInfo::safe_VkImageCreateInfo(const safe_VkImageCreateInfo& cop
     tiling = copy_src.tiling;
     usage = copy_src.usage;
     sharingMode = copy_src.sharingMode;
-    queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     initialLayout = copy_src.initialLayout;
     pNext = SafePnextCopy(copy_src.pNext);
     if ((copy_src.sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)copy_src.pQueueFamilyIndices, sizeof(uint32_t)*copy_src.queueFamilyIndexCount);
+        queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -2192,13 +2208,15 @@ safe_VkImageCreateInfo& safe_VkImageCreateInfo::operator=(const safe_VkImageCrea
     tiling = copy_src.tiling;
     usage = copy_src.usage;
     sharingMode = copy_src.sharingMode;
-    queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     initialLayout = copy_src.initialLayout;
     pNext = SafePnextCopy(copy_src.pNext);
     if ((copy_src.sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)copy_src.pQueueFamilyIndices, sizeof(uint32_t)*copy_src.queueFamilyIndexCount);
+        queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 
     return *this;
@@ -2225,13 +2243,15 @@ void safe_VkImageCreateInfo::initialize(const VkImageCreateInfo* in_struct)
     tiling = in_struct->tiling;
     usage = in_struct->usage;
     sharingMode = in_struct->sharingMode;
-    queueFamilyIndexCount = in_struct->queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     initialLayout = in_struct->initialLayout;
     pNext = SafePnextCopy(in_struct->pNext);
     if ((in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)in_struct->pQueueFamilyIndices, sizeof(uint32_t)*in_struct->queueFamilyIndexCount);
+        queueFamilyIndexCount = in_struct->queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -2248,13 +2268,15 @@ void safe_VkImageCreateInfo::initialize(const safe_VkImageCreateInfo* copy_src)
     tiling = copy_src->tiling;
     usage = copy_src->usage;
     sharingMode = copy_src->sharingMode;
-    queueFamilyIndexCount = copy_src->queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     initialLayout = copy_src->initialLayout;
     pNext = SafePnextCopy(copy_src->pNext);
     if ((copy_src->sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src->queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)copy_src->pQueueFamilyIndices, sizeof(uint32_t)*copy_src->queueFamilyIndexCount);
+        queueFamilyIndexCount = copy_src->queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -14696,7 +14718,7 @@ safe_VkSwapchainCreateInfoKHR::safe_VkSwapchainCreateInfoKHR(const VkSwapchainCr
     imageArrayLayers(in_struct->imageArrayLayers),
     imageUsage(in_struct->imageUsage),
     imageSharingMode(in_struct->imageSharingMode),
-    queueFamilyIndexCount(in_struct->queueFamilyIndexCount),
+    queueFamilyIndexCount(0),
     pQueueFamilyIndices(nullptr),
     preTransform(in_struct->preTransform),
     compositeAlpha(in_struct->compositeAlpha),
@@ -14708,6 +14730,9 @@ safe_VkSwapchainCreateInfoKHR::safe_VkSwapchainCreateInfoKHR(const VkSwapchainCr
     if ((in_struct->imageSharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)in_struct->pQueueFamilyIndices, sizeof(uint32_t)*in_struct->queueFamilyIndexCount);
+        queueFamilyIndexCount = in_struct->queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -14729,7 +14754,6 @@ safe_VkSwapchainCreateInfoKHR::safe_VkSwapchainCreateInfoKHR(const safe_VkSwapch
     imageArrayLayers = copy_src.imageArrayLayers;
     imageUsage = copy_src.imageUsage;
     imageSharingMode = copy_src.imageSharingMode;
-    queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     preTransform = copy_src.preTransform;
     compositeAlpha = copy_src.compositeAlpha;
@@ -14740,6 +14764,9 @@ safe_VkSwapchainCreateInfoKHR::safe_VkSwapchainCreateInfoKHR(const safe_VkSwapch
     if ((copy_src.imageSharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)copy_src.pQueueFamilyIndices, sizeof(uint32_t)*copy_src.queueFamilyIndexCount);
+        queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -14762,7 +14789,6 @@ safe_VkSwapchainCreateInfoKHR& safe_VkSwapchainCreateInfoKHR::operator=(const sa
     imageArrayLayers = copy_src.imageArrayLayers;
     imageUsage = copy_src.imageUsage;
     imageSharingMode = copy_src.imageSharingMode;
-    queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     preTransform = copy_src.preTransform;
     compositeAlpha = copy_src.compositeAlpha;
@@ -14773,6 +14799,9 @@ safe_VkSwapchainCreateInfoKHR& safe_VkSwapchainCreateInfoKHR::operator=(const sa
     if ((copy_src.imageSharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)copy_src.pQueueFamilyIndices, sizeof(uint32_t)*copy_src.queueFamilyIndexCount);
+        queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 
     return *this;
@@ -14798,7 +14827,6 @@ void safe_VkSwapchainCreateInfoKHR::initialize(const VkSwapchainCreateInfoKHR* i
     imageArrayLayers = in_struct->imageArrayLayers;
     imageUsage = in_struct->imageUsage;
     imageSharingMode = in_struct->imageSharingMode;
-    queueFamilyIndexCount = in_struct->queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     preTransform = in_struct->preTransform;
     compositeAlpha = in_struct->compositeAlpha;
@@ -14809,6 +14837,9 @@ void safe_VkSwapchainCreateInfoKHR::initialize(const VkSwapchainCreateInfoKHR* i
     if ((in_struct->imageSharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)in_struct->pQueueFamilyIndices, sizeof(uint32_t)*in_struct->queueFamilyIndexCount);
+        queueFamilyIndexCount = in_struct->queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -14824,7 +14855,6 @@ void safe_VkSwapchainCreateInfoKHR::initialize(const safe_VkSwapchainCreateInfoK
     imageArrayLayers = copy_src->imageArrayLayers;
     imageUsage = copy_src->imageUsage;
     imageSharingMode = copy_src->imageSharingMode;
-    queueFamilyIndexCount = copy_src->queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     preTransform = copy_src->preTransform;
     compositeAlpha = copy_src->compositeAlpha;
@@ -14835,6 +14865,9 @@ void safe_VkSwapchainCreateInfoKHR::initialize(const safe_VkSwapchainCreateInfoK
     if ((copy_src->imageSharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src->queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)copy_src->pQueueFamilyIndices, sizeof(uint32_t)*copy_src->queueFamilyIndexCount);
+        queueFamilyIndexCount = copy_src->queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -32409,13 +32442,16 @@ safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::safe_VkPhysicalDeviceImageDr
     sType(in_struct->sType),
     drmFormatModifier(in_struct->drmFormatModifier),
     sharingMode(in_struct->sharingMode),
-    queueFamilyIndexCount(in_struct->queueFamilyIndexCount),
+    queueFamilyIndexCount(0),
     pQueueFamilyIndices(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
     if ((in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)in_struct->pQueueFamilyIndices, sizeof(uint32_t)*in_struct->queueFamilyIndexCount);
+        queueFamilyIndexCount = in_struct->queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -32430,12 +32466,14 @@ safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::safe_VkPhysicalDeviceImageDr
     sType = copy_src.sType;
     drmFormatModifier = copy_src.drmFormatModifier;
     sharingMode = copy_src.sharingMode;
-    queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
     if ((copy_src.sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)copy_src.pQueueFamilyIndices, sizeof(uint32_t)*copy_src.queueFamilyIndexCount);
+        queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -32451,12 +32489,14 @@ safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT& safe_VkPhysicalDeviceImageDr
     sType = copy_src.sType;
     drmFormatModifier = copy_src.drmFormatModifier;
     sharingMode = copy_src.sharingMode;
-    queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
     if ((copy_src.sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)copy_src.pQueueFamilyIndices, sizeof(uint32_t)*copy_src.queueFamilyIndexCount);
+        queueFamilyIndexCount = copy_src.queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 
     return *this;
@@ -32475,12 +32515,14 @@ void safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::initialize(const VkPhys
     sType = in_struct->sType;
     drmFormatModifier = in_struct->drmFormatModifier;
     sharingMode = in_struct->sharingMode;
-    queueFamilyIndexCount = in_struct->queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
     if ((in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)in_struct->pQueueFamilyIndices, sizeof(uint32_t)*in_struct->queueFamilyIndexCount);
+        queueFamilyIndexCount = in_struct->queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
@@ -32489,12 +32531,14 @@ void safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::initialize(const safe_V
     sType = copy_src->sType;
     drmFormatModifier = copy_src->drmFormatModifier;
     sharingMode = copy_src->sharingMode;
-    queueFamilyIndexCount = copy_src->queueFamilyIndexCount;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
     if ((copy_src->sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src->queueFamilyIndexCount];
         memcpy ((void *)pQueueFamilyIndices, (void *)copy_src->pQueueFamilyIndices, sizeof(uint32_t)*copy_src->queueFamilyIndexCount);
+        queueFamilyIndexCount = copy_src->queueFamilyIndexCount;
+    } else {
+        queueFamilyIndexCount = 0;
     }
 }
 
