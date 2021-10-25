@@ -74,3 +74,24 @@ jobs:
       - name: Test CMake minimum version requirements
         run: python3 scripts/cmake_test_min.py
         if: matrix.cc == 'gcc' && matrix.config == 'release'
+
+  linux-cpp20:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+      - name: Install build dependencies
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
+                                libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
+                                libxcb-randr0-dev cmake
+      - name: Build and Test Vulkan-ValidationLayers
+        run: python3 scripts/github_ci_win_linux.py --config release --cmake='-DVVL_CPP_STANDARD=20'
+        env:
+          CC: clang
+          CXX: clang++
