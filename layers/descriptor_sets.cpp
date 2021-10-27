@@ -171,6 +171,7 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
             for (uint32_t j = 0; j < list.descriptorTypeCount; ++j) {
                 mutable_types_[i].push_back(list.pDescriptorTypes[j]);
             }
+            std::sort(mutable_types_[i].begin(), mutable_types_[i].end());
         }
     }
 
@@ -314,6 +315,10 @@ bool cvdescriptorset::DescriptorSetLayoutDef::IsTypeMutable(const VkDescriptorTy
     // If mutableDescriptorTypeListCount is zero or if VkMutableDescriptorTypeCreateInfoVALVE structure is not included in the pNext
     // chain, the VkMutableDescriptorTypeListVALVE for each element is considered to be zero or NULL for each member.
     return false;
+}
+
+const std::vector<std::vector<VkDescriptorType>>& cvdescriptorset::DescriptorSetLayoutDef::GetMutableTypes() const {
+    return mutable_types_;
 }
 
 const std::vector<VkDescriptorType> &cvdescriptorset::DescriptorSetLayoutDef::GetMutableTypes(uint32_t binding) const {
