@@ -178,6 +178,7 @@ class DescriptorSetLayoutDef {
     VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t) const;
     VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t) const;
     bool IsTypeMutable(const VkDescriptorType type, uint32_t binding) const;
+    const std::vector<std::vector<VkDescriptorType>> &GetMutableTypes() const;
     const std::vector<VkDescriptorType> &GetMutableTypes(uint32_t binding) const;
     // For a particular binding, get the global index range
     //  This call should be guarded by a call to "HasBinding(binding)" to verify that the given binding exists
@@ -216,8 +217,9 @@ class DescriptorSetLayoutDef {
 };
 
 static inline bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef &rhs) {
-    bool result = (lhs.GetCreateFlags() == rhs.GetCreateFlags()) && (lhs.GetBindings() == rhs.GetBindings()) &&
-                  (lhs.GetBindingFlags() == rhs.GetBindingFlags());
+    bool result =
+        (lhs.GetCreateFlags() == rhs.GetCreateFlags()) && (lhs.GetBindings() == rhs.GetBindings()) &&
+        (lhs.GetBindingFlags() == rhs.GetBindingFlags() && lhs.GetMutableTypes() == rhs.GetMutableTypes());
     return result;
 }
 
