@@ -1067,7 +1067,9 @@ VK_LAYER_EXPORT VkExtent3D FormatTexelBlockExtent(VkFormat format) {
         case VK_FORMAT_B16G16R16G16_422_UNORM:
             block_size = {2, 1, 1};
             break;
-        // _422 multi-plane formats are not considered compressed, but shared components form a logical 2x1 block
+        // Other YCbCr formats (for copies) are not considered compressed and should be 1x1x1
+        // yes, some formats are "logically" 2x1 and 2x2 block, but it was discussed here
+        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4787#note_333809
         case VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM:
         case VK_FORMAT_G8_B8R8_2PLANE_422_UNORM:
         case VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16:
@@ -1076,9 +1078,6 @@ VK_LAYER_EXPORT VkExtent3D FormatTexelBlockExtent(VkFormat format) {
         case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16:
         case VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM:
         case VK_FORMAT_G16_B16R16_2PLANE_422_UNORM:
-            block_size = {2, 1, 1};
-            break;
-        // _420 formats are not considered compressed, but shared components form a logical 2x2 block
         case VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM:
         case VK_FORMAT_G8_B8R8_2PLANE_420_UNORM:
         case VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16:
@@ -1087,9 +1086,6 @@ VK_LAYER_EXPORT VkExtent3D FormatTexelBlockExtent(VkFormat format) {
         case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16:
         case VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM:
         case VK_FORMAT_G16_B16R16_2PLANE_420_UNORM:
-            block_size = {2, 2, 1};
-            break;
-        // _444 multi-plane formats do not share components, default to 1x1
         case VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16:
         case VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM:
         case VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16:
