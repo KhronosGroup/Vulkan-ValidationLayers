@@ -49,35 +49,29 @@ class SAMPLER_STATE;
 
 namespace cvdescriptorset {
 class DescriptorSet;
+struct AllocateDescriptorSetsData;
 }
 
 class DESCRIPTOR_POOL_STATE : public BASE_NODE {
   public:
-    VkDescriptorPool pool;
-    uint32_t maxSets;        // Max descriptor sets allowed in this pool
+    ValidationStateTracker *dev_data;
+    const uint32_t maxSets;  // Max descriptor sets allowed in this pool
     uint32_t availableSets;  // Available descriptor sets in this pool
 
-    safe_VkDescriptorPoolCreateInfo createInfo;
-    layer_data::unordered_set<cvdescriptorset::DescriptorSet *> sets;  // Collection of all sets in this pool
-    std::map<uint32_t, uint32_t> maxDescriptorTypeCount;               // Max # of descriptors of each type in this pool
-    std::map<uint32_t, uint32_t> availableDescriptorTypeCount;         // Available # of descriptors of each type in this pool
+    const safe_VkDescriptorPoolCreateInfo createInfo;
+    using TypeCountMap = layer_data::unordered_map<uint32_t, uint32_t>;
+    const TypeCountMap maxDescriptorTypeCount;  // Max # of descriptors of each type in this pool
+    TypeCountMap availableDescriptorTypeCount;  // Available # of descriptors of each type in this pool
+    layer_data::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> sets;  // Collection of all sets in this pool
 
-    DESCRIPTOR_POOL_STATE(const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo *pCreateInfo)
-        : BASE_NODE(pool, kVulkanObjectTypeDescriptorPool),
-          pool(pool),
-          maxSets(pCreateInfo->maxSets),
-          availableSets(pCreateInfo->maxSets),
-          createInfo(pCreateInfo),
-          maxDescriptorTypeCount(),
-          availableDescriptorTypeCount() {
-        // Collect maximums per descriptor type.
-        for (uint32_t i = 0; i < createInfo.poolSizeCount; ++i) {
-            uint32_t typeIndex = static_cast<uint32_t>(createInfo.pPoolSizes[i].type);
-            // Same descriptor types can appear several times
-            maxDescriptorTypeCount[typeIndex] += createInfo.pPoolSizes[i].descriptorCount;
-            availableDescriptorTypeCount[typeIndex] = maxDescriptorTypeCount[typeIndex];
-        }
-    }
+    DESCRIPTOR_POOL_STATE(ValidationStateTracker *dev, const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo *pCreateInfo);
+    ~DESCRIPTOR_POOL_STATE() { Destroy(); }
+
+    void Allocate(const VkDescriptorSetAllocateInfo *alloc_info, const VkDescriptorSet *descriptor_sets,
+                  const cvdescriptorset::AllocateDescriptorSetsData *ds_data);
+    void Free(uint32_t count, const VkDescriptorSet *descriptor_sets);
+    void Reset();
+    void Destroy() override;
 };
 
 // Descriptor Data structures

@@ -34,6 +34,90 @@
 #include <array>
 #include <memory>
 
+static DESCRIPTOR_POOL_STATE::TypeCountMap GetMaxTypeCounts(const VkDescriptorPoolCreateInfo *create_info) {
+    DESCRIPTOR_POOL_STATE::TypeCountMap counts;
+    // Collect maximums per descriptor type.
+    for (uint32_t i = 0; i < create_info->poolSizeCount; ++i) {
+        const auto &pool_size = create_info->pPoolSizes[i];
+        uint32_t type = static_cast<uint32_t>(pool_size.type);
+        // Same descriptor types can appear several times
+        counts[type] += pool_size.descriptorCount;
+    }
+    return counts;
+}
+
+DESCRIPTOR_POOL_STATE::DESCRIPTOR_POOL_STATE(ValidationStateTracker *dev, const VkDescriptorPool pool,
+                                             const VkDescriptorPoolCreateInfo *pCreateInfo)
+    : BASE_NODE(pool, kVulkanObjectTypeDescriptorPool),
+      dev_data(dev),
+      maxSets(pCreateInfo->maxSets),
+      availableSets(pCreateInfo->maxSets),
+      createInfo(pCreateInfo),
+      maxDescriptorTypeCount(GetMaxTypeCounts(pCreateInfo)),
+      availableDescriptorTypeCount(maxDescriptorTypeCount) {}
+
+void DESCRIPTOR_POOL_STATE::Allocate(const VkDescriptorSetAllocateInfo *alloc_info, const VkDescriptorSet *descriptor_sets,
+                                     const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
+    // Account for sets and individual descriptors allocated from pool
+    availableSets -= alloc_info->descriptorSetCount;
+    for (auto it = ds_data->required_descriptors_by_type.begin(); it != ds_data->required_descriptors_by_type.end(); ++it) {
+        availableDescriptorTypeCount[it->first] -= ds_data->required_descriptors_by_type.at(it->first);
+    }
+
+    const auto *variable_count_info = LvlFindInChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(alloc_info->pNext);
+    bool variable_count_valid = variable_count_info && variable_count_info->descriptorSetCount == alloc_info->descriptorSetCount;
+
+    // Create tracking object for each descriptor set; insert into global map and the pool's set.
+    for (uint32_t i = 0; i < alloc_info->descriptorSetCount; i++) {
+        uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
+
+        auto new_ds = std::make_shared<cvdescriptorset::DescriptorSet>(descriptor_sets[i], this, ds_data->layout_nodes[i],
+                                                                       variable_count, dev_data);
+        sets.emplace(descriptor_sets[i], new_ds.get());
+        dev_data->setMap.emplace(descriptor_sets[i], std::move(new_ds));
+    }
+}
+
+void DESCRIPTOR_POOL_STATE::Free(uint32_t count, const VkDescriptorSet *descriptor_sets) {
+    // Update available descriptor sets in pool
+    availableSets += count;
+
+    // For each freed descriptor add its resources back into the pool as available and remove from pool and setMap
+    for (uint32_t i = 0; i < count; ++i) {
+        if (descriptor_sets[i] != VK_NULL_HANDLE) {
+            auto iter = sets.find(descriptor_sets[i]);
+            assert(iter != sets.end());
+            auto *set_state = iter->second;
+            uint32_t type_index = 0, descriptor_count = 0;
+            for (uint32_t j = 0; j < set_state->GetBindingCount(); ++j) {
+                type_index = static_cast<uint32_t>(set_state->GetTypeFromIndex(j));
+                descriptor_count = set_state->GetDescriptorCountFromIndex(j);
+                availableDescriptorTypeCount[type_index] += descriptor_count;
+            }
+            set_state->Destroy();
+            dev_data->setMap.erase(iter->first);
+            sets.erase(iter);
+        }
+    }
+}
+
+void DESCRIPTOR_POOL_STATE::Reset() {
+    // For every set off of this pool, clear it, remove from setMap, and free cvdescriptorset::DescriptorSet
+    for (auto entry : sets) {
+        entry.second->Destroy();
+        dev_data->setMap.erase(entry.first);
+    }
+    sets.clear();
+    // Reset available count for each type and available sets for this pool
+    availableDescriptorTypeCount = maxDescriptorTypeCount;
+    availableSets = maxSets;
+}
+
+void DESCRIPTOR_POOL_STATE::Destroy() {
+    Reset();
+    BASE_NODE::Destroy();
+}
+
 // ExtendedBinding collects a VkDescriptorSetLayoutBinding and any extended
 // state that comes from a different array/structure so they can stay together
 // while being sorted by binding number.
@@ -3206,10 +3290,10 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
     if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         // Track number of descriptorSets allowable in this pool
         if (pool_state->availableSets < p_alloc_info->descriptorSetCount) {
-            skip |= LogError(pool_state->pool, "VUID-VkDescriptorSetAllocateInfo-descriptorSetCount-00306",
+            skip |= LogError(pool_state->Handle(), "VUID-VkDescriptorSetAllocateInfo-descriptorSetCount-00306",
                              "vkAllocateDescriptorSets(): Unable to allocate %u descriptorSets from %s"
                              ". This pool only has %d descriptorSets remaining.",
-                             p_alloc_info->descriptorSetCount, report_data->FormatHandle(pool_state->pool).c_str(),
+                             p_alloc_info->descriptorSetCount, report_data->FormatHandle(pool_state->Handle()).c_str(),
                              pool_state->availableSets);
         }
         // Determine whether descriptor counts are satisfiable
@@ -3218,12 +3302,12 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
             uint32_t available_count = (count_iter != pool_state->availableDescriptorTypeCount.end()) ? count_iter->second : 0;
 
             if (ds_data->required_descriptors_by_type.at(it->first) > available_count) {
-                skip |= LogError(pool_state->pool, "VUID-VkDescriptorSetAllocateInfo-descriptorPool-00307",
+                skip |= LogError(pool_state->Handle(), "VUID-VkDescriptorSetAllocateInfo-descriptorPool-00307",
                                  "vkAllocateDescriptorSets(): Unable to allocate %u descriptors of type %s from %s"
                                  ". This pool only has %d descriptors of this type remaining.",
                                  ds_data->required_descriptors_by_type.at(it->first),
                                  string_VkDescriptorType(VkDescriptorType(it->first)),
-                                 report_data->FormatHandle(pool_state->pool).c_str(), available_count);
+                                 report_data->FormatHandle(pool_state->Handle()).c_str(), available_count);
             }
         }
     }

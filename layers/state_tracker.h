@@ -1137,15 +1137,11 @@ class ValidationStateTracker : public ValidationObject {
                                                 VkResult result) override;
 
     // State Utilty functions
-    void DeleteDescriptorSetPools();
-    void FreeDescriptorSet(cvdescriptorset::DescriptorSet* descriptor_set);
     std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> GetSharedAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
                                                                                   const FRAMEBUFFER_STATE& fb_state) const;
 
     BASE_NODE* GetStateStructPtrFromObject(const VulkanTypedHandle& object_struct);
     VkFormatFeatureFlags GetPotentialFormatFeatures(VkFormat format) const;
-    void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
-                                       const cvdescriptorset::AllocateDescriptorSetsData*);
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
                                                     const void* pData);
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,

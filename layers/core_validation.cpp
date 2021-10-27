@@ -6304,9 +6304,10 @@ bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescripto
     // Make sure sets being destroyed are not currently in-use
     if (disabled[object_in_use]) return false;
     bool skip = false;
-    const DESCRIPTOR_POOL_STATE *pool = GetDescriptorPoolState(descriptorPool);
-    if (pool != nullptr) {
-        for (auto *ds : pool->sets) {
+    const auto pool = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
+    if (pool) {
+        for (const auto &entry : pool->sets) {
+            const auto *ds = entry.second;
             if (ds && ds->InUse()) {
                 skip |= LogError(descriptorPool, "VUID-vkResetDescriptorPool-descriptorPool-00313",
                                  "It is invalid to call vkResetDescriptorPool() with descriptor sets in use by a command buffer.");

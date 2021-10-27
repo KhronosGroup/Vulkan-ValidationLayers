@@ -445,27 +445,6 @@ BINDABLE *ValidationStateTracker::GetObjectMemBinding(const VulkanTypedHandle &t
     return GetObjectMemBindingImpl<ValidationStateTracker *, BINDABLE *>(this, typed_handle);
 }
 
-// Remove set from setMap and delete the set
-void ValidationStateTracker::FreeDescriptorSet(cvdescriptorset::DescriptorSet *descriptor_set) {
-    // Any bound cmd buffers are now invalid
-    descriptor_set->Destroy();
-
-    setMap.erase(descriptor_set->GetSet());
-}
-
-// Free all DS Pools including their Sets & related sub-structs
-// NOTE : Calls to this function should be wrapped in mutex
-void ValidationStateTracker::DeleteDescriptorSetPools() {
-    for (auto ii = descriptorPoolMap.begin(); ii != descriptorPoolMap.end();) {
-        // Remove this pools' sets from setMap and delete them
-        for (auto *ds : ii->second->sets) {
-            FreeDescriptorSet(ds);
-        }
-        ii->second->sets.clear();
-        ii = descriptorPoolMap.erase(ii);
-    }
-}
-
 // For given object struct return a ptr of BASE_NODE type for its wrapping struct
 BASE_NODE *ValidationStateTracker::GetStateStructPtrFromObject(const VulkanTypedHandle &object_struct) {
     if (object_struct.node) {
@@ -1357,7 +1336,7 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
     renderPassMap.clear();
 
     // This will also delete all sets in the pool & remove them from setMap
-    DeleteDescriptorSetPools();
+    descriptorPoolMap.clear();
     // All sets should be removed
     assert(setMap.empty());
     descriptorSetLayoutMap.clear();
@@ -1889,13 +1868,8 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorSetLayout(VkDevice de
 
 void ValidationStateTracker::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                                 const VkAllocationCallbacks *pAllocator) {
-    if (!descriptorPool) return;
-    DESCRIPTOR_POOL_STATE *desc_pool_state = GetDescriptorPoolState(descriptorPool);
+    auto *desc_pool_state = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
     if (desc_pool_state) {
-        // Free sets that were in this pool
-        for (auto *ds : desc_pool_state->sets) {
-            FreeDescriptorSet(ds);
-        }
         desc_pool_state->Destroy();
         descriptorPoolMap.erase(descriptorPool);
     }
@@ -2167,24 +2141,16 @@ void ValidationStateTracker::PostCallRecordCreateDescriptorPool(VkDevice device,
                                                                 const VkAllocationCallbacks *pAllocator,
                                                                 VkDescriptorPool *pDescriptorPool, VkResult result) {
     if (VK_SUCCESS != result) return;
-    descriptorPoolMap[*pDescriptorPool] = std::make_shared<DESCRIPTOR_POOL_STATE>(*pDescriptorPool, pCreateInfo);
+    descriptorPoolMap.emplace(*pDescriptorPool, std::make_shared<DESCRIPTOR_POOL_STATE>(this, *pDescriptorPool, pCreateInfo));
 }
 
 void ValidationStateTracker::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                                VkDescriptorPoolResetFlags flags, VkResult result) {
     if (VK_SUCCESS != result) return;
-    DESCRIPTOR_POOL_STATE *pool = GetDescriptorPoolState(descriptorPool);
-    // TODO: validate flags
-    // For every set off of this pool, clear it, remove from setMap, and free cvdescriptorset::DescriptorSet
-    for (auto *ds : pool->sets) {
-        FreeDescriptorSet(ds);
+    auto pool = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
+    if (pool) {
+        pool->Reset();
     }
-    pool->sets.clear();
-    // Reset available count for each type and available sets for this pool
-    for (auto it = pool->availableDescriptorTypeCount.begin(); it != pool->availableDescriptorTypeCount.end(); ++it) {
-        pool->availableDescriptorTypeCount[it->first] = pool->maxDescriptorTypeCount[it->first];
-    }
-    pool->availableSets = pool->maxSets;
 }
 
 bool ValidationStateTracker::PreCallValidateAllocateDescriptorSets(VkDevice device,
@@ -2206,28 +2172,17 @@ void ValidationStateTracker::PostCallRecordAllocateDescriptorSets(VkDevice devic
     // All the updates are contained in a single cvdescriptorset function
     cvdescriptorset::AllocateDescriptorSetsData *ads_state =
         reinterpret_cast<cvdescriptorset::AllocateDescriptorSetsData *>(ads_state_data);
-    PerformAllocateDescriptorSets(pAllocateInfo, pDescriptorSets, ads_state);
+    auto pool_state = Get<DESCRIPTOR_POOL_STATE>(pAllocateInfo->descriptorPool);
+    if (pool_state) {
+        pool_state->Allocate(pAllocateInfo, pDescriptorSets, ads_state);
+    }
 }
 
 void ValidationStateTracker::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
                                                              const VkDescriptorSet *pDescriptorSets) {
-    DESCRIPTOR_POOL_STATE *pool_state = GetDescriptorPoolState(descriptorPool);
-    // Update available descriptor sets in pool
-    pool_state->availableSets += count;
-
-    // For each freed descriptor add its resources back into the pool as available and remove from pool and setMap
-    for (uint32_t i = 0; i < count; ++i) {
-        if (pDescriptorSets[i] != VK_NULL_HANDLE) {
-            auto descriptor_set = setMap[pDescriptorSets[i]].get();
-            uint32_t type_index = 0, descriptor_count = 0;
-            for (uint32_t j = 0; j < descriptor_set->GetBindingCount(); ++j) {
-                type_index = static_cast<uint32_t>(descriptor_set->GetTypeFromIndex(j));
-                descriptor_count = descriptor_set->GetDescriptorCountFromIndex(j);
-                pool_state->availableDescriptorTypeCount[type_index] += descriptor_count;
-            }
-            FreeDescriptorSet(descriptor_set);
-            pool_state->sets.erase(descriptor_set);
-        }
+    auto pool_state = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
+    if (pool_state) {
+        pool_state->Free(count, pDescriptorSets);
     }
 }
 
@@ -3923,31 +3878,6 @@ void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptor
             }
         }
         // Any unknown layouts will be flagged as errors during ValidateAllocateDescriptorSets() call
-    }
-}
-
-// Decrement allocated sets from the pool and insert new sets into set_map
-void ValidationStateTracker::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *p_alloc_info,
-                                                           const VkDescriptorSet *descriptor_sets,
-                                                           const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
-    auto pool_state = descriptorPoolMap[p_alloc_info->descriptorPool].get();
-    // Account for sets and individual descriptors allocated from pool
-    pool_state->availableSets -= p_alloc_info->descriptorSetCount;
-    for (auto it = ds_data->required_descriptors_by_type.begin(); it != ds_data->required_descriptors_by_type.end(); ++it) {
-        pool_state->availableDescriptorTypeCount[it->first] -= ds_data->required_descriptors_by_type.at(it->first);
-    }
-
-    const auto *variable_count_info = LvlFindInChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(p_alloc_info->pNext);
-    bool variable_count_valid = variable_count_info && variable_count_info->descriptorSetCount == p_alloc_info->descriptorSetCount;
-
-    // Create tracking object for each descriptor set; insert into global map and the pool's set.
-    for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
-        uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
-
-        auto new_ds = std::make_shared<cvdescriptorset::DescriptorSet>(descriptor_sets[i], pool_state, ds_data->layout_nodes[i],
-                                                                       variable_count, this);
-        pool_state->sets.insert(new_ds.get());
-        setMap[descriptor_sets[i]] = std::move(new_ds);
     }
 }
 
