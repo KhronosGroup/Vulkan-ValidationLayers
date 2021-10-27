@@ -3640,26 +3640,27 @@ void ValidationStateTracker::PostCallRecordReleaseProfilingLockKHR(VkDevice devi
 void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device,
                                                                           VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                           const VkAllocationCallbacks *pAllocator) {
-    if (!descriptorUpdateTemplate) return;
-    auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
-    template_state->destroyed = true;
-    desc_template_map.erase(descriptorUpdateTemplate);
+    auto template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
+    if (template_state) {
+        template_state->Destroy();
+        desc_template_map_.erase(descriptorUpdateTemplate);
+    }
 }
 
 void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device,
                                                                              VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                              const VkAllocationCallbacks *pAllocator) {
-    if (!descriptorUpdateTemplate) return;
-    auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
-    template_state->destroyed = true;
-    desc_template_map.erase(descriptorUpdateTemplate);
+    auto template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
+    if (template_state) {
+        template_state->Destroy();
+        desc_template_map_.erase(descriptorUpdateTemplate);
+    }
 }
 
 void ValidationStateTracker::RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
                                                                        VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate) {
-    safe_VkDescriptorUpdateTemplateCreateInfo local_create_info(pCreateInfo);
-    auto template_state = std::make_shared<TEMPLATE_STATE>(*pDescriptorUpdateTemplate, &local_create_info);
-    desc_template_map[*pDescriptorUpdateTemplate] = std::move(template_state);
+    desc_template_map_.emplace(*pDescriptorUpdateTemplate,
+                              std::make_shared<UPDATE_TEMPLATE_STATE>(*pDescriptorUpdateTemplate, pCreateInfo));
 }
 
 void ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device,
@@ -3681,11 +3682,9 @@ void ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplateKHR(
 void ValidationStateTracker::RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet descriptorSet,
                                                                         VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                         const void *pData) {
-    auto const template_map_entry = desc_template_map.find(descriptorUpdateTemplate);
-    if ((template_map_entry == desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
-        assert(0);
-    } else {
-        const TEMPLATE_STATE *template_state = template_map_entry->second.get();
+    auto const template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
+    assert(template_state);
+    if (template_state) {
         // TODO: Record template push descriptor updates
         if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
             PerformUpdateDescriptorSetsWithTemplateKHR(descriptorSet, template_state, pData);
@@ -3712,7 +3711,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
 
     cb_state->RecordCmd(CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR);
-    const auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
+    const auto template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
     if (template_state) {
         auto layout_data = GetPipelineLayout(layout);
         auto dsl = layout_data ? layout_data->GetDsl(set) : nullptr;
@@ -3856,7 +3855,8 @@ void ValidationStateTracker::PostCallRecordResetQueryPool(VkDevice device, VkQue
 }
 
 void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
-                                                                        const TEMPLATE_STATE *template_state, const void *pData) {
+                                                                        const UPDATE_TEMPLATE_STATE *template_state,
+                                                                        const void *pData) {
     // Translate the templated update into a normal update for validation...
     cvdescriptorset::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state, pData);
     cvdescriptorset::PerformUpdateDescriptorSets(this, static_cast<uint32_t>(decoded_update.desc_writes.size()),

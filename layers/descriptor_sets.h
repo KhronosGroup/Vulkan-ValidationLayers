@@ -43,7 +43,7 @@ class CoreChecks;
 class ValidationObject;
 class ValidationStateTracker;
 class CMD_BUFFER_STATE;
-struct TEMPLATE_STATE;
+class UPDATE_TEMPLATE_STATE;
 struct DeviceExtensions;
 class SAMPLER_STATE;
 
@@ -72,6 +72,14 @@ class DESCRIPTOR_POOL_STATE : public BASE_NODE {
     void Free(uint32_t count, const VkDescriptorSet *descriptor_sets);
     void Reset();
     void Destroy() override;
+};
+
+class UPDATE_TEMPLATE_STATE : public BASE_NODE {
+  public:
+    const safe_VkDescriptorUpdateTemplateCreateInfo create_info;
+
+    UPDATE_TEMPLATE_STATE(VkDescriptorUpdateTemplate update_template, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo)
+        : BASE_NODE(update_template, kVulkanObjectTypeDescriptorUpdateTemplate), create_info(pCreateInfo) {}
 };
 
 // Descriptor Data structures
@@ -687,7 +695,7 @@ struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSetAccelerationStructureKHR> inline_infos_khr;
     std::vector<VkWriteDescriptorSetAccelerationStructureNV> inline_infos_nv;
     DecodedTemplateUpdate(const ValidationStateTracker *device_data, VkDescriptorSet descriptorSet,
-                          const TEMPLATE_STATE *template_state, const void *pData,
+                          const UPDATE_TEMPLATE_STATE *template_state, const void *pData,
                           VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);
 };
 

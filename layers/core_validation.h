@@ -510,7 +510,7 @@ class CoreChecks : public ValidationStateTracker {
                               std::string* error_code, std::string* error_msg) const;
     template <typename T>
     bool ValidateAccelerationStructureUpdate(T acc, const char* func_name, std::string* error_code, std::string* error_msg) const;
-    bool ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
+    bool ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const UPDATE_TEMPLATE_STATE* template_state,
                                                      const void* pData) const;
     bool ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*,
                                         const cvdescriptorset::AllocateDescriptorSetsData*) const;

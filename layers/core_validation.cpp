@@ -14518,17 +14518,13 @@ bool CoreChecks::ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descrip
                                                          VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                          const void *pData) const {
     bool skip = false;
-    auto const template_map_entry = desc_template_map.find(descriptorUpdateTemplate);
-    if ((template_map_entry == desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
-        // Object tracker will report errors for invalid descriptorUpdateTemplate values, avoiding a crash in release builds
-        // but retaining the assert as template support is new enough to want to investigate these in debug builds.
-        assert(0);
-    } else {
-        const TEMPLATE_STATE *template_state = template_map_entry->second.get();
-        // TODO: Validate template push descriptor updates
-        if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
-            skip = ValidateUpdateDescriptorSetsWithTemplateKHR(descriptorSet, template_state, pData);
-        }
+    const auto template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
+    // Object tracker will report errors for invalid descriptorUpdateTemplate values, avoiding a crash in release builds
+    // but retaining the assert as template support is new enough to want to investigate these in debug builds.
+    assert(template_state);
+    // TODO: Validate template push descriptor updates
+    if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
+        skip = ValidateUpdateDescriptorSetsWithTemplateKHR(descriptorSet, template_state, pData);
     }
     return skip;
 }
@@ -14570,7 +14566,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                         report_data->FormatHandle(layout).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
     }
 
-    const auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
+    const auto template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
     if (template_state) {
         const auto &template_ci = template_state->create_info;
         static const std::map<VkPipelineBindPoint, std::string> bind_errors = {

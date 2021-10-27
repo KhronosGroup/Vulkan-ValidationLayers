@@ -2798,8 +2798,9 @@ void cvdescriptorset::PerformUpdateDescriptorSets(ValidationStateTracker *dev_da
 }
 
 cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker *device_data,
-                                                              VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
-                                                              const void *pData, VkDescriptorSetLayout push_layout) {
+                                                              VkDescriptorSet descriptorSet,
+                                                              const UPDATE_TEMPLATE_STATE *template_state, const void *pData,
+                                                              VkDescriptorSetLayout push_layout) {
     auto const &create_info = template_state->create_info;
     inline_infos.resize(create_info.descriptorUpdateEntryCount);  // Make sure we have one if we need it
     inline_infos_khr.resize(create_info.descriptorUpdateEntryCount);
@@ -2898,8 +2899,8 @@ cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationSt
 }
 // These helper functions carry out the validate and record descriptor updates peformed via update templates. They decode
 // the templatized data and leverage the non-template UpdateDescriptor helper functions.
-bool CoreChecks::ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
-                                                             const void *pData) const {
+bool CoreChecks::ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
+                                                             const UPDATE_TEMPLATE_STATE *template_state, const void *pData) const {
     // Translate the templated update into a normal update for validation...
     cvdescriptorset::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state, pData);
     return ValidateUpdateDescriptorSets(static_cast<uint32_t>(decoded_update.desc_writes.size()), decoded_update.desc_writes.data(),
