@@ -32,6 +32,10 @@ bool AtomicOperation(uint32_t opcode);
 
 bool GroupOperation(uint32_t opcode);
 
+bool ImageGatherOperation(uint32_t opcode);
+bool ImageFetchOperation(uint32_t opcode);
+bool ImageSampleOperation(uint32_t opcode);
+
 uint32_t MemoryScopeParam(uint32_t opcode);
 uint32_t ExecutionScopeParam(uint32_t opcode);
 
