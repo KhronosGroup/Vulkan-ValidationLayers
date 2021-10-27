@@ -848,7 +848,7 @@ class ValidationStateTracker : public ValidationObject {
 
     virtual std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb,
                                                                    const VkCommandBufferAllocateInfo* create_info,
-                                                                   std::shared_ptr<COMMAND_POOL_STATE>& pool);
+                                                                   const COMMAND_POOL_STATE* pool);
     // Allocate/Free
     void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
                                               VkCommandBuffer* pCommandBuffer, VkResult result) override;
@@ -1138,8 +1138,6 @@ class ValidationStateTracker : public ValidationObject {
 
     // State Utilty functions
     void DeleteDescriptorSetPools();
-    void FreeCommandBufferStates(COMMAND_POOL_STATE* pool_state, const uint32_t command_buffer_count,
-                                 const VkCommandBuffer* command_buffers);
     void FreeDescriptorSet(cvdescriptorset::DescriptorSet* descriptor_set);
     std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> GetSharedAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
                                                                                   const FRAMEBUFFER_STATE& fb_state) const;

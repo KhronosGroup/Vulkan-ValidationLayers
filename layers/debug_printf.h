@@ -72,7 +72,7 @@ class CMD_BUFFER_STATE_PRINTF : public CMD_BUFFER_STATE {
     std::vector<DPFBufferInfo> buffer_infos;
 
     CMD_BUFFER_STATE_PRINTF(DebugPrintf* dp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
-                            std::shared_ptr<COMMAND_POOL_STATE>& pool);
+                            const COMMAND_POOL_STATE* pool);
 
     void Reset() final;
 };
@@ -273,7 +273,7 @@ class DebugPrintf : public ValidationStateTracker {
     }
 
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
-                                                           std::shared_ptr<COMMAND_POOL_STATE>& pool) final;
+                                                           const COMMAND_POOL_STATE* pool) final;
 
     void DestroyBuffer(DPFBufferInfo& buffer_info);
 };

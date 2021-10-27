@@ -206,7 +206,7 @@ class CMD_BUFFER_STATE_BP : public CMD_BUFFER_STATE {
     RenderPassState render_pass_state;
 
     CMD_BUFFER_STATE_BP(BestPractices* bp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
-                        std::shared_ptr<COMMAND_POOL_STATE>& pool);
+                        const COMMAND_POOL_STATE* pool);
 };
 
 class BestPractices : public ValidationStateTracker {
@@ -714,6 +714,6 @@ class BestPractices : public ValidationStateTracker {
         return static_cast<CMD_BUFFER_STATE_BP*>(Get<CMD_BUFFER_STATE>(cb));
     }
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
-                                                           std::shared_ptr<COMMAND_POOL_STATE>& pool) final;
+                                                           const COMMAND_POOL_STATE* pool) final;
 };
 

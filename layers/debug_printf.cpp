@@ -974,13 +974,12 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
 
 std::shared_ptr<CMD_BUFFER_STATE> DebugPrintf::CreateCmdBufferState(VkCommandBuffer cb,
                                                                     const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                                    std::shared_ptr<COMMAND_POOL_STATE> &pool) {
+                                                                    const COMMAND_POOL_STATE *pool) {
     return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<CMD_BUFFER_STATE_PRINTF>(this, cb, pCreateInfo, pool));
 }
 
 CMD_BUFFER_STATE_PRINTF::CMD_BUFFER_STATE_PRINTF(DebugPrintf *dp, VkCommandBuffer cb,
-                                                 const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                 std::shared_ptr<COMMAND_POOL_STATE> &pool)
+                                                 const VkCommandBufferAllocateInfo *pCreateInfo, const COMMAND_POOL_STATE *pool)
     : CMD_BUFFER_STATE(dp, cb, pCreateInfo, pool) {}
 
 void CMD_BUFFER_STATE_PRINTF::Reset() {
