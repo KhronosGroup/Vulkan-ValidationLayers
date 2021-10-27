@@ -60,12 +60,12 @@ const SpecialUseVUIDs kSpecialUseDeviceVUIDs {
 
 std::shared_ptr<CMD_BUFFER_STATE> BestPractices::CreateCmdBufferState(VkCommandBuffer cb,
                                                                       const VkCommandBufferAllocateInfo* pCreateInfo,
-                                                                      std::shared_ptr<COMMAND_POOL_STATE>& pool) {
+                                                                      const COMMAND_POOL_STATE* pool) {
     return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<CMD_BUFFER_STATE_BP>(this, cb, pCreateInfo, pool));
 }
 
 CMD_BUFFER_STATE_BP::CMD_BUFFER_STATE_BP(BestPractices* bp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
-                                         std::shared_ptr<COMMAND_POOL_STATE>& pool)
+                                         const COMMAND_POOL_STATE* pool)
     : CMD_BUFFER_STATE(bp, cb, pCreateInfo, pool) {}
 
 bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {

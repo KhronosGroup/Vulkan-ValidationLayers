@@ -129,7 +129,7 @@ class CMD_BUFFER_STATE_GPUAV : public CMD_BUFFER_STATE {
     std::vector<GpuAssistedAccelerationStructureBuildValidationBufferInfo> as_validation_buffers;
 
     CMD_BUFFER_STATE_GPUAV(GpuAssisted* ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
-                           std::shared_ptr<COMMAND_POOL_STATE>& pool);
+                           const COMMAND_POOL_STATE* pool);
 
     void Reset() final;
 };
@@ -366,7 +366,7 @@ class GpuAssisted : public ValidationStateTracker {
     }
 
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
-                                                           std::shared_ptr<COMMAND_POOL_STATE>& pool) final;
+                                                           const COMMAND_POOL_STATE* pool) final;
 
     void DestroyBuffer(GpuAssistedBufferInfo& buffer_info);
     void DestroyBuffer(GpuAssistedAccelerationStructureBuildValidationBufferInfo& buffer_info);

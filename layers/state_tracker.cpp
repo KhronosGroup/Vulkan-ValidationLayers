@@ -1351,13 +1351,10 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     if (!device) return;
 
-    // Reset all command buffers before destroying them, to unlink object_bindings.
-    for (auto &command_buffer : commandBufferMap) {
-        command_buffer.second->Reset();
-    }
+    commandPoolMap.clear();
+    assert(commandBufferMap.empty());
     pipelineMap.clear();
     renderPassMap.clear();
-    commandBufferMap.clear();
 
     // This will also delete all sets in the pool & remove them from setMap
     DeleteDescriptorSetPools();
@@ -1904,25 +1901,12 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorPool(VkDevice device,
     }
 }
 
-// Free all command buffers in given list, removing all references/links to them using CMD_BUFFER_STATE::Reset
-void ValidationStateTracker::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_state, const uint32_t command_buffer_count,
-                                                     const VkCommandBuffer *command_buffers) {
-    for (uint32_t i = 0; i < command_buffer_count; i++) {
-        auto cb_state = Get<CMD_BUFFER_STATE>(command_buffers[i]);
-        // Remove references to command buffer's state and delete
-        if (cb_state) {
-            cb_state->Destroy();
-        }
-        // Remove CBState from CB map
-        pool_state->commandBuffers.erase(command_buffers[i]);
-        commandBufferMap.erase(command_buffers[i]);
-    }
-}
-
 void ValidationStateTracker::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
                                                              uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers) {
-    auto pool = GetCommandPoolState(commandPool);
-    FreeCommandBufferStates(pool, commandBufferCount, pCommandBuffers);
+    auto pool = Get<COMMAND_POOL_STATE>(commandPool);
+    if (pool) {
+        pool->Free(commandBufferCount, pCommandBuffers);
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
@@ -1930,7 +1914,7 @@ void ValidationStateTracker::PostCallRecordCreateCommandPool(VkDevice device, co
                                                              VkResult result) {
     if (VK_SUCCESS != result) return;
     auto queue_flags = physical_device_state->queue_family_properties[pCreateInfo->queueFamilyIndex].queueFlags;
-    commandPoolMap[*pCommandPool] = std::make_shared<COMMAND_POOL_STATE>(*pCommandPool, pCreateInfo, queue_flags);
+    commandPoolMap[*pCommandPool] = std::make_shared<COMMAND_POOL_STATE>(this, *pCommandPool, pCreateInfo, queue_flags);
 }
 
 void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
@@ -1979,9 +1963,6 @@ void ValidationStateTracker::PreCallRecordDestroyCommandPool(VkDevice device, Vk
     // Remove cmdpool from cmdpoolmap, after freeing layer data for the command buffers
     // "When a pool is destroyed, all command buffers allocated from the pool are freed."
     if (cp_state) {
-        // Create a vector, as FreeCommandBufferStates deletes from cp_state->commandBuffers during iteration.
-        std::vector<VkCommandBuffer> cb_vec{cp_state->commandBuffers.begin(), cp_state->commandBuffers.end()};
-        FreeCommandBufferStates(cp_state, static_cast<uint32_t>(cb_vec.size()), cb_vec.data());
         cp_state->Destroy();
         commandPoolMap.erase(commandPool);
     }
@@ -1991,10 +1972,9 @@ void ValidationStateTracker::PostCallRecordResetCommandPool(VkDevice device, VkC
                                                             VkCommandPoolResetFlags flags, VkResult result) {
     if (VK_SUCCESS != result) return;
     // Reset all of the CBs allocated from this pool
-    auto command_pool_state = GetCommandPoolState(commandPool);
-    for (auto cmd_buffer : command_pool_state->commandBuffers) {
-        auto cb_state = Get<CMD_BUFFER_STATE>(cmd_buffer);
-        cb_state->Reset();
+    auto pool = Get<COMMAND_POOL_STATE>(commandPool);
+    if (pool) {
+        pool->Reset();
     }
 }
 
@@ -2260,15 +2240,11 @@ void ValidationStateTracker::PreCallRecordUpdateDescriptorSets(VkDevice device, 
 }
 
 void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                                  VkCommandBuffer *pCommandBuffer, VkResult result) {
+                                                                  VkCommandBuffer *pCommandBuffers, VkResult result) {
     if (VK_SUCCESS != result) return;
     auto pool = GetCommandPoolShared(pCreateInfo->commandPool);
     if (pool) {
-        for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
-            // Add command buffer to its commandPool map
-            pool->commandBuffers.insert(pCommandBuffer[i]);
-            commandBufferMap[pCommandBuffer[i]] = CreateCmdBufferState(pCommandBuffer[i], pCreateInfo, pool);
-        }
+        pool->Allocate(pCreateInfo, pCommandBuffers);
     }
 }
 
@@ -4447,6 +4423,6 @@ std::shared_ptr<SWAPCHAIN_NODE> ValidationStateTracker::CreateSwapchainState(con
 
 std::shared_ptr<CMD_BUFFER_STATE> ValidationStateTracker::CreateCmdBufferState(VkCommandBuffer cb,
                                                                                const VkCommandBufferAllocateInfo *create_info,
-                                                                               std::shared_ptr<COMMAND_POOL_STATE> &pool) {
+                                                                               const COMMAND_POOL_STATE *pool) {
     return std::make_shared<CMD_BUFFER_STATE>(this, cb, create_info, pool);
 }

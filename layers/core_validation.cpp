@@ -2447,7 +2447,7 @@ bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE *pCB, const CMD_
 
 bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE *cb_node, const char *caller_name, VkQueueFlags required_flags,
                                        const char *error_code) const {
-    auto pool = cb_node->command_pool.get();
+    auto pool = cb_node->command_pool;
     if (pool) {
         const uint32_t queue_family_index = pool->queueFamilyIndex;
         const VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[queue_family_index].queueFlags;
@@ -3092,8 +3092,8 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
     bool skip = false;
-    auto pool = pCB->command_pool.get();
-    auto queue_state = GetQueueState(queue);
+    auto pool = pCB->command_pool;
+    auto queue_state = Get<QUEUE_STATE>(queue);
 
     if (pool && queue_state) {
         if (pool->queueFamilyIndex != queue_state->queueFamilyIndex) {
@@ -5195,8 +5195,9 @@ bool CoreChecks::CheckCommandBufferInFlight(const CMD_BUFFER_STATE *cb_node, con
 // Iterate over all cmdBuffers in given commandPool and verify that each is not in use
 bool CoreChecks::CheckCommandBuffersInFlight(const COMMAND_POOL_STATE *pPool, const char *action, const char *error_code) const {
     bool skip = false;
-    for (auto cmd_buffer : pPool->commandBuffers) {
-        skip |= CheckCommandBufferInFlight(GetCBState(cmd_buffer), action, error_code);
+    for (auto &entry : pPool->commandBuffers) {
+        const auto cb_state = entry.second;
+        skip |= CheckCommandBufferInFlight(cb_state, action, error_code);
     }
     return skip;
 }
@@ -6453,7 +6454,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                          report_data->FormatHandle(commandBuffer).c_str());
     } else if (CB_RECORDED == cb_state->state || CB_INVALID_COMPLETE == cb_state->state) {
         VkCommandPool cmd_pool = cb_state->createInfo.commandPool;
-        const auto *pool = cb_state->command_pool.get();
+        const auto *pool = cb_state->command_pool;
         if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pool->createFlags)) {
             LogObjectList objlist(commandBuffer);
             objlist.add(cmd_pool);
@@ -6510,7 +6511,7 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (!cb_state) return false;
     VkCommandPool cmd_pool = cb_state->createInfo.commandPool;
-    const auto *pool = cb_state->command_pool.get();
+    const auto *pool = cb_state->command_pool;
 
     if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pool->createFlags)) {
         LogObjectList objlist(commandBuffer);
@@ -7689,7 +7690,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
 bool CoreChecks::ValidatePipelineBindPoint(const CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point, const char *func_name,
                                            const std::map<VkPipelineBindPoint, std::string> &bind_errors) const {
     bool skip = false;
-    auto pool = cb_state->command_pool.get();
+    auto pool = cb_state->command_pool;
     if (pool) {  // The loss of a pool in a recording cmd is reported in DestroyCommandPool
         static const std::map<VkPipelineBindPoint, VkQueueFlags> flag_mask = {
             std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT)),
@@ -12145,8 +12146,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB
             }
         }
     }
-    auto primary_pool = pCB->command_pool.get();
-    auto secondary_pool = pSubCB->command_pool.get();
+    const auto primary_pool = pCB->command_pool;
+    const auto secondary_pool = pSubCB->command_pool;
     if (primary_pool && secondary_pool && (primary_pool->queueFamilyIndex != secondary_pool->queueFamilyIndex)) {
         LogObjectList objlist(pSubCB->commandBuffer());
         objlist.add(pCB->commandBuffer());

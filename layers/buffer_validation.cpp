@@ -2480,7 +2480,7 @@ static inline bool IsExtentAllZeroes(const VkExtent3D *extent) {
 VkExtent3D CoreChecks::GetScaledItg(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *img) const {
     // Default to (0, 0, 0) granularity in case we can't find the real granularity for the physical device.
     VkExtent3D granularity = {0, 0, 0};
-    auto pool = cb_node->command_pool.get();
+    const auto pool = cb_node->command_pool;
     if (pool) {
         granularity = GetPhysicalDeviceState()->queue_family_properties[pool->queueFamilyIndex].minImageTransferGranularity;
         if (FormatIsBlockedImage(img->createInfo.format)) {
@@ -6401,7 +6401,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         }
 
         // TODO - Don't use ValidateCmdQueueFlags due to currently not having way to add more descriptive message
-        const COMMAND_POOL_STATE *command_pool = cb_node->command_pool.get();
+        const COMMAND_POOL_STATE *command_pool = cb_node->command_pool;
         assert(command_pool != nullptr);
         const uint32_t queue_family_index = command_pool->queueFamilyIndex;
         const VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[queue_family_index].queueFlags;
@@ -6508,7 +6508,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     skip |= ValidateCmd(cb_node, cmd_type);
 
     // Command pool must support graphics, compute, or transfer operations
-    const auto pool = cb_node->command_pool.get();
+    const auto pool = cb_node->command_pool;
 
     VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pool->queueFamilyIndex].queueFlags;
 
@@ -6712,7 +6712,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
                                              pRegions[i].imageSubresource.layerCount, i, func_name, "imageSubresource", vuid);
 
         // TODO - Don't use ValidateCmdQueueFlags due to currently not having way to add more descriptive message
-        const COMMAND_POOL_STATE *command_pool = cb_node->command_pool.get();
+        const COMMAND_POOL_STATE *command_pool = cb_node->command_pool;
         assert(command_pool != nullptr);
         const uint32_t queue_family_index = command_pool->queueFamilyIndex;
         const VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[queue_family_index].queueFlags;
