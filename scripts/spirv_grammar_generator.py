@@ -92,6 +92,9 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
 
         self.atomicsOps = []
         self.groupOps = []
+        self.imageGatherOps = []
+        self.imageSampleOps = []
+        self.imageFetchOps = []
         self.memoryScopeParam = [[] for i in range(5)]
         self.executionScopeParam = [[] for i in range(5)]
 
@@ -160,6 +163,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
     def endFile(self):
         write(self.atomicOperation(), file=self.outFile)
         write(self.groupOperation(), file=self.outFile)
+        write(self.imageOperation(), file=self.outFile)
         write(self.scopeHelper(), file=self.outFile)
         # Finish processing in superclass
         OutputGenerator.endFile(self)
@@ -193,6 +197,12 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                     self.atomicsOps.append(opname)
                 if instruction['class'] == 'Non-Uniform':
                     self.groupOps.append(opname)
+                if re.search("OpImage.*Gather", opname) is not None:
+                    self.imageGatherOps.append(opname)
+                if re.search("OpImageFetch.*", opname) is not None:
+                    self.imageFetchOps.append(opname)
+                if re.search("OpImageSample.*", opname) is not None:
+                    self.imageSampleOps.append(opname)
                 if 'operands' in instruction:
                     for index, operand in enumerate(instruction['operands']):
                         # some instructions have both types of IdScope
@@ -234,6 +244,39 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             output += '    bool found = false;\n'
             output += '    switch (opcode) {\n'
             for f in self.groupOps:
+                output += '        case spv::{}:\n'.format(f)
+            output += self.commonBoolSwitch
+
+        return output;
+    #
+    # Generate functions for image operations
+    def imageOperation(self):
+        output = ''
+        if self.headerFile:
+            output += 'bool ImageGatherOperation(uint32_t opcode);\n'
+            output += 'bool ImageFetchOperation(uint32_t opcode);\n'
+            output += 'bool ImageSampleOperation(uint32_t opcode);\n'
+        elif self.sourceFile:
+            output += 'bool ImageGatherOperation(uint32_t opcode) {\n'
+            output += '    bool found = false;\n'
+            output += '    switch (opcode) {\n'
+            for f in self.imageGatherOps:
+                output += '        case spv::{}:\n'.format(f)
+            output += self.commonBoolSwitch
+            output += '\n'
+
+            output += 'bool ImageFetchOperation(uint32_t opcode) {\n'
+            output += '    bool found = false;\n'
+            output += '    switch (opcode) {\n'
+            for f in self.imageFetchOps:
+                output += '        case spv::{}:\n'.format(f)
+            output += self.commonBoolSwitch
+            output += '\n'
+
+            output += 'bool ImageSampleOperation(uint32_t opcode) {\n'
+            output += '    bool found = false;\n'
+            output += '    switch (opcode) {\n'
+            for f in self.imageSampleOps:
                 output += '        case spv::{}:\n'.format(f)
             output += self.commonBoolSwitch
 

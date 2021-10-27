@@ -105,6 +105,53 @@ bool GroupOperation(uint32_t opcode) {
     return found;
 }
 
+bool ImageGatherOperation(uint32_t opcode) {
+    bool found = false;
+    switch (opcode) {
+        case spv::OpImageGather:
+        case spv::OpImageDrefGather:
+        case spv::OpImageSparseGather:
+        case spv::OpImageSparseDrefGather:
+            found = true;
+            break;
+        default:
+            break;
+    }
+    return found;
+}
+
+bool ImageFetchOperation(uint32_t opcode) {
+    bool found = false;
+    switch (opcode) {
+        case spv::OpImageFetch:
+            found = true;
+            break;
+        default:
+            break;
+    }
+    return found;
+}
+
+bool ImageSampleOperation(uint32_t opcode) {
+    bool found = false;
+    switch (opcode) {
+        case spv::OpImageSampleImplicitLod:
+        case spv::OpImageSampleExplicitLod:
+        case spv::OpImageSampleDrefImplicitLod:
+        case spv::OpImageSampleDrefExplicitLod:
+        case spv::OpImageSampleProjImplicitLod:
+        case spv::OpImageSampleProjExplicitLod:
+        case spv::OpImageSampleProjDrefImplicitLod:
+        case spv::OpImageSampleProjDrefExplicitLod:
+        case spv::OpImageSampleFootprintNV:
+            found = true;
+            break;
+        default:
+            break;
+    }
+    return found;
+}
+
 // Return paramater position of memory scope ID or zero if there is none
 uint32_t MemoryScopeParam(uint32_t opcode) {
     uint32_t position = 0;

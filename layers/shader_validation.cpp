@@ -2143,9 +2143,7 @@ bool CoreChecks::ValidateTexelGatherOffset(SHADER_MODULE_STATE const *src, spirv
     bool skip = false;
 
     const uint32_t opcode = insn.opcode();
-    // If opcode is OpImage*Gather
-    if (opcode == spv::OpImageGather || opcode == spv::OpImageDrefGather || opcode == spv::OpImageSparseGather ||
-        opcode == spv::OpImageSparseDrefGather) {
+    if (ImageGatherOperation(opcode)) {
         if (insn.len() > 6) { // Image operands are optional
             auto image_operand = insn.word(6);
             // Bits we are validating
