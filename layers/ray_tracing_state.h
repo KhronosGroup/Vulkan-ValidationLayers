@@ -104,9 +104,10 @@ class ACCELERATION_STRUCTURE_STATE_KHR : public BASE_NODE {
         }
     }
 
-    void Build(const VkAccelerationStructureBuildGeometryInfoKHR *pInfo) {
+    void Build(const VkAccelerationStructureBuildGeometryInfoKHR *pInfo, const bool is_host,
+               const VkAccelerationStructureBuildRangeInfoKHR *build_range_info) {
         built = true;
-        build_info_khr.initialize(pInfo);
+        build_info_khr.initialize(pInfo, is_host, build_range_info);
     };
 
     const safe_VkAccelerationStructureCreateInfoKHR create_infoKHR = {};
