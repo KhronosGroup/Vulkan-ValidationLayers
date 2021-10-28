@@ -42,7 +42,7 @@ void COMMAND_POOL_STATE::Allocate(const VkCommandBufferAllocateInfo *create_info
     for (uint32_t i = 0; i < create_info->commandBufferCount; i++) {
         auto new_cb = dev_data->CreateCmdBufferState(command_buffers[i], create_info, this);
         commandBuffers.emplace(command_buffers[i], new_cb.get());
-        dev_data->commandBufferMap.emplace(command_buffers[i], std::move(new_cb));
+        dev_data->Add(std::move(new_cb));
     }
 }
 
@@ -50,8 +50,7 @@ void COMMAND_POOL_STATE::Free(uint32_t count, const VkCommandBuffer *command_buf
     for (uint32_t i = 0; i < count; i++) {
         auto iter = commandBuffers.find(command_buffers[i]);
         if (iter != commandBuffers.end()) {
-            iter->second->Destroy();
-            dev_data->commandBufferMap.erase(iter->first);
+            dev_data->Destroy<CMD_BUFFER_STATE>(iter->first);
             commandBuffers.erase(iter);
         }
     }
@@ -65,8 +64,7 @@ void COMMAND_POOL_STATE::Reset() {
 
 void COMMAND_POOL_STATE::Destroy() {
     for (auto &entry : commandBuffers) {
-        entry.second->Destroy();
-        dev_data->commandBufferMap.erase(entry.first);
+        dev_data->Destroy<CMD_BUFFER_STATE>(entry.first);
     }
     commandBuffers.clear();
     BASE_NODE::Destroy();
