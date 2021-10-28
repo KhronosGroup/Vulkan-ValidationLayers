@@ -299,6 +299,32 @@ class ValidationStateTracker : public ValidationObject {
 
   public:
     template <typename State>
+    void Add(std::shared_ptr<State>&& state_object) {
+        using Traits = AccessorTraits<State>;
+        auto map_member = Traits::Map();
+        using KeyType = typename Traits::MapType::key_type;
+        typename Traits::MapType& map =
+            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+
+        auto handle = state_object->Handle().template Cast<KeyType>();
+        map.emplace(handle, std::move(state_object));
+    }
+
+    template <typename State>
+    void Destroy(typename AccessorTraits<State>::HandleType handle) {
+        using Traits = AccessorTraits<State>;
+        auto map_member = Traits::Map();
+        typename Traits::MapType& map =
+            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+
+        auto iter = map.find(handle);
+        if (iter != map.end()) {
+            iter->second->Destroy();
+            map.erase(iter);
+        }
+    }
+
+    template <typename State>
     typename AccessorTraits<State>::ReturnType Get(typename AccessorTraits<State>::HandleType handle) {
         using Traits = AccessorTraits<State>;
         auto map_member = Traits::Map();

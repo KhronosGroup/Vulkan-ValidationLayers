@@ -74,7 +74,7 @@ void DESCRIPTOR_POOL_STATE::Allocate(const VkDescriptorSetAllocateInfo *alloc_in
         auto new_ds = std::make_shared<cvdescriptorset::DescriptorSet>(descriptor_sets[i], this, ds_data->layout_nodes[i],
                                                                        variable_count, dev_data);
         sets.emplace(descriptor_sets[i], new_ds.get());
-        dev_data->setMap.emplace(descriptor_sets[i], std::move(new_ds));
+        dev_data->Add(std::move(new_ds));
     }
 }
 
@@ -82,7 +82,7 @@ void DESCRIPTOR_POOL_STATE::Free(uint32_t count, const VkDescriptorSet *descript
     // Update available descriptor sets in pool
     availableSets += count;
 
-    // For each freed descriptor add its resources back into the pool as available and remove from pool and setMap
+    // For each freed descriptor add its resources back into the pool as available and remove from pool and device data
     for (uint32_t i = 0; i < count; ++i) {
         if (descriptor_sets[i] != VK_NULL_HANDLE) {
             auto iter = sets.find(descriptor_sets[i]);
@@ -94,8 +94,7 @@ void DESCRIPTOR_POOL_STATE::Free(uint32_t count, const VkDescriptorSet *descript
                 descriptor_count = set_state->GetDescriptorCountFromIndex(j);
                 availableDescriptorTypeCount[type_index] += descriptor_count;
             }
-            set_state->Destroy();
-            dev_data->setMap.erase(iter->first);
+            dev_data->Destroy<cvdescriptorset::DescriptorSet>(iter->first);
             sets.erase(iter);
         }
     }
@@ -104,8 +103,7 @@ void DESCRIPTOR_POOL_STATE::Free(uint32_t count, const VkDescriptorSet *descript
 void DESCRIPTOR_POOL_STATE::Reset() {
     // For every set off of this pool, clear it, remove from setMap, and free cvdescriptorset::DescriptorSet
     for (auto entry : sets) {
-        entry.second->Destroy();
-        dev_data->setMap.erase(entry.first);
+        dev_data->Destroy<cvdescriptorset::DescriptorSet>(entry.first);
     }
     sets.clear();
     // Reset available count for each type and available sets for this pool
