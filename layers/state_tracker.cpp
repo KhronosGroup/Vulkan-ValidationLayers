@@ -1285,7 +1285,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
                 {i, queue_create_info.queueFamilyIndex, queue_create_info.flags, queue_create_info.queueCount});
             total_count += queue_create_info.queueCount;
         }
-        queueMap.reserve(total_count);
+        queue_map_.reserve(total_count);
         for (const auto &queue_info : state_tracker->device_queue_info_list) {
             for (uint32_t i = 0; i < queue_info.queue_count; i++) {
                 VkQueue queue = VK_NULL_HANDLE;
@@ -1309,29 +1309,30 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     if (!device) return;
 
-    commandPoolMap.clear();
-    assert(commandBufferMap.empty());
-    pipelineMap.clear();
-    renderPassMap.clear();
+    command_pool_map_.clear();
+    assert(command_buffer_map_.empty());
+    pipeline_map_.clear();
+    render_pass_map_.clear();
 
     // This will also delete all sets in the pool & remove them from setMap
-    descriptorPoolMap.clear();
+    descriptor_pool_map_.clear();
     // All sets should be removed
-    assert(setMap.empty());
-    descriptorSetLayoutMap.clear();
+    assert(descriptor_set_map_.empty());
+    desc_template_map_.clear();
+    descriptor_set_layout_map_.clear();
     // Because swapchains are associated with Surfaces, which are at instance level,
     // they need to be explicitly destroyed here to avoid continued references to
     // the device we're destroying.
-    for (auto &entry : swapchainMap) {
+    for (auto &entry : swapchain_map_) {
         entry.second->Destroy();
     }
-    swapchainMap.clear();
-    imageViewMap.clear();
-    imageMap.clear();
-    bufferViewMap.clear();
-    bufferMap.clear();
+    swapchain_map_.clear();
+    image_view_map_.clear();
+    image_map_.clear();
+    buffer_view_map_.clear();
+    buffer_map_.clear();
     // Queues persist until device is destroyed
-    queueMap.clear();
+    queue_map_.clear();
 }
 
 void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
@@ -1643,7 +1644,7 @@ void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult
 
 void ValidationStateTracker::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
     if (VK_SUCCESS != result) return;
-    for (auto &queue : queueMap) {
+    for (auto &queue : queue_map_) {
         queue.second->Retire();
     }
 }
@@ -3271,7 +3272,7 @@ void ValidationStateTracker::PostCallRecordCreateInstance(const VkInstanceCreate
         return;
     }
 
-    physical_device_map.reserve(count);
+    physical_device_map_.reserve(count);
     for (auto physdev : physdev_handles) {
         Add(CreatePhysicalDeviceState(physdev));
     }
@@ -3540,7 +3541,7 @@ void ValidationStateTracker::PostCallRecordAcquireProfilingLockKHR(VkDevice devi
 
 void ValidationStateTracker::PostCallRecordReleaseProfilingLockKHR(VkDevice device) {
     performance_lock_acquired = false;
-    for (auto &cmd_buffer : commandBufferMap) {
+    for (auto &cmd_buffer : command_buffer_map_) {
         cmd_buffer.second->performance_lock_released = true;
     }
 }

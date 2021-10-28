@@ -20,6 +20,7 @@
 #include "chassis.h"
 #include "shader_validation.h"
 #include "cmd_buffer_state.h"
+class QUEUE_STATE;
 
 class UtilDescriptorSetManager {
   public:
@@ -390,9 +391,9 @@ void UtilSubmitBarrier(VkQueue queue, ObjectType *object_ptr) {
 
         uint32_t queue_family_index = 0;
 
-        auto queue_state_it = object_ptr->queueMap.find(queue);
-        if (queue_state_it != object_ptr->queueMap.end()) {
-            queue_family_index = queue_state_it->second->queueFamilyIndex;
+        auto queue_state = object_ptr->template Get<QUEUE_STATE>(queue);
+        if (queue_state) {
+            queue_family_index = queue_state->queueFamilyIndex;
         }
 
         VkResult result = VK_SUCCESS;
