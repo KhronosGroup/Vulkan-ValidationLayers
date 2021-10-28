@@ -212,17 +212,6 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
     return skip;
 }
 
-void BestPractices::PreCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                                VkInstance* pInstance) {
-    ValidationStateTracker::PreCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance);
-
-    if (pCreateInfo != nullptr && pCreateInfo->pApplicationInfo != nullptr) {
-        instance_api_version = pCreateInfo->pApplicationInfo->apiVersion;
-    } else {
-        instance_api_version = 0;
-    }
-}
-
 bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) const {
     bool skip = false;
@@ -233,8 +222,8 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
     auto device_api_version = physical_device_properties.apiVersion;
 
     // check api versions and warn if instance api Version is higher than version on device.
-    if (instance_api_version > device_api_version) {
-        std::string inst_api_name = StringAPIVersion(instance_api_version);
+    if (api_version > device_api_version) {
+        std::string inst_api_name = StringAPIVersion(api_version);
         std::string dev_api_name = StringAPIVersion(device_api_version);
 
         skip |= LogWarning(device, kVUID_BestPractices_CreateDevice_API_Mismatch,
@@ -248,7 +237,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
                                "vkCreateDevice(): Attempting to enable Instance Extension %s at CreateDevice time.",
                                pCreateInfo->ppEnabledExtensionNames[i]);
         }
-        skip |= ValidateDeprecatedExtensions("CreateDevice", pCreateInfo->ppEnabledExtensionNames[i], instance_api_version,
+        skip |= ValidateDeprecatedExtensions("CreateDevice", pCreateInfo->ppEnabledExtensionNames[i], api_version,
                                              kVUID_BestPractices_CreateDevice_DeprecatedExtension);
         skip |= ValidateSpecialUseExtensions("CreateDevice", pCreateInfo->ppEnabledExtensionNames[i], kSpecialUseDeviceVUIDs);
     }

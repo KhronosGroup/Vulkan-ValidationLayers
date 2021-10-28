@@ -237,8 +237,6 @@ class BestPractices : public ValidationStateTracker {
 
     bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                        VkInstance* pInstance) const override;
-    void PreCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                     VkInstance* pInstance) override;
     bool PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) const override;
     bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
@@ -627,7 +625,6 @@ class BestPractices : public ValidationStateTracker {
 #include "best_practices.h"
 
   private:
-    uint32_t instance_api_version = 0;
     uint32_t num_mem_objects = 0;
 
     // AMD tracked

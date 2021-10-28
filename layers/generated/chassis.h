@@ -3335,10 +3335,11 @@ class ValidationObject {
             }
         }
 
-        void FinalizeInstanceValidationObject(ValidationObject *framework) {
+        void FinalizeInstanceValidationObject(ValidationObject *framework, VkInstance inst) {
             instance_dispatch_table = framework->instance_dispatch_table;
             enabled = framework->enabled;
             disabled = framework->disabled;
+            instance = inst;
         }
 
         virtual void InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
