@@ -2215,6 +2215,18 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevi
     Add(std::move(as_state));
 }
 
+void ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(
+    VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
+    const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, VkResult result) {
+    for (uint32_t i = 0; i < infoCount; ++i) {
+        auto *dst_as_state = GetAccelerationStructureStateKHR(pInfos[i].dstAccelerationStructure);
+        if (dst_as_state != nullptr) {
+            dst_as_state->Build(&pInfos[i]);
+        }
+    }
+}
+
 void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos) {
@@ -2226,8 +2238,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresKHR(
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto *dst_as_state = GetAccelerationStructureStateKHR(pInfos[i].dstAccelerationStructure);
         if (dst_as_state != nullptr) {
-            dst_as_state->built = true;
-            dst_as_state->build_info_khr.initialize(&pInfos[i]);
+            dst_as_state->Build(&pInfos[i]);
             if (!disabled[command_buffer_state]) {
                 cb_state->AddChild(dst_as_state);
             }
@@ -2254,8 +2265,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresIndirec
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto *dst_as_state = GetAccelerationStructureStateKHR(pInfos[i].dstAccelerationStructure);
         if (dst_as_state != nullptr) {
-            dst_as_state->built = true;
-            dst_as_state->build_info_khr.initialize(&pInfos[i]);
+            dst_as_state->Build(&pInfos[i]);
             if (!disabled[command_buffer_state]) {
                 cb_state->AddChild(dst_as_state);
             }
@@ -2320,8 +2330,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
 
     auto *dst_as_state = GetAccelerationStructureStateNV(dst);
     if (dst_as_state != nullptr) {
-        dst_as_state->built = true;
-        dst_as_state->build_info.initialize(pInfo);
+        dst_as_state->Build(pInfo);
         if (!disabled[command_buffer_state]) {
            cb_state->AddChild(dst_as_state);
         }
@@ -3936,6 +3945,17 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
 
     if (*pSwapchainImageCount) {
         swapchain_state->get_swapchain_image_count = *pSwapchainImageCount;
+    }
+}
+
+void ValidationStateTracker::PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                        const VkCopyAccelerationStructureInfoKHR *pInfo,
+                                                                        VkResult result) {
+    ACCELERATION_STRUCTURE_STATE_KHR *src_as_state = GetAccelerationStructureStateKHR(pInfo->src);
+    ACCELERATION_STRUCTURE_STATE_KHR *dst_as_state = GetAccelerationStructureStateKHR(pInfo->dst);
+    if (dst_as_state != nullptr && src_as_state != nullptr) {
+        dst_as_state->built = true;
+        dst_as_state->build_info_khr = src_as_state->build_info_khr;
     }
 }
 

@@ -650,6 +650,10 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
                                                       VkAccelerationStructureKHR* pAccelerationStructure, VkResult result) override;
+    void PostCallRecordBuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
+                                                      const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                      const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
+                                                      VkResult result) override;
     void PostCallRecordCmdBuildAccelerationStructuresKHR(
         VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
         const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) override;
@@ -1178,6 +1182,8 @@ class ValidationStateTracker : public ValidationObject {
     void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bindInfo);
     void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*) const;
 
+    void PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                    const VkCopyAccelerationStructureInfoKHR* pInfo, VkResult result) override;
     void PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                        const VkCopyAccelerationStructureInfoKHR* pInfo) override;
 
