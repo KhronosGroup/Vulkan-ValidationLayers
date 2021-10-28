@@ -344,16 +344,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     OutputLayerStatusInfo(framework);
 
-    thread_checker_obj->FinalizeInstanceValidationObject(framework);
-    object_tracker_obj->FinalizeInstanceValidationObject(framework);
-    parameter_validation_obj->FinalizeInstanceValidationObject(framework);
-    core_checks_obj->FinalizeInstanceValidationObject(framework);
-    core_checks_obj->instance = *pInstance;
-    core_checks_obj->instance_state = core_checks_obj;
-    best_practices_obj->FinalizeInstanceValidationObject(framework);
-    gpu_assisted_obj->FinalizeInstanceValidationObject(framework);
-    debug_printf_obj->FinalizeInstanceValidationObject(framework);
-    sync_validation_obj->FinalizeInstanceValidationObject(framework);
+    thread_checker_obj->FinalizeInstanceValidationObject(framework, *pInstance);
+    object_tracker_obj->FinalizeInstanceValidationObject(framework, *pInstance);
+    parameter_validation_obj->FinalizeInstanceValidationObject(framework, *pInstance);
+    core_checks_obj->FinalizeInstanceValidationObject(framework, *pInstance);
+    best_practices_obj->FinalizeInstanceValidationObject(framework, *pInstance);
+    gpu_assisted_obj->FinalizeInstanceValidationObject(framework, *pInstance);
+    debug_printf_obj->FinalizeInstanceValidationObject(framework, *pInstance);
+    sync_validation_obj->FinalizeInstanceValidationObject(framework, *pInstance);
 
     for (auto intercept : framework->object_dispatch) {
         auto lock = intercept->WriteLock();

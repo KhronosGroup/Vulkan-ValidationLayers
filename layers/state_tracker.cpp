@@ -3346,6 +3346,7 @@ void ValidationStateTracker::PostCallRecordCreateInstance(const VkInstanceCreate
     if (result != VK_SUCCESS) {
         return;
     }
+    instance_state = this;
     uint32_t count = 0;
     // this can fail if the allocator fails
     result = DispatchEnumeratePhysicalDevices(*pInstance, &count, nullptr);
