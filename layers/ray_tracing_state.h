@@ -52,6 +52,11 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
     ACCELERATION_STRUCTURE_STATE(const ACCELERATION_STRUCTURE_STATE &rh_obj) = delete;
 
     VkAccelerationStructureNV acceleration_structure() const { return handle_.Cast<VkAccelerationStructureNV>(); }
+
+    void Build(const VkAccelerationStructureInfoNV *pInfo) {
+        built = true;
+        build_info.initialize(pInfo);
+    };
 };
 
 class ACCELERATION_STRUCTURE_STATE_KHR : public BINDABLE {
@@ -78,6 +83,11 @@ class ACCELERATION_STRUCTURE_STATE_KHR : public BINDABLE {
     ACCELERATION_STRUCTURE_STATE_KHR(const ACCELERATION_STRUCTURE_STATE_KHR &rh_obj) = delete;
 
     VkAccelerationStructureKHR acceleration_structure() const { return handle_.Cast<VkAccelerationStructureKHR>(); }
+
+    void Build(const VkAccelerationStructureBuildGeometryInfoKHR *pInfo) {
+        built = true;
+        build_info_khr.initialize(pInfo);
+    };
 };
 
 // Safe struct that spans NV and KHR VkRayTracingPipelineCreateInfo structures.
