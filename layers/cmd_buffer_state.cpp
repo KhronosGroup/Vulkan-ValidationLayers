@@ -1212,16 +1212,16 @@ void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
     }
 
     for (const auto &eventStagePair : local_event_to_stage_map) {
-        dev_data->eventMap[eventStagePair.first]->stageMask = eventStagePair.second;
+        dev_data->Get<EVENT_STATE>(eventStagePair.first)->stageMask = eventStagePair.second;
     }
 }
 
 void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass) {
     // First perform decrement on general case bound objects
     for (auto event : writeEventsBeforeWait) {
-        auto event_node = dev_data->eventMap.find(event);
-        if (event_node != dev_data->eventMap.end()) {
-            event_node->second->write_in_use--;
+        auto event_state = dev_data->Get<EVENT_STATE>(event);
+        if (event_state) {
+            event_state->write_in_use--;
         }
     }
     QueryMap local_query_to_state_map;

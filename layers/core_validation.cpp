@@ -2418,10 +2418,10 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const char *func_str) const {
     if (disabled[object_in_use]) return false;
     bool skip = false;
-    auto set_node = setMap.find(set);
-    if (set_node != setMap.end()) {
+    auto set_node = Get<cvdescriptorset::DescriptorSet>(set);
+    if (set_node) {
         // TODO : This covers various error cases so should pass error enum into this function and use passed in enum here
-        if (set_node->second->InUse()) {
+        if (set_node->InUse()) {
             skip |= LogError(set, "VUID-vkFreeDescriptorSets-pDescriptorSets-00309",
                              "Cannot call %s() on %s that is in use by a command buffer.", func_str,
                              report_data->FormatHandle(set).c_str());
@@ -3243,7 +3243,7 @@ void CoreChecks::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCou
 }
 
 bool CoreChecks::SemaphoreWasSignaled(VkSemaphore semaphore) const {
-    for (auto &pair : queueMap) {
+    for (auto &pair : queue_map_) {
         const auto &queue_state = pair.second;
         for (const auto &submission : queue_state->submissions) {
             for (const auto &signal_semaphore : submission.signal_semaphores) {
@@ -3296,7 +3296,7 @@ struct SemaphoreSubmitState {
             internal_semaphores.insert(semaphore);
         }
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
-            for (const auto &q : core->queueMap) {
+            for (const auto &q : core->queue_map_) {
                 if (q.first != queue) {
                     for (const auto &cb : q.second->submissions) {
                         for (const auto &wait_semaphore : cb.wait_semaphores) {
@@ -3462,7 +3462,7 @@ bool CoreChecks::ValidateMaxTimelineSemaphoreValueDifference(const Location &loc
                          report_data->FormatHandle(semaphore).c_str());
     }
 
-    for (auto &pair : queueMap) {
+    for (auto &pair : queue_map_) {
         const auto &queue_state = pair.second;
         for (const auto &submission : queue_state->submissions) {
             for (const auto &signal_semaphore : submission.signal_semaphores) {
@@ -4259,7 +4259,7 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExt
 bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) const {
     bool skip = false;
-    if (memObjMap.size() >= phys_dev_props.limits.maxMemoryAllocationCount) {
+    if (mem_obj_map_.size() >= phys_dev_props.limits.maxMemoryAllocationCount) {
         skip |= LogError(device, "VUID-vkAllocateMemory-maxMemoryAllocationCount-04101",
                          "vkAllocateMemory: Number of currently valid memory objects is not less than the maximum allowed (%u).",
                          phys_dev_props.limits.maxMemoryAllocationCount);
@@ -4543,7 +4543,7 @@ bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) const {
 
 bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) const {
     bool skip = false;
-    for (const auto &queue : queueMap) {
+    for (const auto &queue : queue_map_) {
         skip |= VerifyQueueStateToSeq(queue.second.get(), queue.second->seq + queue.second->submissions.size());
     }
     return skip;
@@ -8985,9 +8985,8 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
                      report_data->FormatHandle(dst_buff_state->buffer()).c_str());
     }
 
-    auto query_pool_state_iter = queryPoolMap.find(queryPool);
-    if (query_pool_state_iter != queryPoolMap.end()) {
-        auto query_pool_state = query_pool_state_iter->second.get();
+    const auto *query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
+    if (query_pool_state) {
         if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
             skip |= ValidatePerformanceQueryResults("vkCmdCopyQueryPoolResults", query_pool_state, firstQuery, queryCount, flags);
             if (!phys_dev_ext_props.performance_query_props.allowCommandBufferQueryCopies) {
@@ -13539,7 +13538,7 @@ bool CoreChecks::ValidateSignalSemaphore(VkDevice device, const VkSemaphoreSigna
                          "%s(): value must be greater than current semaphore %s value", api_name,
                          report_data->FormatHandle(pSignalInfo->semaphore).c_str());
     }
-    for (auto &pair : queueMap) {
+    for (auto &pair : queue_map_) {
         const auto &queue_state = pair.second;
         for (const auto &submission : queue_state->submissions) {
             for (const auto &signal_semaphore : submission.signal_semaphores) {
@@ -13650,7 +13649,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     if (!instance_extensions.vk_khr_android_surface) {
         // restrict search only to queue families of VkDeviceQueueCreateInfos, not the whole physical device
         bool is_supported = false;
-        for (const auto &queue_entry : queueMap) {
+        for (const auto &queue_entry : queue_map_) {
             auto qfi = queue_entry.second->queueFamilyIndex;
             if (surface_state->GetQueueSupport(physical_device, qfi)) {
                 is_supported = true;
@@ -15036,11 +15035,12 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                                               const VkAllocationCallbacks *pAllocator, VkSampler *pSampler) const {
     bool skip = false;
 
-    if (samplerMap.size() >= phys_dev_props.limits.maxSamplerAllocationCount) {
+    auto num_samplers = sampler_map_.size();
+    if (num_samplers >= phys_dev_props.limits.maxSamplerAllocationCount) {
         skip |= LogError(
             device, "VUID-vkCreateSampler-maxSamplerAllocationCount-04110",
             "vkCreateSampler(): Number of currently valid sampler objects (%zu) is not less than the maximum allowed (%u).",
-            samplerMap.size(), phys_dev_props.limits.maxSamplerAllocationCount);
+            num_samplers, phys_dev_props.limits.maxSamplerAllocationCount);
     }
 
     if (enabled_features.core11.samplerYcbcrConversion == VK_TRUE) {

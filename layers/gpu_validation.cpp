@@ -811,7 +811,7 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
     assert(cb_state != nullptr);
 
     std::vector<uint64_t> current_valid_handles;
-    for (const auto &as_state_kv : accelerationStructureMap) {
+    for (const auto &as_state_kv : acceleration_structure_nv_map_) {
         const ACCELERATION_STRUCTURE_STATE &as_state = *as_state_kv.second;
         if (as_state.built && as_state.create_infoNV.info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV) {
             current_valid_handles.push_back(as_state.opaque_handle);
