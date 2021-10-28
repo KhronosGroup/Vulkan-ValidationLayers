@@ -2574,7 +2574,7 @@ void ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].dstAccelerationStructure);
         if (dst_as_state != nullptr) {
-            dst_as_state->Build(&pInfos[i]);
+            dst_as_state->Build(&pInfos[i], true, *ppBuildRangeInfos);
         }
     }
 }
@@ -2584,7 +2584,7 @@ void ValidationStateTracker::RecordDeviceAccelerationStructureBuildInfo(CMD_BUFF
                                                                         const VkAccelerationStructureBuildGeometryInfoKHR &info) {
     auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(info.dstAccelerationStructure);
     if (dst_as_state) {
-        dst_as_state->Build(&info);
+        dst_as_state->Build(&info, false, nullptr);
     }
     if (disabled[command_buffer_state]) {
         return;

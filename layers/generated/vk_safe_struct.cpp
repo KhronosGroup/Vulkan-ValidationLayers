@@ -33,6 +33,7 @@
 
 #include "vk_safe_struct.h"
 #include "vk_typemap_helper.h"
+#include "vk_layer_utils.h"
 
 #include <string.h>
 #include <cassert>
@@ -42,6 +43,21 @@
 #include <vulkan/vk_layer.h>
 
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
+struct ASGeomKHRExtraData {
+    ASGeomKHRExtraData(uint8_t *alloc, uint32_t primOffset, uint32_t primCount) :
+        ptr(alloc),
+        primitiveOffset(primOffset),
+        primitiveCount(primCount)
+    {}
+    ~ASGeomKHRExtraData() {
+        if (ptr)
+            delete[] ptr;
+    }
+    uint8_t *ptr;
+    uint32_t primitiveOffset;
+    uint32_t primitiveCount;
+};
+vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGeomKHRExtraData*, 4> as_geom_khr_host_alloc;
 
 
 safe_VkBufferMemoryBarrier::safe_VkBufferMemoryBarrier(const VkBufferMemoryBarrier* in_struct) :
@@ -54426,13 +54442,36 @@ void safe_VkAccelerationStructureGeometryInstancesDataKHR::initialize(const safe
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
-safe_VkAccelerationStructureGeometryKHR::safe_VkAccelerationStructureGeometryKHR(const VkAccelerationStructureGeometryKHR* in_struct) :
+safe_VkAccelerationStructureGeometryKHR::safe_VkAccelerationStructureGeometryKHR(const VkAccelerationStructureGeometryKHR* in_struct, const bool is_host, const VkAccelerationStructureBuildRangeInfoKHR *build_range_info) :
     sType(in_struct->sType),
     geometryType(in_struct->geometryType),
     geometry(in_struct->geometry),
     flags(in_struct->flags)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    if (is_host && geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+        if (geometry.instances.arrayOfPointers) {
+            size_t pp_array_size = build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);
+            size_t p_array_size = build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+            size_t array_size = build_range_info->primitiveOffset + pp_array_size + p_array_size;
+            uint8_t *allocation = new uint8_t[array_size];
+            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + build_range_info->primitiveOffset);
+            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + build_range_info->primitiveOffset + pp_array_size);
+            for (uint32_t i = 0; i < build_range_info->primitiveCount; ++i) {
+                const uint8_t *byte_ptr = reinterpret_cast<const uint8_t *>(in_struct->geometry.instances.data.hostAddress);
+                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(byte_ptr + build_range_info->primitiveOffset)[i]);
+                ppInstances[i] = &pInstances[i];
+            }
+            geometry.instances.data.hostAddress = allocation;
+            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));
+        } else {
+            size_t array_size = build_range_info->primitiveOffset + build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+            uint8_t *allocation = new uint8_t[array_size];
+            memcpy(allocation, in_struct->geometry.instances.data.hostAddress, array_size);
+            geometry.instances.data.hostAddress = allocation;
+            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));
+        }
+    }
 }
 
 safe_VkAccelerationStructureGeometryKHR::safe_VkAccelerationStructureGeometryKHR() :
@@ -54450,12 +54489,40 @@ safe_VkAccelerationStructureGeometryKHR::safe_VkAccelerationStructureGeometryKHR
     geometry = copy_src.geometry;
     flags = copy_src.flags;
     pNext = SafePnextCopy(copy_src.pNext);
+    auto src_iter = as_geom_khr_host_alloc.find(&copy_src);
+    if (src_iter != as_geom_khr_host_alloc.end()) {
+        auto &src_alloc = src_iter->second;
+        if (geometry.instances.arrayOfPointers) {
+            size_t pp_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);
+            size_t p_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+            size_t array_size = src_alloc->primitiveOffset + pp_array_size + p_array_size;
+            uint8_t *allocation = new uint8_t[array_size];
+            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + src_alloc->primitiveOffset);
+            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + src_alloc->primitiveOffset + pp_array_size);
+            for (uint32_t i = 0; i < src_alloc->primitiveCount; ++i) {
+                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(src_alloc->ptr + src_alloc->primitiveOffset)[i]);
+                ppInstances[i] = &pInstances[i];
+            }
+            geometry.instances.data.hostAddress = allocation;
+            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));
+        } else {
+            size_t array_size = src_alloc->primitiveOffset + src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+            uint8_t *allocation = new uint8_t[array_size];
+            memcpy(allocation, src_alloc->ptr, array_size);
+            geometry.instances.data.hostAddress = allocation;
+            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));
+        }
+    }
 }
 
 safe_VkAccelerationStructureGeometryKHR& safe_VkAccelerationStructureGeometryKHR::operator=(const safe_VkAccelerationStructureGeometryKHR& copy_src)
 {
     if (&copy_src == this) return *this;
 
+    auto iter = as_geom_khr_host_alloc.pop(this);
+    if (iter != as_geom_khr_host_alloc.end()) {
+        delete iter->second;
+    }
     if (pNext)
         FreePnextChain(pNext);
 
@@ -54464,18 +54531,50 @@ safe_VkAccelerationStructureGeometryKHR& safe_VkAccelerationStructureGeometryKHR
     geometry = copy_src.geometry;
     flags = copy_src.flags;
     pNext = SafePnextCopy(copy_src.pNext);
+    auto src_iter = as_geom_khr_host_alloc.find(&copy_src);
+    if (src_iter != as_geom_khr_host_alloc.end()) {
+        auto &src_alloc = src_iter->second;
+        if (geometry.instances.arrayOfPointers) {
+            size_t pp_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);
+            size_t p_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+            size_t array_size = src_alloc->primitiveOffset + pp_array_size + p_array_size;
+            uint8_t *allocation = new uint8_t[array_size];
+            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + src_alloc->primitiveOffset);
+            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + src_alloc->primitiveOffset + pp_array_size);
+            for (uint32_t i = 0; i < src_alloc->primitiveCount; ++i) {
+                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(src_alloc->ptr + src_alloc->primitiveOffset)[i]);
+                ppInstances[i] = &pInstances[i];
+            }
+            geometry.instances.data.hostAddress = allocation;
+            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));
+        } else {
+            size_t array_size = src_alloc->primitiveOffset + src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+            uint8_t *allocation = new uint8_t[array_size];
+            memcpy(allocation, src_alloc->ptr, array_size);
+            geometry.instances.data.hostAddress = allocation;
+            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));
+        }
+    }
 
     return *this;
 }
 
 safe_VkAccelerationStructureGeometryKHR::~safe_VkAccelerationStructureGeometryKHR()
 {
+    auto iter = as_geom_khr_host_alloc.pop(this);
+    if (iter != as_geom_khr_host_alloc.end()) {
+        delete iter->second;
+    }
     if (pNext)
         FreePnextChain(pNext);
 }
 
-void safe_VkAccelerationStructureGeometryKHR::initialize(const VkAccelerationStructureGeometryKHR* in_struct)
+void safe_VkAccelerationStructureGeometryKHR::initialize(const VkAccelerationStructureGeometryKHR* in_struct, const bool is_host, const VkAccelerationStructureBuildRangeInfoKHR *build_range_info)
 {
+    auto iter = as_geom_khr_host_alloc.pop(this);
+    if (iter != as_geom_khr_host_alloc.end()) {
+        delete iter->second;
+    }
     if (pNext)
         FreePnextChain(pNext);
     sType = in_struct->sType;
@@ -54483,6 +54582,29 @@ void safe_VkAccelerationStructureGeometryKHR::initialize(const VkAccelerationStr
     geometry = in_struct->geometry;
     flags = in_struct->flags;
     pNext = SafePnextCopy(in_struct->pNext);
+    if (is_host && geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+        if (geometry.instances.arrayOfPointers) {
+            size_t pp_array_size = build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);
+            size_t p_array_size = build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+            size_t array_size = build_range_info->primitiveOffset + pp_array_size + p_array_size;
+            uint8_t *allocation = new uint8_t[array_size];
+            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + build_range_info->primitiveOffset);
+            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + build_range_info->primitiveOffset + pp_array_size);
+            for (uint32_t i = 0; i < build_range_info->primitiveCount; ++i) {
+                const uint8_t *byte_ptr = reinterpret_cast<const uint8_t *>(in_struct->geometry.instances.data.hostAddress);
+                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(byte_ptr + build_range_info->primitiveOffset)[i]);
+                ppInstances[i] = &pInstances[i];
+            }
+            geometry.instances.data.hostAddress = allocation;
+            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));
+        } else {
+            size_t array_size = build_range_info->primitiveOffset + build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+            uint8_t *allocation = new uint8_t[array_size];
+            memcpy(allocation, in_struct->geometry.instances.data.hostAddress, array_size);
+            geometry.instances.data.hostAddress = allocation;
+            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));
+        }
+    }
 }
 
 void safe_VkAccelerationStructureGeometryKHR::initialize(const safe_VkAccelerationStructureGeometryKHR* copy_src)
@@ -54492,9 +54614,33 @@ void safe_VkAccelerationStructureGeometryKHR::initialize(const safe_VkAccelerati
     geometry = copy_src->geometry;
     flags = copy_src->flags;
     pNext = SafePnextCopy(copy_src->pNext);
+    auto src_iter = as_geom_khr_host_alloc.find(copy_src);
+    if (src_iter != as_geom_khr_host_alloc.end()) {
+        auto &src_alloc = src_iter->second;
+        if (geometry.instances.arrayOfPointers) {
+            size_t pp_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);
+            size_t p_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+            size_t array_size = src_alloc->primitiveOffset + pp_array_size + p_array_size;
+            uint8_t *allocation = new uint8_t[array_size];
+            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + src_alloc->primitiveOffset);
+            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + src_alloc->primitiveOffset + pp_array_size);
+            for (uint32_t i = 0; i < src_alloc->primitiveCount; ++i) {
+                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(src_alloc->ptr + src_alloc->primitiveOffset)[i]);
+                ppInstances[i] = &pInstances[i];
+            }
+            geometry.instances.data.hostAddress = allocation;
+            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));
+        } else {
+            size_t array_size = src_alloc->primitiveOffset + src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+            uint8_t *allocation = new uint8_t[array_size];
+            memcpy(allocation, src_alloc->ptr, array_size);
+            geometry.instances.data.hostAddress = allocation;
+            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));
+        }
+    }
 }
 
-safe_VkAccelerationStructureBuildGeometryInfoKHR::safe_VkAccelerationStructureBuildGeometryInfoKHR(const VkAccelerationStructureBuildGeometryInfoKHR* in_struct) :
+safe_VkAccelerationStructureBuildGeometryInfoKHR::safe_VkAccelerationStructureBuildGeometryInfoKHR(const VkAccelerationStructureBuildGeometryInfoKHR* in_struct, const bool is_host, const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos) :
     sType(in_struct->sType),
     type(in_struct->type),
     flags(in_struct->flags),
@@ -54511,12 +54657,12 @@ safe_VkAccelerationStructureBuildGeometryInfoKHR::safe_VkAccelerationStructureBu
         if ( in_struct->ppGeometries) {
             ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];
             for (uint32_t i = 0; i < geometryCount; ++i) {
-                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(in_struct->ppGeometries[i]);
+                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(in_struct->ppGeometries[i], is_host, &build_range_infos[i]);
             }
         } else {
             pGeometries = new safe_VkAccelerationStructureGeometryKHR[geometryCount];
             for (uint32_t i = 0; i < geometryCount; ++i) {
-                (pGeometries)[i] = safe_VkAccelerationStructureGeometryKHR(&(in_struct->pGeometries)[i]);
+                (pGeometries)[i] = safe_VkAccelerationStructureGeometryKHR(&(in_struct->pGeometries)[i], is_host, &build_range_infos[i]);
             }
         }
     }
@@ -54618,7 +54764,7 @@ safe_VkAccelerationStructureBuildGeometryInfoKHR::~safe_VkAccelerationStructureB
         FreePnextChain(pNext);
 }
 
-void safe_VkAccelerationStructureBuildGeometryInfoKHR::initialize(const VkAccelerationStructureBuildGeometryInfoKHR* in_struct)
+void safe_VkAccelerationStructureBuildGeometryInfoKHR::initialize(const VkAccelerationStructureBuildGeometryInfoKHR* in_struct, const bool is_host, const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos)
 {
     if (ppGeometries) {
         for (uint32_t i = 0; i < geometryCount; ++i) {
@@ -54645,12 +54791,12 @@ void safe_VkAccelerationStructureBuildGeometryInfoKHR::initialize(const VkAccele
         if ( in_struct->ppGeometries) {
             ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];
             for (uint32_t i = 0; i < geometryCount; ++i) {
-                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(in_struct->ppGeometries[i]);
+                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(in_struct->ppGeometries[i], is_host, &build_range_infos[i]);
             }
         } else {
             pGeometries = new safe_VkAccelerationStructureGeometryKHR[geometryCount];
             for (uint32_t i = 0; i < geometryCount; ++i) {
-                (pGeometries)[i] = safe_VkAccelerationStructureGeometryKHR(&(in_struct->pGeometries)[i]);
+                (pGeometries)[i] = safe_VkAccelerationStructureGeometryKHR(&(in_struct->pGeometries)[i], is_host, &build_range_infos[i]);
             }
         }
     }

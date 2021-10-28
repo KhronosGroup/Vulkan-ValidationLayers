@@ -123,6 +123,12 @@ class HelperFileOutputGenerator(OutputGenerator):
             # safe_VkPipelineViewportStateCreateInfo needs to know if viewport and scissor is dynamic to use its pointers
             'VkPipelineViewportStateCreateInfo' :
                 ', const bool is_dynamic_viewports, const bool is_dynamic_scissors',
+            # safe_VkAccelerationStructureBuildGeometryInfoKHR needs to know if we're doing a host or device build
+            'VkAccelerationStructureBuildGeometryInfoKHR' :
+                ', const bool is_host, const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos',
+            # safe_VkAccelerationStructureGeometryKHR needs to know if we're doing a host or device build
+            'VkAccelerationStructureGeometryKHR' :
+                ', const bool is_host, const VkAccelerationStructureBuildRangeInfoKHR *build_range_info',
         }
 
         # Note that adding an API here requires that all three pre/post routines be added to inline_corechecks_instrumentation_source.
@@ -1417,6 +1423,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         safe_struct_helper_source = '\n'
         safe_struct_helper_source += '#include "vk_safe_struct.h"\n'
         safe_struct_helper_source += '#include "vk_typemap_helper.h"\n'
+        safe_struct_helper_source += '#include "vk_layer_utils.h"\n'
         safe_struct_helper_source += '\n'
         safe_struct_helper_source += '#include <string.h>\n'
         safe_struct_helper_source += '#include <cassert>\n'
@@ -1426,6 +1433,21 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         safe_struct_helper_source += '#include <vulkan/vk_layer.h>\n'
         safe_struct_helper_source += '\n'
         safe_struct_helper_source += 'extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;\n'
+        safe_struct_helper_source += 'struct ASGeomKHRExtraData {\n'
+        safe_struct_helper_source += '    ASGeomKHRExtraData(uint8_t *alloc, uint32_t primOffset, uint32_t primCount) :\n'
+        safe_struct_helper_source += '        ptr(alloc),\n'
+        safe_struct_helper_source += '        primitiveOffset(primOffset),\n'
+        safe_struct_helper_source += '        primitiveCount(primCount)\n'
+        safe_struct_helper_source += '    {}\n'
+        safe_struct_helper_source += '    ~ASGeomKHRExtraData() {\n'
+        safe_struct_helper_source += '        if (ptr)\n'
+        safe_struct_helper_source += '            delete[] ptr;\n'
+        safe_struct_helper_source += '    }\n'
+        safe_struct_helper_source += '    uint8_t *ptr;\n'
+        safe_struct_helper_source += '    uint32_t primitiveOffset;\n'
+        safe_struct_helper_source += '    uint32_t primitiveCount;\n'
+        safe_struct_helper_source += '};\n'
+        safe_struct_helper_source += 'vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGeomKHRExtraData*, 4> as_geom_khr_host_alloc;\n'
         safe_struct_helper_source += '\n'
         safe_struct_helper_source += self.GenerateSafeStructSource()
         safe_struct_helper_source += self.build_safe_struct_utility_funcs()
@@ -1632,13 +1654,37 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '        if ( in_struct->ppGeometries) {\n'
                     '            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];\n'
                     '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
-                    '                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(in_struct->ppGeometries[i]);\n'
+                    '                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(in_struct->ppGeometries[i], is_host, &build_range_infos[i]);\n'
                     '            }\n'
                     '        } else {\n'
                     '            pGeometries = new safe_VkAccelerationStructureGeometryKHR[geometryCount];\n'
                     '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
-                    '                (pGeometries)[i] = safe_VkAccelerationStructureGeometryKHR(&(in_struct->pGeometries)[i]);\n'
+                    '                (pGeometries)[i] = safe_VkAccelerationStructureGeometryKHR(&(in_struct->pGeometries)[i], is_host, &build_range_infos[i]);\n'
                     '            }\n'
+                    '        }\n'
+                    '    }\n',
+                'VkAccelerationStructureGeometryKHR':
+                    '    if (is_host && geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {\n'
+                    '        if (geometry.instances.arrayOfPointers) {\n'
+                    '            size_t pp_array_size = build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);\n'
+                    '            size_t p_array_size = build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);\n'
+                    '            size_t array_size = build_range_info->primitiveOffset + pp_array_size + p_array_size;\n'
+                    '            uint8_t *allocation = new uint8_t[array_size];\n'
+                    '            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + build_range_info->primitiveOffset);\n'
+                    '            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + build_range_info->primitiveOffset + pp_array_size);\n'
+                    '            for (uint32_t i = 0; i < build_range_info->primitiveCount; ++i) {\n'
+                    '                const uint8_t *byte_ptr = reinterpret_cast<const uint8_t *>(in_struct->geometry.instances.data.hostAddress);\n'
+                    '                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(byte_ptr + build_range_info->primitiveOffset)[i]);\n'
+                    '                ppInstances[i] = &pInstances[i];\n'
+                    '            }\n'
+                    '            geometry.instances.data.hostAddress = allocation;\n'
+                    '            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));\n'
+                    '        } else {\n'
+                    '            size_t array_size = build_range_info->primitiveOffset + build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);\n'
+                    '            uint8_t *allocation = new uint8_t[array_size];\n'
+                    '            memcpy(allocation, in_struct->geometry.instances.data.hostAddress, array_size);\n'
+                    '            geometry.instances.data.hostAddress = allocation;\n'
+                    '            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));\n'
                     '        }\n'
                     '    }\n',
             }
@@ -1738,6 +1784,32 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '            }\n'
                     '        }\n'
                     '    }\n',
+                'VkAccelerationStructureGeometryKHR':
+                    '    pNext = SafePnextCopy(copy_src.pNext);\n'
+                    '    auto src_iter = as_geom_khr_host_alloc.find(&copy_src);\n'
+                    '    if (src_iter != as_geom_khr_host_alloc.end()) {\n'
+                    '        auto &src_alloc = src_iter->second;\n'
+                    '        if (geometry.instances.arrayOfPointers) {\n'
+                    '            size_t pp_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);\n'
+                    '            size_t p_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);\n'
+                    '            size_t array_size = src_alloc->primitiveOffset + pp_array_size + p_array_size;\n'
+                    '            uint8_t *allocation = new uint8_t[array_size];\n'
+                    '            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + src_alloc->primitiveOffset);\n'
+                    '            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + src_alloc->primitiveOffset + pp_array_size);\n'
+                    '            for (uint32_t i = 0; i < src_alloc->primitiveCount; ++i) {\n'
+                    '                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(src_alloc->ptr + src_alloc->primitiveOffset)[i]);\n'
+                    '                ppInstances[i] = &pInstances[i];\n'
+                    '            }\n'
+                    '            geometry.instances.data.hostAddress = allocation;\n'
+                    '            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));\n'
+                    '        } else {\n'
+                    '            size_t array_size = src_alloc->primitiveOffset + src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);\n'
+                    '            uint8_t *allocation = new uint8_t[array_size];\n'
+                    '            memcpy(allocation, src_alloc->ptr, array_size);\n'
+                    '            geometry.instances.data.hostAddress = allocation;\n'
+                    '            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));\n'
+                    '        }\n'
+                    '    }\n',
             }
 
             custom_destruct_txt = {
@@ -1752,7 +1824,12 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '        delete[] ppGeometries;\n'
                     '    } else if(pGeometries) {\n'
                     '        delete[] pGeometries;\n'
-                    '    }\n'
+                    '    }\n',
+                'VkAccelerationStructureGeometryKHR':
+                    '    auto iter = as_geom_khr_host_alloc.pop(this);\n'
+                    '    if (iter != as_geom_khr_host_alloc.end()) {\n'
+                    '        delete iter->second;\n'
+                    '    }\n',
            }
             copy_pnext = ''
             copy_strings = ''
@@ -1911,7 +1988,9 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                                     destruct_txt, init_func_txt, construct_txt))
             # Copy initializer uses same txt as copy constructor but has a ptr and not a reference
             init_copy = copy_construct_init.replace('copy_src.', 'copy_src->')
+            init_copy = re.sub(r'&copy_src(?!->)', 'copy_src', init_copy)           # Replace '&copy_src' with 'copy_src' unless it's followed by a dereference
             init_construct = copy_construct_txt.replace('copy_src.', 'copy_src->')
+            init_construct = re.sub(r'&copy_src(?!->)', 'copy_src', init_construct) # Replace '&copy_src' with 'copy_src' unless it's followed by a dereference
             safe_struct_body.append("\nvoid %s::initialize(const %s* copy_src)\n{\n%s%s}" % (ss_name, ss_name, init_copy, init_construct))
             if item.ifdef_protect is not None:
                 safe_struct_body.append("#endif // %s\n" % item.ifdef_protect)

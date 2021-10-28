@@ -11899,12 +11899,12 @@ struct safe_VkAccelerationStructureGeometryKHR {
     VkGeometryTypeKHR geometryType;
     VkAccelerationStructureGeometryDataKHR geometry;
     VkGeometryFlagsKHR flags;
-    safe_VkAccelerationStructureGeometryKHR(const VkAccelerationStructureGeometryKHR* in_struct);
+    safe_VkAccelerationStructureGeometryKHR(const VkAccelerationStructureGeometryKHR* in_struct, const bool is_host, const VkAccelerationStructureBuildRangeInfoKHR *build_range_info);
     safe_VkAccelerationStructureGeometryKHR(const safe_VkAccelerationStructureGeometryKHR& copy_src);
     safe_VkAccelerationStructureGeometryKHR& operator=(const safe_VkAccelerationStructureGeometryKHR& copy_src);
     safe_VkAccelerationStructureGeometryKHR();
     ~safe_VkAccelerationStructureGeometryKHR();
-    void initialize(const VkAccelerationStructureGeometryKHR* in_struct);
+    void initialize(const VkAccelerationStructureGeometryKHR* in_struct, const bool is_host, const VkAccelerationStructureBuildRangeInfoKHR *build_range_info);
     void initialize(const safe_VkAccelerationStructureGeometryKHR* copy_src);
     VkAccelerationStructureGeometryKHR *ptr() { return reinterpret_cast<VkAccelerationStructureGeometryKHR *>(this); }
     VkAccelerationStructureGeometryKHR const *ptr() const { return reinterpret_cast<VkAccelerationStructureGeometryKHR const *>(this); }
@@ -11922,12 +11922,12 @@ struct safe_VkAccelerationStructureBuildGeometryInfoKHR {
     safe_VkAccelerationStructureGeometryKHR* pGeometries{};
     safe_VkAccelerationStructureGeometryKHR** ppGeometries{};
     safe_VkDeviceOrHostAddressKHR scratchData;
-    safe_VkAccelerationStructureBuildGeometryInfoKHR(const VkAccelerationStructureBuildGeometryInfoKHR* in_struct);
+    safe_VkAccelerationStructureBuildGeometryInfoKHR(const VkAccelerationStructureBuildGeometryInfoKHR* in_struct, const bool is_host, const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos);
     safe_VkAccelerationStructureBuildGeometryInfoKHR(const safe_VkAccelerationStructureBuildGeometryInfoKHR& copy_src);
     safe_VkAccelerationStructureBuildGeometryInfoKHR& operator=(const safe_VkAccelerationStructureBuildGeometryInfoKHR& copy_src);
     safe_VkAccelerationStructureBuildGeometryInfoKHR();
     ~safe_VkAccelerationStructureBuildGeometryInfoKHR();
-    void initialize(const VkAccelerationStructureBuildGeometryInfoKHR* in_struct);
+    void initialize(const VkAccelerationStructureBuildGeometryInfoKHR* in_struct, const bool is_host, const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos);
     void initialize(const safe_VkAccelerationStructureBuildGeometryInfoKHR* copy_src);
     VkAccelerationStructureBuildGeometryInfoKHR *ptr() { return reinterpret_cast<VkAccelerationStructureBuildGeometryInfoKHR *>(this); }
     VkAccelerationStructureBuildGeometryInfoKHR const *ptr() const { return reinterpret_cast<VkAccelerationStructureBuildGeometryInfoKHR const *>(this); }
