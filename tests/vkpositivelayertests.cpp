@@ -16440,3 +16440,125 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
     vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, ImagelessFramebufferNonZeroBaseMip) {
+    TEST_DESCRIPTION("Use a 1D image view for an imageless framebuffer with base mip level > 0.");
+    m_errorMonitor->ExpectSuccess();
+
+    if (!AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) {
+        printf("%s Instance extensions for %s not supported\n", kSkipPrefix, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    auto pd_imageless_fb_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
+    pd_imageless_fb_features.imagelessFramebuffer = VK_TRUE;
+    auto pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&pd_imageless_fb_features);
+    if (!InitFrameworkAndRetrieveFeatures(pd_features2)) {
+        printf("%s Failed to initialize physical device and query features\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Device extensions for %s not supported\n", kSkipPrefix, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    if (pd_imageless_fb_features.imagelessFramebuffer != VK_TRUE) {
+        printf("%s VkPhysicalDeviceImagelessFramebufferFeaturesKHR::imagelessFramebuffer feature not supported\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    constexpr uint32_t width = 512;
+    constexpr uint32_t height = 1;
+    VkFormat formats[2] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM};
+    VkFormat fb_attachments[2] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM};
+    constexpr uint32_t base_mip = 1;
+
+    // Create a renderPass with a single attachment
+    VkAttachmentDescription attachment_desc = {};
+    attachment_desc.format = formats[0];
+    attachment_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    VkAttachmentReference attachment_ref = {};
+    attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass_desc = {};
+    subpass_desc.colorAttachmentCount = 1;
+    subpass_desc.pColorAttachments = &attachment_ref;
+
+    VkRenderPassCreateInfo rp_ci = {};
+    rp_ci.subpassCount = 1;
+    rp_ci.pSubpasses = &subpass_desc;
+    rp_ci.attachmentCount = 1;
+    rp_ci.pAttachments = &attachment_desc;
+    rp_ci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    vk_testing::RenderPass rp(*m_device, rp_ci);
+
+    auto fb_attachment_image_info = LvlInitStruct<VkFramebufferAttachmentImageInfoKHR>();
+    fb_attachment_image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    fb_attachment_image_info.width = width;
+    fb_attachment_image_info.height = height;
+    fb_attachment_image_info.layerCount = 1;
+    fb_attachment_image_info.viewFormatCount = 2;
+    fb_attachment_image_info.pViewFormats = fb_attachments;
+    fb_attachment_image_info.height = 1;
+    fb_attachment_image_info.width = width >> base_mip;
+
+    auto fb_attachments_ci = LvlInitStruct<VkFramebufferAttachmentsCreateInfoKHR>();
+    fb_attachments_ci.attachmentImageInfoCount = 1;
+    fb_attachments_ci.pAttachmentImageInfos = &fb_attachment_image_info;
+
+    auto fb_ci = LvlInitStruct<VkFramebufferCreateInfo>(&fb_attachments_ci);
+    fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    fb_ci.width = width >> base_mip;
+    fb_ci.height = height;
+    fb_ci.layers = 1;
+    fb_ci.attachmentCount = 1;
+    fb_ci.pAttachments = nullptr;
+    fb_ci.renderPass = rp.handle();
+    vk_testing::Framebuffer fb(*m_device, fb_ci);
+
+    auto image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_ci.extent.width = width;
+    image_ci.extent.height = 1;
+    image_ci.extent.depth = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.mipLevels = 2;
+    image_ci.imageType = VK_IMAGE_TYPE_1D;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.format = formats[0];
+
+    VkImageObj image_object(m_device);
+    image_object.init(&image_ci);
+    VkImage image = image_object.image();
+
+    auto image_view_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    image_view_ci.image = image;
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+    image_view_ci.format = formats[0];
+    image_view_ci.subresourceRange.layerCount = 1;
+    image_view_ci.subresourceRange.levelCount = 1;
+    image_view_ci.subresourceRange.baseMipLevel = base_mip;
+    image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vk_testing::ImageView image_view_obj(*m_device, image_view_ci);
+    VkImageView image_view = image_view_obj.handle();
+
+    auto rp_attachment_begin_info = LvlInitStruct<VkRenderPassAttachmentBeginInfoKHR>();
+    rp_attachment_begin_info.attachmentCount = 1;
+    rp_attachment_begin_info.pAttachments = &image_view;
+    auto rp_begin_info = LvlInitStruct<VkRenderPassBeginInfo>(&rp_attachment_begin_info);
+    rp_begin_info.renderPass = rp.handle();
+    rp_begin_info.renderArea.extent.width = width >> base_mip;
+    rp_begin_info.renderArea.extent.height = height;
+    rp_begin_info.framebuffer = fb.handle();
+
+    VkCommandBufferBeginInfo cmd_begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
+                                               VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
+
+    m_commandBuffer->begin(&cmd_begin_info);
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->VerifyNotFound();
+}

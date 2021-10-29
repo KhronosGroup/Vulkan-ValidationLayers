@@ -596,6 +596,8 @@ class Image : public internal::NonDispHandle<VkImage> {
 
 class ImageView : public internal::NonDispHandle<VkImageView> {
   public:
+    explicit ImageView() = default;
+    explicit ImageView(const Device &dev, const VkImageViewCreateInfo &info) { init(dev, info); }
     ~ImageView() NOEXCEPT;
 
     // vkCreateImageView()
