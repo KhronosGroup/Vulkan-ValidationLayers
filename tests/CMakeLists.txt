@@ -83,7 +83,16 @@ set(COMMON_CPP
     vklayertests_portability_subset.cpp
     vklayertests_viewport_inheritance.cpp
     vklayertests_wsi.cpp
-    vkpositivelayertests.cpp
+    positive/command.cpp
+    positive/descriptors.cpp
+    positive/image_buffer.cpp
+    positive/instance.cpp
+    positive/other.cpp
+    positive/pipeline.cpp
+    positive/render_pass.cpp
+    positive/shaderval.cpp
+    positive/sync.cpp
+    positive/tooling.cpp
     vksyncvaltests.cpp
     vkrenderframework.cpp
     vktestbinding.cpp
