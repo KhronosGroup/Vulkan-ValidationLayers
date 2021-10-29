@@ -90,22 +90,32 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         self.headerFile = False # Header file generation flag
         self.sourceFile = False # Source file generation flag
 
+        self.opcodes = dict()
         self.atomicsOps = []
         self.groupOps = []
         self.imageGatherOps = []
         self.imageSampleOps = []
         self.imageFetchOps = []
+        # Need range to be large as largest possible operand index
         self.memoryScopeParam = [[] for i in range(5)]
         self.executionScopeParam = [[] for i in range(5)]
+        self.imageOperandsParam = [[] for i in range(8)]
 
         # Lots of switch statements share same ending
-        self.commonBoolSwitch  = '''            found = true;
+        self.commonBoolSwitch = '''            found = true;
             break;
         default:
             break;
     }
     return found;
-}
+}\n
+'''
+        self.commonParamSwitch = '''            break;
+        default:
+            break;
+    }
+    return position;
+}\n
 '''
 
     #
@@ -153,10 +163,10 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
 
         if self.sourceFile:
             write('#include "spirv_grammar_helper.h"', file=self.outFile)
-            write('#include <spirv/unified1/spirv.hpp>', file=self.outFile)
         elif self.headerFile:
             write('#pragma once', file=self.outFile)
             write('#include <cstdint>', file=self.outFile)
+            write('#include <spirv/unified1/spirv.hpp>', file=self.outFile)
         write('', file=self.outFile)
     #
     # Write generated file content to output file
@@ -165,6 +175,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         write(self.groupOperation(), file=self.outFile)
         write(self.imageOperation(), file=self.outFile)
         write(self.scopeHelper(), file=self.outFile)
+        write(self.stringHelper(), file=self.outFile)
         # Finish processing in superclass
         OutputGenerator.endFile(self)
     #
@@ -182,6 +193,14 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             # Build list from json of all capabilities that are only for kernel
             # This needs to be done before loop instructions
             kernelCapability = ['Kernel']
+            # some SPV_INTEL_* are not allowed in Vulkan and are just adding unused opcodes
+            # TODO bring in vk.xml to cross check valid extensions/capabilities instead of starting another hardcoded list
+            kernelCapability.append('ArbitraryPrecisionIntegersINTEL')
+            kernelCapability.append('ArbitraryPrecisionFixedPointINTEL')
+            kernelCapability.append('ArbitraryPrecisionFloatingPointINTEL')
+            kernelCapability.append('SubgroupAvcMotionEstimationINTEL')
+            kernelCapability.append('SubgroupAvcMotionEstimationIntraINTEL')
+            kernelCapability.append('SubgroupAvcMotionEstimationChromaINTEL')
 
             for operandKind in operandKinds:
                 if operandKind['kind'] == 'Capability':
@@ -191,8 +210,19 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
 
             for instruction in instructions:
                 opname = instruction['opname']
-                if 'capabilities' in instruction and len(instruction['capabilities']) == 1 and instruction['capabilities'][0] in kernelCapability:
-                    continue # If just 'Kernel' then op is ment for OpenCL
+                if 'capabilities' in instruction:
+                    notSupported = True
+                    for capability in instruction['capabilities']:
+                        if capability not in kernelCapability:
+                            notSupported = False
+                            break
+                    if notSupported:
+                        continue # If just 'Kernel' capabilites then it's ment for OpenCL and skip instruction
+
+                # Nice side effect of using a dict here is alias opcodes will be last in the grammar file
+                # ex: OpTypeAccelerationStructureNV will be replaced by OpTypeAccelerationStructureKHR
+                self.opcodes[instruction['opcode']] = opname
+
                 if instruction['class'] == 'Atomic':
                     self.atomicsOps.append(opname)
                 if instruction['class'] == 'Non-Uniform':
@@ -215,6 +245,8 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                             else:
                                 print("Error: unknown operand {} not handled correctly\n".format(opname))
                                 sys.exit(1)
+                        if operand['kind'] == 'ImageOperands':
+                            self.imageOperandsParam[index + 1].append(opname)
 
     #
     # Generate functions for numeric based functions
@@ -288,6 +320,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         if self.headerFile:
             output += 'uint32_t MemoryScopeParam(uint32_t opcode);\n'
             output += 'uint32_t ExecutionScopeParam(uint32_t opcode);\n'
+            output += 'uint32_t ImageOperandsParam(uint32_t opcode);\n'
         elif self.sourceFile:
             output += '// Return paramater position of memory scope ID or zero if there is none\n'
             output += 'uint32_t MemoryScopeParam(uint32_t opcode) {\n'
@@ -298,13 +331,8 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                     output += '        case spv::{}:\n'.format(operand)
                 if len(operands) != 0:
                     output += '            return {};\n'.format(index)
-            output +='''            break;
-        default:
-            break;
-    }
-    return position;
-}\n
-'''
+            output += self.commonParamSwitch
+
             output += '// Return paramater position of execution scope ID or zero if there is none\n'
             output += 'uint32_t ExecutionScopeParam(uint32_t opcode) {\n'
             output += '    uint32_t position = 0;\n'
@@ -314,11 +342,33 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                     output += '        case spv::{}:\n'.format(operand)
                 if len(operands) != 0:
                     output += '            return {};\n'.format(index)
-            output +='''            break;
-        default:
-            break;
-    }
-    return position;
-}\n
-'''
+            output += self.commonParamSwitch
+
+
+            output += '// Return paramater position of Image Operands or zero if there is none\n'
+            output += 'uint32_t ImageOperandsParam(uint32_t opcode) {\n'
+            output += '    uint32_t position = 0;\n'
+            output += '    switch (opcode) {\n'
+            for index, operands in enumerate(self.imageOperandsParam):
+                for operand in operands:
+                    output += '        case spv::{}:\n'.format(operand)
+                if len(operands) != 0:
+                    output += '            return {};\n'.format(index)
+            output += self.commonParamSwitch
+
         return output;
+    #
+    # Generate functions for getting strings to give better error messages
+    def stringHelper(self):
+        output = ''
+        if self.headerFile:
+            output =  'static inline const char* string_SpvOpcode(uint32_t opcode) {\n'
+            output += '    switch ((spv::Op)opcode) {\n'
+            for opcode, name in sorted(self.opcodes.items()):
+                    output += '         case spv::' + name + ':\n'
+                    output += '            return \"' + name + '\";\n'
+            output += '        default:\n'
+            output += '            return \"Unhandled Opcode\";\n'
+            output += '    };\n'
+            output += '};'
+        return output
