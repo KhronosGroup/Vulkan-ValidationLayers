@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -6129,10 +6129,7 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
 void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     const auto buffer_state = Get<BUFFER_STATE>(buffer);
     if (buffer_state) {
-        auto itr = buffer_address_map_.find(buffer_state->deviceAddress);
-        if (itr != buffer_address_map_.end()) {
-            buffer_address_map_.erase(itr);
-        }
+        buffer_address_map_.erase(buffer_state->deviceAddress);
     }
     StateTracker::PreCallRecordDestroyBuffer(device, buffer, pAllocator);
 }

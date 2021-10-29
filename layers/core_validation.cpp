@@ -8167,7 +8167,7 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
     auto buffer_check = [this, info_index, func_name](uint32_t gi, const VkDeviceOrHostAddressConstKHR address,
                                                       const char *field) -> bool {
         const auto itr = buffer_address_map_.find(address.deviceAddress);
-        if (itr != buffer_address_map_.cend() &&
+        if (itr != buffer_address_map_.end() &&
             !(itr->second->createInfo.usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR)) {
             LogObjectList objlist(device);
             objlist.add(itr->second->Handle());
@@ -8215,7 +8215,7 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
     }
 
     const auto itr = buffer_address_map_.find(info.scratchData.deviceAddress);
-    if (itr != buffer_address_map_.cend() && !(itr->second->createInfo.usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
+    if (itr != buffer_address_map_.end() && !(itr->second->createInfo.usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
         skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
                          "vkBuildAccelerationStructuresKHR(): The buffer associated with pInfos[%" PRIu32
                          "].scratchData.deviceAddress was not created with VK_BUFFER_USAGE_STORAGE_BUFFER_BIT bit.",

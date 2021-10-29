@@ -114,7 +114,7 @@ void ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesAND
     if (VK_SUCCESS != result) return;
     auto ahb_format_props = LvlFindInChain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
     if (ahb_format_props) {
-        ahb_ext_formats_map.emplace(ahb_format_props->externalFormat, ahb_format_props->formatFeatures);
+        ahb_ext_formats_map.insert(ahb_format_props->externalFormat, ahb_format_props->formatFeatures);
     }
 }
 
@@ -269,7 +269,7 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
         if (opaque_capture_address) {
             // address is used for GPU-AV and ray tracing buffer validation
             buffer_state->deviceAddress = opaque_capture_address->opaqueCaptureAddress;
-            buffer_address_map_.emplace(opaque_capture_address->opaqueCaptureAddress, buffer_state.get());
+            buffer_address_map_.insert(opaque_capture_address->opaqueCaptureAddress, buffer_state.get());
         }
     }
     Add(std::move(buffer_state));
@@ -1182,7 +1182,6 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
                 {i, queue_create_info.queueFamilyIndex, queue_create_info.flags, queue_create_info.queueCount});
             total_count += queue_create_info.queueCount;
         }
-        queue_map_.reserve(total_count);
         for (const auto &queue_info : state_tracker->device_queue_info_list) {
             for (uint32_t i = 0; i < queue_info.queue_count; i++) {
                 VkQueue queue = VK_NULL_HANDLE;
@@ -1220,7 +1219,7 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
     // Because swapchains are associated with Surfaces, which are at instance level,
     // they need to be explicitly destroyed here to avoid continued references to
     // the device we're destroying.
-    for (auto &entry : swapchain_map_) {
+    for (auto &entry : swapchain_map_.snapshot()) {
         entry.second->Destroy();
     }
     swapchain_map_.clear();
@@ -1541,7 +1540,7 @@ void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult
 
 void ValidationStateTracker::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
     if (VK_SUCCESS != result) return;
-    for (auto &queue : queue_map_) {
+    for (auto &queue : queue_map_.snapshot()) {
         queue.second->Retire();
     }
 }
@@ -3166,7 +3165,6 @@ void ValidationStateTracker::PostCallRecordCreateInstance(const VkInstanceCreate
         return;
     }
 
-    physical_device_map_.reserve(count);
     for (auto physdev : physdev_handles) {
         Add(CreatePhysicalDeviceState(physdev));
     }
@@ -3435,7 +3433,7 @@ void ValidationStateTracker::PostCallRecordAcquireProfilingLockKHR(VkDevice devi
 
 void ValidationStateTracker::PostCallRecordReleaseProfilingLockKHR(VkDevice device) {
     performance_lock_acquired = false;
-    for (auto &cmd_buffer : command_buffer_map_) {
+    for (auto &cmd_buffer : command_buffer_map_.snapshot()) {
         cmd_buffer.second->performance_lock_released = true;
     }
 }
@@ -4120,7 +4118,7 @@ void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAd
     if (buffer_state) {
         // address is used for GPU-AV and ray tracing buffer validation
         buffer_state->deviceAddress = address;
-        buffer_address_map_.emplace(address, buffer_state.get());
+        buffer_address_map_.insert(address, buffer_state.get());
     }
 }
 
