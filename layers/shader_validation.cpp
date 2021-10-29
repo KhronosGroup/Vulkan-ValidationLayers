@@ -1518,21 +1518,22 @@ bool CoreChecks::ValidateAtomicsTypes(SHADER_MODULE_STATE const *src) const {
             // Validate 64-bit image atomics
             if (((atomic.storage_class == spv::StorageClassStorageBuffer) || (atomic.storage_class == spv::StorageClassUniform)) &&
                 (enabled_features.core12.shaderBufferInt64Atomics == VK_FALSE)) {
-                skip |= LogError(
-                    device, "VUID-RuntimeSpirv-None-06278",
-                    "%s: Can't use 64-bit int atomics operations with %s storage class without shaderBufferInt64Atomics enabled.",
-                    report_data->FormatHandle(src->vk_shader_module()).c_str(), StorageClassName(atomic.storage_class));
+                skip |= LogError(device, "VUID-RuntimeSpirv-None-06278",
+                                 "%s: Can't use 64-bit int atomics operations (%s) with %s storage class without "
+                                 "shaderBufferInt64Atomics enabled.",
+                                 report_data->FormatHandle(src->vk_shader_module()).c_str(), string_SpvOpcode(opcode),
+                                 StorageClassName(atomic.storage_class));
             } else if ((atomic.storage_class == spv::StorageClassWorkgroup) &&
                        (enabled_features.core12.shaderSharedInt64Atomics == VK_FALSE)) {
                 skip |= LogError(device, "VUID-RuntimeSpirv-None-06279",
-                                 "%s: Can't use 64-bit int atomics operations with Workgroup storage class without "
+                                 "%s: Can't use 64-bit int atomics operations (%s) with Workgroup storage class without "
                                  "shaderSharedInt64Atomics enabled.",
-                                 report_data->FormatHandle(src->vk_shader_module()).c_str());
+                                 report_data->FormatHandle(src->vk_shader_module()).c_str(), string_SpvOpcode(opcode));
             } else if ((atomic.storage_class == spv::StorageClassImage) && (valid_image_64_int == false)) {
                 skip |= LogError(device, "VUID-RuntimeSpirv-None-06288",
-                                 "%s: Can't use 64-bit int atomics operations with Image storage class without "
+                                 "%s: Can't use 64-bit int atomics operations (%s) with Image storage class without "
                                  "shaderImageInt64Atomics enabled.",
-                                 report_data->FormatHandle(src->vk_shader_module()).c_str());
+                                 report_data->FormatHandle(src->vk_shader_module()).c_str(), string_SpvOpcode(opcode));
             }
         } else if (atomic.type == spv::OpTypeFloat) {
             // Validate Floats
@@ -1541,12 +1542,12 @@ bool CoreChecks::ValidateAtomicsTypes(SHADER_MODULE_STATE const *src) const {
                     const char *vuid = IsExtEnabled(device_extensions.vk_ext_shader_atomic_float2) ? "VUID-RuntimeSpirv-None-06284"
                                                                                                    : "VUID-RuntimeSpirv-None-06280";
                     skip |= LogError(device, vuid,
-                                     "%s: Can't use float atomics operations with StorageBuffer storage class without "
+                                     "%s: Can't use float atomics operations (%s) with StorageBuffer storage class without "
                                      "shaderBufferFloat32Atomics or shaderBufferFloat32AtomicAdd or shaderBufferFloat64Atomics or "
                                      "shaderBufferFloat64AtomicAdd or shaderBufferFloat16Atomics or shaderBufferFloat16AtomicAdd "
                                      "or shaderBufferFloat16AtomicMinMax or shaderBufferFloat32AtomicMinMax or "
                                      "shaderBufferFloat64AtomicMinMax enabled.",
-                                     report_data->FormatHandle(src->vk_shader_module()).c_str());
+                                     report_data->FormatHandle(src->vk_shader_module()).c_str(), string_SpvOpcode(opcode));
                 } else if (opcode == spv::OpAtomicFAddEXT) {
                     if ((atomic.bit_width == 16) && (float2_features.shaderBufferFloat16AtomicAdd == VK_FALSE)) {
                         skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
@@ -1610,13 +1611,14 @@ bool CoreChecks::ValidateAtomicsTypes(SHADER_MODULE_STATE const *src) const {
                 if (valid_workgroup_float == false) {
                     const char *vuid = IsExtEnabled(device_extensions.vk_ext_shader_atomic_float2) ? "VUID-RuntimeSpirv-None-06285"
                                                                                                    : "VUID-RuntimeSpirv-None-06281";
-                    skip |= LogError(
-                        device, vuid,
-                        "%s: Can't use float atomics operations with Workgroup storage class without shaderSharedFloat32Atomics or "
-                        "shaderSharedFloat32AtomicAdd or shaderSharedFloat64Atomics or shaderSharedFloat64AtomicAdd or "
-                        "shaderSharedFloat16Atomics or shaderSharedFloat16AtomicAdd or shaderSharedFloat16AtomicMinMax or "
-                        "shaderSharedFloat32AtomicMinMax or shaderSharedFloat64AtomicMinMax enabled.",
-                        report_data->FormatHandle(src->vk_shader_module()).c_str());
+                    skip |=
+                        LogError(device, vuid,
+                                 "%s: Can't use float atomics operations (%s) with Workgroup storage class without "
+                                 "shaderSharedFloat32Atomics or "
+                                 "shaderSharedFloat32AtomicAdd or shaderSharedFloat64Atomics or shaderSharedFloat64AtomicAdd or "
+                                 "shaderSharedFloat16Atomics or shaderSharedFloat16AtomicAdd or shaderSharedFloat16AtomicMinMax or "
+                                 "shaderSharedFloat32AtomicMinMax or shaderSharedFloat64AtomicMinMax enabled.",
+                                 report_data->FormatHandle(src->vk_shader_module()).c_str(), string_SpvOpcode(opcode));
                 } else if (opcode == spv::OpAtomicFAddEXT) {
                     if ((atomic.bit_width == 16) && (float2_features.shaderSharedFloat16AtomicAdd == VK_FALSE)) {
                         skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
@@ -1679,35 +1681,35 @@ bool CoreChecks::ValidateAtomicsTypes(SHADER_MODULE_STATE const *src) const {
             } else if ((atomic.storage_class == spv::StorageClassImage) && (valid_image_float == false)) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_ext_shader_atomic_float2) ? "VUID-RuntimeSpirv-None-06286"
                                                                                                : "VUID-RuntimeSpirv-None-06282";
-                skip |=
-                    LogError(device, vuid,
-                             "%s: Can't use float atomics operations with Image storage class without shaderImageFloat32Atomics or "
-                             "shaderImageFloat32AtomicAdd or shaderImageFloat32AtomicMinMax enabled.",
-                             report_data->FormatHandle(src->vk_shader_module()).c_str());
+                skip |= LogError(
+                    device, vuid,
+                    "%s: Can't use float atomics operations (%s) with Image storage class without shaderImageFloat32Atomics or "
+                    "shaderImageFloat32AtomicAdd or shaderImageFloat32AtomicMinMax enabled.",
+                    report_data->FormatHandle(src->vk_shader_module()).c_str(), string_SpvOpcode(opcode));
             } else if ((atomic.bit_width == 16) && (valid_16_float == false)) {
                 skip |= LogError(device, "VUID-RuntimeSpirv-None-06337",
-                                 "%s: Can't use 16-bit float atomics operations without shaderBufferFloat16Atomics, "
+                                 "%s: Can't use 16-bit float atomics operations (%s) without shaderBufferFloat16Atomics, "
                                  "shaderBufferFloat16AtomicAdd, shaderBufferFloat16AtomicMinMax, shaderSharedFloat16Atomics, "
                                  "shaderSharedFloat16AtomicAdd or shaderSharedFloat16AtomicMinMax enabled.",
-                                 report_data->FormatHandle(src->vk_shader_module()).c_str());
+                                 report_data->FormatHandle(src->vk_shader_module()).c_str(), string_SpvOpcode(opcode));
             } else if ((atomic.bit_width == 32) && (valid_32_float == false)) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_ext_shader_atomic_float2) ? "VUID-RuntimeSpirv-None-06338"
                                                                                                : "VUID-RuntimeSpirv-None-06335";
                 skip |= LogError(device, vuid,
-                                 "%s: Can't use 32-bit float atomics operations without shaderBufferFloat32AtomicMinMax, "
+                                 "%s: Can't use 32-bit float atomics operations (%s) without shaderBufferFloat32AtomicMinMax, "
                                  "shaderSharedFloat32AtomicMinMax, shaderImageFloat32AtomicMinMax, sparseImageFloat32AtomicMinMax, "
                                  "shaderBufferFloat32Atomics, shaderBufferFloat32AtomicAdd, shaderSharedFloat32Atomics, "
                                  "shaderSharedFloat32AtomicAdd, shaderImageFloat32Atomics, shaderImageFloat32AtomicAdd, "
                                  "sparseImageFloat32Atomics or sparseImageFloat32AtomicAdd enabled.",
-                                 report_data->FormatHandle(src->vk_shader_module()).c_str());
+                                 report_data->FormatHandle(src->vk_shader_module()).c_str(), string_SpvOpcode(opcode));
             } else if ((atomic.bit_width == 64) && (valid_64_float == false)) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_ext_shader_atomic_float2) ? "VUID-RuntimeSpirv-None-06339"
                                                                                                : "VUID-RuntimeSpirv-None-06336";
                 skip |= LogError(device, vuid,
-                                 "%s: Can't use 64-bit float atomics operations without shaderBufferFloat64AtomicMinMax, "
+                                 "%s: Can't use 64-bit float atomics operations (%s) without shaderBufferFloat64AtomicMinMax, "
                                  "shaderSharedFloat64AtomicMinMax, shaderBufferFloat64Atomics, shaderBufferFloat64AtomicAdd, "
                                  "shaderSharedFloat64Atomics or shaderSharedFloat64AtomicAdd enabled.",
-                                 report_data->FormatHandle(src->vk_shader_module()).c_str());
+                                 report_data->FormatHandle(src->vk_shader_module()).c_str(), string_SpvOpcode(opcode));
             }
         }
     }
@@ -2116,10 +2118,10 @@ bool CoreChecks::ValidateTransformFeedback(SHADER_MODULE_STATE const *src) const
             if (stream >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
                 skip |= LogError(
                     device, "VUID-RuntimeSpirv-OpEmitStreamVertex-06310",
-                    "vkCreateGraphicsPipelines(): shader uses transform feedback stream with index %" PRIu32
+                    "vkCreateGraphicsPipelines(): shader uses transform feedback stream (%s) with index %" PRIu32
                     ", which is not less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32
                     ").",
-                    stream, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+                    string_SpvOpcode(opcode), stream, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
             }
         }
         if (opcode == spv::OpExecutionMode && insn.word(2) == spv::ExecutionModeOutputPoints) {
@@ -2144,14 +2146,16 @@ bool CoreChecks::ValidateTexelGatherOffset(SHADER_MODULE_STATE const *src, spirv
 
     const uint32_t opcode = insn.opcode();
     if (ImageGatherOperation(opcode)) {
-        if (insn.len() > 6) { // Image operands are optional
-            auto image_operand = insn.word(6);
+        uint32_t image_operand_position = ImageOperandsParam(opcode);
+        // Image operands are optional
+        if (image_operand_position != 0 && insn.len() > image_operand_position) {
+            auto image_operand = insn.word(image_operand_position);
             // Bits we are validating
             uint32_t offset_bits =
                 spv::ImageOperandsOffsetMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsConstOffsetsMask;
             if (image_operand & (offset_bits)) {
-                // Operand values start at word 7
-                uint32_t index = 7;
+                // Operand values follow
+                uint32_t index = image_operand_position + 1;
                 // Each bit has it's own operand, starts with the smallest set bit and loop to the highest bit among
                 // ImageOperandsOffsetMask, ImageOperandsConstOffsetMask and ImageOperandsConstOffsetsMask
                 for (uint32_t i = 1; i < spv::ImageOperandsConstOffsetsMask; i <<= 1) {
@@ -2175,16 +2179,17 @@ bool CoreChecks::ValidateTexelGatherOffset(SHADER_MODULE_STATE const *src, spirv
                                     // then zero
                                     if (use_signed && (signed_offset < phys_dev_props.limits.minTexelGatherOffset)) {
                                         skip |= LogError(device, "VUID-RuntimeSpirv-OpImage-06376",
-                                                         "vkCreateShaderModule(): Shader uses OpImageGather with offset (%" PRIi32
+                                                         "vkCreateShaderModule(): Shader uses %s with offset (%" PRIi32
                                                          ") less than VkPhysicalDeviceLimits::minTexelGatherOffset (%" PRIi32 ").",
-                                                         signed_offset, phys_dev_props.limits.minTexelGatherOffset);
+                                                         string_SpvOpcode(opcode), signed_offset,
+                                                         phys_dev_props.limits.minTexelGatherOffset);
                                     } else if ((offset > phys_dev_props.limits.maxTexelGatherOffset) &&
                                                (!use_signed || (use_signed && signed_offset > 0))) {
                                         skip |=
                                             LogError(device, "VUID-RuntimeSpirv-OpImage-06377",
-                                                     "vkCreateShaderModule(): Shader uses OpImageGather with offset (%" PRIu32
+                                                     "vkCreateShaderModule(): Shader uses %s with offset (%" PRIu32
                                                      ") greater than VkPhysicalDeviceLimits::maxTexelGatherOffset (%" PRIu32 ").",
-                                                     offset, phys_dev_props.limits.maxTexelGatherOffset);
+                                                     string_SpvOpcode(opcode), offset, phys_dev_props.limits.maxTexelGatherOffset);
                                     }
                                 }
                             }

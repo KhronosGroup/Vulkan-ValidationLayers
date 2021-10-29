@@ -26,7 +26,6 @@
  ****************************************************************************/
 
 #include "spirv_grammar_helper.h"
-#include <spirv/unified1/spirv.hpp>
 
 // Any non supported operation will be covered with VUID 01090
 bool AtomicOperation(uint32_t opcode) {
@@ -57,6 +56,7 @@ bool AtomicOperation(uint32_t opcode) {
     }
     return found;
 }
+
 
 // Any non supported operation will be covered with VUID 01090
 bool GroupOperation(uint32_t opcode) {
@@ -105,6 +105,7 @@ bool GroupOperation(uint32_t opcode) {
     return found;
 }
 
+
 bool ImageGatherOperation(uint32_t opcode) {
     bool found = false;
     switch (opcode) {
@@ -120,6 +121,7 @@ bool ImageGatherOperation(uint32_t opcode) {
     return found;
 }
 
+
 bool ImageFetchOperation(uint32_t opcode) {
     bool found = false;
     switch (opcode) {
@@ -131,6 +133,7 @@ bool ImageFetchOperation(uint32_t opcode) {
     }
     return found;
 }
+
 
 bool ImageSampleOperation(uint32_t opcode) {
     bool found = false;
@@ -151,6 +154,7 @@ bool ImageSampleOperation(uint32_t opcode) {
     }
     return found;
 }
+
 
 // Return paramater position of memory scope ID or zero if there is none
 uint32_t MemoryScopeParam(uint32_t opcode) {
@@ -254,5 +258,47 @@ uint32_t ExecutionScopeParam(uint32_t opcode) {
     }
     return position;
 }
+
+// Return paramater position of Image Operands or zero if there is none
+uint32_t ImageOperandsParam(uint32_t opcode) {
+    uint32_t position = 0;
+    switch (opcode) {
+        case spv::OpImageWrite:
+            return 4;
+        case spv::OpImageSampleImplicitLod:
+        case spv::OpImageSampleExplicitLod:
+        case spv::OpImageSampleProjImplicitLod:
+        case spv::OpImageSampleProjExplicitLod:
+        case spv::OpImageFetch:
+        case spv::OpImageRead:
+        case spv::OpImageSparseSampleImplicitLod:
+        case spv::OpImageSparseSampleExplicitLod:
+        case spv::OpImageSparseSampleProjImplicitLod:
+        case spv::OpImageSparseSampleProjExplicitLod:
+        case spv::OpImageSparseFetch:
+        case spv::OpImageSparseRead:
+            return 5;
+        case spv::OpImageSampleDrefImplicitLod:
+        case spv::OpImageSampleDrefExplicitLod:
+        case spv::OpImageSampleProjDrefImplicitLod:
+        case spv::OpImageSampleProjDrefExplicitLod:
+        case spv::OpImageGather:
+        case spv::OpImageDrefGather:
+        case spv::OpImageSparseSampleDrefImplicitLod:
+        case spv::OpImageSparseSampleDrefExplicitLod:
+        case spv::OpImageSparseSampleProjDrefImplicitLod:
+        case spv::OpImageSparseSampleProjDrefExplicitLod:
+        case spv::OpImageSparseGather:
+        case spv::OpImageSparseDrefGather:
+            return 6;
+        case spv::OpImageSampleFootprintNV:
+            return 7;
+            break;
+        default:
+            break;
+    }
+    return position;
+}
+
 
 
