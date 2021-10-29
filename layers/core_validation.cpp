@@ -11694,20 +11694,28 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                         }
                     }
 
-                    uint32_t view_width = image_create_info->extent.width >> subresource_range.baseMipLevel;
+                    const auto view_width = image_create_info->extent.width >> subresource_range.baseMipLevel;
                     if (framebuffer_attachment_image_info->width != view_width) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03211",
-                                         "%s: Image view #%u created from an image subresource with width set as %u, "
-                                         "but image info #%u used to create the framebuffer had width set as %u",
-                                         func_name, i, view_width, i, framebuffer_attachment_image_info->width);
+                                         "%s: For VkRenderPassAttachmentBeginInfo::pAttachments[%" PRIu32
+                                         "], VkImageView width (%" PRIu32 ") at mip level %" PRIu32 " (%" PRIu32
+                                         ") != VkFramebufferAttachmentsCreateInfo::pAttachments[%" PRIu32 "]::width (%" PRIu32 ").",
+                                         func_name, i, image_create_info->extent.width, subresource_range.baseMipLevel, view_width,
+                                         i, framebuffer_attachment_image_info->width);
                     }
 
-                    uint32_t view_height = image_create_info->extent.height >> subresource_range.baseMipLevel;
+                    const bool is_1d = (image_view_create_info->viewType == VK_IMAGE_VIEW_TYPE_1D) ||
+                                       (image_view_create_info->viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY);
+                    const auto view_height = (!is_1d) ? image_create_info->extent.height >> subresource_range.baseMipLevel
+                                                      : image_create_info->extent.height;
                     if (framebuffer_attachment_image_info->height != view_height) {
-                        skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03212",
-                                         "%s: Image view #%u created from an image subresource with height set as %u, "
-                                         "but image info #%u used to create the framebuffer had height set as %u",
-                                         func_name, i, view_height, i, framebuffer_attachment_image_info->height);
+                        skip |=
+                            LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03212",
+                                     "%s: For VkRenderPassAttachmentBeginInfo::pAttachments[%" PRIu32
+                                     "], VkImageView height (%" PRIu32 ") at mip level %" PRIu32 " (%" PRIu32
+                                     ") != VkFramebufferAttachmentsCreateInfo::pAttachments[%" PRIu32 "]::height (%" PRIu32 ").",
+                                     func_name, i, image_create_info->extent.height, subresource_range.baseMipLevel, view_height, i,
+                                     framebuffer_attachment_image_info->height);
                     }
 
                     if (framebuffer_attachment_image_info->layerCount != subresource_range.layerCount) {
