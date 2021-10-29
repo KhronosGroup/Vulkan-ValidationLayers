@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -255,11 +255,10 @@ class ValidationStateTracker : public ValidationObject {
     struct AccessorTraitsTypes {
         using StateType = StateType_;
         using HandleType = typename AccessorStateHandle<StateType>::HandleType;
-        using ReturnType = StateType*;
         using SharedType = std::shared_ptr<StateType>;
         using ConstSharedType = std::shared_ptr<const StateType>;
         using MappedType = std::shared_ptr<StateType>;
-        using MapType = layer_data::unordered_map<HandleType, MappedType>;
+        using MapType = vl_concurrent_unordered_map<HandleType, MappedType>;
     };
 
     template <typename State, typename Traits = AccessorTraits<State>>
@@ -280,24 +279,17 @@ class ValidationStateTracker : public ValidationObject {
     template <typename State>
     void Add(std::shared_ptr<State>&& state_object) {
         auto& map = GetStateMap<State>();
-        using KeyType = typename AccessorTraits<State>::MapType::key_type;
+        auto handle = state_object->Handle().template Cast<typename AccessorTraits<State>::HandleType>();
 
-        auto handle = state_object->Handle().template Cast<KeyType>();
-        auto result = map.emplace(handle, state_object);
-        // there shouldn't be anything in the map. If there is, we missed a destroy and then the driver reused the handle.
-        assert(result.second);
-        if (!result.second) {
-            result.first->second = std::move(state_object);
-        }
+        map.insert_or_assign(handle, std::move(state_object));
     }
 
     template <typename State>
     void Destroy(typename AccessorTraits<State>::HandleType handle) {
         auto& map = GetStateMap<State>();
-        auto iter = map.find(handle);
+        auto iter = map.pop(handle);
         if (iter != map.end()) {
             iter->second->Destroy();
-            map.erase(iter);
         }
     }
 
@@ -309,7 +301,7 @@ class ValidationStateTracker : public ValidationObject {
     template <typename State>
     void ForEach(std::function<void(const State& s)> fn) const {
         const auto& map = GetStateMap<State>();
-        for (const auto& entry : map) {
+        for (const auto& entry : map.snapshot()) {
             fn(*entry.second);
         }
     }
@@ -317,7 +309,7 @@ class ValidationStateTracker : public ValidationObject {
     template <typename State>
     bool AnyOf(std::function<bool(const State& s)> fn) const {
         const auto& map = GetStateMap<State>();
-        for (const auto& entry : map) {
+        for (const auto& entry : map.snapshot()) {
             if (fn(*entry.second)) {
                 return true;
             }
@@ -332,17 +324,19 @@ class ValidationStateTracker : public ValidationObject {
         if (found_it == map.end()) {
             return nullptr;
         }
-        return found_it->second;
+        // NOTE: vl_concurrent_unordered_map::find() makes a copy of the value, so it is safe to move out.
+        // But this will break everything, when switching to a different map type.
+        return std::move(found_it->second);
     };
 
     template <typename State>
     typename AccessorTraits<State>::ConstSharedType Get(typename AccessorTraits<State>::HandleType handle) const {
         const auto& map = GetStateMap<State>();
         const auto found_it = map.find(handle);
-        if (found_it == map.cend()) {
+        if (found_it == map.end()) {
             return nullptr;
         }
-        return found_it->second;
+        return std::move(found_it->second);
     };
 
     // When needing to share ownership, control over constness of access with another object (i.e. adding references while
@@ -351,10 +345,10 @@ class ValidationStateTracker : public ValidationObject {
     typename AccessorTraits<State>::SharedType GetConstCastShared(typename AccessorTraits<State>::HandleType handle) const {
         const auto& map = GetStateMap<State>();
         const auto found_it = map.find(handle);
-        if (found_it == map.cend()) {
+        if (found_it == map.end()) {
             return nullptr;
         }
-        return found_it->second;
+        return std::move(found_it->second);
     };
 
     using CommandBufferResetCallback = std::function<void(VkCommandBuffer)>;
@@ -1179,8 +1173,8 @@ class ValidationStateTracker : public ValidationObject {
     std::vector<DeviceQueueInfo> device_queue_info_list;
     // If vkGetBufferDeviceAddress is called, keep track of buffer <-> address mapping.
     // TODO is it sufficient to track a pointer, or do we need a std::shared_ptr<BUFFER_STATE>?
-    layer_data::unordered_map<VkDeviceAddress, BUFFER_STATE*> buffer_address_map_;
-    layer_data::unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
+    vl_concurrent_unordered_map<VkDeviceAddress, BUFFER_STATE*> buffer_address_map_;
+    vl_concurrent_unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
 
   private:
     VALSTATETRACK_MAP_AND_TRAITS(VkQueue, QUEUE_STATE, queue_map_)
