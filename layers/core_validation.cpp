@@ -976,6 +976,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 switch (pCB->primitiveTopology) {
                     case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
                     case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
+                    case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
+                    case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
                         compatible_topology = true;
                         break;
                     default:
