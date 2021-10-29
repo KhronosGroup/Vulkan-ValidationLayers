@@ -215,13 +215,12 @@ bool CoreChecks::ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION
 //  Otherwise, add reference from objectInfo to memoryInfo
 //  Add reference off of objInfo
 // TODO: We may need to refactor or pass in multiple valid usage statements to handle multiple valid usage conditions.
-bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHandle &typed_handle, const char *apiName) const {
+bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const BINDABLE &mem_binding, const char *apiName) const {
     bool skip = false;
     // It's an error to bind an object to NULL memory
     if (mem != VK_NULL_HANDLE) {
-        const BINDABLE *mem_binding = ValidationStateTracker::GetObjectMemBinding(typed_handle);
-        assert(mem_binding);
-        if (mem_binding->sparse) {
+        auto typed_handle = mem_binding.Handle();
+        if (mem_binding.sparse) {
             const char *error_code = nullptr;
             const char *handle_type = nullptr;
             if (typed_handle.type == kVulkanObjectTypeBuffer) {
@@ -253,7 +252,7 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
         }
         const DEVICE_MEMORY_STATE *mem_info = ValidationStateTracker::GetDevMemState(mem);
         if (mem_info) {
-            const DEVICE_MEMORY_STATE *prev_binding = mem_binding->MemState();
+            const auto prev_binding = mem_binding.MemState();
             if (prev_binding) {
                 if (!prev_binding->Destroyed()) {
                     const char *error_code = nullptr;
@@ -4881,7 +4880,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
     bool skip = false;
     if (buffer_state) {
         // Track objects tied to memory
-        skip = ValidateSetMemBinding(mem, buffer_state->Handle(), api_name);
+        skip = ValidateSetMemBinding(mem, *buffer_state, api_name);
 
         const auto mem_info = GetDevMemState(mem);
 
@@ -12775,8 +12774,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
         const IMAGE_STATE *image_state = GetImageState(bind_info.image);
         if (image_state) {
             // Track objects tied to memory
-            skip |=
-                ValidateSetMemBinding(bind_info.memory, image_state->Handle(), error_prefix);
+            skip |= ValidateSetMemBinding(bind_info.memory, *image_state, error_prefix);
 
             const auto plane_info = LvlFindInChain<VkBindImagePlaneMemoryInfo>(bind_info.pNext);
             const auto mem_info = GetDevMemState(bind_info.memory);
