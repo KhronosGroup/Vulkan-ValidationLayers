@@ -241,14 +241,12 @@ enum PushConstantByteState {
 struct SHADER_MODULE_STATE;
 
 class ValidationStateTracker : public ValidationObject {
-  public:
-    QueryMap queryToStateMap;
-    layer_data::unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
-
+  private:
     // Traits for State function resolution.  Specializations defined in the macro.
     // NOTE: The Dummy argument allows for *partial* specialization at class scope, as full specialization at class scope
     //       isn't supported until C++17.  Since the Dummy has a default all instantiations of the template can ignore it, but all
     //       specializations of the template must list it (and not give it a default).
+    // These must be declared at the same access level as the map declarations (below).
     template <typename StateType, typename Dummy = int>
     struct AccessorStateHandle {};
     template <typename StateType, typename Dummy = int>
@@ -264,47 +262,25 @@ class ValidationStateTracker : public ValidationObject {
         using MapType = layer_data::unordered_map<HandleType, MappedType>;
     };
 
+    template <typename State, typename Traits = AccessorTraits<State>>
+    typename Traits::MapType& GetStateMap() {
+        auto map_member = Traits::Map();
+        return (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+    }
+    template <typename State, typename Traits = AccessorTraits<State>>
+    const typename Traits::MapType& GetStateMap() const {
+        auto map_member = Traits::Map();
+        return (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+    }
+
+  public:
     // Override base class, we have some extra work to do here
     void InitDeviceValidationObject(bool add_obj, ValidationObject* inst_obj, ValidationObject* dev_obj) override;
 
-    VALSTATETRACK_MAP_AND_TRAITS(VkQueue, QUEUE_STATE, queue_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkRenderPass, RENDER_PASS_STATE, render_pass_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSetLayout, cvdescriptorset::DescriptorSetLayout, descriptor_set_layout_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkSampler, SAMPLER_STATE, sampler_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkImageView, IMAGE_VIEW_STATE, image_view_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkImage, IMAGE_STATE, image_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkBufferView, BUFFER_VIEW_STATE, buffer_view_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkBuffer, BUFFER_STATE, buffer_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkPipeline, PIPELINE_STATE, pipeline_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkDeviceMemory, DEVICE_MEMORY_STATE, mem_obj_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkFramebuffer, FRAMEBUFFER_STATE, frame_buffer_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkShaderModule, SHADER_MODULE_STATE, shader_module_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorUpdateTemplate, UPDATE_TEMPLATE_STATE, desc_template_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkSwapchainKHR, SWAPCHAIN_NODE, swapchain_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorPool, DESCRIPTOR_POOL_STATE, descriptor_pool_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSet, cvdescriptorset::DescriptorSet, descriptor_set_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkCommandBuffer, CMD_BUFFER_STATE, command_buffer_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkCommandPool, COMMAND_POOL_STATE, command_pool_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkPipelineLayout, PIPELINE_LAYOUT_STATE, pipeline_layout_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkFence, FENCE_STATE, fence_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkQueryPool, QUERY_POOL_STATE, query_pool_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkSemaphore, SEMAPHORE_STATE, semaphore_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkEvent, EVENT_STATE, event_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkSamplerYcbcrConversion, SAMPLER_YCBCR_CONVERSION_STATE, sampler_ycbcr_conversion_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE, acceleration_structure_nv_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR, acceleration_structure_khr_map_)
-    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map_)
-    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, DISPLAY_MODE_STATE, display_mode_map_)
-    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, PHYSICAL_DEVICE_STATE, physical_device_map_);
-
-  public:
     template <typename State>
     void Add(std::shared_ptr<State>&& state_object) {
-        using Traits = AccessorTraits<State>;
-        auto map_member = Traits::Map();
-        using KeyType = typename Traits::MapType::key_type;
-        typename Traits::MapType& map =
-            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+        auto& map = GetStateMap<State>();
+        using KeyType = typename AccessorTraits<State>::MapType::key_type;
 
         auto handle = state_object->Handle().template Cast<KeyType>();
         auto result = map.emplace(handle, state_object);
@@ -317,11 +293,7 @@ class ValidationStateTracker : public ValidationObject {
 
     template <typename State>
     void Destroy(typename AccessorTraits<State>::HandleType handle) {
-        using Traits = AccessorTraits<State>;
-        auto map_member = Traits::Map();
-        typename Traits::MapType& map =
-            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
-
+        auto& map = GetStateMap<State>();
         auto iter = map.find(handle);
         if (iter != map.end()) {
             iter->second->Destroy();
@@ -330,12 +302,32 @@ class ValidationStateTracker : public ValidationObject {
     }
 
     template <typename State>
-    typename AccessorTraits<State>::ReturnType Get(typename AccessorTraits<State>::HandleType handle) {
-        using Traits = AccessorTraits<State>;
-        auto map_member = Traits::Map();
-        const typename Traits::MapType& map =
-            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+    size_t Count() const {
+        return GetStateMap<State>().size();
+    }
 
+    template <typename State>
+    void ForEach(std::function<void(const State& s)> fn) const {
+        const auto& map = GetStateMap<State>();
+        for (const auto& entry : map) {
+            fn(*entry.second);
+        }
+    }
+
+    template <typename State>
+    bool AnyOf(std::function<bool(const State& s)> fn) const {
+        const auto& map = GetStateMap<State>();
+        for (const auto& entry : map) {
+            if (fn(*entry.second)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    template <typename State>
+    typename AccessorTraits<State>::ReturnType Get(typename AccessorTraits<State>::HandleType handle) {
+        const auto& map = GetStateMap<State>();
         const auto found_it = map.find(handle);
         if (found_it == map.end()) {
             return nullptr;
@@ -345,11 +337,7 @@ class ValidationStateTracker : public ValidationObject {
 
     template <typename State>
     const typename AccessorTraits<State>::ReturnType Get(typename AccessorTraits<State>::HandleType handle) const {
-        using Traits = AccessorTraits<State>;
-        auto map_member = Traits::Map();
-        const typename Traits::MapType& map =
-            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
-
+        const auto& map = GetStateMap<State>();
         const auto found_it = map.find(handle);
         if (found_it == map.cend()) {
             return nullptr;
@@ -359,11 +347,7 @@ class ValidationStateTracker : public ValidationObject {
 
     template <typename State>
     typename AccessorTraits<State>::SharedType GetShared(typename AccessorTraits<State>::HandleType handle) {
-        using Traits = AccessorTraits<State>;
-        auto map_member = Traits::Map();
-        const typename Traits::MapType& map =
-            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
-
+        const auto& map = GetStateMap<State>();
         const auto found_it = map.find(handle);
         if (found_it == map.end()) {
             return nullptr;
@@ -373,11 +357,7 @@ class ValidationStateTracker : public ValidationObject {
 
     template <typename State>
     typename AccessorTraits<State>::ConstSharedType GetShared(typename AccessorTraits<State>::HandleType handle) const {
-        using Traits = AccessorTraits<State>;
-        auto map_member = Traits::Map();
-        const typename Traits::MapType& map =
-            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
-
+        const auto& map = GetStateMap<State>();
         const auto found_it = map.find(handle);
         if (found_it == map.cend()) {
             return nullptr;
@@ -389,11 +369,7 @@ class ValidationStateTracker : public ValidationObject {
     // not modifying the contents of the ValidationStateTracker)
     template <typename State>
     typename AccessorTraits<State>::SharedType GetConstCastShared(typename AccessorTraits<State>::HandleType handle) const {
-        using Traits = AccessorTraits<State>;
-        auto map_member = Traits::Map();
-        const typename Traits::MapType& map =
-            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
-
+        const auto& map = GetStateMap<State>();
         const auto found_it = map.find(handle);
         if (found_it == map.cend()) {
             return nullptr;
@@ -524,28 +500,19 @@ class ValidationStateTracker : public ValidationObject {
     const BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle) const;
     BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle);
 
-    // Link to the device's physical-device data
-    PHYSICAL_DEVICE_STATE* physical_device_state;
-
-    // Link for derived device objects back to their parent instance object
-    ValidationStateTracker* instance_state;
-
     using CommandBufferResetCallback = std::function<void(VkCommandBuffer)>;
-    std::unique_ptr<CommandBufferResetCallback> command_buffer_reset_callback;
     template <typename Fn>
     void SetCommandBufferResetCallback(Fn&& fn) {
         command_buffer_reset_callback.reset(new CommandBufferResetCallback(std::forward<Fn>(fn)));
     }
 
     using CommandBufferFreeCallback = std::function<void(VkCommandBuffer)>;
-    std::unique_ptr<CommandBufferFreeCallback> command_buffer_free_callback;
     template <typename Fn>
     void SetCommandBufferFreeCallback(Fn&& fn) {
         command_buffer_free_callback.reset(new CommandBufferFreeCallback(std::forward<Fn>(fn)));
     }
 
     using SetImageViewInitialLayoutCallback = std::function<void(CMD_BUFFER_STATE*, const IMAGE_VIEW_STATE&, VkImageLayout)>;
-    std::unique_ptr<SetImageViewInitialLayoutCallback> set_image_view_initial_layout_callback;
     template <typename Fn>
     void SetSetImageViewInitialLayoutCallback(Fn&& fn) {
         set_image_view_initial_layout_callback.reset(new SetImageViewInitialLayoutCallback(std::forward<Fn>(fn)));
@@ -1271,6 +1238,30 @@ class ValidationStateTracker : public ValidationObject {
                                                  VkDeviceAddress address) override;
     void PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                                  VkDeviceAddress address) override;
+    template <typename ExtProp>
+    void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, ExtEnabled enabled, ExtProp* ext_prop) {
+        assert(ext_prop);
+        if (IsExtEnabled(enabled)) {
+            *ext_prop = LvlInitStruct<ExtProp>();
+            if (api_version < VK_API_VERSION_1_1) {
+                auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
+                DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
+            } else {
+                auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
+                DispatchGetPhysicalDeviceProperties2(gpu, &prop2);
+            }
+        }
+    }
+
+    // Link to the device's physical-device data
+    PHYSICAL_DEVICE_STATE* physical_device_state;
+
+    // Link for derived device objects back to their parent instance object
+    ValidationStateTracker* instance_state;
+
+    std::unique_ptr<CommandBufferResetCallback> command_buffer_reset_callback;
+    std::unique_ptr<CommandBufferFreeCallback> command_buffer_free_callback;
+    std::unique_ptr<SetImageViewInitialLayoutCallback> set_image_view_initial_layout_callback;
 
     DeviceFeatures enabled_features = {};
     // Device specific data
@@ -1313,6 +1304,11 @@ class ValidationStateTracker : public ValidationObject {
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
 
+    bool performance_lock_acquired = false;
+
+    QueryMap queryToStateMap;
+
+  protected:
     // tracks which queue family index were used when creating the device for quick lookup
     layer_data::unordered_set<uint32_t> queue_family_index_set;
     // The queue count can different for the same queueFamilyIndex if the create flag are different
@@ -1323,29 +1319,42 @@ class ValidationStateTracker : public ValidationObject {
         uint32_t queue_count;
     };
     std::vector<DeviceQueueInfo> device_queue_info_list;
-    bool performance_lock_acquired = false;
-
-    template <typename ExtProp>
-    void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, ExtEnabled enabled, ExtProp* ext_prop) {
-        assert(ext_prop);
-        if (IsExtEnabled(enabled)) {
-            *ext_prop = LvlInitStruct<ExtProp>();
-            if (api_version < VK_API_VERSION_1_1) {
-                auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
-                DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
-            } else {
-                auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
-                DispatchGetPhysicalDeviceProperties2(gpu, &prop2);
-            }
-        }
-    }
-
-  protected:
     // If vkGetBufferDeviceAddress is called, keep track of buffer <-> address mapping.
     // TODO is it sufficient to track a pointer, or do we need a std::shared_ptr<BUFFER_STATE>?
     layer_data::unordered_map<VkDeviceAddress, BUFFER_STATE*> buffer_address_map_;
+    layer_data::unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
 
   private:
+    VALSTATETRACK_MAP_AND_TRAITS(VkQueue, QUEUE_STATE, queue_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE, acceleration_structure_nv_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkRenderPass, RENDER_PASS_STATE, render_pass_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSetLayout, cvdescriptorset::DescriptorSetLayout, descriptor_set_layout_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkSampler, SAMPLER_STATE, sampler_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkImageView, IMAGE_VIEW_STATE, image_view_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkImage, IMAGE_STATE, image_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkBufferView, BUFFER_VIEW_STATE, buffer_view_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkBuffer, BUFFER_STATE, buffer_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkPipeline, PIPELINE_STATE, pipeline_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDeviceMemory, DEVICE_MEMORY_STATE, mem_obj_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkFramebuffer, FRAMEBUFFER_STATE, frame_buffer_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkShaderModule, SHADER_MODULE_STATE, shader_module_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorUpdateTemplate, UPDATE_TEMPLATE_STATE, desc_template_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkSwapchainKHR, SWAPCHAIN_NODE, swapchain_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorPool, DESCRIPTOR_POOL_STATE, descriptor_pool_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSet, cvdescriptorset::DescriptorSet, descriptor_set_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkCommandBuffer, CMD_BUFFER_STATE, command_buffer_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkCommandPool, COMMAND_POOL_STATE, command_pool_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkPipelineLayout, PIPELINE_LAYOUT_STATE, pipeline_layout_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkFence, FENCE_STATE, fence_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkQueryPool, QUERY_POOL_STATE, query_pool_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkSemaphore, SEMAPHORE_STATE, semaphore_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkEvent, EVENT_STATE, event_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkSamplerYcbcrConversion, SAMPLER_YCBCR_CONVERSION_STATE, sampler_ycbcr_conversion_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR, acceleration_structure_khr_map_)
+    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map_)
+    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, DISPLAY_MODE_STATE, display_mode_map_)
+    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, PHYSICAL_DEVICE_STATE, physical_device_map_);
+
     // Simple base address allocator allow allow VkDeviceMemory allocations to appear to exist in a common address space.
     // At 256GB allocated/sec  ( > 8GB at 30Hz), will overflow in just over 2 years
     class FakeAllocator {
