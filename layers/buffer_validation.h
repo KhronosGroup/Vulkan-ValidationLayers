@@ -34,6 +34,6 @@ uint32_t FullMipChainLevels(VkExtent3D);
 uint32_t FullMipChainLevels(VkExtent2D);
 
 GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const IMAGE_STATE &image_state);
-const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, VkImage image);
+const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, const IMAGE_STATE &image);
 
 #endif  // CORE_VALIDATION_BUFFER_VALIDATION_H_

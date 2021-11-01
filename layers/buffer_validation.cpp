@@ -334,7 +334,7 @@ uint32_t FullMipChainLevels(VkExtent3D extent) { return FullMipChainLevels(exten
 uint32_t FullMipChainLevels(VkExtent2D extent) { return FullMipChainLevels(extent.height, extent.width); }
 
 bool CoreChecks::FindLayouts(const IMAGE_STATE &image_state, std::vector<VkImageLayout> &layouts) const {
-    const auto *layout_range_map = GetLayoutRangeMap(imageLayoutMap, image_state.image());
+    const auto *layout_range_map = GetLayoutRangeMap(imageLayoutMap, image_state);
     if (!layout_range_map) return false;
     // TODO: FindLayouts function should mutate into a ValidatePresentableLayout with the loop wrapping the LogError
     //       from the caller. You can then use decode to add the subresource of the range::begin to the error message.
@@ -569,7 +569,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                         // Cast pCB to const because we don't want to create entries that don't exist here (in case the key changes to something
                         // in common with the non-const version.)
                         // The lookup is expensive, so cache it.
-                        subresource_map = const_p_cb->GetImageSubresourceLayoutMap(image);
+                        subresource_map = const_p_cb->GetImageSubresourceLayoutMap(*image_state);
                         has_queried_map = true;
                     }
 
@@ -871,13 +871,13 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
             if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 // TODO: Set memory invalid which is in mem_tracker currently
             } else if (!QueueFamilyIsExternal(img_barrier.srcQueueFamilyIndex)) {
-                auto &write_subresource_map = layout_updates[img_barrier.image];
+                auto &write_subresource_map = layout_updates[image_state];
                 bool new_write = false;
                 if (!write_subresource_map) {
                     write_subresource_map.emplace(*image_state);
                     new_write = true;
                 }
-                const auto &current_subresource_map = current_map.find(img_barrier.image);
+                const auto &current_subresource_map = current_map.find(image_state);
                 const auto &read_subresource_map = (new_write && current_subresource_map != current_map.end())
                                                        ? (*current_subresource_map).second
                                                        : write_subresource_map;
@@ -1384,10 +1384,9 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
     if (disabled[image_layout_validation]) return false;
     assert(cb_node);
     assert(image_state);
-    const auto image = image_state->image();
     bool skip = false;
 
-    const auto *subresource_map = cb_node->GetImageSubresourceLayoutMap(image);
+    const auto *subresource_map = cb_node->GetImageSubresourceLayoutMap(*image_state);
     if (subresource_map) {
         bool subres_skip = false;
         LayoutUseCheckAndMessage layout_check(subresource_map, aspect_mask);
@@ -1396,12 +1395,13 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
         for (auto pos = subresource_map->Find(range); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
             if (!layout_check.Check(pos->subresource, explicit_layout, pos->current_layout, pos->initial_layout)) {
                 *error = true;
-                subres_skip |= LogError(cb_node->commandBuffer(), layout_mismatch_msg_code,
-                                        "%s: Cannot use %s (layer=%u mip=%u) with specific layout %s that doesn't match the "
-                                        "%s layout %s.",
-                                        caller, report_data->FormatHandle(image).c_str(), pos->subresource.arrayLayer,
-                                        pos->subresource.mipLevel, string_VkImageLayout(explicit_layout), layout_check.message,
-                                        string_VkImageLayout(layout_check.layout));
+                subres_skip |=
+                    LogError(cb_node->commandBuffer(), layout_mismatch_msg_code,
+                             "%s: Cannot use %s (layer=%u mip=%u) with specific layout %s that doesn't match the "
+                             "%s layout %s.",
+                             caller, report_data->FormatHandle(image_state->Handle()).c_str(), pos->subresource.arrayLayer,
+                             pos->subresource.mipLevel, string_VkImageLayout(explicit_layout), layout_check.message,
+                             string_VkImageLayout(layout_check.layout));
             }
         }
         skip |= subres_skip;
@@ -1414,7 +1414,8 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
                 // LAYOUT_GENERAL is allowed, but may not be performance optimal, flag as perf warning.
                 skip |= LogPerformanceWarning(cb_node->commandBuffer(), kVUID_Core_DrawState_InvalidImageLayout,
                                               "%s: For optimal performance %s layout should be %s instead of GENERAL.", caller,
-                                              report_data->FormatHandle(image).c_str(), string_VkImageLayout(optimal_layout));
+                                              report_data->FormatHandle(image_state->Handle()).c_str(),
+                                              string_VkImageLayout(optimal_layout));
             }
         } else if (IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
             if (image_state->shared_presentable) {
@@ -1429,7 +1430,7 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
             *error = true;
             skip |= LogError(cb_node->commandBuffer(), layout_invalid_msg_code,
                              "%s: Layout for %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.", caller,
-                             report_data->FormatHandle(image).c_str(), string_VkImageLayout(explicit_layout),
+                             report_data->FormatHandle(image_state->Handle()).c_str(), string_VkImageLayout(explicit_layout),
                              string_VkImageLayout(optimal_layout));
         }
     }
@@ -2079,9 +2080,10 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
 
 void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
     // Clean up validation specific data
+    auto *image_state = Get<IMAGE_STATE>(image);
     qfo_release_image_barrier_map.erase(image);
 
-    imageLayoutMap.erase(image);
+    imageLayoutMap.erase(image_state);
 
     // Clean up generic image state
     StateTracker::PreCallRecordDestroyImage(device, image, pAllocator);
@@ -2148,7 +2150,7 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE *cb_node, const I
     }
 
     // Cast to const to prevent creation at validate time.
-    const auto *subresource_map = cb_node->GetImageSubresourceLayoutMap(image_state->image());
+    const auto *subresource_map = cb_node->GetImageSubresourceLayoutMap(*image_state);
     if (subresource_map) {
         bool subres_skip = false;
         LayoutUseCheckAndMessage layout_check(subresource_map);
@@ -4203,15 +4205,15 @@ void CoreChecks::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, co
 
 GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
     // This approach allows for a single hash lookup or/create new
-    auto &layout_map = map[image_state.image()];
+    auto &layout_map = map[&image_state];
     if (!layout_map) {
         layout_map.emplace(image_state.subresource_encoder.SubresourceCount());
     }
     return &layout_map;
 }
 
-const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, VkImage image) {
-    auto it = map.find(image);
+const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
+    auto it = map.find(&image_state);
     if (it != map.end()) {
         return &it->second;
     }
@@ -4246,16 +4248,14 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
     // Iterate over the layout maps for each referenced image
     GlobalImageLayoutRangeMap empty_map(1);
     for (const auto &layout_map_entry : pCB->image_layout_map) {
-        const auto image = layout_map_entry.first;
-        const auto *image_state = GetImageState(image);
-        if (!image_state) continue;  // Can't check layouts of a dead image
+        const auto *image_state = layout_map_entry.first;
         const auto &subres_map = layout_map_entry.second;
         const auto &layout_map = subres_map->GetLayoutMap();
         // Validate the initial_uses for each subresource referenced
         if (layout_map.empty()) continue;
 
         auto *overlay_map = GetLayoutRangeMap(overlayLayoutMap, *image_state);
-        const auto *global_map = GetLayoutRangeMap(globalImageLayoutMap, image);
+        const auto *global_map = GetLayoutRangeMap(globalImageLayoutMap, *image_state);
         if (global_map == nullptr) {
             global_map = &empty_map;
         }
@@ -4297,7 +4297,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
                             "%s command buffer %s expects %s (subresource: aspectMask 0x%X array layer %u, mip level %u) "
                             "to be in layout %s--instead, current layout is %s.",
                             loc.Message().c_str(), report_data->FormatHandle(pCB->commandBuffer()).c_str(),
-                            report_data->FormatHandle(image).c_str(), subresource.aspectMask, subresource.arrayLayer,
+                            report_data->FormatHandle(image_state->Handle()).c_str(), subresource.aspectMask, subresource.arrayLayer,
                             subresource.mipLevel, string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout));
                     }
                 }
@@ -4320,10 +4320,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
 
 void CoreChecks::UpdateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB) {
     for (const auto &layout_map_entry : pCB->image_layout_map) {
-        const auto image = layout_map_entry.first;
+        const auto *image_state = layout_map_entry.first;
         const auto &subres_map = layout_map_entry.second;
-        const auto *image_state = GetImageState(image);
-        if (!image_state) continue;  // Can't set layouts of a dead image
         auto *global_map = GetLayoutRangeMap(imageLayoutMap, *image_state);
         sparse_container::splice(*global_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
     }
