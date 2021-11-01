@@ -3269,18 +3269,16 @@ void CoreChecks::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCou
 }
 
 bool CoreChecks::SemaphoreWasSignaled(VkSemaphore semaphore) const {
-    for (auto &pair : queue_map_) {
-        const auto &queue_state = pair.second;
-        for (const auto &submission : queue_state->submissions) {
+    return AnyOf<QUEUE_STATE>([semaphore](const QUEUE_STATE &queue_state) {
+        for (const auto &submission : queue_state.submissions) {
             for (const auto &signal_semaphore : submission.signal_semaphores) {
                 if (signal_semaphore.semaphore->semaphore() == semaphore) {
                     return true;
                 }
             }
         }
-    }
-
-    return false;
+        return false;
+    });
 }
 
 struct SemaphoreSubmitState {
@@ -3297,8 +3295,6 @@ struct SemaphoreSubmitState {
         using sync_vuid_maps::GetQueueSubmitVUID;
         using sync_vuid_maps::SubmitError;
         bool skip = false;
-        LogObjectList objlist(semaphore);
-        objlist.add(queue);
 
         const auto *pSemaphore = core->GetSemaphoreState(semaphore);
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR &&
@@ -3309,6 +3305,8 @@ struct SemaphoreSubmitState {
                                  ? SubmitError::kTimelineCannotBeSignalled
                                  : SubmitError::kBinaryCannotBeSignalled;
                 const auto &vuid = GetQueueSubmitVUID(loc, error);
+                LogObjectList objlist(semaphore);
+                objlist.add(queue);
                 skip |= core->LogError(
                     objlist, pSemaphore->scope == kSyncScopeInternal ? vuid : kVUID_Core_DrawState_QueueForwardProgress,
                     "%s Queue %s is waiting on semaphore (%s) that has no way to be signaled.", loc.Message().c_str(),
@@ -3322,22 +3320,24 @@ struct SemaphoreSubmitState {
             internal_semaphores.insert(semaphore);
         }
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
-            for (const auto &q : core->queue_map_) {
-                if (q.first != queue) {
-                    for (const auto &cb : q.second->submissions) {
+            core->ForEach<QUEUE_STATE>([loc, queue, semaphore, &skip, this](const QUEUE_STATE &q) {
+                if (q.Queue() != queue) {
+                    for (const auto &cb : q.submissions) {
                         for (const auto &wait_semaphore : cb.wait_semaphores) {
                             if (wait_semaphore.semaphore->semaphore() == semaphore) {
                                 const char *vuid = loc.function == core_error::Func::vkQueueSubmit
                                                        ? "VUID-vkQueueSubmit-pWaitSemaphores-00068"
                                                        : "VUID-vkQueueSubmit2KHR-semaphore-03871";
+                                LogObjectList objlist(semaphore);
+                                objlist.add(queue);
                                 skip |= core->LogError(objlist, vuid, "%s Queue %s is already waiting on semaphore (%s).",
-                                                       loc.Message().c_str(), core->report_data->FormatHandle(q.first).c_str(),
+                                                       loc.Message().c_str(), core->report_data->FormatHandle(q.Handle()).c_str(),
                                                        core->report_data->FormatHandle(semaphore).c_str());
                             }
                         }
                     }
                 }
-            }
+            });
         }
         return skip;
     }
@@ -3488,12 +3488,12 @@ bool CoreChecks::ValidateMaxTimelineSemaphoreValueDifference(const Location &loc
                          report_data->FormatHandle(semaphore).c_str());
     }
 
-    for (auto &pair : queue_map_) {
-        const auto &queue_state = pair.second;
-        for (const auto &submission : queue_state->submissions) {
+    ForEach<QUEUE_STATE>([&skip, loc, value, semaphore, this](const QUEUE_STATE &queue_state) {
+        for (const auto &submission : queue_state.submissions) {
             for (const auto &signal_semaphore : submission.signal_semaphores) {
                 if (signal_semaphore.semaphore->semaphore() == semaphore) {
-                    diff = value > signal_semaphore.payload ? value - signal_semaphore.payload : signal_semaphore.payload - value;
+                    uint64_t diff =
+                        value > signal_semaphore.payload ? value - signal_semaphore.payload : signal_semaphore.payload - value;
                     if (diff > phys_dev_props_core12.maxTimelineSemaphoreValueDifference) {
                         const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kTimelineSemMaxDiff);
                         skip |= LogError(semaphore, vuid, "%s value exceeds limit regarding pending semaphore %s signal value",
@@ -3503,7 +3503,8 @@ bool CoreChecks::ValidateMaxTimelineSemaphoreValueDifference(const Location &loc
             }
             for (const auto &wait_semaphore : submission.wait_semaphores) {
                 if (wait_semaphore.semaphore->semaphore() == semaphore) {
-                    diff = value > wait_semaphore.payload ? value - wait_semaphore.payload : wait_semaphore.payload - value;
+                    uint64_t diff =
+                        value > wait_semaphore.payload ? value - wait_semaphore.payload : wait_semaphore.payload - value;
                     if (diff > phys_dev_props_core12.maxTimelineSemaphoreValueDifference) {
                         const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kTimelineSemMaxDiff);
                         skip |= LogError(semaphore, vuid, "%s value exceeds limit regarding pending semaphore %s wait value",
@@ -3512,7 +3513,7 @@ bool CoreChecks::ValidateMaxTimelineSemaphoreValueDifference(const Location &loc
                 }
             }
         }
-    }
+    });
 
     return skip;
 }
@@ -4283,7 +4284,7 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExt
 bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) const {
     bool skip = false;
-    if (mem_obj_map_.size() >= phys_dev_props.limits.maxMemoryAllocationCount) {
+    if (Count<DEVICE_MEMORY_STATE>() >= phys_dev_props.limits.maxMemoryAllocationCount) {
         skip |= LogError(device, "VUID-vkAllocateMemory-maxMemoryAllocationCount-04101",
                          "vkAllocateMemory: Number of currently valid memory objects is not less than the maximum allowed (%u).",
                          phys_dev_props.limits.maxMemoryAllocationCount);
@@ -4567,9 +4568,9 @@ bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) const {
 
 bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) const {
     bool skip = false;
-    for (const auto &queue : queue_map_) {
-        skip |= VerifyQueueStateToSeq(queue.second.get(), queue.second->seq + queue.second->submissions.size());
-    }
+    ForEach<QUEUE_STATE>([this, &skip](const QUEUE_STATE &queue_state) {
+        skip |= VerifyQueueStateToSeq(&queue_state, queue_state.seq + queue_state.submissions.size());
+    });
     return skip;
 }
 
@@ -14055,9 +14056,8 @@ bool CoreChecks::ValidateSignalSemaphore(VkDevice device, const VkSemaphoreSigna
                          "%s(): value must be greater than current semaphore %s value", api_name,
                          report_data->FormatHandle(pSignalInfo->semaphore).c_str());
     }
-    for (auto &pair : queue_map_) {
-        const auto &queue_state = pair.second;
-        for (const auto &submission : queue_state->submissions) {
+    ForEach<QUEUE_STATE>([this, &skip, api_name, pSignalInfo](const QUEUE_STATE &queue_state) {
+        for (const auto &submission : queue_state.submissions) {
             for (const auto &signal_semaphore : submission.signal_semaphores) {
                 if (signal_semaphore.semaphore->semaphore() == pSignalInfo->semaphore &&
                     pSignalInfo->value >= signal_semaphore.payload) {
@@ -14068,7 +14068,7 @@ bool CoreChecks::ValidateSignalSemaphore(VkDevice device, const VkSemaphoreSigna
                 }
             }
         }
-    }
+    });
 
     if (!skip) {
         Location loc(Func::vkSignalSemaphore, Struct::VkSemaphoreSignalInfo, Field::value);
@@ -14165,14 +14165,9 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     // application to have established support on any other platform.
     if (!instance_extensions.vk_khr_android_surface) {
         // restrict search only to queue families of VkDeviceQueueCreateInfos, not the whole physical device
-        bool is_supported = false;
-        for (const auto &queue_entry : queue_map_) {
-            auto qfi = queue_entry.second->queueFamilyIndex;
-            if (surface_state->GetQueueSupport(physical_device, qfi)) {
-                is_supported = true;
-                break;
-            }
-        }
+        bool is_supported = AnyOf<QUEUE_STATE>([this, surface_state](const QUEUE_STATE &queue_state) {
+            return surface_state->GetQueueSupport(physical_device, queue_state.queueFamilyIndex);
+        });
 
         if (!is_supported) {
             LogObjectList objs(device);
@@ -15552,7 +15547,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                                               const VkAllocationCallbacks *pAllocator, VkSampler *pSampler) const {
     bool skip = false;
 
-    auto num_samplers = sampler_map_.size();
+    auto num_samplers = Count<SAMPLER_STATE>();
     if (num_samplers >= phys_dev_props.limits.maxSamplerAllocationCount) {
         skip |= LogError(
             device, "VUID-vkCreateSampler-maxSamplerAllocationCount-04110",
