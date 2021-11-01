@@ -252,7 +252,7 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const BINDABLE &mem_b
         }
         const DEVICE_MEMORY_STATE *mem_info = ValidationStateTracker::GetDevMemState(mem);
         if (mem_info) {
-            const auto prev_binding = mem_binding.MemState();
+            const auto *prev_binding = mem_binding.MemState();
             if (prev_binding) {
                 if (!prev_binding->Destroyed()) {
                     const char *error_code = nullptr;
@@ -12543,11 +12543,10 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         // initial layout usage of secondary command buffers resources must match parent command buffer
         const auto *const_cb_state = static_cast<const CMD_BUFFER_STATE *>(cb_state);
         for (const auto &sub_layout_map_entry : sub_cb_state->image_layout_map) {
-            const auto image = sub_layout_map_entry.first;
-            const auto *image_state = GetImageState(image);
-            if (!image_state) continue;  // Can't set layouts of a dead image
+            const auto *image_state = sub_layout_map_entry.first;
+            const auto image = image_state->image();
 
-            const auto *cb_subres_map = const_cb_state->GetImageSubresourceLayoutMap(image);
+            const auto *cb_subres_map = const_cb_state->GetImageSubresourceLayoutMap(*image_state);
             // Const getter can be null in which case we have nothing to check against for this image...
             if (!cb_subres_map) continue;
 
@@ -14053,7 +14052,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
         if (swapchain_data) {
             for (const auto &swapchain_image : swapchain_data->images) {
                 if (!swapchain_image.image_state) continue;
-                imageLayoutMap.erase(swapchain_image.image_state->image());
+                imageLayoutMap.erase(swapchain_image.image_state);
                 qfo_release_image_barrier_map.erase(swapchain_image.image_state->image());
             }
         }

@@ -466,8 +466,15 @@ void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes
     if (unlink) {
         for (auto *obj : invalid_nodes) {
             object_bindings.erase(obj);
-            if (obj->Type() == kVulkanObjectTypeCommandBuffer) {
-                linkedCommandBuffers.erase(static_cast<CMD_BUFFER_STATE *>(obj));
+            switch (obj->Type()) {
+                case kVulkanObjectTypeCommandBuffer:
+                    linkedCommandBuffers.erase(static_cast<CMD_BUFFER_STATE *>(obj));
+                    break;
+                case kVulkanObjectTypeImage:
+                    image_layout_map.erase(static_cast<IMAGE_STATE *>(obj));
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -477,8 +484,8 @@ void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes
 const CommandBufferImageLayoutMap& CMD_BUFFER_STATE::GetImageSubresourceLayoutMap() const { return image_layout_map; }
 
 // The const variant only need the image as it is the key for the map
-const ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(VkImage image) const {
-    auto it = image_layout_map.find(image);
+const ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state) const {
+    auto it = image_layout_map.find(&image_state);
     if (it == image_layout_map.cend()) {
         return nullptr;
     }
@@ -487,7 +494,7 @@ const ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(
 
 // The non-const variant only needs the image state, as the factory requires it to construct a new entry
 ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state) {
-    auto &layout_map = image_layout_map[image_state.image()];
+    auto &layout_map = image_layout_map[&image_state];
     if (!layout_map) {
         // Was an empty slot... fill it in.
         layout_map.emplace(image_state);
@@ -763,9 +770,7 @@ void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCom
         // ValidationStateTracker these maps will be empty, so leaving the propagation in the the state tracker should be a no-op
         // for those other classes.
         for (const auto &sub_layout_map_entry : sub_cb_state->image_layout_map) {
-            const auto image = sub_layout_map_entry.first;
-            const IMAGE_STATE *image_state = dev_data->GetImageState(image);
-            if (!image_state) continue;                // Can't set layouts of a dead image
+            const auto *image_state = sub_layout_map_entry.first;
 
             auto *cb_subres_map = GetImageSubresourceLayoutMap(*image_state);
             const auto *sub_cb_subres_map = &sub_layout_map_entry.second;
