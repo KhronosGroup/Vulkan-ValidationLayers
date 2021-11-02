@@ -2325,7 +2325,16 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     bool skip = false;
     const auto *pStage = stage_state.create_info;
     const auto *module = stage_state.module.get();
-    const auto &entrypoint = stage_state.entrypoint;
+    const auto *words = &module->words;            // reference to possibly optimized spirv with spec const values updated
+    std::unique_ptr<SHADER_MODULE_STATE> mod_opt;  // Owning pointer for optimized shader with spec constants
+
+    // Check the entrypoint
+    if (stage_state.entrypoint == module->end()) {
+        skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pName-00707", "No entrypoint found named `%s` for stage %s.",
+                         pStage->pName, string_VkShaderStageFlagBits(stage_state.stage_flag));
+    }
+
+    if (skip) return true;  // no point continuing beyond here, any analysis is just going to be garbage.
     // Check the module
     if (!module->has_valid_spirv) {
         skip |= LogError(
@@ -2335,12 +2344,31 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
 
     // If specialization-constant values are given and specialization-constant instructions are present in the shader, the
     // specializations should be applied and validated.
-    if (pStage->pSpecializationInfo != nullptr && pStage->pSpecializationInfo->mapEntryCount > 0 &&
-        pStage->pSpecializationInfo->pMapEntries != nullptr && module->HasSpecConstants()) {
+
+    // both spirv-opt and spirv-val will use the same flags
+    spvtools::ValidatorOptions options;
+    AdjustValidatorOptions(device_extensions, enabled_features, options);
+
+    // Apply the specialization-constant values and revalidate the shader module.
+    spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
+    spvtools::Optimizer optimizer(spirv_environment);
+    spvtools::MessageConsumer consumer = [&skip, &module, &stage_state, this](spv_message_level_t level, const char *source,
+                                                                              const spv_position_t &position, const char *message) {
+        skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-parameter",
+                         "%s does not contain valid spirv for stage %s. %s",
+                         report_data->FormatHandle(module->vk_shader_module()).c_str(),
+                         string_VkShaderStageFlagBits(stage_state.stage_flag), message);
+    };
+    optimizer.SetMessageConsumer(consumer);
+
+    std::vector<uint32_t> specialized_spirv;
+    const bool has_spec_const = (pStage->pSpecializationInfo != nullptr) && (pStage->pSpecializationInfo->mapEntryCount > 0) &&
+                                (pStage->pSpecializationInfo->pMapEntries != nullptr) && module->HasSpecConstants();
+    std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;  // note: this must be std:: to work with spvtools
+    if (has_spec_const) {
         // Gather the specialization-constant values.
         auto const &specialization_info = pStage->pSpecializationInfo;
         auto const &specialization_data = reinterpret_cast<uint8_t const *>(specialization_info->pData);
-        std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;  // note: this must be std:: to work with spvtools
         id_value_map.reserve(specialization_info->mapEntryCount);
         for (auto i = 0u; i < specialization_info->mapEntryCount; ++i) {
             auto const &map_entry = specialization_info->pMapEntries[i];
@@ -2390,29 +2418,21 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
             }
         }
 
-        // both spirv-opt and spirv-val will use the same flags
-        spvtools::ValidatorOptions options;
-        AdjustValidatorOptions(device_extensions, enabled_features, options);
-
-        // Apply the specialization-constant values and revalidate the shader module.
-        spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
-        spvtools::Optimizer optimizer(spirv_environment);
-        spvtools::MessageConsumer consumer = [&skip, &module, &stage_state, this](spv_message_level_t level, const char *source,
-                                                                                  const spv_position_t &position,
-                                                                                  const char *message) {
-            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-parameter",
-                             "%s does not contain valid spirv for stage %s. %s",
-                             report_data->FormatHandle(module->vk_shader_module()).c_str(),
-                             string_VkShaderStageFlagBits(stage_state.stage_flag), message);
-        };
-        optimizer.SetMessageConsumer(consumer);
+        // Use the new new spec constant values as defaults
         optimizer.RegisterPass(spvtools::CreateSetSpecConstantDefaultValuePass(id_value_map));
-        optimizer.RegisterPass(spvtools::CreateFreezeSpecConstantValuePass());
-        std::vector<uint32_t> specialized_spirv;
-        auto const optimized = optimizer.Run(module->words.data(), module->words.size(), &specialized_spirv, options, false);
-        assert(optimized == true);
+    }
 
-        if (optimized) {
+    // Run the optimizer using the default specialization values if provided
+    optimizer.RegisterPass(spvtools::CreateFreezeSpecConstantValuePass());
+    optimizer.RegisterPass(spvtools::CreateFoldSpecConstantOpAndCompositePass());
+    optimizer.RegisterPass(spvtools::CreateDeadBranchElimPass());
+    auto const optimized = optimizer.Run(words->data(), words->size(), &specialized_spirv, options, false);
+
+    if (optimized) {
+        mod_opt = layer_data::make_unique<SHADER_MODULE_STATE>(specialized_spirv);
+        module = mod_opt.get();
+
+        if (has_spec_const) {
             spv_context ctx = spvContextCreate(spirv_environment);
             spv_const_binary_t binary{specialized_spirv.data(), specialized_spirv.size()};
             spv_diagnostic diag = nullptr;
@@ -2427,19 +2447,24 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
             spvDiagnosticDestroy(diag);
             spvContextDestroy(ctx);
         }
-
-        skip |= ValidateWorkgroupSize(module, pStage, id_value_map);
     }
 
-    // Check the entrypoint
-    if (entrypoint == module->end()) {
-        skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pName-00707", "No entrypoint found named `%s` for stage %s.",
-                         pStage->pName, string_VkShaderStageFlagBits(stage_state.stage_flag));
-    }
-    if (skip) return true;  // no point continuing beyond here, any analysis is just going to be garbage.
+    // If spirv-opt or spirv-val failed, then we don't want to continue validating invalid spirv
+    if (skip) return true;
+
+    // Get new entrypoint iter and accessible IDs after optimization
+    const auto &entrypoint = module->FindEntrypoint(pStage->pName, pStage->stage);
+    assert(entrypoint != module->end());
 
     // Mark accessible ids
-    auto &accessible_ids = stage_state.accessible_ids;
+    const auto &accessible_ids = module->MarkAccessibleIds(entrypoint);
+
+    if (has_spec_const) {
+        // NOTE: ideally we would use the optimized shader code here and simplify SHADER_MODULE_STATE::GetWorkgroupSize
+        //       by removing all OpSpec* instructions references. However, it looks like spirv-opt sets the local work
+        //       group sizes to 1 regardless of the input specialization constants.
+        skip |= ValidateWorkgroupSize(stage_state.module.get(), pStage, id_value_map);
+    }
 
     // Validate descriptor set layout against what the entrypoint actually uses
 
