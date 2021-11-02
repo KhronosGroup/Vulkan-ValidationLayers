@@ -262,7 +262,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     layer_data::unordered_set<std::shared_ptr<FRAMEBUFFER_STATE>> framebuffers;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
-    layer_data::unordered_set<VulkanTypedHandle> object_bindings;
+    BASE_NODE::NodeSet object_bindings;
     layer_data::unordered_map<VulkanTypedHandle, LogObjectList> broken_bindings;
 
     QFOTransferBarrierSets<QFOBufferTransferBarrier> qfo_transfer_buffer_barriers;
@@ -447,7 +447,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void Retire(uint32_t perf_submit_pass);
 
   protected:
-    void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
+    void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
     void UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin);
 };
 

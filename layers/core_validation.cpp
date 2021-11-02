@@ -3109,21 +3109,28 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
         }
 
         // Ensure that any bound images or buffers created with SHARING_MODE_CONCURRENT have access to the current queue family
-        for (const auto &object : pCB->object_bindings) {
-            if (object.type == kVulkanObjectTypeImage) {
-                auto image_state = object.node ? (IMAGE_STATE *)object.node : GetImageState(object.Cast<VkImage>());
-                if (image_state && image_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                    skip |= ValidImageBufferQueue(pCB, object, queue_state->queueFamilyIndex,
-                                                  image_state->createInfo.queueFamilyIndexCount,
-                                                  image_state->createInfo.pQueueFamilyIndices);
+        for (const auto *base_node : pCB->object_bindings) {
+            switch (base_node->Type()) {
+                case kVulkanObjectTypeImage: {
+                    auto image_state = static_cast<const IMAGE_STATE *>(base_node);
+                    if (image_state && image_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+                        skip |= ValidImageBufferQueue(pCB, image_state->Handle(), queue_state->queueFamilyIndex,
+                                                      image_state->createInfo.queueFamilyIndexCount,
+                                                      image_state->createInfo.pQueueFamilyIndices);
+                    }
+                    break;
                 }
-            } else if (object.type == kVulkanObjectTypeBuffer) {
-                auto buffer_state = object.node ? (BUFFER_STATE *)object.node : GetBufferState(object.Cast<VkBuffer>());
-                if (buffer_state && buffer_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                    skip |= ValidImageBufferQueue(pCB, object, queue_state->queueFamilyIndex,
-                                                  buffer_state->createInfo.queueFamilyIndexCount,
-                                                  buffer_state->createInfo.pQueueFamilyIndices);
+                case kVulkanObjectTypeBuffer: {
+                    auto buffer_state = static_cast<const BUFFER_STATE *>(base_node);
+                    if (buffer_state && buffer_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+                        skip |= ValidImageBufferQueue(pCB, buffer_state->Handle(), queue_state->queueFamilyIndex,
+                                                      buffer_state->createInfo.queueFamilyIndexCount,
+                                                      buffer_state->createInfo.pQueueFamilyIndices);
+                    }
+                    break;
                 }
+                default:
+                    break;
             }
         }
     }
