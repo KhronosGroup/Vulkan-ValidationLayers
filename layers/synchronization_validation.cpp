@@ -3565,8 +3565,8 @@ void SyncValidator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
     }
 }
 
-bool SyncValidator::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer,
-                                                    const VkCopyImageInfo2KHR *pCopyImageInfo) const {
+bool SyncValidator::ValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
+                                          CMD_TYPE cmd_type) const {
     bool skip = false;
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
@@ -3576,8 +3576,10 @@ bool SyncValidator::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffe
     assert(context);
     if (!context) return skip;
 
+    const char *func_name = CommandTypeString(cmd_type);
     const auto src_image = Get<IMAGE_STATE>(pCopyImageInfo->srcImage);
     const auto dst_image = Get<IMAGE_STATE>(pCopyImageInfo->dstImage);
+
     for (uint32_t region = 0; region < pCopyImageInfo->regionCount; region++) {
         const auto &copy_region = pCopyImageInfo->pRegions[region];
         if (src_image) {
@@ -3585,7 +3587,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffe
                                                 copy_region.srcOffset, copy_region.extent);
             if (hazard.hazard) {
                 skip |= LogError(pCopyImageInfo->srcImage, string_SyncHazardVUID(hazard.hazard),
-                                 "vkCmdCopyImage2KHR: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.",
+                                 "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", func_name, 
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(pCopyImageInfo->srcImage).c_str(),
                                  region, cb_access_context->FormatUsage(hazard).c_str());
             }
@@ -3598,7 +3600,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffe
                                                 copy_region.dstOffset, dst_copy_extent);
             if (hazard.hazard) {
                 skip |= LogError(pCopyImageInfo->dstImage, string_SyncHazardVUID(hazard.hazard),
-                                 "vkCmdCopyImage2KHR: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.",
+                                 "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", func_name, 
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(pCopyImageInfo->dstImage).c_str(),
                                  region, cb_access_context->FormatUsage(hazard).c_str());
             }
@@ -3609,10 +3611,19 @@ bool SyncValidator::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffe
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo) {
+bool SyncValidator::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer,
+                                                    const VkCopyImageInfo2KHR *pCopyImageInfo) const {
+    return ValidateCmdCopyImage2(commandBuffer, pCopyImageInfo, CMD_COPYIMAGE2KHR);
+}
+
+bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo) const {
+    return ValidateCmdCopyImage2(commandBuffer, pCopyImageInfo, CMD_COPYIMAGE2);
+}
+
+void SyncValidator::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo, CMD_TYPE cmd_type) {
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
-    const auto tag = cb_access_context->NextCommandTag(CMD_COPYIMAGE2KHR);
+    const auto tag = cb_access_context->NextCommandTag(cmd_type);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -3632,6 +3643,14 @@ void SyncValidator::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer,
                                        copy_region.dstSubresource, copy_region.dstOffset, dst_copy_extent, tag);
         }
     }
+}
+
+void SyncValidator::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo) {
+    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, CMD_COPYIMAGE2KHR);
+}
+
+void SyncValidator::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo) {
+    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, CMD_COPYIMAGE2);
 }
 
 bool SyncValidator::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,

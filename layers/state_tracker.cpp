@@ -263,6 +263,14 @@ void ValidationStateTracker::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer comma
                                Get<IMAGE_STATE>(pCopyImageInfo->dstImage));
 }
 
+void ValidationStateTracker::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo) {
+    if (disabled[command_buffer_state]) return;
+
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_node->RecordTransferCmd(CMD_COPYIMAGE2, Get<IMAGE_STATE>(pCopyImageInfo->srcImage),
+                               Get<IMAGE_STATE>(pCopyImageInfo->dstImage));
+}
+
 void ValidationStateTracker::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage,
                                                           VkImageLayout srcImageLayout, VkImage dstImage,
                                                           VkImageLayout dstImageLayout, uint32_t regionCount,
