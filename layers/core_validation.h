@@ -852,7 +852,7 @@ class CoreChecks : public ValidationStateTracker {
     template <typename BufferImageCopyRegionType>
     bool ValidateCmdCopyBufferBounds(const BUFFER_STATE* src_buffer_state, const BUFFER_STATE* dst_buffer_state,
                                      uint32_t regionCount, const BufferImageCopyRegionType* pRegions,
-                                     CopyCommandVersion version) const;
+                                     CMD_TYPE cmd_type) const;
 
     template <typename BufferImageCopyRegionType>
     bool ValidateImageBounds(const IMAGE_STATE* image_state, const uint32_t regionCount, const BufferImageCopyRegionType* pRegions,
@@ -882,13 +882,15 @@ class CoreChecks : public ValidationStateTracker {
 
     template <typename RegionType>
     bool ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                               const RegionType* pRegions, CopyCommandVersion version) const;
+                               const RegionType* pRegions, CMD_TYPE cmd_type) const;
 
     bool PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                       const VkBufferCopy* pRegions) const override;
 
     bool PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer,
                                           const VkCopyBufferInfo2KHR* pCopyBufferInfos) const override;
+
+    bool PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfos) const override;
 
     bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView,
                                          const VkAllocationCallbacks* pAllocator) const override;
