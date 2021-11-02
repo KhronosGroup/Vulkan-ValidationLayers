@@ -47,7 +47,8 @@ struct hash<VulkanTypedHandle> {
 
 class BASE_NODE {
   public:
-    using BindingsType = layer_data::unordered_set<BASE_NODE*>;
+    using NodeSet = layer_data::unordered_set<BASE_NODE *>;
+    using NodeList = small_vector<BASE_NODE *, 4>;
 
     template <typename Handle>
     BASE_NODE(Handle h, VulkanObjectType t) : handle_(h, t, this), destroyed_(false) {}
@@ -62,6 +63,7 @@ class BASE_NODE {
     bool Destroyed() const { return destroyed_; }
 
     const VulkanTypedHandle &Handle() const { return handle_; }
+    VulkanObjectType Type() const { return handle_.type; }
 
     virtual bool InUse() const {
         bool result = false;
@@ -84,23 +86,26 @@ class BASE_NODE {
     }
 
     void Invalidate(bool unlink = true) {
-        LogObjectList invalid_handles(handle_);
+        NodeList invalid_nodes;
+        invalid_nodes.emplace_back(this);
         for (auto& node: parent_nodes_) {
-            node->NotifyInvalidate(invalid_handles, unlink);
+            node->NotifyInvalidate(invalid_nodes, unlink);
         }
         if (unlink) {
             parent_nodes_.clear();
         }
     }
   protected:
-    virtual void NotifyInvalidate(const LogObjectList& invalid_handles, bool unlink) {
+    // NOTE: the entries in invalid_nodes will likely be destroyed & deleted
+    // after the NotifyInvalidate() calls finish.
+    virtual void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
         if (parent_nodes_.size() == 0) {
             return;
         }
-        LogObjectList up_handles = invalid_handles;
-        up_handles.object_list.emplace_back(handle_);
+        NodeList up_nodes = invalid_nodes;
+        up_nodes.emplace_back(this);
         for (auto& node: parent_nodes_) {
-            node->NotifyInvalidate(up_handles, unlink);
+            node->NotifyInvalidate(up_nodes, unlink);
         }
         if (unlink) {
             parent_nodes_.clear();
@@ -115,7 +120,7 @@ class BASE_NODE {
 
     // Set of immediate parent nodes for this object. For an in-use object, the
     // parent nodes should form a tree with the root being a command buffer.
-    BindingsType parent_nodes_;
+    NodeSet parent_nodes_;
 };
 
 class REFCOUNTED_NODE : public BASE_NODE {

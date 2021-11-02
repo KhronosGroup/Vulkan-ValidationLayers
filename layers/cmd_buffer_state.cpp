@@ -253,14 +253,16 @@ const IMAGE_VIEW_STATE *CMD_BUFFER_STATE::GetActiveAttachmentImageViewState(uint
 }
 
 void CMD_BUFFER_STATE::AddChild(BASE_NODE *child_node) {
+    assert(child_node);
     if (child_node->AddParent(this)) {
-        object_bindings.insert(child_node->Handle());
+        object_bindings.insert(child_node);
     }
 }
 
 void CMD_BUFFER_STATE::RemoveChild(BASE_NODE *child_node) {
+    assert(child_node);
     child_node->RemoveParent(this);
-    object_bindings.erase(child_node->Handle());
+    object_bindings.erase(child_node);
 }
 
 // Reset the command buffer state
@@ -328,9 +330,7 @@ void CMD_BUFFER_STATE::Reset() {
 
     // Remove object bindings
     for (const auto &obj : object_bindings) {
-        if (obj.node) {
-            obj.node->RemoveParent(this);
-        }
+        obj->RemoveParent(this);
     }
     object_bindings.clear();
 
@@ -358,9 +358,8 @@ void CMD_BUFFER_STATE::Reset() {
     transform_feedback_active = false;
 
     // Remove object bindings
-    for (const auto &obj : object_bindings) {
-        BASE_NODE *base_obj = obj.node;
-        if (base_obj) RemoveChild(base_obj);
+    for (auto *base_obj : object_bindings) {
+        RemoveChild(base_obj);
     }
     object_bindings.clear();
 
@@ -451,24 +450,28 @@ void CMD_BUFFER_STATE::Destroy() {
     BASE_NODE::Destroy();
 }
 
-void CMD_BUFFER_STATE::NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) {
+void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
     if (state == CB_RECORDING) {
         state = CB_INVALID_INCOMPLETE;
     } else if (state == CB_RECORDED) {
         state = CB_INVALID_COMPLETE;
     }
-    assert(!invalid_handles.object_list.empty());
-    broken_bindings.emplace(invalid_handles.object_list[0], invalid_handles);
+    assert(!invalid_nodes.empty());
+    LogObjectList log_list;
+    for (auto *obj : invalid_nodes) {
+        log_list.object_list.emplace_back(obj->Handle());
+    }
+    broken_bindings.emplace(invalid_nodes[0]->Handle(), log_list);
 
     if (unlink) {
-        for (auto &obj : invalid_handles.object_list) {
+        for (auto *obj : invalid_nodes) {
             object_bindings.erase(obj);
-            if (obj.type == kVulkanObjectTypeCommandBuffer) {
-                linkedCommandBuffers.erase(static_cast<CMD_BUFFER_STATE *>(obj.node));
+            if (obj->Type() == kVulkanObjectTypeCommandBuffer) {
+                linkedCommandBuffers.erase(static_cast<CMD_BUFFER_STATE *>(obj));
             }
         }
     }
-    BASE_NODE::NotifyInvalidate(invalid_handles, unlink);
+    BASE_NODE::NotifyInvalidate(invalid_nodes, unlink);
 }
 
 const CommandBufferImageLayoutMap& CMD_BUFFER_STATE::GetImageSubresourceLayoutMap() const { return image_layout_map; }
