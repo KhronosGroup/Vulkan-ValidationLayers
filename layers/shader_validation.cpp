@@ -2350,7 +2350,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     AdjustValidatorOptions(device_extensions, enabled_features, options);
 
     // Apply the specialization-constant values and revalidate the shader module.
-    spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
+    spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4), pStage->stage);
     spvtools::Optimizer optimizer(spirv_environment);
     spvtools::MessageConsumer consumer = [&skip, &module, &stage_state, this](spv_message_level_t level, const char *source,
                                                                               const spv_position_t &position, const char *message) {
@@ -3176,14 +3176,20 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
     return skip;
 }
 
-spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4) {
-    if (api_version >= VK_API_VERSION_1_2) {
-        return SPV_ENV_VULKAN_1_2;
-    } else if (api_version >= VK_API_VERSION_1_1) {
-        if (spirv_1_4) {
-            return SPV_ENV_VULKAN_1_1_SPIRV_1_4;
-        } else {
-            return SPV_ENV_VULKAN_1_1;
+spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4, VkShaderStageFlagBits stage) {
+    if (stage & (VK_SHADER_STAGE_MESH_BIT_NV | VK_SHADER_STAGE_TASK_BIT_NV)) {
+        // It appears that glslang will _always_ use 1.5 for mesh and task shaders.
+        // TODO is there a better way to detect this?
+        return SPV_ENV_UNIVERSAL_1_5;
+    } else {
+        if (api_version >= VK_API_VERSION_1_2) {
+            return SPV_ENV_VULKAN_1_2;
+        } else if (api_version >= VK_API_VERSION_1_1) {
+            if (spirv_1_4) {
+                return SPV_ENV_VULKAN_1_1_SPIRV_1_4;
+            } else {
+                return SPV_ENV_VULKAN_1_1;
+            }
         }
     }
     return SPV_ENV_VULKAN_1_0;

@@ -707,6 +707,8 @@ class PipelineLayout : public internal::NonDispHandle<VkPipelineLayout> {
 
 class Sampler : public internal::NonDispHandle<VkSampler> {
   public:
+    Sampler() = default;
+    Sampler(const Device &dev, const VkSamplerCreateInfo &info) { init(dev, info); }
     ~Sampler() NOEXCEPT;
 
     // vkCreateSampler()

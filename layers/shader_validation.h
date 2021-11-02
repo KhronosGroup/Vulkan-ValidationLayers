@@ -133,7 +133,7 @@ class ValidationCache {
     }
 };
 
-spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4);
+spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4, VkShaderStageFlagBits stage = VK_SHADER_STAGE_ALL_GRAPHICS);
 
 void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
                             spvtools::ValidatorOptions &options);

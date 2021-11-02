@@ -3537,8 +3537,10 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
                 #extension GL_EXT_shader_16bit_storage: enable
                 #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
                 layout(location = 0) out float16_t outData;
+                // Using spec constant to force glslang to use OpCapability Float16
+                layout(constant_id = 0) const float16_t x = 1.0hf;
                 void main(){
-                   outData = float16_t(1);
+                   outData = x;
                    gl_Position = vec4(0.0);
                 }
             )glsl";
@@ -3635,8 +3637,10 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
                 #extension GL_EXT_shader_16bit_storage: enable
                 #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
                 layout(location = 0) out int16_t outData;
+                // Using spec constant to force glslang to use OpCapability Int16
+                layout(constant_id = 0) const int16_t x = 1s;
                 void main(){
-                   outData = int16_t(1);
+                   outData = x;
                    gl_Position = vec4(0.0);
                 }
             )glsl";

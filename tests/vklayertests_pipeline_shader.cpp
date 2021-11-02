@@ -3951,6 +3951,10 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderSpecializationApplied) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.shader_stages_[1].pSpecializationInfo = &specialization_info;
     };
+
+    // A spirv-val failure will trigger VUID-VkPipelineShaderStageCreateInfo-module-parameter, but 04145 will only get
+    // triggered when there is invalid spirv.
+    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineShaderStageCreateInfo-module-parameter");
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-module-04145");
 }
 
@@ -9452,7 +9456,7 @@ TEST_F(VkLayerTest, VertexStoresAndAtomicsFeatureDisable) {
     {
         char const *vsSource = R"glsl(
             #version 450
-            layout(set=0, binding=0, rgba8) uniform image2D si0;
+            layout(set=0, binding=0, r32f) uniform image2D si0;
             void main() {
                   imageAtomicExchange(si0, ivec2(0), 1);
             }
@@ -9506,7 +9510,7 @@ TEST_F(VkLayerTest, FragmentStoresAndAtomicsFeatureDisable) {
     {
         char const *fsSource = R"glsl(
             #version 450
-            layout(set=0, binding=0, rgba8) uniform image2D si0;
+            layout(set=0, binding=0, r32f) uniform image2D si0;
             void main() {
                   imageAtomicExchange(si0, ivec2(0), 1);
             }
@@ -10961,8 +10965,9 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             #extension GL_EXT_shader_16bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
             layout(location = 0) out float16_t outData;
+            layout(constant_id = 0) const float16_t x = 1.0hf;
             void main(){
-               outData = float16_t(1);
+               outData = x;
                gl_Position = vec4(0.0);
             }
         )glsl";
@@ -10988,7 +10993,8 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Float16 (vert)
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
                                "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageInputOutput16 frag
         }
     }
@@ -11084,8 +11090,9 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             #extension GL_EXT_shader_16bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
             layout(location = 0) out int16_t outData;
+            layout(constant_id = 0) const int16_t x = 1s;
             void main(){
-               outData = int16_t(1);
+               outData = x;
                gl_Position = vec4(0.0);
             }
         )glsl";
@@ -11111,7 +11118,8 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int16 (vert)
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
                                "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageInputOutput16 frag
         }
     }
@@ -12076,39 +12084,50 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
+    if (!AddRequiredExtensions(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME)) {
         printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+               VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
+        return;
+    }
+    // Create device without VK_EXT_shader_image_atomic_int64 extension or features enabled
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Vulkan +1.1 required\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Device extension or dependency for %s not supported\n", kSkipPrefix, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
         return;
     }
 
-    // Create device without VK_EXT_shader_image_atomic_int64 extension or features enabled
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    VkPhysicalDeviceFeatures available_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
-    if (!available_features.shaderInt64) {
+    auto atomic64_features = LvlInitStruct<VkPhysicalDeviceShaderAtomicInt64FeaturesKHR>();
+    atomic64_features.shaderBufferInt64Atomics = VK_TRUE;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&atomic64_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!features2.features.shaderInt64) {
         printf("%s VkPhysicalDeviceFeatures::shaderInt64 is not supported, skipping tests\n", kSkipPrefix);
         return;
     }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required for SPIR-V 1.3, skipping test.\n", kSkipPrefix);
+    if (!atomic64_features.shaderBufferInt64Atomics) {
+        printf("%s VkPhysicalDeviceShaderAtomicInt64FeaturesKHR::shaderBufferInt64Atomics is not supported\n", kSkipPrefix);
         return;
     }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     // clang-format off
     std::string cs_image_base = R"glsl(
         #version 450
         #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
         #extension GL_EXT_shader_image_int64 : enable
+        #extension GL_EXT_shader_atomic_int64 : enable
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0) buffer ssbo { uint64_t y; };
         layout(set = 0, binding = 1, r64ui) uniform u64image2D z;
         void main() {
+            // NOTE: glslang will not add the required Int64Atomics capability unless one of the functions mentioned
+            //       in GL_EXT_shader_atomic_int64 are used (bug in glslang?).
+            uint64_t x = atomicMin(y, 1u);
     )glsl";
 
     std::string cs_image_load = cs_image_base + R"glsl(
@@ -12117,7 +12136,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     )glsl";
 
     std::string cs_image_store = cs_image_base + R"glsl(
-           imageAtomicStore(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+           imageAtomicStore(z, ivec2(1, 1), x, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
         }
     )glsl";
 
@@ -12148,8 +12167,8 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_load.c_str(), false, SPV_ENV_VULKAN_1_1)) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
-                                "VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06288"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-04147",
+                                "VUID-RuntimeSpirv-None-06288"});
     }
 
     // glslang doesn't omit Int64Atomics for store currently
@@ -12167,8 +12186,8 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_exchange.c_str(), false, SPV_ENV_VULKAN_1_1)) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
-                                "VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06288"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-04147",
+                                "VUID-RuntimeSpirv-None-06288"});
     }
 
     current_shader = layer_data::make_unique<VkShaderObj>(*m_device, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -12176,8 +12195,8 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     if (VK_SUCCESS == current_shader->InitFromGLSLTry(*this, cs_image_add.c_str(), false, SPV_ENV_VULKAN_1_1)) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
-                                "VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06288"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-04147",
+                                "VUID-RuntimeSpirv-None-06288"});
     }
 }
 
