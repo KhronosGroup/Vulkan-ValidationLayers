@@ -737,7 +737,7 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
 
     const DEVICE_MEMORY_STATE* mem_state = GetDevMemState(memory);
 
-    if (mem_state->alloc_info.allocationSize == buffer_state->createInfo.size &&
+    if (mem_state && mem_state->alloc_info.allocationSize == buffer_state->createInfo.size &&
         mem_state->alloc_info.allocationSize < kMinDedicatedAllocationSize) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_SmallDedicatedAllocation,
