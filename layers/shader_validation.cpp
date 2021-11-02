@@ -2141,18 +2141,21 @@ bool CoreChecks::ValidateTransformFeedback(SHADER_MODULE_STATE const *src) const
     return skip;
 }
 
-bool CoreChecks::ValidateTexelGatherOffset(SHADER_MODULE_STATE const *src, spirv_inst_iter &insn) const {
+// Checks for both TexelOffset and TexelGatherOffset limits
+bool CoreChecks::ValidateTexelOffsetLimits(SHADER_MODULE_STATE const *src, spirv_inst_iter &insn) const {
     bool skip = false;
 
     const uint32_t opcode = insn.opcode();
-    if (ImageGatherOperation(opcode)) {
+    if (ImageGatherOperation(opcode) || ImageSampleOperation(opcode) || ImageFetchOperation(opcode)) {
         uint32_t image_operand_position = ImageOperandsParam(opcode);
-        // Image operands are optional
+        // Image operands can be optional
         if (image_operand_position != 0 && insn.len() > image_operand_position) {
             auto image_operand = insn.word(image_operand_position);
-            // Bits we are validating
+            // Bits we are validating (sample/fetch only check ConstOffset)
             uint32_t offset_bits =
-                spv::ImageOperandsOffsetMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsConstOffsetsMask;
+                ImageGatherOperation(opcode)
+                    ? (spv::ImageOperandsOffsetMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsConstOffsetsMask)
+                    : (spv::ImageOperandsConstOffsetMask);
             if (image_operand & (offset_bits)) {
                 // Operand values follow
                 uint32_t index = image_operand_position + 1;
@@ -2171,25 +2174,46 @@ bool CoreChecks::ValidateTexelGatherOffset(SHADER_MODULE_STATE const *src, spirv
                                     const auto &comp_type = src->get_def(comp.word(1));
                                     // Get operand value
                                     const uint32_t offset = comp.word(3);
+                                    // spec requires minTexelGatherOffset/minTexelOffset to be -8 or less so never can compare if
+                                    // unsigned spec requires maxTexelGatherOffset/maxTexelOffset to be 7 or greater so never can
+                                    // compare if signed is less then zero
                                     const int32_t signed_offset = static_cast<int32_t>(offset);
                                     const bool use_signed = (comp_type.opcode() == spv::OpTypeInt && comp_type.word(3) != 0);
 
-                                    // spec requires minTexelGatherOffset to be -8 or less so never can compare if unsigned
-                                    // spec requires maxTexelGatherOffset to be 7 or greater so never can compare if signed is less
-                                    // then zero
-                                    if (use_signed && (signed_offset < phys_dev_props.limits.minTexelGatherOffset)) {
-                                        skip |= LogError(device, "VUID-RuntimeSpirv-OpImage-06376",
+                                    // There are 2 sets of VU being covered where the only main difference is the opcode
+                                    if (ImageGatherOperation(opcode)) {
+                                        // min/maxTexelGatherOffset
+                                        if (use_signed && (signed_offset < phys_dev_props.limits.minTexelGatherOffset)) {
+                                            skip |=
+                                                LogError(device, "VUID-RuntimeSpirv-OpImage-06376",
                                                          "vkCreateShaderModule(): Shader uses %s with offset (%" PRIi32
                                                          ") less than VkPhysicalDeviceLimits::minTexelGatherOffset (%" PRIi32 ").",
                                                          string_SpvOpcode(opcode), signed_offset,
                                                          phys_dev_props.limits.minTexelGatherOffset);
-                                    } else if ((offset > phys_dev_props.limits.maxTexelGatherOffset) &&
-                                               (!use_signed || (use_signed && signed_offset > 0))) {
-                                        skip |=
-                                            LogError(device, "VUID-RuntimeSpirv-OpImage-06377",
-                                                     "vkCreateShaderModule(): Shader uses %s with offset (%" PRIu32
-                                                     ") greater than VkPhysicalDeviceLimits::maxTexelGatherOffset (%" PRIu32 ").",
-                                                     string_SpvOpcode(opcode), offset, phys_dev_props.limits.maxTexelGatherOffset);
+                                        } else if ((offset > phys_dev_props.limits.maxTexelGatherOffset) &&
+                                                   (!use_signed || (use_signed && signed_offset > 0))) {
+                                            skip |= LogError(
+                                                device, "VUID-RuntimeSpirv-OpImage-06377",
+                                                "vkCreateShaderModule(): Shader uses %s with offset (%" PRIu32
+                                                ") greater than VkPhysicalDeviceLimits::maxTexelGatherOffset (%" PRIu32 ").",
+                                                string_SpvOpcode(opcode), offset, phys_dev_props.limits.maxTexelGatherOffset);
+                                        }
+                                    } else {
+                                        // min/maxTexelOffset
+                                        if (use_signed && (signed_offset < phys_dev_props.limits.minTexelOffset)) {
+                                            skip |= LogError(device, "VUID-RuntimeSpirv-OpImageSample-06435",
+                                                             "vkCreateShaderModule(): Shader uses %s with offset (%" PRIi32
+                                                             ") less than VkPhysicalDeviceLimits::minTexelOffset (%" PRIi32 ").",
+                                                             string_SpvOpcode(opcode), signed_offset,
+                                                             phys_dev_props.limits.minTexelOffset);
+                                        } else if ((offset > phys_dev_props.limits.maxTexelOffset) &&
+                                                   (!use_signed || (use_signed && signed_offset > 0))) {
+                                            skip |=
+                                                LogError(device, "VUID-RuntimeSpirv-OpImageSample-06436",
+                                                         "vkCreateShaderModule(): Shader uses %s with offset (%" PRIu32
+                                                         ") greater than VkPhysicalDeviceLimits::maxTexelOffset (%" PRIu32 ").",
+                                                         string_SpvOpcode(opcode), offset, phys_dev_props.limits.maxTexelOffset);
+                                        }
                                     }
                                 }
                             }
@@ -2354,7 +2378,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     // and mainly only checking the instruction in detail for a single operation
     uint32_t total_shared_size = 0;
     for (auto insn : *module) {
-        skip |= ValidateTexelGatherOffset(module, insn);
+        skip |= ValidateTexelOffsetLimits(module, insn);
         skip |= ValidateShaderCapabilitiesAndExtensions(module, insn);
         skip |= ValidateShaderClock(module, insn);
         skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage, insn);

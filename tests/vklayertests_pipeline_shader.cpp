@@ -14018,8 +14018,8 @@ TEST_F(VkLayerTest, TestMinAndMaxTexelGatherOffset) {
   %uint_n100 = OpConstant %uint 4294967196
     %int_100 = OpConstant %int 100
       %int_0 = OpConstant %int 0
-         %22 = OpConstantComposite %v2int %int_n100 %int_100
-         %23 = OpConstantComposite %v2int %int_0 %uint_n100
+ %offset_100 = OpConstantComposite %v2int %int_n100 %int_100
+%offset_n100 = OpConstantComposite %v2int %int_0 %uint_n100
 
                ; Function main
        %main = OpFunction %void None %3
@@ -14027,9 +14027,9 @@ TEST_F(VkLayerTest, TestMinAndMaxTexelGatherOffset) {
       %color = OpVariable %_ptr_Function_v4float Function
          %14 = OpLoad %11 %samp
                ; Should trigger min and max
-         %24 = OpImageGather %v4float %14 %17 %int_0 ConstOffset %22
+         %24 = OpImageGather %v4float %14 %17 %int_0 ConstOffset %offset_100
                ; Should only trigger max since uint
-         %25 = OpImageGather %v4float %14 %17 %int_0 ConstOffset %23
+         %25 = OpImageGather %v4float %14 %17 %int_0 ConstOffset %offset_n100
                OpStore %color %24
                OpReturn
                OpFunctionEnd
@@ -14053,6 +14053,91 @@ TEST_F(VkLayerTest, TestMinAndMaxTexelGatherOffset) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06377");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06377");
     cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, TestMinAndMaxTexelOffset) {
+    TEST_DESCRIPTION("Test shader with offset less than minTexelOffset and greather than maxTexelOffset");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (m_device->phy().properties().limits.minTexelOffset <= -100 || m_device->phy().properties().limits.maxTexelOffset >= 100) {
+        printf("%s test needs minTexelOffset greater than -100 and maxTexelOffset less than 100. Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main"
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 450
+               OpDecorate %textureSampler DescriptorSet 0
+               OpDecorate %textureSampler Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Function_v4float = OpTypePointer Function %v4float
+         %10 = OpTypeImage %float 2D 0 0 0 1 Unknown
+         %11 = OpTypeSampledImage %10
+%_ptr_UniformConstant_11 = OpTypePointer UniformConstant %11
+%textureSampler = OpVariable %_ptr_UniformConstant_11 UniformConstant
+    %v2float = OpTypeVector %float 2
+    %float_0 = OpConstant %float 0
+         %17 = OpConstantComposite %v2float %float_0 %float_0
+              ; set up composite to be validated
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+      %v2int = OpTypeVector %int 2
+      %int_0 = OpConstant %int 0
+   %int_n100 = OpConstant %int -100
+  %uint_n100 = OpConstant %uint 4294967196
+    %int_100 = OpConstant %int 100
+ %offset_100 = OpConstantComposite %v2int %int_n100 %int_100
+%offset_n100 = OpConstantComposite %v2int %int_0 %uint_n100
+         %24 = OpConstantComposite %v2int %int_0 %int_0
+
+       %main = OpFunction %void None %3
+      %label = OpLabel
+         %14 = OpLoad %11 %textureSampler
+         %26 = OpImage %10 %14
+               ; Should trigger min and max
+    %result0 = OpImageSampleImplicitLod %v4float %14 %17 ConstOffset %offset_100
+    %result1 = OpImageFetch %v4float %26 %24 ConstOffset %offset_100
+               ; Should only trigger max since uint
+    %result2 = OpImageSampleImplicitLod %v4float %14 %17 ConstOffset %offset_n100
+    %result3 = OpImageFetch %v4float %26 %24 ConstOffset %offset_n100
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+
+    VkShaderObj const fs(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    // as commented in SPIR-V should trigger the limits as following
+    //
+    // OpImageSampleImplicitLod
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageSample-06435");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageSample-06436");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageSample-06436");
+    // // OpImageFetch
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageSample-06435");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageSample-06436");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageSample-06436");
+    pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyFound();
 }
