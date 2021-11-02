@@ -4773,8 +4773,23 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffe
     if (pCopyBufferInfo->pRegions != nullptr) {
         for (uint32_t i = 0; i < pCopyBufferInfo->regionCount; i++) {
             if (pCopyBufferInfo->pRegions[i].size == 0) {
-                skip |= LogError(device, "VUID-VkBufferCopy2KHR-size-01988",
+                skip |= LogError(device, "VUID-VkBufferCopy2-size-01988",
                                  "vkCmdCopyBuffer2KHR() pCopyBufferInfo->pRegions[%" PRIu32 "].size must be greater than zero", i);
+            }
+        }
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
+                                                               const VkCopyBufferInfo2 *pCopyBufferInfo) const {
+    bool skip = false;
+
+    if (pCopyBufferInfo->pRegions != nullptr) {
+        for (uint32_t i = 0; i < pCopyBufferInfo->regionCount; i++) {
+            if (pCopyBufferInfo->pRegions[i].size == 0) {
+                skip |= LogError(device, "VUID-VkBufferCopy2-size-01988",
+                                 "vkCmdCopyBuffer2() pCopyBufferInfo->pRegions[%" PRIu32 "].size must be greater than zero", i);
             }
         }
     }

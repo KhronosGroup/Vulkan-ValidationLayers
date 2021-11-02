@@ -394,6 +394,14 @@ void ValidationStateTracker::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer comm
                                Get<BUFFER_STATE>(pCopyBufferInfo->dstBuffer));
 }
 
+void ValidationStateTracker::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo) {
+    if (disabled[command_buffer_state]) return;
+
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_node->RecordTransferCmd(CMD_COPYBUFFER2, Get<BUFFER_STATE>(pCopyBufferInfo->srcBuffer),
+                               Get<BUFFER_STATE>(pCopyBufferInfo->dstBuffer));
+}
+
 void ValidationStateTracker::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView,
                                                            const VkAllocationCallbacks *pAllocator) {
     Destroy<IMAGE_VIEW_STATE>(imageView);

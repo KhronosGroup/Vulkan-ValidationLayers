@@ -9708,6 +9708,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBuffer2(
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo);
     return skip;
 }
 

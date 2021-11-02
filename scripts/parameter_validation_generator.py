@@ -251,6 +251,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdBindVertexBuffers2EXT',
             'vkCmdBindVertexBuffers2',
             'vkCmdCopyBuffer2KHR',
+            'vkCmdCopyBuffer2',
             'vkCmdBuildAccelerationStructuresKHR',
             'vkCmdBuildAccelerationStructuresIndirectKHR',
             'vkBuildAccelerationStructuresKHR',
