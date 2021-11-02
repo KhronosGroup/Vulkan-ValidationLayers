@@ -28,7 +28,6 @@
 #include "pipeline_state.h"
 #include "descriptor_sets.h"
 #include "cmd_buffer_state.h"
-#include "render_pass_state.h"
 #include "state_tracker.h"
 #include "shader_module.h"
 
@@ -360,8 +359,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
                                std::shared_ptr<const RENDER_PASS_STATE> &&rpstate,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
-      create_info(pCreateInfo, rpstate->UsesColorAttachment(pCreateInfo->subpass),
-                  rpstate->UsesDepthStencilAttachment(pCreateInfo->subpass)),
+      create_info(pCreateInfo, rpstate),
       pipeline_layout(std::move(layout)),
       rp_state(rpstate),
       stage_state(GetStageStates(state_data, create_info.graphics.pStages, create_info.graphics.stageCount)),

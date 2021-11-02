@@ -239,7 +239,7 @@ static void InitRenderPassState(RENDER_PASS_STATE *render_pass) {
 }
 
 RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo2 const *pCreateInfo)
-    : BASE_NODE(rp, kVulkanObjectTypeRenderPass), createInfo(pCreateInfo) {
+    : BASE_NODE(rp, kVulkanObjectTypeRenderPass), use_dynamic_rendering(false), use_dynamic_rendering_inherited(false), createInfo(pCreateInfo) {
     InitRenderPassState(this);
 }
 
@@ -250,9 +250,25 @@ static safe_VkRenderPassCreateInfo2 ConvertCreateInfo(const VkRenderPassCreateIn
 }
 
 RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo const *pCreateInfo)
-    : BASE_NODE(rp, kVulkanObjectTypeRenderPass), createInfo(ConvertCreateInfo(*pCreateInfo)) {
+    : BASE_NODE(rp, kVulkanObjectTypeRenderPass), use_dynamic_rendering(false), use_dynamic_rendering_inherited(false), createInfo(ConvertCreateInfo(*pCreateInfo)) {
     InitRenderPassState(this);
 }
+
+const VkPipelineRenderingCreateInfoKHR VkPipelineRenderingCreateInfoKHR_default = {
+    VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+    nullptr,
+    0,
+    0,
+    nullptr,
+    VK_FORMAT_UNDEFINED,
+    VK_FORMAT_UNDEFINED
+};
+
+RENDER_PASS_STATE::RENDER_PASS_STATE(VkPipelineRenderingCreateInfoKHR const *pPipelineRenderingCreateInfo)
+    : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
+      use_dynamic_rendering(true),
+      use_dynamic_rendering_inherited(false),
+      rendering_create_info(pPipelineRenderingCreateInfo ? pPipelineRenderingCreateInfo : &VkPipelineRenderingCreateInfoKHR_default) {}
 
 bool RENDER_PASS_STATE::UsesColorAttachment(uint32_t subpass_num) const {
     bool result = false;
@@ -281,6 +297,18 @@ bool RENDER_PASS_STATE::UsesDepthStencilAttachment(uint32_t subpass_num) const {
     return result;
 }
 
+RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderingInfoKHR const *pRenderingInfo)
+    : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
+      use_dynamic_rendering(true),
+      use_dynamic_rendering_inherited(false),
+      dynamic_rendering_info(pRenderingInfo) {}
+
+RENDER_PASS_STATE::RENDER_PASS_STATE(VkCommandBufferInheritanceRenderingInfoKHR const* pInheritanceRenderingInfo)
+    : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
+    use_dynamic_rendering(true),
+    use_dynamic_rendering_inherited(true),
+    inheritance_rendering_info(pInheritanceRenderingInfo) {}
+
 FRAMEBUFFER_STATE::FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo,
                                      std::shared_ptr<RENDER_PASS_STATE> &&rpstate,
                                      std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> &&attachments)
@@ -294,10 +322,9 @@ FRAMEBUFFER_STATE::FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreate
 }
 
 void FRAMEBUFFER_STATE::Destroy() {
-    for (auto& view: attachments_view_state) {
+    for (auto &view : attachments_view_state) {
         view->RemoveParent(this);
     }
     attachments_view_state.clear();
     BASE_NODE::Destroy();
 }
-

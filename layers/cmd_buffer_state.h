@@ -401,6 +401,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void NextSubpass(CMD_TYPE cmd_type, VkSubpassContents contents);
     void EndRenderPass(CMD_TYPE cmd_type);
 
+    void BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfoKHR *pRenderingInfo);
+
     void ExecuteCommands(uint32_t commandBuffersCount, const VkCommandBuffer *pCommandBuffers);
 
     void UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point, const PIPELINE_LAYOUT_STATE *pipeline_layout,
@@ -441,6 +443,24 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     void Submit(uint32_t perf_submit_pass);
     void Retire(uint32_t perf_submit_pass);
+
+    uint32_t GetDynamicColorAttachmentCount() {
+        if (activeRenderPass) {
+            if (activeRenderPass->use_dynamic_rendering_inherited) {
+                return activeRenderPass->inheritance_rendering_info.colorAttachmentCount;
+            }
+            if (activeRenderPass->use_dynamic_rendering) {
+                return activeRenderPass->dynamic_rendering_info.colorAttachmentCount;
+            }
+        }
+        return 0;
+    }
+    uint32_t GetDynamicColorAttachmentImageIndex(uint32_t index) { return index; }
+    uint32_t GetDynamicColorResolveAttachmentImageIndex(uint32_t index) { return index + GetDynamicColorAttachmentCount(); }
+    uint32_t GetDynamicDepthAttachmentImageIndex() { return 2 * GetDynamicColorAttachmentCount(); }
+    uint32_t GetDynamicDepthResolveAttachmentImageIndex() { return 2 * GetDynamicColorAttachmentCount() + 1; }
+    uint32_t GetDynamicStencilAttachmentImageIndex() { return 2 * GetDynamicColorAttachmentCount() + 2; }
+    uint32_t GetDynamicStencilResolveAttachmentImageIndex() { return 2 * GetDynamicColorAttachmentCount() + 3; }
 
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;

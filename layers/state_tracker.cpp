@@ -182,7 +182,6 @@ void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage 
 void ValidationStateTracker::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image,
                                                              VkImageLayout imageLayout, const VkClearColorValue *pColor,
                                                              uint32_t rangeCount, const VkImageSubresourceRange *pRanges) {
-
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
@@ -392,7 +391,6 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer c
 
 void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
                                                                    const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo) {
-
     if (disabled[command_buffer_state]) return;
 
     auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
@@ -1819,13 +1817,15 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
     cgpl_state->pCreateInfos = pCreateInfos;  // GPU validation can alter this, so we have to set a default value for the Chassis
     cgpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
-        // Avoid crashes if VK_KHR_dynamic_rendering is in use.
         if (pCreateInfos[i].renderPass != VK_NULL_HANDLE) {
             cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i],
                                                                               GetRenderPassShared(pCreateInfos[i].renderPass),
                                                                               GetPipelineLayoutShared(pCreateInfos[i].layout)));
-        } else {
-            cgpl_state->pipe_state.push_back(std::shared_ptr<PIPELINE_STATE>());
+        } else if (enabled_features.dynamic_rendering_features.dynamicRendering) {
+            auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfoKHR>(pCreateInfos[i].pNext);
+            cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i],
+                                                                              std::make_shared<RENDER_PASS_STATE>(dynamic_rendering),
+                                                                              GetPipelineLayoutShared(pCreateInfos[i].layout)));
         }
     }
     return false;
@@ -2427,7 +2427,6 @@ void ValidationStateTracker::PreCallRecordCmdSetStencilReference(VkCommandBuffer
     cb_state->RecordStateCmd(CMD_SETSTENCILREFERENCE, CBSTATUS_STENCIL_REFERENCE_SET);
 }
 
-
 // Update the bound state for the bind point, including the effects of incompatible pipeline layouts
 void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer,
                                                                 VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
@@ -2793,13 +2792,34 @@ void ValidationStateTracker::PostCallRecordCmdEndConditionalRenderingEXT(VkComma
     cb_state->conditional_rendering_subpass = 0;
 }
 
+void ValidationStateTracker::RecordCmdBeginRenderingRenderPassState(VkCommandBuffer commandBuffer,
+                                                                    const VkRenderingInfoKHR *pRenderingInfo) {
+    auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->activeRenderPass = std::make_shared<RENDER_PASS_STATE>(pRenderingInfo);
+}
+
+void ValidationStateTracker::RecordCmdEndRenderingRenderPassState(VkCommandBuffer commandBuffer) {
+    auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->activeRenderPass = nullptr;
+}
+
+void ValidationStateTracker::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
+                                                               const VkRenderingInfoKHR *pRenderingInfo) {
+    RecordCmdBeginRenderingRenderPassState(commandBuffer, pRenderingInfo);
+    CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->BeginRendering(CMD_BEGINRENDERINGKHR, pRenderingInfo);
+}
+
+void ValidationStateTracker::PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer) {
+    RecordCmdEndRenderingRenderPassState(commandBuffer);
+}
+
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
                                                               const VkRenderPassBeginInfo *pRenderPassBegin,
                                                               const VkSubpassBeginInfo *pSubpassBeginInfo) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->BeginRenderPass(CMD_BEGINRENDERPASS2, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
-
 
 void ValidationStateTracker::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     CMD_BUFFER_STATE *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
@@ -3846,7 +3866,6 @@ void ValidationStateTracker::PostCallRecordCmdTraceRaysNV(VkCommandBuffer comman
     cb_state->UpdateStateCmdDrawDispatchType(CMD_TRACERAYSNV, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
     cb_state->hasTraceRaysCmd = true;
 }
-
 
 void ValidationStateTracker::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,

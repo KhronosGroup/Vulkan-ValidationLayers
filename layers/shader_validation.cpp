@@ -200,8 +200,6 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
                                                     PIPELINE_STATE const *pipeline, uint32_t subpass_index) const {
     bool skip = false;
 
-    const auto rpci = pipeline->rp_state->createInfo.ptr();
-
     struct Attachment {
         const VkAttachmentReference2 *reference = nullptr;
         const VkAttachmentDescription2 *attachment = nullptr;
@@ -209,13 +207,16 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
     };
     std::map<uint32_t, Attachment> location_map;
 
-    const auto subpass = rpci->pSubpasses[subpass_index];
-    for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
-        auto const &reference = subpass.pColorAttachments[i];
-        location_map[i].reference = &reference;
-        if (reference.attachment != VK_ATTACHMENT_UNUSED &&
-            rpci->pAttachments[reference.attachment].format != VK_FORMAT_UNDEFINED) {
-            location_map[i].attachment = &rpci->pAttachments[reference.attachment];
+    if (pipeline->rp_state && !pipeline->rp_state->use_dynamic_rendering) {
+        const auto rpci = pipeline->rp_state->createInfo.ptr();
+        const auto subpass = rpci->pSubpasses[subpass_index];
+        for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+            auto const &reference = subpass.pColorAttachments[i];
+            location_map[i].reference = &reference;
+            if (reference.attachment != VK_ATTACHMENT_UNUSED &&
+                rpci->pAttachments[reference.attachment].format != VK_FORMAT_UNDEFINED) {
+                location_map[i].attachment = &rpci->pAttachments[reference.attachment];
+            }
         }
     }
 
@@ -1054,7 +1055,6 @@ bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *sr
                 }
                 break;
             }
-
         }
     }
 
@@ -1109,8 +1109,13 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
     }
 
     if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-        // "For the fragment shader stage the framebuffer color attachments also count against this limit"
-        total_resources += pipeline->rp_state->createInfo.pSubpasses[pipeline->create_info.graphics.subpass].colorAttachmentCount;
+        if (pipeline->rp_state->use_dynamic_rendering) {
+            total_resources += pipeline->rp_state->rendering_create_info.colorAttachmentCount;
+        } else {
+            // "For the fragment shader stage the framebuffer color attachments also count against this limit"
+            total_resources +=
+                pipeline->rp_state->createInfo.pSubpasses[pipeline->create_info.graphics.subpass].colorAttachmentCount;
+        }
     }
 
     // TODO: This reuses a lot of GetDescriptorCountMaxPerStage but currently would need to make it agnostic in a way to handle
@@ -2546,23 +2551,25 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         auto input_attachment_uses = module->CollectInterfaceByInputAttachmentIndex(accessible_ids);
 
-        auto rpci = pipeline->rp_state->createInfo.ptr();
-        auto subpass = pipeline->create_info.graphics.subpass;
+        if (!pipeline->rp_state->use_dynamic_rendering) {
+            auto rpci = pipeline->rp_state->createInfo.ptr();
+            auto subpass = pipeline->create_info.graphics.subpass;
+            for (auto use : input_attachment_uses) {
+                auto input_attachments = rpci->pSubpasses[subpass].pInputAttachments;
+                auto index = (input_attachments && use.first < rpci->pSubpasses[subpass].inputAttachmentCount)
+                    ? input_attachments[use.first].attachment
+                    : VK_ATTACHMENT_UNUSED;
 
-        for (auto use : input_attachment_uses) {
-            auto input_attachments = rpci->pSubpasses[subpass].pInputAttachments;
-            auto index = (input_attachments && use.first < rpci->pSubpasses[subpass].inputAttachmentCount)
-                             ? input_attachments[use.first].attachment
-                             : VK_ATTACHMENT_UNUSED;
-
-            if (index == VK_ATTACHMENT_UNUSED) {
-                skip |= LogError(device, kVUID_Core_Shader_MissingInputAttachment,
-                                 "Shader consumes input attachment index %d but not provided in subpass", use.first);
-            } else if (!(GetFormatType(rpci->pAttachments[index].format) & module->GetFundamentalType(use.second.type_id))) {
-                skip |=
-                    LogError(device, kVUID_Core_Shader_InputAttachmentTypeMismatch,
-                             "Subpass input attachment %u format of %s does not match type used in shader `%s`", use.first,
-                             string_VkFormat(rpci->pAttachments[index].format), module->DescribeType(use.second.type_id).c_str());
+                if (index == VK_ATTACHMENT_UNUSED) {
+                    skip |= LogError(device, kVUID_Core_Shader_MissingInputAttachment,
+                        "Shader consumes input attachment index %d but not provided in subpass", use.first);
+                }
+                else if (!(GetFormatType(rpci->pAttachments[index].format) & module->GetFundamentalType(use.second.type_id))) {
+                    skip |=
+                        LogError(device, kVUID_Core_Shader_InputAttachmentTypeMismatch,
+                            "Subpass input attachment %u format of %s does not match type used in shader `%s`", use.first,
+                            string_VkFormat(rpci->pAttachments[index].format), module->DescribeType(use.second.type_id).c_str());
+                }
             }
         }
     }
@@ -2766,7 +2773,6 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
                     ValidateInterfaceBetweenStages(producer.module.get(), producer.entrypoint, &shader_stage_attribs[producer_id],
                                                    consumer.module.get(), consumer.entrypoint, &shader_stage_attribs[consumer_id]);
             }
-
         }
     }
 

@@ -3307,18 +3307,9 @@ static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
 }
 
 bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, uint32_t attachment_index,
-                                               const FRAMEBUFFER_STATE *framebuffer, uint32_t fb_attachment,
-                                               const VkRect2D &render_area, uint32_t rect_count, const VkClearRect *clear_rects,
-                                               const CMD_BUFFER_STATE *primary_cb_state) const {
+                                               const IMAGE_VIEW_STATE* image_view_state,
+                                               const VkRect2D &render_area, uint32_t rect_count, const VkClearRect *clear_rects) const {
     bool skip = false;
-    const IMAGE_VIEW_STATE *image_view_state = nullptr;
-    if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) && (fb_attachment < framebuffer->createInfo.attachmentCount)) {
-        if (primary_cb_state) {
-            image_view_state = primary_cb_state->GetActiveAttachmentImageViewState(fb_attachment);
-        } else {
-            image_view_state = GetCBState(command_buffer)->GetActiveAttachmentImageViewState(fb_attachment);
-        }
-    }
 
     for (uint32_t j = 0; j < rect_count; j++) {
         if (!ContainsRect(render_area, clear_rects[j].rect)) {
@@ -3378,26 +3369,28 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                              attachment_index);
             } else if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
                 uint32_t color_attachment = VK_ATTACHMENT_UNUSED;
-                if (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount) {
-                    color_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
-                    if ((color_attachment != VK_ATTACHMENT_UNUSED) && (color_attachment >= renderpass_attachment_count)) {
-                        skip |= LogError(
-                            commandBuffer, "VUID-vkCmdClearAttachments-aspectMask-02501",
-                            "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u is not VK_ATTACHMENT_UNUSED "
-                            "and not a valid attachment for %s attachmentCount=%u. Subpass %u pColorAttachment[%u]=%u.",
-                            attachment_index, clear_desc->colorAttachment,
-                            report_data->FormatHandle(cb_node->activeRenderPass->renderPass()).c_str(), cb_node->activeSubpass,
-                            clear_desc->colorAttachment, color_attachment, renderpass_attachment_count);
+                if (cb_node->activeRenderPass->use_dynamic_rendering == false) {
+                    if (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount) {
+                        color_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
+                        if ((color_attachment != VK_ATTACHMENT_UNUSED) && (color_attachment >= renderpass_attachment_count)) {
+                            skip |= LogError(
+                                commandBuffer, "VUID-vkCmdClearAttachments-aspectMask-02501",
+                                "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u is not VK_ATTACHMENT_UNUSED "
+                                "and not a valid attachment for %s attachmentCount=%u. Subpass %u pColorAttachment[%u]=%u.",
+                                attachment_index, clear_desc->colorAttachment,
+                                report_data->FormatHandle(cb_node->activeRenderPass->renderPass()).c_str(), cb_node->activeSubpass,
+                                clear_desc->colorAttachment, color_attachment, renderpass_attachment_count);
 
-                        color_attachment = VK_ATTACHMENT_UNUSED;  // Defensive, prevent lookup past end of renderpass attachment
+                            color_attachment = VK_ATTACHMENT_UNUSED;  // Defensive, prevent lookup past end of renderpass attachment
+                        }
+                    } else {
+                        skip |= LogError(commandBuffer, "VUID-vkCmdClearAttachments-aspectMask-02501",
+                                         "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u out of range for %s"
+                                         " subpass %u. colorAttachmentCount=%u",
+                                         attachment_index, clear_desc->colorAttachment,
+                                         report_data->FormatHandle(cb_node->activeRenderPass->renderPass()).c_str(),
+                                         cb_node->activeSubpass, subpass_desc->colorAttachmentCount);
                     }
-                } else {
-                    skip |= LogError(commandBuffer, "VUID-vkCmdClearAttachments-aspectMask-02501",
-                                     "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u out of range for %s"
-                                     " subpass %u. colorAttachmentCount=%u",
-                                     attachment_index, clear_desc->colorAttachment,
-                                     report_data->FormatHandle(cb_node->activeRenderPass->renderPass()).c_str(),
-                                     cb_node->activeSubpass, subpass_desc->colorAttachmentCount);
                 }
                 fb_attachment = color_attachment;
 
@@ -3411,38 +3404,44 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             } else {  // Must be depth and/or stencil
                 bool subpass_depth = false;
                 bool subpass_stencil = false;
-                if (subpass_desc->pDepthStencilAttachment &&
-                    (subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
-                    auto index = subpass_desc->pDepthStencilAttachment->attachment;
-                    subpass_depth = FormatHasDepth(renderpass_create_info->pAttachments[index].format);
-                    subpass_stencil = FormatHasStencil(renderpass_create_info->pAttachments[index].format);
-                }
-                if (!subpass_desc->pDepthStencilAttachment ||
-                    (subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
-                    if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) && !subpass_depth) {
-                        skip |= LogError(
-                            commandBuffer, "VUID-vkCmdClearAttachments-aspectMask-02502",
-                            "vkCmdClearAttachments() pAttachments[%u] aspectMask has VK_IMAGE_ASPECT_DEPTH_BIT but there is no "
-                            "depth attachment in subpass",
-                            attachment_index);
+                if (subpass_desc) {
+                    if (subpass_desc->pDepthStencilAttachment &&
+                        (subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
+                        auto index = subpass_desc->pDepthStencilAttachment->attachment;
+                        subpass_depth = FormatHasDepth(renderpass_create_info->pAttachments[index].format);
+                        subpass_stencil = FormatHasStencil(renderpass_create_info->pAttachments[index].format);
                     }
-                    if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) && !subpass_stencil) {
+                    if (!subpass_desc->pDepthStencilAttachment ||
+                        (subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
+                        if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) && !subpass_depth) {
+                            skip |= LogError(
+                                commandBuffer, "VUID-vkCmdClearAttachments-aspectMask-02502",
+                                "vkCmdClearAttachments() pAttachments[%u] aspectMask has VK_IMAGE_ASPECT_DEPTH_BIT but there is no "
+                                "depth attachment in subpass",
+                                attachment_index);
+                        }
+                        if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) && !subpass_stencil) {
                         skip |= LogError(
                             commandBuffer, "VUID-vkCmdClearAttachments-aspectMask-02503",
                             "vkCmdClearAttachments() pAttachments[%u] aspectMask has VK_IMAGE_ASPECT_STENCIL_BIT but there is no "
-                            "stencil attachment in subpass",
-                            attachment_index);
+                                             "stencil attachment in subpass",
+                                             attachment_index);
+                        }
+                    } else {
+                        fb_attachment = subpass_desc->pDepthStencilAttachment->attachment;
                     }
-                } else {
-                    fb_attachment = subpass_desc->pDepthStencilAttachment->attachment;
-                }
-                if (subpass_depth) {
-                    skip |= ValidateClearDepthStencilValue(commandBuffer, clear_desc->clearValue.depthStencil,
-                                                           "vkCmdClearAttachments()");
+                    if (subpass_depth) {
+                        skip |= ValidateClearDepthStencilValue(commandBuffer, clear_desc->clearValue.depthStencil,
+                                                               "vkCmdClearAttachments()");
+                    }
                 }
             }
             if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
-                skip |= ValidateClearAttachmentExtent(commandBuffer, attachment_index, framebuffer, fb_attachment, render_area,
+                const IMAGE_VIEW_STATE* image_view_state = nullptr;
+                if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) && (fb_attachment < framebuffer->createInfo.attachmentCount)) {
+                    image_view_state = cb_node->GetActiveAttachmentImageViewState(fb_attachment);
+                }
+                skip |= ValidateClearAttachmentExtent(commandBuffer, attachment_index, image_view_state, render_area,
                                                       rectCount, pRects);
             }
 
@@ -3458,16 +3457,16 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                                                      "VUID-vkCmdClearAttachments-commandBuffer-02505");
                 }
             }
-        }
 
-        // When a subpass uses a non-zero view mask, multiview functionality is considered to be enabled
-        if (subpass_desc->viewMask > 0) {
-            for (uint32_t i = 0; i < rectCount; ++i) {
-                if (pRects[i].baseArrayLayer != 0 || pRects[i].layerCount != 1) {
-                    skip |= LogError(commandBuffer, "VUID-vkCmdClearAttachments-baseArrayLayer-00018",
-                                     "vkCmdClearAttachments(): pRects[%" PRIu32 "] baseArrayLayer is %" PRIu32
-                                     " and layerCount is %" PRIu32 ", but the render pass instance uses multiview.",
-                                     i, pRects[i].baseArrayLayer, pRects[i].layerCount);
+            // When a subpass uses a non-zero view mask, multiview functionality is considered to be enabled
+            if (subpass_desc && (subpass_desc->viewMask > 0)) {
+                for (uint32_t i = 0; i < rectCount; ++i) {
+                    if (pRects[i].baseArrayLayer != 0 || pRects[i].layerCount != 1) {
+                        skip |= LogError(commandBuffer, "VUID-vkCmdClearAttachments-baseArrayLayer-00018",
+                                         "vkCmdClearAttachments(): pRects[%" PRIu32 "] baseArrayLayer is %" PRIu32
+                                         " and layerCount is %" PRIu32 ", but the render pass instance uses multiview.",
+                                         i, pRects[i].baseArrayLayer, pRects[i].layerCount);
+                    }
                 }
             }
         }
@@ -3480,37 +3479,89 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                                                   const VkClearRect *pRects) {
     auto *cb_node = GetCBState(commandBuffer);
     if (cb_node->activeRenderPass && (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
-        const VkRenderPassCreateInfo2 *renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
-        const VkSubpassDescription2 *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
         std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
-        for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
-            const auto clear_desc = &pAttachments[attachment_index];
-            uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
-            if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) &&
-                (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount)) {
-                fb_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
-            } else if ((clear_desc->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) &&
-                       subpass_desc->pDepthStencilAttachment) {
-                fb_attachment = subpass_desc->pDepthStencilAttachment->attachment;
-            }
-            if (fb_attachment != VK_ATTACHMENT_UNUSED) {
-                if (!clear_rect_copy) {
-                    // We need a copy of the clear rectangles that will persist until the last lambda executes
-                    // but we want to create it as lazily as possible
-                    clear_rect_copy.reset(new std::vector<VkClearRect>(pRects, pRects + rectCount));
+        if (cb_node->activeRenderPass->use_dynamic_rendering) {
+            if (cb_node->activeRenderPass->use_dynamic_rendering_inherited)
+            {
+                for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
+                    const auto clear_desc = &pAttachments[attachment_index];
+                    auto colorAttachmentCount = cb_node->activeRenderPass->inheritance_rendering_info.colorAttachmentCount;
+                    int image_index = -1;
+                    if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) &&
+                        (clear_desc->colorAttachment < colorAttachmentCount)) {
+                        image_index = cb_node->GetDynamicColorAttachmentImageIndex(clear_desc->colorAttachment);
+                    }
+                    else if (clear_desc->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT)) {
+                        image_index = cb_node->GetDynamicDepthAttachmentImageIndex();
+                    }
+                    else if (clear_desc->aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT)) {
+                        image_index = cb_node->GetDynamicStencilAttachmentImageIndex();
+                    }
+
+                    if (image_index != -1) {
+                        if (!clear_rect_copy) {
+                            // We need a copy of the clear rectangles that will persist until the last lambda executes
+                            // but we want to create it as lazily as possible
+                            clear_rect_copy.reset(new std::vector<VkClearRect>(pRects, pRects + rectCount));
+                        }
+                        // if a secondary level command buffer inherits the framebuffer from the primary command buffer
+                        // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
+                        auto val_fn = [this, commandBuffer, attachment_index, image_index, rectCount, clear_rect_copy](
+                            const CMD_BUFFER_STATE* prim_cb, const FRAMEBUFFER_STATE* fb) {
+                            assert(rectCount == clear_rect_copy->size());
+                            bool skip = false;
+                            const IMAGE_VIEW_STATE* image_view_state = nullptr;
+                            if (image_index != -1) {
+                                image_view_state = (*prim_cb->active_attachments)[image_index];
+                            }
+                            skip = ValidateClearAttachmentExtent(commandBuffer, attachment_index, image_view_state, prim_cb->activeRenderPass->dynamic_rendering_info.renderArea, rectCount,
+                                clear_rect_copy->data());
+                            return skip;
+                        };
+                        cb_node->cmd_execute_commands_functions.emplace_back(val_fn);
+                    }
                 }
-                // if a secondary level command buffer inherits the framebuffer from the primary command buffer
-                // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
-                auto val_fn = [this, commandBuffer, attachment_index, fb_attachment, rectCount, clear_rect_copy](
-                                  const CMD_BUFFER_STATE *prim_cb, const FRAMEBUFFER_STATE *fb) {
-                    assert(rectCount == clear_rect_copy->size());
-                    const auto &render_area = prim_cb->activeRenderPassBeginInfo.renderArea;
-                    bool skip = false;
-                    skip = ValidateClearAttachmentExtent(commandBuffer, attachment_index, fb, fb_attachment, render_area, rectCount,
-                                                         clear_rect_copy->data(), prim_cb);
-                    return skip;
-                };
-                cb_node->cmd_execute_commands_functions.emplace_back(val_fn);
+            }
+        }
+        else
+        {
+            const VkRenderPassCreateInfo2* renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
+            const VkSubpassDescription2* subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
+            
+            for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
+                const auto clear_desc = &pAttachments[attachment_index];
+                uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
+                if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) &&
+                    (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount)) {
+                    fb_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
+                }
+                else if ((clear_desc->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) &&
+                    subpass_desc->pDepthStencilAttachment) {
+                    fb_attachment = subpass_desc->pDepthStencilAttachment->attachment;
+                }
+                if (fb_attachment != VK_ATTACHMENT_UNUSED) {
+                    if (!clear_rect_copy) {
+                        // We need a copy of the clear rectangles that will persist until the last lambda executes
+                        // but we want to create it as lazily as possible
+                        clear_rect_copy.reset(new std::vector<VkClearRect>(pRects, pRects + rectCount));
+                    }
+                    // if a secondary level command buffer inherits the framebuffer from the primary command buffer
+                    // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
+                    auto val_fn = [this, commandBuffer, attachment_index, fb_attachment, rectCount, clear_rect_copy](
+                        const CMD_BUFFER_STATE* prim_cb, const FRAMEBUFFER_STATE* fb) {
+                        assert(rectCount == clear_rect_copy->size());
+                        const auto& render_area = prim_cb->activeRenderPassBeginInfo.renderArea;
+                        bool skip = false;
+                        const IMAGE_VIEW_STATE* image_view_state = nullptr;
+                        if (fb && (fb_attachment != VK_ATTACHMENT_UNUSED) && (fb_attachment < fb->createInfo.attachmentCount)) {
+                            image_view_state = prim_cb->GetActiveAttachmentImageViewState(fb_attachment);
+                        }
+                        skip = ValidateClearAttachmentExtent(commandBuffer, attachment_index, image_view_state, render_area, rectCount,
+                            clear_rect_copy->data());
+                        return skip;
+                    };
+                    cb_node->cmd_execute_commands_functions.emplace_back(val_fn);
+                }
             }
         }
     }
