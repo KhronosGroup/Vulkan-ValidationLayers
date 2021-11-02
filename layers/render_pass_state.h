@@ -88,6 +88,11 @@ class RENDER_PASS_STATE : public BASE_NODE {
         AttachmentTransition(uint32_t prev_pass_, uint32_t attachment_, VkImageLayout old_layout_, VkImageLayout new_layout_)
             : prev_pass(prev_pass_), attachment(attachment_), old_layout(old_layout_), new_layout(new_layout_) {}
     };
+    const bool use_dynamic_rendering;
+    const bool use_dynamic_rendering_inherited;
+    safe_VkRenderingInfoKHR dynamic_rendering_info;
+    const safe_VkPipelineRenderingCreateInfoKHR rendering_create_info;
+    const safe_VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info;
     const safe_VkRenderPassCreateInfo2 createInfo;
     using SubpassVec = std::vector<uint32_t>;
     using SelfDepVec = std::vector<SubpassVec>;
@@ -107,6 +112,10 @@ class RENDER_PASS_STATE : public BASE_NODE {
 
     RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo2 const *pCreateInfo);
     RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo const *pCreateInfo);
+
+    RENDER_PASS_STATE(VkPipelineRenderingCreateInfoKHR const *pPipelineRenderingCreateInfo);
+    RENDER_PASS_STATE(VkRenderingInfoKHR const *pRenderingInfo);
+    RENDER_PASS_STATE(VkCommandBufferInheritanceRenderingInfoKHR const *pInheritanceRenderingInfo);
 
     VkRenderPass renderPass() const { return handle_.Cast<VkRenderPass>(); }
 

@@ -190,6 +190,12 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
                 }
             }
 
+            auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfoKHR>(pCreateInfos[idx0].pNext);
+            if (dynamic_rendering) {
+                uses_color_attachment        = (dynamic_rendering->colorAttachmentCount > 0);
+                uses_depthstencil_attachment = (dynamic_rendering->depthAttachmentFormat != VK_FORMAT_UNDEFINED);
+            }
+
             local_pCreateInfos[idx0].initialize(&pCreateInfos[idx0], uses_color_attachment, uses_depthstencil_attachment);
 
             if (pCreateInfos[idx0].basePipelineHandle) {

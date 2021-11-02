@@ -681,6 +681,74 @@ void CMD_BUFFER_STATE::EndRenderPass(CMD_TYPE cmd_type) {
     activeFramebuffer = VK_NULL_HANDLE;
 }
 
+void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfoKHR *pRenderingInfo) {
+    RecordCmd(cmd_type);
+    activeRenderPass = std::make_shared<RENDER_PASS_STATE>(pRenderingInfo);
+
+    auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
+    if (chained_device_group_struct) {
+        active_render_pass_device_mask = chained_device_group_struct->deviceMask;
+    } else {
+        active_render_pass_device_mask = initial_device_mask;
+    }
+
+    activeSubpassContents = ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : VK_SUBPASS_CONTENTS_INLINE);
+
+    active_attachments = nullptr;
+    uint32_t attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
+
+    // Set cb_state->active_attachments & cb_state->attachments_view_states
+    active_attachments = std::make_shared<std::vector<IMAGE_VIEW_STATE *>>(attachment_count);
+    auto &attachments = *(active_attachments.get());
+
+    for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
+        auto& colorAttachment = attachments[GetDynamicColorAttachmentImageIndex(i)];
+        auto& colorResolveAttachment = attachments[GetDynamicColorResolveAttachmentImageIndex(i)];
+        colorAttachment = nullptr;
+        colorResolveAttachment = nullptr;
+
+        if (pRenderingInfo->pColorAttachments[i].imageView != VK_NULL_HANDLE) {
+            auto res = attachments_view_states.insert(
+                dev_data->GetShared<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[i].imageView));
+            colorAttachment = res.first->get();
+            if (pRenderingInfo->pColorAttachments[i].resolveMode != VK_RESOLVE_MODE_NONE &&
+                pRenderingInfo->pColorAttachments[i].resolveImageView != VK_NULL_HANDLE) {
+                colorResolveAttachment = res.first->get();
+            }
+        }
+    }
+
+    if (pRenderingInfo->pDepthAttachment && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
+        auto& depthAttachment = attachments[GetDynamicDepthAttachmentImageIndex()];
+        auto& depthResolveAttachment = attachments[GetDynamicDepthResolveAttachmentImageIndex()];
+        depthAttachment = nullptr;
+        depthResolveAttachment = nullptr;
+
+        auto res =
+            attachments_view_states.insert(dev_data->GetShared<IMAGE_VIEW_STATE>(pRenderingInfo->pDepthAttachment->imageView));
+        depthAttachment = res.first->get();
+        if (pRenderingInfo->pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
+            pRenderingInfo->pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
+            depthResolveAttachment = res.first->get();
+        }
+    } 
+
+    if (pRenderingInfo->pStencilAttachment && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
+        auto& stencilAttachment = attachments[GetDynamicStencilAttachmentImageIndex()];
+        auto& stencilResolveAttachment = attachments[GetDynamicStencilResolveAttachmentImageIndex()];
+        stencilAttachment = nullptr;
+        stencilResolveAttachment = nullptr;
+
+        auto res =
+            attachments_view_states.insert(dev_data->GetShared<IMAGE_VIEW_STATE>(pRenderingInfo->pStencilAttachment->imageView));
+        stencilAttachment = res.first->get();
+        if (pRenderingInfo->pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
+            pRenderingInfo->pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
+            stencilResolveAttachment = res.first->get();
+        }
+    }
+}
+
 void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     if (CB_RECORDED == state || CB_INVALID_COMPLETE == state) {
         Reset();
@@ -694,31 +762,40 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
         // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
         if ((createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) &&
             (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-            activeRenderPass = dev_data->GetShared<RENDER_PASS_STATE>(beginInfo.pInheritanceInfo->renderPass);
-            activeSubpass = beginInfo.pInheritanceInfo->subpass;
+            if (beginInfo.pInheritanceInfo->renderPass) {
+                activeRenderPass = dev_data->GetShared<RENDER_PASS_STATE>(beginInfo.pInheritanceInfo->renderPass);
+                activeSubpass = beginInfo.pInheritanceInfo->subpass;
 
-            if (beginInfo.pInheritanceInfo->framebuffer) {
-                activeFramebuffer = dev_data->GetShared<FRAMEBUFFER_STATE>(beginInfo.pInheritanceInfo->framebuffer);
-                active_subpasses = nullptr;
-                active_attachments = nullptr;
+                if (beginInfo.pInheritanceInfo->framebuffer) {
+                    activeFramebuffer = dev_data->GetShared<FRAMEBUFFER_STATE>(beginInfo.pInheritanceInfo->framebuffer);
+                    active_subpasses = nullptr;
+                    active_attachments = nullptr;
 
-                if (activeFramebuffer) {
-                    framebuffers.insert(activeFramebuffer);
+                    if (activeFramebuffer) {
+                        framebuffers.insert(activeFramebuffer);
 
-                    // Set active_subpasses
-                    active_subpasses = std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
-                    const auto &subpass = activeRenderPass->createInfo.pSubpasses[activeSubpass];
-                    UpdateSubpassAttachments(subpass, *active_subpasses);
+                        // Set active_subpasses
+                        active_subpasses = std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
+                        const auto& subpass = activeRenderPass->createInfo.pSubpasses[activeSubpass];
+                        UpdateSubpassAttachments(subpass, *active_subpasses);
 
-                    // Set active_attachments & attachments_view_states
-                    active_attachments =
-                        std::make_shared<std::vector<IMAGE_VIEW_STATE *>>(activeFramebuffer->createInfo.attachmentCount);
-                    UpdateAttachmentsView(nullptr);
+                        // Set active_attachments & attachments_view_states
+                        active_attachments =
+                            std::make_shared<std::vector<IMAGE_VIEW_STATE*>>(activeFramebuffer->createInfo.attachmentCount);
+                        UpdateAttachmentsView(nullptr);
 
-                    // Connect this framebuffer and its children to this cmdBuffer
-                    if (!dev_data->disabled[command_buffer_state]) {
-                        AddChild(activeFramebuffer.get());
+                        // Connect this framebuffer and its children to this cmdBuffer
+                        if (!dev_data->disabled[command_buffer_state]) {
+                            AddChild(activeFramebuffer.get());
+                        }
                     }
+                }
+            }
+            else
+            {
+                auto inheritance_rendering_info = lvl_find_in_chain<VkCommandBufferInheritanceRenderingInfoKHR>(beginInfo.pInheritanceInfo->pNext);
+                if (inheritance_rendering_info) {
+                    activeRenderPass = std::make_shared<RENDER_PASS_STATE>(inheritance_rendering_info);
                 }
             }
 

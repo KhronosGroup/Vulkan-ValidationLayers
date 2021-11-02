@@ -621,9 +621,8 @@ class CoreChecks : public ValidationStateTracker {
                                  const char* param_name) const;
 
     bool ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, uint32_t attachment_index,
-                                       const FRAMEBUFFER_STATE* framebuffer, uint32_t fb_attachment, const VkRect2D& render_area,
-                                       uint32_t rect_count, const VkClearRect* clear_rects,
-                                       const CMD_BUFFER_STATE* primary_cb_state = nullptr) const;
+                                       const IMAGE_VIEW_STATE *image_view_state, const VkRect2D& render_area,
+                                       uint32_t rect_count, const VkClearRect* clear_rects) const;
 
     template <typename ImageCopyRegionType>
     bool ValidateImageCopyData(const uint32_t regionCount, const ImageCopyRegionType* ic_regions, const IMAGE_STATE* src_state,
@@ -1085,6 +1084,9 @@ class CoreChecks : public ValidationStateTracker {
                                              const VkCopyDescriptorSet* pDescriptorCopies) const override;
     bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
                                            const VkCommandBufferBeginInfo* pBeginInfo) const override;
+    bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
+                                             const VkRenderingInfoKHR* pRenderingInfo) const override;
+    bool ValidateRenderingAttachmentInfoKHR(VkCommandBuffer commandBuffer, const VkRenderingAttachmentInfoKHR* pAttachments) const;
     bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) const override;
     bool PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) const override;
     bool PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
@@ -1630,4 +1632,4 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                     Display* dpy, VisualID visualID) const override;
 #endif  // VK_USE_PLATFORM_XLIB_KHR
-};  // Class CoreChecks
+};      // Class CoreChecks

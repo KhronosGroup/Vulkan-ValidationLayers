@@ -30,6 +30,7 @@
 #include "base_node.h"
 #include "sampler_state.h"
 #include "ray_tracing_state.h"
+#include "render_pass_state.h"
 #include "shader_module.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
@@ -163,8 +164,24 @@ struct PipelineStageState {
 class PIPELINE_STATE : public BASE_NODE {
   public:
     union CreateInfo {
-        CreateInfo(const VkGraphicsPipelineCreateInfo *ci, bool uses_color, bool uses_depth_stencil)
-            : graphics(ci, uses_color, uses_depth_stencil) {}
+        CreateInfo(const VkGraphicsPipelineCreateInfo *ci, std::shared_ptr<const RENDER_PASS_STATE> rpstate) {
+            bool use_color = false;
+            bool use_depth = false;
+
+            
+            if (ci->renderPass == VK_NULL_HANDLE) {
+                auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfoKHR>(ci->pNext);
+                if (dynamic_rendering) {
+                    use_color = (dynamic_rendering->colorAttachmentCount > 0);
+                    use_depth = (dynamic_rendering->depthAttachmentFormat != VK_FORMAT_UNDEFINED);
+                }
+            } else {
+                use_color = rpstate->UsesColorAttachment(ci->subpass);
+                use_depth = rpstate->UsesDepthStencilAttachment(ci->subpass);
+            }
+
+            graphics.initialize(ci, use_color, use_depth);
+        }
         CreateInfo(const VkComputePipelineCreateInfo *ci) : compute(ci) {}
         CreateInfo(const VkRayTracingPipelineCreateInfoKHR *ci) : raytracing(ci) {}
         CreateInfo(const VkRayTracingPipelineCreateInfoNV *ci) : raytracing(ci) {}
