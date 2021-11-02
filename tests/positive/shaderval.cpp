@@ -2147,6 +2147,92 @@ TEST_F(VkPositiveLayerTest, WriteDescriptorSetAccelerationStructureNVNullDescrip
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
 
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+}
 
+TEST_F(VkPositiveLayerTest, SubpassInputUnused) {
+    TEST_DESCRIPTION("Ensure unused inputs removed by spirv-opt are not validated");
+
+    m_errorMonitor->ExpectSuccess();
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkImageUsageFlags usage_input =
+        VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image_input(m_device);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 1, format, usage_input, VK_IMAGE_TILING_OPTIMAL);
+    image_input.Init(image_ci);
+
+    const VkAttachmentDescription inputAttachment = {
+        0u,
+        format,
+        VK_SAMPLE_COUNT_1_BIT,
+        VK_ATTACHMENT_LOAD_OP_LOAD,
+        VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_GENERAL,
+    };
+    std::vector<VkAttachmentDescription> attachmentDescs(2, inputAttachment);
+
+    std::vector<VkAttachmentReference> inputAttachments = {
+        {0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+        {VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+    };
+
+    const std::vector<VkSubpassDescription> subpasses = {{
+        0u,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        static_cast<uint32_t>(inputAttachments.size()),
+        inputAttachments.data(),
+        0,
+        nullptr,
+        0u,
+        nullptr,
+        0u,
+        nullptr,
+    }};
+
+    auto renderPassInfo = LvlInitStruct<VkRenderPassCreateInfo>();
+    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentDescs.size());
+    renderPassInfo.pAttachments = attachmentDescs.data();
+    renderPassInfo.subpassCount = static_cast<uint32_t>(subpasses.size());
+    renderPassInfo.pSubpasses = subpasses.data();
+    renderPassInfo.dependencyCount = 0u;
+    renderPassInfo.pDependencies = nullptr;
+    vk_testing::RenderPass rp(*m_device, renderPassInfo);
+
+    // Subpass input 1 is never used due to spec constant, and it should be removed by spirv-opt's --eliminate-dead-branches
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(input_attachment_index=1, set=0, binding=1) uniform subpassInput p;
+        layout(constant_id = 0) const uint x = 1;
+        layout(location = 0) out vec4 color;
+        void main() {
+            if (x > 5) {
+                color = subpassLoad(p);
+            } else {
+                color = vec4(0.0);
+            }
+        }
+    )glsl";
+
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.InitInfo();
+    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+    };
+    g_pipe.gp_ci_.renderPass = rp.handle();
+    g_pipe.pipeline_layout_ci_.setLayoutCount = 2;
+    g_pipe.InitState();
+
+    g_pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
