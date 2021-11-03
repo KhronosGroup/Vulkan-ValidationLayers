@@ -5699,6 +5699,48 @@ VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 
+VKAPI_ATTR void VKAPI_CALL CmdBeginRenderingKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderingInfoKHR*                   pRenderingInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBeginRenderingKHR]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBeginRenderingKHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+    }
+    DispatchCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginRenderingKHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdEndRenderingKHR(
+    VkCommandBuffer                             commandBuffer) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEndRenderingKHR]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdEndRenderingKHR(commandBuffer);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdEndRenderingKHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdEndRenderingKHR(commandBuffer);
+    }
+    DispatchCmdEndRenderingKHR(commandBuffer);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndRenderingKHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdEndRenderingKHR(commandBuffer);
+    }
+}
+
+
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2KHR(
     VkPhysicalDevice                            physicalDevice,
@@ -12580,6 +12622,8 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdDecodeVideoKHR", {kFuncTypeDev, (void*)CmdDecodeVideoKHR}},
 #endif
+    {"vkCmdBeginRenderingKHR", {kFuncTypeDev, (void*)CmdBeginRenderingKHR}},
+    {"vkCmdEndRenderingKHR", {kFuncTypeDev, (void*)CmdEndRenderingKHR}},
     {"vkGetPhysicalDeviceFeatures2KHR", {kFuncTypePdev, (void*)GetPhysicalDeviceFeatures2KHR}},
     {"vkGetPhysicalDeviceProperties2KHR", {kFuncTypePdev, (void*)GetPhysicalDeviceProperties2KHR}},
     {"vkGetPhysicalDeviceFormatProperties2KHR", {kFuncTypePdev, (void*)GetPhysicalDeviceFormatProperties2KHR}},

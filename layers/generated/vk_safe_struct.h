@@ -3772,6 +3772,171 @@ struct safe_VkVideoDecodeInfoKHR {
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+struct safe_VkRenderingAttachmentInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkImageView imageView;
+    VkImageLayout imageLayout;
+    VkResolveModeFlagBits resolveMode;
+    VkImageView resolveImageView;
+    VkImageLayout resolveImageLayout;
+    VkAttachmentLoadOp loadOp;
+    VkAttachmentStoreOp storeOp;
+    VkClearValue clearValue;
+    safe_VkRenderingAttachmentInfoKHR(const VkRenderingAttachmentInfoKHR* in_struct);
+    safe_VkRenderingAttachmentInfoKHR(const safe_VkRenderingAttachmentInfoKHR& copy_src);
+    safe_VkRenderingAttachmentInfoKHR& operator=(const safe_VkRenderingAttachmentInfoKHR& copy_src);
+    safe_VkRenderingAttachmentInfoKHR();
+    ~safe_VkRenderingAttachmentInfoKHR();
+    void initialize(const VkRenderingAttachmentInfoKHR* in_struct);
+    void initialize(const safe_VkRenderingAttachmentInfoKHR* copy_src);
+    VkRenderingAttachmentInfoKHR *ptr() { return reinterpret_cast<VkRenderingAttachmentInfoKHR *>(this); }
+    VkRenderingAttachmentInfoKHR const *ptr() const { return reinterpret_cast<VkRenderingAttachmentInfoKHR const *>(this); }
+};
+
+struct safe_VkRenderingInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkRenderingFlagsKHR flags;
+    VkRect2D renderArea;
+    uint32_t layerCount;
+    uint32_t viewMask;
+    uint32_t colorAttachmentCount;
+    safe_VkRenderingAttachmentInfoKHR* pColorAttachments;
+    safe_VkRenderingAttachmentInfoKHR* pDepthAttachment;
+    safe_VkRenderingAttachmentInfoKHR* pStencilAttachment;
+    safe_VkRenderingInfoKHR(const VkRenderingInfoKHR* in_struct);
+    safe_VkRenderingInfoKHR(const safe_VkRenderingInfoKHR& copy_src);
+    safe_VkRenderingInfoKHR& operator=(const safe_VkRenderingInfoKHR& copy_src);
+    safe_VkRenderingInfoKHR();
+    ~safe_VkRenderingInfoKHR();
+    void initialize(const VkRenderingInfoKHR* in_struct);
+    void initialize(const safe_VkRenderingInfoKHR* copy_src);
+    VkRenderingInfoKHR *ptr() { return reinterpret_cast<VkRenderingInfoKHR *>(this); }
+    VkRenderingInfoKHR const *ptr() const { return reinterpret_cast<VkRenderingInfoKHR const *>(this); }
+};
+
+struct safe_VkPipelineRenderingCreateInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t viewMask;
+    uint32_t colorAttachmentCount;
+    const VkFormat* pColorAttachmentFormats;
+    VkFormat depthAttachmentFormat;
+    VkFormat stencilAttachmentFormat;
+    safe_VkPipelineRenderingCreateInfoKHR(const VkPipelineRenderingCreateInfoKHR* in_struct);
+    safe_VkPipelineRenderingCreateInfoKHR(const safe_VkPipelineRenderingCreateInfoKHR& copy_src);
+    safe_VkPipelineRenderingCreateInfoKHR& operator=(const safe_VkPipelineRenderingCreateInfoKHR& copy_src);
+    safe_VkPipelineRenderingCreateInfoKHR();
+    ~safe_VkPipelineRenderingCreateInfoKHR();
+    void initialize(const VkPipelineRenderingCreateInfoKHR* in_struct);
+    void initialize(const safe_VkPipelineRenderingCreateInfoKHR* copy_src);
+    VkPipelineRenderingCreateInfoKHR *ptr() { return reinterpret_cast<VkPipelineRenderingCreateInfoKHR *>(this); }
+    VkPipelineRenderingCreateInfoKHR const *ptr() const { return reinterpret_cast<VkPipelineRenderingCreateInfoKHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 dynamicRendering;
+    safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR(const VkPhysicalDeviceDynamicRenderingFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR(const safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR& operator=(const safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR();
+    ~safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR();
+    void initialize(const VkPhysicalDeviceDynamicRenderingFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR* copy_src);
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceDynamicRenderingFeaturesKHR *>(this); }
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDynamicRenderingFeaturesKHR const *>(this); }
+};
+
+struct safe_VkCommandBufferInheritanceRenderingInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkRenderingFlagsKHR flags;
+    uint32_t viewMask;
+    uint32_t colorAttachmentCount;
+    const VkFormat* pColorAttachmentFormats;
+    VkFormat depthAttachmentFormat;
+    VkFormat stencilAttachmentFormat;
+    VkSampleCountFlagBits rasterizationSamples;
+    safe_VkCommandBufferInheritanceRenderingInfoKHR(const VkCommandBufferInheritanceRenderingInfoKHR* in_struct);
+    safe_VkCommandBufferInheritanceRenderingInfoKHR(const safe_VkCommandBufferInheritanceRenderingInfoKHR& copy_src);
+    safe_VkCommandBufferInheritanceRenderingInfoKHR& operator=(const safe_VkCommandBufferInheritanceRenderingInfoKHR& copy_src);
+    safe_VkCommandBufferInheritanceRenderingInfoKHR();
+    ~safe_VkCommandBufferInheritanceRenderingInfoKHR();
+    void initialize(const VkCommandBufferInheritanceRenderingInfoKHR* in_struct);
+    void initialize(const safe_VkCommandBufferInheritanceRenderingInfoKHR* copy_src);
+    VkCommandBufferInheritanceRenderingInfoKHR *ptr() { return reinterpret_cast<VkCommandBufferInheritanceRenderingInfoKHR *>(this); }
+    VkCommandBufferInheritanceRenderingInfoKHR const *ptr() const { return reinterpret_cast<VkCommandBufferInheritanceRenderingInfoKHR const *>(this); }
+};
+
+struct safe_VkRenderingFragmentShadingRateAttachmentInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkImageView imageView;
+    VkImageLayout imageLayout;
+    VkExtent2D shadingRateAttachmentTexelSize;
+    safe_VkRenderingFragmentShadingRateAttachmentInfoKHR(const VkRenderingFragmentShadingRateAttachmentInfoKHR* in_struct);
+    safe_VkRenderingFragmentShadingRateAttachmentInfoKHR(const safe_VkRenderingFragmentShadingRateAttachmentInfoKHR& copy_src);
+    safe_VkRenderingFragmentShadingRateAttachmentInfoKHR& operator=(const safe_VkRenderingFragmentShadingRateAttachmentInfoKHR& copy_src);
+    safe_VkRenderingFragmentShadingRateAttachmentInfoKHR();
+    ~safe_VkRenderingFragmentShadingRateAttachmentInfoKHR();
+    void initialize(const VkRenderingFragmentShadingRateAttachmentInfoKHR* in_struct);
+    void initialize(const safe_VkRenderingFragmentShadingRateAttachmentInfoKHR* copy_src);
+    VkRenderingFragmentShadingRateAttachmentInfoKHR *ptr() { return reinterpret_cast<VkRenderingFragmentShadingRateAttachmentInfoKHR *>(this); }
+    VkRenderingFragmentShadingRateAttachmentInfoKHR const *ptr() const { return reinterpret_cast<VkRenderingFragmentShadingRateAttachmentInfoKHR const *>(this); }
+};
+
+struct safe_VkRenderingFragmentDensityMapAttachmentInfoEXT {
+    VkStructureType sType;
+    const void* pNext;
+    VkImageView imageView;
+    VkImageLayout imageLayout;
+    safe_VkRenderingFragmentDensityMapAttachmentInfoEXT(const VkRenderingFragmentDensityMapAttachmentInfoEXT* in_struct);
+    safe_VkRenderingFragmentDensityMapAttachmentInfoEXT(const safe_VkRenderingFragmentDensityMapAttachmentInfoEXT& copy_src);
+    safe_VkRenderingFragmentDensityMapAttachmentInfoEXT& operator=(const safe_VkRenderingFragmentDensityMapAttachmentInfoEXT& copy_src);
+    safe_VkRenderingFragmentDensityMapAttachmentInfoEXT();
+    ~safe_VkRenderingFragmentDensityMapAttachmentInfoEXT();
+    void initialize(const VkRenderingFragmentDensityMapAttachmentInfoEXT* in_struct);
+    void initialize(const safe_VkRenderingFragmentDensityMapAttachmentInfoEXT* copy_src);
+    VkRenderingFragmentDensityMapAttachmentInfoEXT *ptr() { return reinterpret_cast<VkRenderingFragmentDensityMapAttachmentInfoEXT *>(this); }
+    VkRenderingFragmentDensityMapAttachmentInfoEXT const *ptr() const { return reinterpret_cast<VkRenderingFragmentDensityMapAttachmentInfoEXT const *>(this); }
+};
+
+struct safe_VkAttachmentSampleCountInfoAMD {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t colorAttachmentCount;
+    const VkSampleCountFlagBits* pColorAttachmentSamples;
+    VkSampleCountFlagBits depthStencilAttachmentSamples;
+    safe_VkAttachmentSampleCountInfoAMD(const VkAttachmentSampleCountInfoAMD* in_struct);
+    safe_VkAttachmentSampleCountInfoAMD(const safe_VkAttachmentSampleCountInfoAMD& copy_src);
+    safe_VkAttachmentSampleCountInfoAMD& operator=(const safe_VkAttachmentSampleCountInfoAMD& copy_src);
+    safe_VkAttachmentSampleCountInfoAMD();
+    ~safe_VkAttachmentSampleCountInfoAMD();
+    void initialize(const VkAttachmentSampleCountInfoAMD* in_struct);
+    void initialize(const safe_VkAttachmentSampleCountInfoAMD* copy_src);
+    VkAttachmentSampleCountInfoAMD *ptr() { return reinterpret_cast<VkAttachmentSampleCountInfoAMD *>(this); }
+    VkAttachmentSampleCountInfoAMD const *ptr() const { return reinterpret_cast<VkAttachmentSampleCountInfoAMD const *>(this); }
+};
+
+struct safe_VkMultiviewPerViewAttributesInfoNVX {
+    VkStructureType sType;
+    const void* pNext;
+    VkBool32 perViewAttributes;
+    VkBool32 perViewAttributesPositionXOnly;
+    safe_VkMultiviewPerViewAttributesInfoNVX(const VkMultiviewPerViewAttributesInfoNVX* in_struct);
+    safe_VkMultiviewPerViewAttributesInfoNVX(const safe_VkMultiviewPerViewAttributesInfoNVX& copy_src);
+    safe_VkMultiviewPerViewAttributesInfoNVX& operator=(const safe_VkMultiviewPerViewAttributesInfoNVX& copy_src);
+    safe_VkMultiviewPerViewAttributesInfoNVX();
+    ~safe_VkMultiviewPerViewAttributesInfoNVX();
+    void initialize(const VkMultiviewPerViewAttributesInfoNVX* in_struct);
+    void initialize(const safe_VkMultiviewPerViewAttributesInfoNVX* copy_src);
+    VkMultiviewPerViewAttributesInfoNVX *ptr() { return reinterpret_cast<VkMultiviewPerViewAttributesInfoNVX *>(this); }
+    VkMultiviewPerViewAttributesInfoNVX const *ptr() const { return reinterpret_cast<VkMultiviewPerViewAttributesInfoNVX const *>(this); }
+};
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 struct safe_VkImportMemoryWin32HandleInfoKHR {
     VkStructureType sType;

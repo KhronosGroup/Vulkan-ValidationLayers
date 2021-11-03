@@ -518,6 +518,12 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdDecodeVideoKHR,
     InterceptIdPreCallRecordCmdDecodeVideoKHR,
     InterceptIdPostCallRecordCmdDecodeVideoKHR,
+    InterceptIdPreCallValidateCmdBeginRenderingKHR,
+    InterceptIdPreCallRecordCmdBeginRenderingKHR,
+    InterceptIdPostCallRecordCmdBeginRenderingKHR,
+    InterceptIdPreCallValidateCmdEndRenderingKHR,
+    InterceptIdPreCallRecordCmdEndRenderingKHR,
+    InterceptIdPostCallRecordCmdEndRenderingKHR,
     InterceptIdPreCallValidateGetDeviceGroupPeerMemoryFeaturesKHR,
     InterceptIdPreCallRecordGetDeviceGroupPeerMemoryFeaturesKHR,
     InterceptIdPostCallRecordGetDeviceGroupPeerMemoryFeaturesKHR,
@@ -1786,6 +1792,12 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDecodeVideoKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDecodeVideoKHR);
 #endif
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBeginRenderingKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBeginRenderingKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBeginRenderingKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdEndRenderingKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdEndRenderingKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdEndRenderingKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceGroupPeerMemoryFeaturesKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceGroupPeerMemoryFeaturesKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceGroupPeerMemoryFeaturesKHR);

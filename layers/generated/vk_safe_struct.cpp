@@ -17079,6 +17079,773 @@ void safe_VkVideoDecodeInfoKHR::initialize(const safe_VkVideoDecodeInfoKHR* copy
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+
+safe_VkRenderingAttachmentInfoKHR::safe_VkRenderingAttachmentInfoKHR(const VkRenderingAttachmentInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    imageView(in_struct->imageView),
+    imageLayout(in_struct->imageLayout),
+    resolveMode(in_struct->resolveMode),
+    resolveImageView(in_struct->resolveImageView),
+    resolveImageLayout(in_struct->resolveImageLayout),
+    loadOp(in_struct->loadOp),
+    storeOp(in_struct->storeOp),
+    clearValue(in_struct->clearValue)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkRenderingAttachmentInfoKHR::safe_VkRenderingAttachmentInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkRenderingAttachmentInfoKHR::safe_VkRenderingAttachmentInfoKHR(const safe_VkRenderingAttachmentInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    imageView = copy_src.imageView;
+    imageLayout = copy_src.imageLayout;
+    resolveMode = copy_src.resolveMode;
+    resolveImageView = copy_src.resolveImageView;
+    resolveImageLayout = copy_src.resolveImageLayout;
+    loadOp = copy_src.loadOp;
+    storeOp = copy_src.storeOp;
+    clearValue = copy_src.clearValue;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkRenderingAttachmentInfoKHR& safe_VkRenderingAttachmentInfoKHR::operator=(const safe_VkRenderingAttachmentInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    imageView = copy_src.imageView;
+    imageLayout = copy_src.imageLayout;
+    resolveMode = copy_src.resolveMode;
+    resolveImageView = copy_src.resolveImageView;
+    resolveImageLayout = copy_src.resolveImageLayout;
+    loadOp = copy_src.loadOp;
+    storeOp = copy_src.storeOp;
+    clearValue = copy_src.clearValue;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkRenderingAttachmentInfoKHR::~safe_VkRenderingAttachmentInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkRenderingAttachmentInfoKHR::initialize(const VkRenderingAttachmentInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    imageView = in_struct->imageView;
+    imageLayout = in_struct->imageLayout;
+    resolveMode = in_struct->resolveMode;
+    resolveImageView = in_struct->resolveImageView;
+    resolveImageLayout = in_struct->resolveImageLayout;
+    loadOp = in_struct->loadOp;
+    storeOp = in_struct->storeOp;
+    clearValue = in_struct->clearValue;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkRenderingAttachmentInfoKHR::initialize(const safe_VkRenderingAttachmentInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    imageView = copy_src->imageView;
+    imageLayout = copy_src->imageLayout;
+    resolveMode = copy_src->resolveMode;
+    resolveImageView = copy_src->resolveImageView;
+    resolveImageLayout = copy_src->resolveImageLayout;
+    loadOp = copy_src->loadOp;
+    storeOp = copy_src->storeOp;
+    clearValue = copy_src->clearValue;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkRenderingInfoKHR::safe_VkRenderingInfoKHR(const VkRenderingInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    renderArea(in_struct->renderArea),
+    layerCount(in_struct->layerCount),
+    viewMask(in_struct->viewMask),
+    colorAttachmentCount(in_struct->colorAttachmentCount),
+    pColorAttachments(nullptr),
+    pDepthAttachment(nullptr),
+    pStencilAttachment(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (colorAttachmentCount && in_struct->pColorAttachments) {
+        pColorAttachments = new safe_VkRenderingAttachmentInfoKHR[colorAttachmentCount];
+        for (uint32_t i = 0; i < colorAttachmentCount; ++i) {
+            pColorAttachments[i].initialize(&in_struct->pColorAttachments[i]);
+        }
+    }
+    if (in_struct->pDepthAttachment)
+        pDepthAttachment = new safe_VkRenderingAttachmentInfoKHR(in_struct->pDepthAttachment);
+    if (in_struct->pStencilAttachment)
+        pStencilAttachment = new safe_VkRenderingAttachmentInfoKHR(in_struct->pStencilAttachment);
+}
+
+safe_VkRenderingInfoKHR::safe_VkRenderingInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_RENDERING_INFO_KHR),
+    pNext(nullptr),
+    pColorAttachments(nullptr),
+    pDepthAttachment(nullptr),
+    pStencilAttachment(nullptr)
+{}
+
+safe_VkRenderingInfoKHR::safe_VkRenderingInfoKHR(const safe_VkRenderingInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    renderArea = copy_src.renderArea;
+    layerCount = copy_src.layerCount;
+    viewMask = copy_src.viewMask;
+    colorAttachmentCount = copy_src.colorAttachmentCount;
+    pColorAttachments = nullptr;
+    pDepthAttachment = nullptr;
+    pStencilAttachment = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (colorAttachmentCount && copy_src.pColorAttachments) {
+        pColorAttachments = new safe_VkRenderingAttachmentInfoKHR[colorAttachmentCount];
+        for (uint32_t i = 0; i < colorAttachmentCount; ++i) {
+            pColorAttachments[i].initialize(&copy_src.pColorAttachments[i]);
+        }
+    }
+    if (copy_src.pDepthAttachment)
+        pDepthAttachment = new safe_VkRenderingAttachmentInfoKHR(*copy_src.pDepthAttachment);
+    if (copy_src.pStencilAttachment)
+        pStencilAttachment = new safe_VkRenderingAttachmentInfoKHR(*copy_src.pStencilAttachment);
+}
+
+safe_VkRenderingInfoKHR& safe_VkRenderingInfoKHR::operator=(const safe_VkRenderingInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pColorAttachments)
+        delete[] pColorAttachments;
+    if (pDepthAttachment)
+        delete pDepthAttachment;
+    if (pStencilAttachment)
+        delete pStencilAttachment;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    renderArea = copy_src.renderArea;
+    layerCount = copy_src.layerCount;
+    viewMask = copy_src.viewMask;
+    colorAttachmentCount = copy_src.colorAttachmentCount;
+    pColorAttachments = nullptr;
+    pDepthAttachment = nullptr;
+    pStencilAttachment = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (colorAttachmentCount && copy_src.pColorAttachments) {
+        pColorAttachments = new safe_VkRenderingAttachmentInfoKHR[colorAttachmentCount];
+        for (uint32_t i = 0; i < colorAttachmentCount; ++i) {
+            pColorAttachments[i].initialize(&copy_src.pColorAttachments[i]);
+        }
+    }
+    if (copy_src.pDepthAttachment)
+        pDepthAttachment = new safe_VkRenderingAttachmentInfoKHR(*copy_src.pDepthAttachment);
+    if (copy_src.pStencilAttachment)
+        pStencilAttachment = new safe_VkRenderingAttachmentInfoKHR(*copy_src.pStencilAttachment);
+
+    return *this;
+}
+
+safe_VkRenderingInfoKHR::~safe_VkRenderingInfoKHR()
+{
+    if (pColorAttachments)
+        delete[] pColorAttachments;
+    if (pDepthAttachment)
+        delete pDepthAttachment;
+    if (pStencilAttachment)
+        delete pStencilAttachment;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkRenderingInfoKHR::initialize(const VkRenderingInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    renderArea = in_struct->renderArea;
+    layerCount = in_struct->layerCount;
+    viewMask = in_struct->viewMask;
+    colorAttachmentCount = in_struct->colorAttachmentCount;
+    pColorAttachments = nullptr;
+    pDepthAttachment = nullptr;
+    pStencilAttachment = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (colorAttachmentCount && in_struct->pColorAttachments) {
+        pColorAttachments = new safe_VkRenderingAttachmentInfoKHR[colorAttachmentCount];
+        for (uint32_t i = 0; i < colorAttachmentCount; ++i) {
+            pColorAttachments[i].initialize(&in_struct->pColorAttachments[i]);
+        }
+    }
+    if (in_struct->pDepthAttachment)
+        pDepthAttachment = new safe_VkRenderingAttachmentInfoKHR(in_struct->pDepthAttachment);
+    if (in_struct->pStencilAttachment)
+        pStencilAttachment = new safe_VkRenderingAttachmentInfoKHR(in_struct->pStencilAttachment);
+}
+
+void safe_VkRenderingInfoKHR::initialize(const safe_VkRenderingInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    renderArea = copy_src->renderArea;
+    layerCount = copy_src->layerCount;
+    viewMask = copy_src->viewMask;
+    colorAttachmentCount = copy_src->colorAttachmentCount;
+    pColorAttachments = nullptr;
+    pDepthAttachment = nullptr;
+    pStencilAttachment = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (colorAttachmentCount && copy_src->pColorAttachments) {
+        pColorAttachments = new safe_VkRenderingAttachmentInfoKHR[colorAttachmentCount];
+        for (uint32_t i = 0; i < colorAttachmentCount; ++i) {
+            pColorAttachments[i].initialize(&copy_src->pColorAttachments[i]);
+        }
+    }
+    if (copy_src->pDepthAttachment)
+        pDepthAttachment = new safe_VkRenderingAttachmentInfoKHR(*copy_src->pDepthAttachment);
+    if (copy_src->pStencilAttachment)
+        pStencilAttachment = new safe_VkRenderingAttachmentInfoKHR(*copy_src->pStencilAttachment);
+}
+
+safe_VkPipelineRenderingCreateInfoKHR::safe_VkPipelineRenderingCreateInfoKHR(const VkPipelineRenderingCreateInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    viewMask(in_struct->viewMask),
+    colorAttachmentCount(in_struct->colorAttachmentCount),
+    pColorAttachmentFormats(nullptr),
+    depthAttachmentFormat(in_struct->depthAttachmentFormat),
+    stencilAttachmentFormat(in_struct->stencilAttachmentFormat)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pColorAttachmentFormats) {
+        pColorAttachmentFormats = new VkFormat[in_struct->colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentFormats, (void *)in_struct->pColorAttachmentFormats, sizeof(VkFormat)*in_struct->colorAttachmentCount);
+    }
+}
+
+safe_VkPipelineRenderingCreateInfoKHR::safe_VkPipelineRenderingCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR),
+    pNext(nullptr),
+    pColorAttachmentFormats(nullptr)
+{}
+
+safe_VkPipelineRenderingCreateInfoKHR::safe_VkPipelineRenderingCreateInfoKHR(const safe_VkPipelineRenderingCreateInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    viewMask = copy_src.viewMask;
+    colorAttachmentCount = copy_src.colorAttachmentCount;
+    pColorAttachmentFormats = nullptr;
+    depthAttachmentFormat = copy_src.depthAttachmentFormat;
+    stencilAttachmentFormat = copy_src.stencilAttachmentFormat;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pColorAttachmentFormats) {
+        pColorAttachmentFormats = new VkFormat[copy_src.colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentFormats, (void *)copy_src.pColorAttachmentFormats, sizeof(VkFormat)*copy_src.colorAttachmentCount);
+    }
+}
+
+safe_VkPipelineRenderingCreateInfoKHR& safe_VkPipelineRenderingCreateInfoKHR::operator=(const safe_VkPipelineRenderingCreateInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pColorAttachmentFormats)
+        delete[] pColorAttachmentFormats;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    viewMask = copy_src.viewMask;
+    colorAttachmentCount = copy_src.colorAttachmentCount;
+    pColorAttachmentFormats = nullptr;
+    depthAttachmentFormat = copy_src.depthAttachmentFormat;
+    stencilAttachmentFormat = copy_src.stencilAttachmentFormat;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pColorAttachmentFormats) {
+        pColorAttachmentFormats = new VkFormat[copy_src.colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentFormats, (void *)copy_src.pColorAttachmentFormats, sizeof(VkFormat)*copy_src.colorAttachmentCount);
+    }
+
+    return *this;
+}
+
+safe_VkPipelineRenderingCreateInfoKHR::~safe_VkPipelineRenderingCreateInfoKHR()
+{
+    if (pColorAttachmentFormats)
+        delete[] pColorAttachmentFormats;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineRenderingCreateInfoKHR::initialize(const VkPipelineRenderingCreateInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    viewMask = in_struct->viewMask;
+    colorAttachmentCount = in_struct->colorAttachmentCount;
+    pColorAttachmentFormats = nullptr;
+    depthAttachmentFormat = in_struct->depthAttachmentFormat;
+    stencilAttachmentFormat = in_struct->stencilAttachmentFormat;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pColorAttachmentFormats) {
+        pColorAttachmentFormats = new VkFormat[in_struct->colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentFormats, (void *)in_struct->pColorAttachmentFormats, sizeof(VkFormat)*in_struct->colorAttachmentCount);
+    }
+}
+
+void safe_VkPipelineRenderingCreateInfoKHR::initialize(const safe_VkPipelineRenderingCreateInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    viewMask = copy_src->viewMask;
+    colorAttachmentCount = copy_src->colorAttachmentCount;
+    pColorAttachmentFormats = nullptr;
+    depthAttachmentFormat = copy_src->depthAttachmentFormat;
+    stencilAttachmentFormat = copy_src->stencilAttachmentFormat;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pColorAttachmentFormats) {
+        pColorAttachmentFormats = new VkFormat[copy_src->colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentFormats, (void *)copy_src->pColorAttachmentFormats, sizeof(VkFormat)*copy_src->colorAttachmentCount);
+    }
+}
+
+safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR::safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR(const VkPhysicalDeviceDynamicRenderingFeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    dynamicRendering(in_struct->dynamicRendering)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR::safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR::safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR(const safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    dynamicRendering = copy_src.dynamicRendering;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR& safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR::operator=(const safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    dynamicRendering = copy_src.dynamicRendering;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR::~safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR::initialize(const VkPhysicalDeviceDynamicRenderingFeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    dynamicRendering = in_struct->dynamicRendering;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR::initialize(const safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    dynamicRendering = copy_src->dynamicRendering;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCommandBufferInheritanceRenderingInfoKHR::safe_VkCommandBufferInheritanceRenderingInfoKHR(const VkCommandBufferInheritanceRenderingInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    viewMask(in_struct->viewMask),
+    colorAttachmentCount(in_struct->colorAttachmentCount),
+    pColorAttachmentFormats(nullptr),
+    depthAttachmentFormat(in_struct->depthAttachmentFormat),
+    stencilAttachmentFormat(in_struct->stencilAttachmentFormat),
+    rasterizationSamples(in_struct->rasterizationSamples)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pColorAttachmentFormats) {
+        pColorAttachmentFormats = new VkFormat[in_struct->colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentFormats, (void *)in_struct->pColorAttachmentFormats, sizeof(VkFormat)*in_struct->colorAttachmentCount);
+    }
+}
+
+safe_VkCommandBufferInheritanceRenderingInfoKHR::safe_VkCommandBufferInheritanceRenderingInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR),
+    pNext(nullptr),
+    pColorAttachmentFormats(nullptr)
+{}
+
+safe_VkCommandBufferInheritanceRenderingInfoKHR::safe_VkCommandBufferInheritanceRenderingInfoKHR(const safe_VkCommandBufferInheritanceRenderingInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    viewMask = copy_src.viewMask;
+    colorAttachmentCount = copy_src.colorAttachmentCount;
+    pColorAttachmentFormats = nullptr;
+    depthAttachmentFormat = copy_src.depthAttachmentFormat;
+    stencilAttachmentFormat = copy_src.stencilAttachmentFormat;
+    rasterizationSamples = copy_src.rasterizationSamples;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pColorAttachmentFormats) {
+        pColorAttachmentFormats = new VkFormat[copy_src.colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentFormats, (void *)copy_src.pColorAttachmentFormats, sizeof(VkFormat)*copy_src.colorAttachmentCount);
+    }
+}
+
+safe_VkCommandBufferInheritanceRenderingInfoKHR& safe_VkCommandBufferInheritanceRenderingInfoKHR::operator=(const safe_VkCommandBufferInheritanceRenderingInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pColorAttachmentFormats)
+        delete[] pColorAttachmentFormats;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    viewMask = copy_src.viewMask;
+    colorAttachmentCount = copy_src.colorAttachmentCount;
+    pColorAttachmentFormats = nullptr;
+    depthAttachmentFormat = copy_src.depthAttachmentFormat;
+    stencilAttachmentFormat = copy_src.stencilAttachmentFormat;
+    rasterizationSamples = copy_src.rasterizationSamples;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pColorAttachmentFormats) {
+        pColorAttachmentFormats = new VkFormat[copy_src.colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentFormats, (void *)copy_src.pColorAttachmentFormats, sizeof(VkFormat)*copy_src.colorAttachmentCount);
+    }
+
+    return *this;
+}
+
+safe_VkCommandBufferInheritanceRenderingInfoKHR::~safe_VkCommandBufferInheritanceRenderingInfoKHR()
+{
+    if (pColorAttachmentFormats)
+        delete[] pColorAttachmentFormats;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCommandBufferInheritanceRenderingInfoKHR::initialize(const VkCommandBufferInheritanceRenderingInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    viewMask = in_struct->viewMask;
+    colorAttachmentCount = in_struct->colorAttachmentCount;
+    pColorAttachmentFormats = nullptr;
+    depthAttachmentFormat = in_struct->depthAttachmentFormat;
+    stencilAttachmentFormat = in_struct->stencilAttachmentFormat;
+    rasterizationSamples = in_struct->rasterizationSamples;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pColorAttachmentFormats) {
+        pColorAttachmentFormats = new VkFormat[in_struct->colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentFormats, (void *)in_struct->pColorAttachmentFormats, sizeof(VkFormat)*in_struct->colorAttachmentCount);
+    }
+}
+
+void safe_VkCommandBufferInheritanceRenderingInfoKHR::initialize(const safe_VkCommandBufferInheritanceRenderingInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    viewMask = copy_src->viewMask;
+    colorAttachmentCount = copy_src->colorAttachmentCount;
+    pColorAttachmentFormats = nullptr;
+    depthAttachmentFormat = copy_src->depthAttachmentFormat;
+    stencilAttachmentFormat = copy_src->stencilAttachmentFormat;
+    rasterizationSamples = copy_src->rasterizationSamples;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pColorAttachmentFormats) {
+        pColorAttachmentFormats = new VkFormat[copy_src->colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentFormats, (void *)copy_src->pColorAttachmentFormats, sizeof(VkFormat)*copy_src->colorAttachmentCount);
+    }
+}
+
+safe_VkRenderingFragmentShadingRateAttachmentInfoKHR::safe_VkRenderingFragmentShadingRateAttachmentInfoKHR(const VkRenderingFragmentShadingRateAttachmentInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    imageView(in_struct->imageView),
+    imageLayout(in_struct->imageLayout),
+    shadingRateAttachmentTexelSize(in_struct->shadingRateAttachmentTexelSize)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkRenderingFragmentShadingRateAttachmentInfoKHR::safe_VkRenderingFragmentShadingRateAttachmentInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkRenderingFragmentShadingRateAttachmentInfoKHR::safe_VkRenderingFragmentShadingRateAttachmentInfoKHR(const safe_VkRenderingFragmentShadingRateAttachmentInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    imageView = copy_src.imageView;
+    imageLayout = copy_src.imageLayout;
+    shadingRateAttachmentTexelSize = copy_src.shadingRateAttachmentTexelSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkRenderingFragmentShadingRateAttachmentInfoKHR& safe_VkRenderingFragmentShadingRateAttachmentInfoKHR::operator=(const safe_VkRenderingFragmentShadingRateAttachmentInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    imageView = copy_src.imageView;
+    imageLayout = copy_src.imageLayout;
+    shadingRateAttachmentTexelSize = copy_src.shadingRateAttachmentTexelSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkRenderingFragmentShadingRateAttachmentInfoKHR::~safe_VkRenderingFragmentShadingRateAttachmentInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkRenderingFragmentShadingRateAttachmentInfoKHR::initialize(const VkRenderingFragmentShadingRateAttachmentInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    imageView = in_struct->imageView;
+    imageLayout = in_struct->imageLayout;
+    shadingRateAttachmentTexelSize = in_struct->shadingRateAttachmentTexelSize;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkRenderingFragmentShadingRateAttachmentInfoKHR::initialize(const safe_VkRenderingFragmentShadingRateAttachmentInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    imageView = copy_src->imageView;
+    imageLayout = copy_src->imageLayout;
+    shadingRateAttachmentTexelSize = copy_src->shadingRateAttachmentTexelSize;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkRenderingFragmentDensityMapAttachmentInfoEXT::safe_VkRenderingFragmentDensityMapAttachmentInfoEXT(const VkRenderingFragmentDensityMapAttachmentInfoEXT* in_struct) :
+    sType(in_struct->sType),
+    imageView(in_struct->imageView),
+    imageLayout(in_struct->imageLayout)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkRenderingFragmentDensityMapAttachmentInfoEXT::safe_VkRenderingFragmentDensityMapAttachmentInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkRenderingFragmentDensityMapAttachmentInfoEXT::safe_VkRenderingFragmentDensityMapAttachmentInfoEXT(const safe_VkRenderingFragmentDensityMapAttachmentInfoEXT& copy_src)
+{
+    sType = copy_src.sType;
+    imageView = copy_src.imageView;
+    imageLayout = copy_src.imageLayout;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkRenderingFragmentDensityMapAttachmentInfoEXT& safe_VkRenderingFragmentDensityMapAttachmentInfoEXT::operator=(const safe_VkRenderingFragmentDensityMapAttachmentInfoEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    imageView = copy_src.imageView;
+    imageLayout = copy_src.imageLayout;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkRenderingFragmentDensityMapAttachmentInfoEXT::~safe_VkRenderingFragmentDensityMapAttachmentInfoEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkRenderingFragmentDensityMapAttachmentInfoEXT::initialize(const VkRenderingFragmentDensityMapAttachmentInfoEXT* in_struct)
+{
+    sType = in_struct->sType;
+    imageView = in_struct->imageView;
+    imageLayout = in_struct->imageLayout;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkRenderingFragmentDensityMapAttachmentInfoEXT::initialize(const safe_VkRenderingFragmentDensityMapAttachmentInfoEXT* copy_src)
+{
+    sType = copy_src->sType;
+    imageView = copy_src->imageView;
+    imageLayout = copy_src->imageLayout;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkAttachmentSampleCountInfoAMD::safe_VkAttachmentSampleCountInfoAMD(const VkAttachmentSampleCountInfoAMD* in_struct) :
+    sType(in_struct->sType),
+    colorAttachmentCount(in_struct->colorAttachmentCount),
+    pColorAttachmentSamples(nullptr),
+    depthStencilAttachmentSamples(in_struct->depthStencilAttachmentSamples)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pColorAttachmentSamples) {
+        pColorAttachmentSamples = new VkSampleCountFlagBits[in_struct->colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentSamples, (void *)in_struct->pColorAttachmentSamples, sizeof(VkSampleCountFlagBits)*in_struct->colorAttachmentCount);
+    }
+}
+
+safe_VkAttachmentSampleCountInfoAMD::safe_VkAttachmentSampleCountInfoAMD() :
+    sType(VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD),
+    pNext(nullptr),
+    pColorAttachmentSamples(nullptr)
+{}
+
+safe_VkAttachmentSampleCountInfoAMD::safe_VkAttachmentSampleCountInfoAMD(const safe_VkAttachmentSampleCountInfoAMD& copy_src)
+{
+    sType = copy_src.sType;
+    colorAttachmentCount = copy_src.colorAttachmentCount;
+    pColorAttachmentSamples = nullptr;
+    depthStencilAttachmentSamples = copy_src.depthStencilAttachmentSamples;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pColorAttachmentSamples) {
+        pColorAttachmentSamples = new VkSampleCountFlagBits[copy_src.colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentSamples, (void *)copy_src.pColorAttachmentSamples, sizeof(VkSampleCountFlagBits)*copy_src.colorAttachmentCount);
+    }
+}
+
+safe_VkAttachmentSampleCountInfoAMD& safe_VkAttachmentSampleCountInfoAMD::operator=(const safe_VkAttachmentSampleCountInfoAMD& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pColorAttachmentSamples)
+        delete[] pColorAttachmentSamples;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    colorAttachmentCount = copy_src.colorAttachmentCount;
+    pColorAttachmentSamples = nullptr;
+    depthStencilAttachmentSamples = copy_src.depthStencilAttachmentSamples;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pColorAttachmentSamples) {
+        pColorAttachmentSamples = new VkSampleCountFlagBits[copy_src.colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentSamples, (void *)copy_src.pColorAttachmentSamples, sizeof(VkSampleCountFlagBits)*copy_src.colorAttachmentCount);
+    }
+
+    return *this;
+}
+
+safe_VkAttachmentSampleCountInfoAMD::~safe_VkAttachmentSampleCountInfoAMD()
+{
+    if (pColorAttachmentSamples)
+        delete[] pColorAttachmentSamples;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAttachmentSampleCountInfoAMD::initialize(const VkAttachmentSampleCountInfoAMD* in_struct)
+{
+    sType = in_struct->sType;
+    colorAttachmentCount = in_struct->colorAttachmentCount;
+    pColorAttachmentSamples = nullptr;
+    depthStencilAttachmentSamples = in_struct->depthStencilAttachmentSamples;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pColorAttachmentSamples) {
+        pColorAttachmentSamples = new VkSampleCountFlagBits[in_struct->colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentSamples, (void *)in_struct->pColorAttachmentSamples, sizeof(VkSampleCountFlagBits)*in_struct->colorAttachmentCount);
+    }
+}
+
+void safe_VkAttachmentSampleCountInfoAMD::initialize(const safe_VkAttachmentSampleCountInfoAMD* copy_src)
+{
+    sType = copy_src->sType;
+    colorAttachmentCount = copy_src->colorAttachmentCount;
+    pColorAttachmentSamples = nullptr;
+    depthStencilAttachmentSamples = copy_src->depthStencilAttachmentSamples;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pColorAttachmentSamples) {
+        pColorAttachmentSamples = new VkSampleCountFlagBits[copy_src->colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentSamples, (void *)copy_src->pColorAttachmentSamples, sizeof(VkSampleCountFlagBits)*copy_src->colorAttachmentCount);
+    }
+}
+
+safe_VkMultiviewPerViewAttributesInfoNVX::safe_VkMultiviewPerViewAttributesInfoNVX(const VkMultiviewPerViewAttributesInfoNVX* in_struct) :
+    sType(in_struct->sType),
+    perViewAttributes(in_struct->perViewAttributes),
+    perViewAttributesPositionXOnly(in_struct->perViewAttributesPositionXOnly)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkMultiviewPerViewAttributesInfoNVX::safe_VkMultiviewPerViewAttributesInfoNVX() :
+    sType(VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX),
+    pNext(nullptr)
+{}
+
+safe_VkMultiviewPerViewAttributesInfoNVX::safe_VkMultiviewPerViewAttributesInfoNVX(const safe_VkMultiviewPerViewAttributesInfoNVX& copy_src)
+{
+    sType = copy_src.sType;
+    perViewAttributes = copy_src.perViewAttributes;
+    perViewAttributesPositionXOnly = copy_src.perViewAttributesPositionXOnly;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkMultiviewPerViewAttributesInfoNVX& safe_VkMultiviewPerViewAttributesInfoNVX::operator=(const safe_VkMultiviewPerViewAttributesInfoNVX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    perViewAttributes = copy_src.perViewAttributes;
+    perViewAttributesPositionXOnly = copy_src.perViewAttributesPositionXOnly;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkMultiviewPerViewAttributesInfoNVX::~safe_VkMultiviewPerViewAttributesInfoNVX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMultiviewPerViewAttributesInfoNVX::initialize(const VkMultiviewPerViewAttributesInfoNVX* in_struct)
+{
+    sType = in_struct->sType;
+    perViewAttributes = in_struct->perViewAttributes;
+    perViewAttributesPositionXOnly = in_struct->perViewAttributesPositionXOnly;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkMultiviewPerViewAttributesInfoNVX::initialize(const safe_VkMultiviewPerViewAttributesInfoNVX* copy_src)
+{
+    sType = copy_src->sType;
+    perViewAttributes = copy_src->perViewAttributes;
+    perViewAttributesPositionXOnly = copy_src->perViewAttributesPositionXOnly;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 
@@ -47603,6 +48370,27 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_DISPLAY_PRESENT_INFO_KHR:
             safe_pNext = new safe_VkDisplayPresentInfoKHR(reinterpret_cast<const VkDisplayPresentInfoKHR *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR:
+            safe_pNext = new safe_VkPipelineRenderingCreateInfoKHR(reinterpret_cast<const VkPipelineRenderingCreateInfoKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceDynamicRenderingFeaturesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR:
+            safe_pNext = new safe_VkCommandBufferInheritanceRenderingInfoKHR(reinterpret_cast<const VkCommandBufferInheritanceRenderingInfoKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR:
+            safe_pNext = new safe_VkRenderingFragmentShadingRateAttachmentInfoKHR(reinterpret_cast<const VkRenderingFragmentShadingRateAttachmentInfoKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT:
+            safe_pNext = new safe_VkRenderingFragmentDensityMapAttachmentInfoEXT(reinterpret_cast<const VkRenderingFragmentDensityMapAttachmentInfoEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD:
+            safe_pNext = new safe_VkAttachmentSampleCountInfoAMD(reinterpret_cast<const VkAttachmentSampleCountInfoAMD *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX:
+            safe_pNext = new safe_VkMultiviewPerViewAttributesInfoNVX(reinterpret_cast<const VkMultiviewPerViewAttributesInfoNVX *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR:
             safe_pNext = new safe_VkImportMemoryFdInfoKHR(reinterpret_cast<const VkImportMemoryFdInfoKHR *>(pNext));
             break;
@@ -48688,6 +49476,27 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_DISPLAY_PRESENT_INFO_KHR:
             delete reinterpret_cast<const safe_VkDisplayPresentInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR:
+            delete reinterpret_cast<const safe_VkPipelineRenderingCreateInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceDynamicRenderingFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR:
+            delete reinterpret_cast<const safe_VkCommandBufferInheritanceRenderingInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR:
+            delete reinterpret_cast<const safe_VkRenderingFragmentShadingRateAttachmentInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT:
+            delete reinterpret_cast<const safe_VkRenderingFragmentDensityMapAttachmentInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD:
+            delete reinterpret_cast<const safe_VkAttachmentSampleCountInfoAMD *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX:
+            delete reinterpret_cast<const safe_VkMultiviewPerViewAttributesInfoNVX *>(header);
             break;
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR:
             delete reinterpret_cast<const safe_VkImportMemoryFdInfoKHR *>(header);
