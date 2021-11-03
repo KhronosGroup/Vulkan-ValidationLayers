@@ -1186,13 +1186,10 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             struct VulkanTypedHandle {
                 uint64_t handle;
                 VulkanObjectType type;
-                // node is optional, and if non-NULL is used to avoid a hash table lookup
-                class BASE_NODE *node;
                 template <typename Handle>
-                VulkanTypedHandle(Handle handle_, VulkanObjectType type_, class BASE_NODE *node_ = nullptr) :
+                VulkanTypedHandle(Handle handle_, VulkanObjectType type_) :
                     handle(CastToUint64(handle_)),
-                    type(type_),
-                    node(node_) {
+                    type(type_) {
             #ifdef TYPESAFE_NONDISPATCHABLE_HANDLES
                     // For 32 bit it's not always safe to check for traits <-> type
                     // as all non-dispatchable handles have the same type-id and thus traits,
@@ -1209,8 +1206,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 }
                 VulkanTypedHandle() :
                     handle(CastToUint64(VK_NULL_HANDLE)),
-                    type(kVulkanObjectTypeUnknown),
-                    node(nullptr) {}
+                    type(kVulkanObjectTypeUnknown) {}
             }; ''')  +'\n'
 
         return object_types_header
