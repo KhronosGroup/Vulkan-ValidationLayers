@@ -3185,14 +3185,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
             if (pCreateInfos[i].pRasterizationState) {
                 if (!IsExtEnabled(device_extensions.vk_nv_fill_rectangle)) {
-                    if (pCreateInfos[i].pRasterizationState->polygonMode == VK_POLYGON_MODE_FILL_RECTANGLE_NV) {
-                        skip |=
-                            LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01414",
-                                     "vkCreateGraphicsPipelines parameter, VkPolygonMode "
-                                     "pCreateInfos->pRasterizationState->polygonMode cannot be VK_POLYGON_MODE_FILL_RECTANGLE_NV "
-                                     "if the extension VK_NV_fill_rectangle is not enabled.");
-                    } else if ((pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
-                               (physical_device_features.fillModeNonSolid == false)) {
+                    if ((pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
+                        (physical_device_features.fillModeNonSolid == false)) {
                         skip |= LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01413",
                                          "vkCreateGraphicsPipelines parameter, VkPolygonMode "
                                          "pCreateInfos[%" PRIu32

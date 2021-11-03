@@ -59,7 +59,7 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_CommandBufferSingleSubmi
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_DescriptorSetNotBound = "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotBound";
 // static const char DECORATE_UNUSED *kVUID_Core_DrawState_DescriptorSetNotUpdated = "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated";
 // static const char DECORATE_UNUSED *kVUID_Core_DrawState_DoubleDestroy = "UNASSIGNED-CoreValidation-DrawState-DoubleDestroy";
-static const char DECORATE_UNUSED *kVUID_Core_DrawState_ExtensionNotEnabled = "UNASSIGNED-CoreValidation-DrawState-ExtensionNotEnabled";
+// static const char DECORATE_UNUSED *kVUID_Core_DrawState_ExtensionNotEnabled = "UNASSIGNED-CoreValidation-DrawState-ExtensionNotEnabled";
 // static const char DECORATE_UNUSED *kVUID_Core_DrawState_InternalError = "UNASSIGNED-CoreValidation-DrawState-InternalError";
 // static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidBarrier = "UNASSIGNED-CoreValidation-DrawState-InvalidBarrier";
 //static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidBuffer = "UNASSIGNED-CoreValidation-DrawState-InvalidBuffer";

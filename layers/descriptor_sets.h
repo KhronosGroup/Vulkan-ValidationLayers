@@ -414,8 +414,7 @@ class Descriptor {
 bool VerifySetLayoutCompatibility(const debug_report_data *report_data, DescriptorSetLayout const *lh_ds_layout,
                                   DescriptorSetLayout const *rh_ds_layout, std::string *error_msg);
 bool ValidateDescriptorSetLayoutCreateInfo(const ValidationObject *val_obj, const VkDescriptorSetLayoutCreateInfo *create_info,
-                                           const bool push_descriptor_ext, const uint32_t max_push_descriptors,
-                                           const bool descriptor_indexing_ext,
+                                           const uint32_t max_push_descriptors,
                                            const VkPhysicalDeviceVulkan12Features *core12_features,
                                            const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
                                            const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,

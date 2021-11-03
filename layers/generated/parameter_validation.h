@@ -23,6 +23,71 @@
  */
 
 
+bool ValidateImageCreateFlags(const char *api_name, const ParameterName &parameter_name, VkImageCreateFlags value, const char *vuid) const;
+bool ValidatePipelineCreateFlags(const char *api_name, const ParameterName &parameter_name, VkPipelineCreateFlags value, const char *vuid) const;
+bool ValidateDependencyFlags(const char *api_name, const ParameterName &parameter_name, VkDependencyFlags value, const char *vuid) const;
+bool ValidateFormatFeatureFlags(const char *api_name, const ParameterName &parameter_name, VkFormatFeatureFlags value, const char *vuid) const;
+bool ValidateImageLayout(const char *api_name, const ParameterName &parameter_name, VkImageLayout value, const char *vuid) const;
+bool ValidateDeviceQueueCreateFlags(const char *api_name, const ParameterName &parameter_name, VkDeviceQueueCreateFlags value, const char *vuid) const;
+bool ValidateBufferCreateFlags(const char *api_name, const ParameterName &parameter_name, VkBufferCreateFlags value, const char *vuid) const;
+bool ValidateCommandPoolCreateFlags(const char *api_name, const ParameterName &parameter_name, VkCommandPoolCreateFlags value, const char *vuid) const;
+bool ValidateObjectType(const char *api_name, const ParameterName &parameter_name, VkObjectType value, const char *vuid) const;
+bool ValidateFormat(const char *api_name, const ParameterName &parameter_name, VkFormat value, const char *vuid) const;
+bool ValidateImageAspectFlags(const char *api_name, const ParameterName &parameter_name, VkImageAspectFlags value, const char *vuid) const;
+bool ValidateSamplerAddressMode(const char *api_name, const ParameterName &parameter_name, VkSamplerAddressMode value, const char *vuid) const;
+bool ValidateDescriptorPoolCreateFlags(const char *api_name, const ParameterName &parameter_name, VkDescriptorPoolCreateFlags value, const char *vuid) const;
+bool ValidateDescriptorSetLayoutCreateFlags(const char *api_name, const ParameterName &parameter_name, VkDescriptorSetLayoutCreateFlags value, const char *vuid) const;
+bool ValidateFramebufferCreateFlags(const char *api_name, const ParameterName &parameter_name, VkFramebufferCreateFlags value, const char *vuid) const;
+bool ValidateBufferUsageFlags(const char *api_name, const ParameterName &parameter_name, VkBufferUsageFlags value, const char *vuid) const;
+bool ValidateMemoryAllocateFlags(const char *api_name, const ParameterName &parameter_name, VkMemoryAllocateFlags value, const char *vuid) const;
+bool ValidateSwapchainCreateFlagsKHR(const char *api_name, const ParameterName &parameter_name, VkSwapchainCreateFlagsKHR value, const char *vuid) const;
+bool ValidateDebugReportObjectTypeEXT(const char *api_name, const ParameterName &parameter_name, VkDebugReportObjectTypeEXT value, const char *vuid) const;
+bool ValidateFilter(const char *api_name, const ParameterName &parameter_name, VkFilter value, const char *vuid) const;
+bool ValidateQueryType(const char *api_name, const ParameterName &parameter_name, VkQueryType value, const char *vuid) const;
+bool ValidateQueryResultFlags(const char *api_name, const ParameterName &parameter_name, VkQueryResultFlags value, const char *vuid) const;
+bool ValidatePipelineStageFlags2KHR(const char *api_name, const ParameterName &parameter_name, VkPipelineStageFlags2KHR value, const char *vuid) const;
+bool ValidateAccessFlags2KHR(const char *api_name, const ParameterName &parameter_name, VkAccessFlags2KHR value, const char *vuid) const;
+bool ValidateImageUsageFlags(const char *api_name, const ParameterName &parameter_name, VkImageUsageFlags value, const char *vuid) const;
+bool ValidateAccessFlags(const char *api_name, const ParameterName &parameter_name, VkAccessFlags value, const char *vuid) const;
+bool ValidatePipelineStageFlags(const char *api_name, const ParameterName &parameter_name, VkPipelineStageFlags value, const char *vuid) const;
+bool ValidateVideoCodecOperationFlagsKHR(const char *api_name, const ParameterName &parameter_name, VkVideoCodecOperationFlagsKHR value, const char *vuid) const;
+bool ValidateAttachmentStoreOp(const char *api_name, const ParameterName &parameter_name, VkAttachmentStoreOp value, const char *vuid) const;
+bool ValidateExternalMemoryHandleTypeFlags(const char *api_name, const ParameterName &parameter_name, VkExternalMemoryHandleTypeFlags value, const char *vuid) const;
+bool ValidateExternalSemaphoreHandleTypeFlags(const char *api_name, const ParameterName &parameter_name, VkExternalSemaphoreHandleTypeFlags value, const char *vuid) const;
+bool ValidateSemaphoreImportFlags(const char *api_name, const ParameterName &parameter_name, VkSemaphoreImportFlags value, const char *vuid) const;
+bool ValidateDescriptorUpdateTemplateType(const char *api_name, const ParameterName &parameter_name, VkDescriptorUpdateTemplateType value, const char *vuid) const;
+bool ValidateDynamicState(const char *api_name, const ParameterName &parameter_name, VkDynamicState value, const char *vuid) const;
+bool ValidateSubpassDescriptionFlags(const char *api_name, const ParameterName &parameter_name, VkSubpassDescriptionFlags value, const char *vuid) const;
+bool ValidateColorSpaceKHR(const char *api_name, const ParameterName &parameter_name, VkColorSpaceKHR value, const char *vuid) const;
+bool ValidatePresentModeKHR(const char *api_name, const ParameterName &parameter_name, VkPresentModeKHR value, const char *vuid) const;
+bool ValidateExternalFenceHandleTypeFlags(const char *api_name, const ParameterName &parameter_name, VkExternalFenceHandleTypeFlags value, const char *vuid) const;
+bool ValidateFenceImportFlags(const char *api_name, const ParameterName &parameter_name, VkFenceImportFlags value, const char *vuid) const;
+bool ValidateTessellationDomainOrigin(const char *api_name, const ParameterName &parameter_name, VkTessellationDomainOrigin value, const char *vuid) const;
+bool ValidateSamplerReductionMode(const char *api_name, const ParameterName &parameter_name, VkSamplerReductionMode value, const char *vuid) const;
+bool ValidateDescriptorType(const char *api_name, const ParameterName &parameter_name, VkDescriptorType value, const char *vuid) const;
+bool ValidateBlendOp(const char *api_name, const ParameterName &parameter_name, VkBlendOp value, const char *vuid) const;
+bool ValidateIndexType(const char *api_name, const ParameterName &parameter_name, VkIndexType value, const char *vuid) const;
+bool ValidateShaderStageFlags(const char *api_name, const ParameterName &parameter_name, VkShaderStageFlags value, const char *vuid) const;
+bool ValidatePipelineBindPoint(const char *api_name, const ParameterName &parameter_name, VkPipelineBindPoint value, const char *vuid) const;
+bool ValidatePolygonMode(const char *api_name, const ParameterName &parameter_name, VkPolygonMode value, const char *vuid) const;
+bool ValidateSamplerYcbcrModelConversion(const char *api_name, const ParameterName &parameter_name, VkSamplerYcbcrModelConversion value, const char *vuid) const;
+bool ValidateSamplerYcbcrRange(const char *api_name, const ParameterName &parameter_name, VkSamplerYcbcrRange value, const char *vuid) const;
+bool ValidateChromaLocation(const char *api_name, const ParameterName &parameter_name, VkChromaLocation value, const char *vuid) const;
+bool ValidateImageTiling(const char *api_name, const ParameterName &parameter_name, VkImageTiling value, const char *vuid) const;
+bool ValidateDescriptorBindingFlags(const char *api_name, const ParameterName &parameter_name, VkDescriptorBindingFlags value, const char *vuid) const;
+bool ValidateResolveModeFlags(const char *api_name, const ParameterName &parameter_name, VkResolveModeFlags value, const char *vuid) const;
+bool ValidateSemaphoreType(const char *api_name, const ParameterName &parameter_name, VkSemaphoreType value, const char *vuid) const;
+bool ValidateSemaphoreWaitFlags(const char *api_name, const ParameterName &parameter_name, VkSemaphoreWaitFlags value, const char *vuid) const;
+bool ValidateImageViewCreateFlags(const char *api_name, const ParameterName &parameter_name, VkImageViewCreateFlags value, const char *vuid) const;
+bool ValidateSamplerCreateFlags(const char *api_name, const ParameterName &parameter_name, VkSamplerCreateFlags value, const char *vuid) const;
+bool ValidatePipelineShaderStageCreateFlags(const char *api_name, const ParameterName &parameter_name, VkPipelineShaderStageCreateFlags value, const char *vuid) const;
+bool ValidateRenderPassCreateFlags(const char *api_name, const ParameterName &parameter_name, VkRenderPassCreateFlags value, const char *vuid) const;
+bool ValidateBorderColor(const char *api_name, const ParameterName &parameter_name, VkBorderColor value, const char *vuid) const;
+bool ValidatePipelineCacheCreateFlags(const char *api_name, const ParameterName &parameter_name, VkPipelineCacheCreateFlags value, const char *vuid) const;
+bool ValidateEventCreateFlags(const char *api_name, const ParameterName &parameter_name, VkEventCreateFlags value, const char *vuid) const;
+bool ValidateAccelerationStructureCreateFlagsKHR(const char *api_name, const ParameterName &parameter_name, VkAccelerationStructureCreateFlagsKHR value, const char *vuid) const;
+bool ValidateAttachmentLoadOp(const char *api_name, const ParameterName &parameter_name, VkAttachmentLoadOp value, const char *vuid) const;
+
 bool PreCallValidateCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,

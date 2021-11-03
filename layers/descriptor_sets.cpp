@@ -456,8 +456,7 @@ cvdescriptorset::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetL
 
 // Validate descriptor set layout create info
 bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
-    const ValidationObject *val_obj, const VkDescriptorSetLayoutCreateInfo *create_info, const bool push_descriptor_ext,
-    const uint32_t max_push_descriptors, const bool descriptor_indexing_ext,
+    const ValidationObject *val_obj, const VkDescriptorSetLayoutCreateInfo *create_info, const uint32_t max_push_descriptors,
     const VkPhysicalDeviceVulkan12Features *core12_features,
     const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
     const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
@@ -470,22 +469,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
     const auto *flags_create_info = LvlFindInChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(create_info->pNext);
 
     const bool push_descriptor_set = !!(create_info->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
-    if (push_descriptor_set && !push_descriptor_ext) {
-        skip |= val_obj->LogError(
-            val_obj->device, kVUID_Core_DrawState_ExtensionNotEnabled,
-            "vkCreateDescriptorSetLayout(): Attempted to use %s in %s but its required extension %s has not been enabled.\n",
-            "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR", "VkDescriptorSetLayoutCreateInfo::flags",
-            VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    }
-
     const bool update_after_bind_set = !!(create_info->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT);
-    if (update_after_bind_set && !descriptor_indexing_ext) {
-        skip |= val_obj->LogError(
-            val_obj->device, kVUID_Core_DrawState_ExtensionNotEnabled,
-            "vkCreateDescriptorSetLayout(): Attemped to use %s in %s but its required extension %s has not been enabled.\n",
-            "VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT", "VkDescriptorSetLayoutCreateInfo::flags",
-            VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    }
 
     auto valid_type = [push_descriptor_set](const VkDescriptorType type) {
         return !push_descriptor_set ||
@@ -776,12 +760,11 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
     }
 
     if ((push_descriptor_set) && (total_descriptors > max_push_descriptors)) {
-        const char *undefined = push_descriptor_ext ? "" : " -- undefined";
         skip |= val_obj->LogError(
             val_obj->device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-00281",
             "vkCreateDescriptorSetLayout(): for push descriptor, total descriptor count in layout (%" PRIu64
-            ") must not be greater than VkPhysicalDevicePushDescriptorPropertiesKHR::maxPushDescriptors (%" PRIu32 "%s).",
-            total_descriptors, max_push_descriptors, undefined);
+            ") must not be greater than VkPhysicalDevicePushDescriptorPropertiesKHR::maxPushDescriptors (%" PRIu32 ").",
+            total_descriptors, max_push_descriptors);
     }
 
     return skip;

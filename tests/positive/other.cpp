@@ -690,3 +690,45 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
 
     vk::QueueWaitIdle(queue_h);
 }
+
+TEST_F(VkPositiveLayerTest, VulkanCoreEnumstWithoutExtension) {
+    TEST_DESCRIPTION("Use Vulkan 1.1+ enums without the extensions.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    m_errorMonitor->ExpectSuccess();
+
+    // 1.1 promoted enums (from VK_KHR_maintenance2)
+    VkImageCreateInfo create_info = LvlInitStruct<VkImageCreateInfo>();
+    create_info.imageType = VK_IMAGE_TYPE_2D;
+    create_info.arrayLayers = 1;
+    create_info.extent = {32, 32, 1};
+    create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    create_info.mipLevels = 1;
+    create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    create_info.flags = VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;  // promoted enum
+    VkImage test_image;
+    vk::CreateImage(device(), &create_info, nullptr, &test_image);
+    vk::DestroyImage(device(), test_image, nullptr);
+
+    // 1.2 promoted enums (from VK_EXT_descriptor_indexing)
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
+        VkDescriptorPoolSize pool_sizes = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1};
+        auto dspci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+        dspci.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;  // promoted enum
+        dspci.poolSizeCount = 1;
+        dspci.pPoolSizes = &pool_sizes;
+        dspci.maxSets = 1;
+        VkDescriptorPool pool;
+        vk::CreateDescriptorPool(device(), &dspci, nullptr, &pool);
+        vk::DestroyDescriptorPool(device(), pool, nullptr);
+    }
+
+    m_errorMonitor->VerifyNotFound();
+}

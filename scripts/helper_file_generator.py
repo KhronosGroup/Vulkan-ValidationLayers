@@ -231,7 +231,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         requiresCore = interface.get('requiresCore')
         if requiresCore is not None:
             required_extensions.append('VK_VERSION_%s' % ('_'.join(requiresCore.split('.'))))
-        info = { 'define': GetNameDefine(interface), 'ifdef':self.featureExtraProtect, 'reqs':required_extensions }
+        info = { 'define': GetExtensionNameEnum(interface).get('name'), 'ifdef':self.featureExtraProtect, 'reqs':required_extensions }
         if interface.get('type') == 'instance':
             self.instance_extension_info[name] = info
         else:

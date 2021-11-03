@@ -1133,6 +1133,11 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayout) {
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
+    if (!AddSurfaceInstanceExtension()) {
+        // needed to use VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
@@ -1147,6 +1152,12 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayout) {
         vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     } else {
         separate_depth_stencil_layouts_features.separateDepthStencilLayouts = VK_FALSE;
+    }
+
+    if (!AddSwapchainDeviceExtension()) {
+        // needed to use VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, (vkGetPhysicalDeviceFeatures2KHR) ? &features2 : nullptr));
 
@@ -1451,6 +1462,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentReferences) {
                          nullptr);
 
     iaar.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
+    m_errorMonitor->SetUnexpectedError("VUID-VkInputAttachmentAspectReference-aspectMask-parameter");
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo-pNext-01963");
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo2-attachment-02525");
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkInputAttachmentAspectReference-aspectMask-02250",
@@ -7449,13 +7461,7 @@ TEST_F(VkLayerTest, PushDescriptorSetLayoutWithoutExtension) {
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &binding;
 
-    std::string error = "Attempted to use VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR in ";
-    error = error + "VkDescriptorSetLayoutCreateInfo::flags but its required extension ";
-    error = error + VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME;
-    error = error + " has not been enabled.";
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, error.c_str());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-00281");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-parameter");
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
     vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
@@ -7464,17 +7470,18 @@ TEST_F(VkLayerTest, PushDescriptorSetLayoutWithoutExtension) {
 
 TEST_F(VkLayerTest, DescriptorIndexingSetLayoutWithoutExtension) {
     TEST_DESCRIPTION("Create an update_after_bind set layout without loading the needed extension.");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    // Extension was promoted in 1.2
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
+        printf("%s test requires Vulkan 1.1 or lower, skipping test\n", kSkipPrefix);
+        return;
+    }
     auto ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
 
-    std::string error = "Attemped to use VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT in ";
-    error = error + "VkDescriptorSetLayoutCreateInfo::flags but its required extension ";
-    error = error + VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME;
-    error = error + " has not been enabled.";
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, error.c_str());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-parameter");
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
     vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
@@ -9360,6 +9367,12 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
         return;
     }
 
+    bool qcom_render_pass = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME);
+        qcom_render_pass = true;
+    }
+
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
         (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
@@ -9417,7 +9430,9 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
         (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
 
     rpci.flags = VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-flags-04521");
+    const char *vuid =
+        qcom_render_pass ? "VUID-VkRenderPassCreateInfo2-flags-04521" : "VUID-VkRenderPassCreateInfo2-flags-parameter";
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
     vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     rpci.flags = 0;
@@ -9761,6 +9776,7 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewMasks) {
 TEST_F(VkLayerTest, InvalidCreateDescriptorPoolFlags) {
     TEST_DESCRIPTION("Create descriptor pool with invalid flags.");
 
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequestedExtensionsEnabled()) {
@@ -10770,6 +10786,7 @@ TEST_F(VkLayerTest, DescriptorUpdateTemplate) {
 TEST_F(VkLayerTest, MutableDescriptorSetLayout) {
     TEST_DESCRIPTION("Create mutable descriptor set layout.");
 
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));

@@ -141,6 +141,9 @@ TEST_F(VkLayerTest, MirrorClampToEdgeNotEnabled) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01079");
+    m_errorMonitor->SetUnexpectedError("VUID-VkSamplerCreateInfo-addressModeU-parameter");
+    m_errorMonitor->SetUnexpectedError("VUID-VkSamplerCreateInfo-addressModeV-parameter");
+    m_errorMonitor->SetUnexpectedError("VUID-VkSamplerCreateInfo-addressModeW-parameter");
     VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     // Set the modes to cause the error
@@ -7220,7 +7223,13 @@ TEST_F(VkLayerTest, BadVertexBufferOffset) {
 TEST_F(VkLayerTest, BadIndexBufferOffset) {
     TEST_DESCRIPTION("Submit bad offsets binding the index buffer");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    AddRequiredExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     static const uint32_t ibo_data[3] = {0, 1, 2};
     VkConstantBufferObj ibo(m_device, sizeof(ibo_data), (const void *)&ibo_data, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
@@ -9444,6 +9453,7 @@ TEST_F(VkLayerTest, InvalidImageViewLayerCount) {
 
 TEST_F(VkLayerTest, CreateImageMiscErrors) {
     TEST_DESCRIPTION("Misc leftover valid usage errors in VkImageCreateInfo struct");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
 
     VkPhysicalDeviceFeatures features{};
     ASSERT_NO_FATAL_FAILURE(Init(&features));
@@ -9553,20 +9563,22 @@ TEST_F(VkLayerTest, CreateImageMiscErrors) {
         image_ci.tiling = VK_IMAGE_TILING_LINEAR;
         CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02257");
 
-        image_ci = safe_image_ci;
-        image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-        image_ci.mipLevels = 2;
-        image_ci.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-02259");
+        if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+            image_ci = safe_image_ci;
+            image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+            image_ci.mipLevels = 2;
+            image_ci.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
+            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-02259");
 
-        image_ci = safe_image_ci;
-        image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-        image_ci.mipLevels = 1;
-        image_ci.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
-        image_ci.tiling = VK_IMAGE_TILING_LINEAR;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-02259");
+            image_ci = safe_image_ci;
+            image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+            image_ci.mipLevels = 1;
+            image_ci.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
+            image_ci.tiling = VK_IMAGE_TILING_LINEAR;
+            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-02259");
+        }
     }
 
     {
@@ -14057,9 +14069,12 @@ TEST_F(VkLayerTest, CreateImageViewWithInvalidViewType) {
 
 TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
     TEST_DESCRIPTION("Test creating Image with invalid VkImageSubresourceRange aspectMask.");
-
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
 
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
 
