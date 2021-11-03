@@ -51,7 +51,7 @@ class BASE_NODE {
     using NodeList = small_vector<BASE_NODE *, 4>;
 
     template <typename Handle>
-    BASE_NODE(Handle h, VulkanObjectType t) : handle_(h, t, this), destroyed_(false) {}
+    BASE_NODE(Handle h, VulkanObjectType t) : handle_(h, t), destroyed_(false) {}
 
     virtual ~BASE_NODE() { Destroy(); }
 
