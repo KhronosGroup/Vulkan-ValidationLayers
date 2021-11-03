@@ -471,6 +471,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_display_swapchain{kNotEnabled};
     ExtEnabled vk_khr_draw_indirect_count{kNotEnabled};
     ExtEnabled vk_khr_driver_properties{kNotEnabled};
+    ExtEnabled vk_khr_dynamic_rendering{kNotEnabled};
     ExtEnabled vk_khr_external_fence{kNotEnabled};
     ExtEnabled vk_khr_external_fence_fd{kNotEnabled};
     ExtEnabled vk_khr_external_fence_win32{kNotEnabled};
@@ -842,6 +843,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_display, VK_KHR_DISPLAY_EXTENSION_NAME}}})},
             {VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_draw_indirect_count, {})},
             {VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_driver_properties, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_dynamic_rendering, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_external_fence, {{
                            {&DeviceExtensions::vk_khr_external_fence_capabilities, VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME}}})},
@@ -1319,6 +1322,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME,
     VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
     VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
+    VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
     VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME,
     VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_WIN32_KHR

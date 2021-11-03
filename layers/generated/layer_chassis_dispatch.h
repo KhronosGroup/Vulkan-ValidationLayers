@@ -1105,6 +1105,11 @@ void DispatchCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoDecodeInfoKHR*                 pFrameInfo);
 #endif // VK_ENABLE_BETA_EXTENSIONS
+void DispatchCmdBeginRenderingKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderingInfoKHR*                   pRenderingInfo);
+void DispatchCmdEndRenderingKHR(
+    VkCommandBuffer                             commandBuffer);
 void DispatchGetPhysicalDeviceFeatures2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkPhysicalDeviceFeatures2*                  pFeatures);

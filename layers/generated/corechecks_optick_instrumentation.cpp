@@ -3587,6 +3587,38 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdDecodeVideoKHR(VkCommandBuff
 }
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
+bool CoreChecksOptickInstrumented::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer                   commandBuffer, const VkRenderingInfoKHR*                           pRenderingInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer                   commandBuffer, const VkRenderingInfoKHR*                           pRenderingInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer                   commandBuffer, const VkRenderingInfoKHR*                           pRenderingInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer                   commandBuffer) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdEndRenderingKHR(commandBuffer);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdEndRenderingKHR(VkCommandBuffer                   commandBuffer) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdEndRenderingKHR(commandBuffer);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdEndRenderingKHR(VkCommandBuffer                   commandBuffer) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdEndRenderingKHR(commandBuffer);
+}
+
 bool CoreChecksOptickInstrumented::PreCallValidateGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);

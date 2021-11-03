@@ -1478,6 +1478,11 @@ bool PreCallValidateCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoDecodeInfoKHR*                 pFrameInfo) const override;
 #endif // VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCmdBeginRenderingKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderingInfoKHR*                   pRenderingInfo) const override;
+bool PreCallValidateCmdEndRenderingKHR(
+    VkCommandBuffer                             commandBuffer) const override;
 bool PreCallValidateGetPhysicalDeviceFeatures2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkPhysicalDeviceFeatures2*                  pFeatures) const override;

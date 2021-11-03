@@ -4151,6 +4151,32 @@ void ThreadSafety::PostCallRecordCmdDecodeVideoKHR(
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+void ThreadSafety::PreCallRecordCmdBeginRenderingKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderingInfoKHR*                   pRenderingInfo) {
+    StartWriteObject(commandBuffer, "vkCmdBeginRenderingKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdBeginRenderingKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderingInfoKHR*                   pRenderingInfo) {
+    FinishWriteObject(commandBuffer, "vkCmdBeginRenderingKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdEndRenderingKHR(
+    VkCommandBuffer                             commandBuffer) {
+    StartWriteObject(commandBuffer, "vkCmdEndRenderingKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdEndRenderingKHR(
+    VkCommandBuffer                             commandBuffer) {
+    FinishWriteObject(commandBuffer, "vkCmdEndRenderingKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void ThreadSafety::PreCallRecordGetDeviceGroupPeerMemoryFeaturesKHR(
     VkDevice                                    device,
     uint32_t                                    heapIndex,

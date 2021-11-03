@@ -2930,6 +2930,20 @@ void PostCallRecordCmdDecodeVideoKHR(
     const VkVideoDecodeInfoKHR*                 pFrameInfo) override;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+void PreCallRecordCmdBeginRenderingKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderingInfoKHR*                   pRenderingInfo) override;
+
+void PostCallRecordCmdBeginRenderingKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderingInfoKHR*                   pRenderingInfo) override;
+
+void PreCallRecordCmdEndRenderingKHR(
+    VkCommandBuffer                             commandBuffer) override;
+
+void PostCallRecordCmdEndRenderingKHR(
+    VkCommandBuffer                             commandBuffer) override;
+
 void PreCallRecordGetDeviceGroupPeerMemoryFeaturesKHR(
     VkDevice                                    device,
     uint32_t                                    heapIndex,
