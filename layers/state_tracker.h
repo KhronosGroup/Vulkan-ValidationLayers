@@ -307,7 +307,12 @@ class ValidationStateTracker : public ValidationObject {
             (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
 
         auto handle = state_object->Handle().template Cast<KeyType>();
-        map.emplace(handle, std::move(state_object));
+        auto result = map.emplace(handle, state_object);
+        // there shouldn't be anything in the map. If there is, we missed a destroy and then the driver reused the handle.
+        assert(result.second);
+        if (!result.second) {
+            result.first->second = std::move(state_object);
+        }
     }
 
     template <typename State>
