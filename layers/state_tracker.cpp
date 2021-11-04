@@ -308,6 +308,14 @@ void ValidationStateTracker::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer comma
                                Get<IMAGE_STATE>(pBlitImageInfo->dstImage));
 }
 
+void ValidationStateTracker::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2 *pBlitImageInfo) {
+    if (disabled[command_buffer_state]) return;
+
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_node->RecordTransferCmd(CMD_BLITIMAGE2, Get<IMAGE_STATE>(pBlitImageInfo->srcImage),
+                               Get<IMAGE_STATE>(pBlitImageInfo->dstImage));
+}
+
 void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                                         const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
                                                         VkResult result) {
