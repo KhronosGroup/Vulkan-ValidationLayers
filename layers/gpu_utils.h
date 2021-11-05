@@ -232,8 +232,8 @@ void UtilPreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreat
 
         if (replace_shaders) {
             for (uint32_t stage = 0; stage < stageCount; ++stage) {
-                const SHADER_MODULE_STATE *shader =
-                    object_ptr->GetShaderModuleState(Accessor::GetShaderModule(pCreateInfos[pipeline], stage));
+                const auto shader =
+                    object_ptr->template Get<SHADER_MODULE_STATE>(Accessor::GetShaderModule(pCreateInfos[pipeline], stage));
 
                 VkShaderModule shader_module;
                 auto create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
@@ -267,7 +267,7 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
         return;
     }
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
-        auto pipeline_state = object_ptr->ValidationStateTracker::GetPipelineState(pPipelines[pipeline]);
+        auto pipeline_state = object_ptr->template Get<PIPELINE_STATE>(pPipelines[pipeline]);
         if (nullptr == pipeline_state) continue;
 
         uint32_t stageCount = 0;
@@ -289,12 +289,14 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
 
             const SHADER_MODULE_STATE *shader_state = nullptr;
             if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                shader_state = object_ptr->GetShaderModuleState(pipeline_state->create_info.graphics.pStages[stage].module);
+                shader_state =
+                    object_ptr->template Get<SHADER_MODULE_STATE>(pipeline_state->create_info.graphics.pStages[stage].module);
             } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
                 assert(stage == 0);
-                shader_state = object_ptr->GetShaderModuleState(pipeline_state->create_info.compute.stage.module);
+                shader_state = object_ptr->template Get<SHADER_MODULE_STATE>(pipeline_state->create_info.compute.stage.module);
             } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-                shader_state = object_ptr->GetShaderModuleState(pipeline_state->create_info.raytracing.pStages[stage].module);
+                shader_state =
+                    object_ptr->template Get<SHADER_MODULE_STATE>(pipeline_state->create_info.raytracing.pStages[stage].module);
             } else {
                 assert(false);
             }
