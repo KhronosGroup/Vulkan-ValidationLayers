@@ -353,11 +353,13 @@ bool CoreChecks::FindLayouts(const IMAGE_STATE &image_state, std::vector<VkImage
 }
 
 bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
-                                                                      VkImage image, VkImageView image_view,
+                                                                      const IMAGE_VIEW_STATE &image_view_state,
                                                                       VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                                       uint32_t attachment_index, const char *variable_name) const {
     bool skip = false;
-    auto image_state = GetImageState(image);
+    const auto &image_view = image_view_state.Handle();
+    const auto *image_state = image_view_state.image_state.get();
+    const auto &image = image_state->Handle();
     const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *function_name = use_rp2 ? "vkCmdBeginRenderPass2()" : "vkCmdBeginRenderPass()";
@@ -522,7 +524,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             }
 
             const VkImage image = view_state->create_info.image;
-            const IMAGE_STATE *image_state = GetImageState(image);
+            const auto *image_state = view_state->image_state.get();
 
             if (!image_state) {
                 LogObjectList objlist(pRenderPassBegin->renderPass);
@@ -599,11 +601,11 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
 
             skip |= subres_skip;
 
-            ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_initial_layout, image, image_view,
-                                                                 framebuffer, render_pass, i, "initial layout");
+            ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_initial_layout, *view_state, framebuffer,
+                                                                 render_pass, i, "initial layout");
 
-            ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, final_layout, image, image_view, framebuffer,
-                                                                 render_pass, i, "final layout");
+            ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, final_layout, *view_state, framebuffer, render_pass, i,
+                                                                 "final layout");
         }
 
         for (uint32_t j = 0; j < render_pass_info->subpassCount; ++j) {
@@ -615,8 +617,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                     auto view_state = GetImageViewState(image_view);
 
                     if (view_state) {
-                        auto image = view_state->create_info.image;
-                        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
+                        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, *view_state,
                                                                              framebuffer, render_pass, attachment_ref.attachment,
                                                                              "input attachment layout");
                     }
@@ -630,14 +631,13 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                     auto view_state = GetImageViewState(image_view);
 
                     if (view_state) {
-                        auto image = view_state->create_info.image;
-                        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
+                        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, *view_state,
                                                                              framebuffer, render_pass, attachment_ref.attachment,
                                                                              "color attachment layout");
                         if (subpass.pResolveAttachments) {
                             ValidateRenderPassLayoutAgainstFramebufferImageUsage(
-                                rp_version, attachment_ref.layout, image, image_view, framebuffer, render_pass,
-                                attachment_ref.attachment, "resolve attachment layout");
+                                rp_version, attachment_ref.layout, *view_state, framebuffer, render_pass, attachment_ref.attachment,
+                                "resolve attachment layout");
                         }
                     }
                 }
@@ -650,8 +650,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                     auto view_state = GetImageViewState(image_view);
 
                     if (view_state) {
-                        auto image = view_state->create_info.image;
-                        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
+                        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, *view_state,
                                                                              framebuffer, render_pass, attachment_ref.attachment,
                                                                              "input attachment layout");
                     }
@@ -1179,9 +1178,9 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location 
         core_error::LocationCapture loc_capture(loc);
         const auto render_pass = rp_state->renderPass();
         cb_state->cmd_execute_commands_functions.emplace_back(
-            [this_ptr, loc_capture, cb_state, active_subpass, sub_desc, render_pass, barrier](const CMD_BUFFER_STATE *primary_cb,
-                                                                                              const FRAMEBUFFER_STATE *fb) {
-                return this_ptr->ValidateImageBarrierAttachment(loc_capture.Get(), cb_state, fb, active_subpass, sub_desc,
+            [this_ptr, loc_capture, active_subpass, sub_desc, render_pass, barrier](
+                const CMD_BUFFER_STATE &secondary_cb, const CMD_BUFFER_STATE *primary_cb, const FRAMEBUFFER_STATE *fb) {
+                return this_ptr->ValidateImageBarrierAttachment(loc_capture.Get(), &secondary_cb, fb, active_subpass, sub_desc,
                                                                 render_pass, barrier, primary_cb);
             });
     }
@@ -3306,14 +3305,14 @@ static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
     return true;
 }
 
-bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, uint32_t attachment_index,
+bool CoreChecks::ValidateClearAttachmentExtent(const CMD_BUFFER_STATE &cb_node, uint32_t attachment_index,
                                                const IMAGE_VIEW_STATE* image_view_state,
                                                const VkRect2D &render_area, uint32_t rect_count, const VkClearRect *clear_rects) const {
     bool skip = false;
 
     for (uint32_t j = 0; j < rect_count; j++) {
         if (!ContainsRect(render_area, clear_rects[j].rect)) {
-            skip |= LogError(command_buffer, "VUID-vkCmdClearAttachments-pRects-00016",
+            skip |= LogError(cb_node.Handle(), "VUID-vkCmdClearAttachments-pRects-00016",
                              "vkCmdClearAttachments(): The area defined by pRects[%d] is not contained in the area of "
                              "the current render pass instance.",
                              j);
@@ -3325,7 +3324,7 @@ bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, u
             const auto attachment_layer_count = image_view_state->normalized_subresource_range.layerCount;
             if ((clear_rects[j].baseArrayLayer >= attachment_layer_count) ||
                 (clear_rects[j].baseArrayLayer + clear_rects[j].layerCount > attachment_layer_count)) {
-                skip |= LogError(command_buffer, "VUID-vkCmdClearAttachments-pRects-00017",
+                skip |= LogError(cb_node.Handle(), "VUID-vkCmdClearAttachments-pRects-00017",
                                  "vkCmdClearAttachments(): The layers defined in pRects[%d] are not contained in the layers "
                                  "of pAttachment[%d].",
                                  j, attachment_index);
@@ -3441,7 +3440,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) && (fb_attachment < framebuffer->createInfo.attachmentCount)) {
                     image_view_state = cb_node->GetActiveAttachmentImageViewState(fb_attachment);
                 }
-                skip |= ValidateClearAttachmentExtent(commandBuffer, attachment_index, image_view_state, render_area,
+                skip |= ValidateClearAttachmentExtent(*cb_node, attachment_index, image_view_state, render_area,
                                                       rectCount, pRects);
             }
 
@@ -3506,16 +3505,18 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                         }
                         // if a secondary level command buffer inherits the framebuffer from the primary command buffer
                         // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
-                        auto val_fn = [this, commandBuffer, attachment_index, image_index, rectCount, clear_rect_copy](
-                            const CMD_BUFFER_STATE* prim_cb, const FRAMEBUFFER_STATE* fb) {
+                        auto val_fn = [this, attachment_index, image_index, rectCount, clear_rect_copy](
+                                          const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *prim_cb,
+                                          const FRAMEBUFFER_STATE *fb) {
                             assert(rectCount == clear_rect_copy->size());
                             bool skip = false;
                             const IMAGE_VIEW_STATE* image_view_state = nullptr;
                             if (image_index != -1) {
                                 image_view_state = (*prim_cb->active_attachments)[image_index];
                             }
-                            skip = ValidateClearAttachmentExtent(commandBuffer, attachment_index, image_view_state, prim_cb->activeRenderPass->dynamic_rendering_info.renderArea, rectCount,
-                                clear_rect_copy->data());
+                            skip = ValidateClearAttachmentExtent(secondary, attachment_index, image_view_state,
+                                                                 prim_cb->activeRenderPass->dynamic_rendering_info.renderArea,
+                                                                 rectCount, clear_rect_copy->data());
                             return skip;
                         };
                         cb_node->cmd_execute_commands_functions.emplace_back(val_fn);
@@ -3547,8 +3548,9 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                     }
                     // if a secondary level command buffer inherits the framebuffer from the primary command buffer
                     // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
-                    auto val_fn = [this, commandBuffer, attachment_index, fb_attachment, rectCount, clear_rect_copy](
-                        const CMD_BUFFER_STATE* prim_cb, const FRAMEBUFFER_STATE* fb) {
+                    auto val_fn = [this, attachment_index, fb_attachment, rectCount, clear_rect_copy](
+                                      const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *prim_cb,
+                                      const FRAMEBUFFER_STATE *fb) {
                         assert(rectCount == clear_rect_copy->size());
                         const auto& render_area = prim_cb->activeRenderPassBeginInfo.renderArea;
                         bool skip = false;
@@ -3556,8 +3558,8 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                         if (fb && (fb_attachment != VK_ATTACHMENT_UNUSED) && (fb_attachment < fb->createInfo.attachmentCount)) {
                             image_view_state = prim_cb->GetActiveAttachmentImageViewState(fb_attachment);
                         }
-                        skip = ValidateClearAttachmentExtent(commandBuffer, attachment_index, image_view_state, render_area, rectCount,
-                            clear_rect_copy->data());
+                        skip = ValidateClearAttachmentExtent(secondary, attachment_index, image_view_state, render_area, rectCount,
+                                                             clear_rect_copy->data());
                         return skip;
                     };
                     cb_node->cmd_execute_commands_functions.emplace_back(val_fn);

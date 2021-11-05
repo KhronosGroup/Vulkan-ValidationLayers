@@ -928,7 +928,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (attachment != VK_ATTACHMENT_UNUSED) {
                     const auto *imageview_state = pCB->GetActiveAttachmentImageViewState(attachment);
                     if (imageview_state != nullptr) {
-                        const IMAGE_STATE *image_state = GetImageState(imageview_state->create_info.image);
+                        const auto *image_state = imageview_state->image_state.get();
                         if (image_state != nullptr) {
                             if ((image_state->createInfo.flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
                                 skip |= LogError(pPipeline->pipeline(), vuid.sample_location,
@@ -7511,45 +7511,49 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
                          "vkCmdBindShadingRateImageNV: The shadingRateImage feature is disabled.");
     }
 
-    if (imageView != VK_NULL_HANDLE) {
-        const auto view_state = GetImageViewState(imageView);
-        auto &ivci = view_state->create_info;
+    if (imageView == VK_NULL_HANDLE) {
+        return skip;
+    }
+    const auto *view_state = Get<IMAGE_VIEW_STATE>(imageView);
+    if (!view_state) {
+        skip |= LogError(imageView, "VUID-vkCmdBindShadingRateImageNV-imageView-02059",
+                         "vkCmdBindShadingRateImageNV: If imageView is not VK_NULL_HANDLE, it must be a valid "
+                         "VkImageView handle.");
+        return skip;
+    }
+    const auto &ivci = view_state->create_info;
+    if (ivci.viewType != VK_IMAGE_VIEW_TYPE_2D && ivci.viewType != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+        skip |= LogError(imageView, "VUID-vkCmdBindShadingRateImageNV-imageView-02059",
+                         "vkCmdBindShadingRateImageNV: If imageView is not VK_NULL_HANDLE, it must be a valid "
+                         "VkImageView handle of type VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY.");
+    }
 
-        if (!view_state || (ivci.viewType != VK_IMAGE_VIEW_TYPE_2D && ivci.viewType != VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
-            skip |= LogError(imageView, "VUID-vkCmdBindShadingRateImageNV-imageView-02059",
-                             "vkCmdBindShadingRateImageNV: If imageView is not VK_NULL_HANDLE, it must be a valid "
-                             "VkImageView handle of type VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY.");
-        }
+    if (ivci.format != VK_FORMAT_R8_UINT) {
+        skip |= LogError(
+            imageView, "VUID-vkCmdBindShadingRateImageNV-imageView-02060",
+            "vkCmdBindShadingRateImageNV: If imageView is not VK_NULL_HANDLE, it must have a format of VK_FORMAT_R8_UINT.");
+    }
 
-        if (view_state && ivci.format != VK_FORMAT_R8_UINT) {
-            skip |= LogError(
-                imageView, "VUID-vkCmdBindShadingRateImageNV-imageView-02060",
-                "vkCmdBindShadingRateImageNV: If imageView is not VK_NULL_HANDLE, it must have a format of VK_FORMAT_R8_UINT.");
-        }
+    const auto image_state = view_state->image_state.get();
+    auto usage = image_state->createInfo.usage;
+    if (!(usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV)) {
+        skip |= LogError(imageView, "VUID-vkCmdBindShadingRateImageNV-imageView-02061",
+                         "vkCmdBindShadingRateImageNV: If imageView is not VK_NULL_HANDLE, the image must have been "
+                         "created with VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV set.");
+    }
 
-        const VkImageCreateInfo *ici = view_state ? &GetImageState(view_state->create_info.image)->createInfo : nullptr;
-        if (ici && !(ici->usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV)) {
-            skip |= LogError(imageView, "VUID-vkCmdBindShadingRateImageNV-imageView-02061",
-                             "vkCmdBindShadingRateImageNV: If imageView is not VK_NULL_HANDLE, the image must have been "
-                             "created with VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV set.");
-        }
+    bool hit_error = false;
 
-        if (view_state) {
-            const auto image_state = GetImageState(view_state->create_info.image);
-            bool hit_error = false;
+    // XXX TODO: While the VUID says "each subresource", only the base mip level is
+    // actually used. Since we don't have an existing convenience function to iterate
+    // over all mip levels, just don't bother with non-base levels.
+    const VkImageSubresourceRange &range = view_state->normalized_subresource_range;
+    VkImageSubresourceLayers subresource = {range.aspectMask, range.baseMipLevel, range.baseArrayLayer, range.layerCount};
 
-            // XXX TODO: While the VUID says "each subresource", only the base mip level is
-            // actually used. Since we don't have an existing convenience function to iterate
-            // over all mip levels, just don't bother with non-base levels.
-            const VkImageSubresourceRange &range = view_state->normalized_subresource_range;
-            VkImageSubresourceLayers subresource = {range.aspectMask, range.baseMipLevel, range.baseArrayLayer, range.layerCount};
-
-            if (image_state) {
-                skip |= VerifyImageLayout(cb_state, image_state, subresource, imageLayout, VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV,
-                                          "vkCmdCopyImage()", "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
-                                          "VUID-vkCmdBindShadingRateImageNV-imageView-02062", &hit_error);
-            }
-        }
+    if (image_state) {
+        skip |= VerifyImageLayout(cb_state, image_state, subresource, imageLayout, VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV,
+                                  "vkCmdCopyImage()", "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
+                                  "VUID-vkCmdBindShadingRateImageNV-imageView-02062", &hit_error);
     }
 
     return skip;
@@ -9974,19 +9978,17 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attach
                         const VkImageView *image_view = &fbci->pAttachments[attachments[attach].attachment];
                         auto view_state = GetImageViewState(*image_view);
                         if (view_state) {
-                            const VkImageCreateInfo *ici = &GetImageState(view_state->create_info.image)->createInfo;
-                            if (ici != nullptr) {
-                                auto creation_usage = ici->usage;
-                                const auto stencil_usage_info = LvlFindInChain<VkImageStencilUsageCreateInfo>(ici->pNext);
-                                if (stencil_usage_info) {
-                                    creation_usage |= stencil_usage_info->stencilUsage;
-                                }
-                                if ((creation_usage & usage_flag) == 0) {
-                                    skip |= LogError(device, error_code,
-                                                     "vkCreateFramebuffer:  Framebuffer Attachment (%d) conflicts with the image's "
-                                                     "IMAGE_USAGE flags (%s).",
-                                                     attachments[attach].attachment, string_VkImageUsageFlagBits(usage_flag));
-                                }
+                            const auto &ici = view_state->image_state->createInfo;
+                            auto creation_usage = ici.usage;
+                            const auto stencil_usage_info = LvlFindInChain<VkImageStencilUsageCreateInfo>(ici.pNext);
+                            if (stencil_usage_info) {
+                                creation_usage |= stencil_usage_info->stencilUsage;
+                            }
+                            if ((creation_usage & usage_flag) == 0) {
+                                skip |= LogError(device, error_code,
+                                                 "vkCreateFramebuffer:  Framebuffer Attachment (%d) conflicts with the image's "
+                                                 "IMAGE_USAGE flags (%s).",
+                                                 attachments[attach].attachment, string_VkImageUsageFlagBits(usage_flag));
                             }
                         }
                     } else {
@@ -10076,20 +10078,20 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 i, string_VkFormat(ivci.format), string_VkFormat(rpci->pAttachments[i].format),
                                 report_data->FormatHandle(pCreateInfo->renderPass).c_str());
                         }
-                        const VkImageCreateInfo *ici = &GetImageState(ivci.image)->createInfo;
-                        if (ici->samples != rpci->pAttachments[i].samples) {
+                        const auto &ici = view_state->image_state->createInfo;
+                        if (ici.samples != rpci->pAttachments[i].samples) {
                             skip |=
                                 LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-pAttachments-00881",
                                          "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has %s samples that do not "
                                          "match the %s "
                                          "samples used by the corresponding attachment for %s.",
-                                         i, string_VkSampleCountFlagBits(ici->samples),
+                                         i, string_VkSampleCountFlagBits(ici.samples),
                                          string_VkSampleCountFlagBits(rpci->pAttachments[i].samples),
                                          report_data->FormatHandle(pCreateInfo->renderPass).c_str());
                         }
 
                         // Verify that image memory is valid
-                        auto image_data = GetImageState(ivci.image);
+                        auto *image_data = view_state->image_state.get();
                         skip |= ValidateMemoryIsBoundToImage(image_data, "vkCreateFramebuffer()",
                                                              kVUID_Core_Bound_Resource_FreedMemoryAccess);
 
@@ -10102,8 +10104,8 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 i, subresource_range.levelCount);
                         }
                         const uint32_t mip_level = subresource_range.baseMipLevel;
-                        uint32_t mip_width = max(1u, ici->extent.width >> mip_level);
-                        uint32_t mip_height = max(1u, ici->extent.height >> mip_level);
+                        uint32_t mip_width = max(1u, ici.extent.width >> mip_level);
+                        uint32_t mip_height = max(1u, ici.extent.height >> mip_level);
                         bool used_as_input_color_resolve_depth_stencil_attachment = false;
                         bool used_as_fragment_shading_rate_attachment = false;
                         bool fsr_non_zero_viewmasks = false;
@@ -10248,7 +10250,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                                  i, mip_level, mip_height, pCreateInfo->height);
                             }
                             uint32_t layerCount = view_state->create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS
-                                                      ? GetImageState(ivci.image)->createInfo.arrayLayers
+                                                      ? view_state->image_state->createInfo.arrayLayers
                                                       : view_state->create_info.subresourceRange.layerCount;
                             if (layerCount < pCreateInfo->layers) {
                                 skip |=
@@ -12414,7 +12416,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                     const auto &subresource_range = image_view_state->normalized_subresource_range;
                     const VkFramebufferAttachmentImageInfo *framebuffer_attachment_image_info =
                         &framebuffer_attachments_create_info->pAttachmentImageInfos[i];
-                    const VkImageCreateInfo *image_create_info = &GetImageState(image_view_create_info->image)->createInfo;
+                    const auto *image_create_info = &image_view_state->image_state->createInfo;
 
                     if (framebuffer_attachment_image_info->flags != image_create_info->flags) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03209",
@@ -13221,7 +13223,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     if (!sub_cb_state->cmd_execute_commands_functions.empty()) {
                         //  Inherit primary's activeFramebuffer and while running validate functions
                         for (auto &function : sub_cb_state->cmd_execute_commands_functions) {
-                            skip |= function(cb_state, cb_state->activeFramebuffer.get());
+                            skip |= function(*sub_cb_state, cb_state, cb_state->activeFramebuffer.get());
                         }
                     }
                 }

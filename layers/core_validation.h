@@ -594,7 +594,7 @@ class CoreChecks : public ValidationStateTracker {
                                        const char* param_name, const char* image_layer_count_var_name, const VkImage image,
                                        const SubresourceRangeErrorCodes& errorCodes) const;
     bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
-                                                              VkImage image, VkImageView image_view, VkFramebuffer framebuffer,
+                                                              const IMAGE_VIEW_STATE& image_view_state, VkFramebuffer framebuffer,
                                                               VkRenderPass renderpass, uint32_t attachment_index,
                                                               const char* variable_name) const;
     template <typename RegionType>
@@ -620,7 +620,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageAttributes(const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
                                  const char* param_name) const;
 
-    bool ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, uint32_t attachment_index,
+    bool ValidateClearAttachmentExtent(const CMD_BUFFER_STATE &cb_node, uint32_t attachment_index,
                                        const IMAGE_VIEW_STATE *image_view_state, const VkRect2D& render_area,
                                        uint32_t rect_count, const VkClearRect* clear_rects) const;
 

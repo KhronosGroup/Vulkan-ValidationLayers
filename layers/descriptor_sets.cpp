@@ -2251,7 +2251,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     VkImage image = iv_state->create_info.image;
     VkFormat format = VK_FORMAT_MAX_ENUM;
     VkImageUsageFlags usage = 0;
-    auto image_node = GetImageState(image);
+    auto *image_node = iv_state->image_state.get();
     assert(image_node);
 
     format = image_node->createInfo.format;
