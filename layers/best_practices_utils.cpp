@@ -537,8 +537,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
 
         auto view_state = GetImageViewState(image_views[i]);
         if (view_state) {
-            const auto& ivci = view_state->create_info;
-            const auto& ici = Get<IMAGE_STATE>(ivci.image)->createInfo;
+            const auto& ici = view_state->image_state->createInfo;
 
             bool image_is_transient = (ici.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0;
 
