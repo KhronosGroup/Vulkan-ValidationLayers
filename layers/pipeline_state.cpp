@@ -118,7 +118,7 @@ static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(ValidationStateTrack
     PIPELINE_LAYOUT_STATE::SetLayoutVector set_layouts(pCreateInfo->setLayoutCount);
 
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-        set_layouts[i] = dev_data->GetDescriptorSetLayoutShared(pCreateInfo->pSetLayouts[i]);
+        set_layouts[i] = dev_data->GetShared<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
     }
     return set_layouts;
 }

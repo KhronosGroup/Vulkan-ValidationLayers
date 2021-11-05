@@ -327,7 +327,7 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
 
 void GpuAssisted::PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
                                                        VkDeviceAddress address) {
-    BUFFER_STATE *buffer_state = GetBufferState(pInfo->buffer);
+    auto buffer_state = Get<BUFFER_STATE>(pInfo->buffer);
     // Validate against the size requested when the buffer was created
     if (buffer_state) {
         buffer_state->deviceAddress = address;
@@ -347,7 +347,7 @@ void GpuAssisted::PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const
 }
 
 void GpuAssisted::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
-    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    auto buffer_state = Get<BUFFER_STATE>(buffer);
     if (buffer_state) buffer_map.erase(buffer_state->deviceAddress);
     ValidationStateTracker::PreCallRecordDestroyBuffer(device, buffer, pAllocator);
 }
@@ -993,7 +993,7 @@ void GpuAssisted::PostCallRecordBindAccelerationStructureMemoryNV(VkDevice devic
     ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, result);
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
-        ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureStateNV(info.accelerationStructure);
+        auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(info.accelerationStructure);
         if (as_state) {
             DispatchGetAccelerationStructureHandleNV(device, info.accelerationStructure, 8, &as_state->opaque_handle);
         }
@@ -2097,7 +2097,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
                 assert(cmd_type == CMD_DRAWINDEXEDINDIRECTCOUNT || cmd_type == CMD_DRAWINDEXEDINDIRECTCOUNTKHR);
                 struct_size = sizeof(VkDrawIndexedIndirectCommand);
             }
-            BUFFER_STATE *buffer_state = GetBufferState(cdi_state->buffer);
+            auto buffer_state = Get<BUFFER_STATE>(cdi_state->buffer);
             uint32_t max_count;
             uint64_t bufsize = buffer_state->createInfo.size;
             uint64_t first_command_bytes = struct_size + cdi_state->offset;

@@ -357,7 +357,7 @@ void BestPractices::PreCallRecordDestroyImage(VkDevice device, VkImage image, co
 
 void BestPractices::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator) {
     if (VK_NULL_HANDLE != swapchain) {
-        SWAPCHAIN_NODE* chain = GetSwapchainState(swapchain);
+        auto chain = Get<SWAPCHAIN_NODE>(swapchain);
         for (auto& image : chain->images) {
             if (image.image_state) {
                 ReleaseImageUsageState(image.image_state->image());
@@ -373,7 +373,7 @@ IMAGE_STATE_BP* BestPractices::GetImageUsageState(VkImage vk_image) {
         return &itr->second;
     } else {
         auto& state = imageUsageMap[vk_image];
-        IMAGE_STATE* image = Get<IMAGE_STATE>(vk_image);
+        auto image = Get<IMAGE_STATE>(vk_image);
         state.image = image;
         state.usages.resize(image->createInfo.arrayLayers);
         for (auto& mips : state.usages) {
@@ -535,7 +535,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
                                                attachment.stencilStoreOp != VK_ATTACHMENT_STORE_OP_STORE);
         }
 
-        auto view_state = GetImageViewState(image_views[i]);
+        auto view_state = Get<IMAGE_VIEW_STATE>(image_views[i]);
         if (view_state) {
             const auto& ici = view_state->image_state->createInfo;
 
@@ -577,7 +577,7 @@ bool BestPractices::PreCallValidateCreateFramebuffer(VkDevice device, const VkFr
                                                      const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) const {
     bool skip = false;
 
-    auto rp_state = GetRenderPassState(pCreateInfo->renderPass);
+    auto rp_state = Get<RENDER_PASS_STATE>(pCreateInfo->renderPass);
     if (rp_state && !(pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         skip = ValidateAttachments(rp_state->createInfo.ptr(), pCreateInfo->attachmentCount, pCreateInfo->pAttachments);
     }
@@ -703,7 +703,7 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
     if (memory == VK_NULL_HANDLE) return false;
     bool skip = false;
 
-    const DEVICE_MEMORY_STATE* mem_info = ValidationStateTracker::GetDevMemState(memory);
+    const auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
 
     for (const auto& node: mem_info->ObjectBindings()) {
         const auto& obj = node->Handle();
@@ -726,7 +726,7 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
 
 bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const char* api_name) const {
     bool skip = false;
-    const BUFFER_STATE* buffer_state = GetBufferState(buffer);
+    const auto buffer_state = Get<BUFFER_STATE>(buffer);
 
     if (!buffer_state->memory_requirements_checked && !buffer_state->external_memory_handle) {
         skip |= LogWarning(device, kVUID_BestPractices_BufferMemReqNotCalled,
@@ -734,7 +734,7 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
                            api_name, report_data->FormatHandle(buffer).c_str());
     }
 
-    const DEVICE_MEMORY_STATE* mem_state = GetDevMemState(memory);
+    const auto mem_state = Get<DEVICE_MEMORY_STATE>(memory);
 
     if (mem_state && mem_state->alloc_info.allocationSize == buffer_state->createInfo.size &&
         mem_state->alloc_info.allocationSize < kMinDedicatedAllocationSize) {
@@ -787,7 +787,7 @@ bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_
 
 bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const char* api_name) const {
     bool skip = false;
-    const IMAGE_STATE* image_state = Get<IMAGE_STATE>(image);
+    const auto image_state = Get<IMAGE_STATE>(image);
 
     if (image_state->disjoint == false) {
         if (!image_state->memory_requirements_checked[0] && !image_state->external_memory_handle) {
@@ -800,7 +800,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
         // plane.
     }
 
-    const DEVICE_MEMORY_STATE* mem_state = GetDevMemState(memory);
+    const auto mem_state = Get<DEVICE_MEMORY_STATE>(memory);
 
     if (mem_state->alloc_info.allocationSize == image_state->requirements[0].size &&
         mem_state->alloc_info.allocationSize < kMinDedicatedAllocationSize) {
@@ -914,7 +914,7 @@ bool BestPractices::ValidateMultisampledBlendingArm(uint32_t createInfoCount,
             return skip;
         }
 
-        auto rp_state = GetRenderPassState(create_info->renderPass);
+        auto rp_state = Get<RENDER_PASS_STATE>(create_info->renderPass);
         const auto& subpass = rp_state->createInfo.pSubpasses[create_info->subpass];
 
         // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
@@ -1065,7 +1065,7 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
             continue;
         }
         // Record which frame buffer attachments we should consider to be accessed when a draw call is performed.
-        RENDER_PASS_STATE* rp = GetRenderPassState(create_info.renderPass);
+        auto rp = Get<RENDER_PASS_STATE>(create_info.renderPass);
         auto& subpass = rp->createInfo.pSubpasses[create_info.subpass];
         cis.accessFramebufferAttachments.clear();
 
@@ -1139,7 +1139,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 
 bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& createInfo) const {
     bool skip = false;
-    auto* module = GetShaderModuleState(createInfo.stage.module);
+    auto module = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
     // Generate warnings about work group sizes based on active resources.
     auto entrypoint = module->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
     if (entrypoint == module->end()) return false;
@@ -1468,7 +1468,7 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
         // check for depth/blend state tracking
         auto gp_cis = graphicsPipelineCIs.find(pipeline);
         if (gp_cis != graphicsPipelineCIs.end()) {
-            auto* cb_node = GetCBState(commandBuffer);
+            auto cb_node = GetCBState(commandBuffer);
             assert(cb_node);
             auto& render_pass_state = cb_node->render_pass_state;
 
@@ -1575,7 +1575,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
                            "and can only be used for side effects such as layout transitions.");
     }
 
-    auto rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
+    auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     if (rp_state) {
         if (rp_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
             const VkRenderPassAttachmentBeginInfo* rpabi = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
@@ -1812,7 +1812,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
 
     auto* cb = GetCBState(commandBuffer);
 
-    auto* rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
+    auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     if (rp_state) {
         // Check load ops
         for (uint32_t att = 0; att < rp_state->createInfo.attachmentCount; att++) {
@@ -1835,16 +1835,16 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
                 usage = IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS;
             }
 
-            auto framebuffer = GetFramebufferState(pRenderPassBegin->framebuffer);
+            auto framebuffer = Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
             IMAGE_VIEW_STATE* image_view = nullptr;
 
             if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
                 const VkRenderPassAttachmentBeginInfo* rpabi = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
                 if (rpabi) {
-                    image_view = GetImageViewState(rpabi->pAttachments[att]);
+                    image_view = Get<IMAGE_VIEW_STATE>(rpabi->pAttachments[att]);
                 }
             } else {
-                image_view = GetImageViewState(framebuffer->createInfo.pAttachments[att]);
+                image_view = Get<IMAGE_VIEW_STATE>(framebuffer->createInfo.pAttachments[att]);
             }
 
             QueueValidateImageView(cb->queue_submit_functions, "vkCmdBeginRenderPass()", image_view, usage);
@@ -1865,16 +1865,16 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
                 usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED;
             }
 
-            auto framebuffer = GetFramebufferState(pRenderPassBegin->framebuffer);
+            auto framebuffer = Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
 
             IMAGE_VIEW_STATE* image_view = nullptr;
             if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
                 const VkRenderPassAttachmentBeginInfo* rpabi = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
                 if (rpabi) {
-                    image_view = GetImageViewState(rpabi->pAttachments[att]);
+                    image_view = Get<IMAGE_VIEW_STATE>(rpabi->pAttachments[att]);
                 }
             } else {
-                image_view = GetImageViewState(framebuffer->createInfo.pAttachments[att]);
+                image_view = Get<IMAGE_VIEW_STATE>(framebuffer->createInfo.pAttachments[att]);
             }
 
             QueueValidateImageView(cb->queue_submit_functions_after_render_pass, "vkCmdEndRenderPass()", image_view, usage);
@@ -1920,7 +1920,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rend
     render_pass_state.drawTouchAttachments = true;
     // Don't reset state related to pipeline state.
 
-    const auto* rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
+    const auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
 
     // track depth / color attachment usage within the renderpass
     for (size_t i = 0; i < rp_state->createInfo.subpassCount; i++) {
@@ -2503,7 +2503,7 @@ void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer, c
                     }
 
                     if (image_view) {
-                        IMAGE_VIEW_STATE* image_view_state = GetImageViewState(image_view);
+                        auto image_view_state = Get<IMAGE_VIEW_STATE>(image_view);
                         QueueValidateImageView(cb_state->queue_submit_functions, function_name,
                                                image_view_state, IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS);
                     }
@@ -2706,7 +2706,7 @@ bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwap
                                                          VkImage* pSwapchainImages) const {
     bool skip = false;
 
-    const auto* swapchain_state = static_cast<SWAPCHAIN_STATE_BP*>(Get<SWAPCHAIN_NODE>(swapchain));
+    const auto swapchain_state = static_cast<SWAPCHAIN_STATE_BP*>(Get<SWAPCHAIN_NODE>(swapchain));
 
     if (swapchain_state && pSwapchainImages) {
         // Compare the preliminary value of *pSwapchainImageCount with the value this time:
@@ -2763,7 +2763,7 @@ bool BestPractices::PreCallValidateBindAccelerationStructureMemoryNV(
     bool skip = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        const ACCELERATION_STRUCTURE_STATE* as_state = GetAccelerationStructureStateNV(pBindInfos[i].accelerationStructure);
+        const auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(pBindInfos[i].accelerationStructure);
         if (!as_state->memory_requirements_checked) {
             // There's not an explicit requirement in the spec to call vkGetImageMemoryRequirements() prior to calling
             // BindAccelerationStructureMemoryNV but it's implied in that memory being bound must conform with
@@ -3396,8 +3396,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
         // Push constants cost 1 DWORD per 4 bytes in the Push constant range.
         uint32_t pipeline_size = pCreateInfo->setLayoutCount;  // in DWORDS
         for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; i++) {
-            std::shared_ptr<const cvdescriptorset::DescriptorSetLayout> descriptor_set_layout_state =
-                GetDescriptorSetLayoutShared(pCreateInfo->pSetLayouts[i]);
+            auto descriptor_set_layout_state = GetShared<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
             pipeline_size += descriptor_set_layout_state->GetDynamicDescriptorCount() * (robust_buffer_access ? 4 : 2);
         }
 
@@ -3429,8 +3428,8 @@ bool BestPractices::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
     dst_image_hex << "0x" << std::hex << HandleToUint64(dstImage);
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        const IMAGE_STATE* src_state = Get<IMAGE_STATE>(srcImage);
-        const IMAGE_STATE* dst_state = Get<IMAGE_STATE>(dstImage);
+        const auto src_state = Get<IMAGE_STATE>(srcImage);
+        const auto dst_state = Get<IMAGE_STATE>(dstImage);
 
         if (src_state && dst_state) {
             VkImageTiling src_Tiling = src_state->createInfo.tiling;
@@ -3576,7 +3575,7 @@ bool BestPractices::PostTransformLRUCacheModel::query_cache(uint32_t value) {
 
 bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                        VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) const {
-    const auto swapchain_data = GetSwapchainState(swapchain);
+    const auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
     bool skip = false;
     if (swapchain_data && swapchain_data->images.size() == 0) {
         skip |= LogWarning(swapchain, kVUID_Core_DrawState_SwapchainImagesNotFound,
@@ -3770,7 +3769,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesK
 void BestPractices::ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                               uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages,
                                                               VkResult result) {
-    auto* swapchain_state = static_cast<SWAPCHAIN_STATE_BP*>(Get<SWAPCHAIN_NODE>(swapchain));
+    auto swapchain_state = static_cast<SWAPCHAIN_STATE_BP*>(Get<SWAPCHAIN_NODE>(swapchain));
     if (swapchain_state && (pSwapchainImages || *pSwapchainImageCount)) {
         if (swapchain_state->vkGetSwapchainImagesKHRState < QUERY_DETAILS) {
             swapchain_state->vkGetSwapchainImagesKHRState = QUERY_DETAILS;
@@ -3790,7 +3789,7 @@ void BestPractices::ManualPostCallRecordCreateDevice(VkPhysicalDevice gpu, const
 void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) {
     ValidationStateTracker::PreCallRecordQueueSubmit(queue, submitCount, pSubmits, fence);
 
-    QUEUE_STATE* queue_state = GetQueueState(queue);
+    auto queue_state = Get<QUEUE_STATE>(queue);
     for (uint32_t submit = 0; submit < submitCount; submit++) {
         const auto& submit_info = pSubmits[submit];
         for (uint32_t cb_index = 0; cb_index < submit_info.commandBufferCount; cb_index++) {
