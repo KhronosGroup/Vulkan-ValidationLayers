@@ -156,8 +156,8 @@ bool ImageSampleOperation(uint32_t opcode) {
 }
 
 
-// Return paramater position of memory scope ID or zero if there is none
-uint32_t MemoryScopeParam(uint32_t opcode) {
+// Return parameter position of memory scope ID or zero if there is none
+uint32_t MemoryScopeParamPosition(uint32_t opcode) {
     uint32_t position = 0;
     switch (opcode) {
         case spv::OpMemoryBarrier:
@@ -190,8 +190,8 @@ uint32_t MemoryScopeParam(uint32_t opcode) {
     return position;
 }
 
-// Return paramater position of execution scope ID or zero if there is none
-uint32_t ExecutionScopeParam(uint32_t opcode) {
+// Return parameter position of execution scope ID or zero if there is none
+uint32_t ExecutionScopeParamPosition(uint32_t opcode) {
     uint32_t position = 0;
     switch (opcode) {
         case spv::OpControlBarrier:
@@ -259,8 +259,8 @@ uint32_t ExecutionScopeParam(uint32_t opcode) {
     return position;
 }
 
-// Return paramater position of Image Operands or zero if there is none
-uint32_t ImageOperandsParam(uint32_t opcode) {
+// Return parameter position of Image Operands or zero if there is none
+uint32_t ImageOperandsParamPosition(uint32_t opcode) {
     uint32_t position = 0;
     switch (opcode) {
         case spv::OpImageWrite:
@@ -298,6 +298,35 @@ uint32_t ImageOperandsParam(uint32_t opcode) {
             break;
     }
     return position;
+}
+
+// Return number of optional parameter from ImageOperands
+uint32_t ImageOperandsParamCount(uint32_t image_operand) {
+    uint32_t count = 0;
+    switch (image_operand) {
+        case spv::ImageOperandsMaskNone:
+        case spv::ImageOperandsNonPrivateTexelMask:
+        case spv::ImageOperandsVolatileTexelMask:
+        case spv::ImageOperandsSignExtendMask:
+        case spv::ImageOperandsZeroExtendMask:
+            return 0;
+        case spv::ImageOperandsBiasMask:
+        case spv::ImageOperandsLodMask:
+        case spv::ImageOperandsConstOffsetMask:
+        case spv::ImageOperandsOffsetMask:
+        case spv::ImageOperandsConstOffsetsMask:
+        case spv::ImageOperandsSampleMask:
+        case spv::ImageOperandsMinLodMask:
+        case spv::ImageOperandsMakeTexelAvailableMask:
+        case spv::ImageOperandsMakeTexelVisibleMask:
+            return 1;
+        case spv::ImageOperandsGradMask:
+            return 2;
+            break;
+        default:
+            break;
+    }
+    return count;
 }
 
 

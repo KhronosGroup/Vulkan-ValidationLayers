@@ -100,6 +100,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         self.memoryScopeParam = [[] for i in range(5)]
         self.executionScopeParam = [[] for i in range(5)]
         self.imageOperandsParam = [[] for i in range(8)]
+        self.imageOperandsParamCount = [[] for i in range(3)]
 
         # Lots of switch statements share same ending
         self.commonBoolSwitch = '''            found = true;
@@ -110,13 +111,15 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
     return found;
 }\n
 '''
-        self.commonParamSwitch = '''            break;
+
+    def commonParamSwitch(self, variableName):
+        return '''            break;
         default:
             break;
-    }
-    return position;
-}\n
-'''
+    }}
+    return {};
+}}\n
+'''.format(variableName)
 
     #
     # Called at beginning of processing as file is opened
@@ -174,7 +177,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         write(self.atomicOperation(), file=self.outFile)
         write(self.groupOperation(), file=self.outFile)
         write(self.imageOperation(), file=self.outFile)
-        write(self.scopeHelper(), file=self.outFile)
+        write(self.parameterHelper(), file=self.outFile)
         write(self.stringHelper(), file=self.outFile)
         # Finish processing in superclass
         OutputGenerator.endFile(self)
@@ -207,6 +210,13 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                     for enum in operandKind['enumerants']:
                         if 'capabilities' in enum and len(enum['capabilities']) == 1 and enum['capabilities'][0] == 'Kernel':
                             kernelCapability.append(enum['enumerant'])
+                if operandKind['kind'] == 'ImageOperands':
+                    values = [] # prevent alias from being duplicatd
+                    for enum in operandKind['enumerants']:
+                        count = 0  if 'parameters' not in enum else len(enum['parameters'])
+                        if enum['value'] not in values:
+                            self.imageOperandsParamCount[count].append(enum['enumerant'])
+                            values.append(enum['value'])
 
             for instruction in instructions:
                 opname = instruction['opname']
@@ -314,16 +324,17 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
 
         return output;
     #
-    # Generate functions for scope id
-    def scopeHelper(self):
+    # Generate functions for operand parameter switch cases
+    def parameterHelper(self):
         output = ''
         if self.headerFile:
-            output += 'uint32_t MemoryScopeParam(uint32_t opcode);\n'
-            output += 'uint32_t ExecutionScopeParam(uint32_t opcode);\n'
-            output += 'uint32_t ImageOperandsParam(uint32_t opcode);\n'
+            output += 'uint32_t MemoryScopeParamPosition(uint32_t opcode);\n'
+            output += 'uint32_t ExecutionScopeParamPosition(uint32_t opcode);\n'
+            output += 'uint32_t ImageOperandsParamPosition(uint32_t opcode);\n'
+            output += 'uint32_t ImageOperandsParamCount(uint32_t opcode);\n'
         elif self.sourceFile:
-            output += '// Return paramater position of memory scope ID or zero if there is none\n'
-            output += 'uint32_t MemoryScopeParam(uint32_t opcode) {\n'
+            output += '// Return parameter position of memory scope ID or zero if there is none\n'
+            output += 'uint32_t MemoryScopeParamPosition(uint32_t opcode) {\n'
             output += '    uint32_t position = 0;\n'
             output += '    switch (opcode) {\n'
             for index, operands in enumerate(self.memoryScopeParam):
@@ -331,10 +342,10 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                     output += '        case spv::{}:\n'.format(operand)
                 if len(operands) != 0:
                     output += '            return {};\n'.format(index)
-            output += self.commonParamSwitch
+            output += self.commonParamSwitch('position')
 
-            output += '// Return paramater position of execution scope ID or zero if there is none\n'
-            output += 'uint32_t ExecutionScopeParam(uint32_t opcode) {\n'
+            output += '// Return parameter position of execution scope ID or zero if there is none\n'
+            output += 'uint32_t ExecutionScopeParamPosition(uint32_t opcode) {\n'
             output += '    uint32_t position = 0;\n'
             output += '    switch (opcode) {\n'
             for index, operands in enumerate(self.executionScopeParam):
@@ -342,11 +353,11 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                     output += '        case spv::{}:\n'.format(operand)
                 if len(operands) != 0:
                     output += '            return {};\n'.format(index)
-            output += self.commonParamSwitch
+            output += self.commonParamSwitch('position')
 
 
-            output += '// Return paramater position of Image Operands or zero if there is none\n'
-            output += 'uint32_t ImageOperandsParam(uint32_t opcode) {\n'
+            output += '// Return parameter position of Image Operands or zero if there is none\n'
+            output += 'uint32_t ImageOperandsParamPosition(uint32_t opcode) {\n'
             output += '    uint32_t position = 0;\n'
             output += '    switch (opcode) {\n'
             for index, operands in enumerate(self.imageOperandsParam):
@@ -354,7 +365,21 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                     output += '        case spv::{}:\n'.format(operand)
                 if len(operands) != 0:
                     output += '            return {};\n'.format(index)
-            output += self.commonParamSwitch
+            output += self.commonParamSwitch('position')
+
+            output += '// Return number of optional parameter from ImageOperands\n'
+            output += 'uint32_t ImageOperandsParamCount(uint32_t image_operand) {\n'
+            output += '    uint32_t count = 0;\n'
+            output += '    switch (image_operand) {\n'
+            for index, operands in enumerate(self.imageOperandsParamCount):
+                for operand in operands:
+                    if operand == 'None': # not sure why header is not consistent with this
+                        output += '        case spv::ImageOperandsMask{}:\n'.format(operand)
+                    else:
+                        output += '        case spv::ImageOperands{}Mask:\n'.format(operand)
+                if len(operands) != 0:
+                    output += '            return {};\n'.format(index)
+            output += self.commonParamSwitch('count')
 
         return output;
     #
