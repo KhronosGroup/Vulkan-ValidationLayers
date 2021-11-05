@@ -37,9 +37,10 @@ bool ImageGatherOperation(uint32_t opcode);
 bool ImageFetchOperation(uint32_t opcode);
 bool ImageSampleOperation(uint32_t opcode);
 
-uint32_t MemoryScopeParam(uint32_t opcode);
-uint32_t ExecutionScopeParam(uint32_t opcode);
-uint32_t ImageOperandsParam(uint32_t opcode);
+uint32_t MemoryScopeParamPosition(uint32_t opcode);
+uint32_t ExecutionScopeParamPosition(uint32_t opcode);
+uint32_t ImageOperandsParamPosition(uint32_t opcode);
+uint32_t ImageOperandsParamCount(uint32_t opcode);
 
 static inline const char* string_SpvOpcode(uint32_t opcode) {
     switch ((spv::Op)opcode) {
