@@ -2123,6 +2123,16 @@ bool CoreChecks::ValidateDecorations(SHADER_MODULE_STATE const* module) const {
                     stride, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
             }
         }
+        if (decoration == spv::DecorationStream) {
+            uint32_t stream = op_decorate.word(3);
+            if (stream >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
+                skip |= LogError(
+                    device, "VUID-RuntimeSpirv-Stream-06312",
+                    "vkCreateGraphicsPipelines(): shader uses transform feedback with stream (%" PRIu32
+                    ") not less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32 ").",
+                    stream, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+            }
+        }
     }
 
     return skip;
