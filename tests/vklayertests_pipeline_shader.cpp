@@ -14557,3 +14557,66 @@ TEST_F(VkLayerTest, ComputeImageLayout_1_1) {
     m_commandBuffer->QueueCommandBuffer(false);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, ValidateDiscardRectangleDynamicStateNotSet) {
+    TEST_DESCRIPTION("Validate dynamic state discard rectangle was set before draw command");
+
+    AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto extended_dynamic_features2 = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
+
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&extended_dynamic_features2);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (extended_dynamic_features2.extendedDynamicState2 == VK_FALSE) {
+        printf("%s extendedDynamicState2 feature is not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT};
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    // Dynamic state VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT is used, but vkCmdSetDiscardRectangleEXT() was not yet called
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_CmdDraw_DiscardRectangle);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    auto vkCmdSetDiscardRectangleEXT =
+        reinterpret_cast<PFN_vkCmdSetDiscardRectangleEXT>(vk::GetInstanceProcAddr(instance(), "vkCmdSetDiscardRectangleEXT"));
+    ASSERT_TRUE(vkCmdSetDiscardRectangleEXT != nullptr);
+
+    m_errorMonitor->ExpectSuccess();
+    VkRect2D discard_rectangle = {};
+    discard_rectangle.extent.width = 32;
+    discard_rectangle.extent.height = 32;
+    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangle);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyNotFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
