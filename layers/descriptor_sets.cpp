@@ -3090,12 +3090,13 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
 template <typename T>
 bool CoreChecks::ValidateAccelerationStructureUpdate(T acc_node, const char *func_name, std::string *error_code,
                                                      std::string *error_msg) const {
-    // Any invalid acc struct should already be caught by object_tracker
-    assert(acc_node);
-    if (ValidateMemoryIsBoundToAccelerationStructure(acc_node, func_name, kVUIDUndefined)) {
-        *error_code = kVUIDUndefined;
-        *error_msg = "No memory bound to acceleration structure.";
-        return false;
+    // nullDescriptor feature allows this to be VK_NULL_HANDLE
+    if (acc_node) {
+        if (ValidateMemoryIsBoundToAccelerationStructure(acc_node, func_name, kVUIDUndefined)) {
+            *error_code = kVUIDUndefined;
+            *error_msg = "No memory bound to acceleration structure.";
+            return false;
+        }
     }
     return true;
 }
