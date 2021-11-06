@@ -953,6 +953,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                            "Dynamic vertex input binding stride not set for this command buffer", vuid.vertex_input_binding_stride);
     skip |=
         ValidateStatus(pCB, CBSTATUS_VERTEX_INPUT_SET, "Dynamic vertex input not set for this command buffer", vuid.vertex_input);
+    skip |=
+        ValidateStatus(pCB, CBSTATUS_DISCARD_RECTANGLE_SET, "Dynamic discard rectangle not set for this command buffer", vuid.discard_rectangle);
 
     // VUID {refpage}-primitiveTopology-03420
     skip |= ValidateStatus(pCB, CBSTATUS_PRIMITIVE_TOPOLOGY_SET, "Dynamic primitive topology state not set for this command buffer",

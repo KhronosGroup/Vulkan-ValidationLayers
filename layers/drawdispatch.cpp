@@ -81,6 +81,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         patch_control_points               = "VUID-vkCmdDraw-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDraw-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDraw-None-04877";
+        discard_rectangle                  = kVUID_Core_CmdDraw_DiscardRectangle;
         logic_op                           = "VUID-vkCmdDraw-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDraw-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDraw-pStrides-04884";
@@ -127,6 +128,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         patch_control_points               = "VUID-vkCmdDrawMultiEXT-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawMultiEXT-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawMultiEXT-None-04877";
+        discard_rectangle                  = kVUID_Core_CmdDrawMultiEXT_DiscardRectangle;
         logic_op                           = "VUID-vkCmdDrawMultiEXT-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawMultiEXT-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawMultiEXT-pStrides-04884";
@@ -173,6 +175,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         patch_control_points               = "VUID-vkCmdDrawIndexed-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawIndexed-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawIndexed-None-04877";
+        discard_rectangle                  = kVUID_Core_CmdDrawIndexed_DiscardRectangle;
         logic_op                           = "VUID-vkCmdDrawIndexed-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawIndexed-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexed-pStrides-04884";
@@ -219,6 +222,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         patch_control_points = "VUID-vkCmdDrawMultiIndexedEXT-None-04875";
         rasterizer_discard_enable = "VUID-vkCmdDrawMultiIndexedEXT-None-04876";
         depth_bias_enable = "VUID-vkCmdDrawMultiIndexedEXT-None-04877";
+        discard_rectangle = kVUID_Core_CmdDrawMultiIndexedEXT_DiscardRectangle;
         logic_op = "VUID-vkCmdDrawMultiIndexedEXT-logicOp-04878";
         primitive_restart_enable = "VUID-vkCmdDrawMultiIndexedEXT-None-04879";
         vertex_input_binding_stride = "VUID-vkCmdDrawMultiIndexedEXT-pStrides-04884";
@@ -267,6 +271,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         patch_control_points               = "VUID-vkCmdDrawIndirect-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawIndirect-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawIndirect-None-04877";
+        discard_rectangle                  = kVUID_Core_CmdDrawIndirect_DiscardRectangle;
         logic_op                           = "VUID-vkCmdDrawIndirect-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawIndirect-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirect-pStrides-04884";
@@ -315,6 +320,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         patch_control_points               = "VUID-vkCmdDrawIndexedIndirect-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawIndexedIndirect-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawIndexedIndirect-None-04877";
+        discard_rectangle                  = kVUID_Core_CmdDrawIndexedIndirect_DiscardRectangle;
         logic_op                           = "VUID-vkCmdDrawIndexedIndirect-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawIndexedIndirect-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexedIndirect-pStrides-04884";
@@ -411,6 +417,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         patch_control_points               = "VUID-vkCmdDrawIndirectCount-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawIndirectCount-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawIndirectCount-None-04877";
+        discard_rectangle                  = kVUID_Core_CmdDrawIndirectCount_DiscardRectangle;
         logic_op                           = "VUID-vkCmdDrawIndirectCount-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawIndirectCount-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirectCount-pStrides-04884";
@@ -459,6 +466,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         patch_control_points               = "VUID-vkCmdDrawIndexedIndirectCount-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawIndexedIndirectCount-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawIndexedIndirectCount-None-04877";
+        discard_rectangle                  = kVUID_Core_CmdDrawIndexedIndirectCount_DiscardRectangle;
         logic_op                           = "VUID-vkCmdDrawIndexedIndirectCount-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawIndexedIndirectCount-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexedIndirectCount-pStrides-04884";
@@ -572,6 +580,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         patch_control_points               = "VUID-vkCmdDrawMeshTasksNV-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawMeshTasksNV-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawMeshTasksNV-None-04877";
+        discard_rectangle                  = kVUID_Core_CmdDrawMeshTasksNV_DiscardRectangle;
         logic_op                           = "VUID-vkCmdDrawMeshTasksNV-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawMeshTasksNV-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawMeshTasksNV-pStrides-04884";
@@ -617,6 +626,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         patch_control_points               = "VUID-vkCmdDrawMeshTasksIndirectNV-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-04877";
+        discard_rectangle                  = kVUID_Core_CmdDrawMeshTasksIndirectNV_DiscardRectangle;
         logic_op                           = "VUID-vkCmdDrawMeshTasksIndirectNV-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawMeshTasksIndirectNV-pStrides-04884";
@@ -662,6 +672,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         patch_control_points               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04877";
+        discard_rectangle                  = kVUID_Core_CmdDrawMeshTasksIndirectCountNV_DiscardRectangle;
         logic_op                           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pStrides-04884";
@@ -710,6 +721,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         patch_control_points               = "VUID-vkCmdDrawIndirectByteCountEXT-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawIndirectByteCountEXT-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawIndirectByteCountEXT-None-04877";
+        discard_rectangle                  = kVUID_Core_CmdDrawIndirectByteCountEXT_DiscardRectangle;
         logic_op                           = "VUID-vkCmdDrawIndirectByteCountEXT-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawIndirectByteCountEXT-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirectByteCountEXT-pStrides-04884";

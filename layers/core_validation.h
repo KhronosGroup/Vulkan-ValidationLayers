@@ -80,6 +80,7 @@ struct DrawDispatchVuid {
     const char* patch_control_points = kVUIDUndefined;
     const char* rasterizer_discard_enable = kVUIDUndefined;
     const char* depth_bias_enable = kVUIDUndefined;
+    const char* discard_rectangle = kVUIDUndefined;
     const char* logic_op = kVUIDUndefined;
     const char* primitive_restart_enable = kVUIDUndefined;
     const char* vertex_input_binding_stride = kVUIDUndefined;

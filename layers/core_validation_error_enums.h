@@ -285,6 +285,19 @@ static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectNV_VertexI
 static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectCountNV_VertexInput = "UNASSIGNED-vkCmdDrawMeshTasksIndirectCountNV-vertexInput-not-specified";
 static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirectByteCountEXT_VertexInput = "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-vertexInput-not-specified";
 
+static const char DECORATE_UNUSED *kVUID_Core_CmdDraw_DiscardRectangle = "UNASSIGNED-vkCmdDraw-DiscardRectangle-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMultiEXT_DiscardRectangle = "UNASSIGNED-vkCmdDrawMultiEXT-DiscardRectangle-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndexed_DiscardRectangle = "UNASSIGNED-vkCmdDrawIndexed-DiscardRectangle-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMultiIndexedEXT_DiscardRectangle = "UNASSIGNED-vkCmdDrawMultiIndexedEXT-DiscardRectangle-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirect_DiscardRectangle = "UNASSIGNED-vkCmdDrawIndirect-DiscardRectangle-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndexedIndirect_DiscardRectangle = "UNASSIGNED-vkCmdDrawIndexedIndirect-DiscardRectangle-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirectCount_DiscardRectangle = "UNASSIGNED-vkCmdDrawIndirectCount-DiscardRectangle-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndexedIndirectCount_DiscardRectangle = "UNASSIGNED-vkCmdDrawIndexedIndirectCount-DiscardRectangle-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksNV_DiscardRectangle = "UNASSIGNED-vkCmdDrawMeshTasksNV-DiscardRectangle-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectNV_DiscardRectangle = "UNASSIGNED-vkCmdDrawMeshTasksIndirectNV-DiscardRectangle-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectCountNV_DiscardRectangle = "UNASSIGNED-vkCmdDrawMeshTasksIndirectCountNV-DiscardRectangle-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirectByteCountEXT_DiscardRectangle = "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-DiscardRectangle-not-specified";
+
 // Format features VUs
 static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageReadWithoutFormat = "UNASSIGNED-features-shaderStorageImageReadWithoutFormat";
 static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithoutFormat = "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat";
