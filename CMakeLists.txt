@@ -308,7 +308,7 @@ if(BUILD_TESTS)
 endif()
 
 if(BUILD_TESTS OR BUILD_LAYERS)
-    # spirv-tools
+		# spirv-tools
     if (NOT TARGET SPIRV-Tools)
         if(NOT SPIRV_TOOLS_INSTALL_DIR)
             set(SPIRV_TOOLS_INSTALL_DIR "${GLSLANG_INSTALL_DIR}")
@@ -325,12 +325,12 @@ if(BUILD_TESTS OR BUILD_LAYERS)
         set(SPIRV_TOOLS_OPT_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
         set(SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
 
-        find_library(SPIRV_TOOLS_LIB NAMES SPIRV-Tools HINTS ${SPIRV_TOOLS_SEARCH_PATH})
-        find_library(SPIRV_TOOLS_OPT_LIB NAMES SPIRV-Tools-opt HINTS ${SPIRV_TOOLS_OPT_SEARCH_PATH})
+        find_library(SPIRV_TOOLS_LIB NAMES SPIRV-Tools SPIRV-Toolsd HINTS ${SPIRV_TOOLS_SEARCH_PATH})
+        find_library(SPIRV_TOOLS_OPT_LIB NAMES SPIRV-Tools-opt SPIRV-Tools-optd HINTS ${SPIRV_TOOLS_OPT_SEARCH_PATH})
 
         set(SPIRV_TOOLS_LIBRARIES ${SPIRV_TOOLS_OPT_LIB} ${SPIRV_TOOLS_LIB})
     else()
-        set(SPIRV_TOOLS_LIBRARIES SPIRV-Tools SPIRV-Tools-opt SPIRV-Toolsd SPIRV-Tools-optd)
+        set(SPIRV_TOOLS_LIBRARIES SPIRV-Tools SPIRV-Tools-opt)
         set(SPIRV_TOOLS_INCLUDE_DIR "${spirv-tools_SOURCE_DIR}/include" CACHE PATH "Path to spirv tools headers")
     endif()
 endif()
