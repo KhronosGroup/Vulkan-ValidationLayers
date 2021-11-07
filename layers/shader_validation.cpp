@@ -2110,6 +2110,9 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
 bool CoreChecks::ValidateDecorations(SHADER_MODULE_STATE const* module) const {
     bool skip = false;
 
+    std::vector<uint32_t> xfb_buffers;
+    std::vector<spirv_inst_iter> xfb_offsets;
+
     for (const auto &op_decorate : module->GetDecorationInstructions()) {
         uint32_t decoration = op_decorate.word(2);
         if (decoration == spv::DecorationXfbStride) {
@@ -2131,6 +2134,31 @@ bool CoreChecks::ValidateDecorations(SHADER_MODULE_STATE const* module) const {
                     "vkCreateGraphicsPipelines(): shader uses transform feedback with stream (%" PRIu32
                     ") not less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32 ").",
                     stream, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+            }
+        }
+        if (decoration == spv::DecorationXfbBuffer) {
+            xfb_buffers.push_back(op_decorate.word(1));
+        }
+        if (decoration == spv::DecorationOffset) {
+            xfb_offsets.push_back(op_decorate);
+        }
+    }
+
+    for (const auto &op_decorate : xfb_offsets) {
+        for (const auto xfb_buffer : xfb_buffers) {
+            if (xfb_buffer == op_decorate.word(1)) {
+                const auto offset = op_decorate.word(3);
+                const auto def = module->get_def(xfb_buffer);
+                const auto size = module->GetTypeBytesSize(def);
+                if (offset + size > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataSize) {
+                    skip |= LogError(
+                        device, "VUID-RuntimeSpirv-Offset-06308",
+                        "vkCreateGraphicsPipelines(): shader uses transform feedback with xfb_offset (%" PRIu32
+                        ") + size of variable (%" PRIu32 ") greater than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackBufferDataSize "
+                        "(%" PRIu32 ").",
+                        offset, size, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataSize);
+                }
+                break;
             }
         }
     }
