@@ -1869,6 +1869,9 @@ uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const spirv_inst_iter &iter) const
     } else if (opcode == spv::OpTypePointer) {
         const auto type = get_def(iter.word(3));
         return GetTypeBitsSize(type);
+    } else if (opcode == spv::OpVariable) {
+        const auto type = get_def(iter.word(1));
+        return GetTypeBitsSize(type);
     }
     return 0;
 }
