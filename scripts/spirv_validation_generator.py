@@ -319,8 +319,9 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
     def createMapValue(self, name, enable, isExtension):
         output = ''
         if enable['version'] != None:
-            # Version should be VK_API_VERSION_x_x as defined in header
-            output = '{' + enable['version'] + ', nullptr, nullptr, ""}'
+            # Version should be VK_VERSION_x_x as defined in header but need to get as VK_API_VERSION_x_x
+            version = enable['version'].replace('VK_VERSION', 'VK_API_VERSION')
+            output = '{' + version + ', nullptr, nullptr, ""}'
         elif enable['feature'] != None:
             output = '{0, &' + enable['feature']['struct'] + '::'  + enable['feature']['feature'] + ', nullptr, ""}'
         elif enable['extension'] != None:
