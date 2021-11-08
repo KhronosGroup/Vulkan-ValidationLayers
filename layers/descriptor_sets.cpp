@@ -2039,6 +2039,14 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         }
     }
 
+    // Update mutable types
+    if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+        src_type = src_set->GetDescriptorFromGlobalIndex(update->srcBinding)->active_descriptor_type;
+    }
+    if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+        dst_type = dst_set->GetDescriptorFromGlobalIndex(update->dstBinding)->active_descriptor_type;
+    }
+
     // Update parameters all look good and descriptor updated so verify update contents
     if (!VerifyCopyUpdateContents(update, src_set, src_type, src_start_idx, dst_set, dst_type, dst_start_idx, func_name, error_code,
                                   error_msg)) {
