@@ -631,7 +631,7 @@ class CoreChecks : public ValidationStateTracker {
                                                               const char* variable_name) const;
     template <typename RegionType>
     bool ValidateBufferImageCopyData(const CMD_BUFFER_STATE* cb_node, uint32_t regionCount, const RegionType* pRegions,
-                                     const IMAGE_STATE* image_state, const char* function, CopyCommandVersion version,
+                                     const IMAGE_STATE* image_state, const char* function, CMD_TYPE cmd_type,
                                      bool image_to_buffer) const;
     bool ValidateBufferViewRange(const BUFFER_STATE* buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
                                  const VkPhysicalDeviceLimits* device_limits) const;
@@ -927,13 +927,16 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
                                                  const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo) const override;
 
+    bool PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
+                                              const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) const override;
+
     void PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
                                                const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo) override;
 
     template <typename RegionType>
     bool ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                       VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType* pRegions,
-                                      CopyCommandVersion version) const;
+                                      CMD_TYPE cmd_type) const;
 
     bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                              VkImageLayout dstImageLayout, uint32_t regionCount,
@@ -946,8 +949,14 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
                                                  const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo) const override;
 
+    bool PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
+                                              const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) const override;
+
     void PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
                                                const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo) override;
+
+    void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
+                                            const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) override;
 
     bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
                                                   VkSubresourceLayout* pLayout) const override;

@@ -477,6 +477,15 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuff
                                Get<IMAGE_STATE>(pCopyBufferToImageInfo->dstImage));
 }
 
+void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
+                                                                const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo) {
+    if (disabled[command_buffer_state]) return;
+
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_node->RecordTransferCmd(CMD_COPYBUFFERTOIMAGE2, Get<BUFFER_STATE>(pCopyBufferToImageInfo->srcBuffer),
+                               Get<IMAGE_STATE>(pCopyBufferToImageInfo->dstImage));
+}
+
 // Gets union of all features defined by Potential Format Features
 // except, does not handle the external format case for AHB as that only can be used for sampled images
 VkFormatFeatureFlags2KHR ValidationStateTracker::GetPotentialFormatFeatures(VkFormat format) const {
