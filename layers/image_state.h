@@ -188,7 +188,7 @@ class IMAGE_STATE : public BINDABLE {
   protected:
     void AddAliasingImage(IMAGE_STATE *bound_image);
     void Unlink();
-    void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
+    void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
 };
 
 // State for VkImageView objects.
@@ -268,10 +268,10 @@ class SWAPCHAIN_NODE : public BASE_NODE {
 
     void Destroy() override;
 
-    const BindingsType &ObjectBindings() const { return parent_nodes_; }
+    const NodeSet &ObjectBindings() const { return parent_nodes_; }
 
   protected:
-    void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
+    void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
 };
 
 struct GpuQueue {

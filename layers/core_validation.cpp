@@ -215,13 +215,12 @@ bool CoreChecks::ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION
 //  Otherwise, add reference from objectInfo to memoryInfo
 //  Add reference off of objInfo
 // TODO: We may need to refactor or pass in multiple valid usage statements to handle multiple valid usage conditions.
-bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHandle &typed_handle, const char *apiName) const {
+bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const BINDABLE &mem_binding, const char *apiName) const {
     bool skip = false;
     // It's an error to bind an object to NULL memory
     if (mem != VK_NULL_HANDLE) {
-        const BINDABLE *mem_binding = ValidationStateTracker::GetObjectMemBinding(typed_handle);
-        assert(mem_binding);
-        if (mem_binding->sparse) {
+        auto typed_handle = mem_binding.Handle();
+        if (mem_binding.sparse) {
             const char *error_code = nullptr;
             const char *handle_type = nullptr;
             if (typed_handle.type == kVulkanObjectTypeBuffer) {
@@ -253,7 +252,7 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
         }
         const DEVICE_MEMORY_STATE *mem_info = ValidationStateTracker::GetDevMemState(mem);
         if (mem_info) {
-            const DEVICE_MEMORY_STATE *prev_binding = mem_binding->MemState();
+            const auto *prev_binding = mem_binding.MemState();
             if (prev_binding) {
                 if (!prev_binding->Destroyed()) {
                     const char *error_code = nullptr;
@@ -3110,21 +3109,28 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
         }
 
         // Ensure that any bound images or buffers created with SHARING_MODE_CONCURRENT have access to the current queue family
-        for (const auto &object : pCB->object_bindings) {
-            if (object.type == kVulkanObjectTypeImage) {
-                auto image_state = object.node ? (IMAGE_STATE *)object.node : GetImageState(object.Cast<VkImage>());
-                if (image_state && image_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                    skip |= ValidImageBufferQueue(pCB, object, queue_state->queueFamilyIndex,
-                                                  image_state->createInfo.queueFamilyIndexCount,
-                                                  image_state->createInfo.pQueueFamilyIndices);
+        for (const auto *base_node : pCB->object_bindings) {
+            switch (base_node->Type()) {
+                case kVulkanObjectTypeImage: {
+                    auto image_state = static_cast<const IMAGE_STATE *>(base_node);
+                    if (image_state && image_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+                        skip |= ValidImageBufferQueue(pCB, image_state->Handle(), queue_state->queueFamilyIndex,
+                                                      image_state->createInfo.queueFamilyIndexCount,
+                                                      image_state->createInfo.pQueueFamilyIndices);
+                    }
+                    break;
                 }
-            } else if (object.type == kVulkanObjectTypeBuffer) {
-                auto buffer_state = object.node ? (BUFFER_STATE *)object.node : GetBufferState(object.Cast<VkBuffer>());
-                if (buffer_state && buffer_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                    skip |= ValidImageBufferQueue(pCB, object, queue_state->queueFamilyIndex,
-                                                  buffer_state->createInfo.queueFamilyIndexCount,
-                                                  buffer_state->createInfo.pQueueFamilyIndices);
+                case kVulkanObjectTypeBuffer: {
+                    auto buffer_state = static_cast<const BUFFER_STATE *>(base_node);
+                    if (buffer_state && buffer_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+                        skip |= ValidImageBufferQueue(pCB, buffer_state->Handle(), queue_state->queueFamilyIndex,
+                                                      buffer_state->createInfo.queueFamilyIndexCount,
+                                                      buffer_state->createInfo.pQueueFamilyIndices);
+                    }
+                    break;
                 }
+                default:
+                    break;
             }
         }
     }
@@ -4881,7 +4887,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
     bool skip = false;
     if (buffer_state) {
         // Track objects tied to memory
-        skip = ValidateSetMemBinding(mem, buffer_state->Handle(), api_name);
+        skip = ValidateSetMemBinding(mem, *buffer_state, api_name);
 
         const auto mem_info = GetDevMemState(mem);
 
@@ -12537,11 +12543,10 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         // initial layout usage of secondary command buffers resources must match parent command buffer
         const auto *const_cb_state = static_cast<const CMD_BUFFER_STATE *>(cb_state);
         for (const auto &sub_layout_map_entry : sub_cb_state->image_layout_map) {
-            const auto image = sub_layout_map_entry.first;
-            const auto *image_state = GetImageState(image);
-            if (!image_state) continue;  // Can't set layouts of a dead image
+            const auto *image_state = sub_layout_map_entry.first;
+            const auto image = image_state->image();
 
-            const auto *cb_subres_map = const_cb_state->GetImageSubresourceLayoutMap(image);
+            const auto *cb_subres_map = const_cb_state->GetImageSubresourceLayoutMap(*image_state);
             // Const getter can be null in which case we have nothing to check against for this image...
             if (!cb_subres_map) continue;
 
@@ -12775,8 +12780,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
         const IMAGE_STATE *image_state = GetImageState(bind_info.image);
         if (image_state) {
             // Track objects tied to memory
-            skip |=
-                ValidateSetMemBinding(bind_info.memory, image_state->Handle(), error_prefix);
+            skip |= ValidateSetMemBinding(bind_info.memory, *image_state, error_prefix);
 
             const auto plane_info = LvlFindInChain<VkBindImagePlaneMemoryInfo>(bind_info.pNext);
             const auto mem_info = GetDevMemState(bind_info.memory);
@@ -14048,7 +14052,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
         if (swapchain_data) {
             for (const auto &swapchain_image : swapchain_data->images) {
                 if (!swapchain_image.image_state) continue;
-                imageLayoutMap.erase(swapchain_image.image_state->image());
+                imageLayoutMap.erase(swapchain_image.image_state);
                 qfo_release_image_barrier_map.erase(swapchain_image.image_state->image());
             }
         }

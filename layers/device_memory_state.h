@@ -81,7 +81,7 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
 
     VkDeviceMemory mem() const { return handle_.Cast<VkDeviceMemory>(); }
 
-    const BindingsType &ObjectBindings() const { return parent_nodes_; }
+    const NodeSet &ObjectBindings() const { return parent_nodes_; }
 };
 
 // Generic memory binding struct to track objects bound to objects

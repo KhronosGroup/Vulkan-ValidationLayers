@@ -167,11 +167,7 @@ struct CBVertexBufferBindingInfo {
     std::vector<BufferBinding> vertex_buffer_bindings;
 };
 
-typedef subresource_adapter::BothRangeMap<VkImageLayout, 16> GlobalImageLayoutRangeMap;
-typedef layer_data::unordered_map<VkImage, layer_data::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
-
-typedef layer_data::unordered_map<VkImage, layer_data::optional<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
-
+typedef layer_data::unordered_map<const IMAGE_STATE *, layer_data::optional<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
 
 class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
   public:
@@ -262,7 +258,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     layer_data::unordered_set<std::shared_ptr<FRAMEBUFFER_STATE>> framebuffers;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
-    layer_data::unordered_set<VulkanTypedHandle> object_bindings;
+    BASE_NODE::NodeSet object_bindings;
     layer_data::unordered_map<VulkanTypedHandle, LogObjectList> broken_bindings;
 
     QFOTransferBarrierSets<QFOBufferTransferBarrier> qfo_transfer_buffer_barriers;
@@ -344,9 +340,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     void ResetPushConstantDataIfIncompatible(const PIPELINE_LAYOUT_STATE *pipeline_layout_state);
 
+    const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state) const;
     ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state);
     const CommandBufferImageLayoutMap& GetImageSubresourceLayoutMap() const;
-    const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(VkImage image) const;
 
     const QFOTransferBarrierSets<QFOImageTransferBarrier> &GetQFOBarrierSets(const QFOImageTransferBarrier &type_tag) const {
         return qfo_transfer_image_barriers;
@@ -447,7 +443,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void Retire(uint32_t perf_submit_pass);
 
   protected:
-    void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
+    void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
     void UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin);
 };
 
