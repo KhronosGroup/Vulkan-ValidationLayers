@@ -52,121 +52,121 @@ static const char *GetBufferImageCopyCommandVUID(std::string id, bool image_to_b
             "VUID-vkCmdCopyBufferToImage-bufferOffset-00193",      // !copy2 & !image_to_buffer
             "VUID-vkCmdCopyImageToBuffer-bufferOffset-00193",      // !copy2 &  image_to_buffer
             "VUID-VkCopyBufferToImageInfo2-bufferOffset-00193", //  copy2 & !image_to_buffer
-            "VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-00193", //  copy2 &  image_to_buffer
+            "VUID-VkCopyImageToBufferInfo2-bufferOffset-00193", //  copy2 &  image_to_buffer
         }},
         {"01558", {
             "VUID-vkCmdCopyBufferToImage-bufferOffset-01558",
             "VUID-vkCmdCopyImageToBuffer-bufferOffset-01558",
             "VUID-VkCopyBufferToImageInfo2-bufferOffset-01558",
-            "VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-01558",
+            "VUID-VkCopyImageToBufferInfo2-bufferOffset-01558",
         }},
         {"01559", {
             "VUID-vkCmdCopyBufferToImage-bufferOffset-01559",
             "VUID-vkCmdCopyImageToBuffer-bufferOffset-01559",
             "VUID-VkCopyBufferToImageInfo2-bufferOffset-01559",
-            "VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-01559",
+            "VUID-VkCopyImageToBufferInfo2-bufferOffset-01559",
         }},
         {"00197", {
             "VUID-vkCmdCopyBufferToImage-pRegions-06218",
             "VUID-vkCmdCopyImageToBuffer-pRegions-06221",
             "VUID-VkCopyBufferToImageInfo2-pRegions-06223",
-            "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00197",
+            "VUID-VkCopyImageToBufferInfo2-imageOffset-00197",
         }},
         {"00198", {
             "VUID-vkCmdCopyBufferToImage-pRegions-06219",
             "VUID-vkCmdCopyImageToBuffer-pRegions-06222",
             "VUID-VkCopyBufferToImageInfo2-pRegions-06224",
-            "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00198",
+            "VUID-VkCopyImageToBufferInfo2-imageOffset-00198",
         }},
         {"00199", {
             "VUID-vkCmdCopyBufferToImage-srcImage-00199",
             "VUID-vkCmdCopyImageToBuffer-srcImage-00199",
             "VUID-VkCopyBufferToImageInfo2-srcImage-00199",
-            "VUID-VkCopyImageToBufferInfo2KHR-srcImage-00199",
+            "VUID-VkCopyImageToBufferInfo2-srcImage-00199",
         }},
         {"00200", {
             "VUID-vkCmdCopyBufferToImage-imageOffset-00200",
             "VUID-vkCmdCopyImageToBuffer-imageOffset-00200",
             "VUID-VkCopyBufferToImageInfo2-imageOffset-00200",
-            "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00200",
+            "VUID-VkCopyImageToBufferInfo2-imageOffset-00200",
         }},
         {"00201", {
             "VUID-vkCmdCopyBufferToImage-srcImage-00201",
             "VUID-vkCmdCopyImageToBuffer-srcImage-00201",
             "VUID-VkCopyBufferToImageInfo2-srcImage-00201",
-            "VUID-VkCopyImageToBufferInfo2KHR-srcImage-00201",
+            "VUID-VkCopyImageToBufferInfo2-srcImage-00201",
         }},
         {"00203", {
             "VUID-vkCmdCopyBufferToImage-bufferRowLength-00203",
             "VUID-vkCmdCopyImageToBuffer-bufferRowLength-00203",
             "VUID-VkCopyBufferToImageInfo2-bufferRowLength-00203",
-            "VUID-VkCopyImageToBufferInfo2KHR-bufferRowLength-00203",
+            "VUID-VkCopyImageToBufferInfo2-bufferRowLength-00203",
         }},
         {"00204", {
             "VUID-vkCmdCopyBufferToImage-bufferImageHeight-00204",
             "VUID-vkCmdCopyImageToBuffer-bufferImageHeight-00204",
             "VUID-VkCopyBufferToImageInfo2-bufferImageHeight-00204",
-            "VUID-VkCopyImageToBufferInfo2KHR-bufferImageHeight-00204",
+            "VUID-VkCopyImageToBufferInfo2-bufferImageHeight-00204",
         }},
         {"00205", {
             "VUID-vkCmdCopyBufferToImage-imageOffset-00205",
             "VUID-vkCmdCopyImageToBuffer-imageOffset-00205",
             "VUID-VkCopyBufferToImageInfo2-imageOffset-00205",
-            "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00205",
+            "VUID-VkCopyImageToBufferInfo2-imageOffset-00205",
         }},
         {"00206", {
             "VUID-vkCmdCopyBufferToImage-bufferOffset-00206",
             "VUID-vkCmdCopyImageToBuffer-bufferOffset-00206",
             "VUID-VkCopyBufferToImageInfo2-bufferOffset-00206",
-            "VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-00206",
+            "VUID-VkCopyImageToBufferInfo2-bufferOffset-00206",
         }},
         {"00207", {
             "VUID-vkCmdCopyBufferToImage-imageExtent-00207",
             "VUID-vkCmdCopyImageToBuffer-imageExtent-00207",
             "VUID-VkCopyBufferToImageInfo2-imageExtent-00207",
-            "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00207",
+            "VUID-VkCopyImageToBufferInfo2-imageExtent-00207",
         }},
         {"00208", {
             "VUID-vkCmdCopyBufferToImage-imageExtent-00208",
             "VUID-vkCmdCopyImageToBuffer-imageExtent-00208",
             "VUID-VkCopyBufferToImageInfo2-imageExtent-00208",
-            "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00208",
+            "VUID-VkCopyImageToBufferInfo2-imageExtent-00208",
         }},
         {"00209", {
             "VUID-vkCmdCopyBufferToImage-imageExtent-00209",
             "VUID-vkCmdCopyImageToBuffer-imageExtent-00209",
             "VUID-VkCopyBufferToImageInfo2-imageExtent-00209",
-            "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00209",
+            "VUID-VkCopyImageToBufferInfo2-imageExtent-00209",
         }},
         {"00211", {
             "VUID-vkCmdCopyBufferToImage-aspectMask-00211",
             "VUID-vkCmdCopyImageToBuffer-aspectMask-00211",
             "VUID-VkCopyBufferToImageInfo2-aspectMask-00211",
-            "VUID-VkCopyImageToBufferInfo2KHR-aspectMask-00211",
+            "VUID-VkCopyImageToBufferInfo2-aspectMask-00211",
         }},
         {"01560", {
             "VUID-vkCmdCopyBufferToImage-aspectMask-01560",
             "VUID-vkCmdCopyImageToBuffer-aspectMask-01560",
             "VUID-VkCopyBufferToImageInfo2-aspectMask-01560",
-            "VUID-VkCopyImageToBufferInfo2KHR-aspectMask-01560",
+            "VUID-VkCopyImageToBufferInfo2-aspectMask-01560",
         }},
         {"00213", {
             "VUID-vkCmdCopyBufferToImage-baseArrayLayer-00213",
             "VUID-vkCmdCopyImageToBuffer-baseArrayLayer-00213",
             "VUID-VkCopyBufferToImageInfo2-baseArrayLayer-00213",
-            "VUID-VkCopyImageToBufferInfo2KHR-baseArrayLayer-00213",
+            "VUID-VkCopyImageToBufferInfo2-baseArrayLayer-00213",
         }},
         {"04052", {
             "VUID-vkCmdCopyBufferToImage-commandBuffer-04052",
             "VUID-vkCmdCopyImageToBuffer-commandBuffer-04052",
             "VUID-VkCopyBufferToImageInfo2-commandBuffer-04052",
-            "VUID-VkCopyImageToBufferInfo2KHR-commandBuffer-04052",
+            "VUID-VkCopyImageToBufferInfo2-commandBuffer-04052",
         }},
         {"04053", {
             "VUID-vkCmdCopyBufferToImage-srcImage-04053",
             "VUID-vkCmdCopyImageToBuffer-srcImage-04053",
             "VUID-VkCopyBufferToImageInfo2-srcImage-04053",
-            "VUID-VkCopyImageToBufferInfo2KHR-srcImage-04053",
+            "VUID-VkCopyImageToBufferInfo2-srcImage-04053",
         }}
     };
     // clang-format on
@@ -6553,13 +6553,13 @@ bool CoreChecks::ValidateBufferBounds(const IMAGE_STATE *image_state, const BUFF
 template <typename BufferImageCopyRegionType>
 bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkBuffer dstBuffer, uint32_t regionCount, const BufferImageCopyRegionType *pRegions,
-                                              CopyCommandVersion version) const {
+
+                                              CMD_TYPE cmd_type) const {
     const auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const auto src_image_state = Get<IMAGE_STATE>(srcImage);
     const auto dst_buffer_state = Get<BUFFER_STATE>(dstBuffer);
 
-    const bool is_2khr = (version == COPY_COMMAND_VERSION_2);
-    const CMD_TYPE cmd_type = is_2khr ? CMD_COPYIMAGETOBUFFER2KHR : CMD_COPYIMAGETOBUFFER;
+    const bool is_2 = (cmd_type == CMD_COPYIMAGETOBUFFER2KHR || cmd_type == CMD_COPYIMAGETOBUFFER2);
     const char *func_name = CommandTypeString(cmd_type);
     const char *vuid;
 
@@ -6574,44 +6574,45 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     VkQueueFlags queue_flags = physical_device_state->queue_family_properties[pool->queueFamilyIndex].queueFlags;
 
     if (0 == (queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT))) {
-        vuid =
-            is_2khr ? "VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-cmdpool" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-cmdpool";
+        vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-commandBuffer-cmdpool" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-cmdpool";
         skip |= LogError(cb_node->createInfo.commandPool, vuid,
                          "Cannot call %s on a command buffer allocated from a pool without graphics, compute, "
                          "or transfer capabilities.",
                          func_name);
     }
-    vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-pRegions-00182" : "VUID-vkCmdCopyImageToBuffer-pRegions-06220";
+
+    vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-pRegions-00182" : "VUID-vkCmdCopyImageToBuffer-pRegions-06220";
     skip |= ValidateImageBounds(src_image_state.get(), regionCount, pRegions, func_name, vuid);
-    vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-pRegions-00183" : "VUID-vkCmdCopyImageToBuffer-pRegions-00183";
+    vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-pRegions-00183" : "VUID-vkCmdCopyImageToBuffer-pRegions-00183";
     skip |= ValidateBufferBounds(src_image_state.get(), dst_buffer_state.get(), regionCount, pRegions, func_name, vuid);
 
-    vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImage-00188" : "VUID-vkCmdCopyImageToBuffer-srcImage-00188";
-    const char *location = is_2khr ? "vkCmdCopyImageToBuffer2KHR(): srcImage" : "vkCmdCopyImageToBuffer(): srcImage";
-    skip |= ValidateImageSampleCount(src_image_state.get(), VK_SAMPLE_COUNT_1_BIT, location, vuid);
+    vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-00188" : "VUID-vkCmdCopyImageToBuffer-srcImage-00188";
+    std::string location = func_name;
+    location.append("() : srcImage");
+    skip |= ValidateImageSampleCount(src_image_state.get(), VK_SAMPLE_COUNT_1_BIT, location.c_str(), vuid);
 
-    vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImage-00187" : "VUID-vkCmdCopyImageToBuffer-srcImage-00187";
+    vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-00187" : "VUID-vkCmdCopyImageToBuffer-srcImage-00187";
     skip |= ValidateMemoryIsBoundToImage(src_image_state.get(), func_name, vuid);
-    vuid = is_2khr ? "vkCmdCopyImageToBuffer-dstBuffer2KHR-00192" : "vkCmdCopyImageToBuffer dstBuffer-00192";
+    vuid = is_2 ? "vkCmdCopyImageToBuffer-dstBuffer2-00192" : "vkCmdCopyImageToBuffer dstBuffer-00192";
     skip |= ValidateMemoryIsBoundToBuffer(dst_buffer_state.get(), func_name, vuid);
 
     // Validate that SRC image & DST buffer have correct usage flags set
-    vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImage-00186" : "VUID-vkCmdCopyImageToBuffer-srcImage-00186";
+    vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-00186" : "VUID-vkCmdCopyImageToBuffer-srcImage-00186";
     skip |= ValidateImageUsageFlags(src_image_state.get(), VK_IMAGE_USAGE_TRANSFER_SRC_BIT, true, vuid, func_name,
                                     "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
-    vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-dstBuffer-00191" : "VUID-vkCmdCopyImageToBuffer-dstBuffer-00191";
+    vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-dstBuffer-00191" : "VUID-vkCmdCopyImageToBuffer-dstBuffer-00191";
     skip |= ValidateBufferUsageFlags(dst_buffer_state.get(), VK_BUFFER_USAGE_TRANSFER_DST_BIT, true, vuid, func_name,
                                      "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    vuid = is_2khr ? "VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-01831" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-01831";
+    vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-commandBuffer-01831" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-01831";
     skip |= ValidateProtectedImage(cb_node.get(), src_image_state.get(), func_name, vuid);
-    vuid = is_2khr ? "VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-01832" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-01832";
+    vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-commandBuffer-01832" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-01832";
     skip |= ValidateProtectedBuffer(cb_node.get(), dst_buffer_state.get(), func_name, vuid);
-    vuid = is_2khr ? "VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-01833" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-01833";
+    vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-commandBuffer-01833" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-01833";
     skip |= ValidateUnprotectedBuffer(cb_node.get(), dst_buffer_state.get(), func_name, vuid);
 
     // Validation for VK_EXT_fragment_density_map
     if (src_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
-        vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImage-02544" : "VUID-vkCmdCopyImageToBuffer-srcImage-02544";
+        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-02544" : "VUID-vkCmdCopyImageToBuffer-srcImage-02544";
         skip |= LogError(cb_node->commandBuffer(), vuid,
                          "%s: srcImage must not have been created with flags containing "
                          "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT",
@@ -6619,33 +6620,30 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
-        vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImage-01998" : "VUID-vkCmdCopyImageToBuffer-srcImage-01998";
-        skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT_KHR, func_name, vuid);
+        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-01998" : "VUID-vkCmdCopyImageToBuffer-srcImage-01998";
+        skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT, func_name, vuid);
     }
     bool hit_error = false;
 
     const char *src_invalid_layout_vuid =
         (src_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
-            ? (vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImageLayout-01397"
-                              : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-01397")
-            : (vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImageLayout-00190"
-                              : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00190");
+            ? (vuid =
+                   is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImageLayout-01397" : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-01397")
+            : (vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImageLayout-00190"
+                           : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00190");
 
     for (uint32_t i = 0; i < regionCount; ++i) {
         skip |= ValidateImageSubresourceLayers(cb_node.get(), &pRegions[i].imageSubresource, func_name, "imageSubresource", i);
-        vuid =
-            is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImageLayout-00189" : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189";
+        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImageLayout-00189" : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189";
         skip |= VerifyImageLayout(cb_node.get(), src_image_state.get(), pRegions[i].imageSubresource, srcImageLayout,
                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, func_name, src_invalid_layout_vuid, vuid, &hit_error);
-        vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-01794" : "VUID-vkCmdCopyImageToBuffer-imageOffset-01794";
+        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageOffset-01794" : "VUID-vkCmdCopyImageToBuffer-imageOffset-01794";
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_node.get(), src_image_state.get(), &pRegions[i], i,
                                                                        func_name, vuid);
-        vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-imageSubresource-01703"
-                       : "VUID-vkCmdCopyImageToBuffer-imageSubresource-01703";
+        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-01703" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-01703";
         skip |= ValidateImageMipLevel(cb_node.get(), src_image_state.get(), pRegions[i].imageSubresource.mipLevel, i, func_name,
                                       "imageSubresource", vuid);
-        vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-imageSubresource-01704"
-                       : "VUID-vkCmdCopyImageToBuffer-imageSubresource-01704";
+        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-01704" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-01704";
         skip |= ValidateImageArrayLayerRange(cb_node.get(), src_image_state.get(), pRegions[i].imageSubresource.baseArrayLayer,
                                              pRegions[i].imageSubresource.layerCount, i, func_name, "imageSubresource", vuid);
     }
@@ -6656,21 +6654,21 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
                                                      VkBuffer dstBuffer, uint32_t regionCount,
                                                      const VkBufferImageCopy *pRegions) const {
     return ValidateCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
-                                        COPY_COMMAND_VERSION_1);
+                                        CMD_COPYIMAGETOBUFFER);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
                                                          const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo) const {
     return ValidateCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
                                         pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
-                                        pCopyImageToBufferInfo->pRegions, COPY_COMMAND_VERSION_2);
+                                        pCopyImageToBufferInfo->pRegions, CMD_COPYIMAGETOBUFFER2KHR);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
                                                       const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo) const {
     return ValidateCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
                                         pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
-                                        pCopyImageToBufferInfo->pRegions, COPY_COMMAND_VERSION_2);
+                                        pCopyImageToBufferInfo->pRegions, CMD_COPYIMAGETOBUFFER2);
 }
 
 void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
@@ -6688,6 +6686,19 @@ void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer
 void CoreChecks::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
                                                        const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo) {
     StateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
+
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    auto src_image_state = Get<IMAGE_STATE>(pCopyImageToBufferInfo->srcImage);
+    // Make sure that all image slices record referenced layout
+    for (uint32_t i = 0; i < pCopyImageToBufferInfo->regionCount; ++i) {
+        cb_node->SetImageInitialLayout(*src_image_state, pCopyImageToBufferInfo->pRegions[i].imageSubresource,
+                                       pCopyImageToBufferInfo->srcImageLayout);
+    }
+}
+
+void CoreChecks::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
+                                                    const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo) {
+    StateTracker::PreCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo);
 
     auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto src_image_state = Get<IMAGE_STATE>(pCopyImageToBufferInfo->srcImage);

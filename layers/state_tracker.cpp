@@ -459,6 +459,15 @@ void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuff
                                Get<BUFFER_STATE>(pCopyImageToBufferInfo->dstBuffer));
 }
 
+void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
+                                                                const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo) {
+    if (disabled[command_buffer_state]) return;
+
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_node->RecordTransferCmd(CMD_COPYIMAGETOBUFFER2, Get<IMAGE_STATE>(pCopyImageToBufferInfo->srcImage),
+                               Get<BUFFER_STATE>(pCopyImageToBufferInfo->dstBuffer));
+}
+
 void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                                VkImageLayout dstImageLayout, uint32_t regionCount,
                                                                const VkBufferImageCopy *pRegions) {
