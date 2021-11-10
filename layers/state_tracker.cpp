@@ -958,6 +958,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         if (maintenance4_features) {
             state_tracker->enabled_features.maintenance4_features = *maintenance4_features;
         }
+
+        const auto *dynamic_rendering_features = LvlFindInChain<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(pCreateInfo->pNext);
+        if (dynamic_rendering_features) {
+            state_tracker->enabled_features.dynamic_rendering_features = *dynamic_rendering_features;
+        }
     }
 
     const auto *subgroup_size_control_features = LvlFindInChain<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>(pCreateInfo->pNext);
@@ -1814,9 +1819,14 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
     cgpl_state->pCreateInfos = pCreateInfos;  // GPU validation can alter this, so we have to set a default value for the Chassis
     cgpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
-        cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i],
-                                                                          GetRenderPassShared(pCreateInfos[i].renderPass),
-                                                                          GetPipelineLayoutShared(pCreateInfos[i].layout)));
+        // Avoid crashes if VK_KHR_dynamic_rendering is in use.
+        if (pCreateInfos[i].renderPass != VK_NULL_HANDLE) {
+            cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i],
+                                                                              GetRenderPassShared(pCreateInfos[i].renderPass),
+                                                                              GetPipelineLayoutShared(pCreateInfos[i].layout)));
+        } else {
+            cgpl_state->pipe_state.push_back(std::shared_ptr<PIPELINE_STATE>());
+        }
     }
     return false;
 }

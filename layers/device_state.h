@@ -89,6 +89,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceSubgroupSizeControlFeaturesEXT subgroup_size_control_features;
     VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT rgba10x6_formats_features;
     VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4_features;
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };
