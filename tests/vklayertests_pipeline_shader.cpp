@@ -14760,20 +14760,13 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
     pipe.AddDefaultColorAttachment();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
     const VkPipelineLayoutObj pl(m_device, {&dsl});
 
-    VkFormat color_formats[2] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM};
-    auto rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
-    rendering_info.colorAttachmentCount = 2;
-    rendering_info.pColorAttachmentFormats = color_formats;
-
     auto create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
     pipe.InitGraphicsPipelineCreateInfo(&create_info);
-    create_info.pNext = &rendering_info;
 
     m_errorMonitor->VerifyNotFound();
 
@@ -14781,3 +14774,4 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
 }
+
