@@ -14023,7 +14023,12 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Offset-06308");
+        std::vector<std::string> vuids = {"VUID-RuntimeSpirv-Offset-06308"};
+        if (transform_feedback_props.maxTransformFeedbackBufferDataSize + 4 >=
+            transform_feedback_props.maxTransformFeedbackStreamDataSize) {
+            vuids.push_back("VUID-RuntimeSpirv-XfbBuffer-06309");
+        }
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
     }
 
     {
@@ -14078,6 +14083,80 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Stream-06312");
+    }
+
+    {
+        uint32_t offset = transform_feedback_props.maxTransformFeedbackBufferDataSize / 2;
+        uint32_t count = transform_feedback_props.maxTransformFeedbackStreamDataSize / offset + 1;
+        // Limit to 25, because we are dynamically adding variables using letters as names
+        if (count < 25) {
+            std::stringstream gsSource;
+            gsSource << R"asm(
+               OpCapability Geometry
+               OpCapability TransformFeedback
+               OpCapability GeometryStreams
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Geometry %main "main"
+               OpExecutionMode %main Xfb
+               OpExecutionMode %main Triangles
+               OpExecutionMode %main Invocations 1
+               OpExecutionMode %main OutputLineStrip
+               OpExecutionMode %main OutputVertices 6
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4)asm";
+
+            for (uint32_t i = 0; i < count; ++i) {
+                char v = 'a' + i;
+                gsSource << "\nOpName %var" << v << " \"" << v << "\"";
+            }
+            gsSource << "\n; Annotations\n";
+
+            for (uint32_t i = 0; i < count; ++i) {
+                char v = 'a' + i;
+                gsSource << "OpDecorate %var" << v << " Location " << i << "\n";
+                gsSource << "OpDecorate %var" << v << " Stream 0\n";
+                gsSource << "OpDecorate %var" << v << " XfbBuffer " << i << "\n";
+                gsSource << "OpDecorate %var" << v << " XfbStride 20\n";
+                gsSource << "OpDecorate %var" << v << " Offset " << offset << "\n";
+            }
+            gsSource << R"asm(
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %float = OpTypeFloat 32
+%_ptr_Output_float = OpTypePointer Output %float)asm";
+
+            gsSource << "\n";
+            for (uint32_t i = 0; i < count; ++i) {
+                char v = 'a' + i;
+                gsSource << "%var" << v << " = OpVariable %_ptr_Output_float Output\n";
+            }
+
+            gsSource << R"asm(
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpEmitStreamVertex %int_0
+               OpReturn
+               OpFunctionEnd
+        )asm";
+
+            auto gs =
+                VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_GEOMETRY_BIT, gsSource.str().c_str(), "main", nullptr);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs->GetStageCreateInfo(),
+                                         helper.fs_->GetStageCreateInfo()};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-XfbBuffer-06309");
+        }
     }
 }
 
