@@ -2123,7 +2123,8 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
 bool CoreChecks::ValidateDecorations(SHADER_MODULE_STATE const* module) const {
     bool skip = false;
 
-    std::vector<uint32_t> xfb_buffers;
+    std::vector<spirv_inst_iter> xfb_streams;
+    std::vector<spirv_inst_iter> xfb_buffers;
     std::vector<spirv_inst_iter> xfb_offsets;
 
     for (const auto &op_decorate : module->GetDecorationInstructions()) {
@@ -2140,6 +2141,7 @@ bool CoreChecks::ValidateDecorations(SHADER_MODULE_STATE const* module) const {
             }
         }
         if (decoration == spv::DecorationStream) {
+            xfb_streams.push_back(op_decorate);
             uint32_t stream = op_decorate.word(3);
             if (stream >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
                 skip |= LogError(
@@ -2150,20 +2152,23 @@ bool CoreChecks::ValidateDecorations(SHADER_MODULE_STATE const* module) const {
             }
         }
         if (decoration == spv::DecorationXfbBuffer) {
-            xfb_buffers.push_back(op_decorate.word(1));
+            xfb_buffers.push_back(op_decorate);
         }
         if (decoration == spv::DecorationOffset) {
             xfb_offsets.push_back(op_decorate);
         }
     }
 
+    // XfbBuffer, buffer data size
+    std::vector<std::pair<uint32_t, uint32_t>> buffer_data_sizes;
     for (const auto &op_decorate : xfb_offsets) {
         for (const auto xfb_buffer : xfb_buffers) {
-            if (xfb_buffer == op_decorate.word(1)) {
+            if (xfb_buffer.word(1) == op_decorate.word(1)) {
                 const auto offset = op_decorate.word(3);
-                const auto def = module->get_def(xfb_buffer);
+                const auto def = module->get_def(xfb_buffer.word(1));
                 const auto size = module->GetTypeBytesSize(def);
-                if (offset + size > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataSize) {
+                const uint32_t buffer_data_size = offset + size;
+                if (buffer_data_size > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataSize) {
                     skip |= LogError(
                         device, "VUID-RuntimeSpirv-Offset-06308",
                         "vkCreateGraphicsPipelines(): shader uses transform feedback with xfb_offset (%" PRIu32
@@ -2171,8 +2176,48 @@ bool CoreChecks::ValidateDecorations(SHADER_MODULE_STATE const* module) const {
                         "(%" PRIu32 ").",
                         offset, size, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataSize);
                 }
+
+                bool found = false;
+                for (auto &bds : buffer_data_sizes) {
+                    if (bds.first == xfb_buffer.word(1)) {
+                        bds.second = std::max(bds.second, buffer_data_size);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    buffer_data_sizes.emplace_back(xfb_buffer.word(1), buffer_data_size);
+                }
+
                 break;
             }
+        }
+    }
+
+    std::unordered_map<uint32_t, uint32_t> stream_data_size;
+    for (const auto &xfb_stream : xfb_streams) {
+        for (const auto& bds : buffer_data_sizes) {
+            if (xfb_stream.word(1) == bds.first) {
+                uint32_t stream = xfb_stream.word(3);
+                const auto itr = stream_data_size.find(stream);
+                if (itr != stream_data_size.end()) {
+                    itr->second += bds.second;
+                } else {
+                    stream_data_size.insert({stream, bds.second});
+                }
+            }
+        }
+    }
+
+    for (const auto& stream : stream_data_size) {
+        if (stream.second > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreamDataSize) {
+            skip |= LogError(device, "VUID-RuntimeSpirv-XfbBuffer-06309",
+                             "vkCreateGraphicsPipelines(): shader uses transform feedback with stream (%" PRIu32
+                             ") having the sum of buffer data sizes (%" PRIu32
+                             ") not less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackBufferDataSize "
+                             "(%" PRIu32 ").",
+                             stream.first, stream.second,
+                             phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataSize);
         }
     }
 
