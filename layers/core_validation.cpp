@@ -5447,6 +5447,25 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
 
     for (uint32_t i = 0; i < count; i++) {
+        if (pCreateInfos[i].renderPass == VK_NULL_HANDLE) {
+            if (!enabled_features.dynamic_rendering_features.dynamicRendering) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06052",
+                                 "vkCreateGraphicsPipeline: pCreateInfos[%" PRIu32
+                                 "].renderPass is VK_NULL_HANDLE but dynamicRendering is not enabled.",
+                                 i);
+
+            } else {
+                skip |= LogError(device, "UNASSIGNED-VkGraphicsPipelineCreateInfo-dynamicRendering-not-supported",
+                                 "vkCreateGraphicsPipeline: pCreateInfos[%" PRIu32
+                                 "].renderPass is VK_NULL_HANDLE. VK_KHR_dynamic_rendering is currently unsupported",
+                                 i);
+            }
+            // it is unsafe to continue validating so we need to always fail creation of the pipeline.
+            return true;
+        }
+    }
+
+    for (uint32_t i = 0; i < count; i++) {
         skip |= ValidatePipelineLocked(cgpl_state->pipe_state, i);
     }
 
