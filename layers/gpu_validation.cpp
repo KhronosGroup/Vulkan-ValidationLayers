@@ -328,6 +328,7 @@ void GpuAssisted::PostCallRecordGetBufferDeviceAddress(VkDevice device, const Vk
     BUFFER_STATE *buffer_state = GetBufferState(pInfo->buffer);
     // Validate against the size requested when the buffer was created
     if (buffer_state) {
+        buffer_state->deviceAddress = address;
         buffer_map[address] = buffer_state->createInfo.size;
     }
 }
