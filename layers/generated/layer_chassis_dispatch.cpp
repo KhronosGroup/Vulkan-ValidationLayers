@@ -253,7 +253,7 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
         for (uint32_t idx0 = 0; idx0 < createInfoCount; ++idx0) {
             bool uses_color_attachment = false;
             bool uses_depthstencil_attachment = false;
-            {
+            if (layer_data->Unwrap(pCreateInfos[idx0].renderPass)) {
                 const auto subpasses_uses_it = layer_data->renderpasses_states.find(layer_data->Unwrap(pCreateInfos[idx0].renderPass));
                 if (subpasses_uses_it != layer_data->renderpasses_states.end()) {
                     const auto &subpasses_uses = subpasses_uses_it->second;
@@ -261,6 +261,12 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
                         uses_color_attachment = true;
                     if (subpasses_uses.subpasses_using_depthstencil_attachment.count(pCreateInfos[idx0].subpass))
                         uses_depthstencil_attachment = true;
+                }
+            } else {
+                auto rendering_info = LvlFindInChain<VkPipelineRenderingCreateInfoKHR>(pCreateInfos[idx0].pNext);
+                if (rendering_info) {
+                    uses_color_attachment = (rendering_info->colorAttachmentCount > 0);
+                    uses_depthstencil_attachment = (rendering_info->depthAttachmentFormat != VK_FORMAT_UNDEFINED);
                 }
             }
 
