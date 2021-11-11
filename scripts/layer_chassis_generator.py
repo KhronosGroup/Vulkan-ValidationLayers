@@ -73,6 +73,7 @@ class LayerChassisGeneratorOptions(GeneratorOptions):
                  addExtensions = None,
                  removeExtensions = None,
                  emitExtensions = None,
+                 warnExtensions = [],
                  emitSpirv = None,
                  sortProcedure = regSortFeatures,
                  genFuncPointers = True,
@@ -111,6 +112,7 @@ class LayerChassisGeneratorOptions(GeneratorOptions):
         self.indentFuncPointer = indentFuncPointer
         self.alignFuncParam    = alignFuncParam
         self.helper_file_type  = helper_file_type
+        self.warnExtensions    = warnExtensions
 
 # LayerChassisOutputGenerator - subclass of OutputGenerator.
 # Generates a LayerFactory layer that intercepts all API entrypoints
@@ -762,6 +764,8 @@ static void DeviceExtensionWhitelist(ValidationObject *layer_data, const VkDevic
     }
 }
 
+static void DeviceExtensionWarnlist(ValidationObject *layer_data, const VkDeviceCreateInfo *pCreateInfo, VkDevice device);
+
 void OutputLayerStatusInfo(ValidationObject *context) {
     std::string list_of_enables;
     std::string list_of_disables;
@@ -1156,6 +1160,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_interceptor->InitObjectDispatchVectors();
 
     DeviceExtensionWhitelist(device_interceptor, pCreateInfo, *pDevice);
+    DeviceExtensionWarnlist(device_interceptor, pCreateInfo, *pDevice);
 
     return result;
 }
@@ -1566,6 +1571,18 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
     return result;
 
 }"""
+    extension_warn_function = """
+static void DeviceExtensionWarnlist(ValidationObject *layer_data, const VkDeviceCreateInfo *pCreateInfo, VkDevice device) {
+    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        // Check for recognized device extensions
+        if (white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeviceWarnExtensionNames)) {
+            layer_data->LogWarning(layer_data->device, kVUIDUndefined,
+                    "Device Extension %s support is incomplete, incorrect results are possible.",
+                    pCreateInfo->ppEnabledExtensionNames[i]);
+        }
+    }
+}
+"""
 
     inline_custom_validation_class_definitions = """
         virtual VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache) { return VK_SUCCESS; };
@@ -1813,6 +1830,11 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             self.chassis_source = True
             write(self.inline_custom_source_preamble_1, file=self.outFile)
             write(self.inline_custom_source_preamble_2, file=self.outFile)
+            write("static const std::set<std::string> kDeviceWarnExtensionNames {", file=self.outFile)
+            for ext in genOpts.warnExtensions:
+                write('    "{}",'.format(ext), file=self.outFile)
+            write("};", file=self.outFile)
+            write(self.extension_warn_function, file=self.outFile)
 
     #
     #

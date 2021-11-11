@@ -59,6 +59,9 @@ def makeGenOpts(args):
     # Extensions to emit (list of extensions)
     emitExtensions = args.emitExtensions
 
+    # Extensions to warn about, if enabled(list of extensions)
+    warnExtensions = args.warnExtensions
+
     # Features to include (list of features)
     features = args.feature
 
@@ -372,6 +375,7 @@ def makeGenOpts(args):
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
+            warnExtensions    = warnExtensions,
             helper_file_type  = 'layer_chassis_header')
         ]
 
@@ -387,6 +391,7 @@ def makeGenOpts(args):
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
+            warnExtensions    = warnExtensions,
             helper_file_type  = 'layer_chassis_source')
         ]
 
@@ -623,6 +628,9 @@ if __name__ == '__main__':
     parser.add_argument('-emitExtensions', action='append',
                         default=[],
                         help='Specify an extension or extensions to emit in targets')
+    parser.add_argument('-warnExtensions', action='append',
+                        default=[],
+                        help='Specify an extension with partial support. Warning will be log if it is enabled')
     parser.add_argument('-feature', action='append',
                         default=[],
                         help='Specify a core API feature name or names to add to targets')

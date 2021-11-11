@@ -45,6 +45,7 @@ def main(argv):
     gen_cmds = [*[[common_codegen.repo_relative('scripts/lvl_genvk.py'),
                    '-registry', os.path.abspath(os.path.join(args.registry,  'vk.xml')),
                    '-grammar', os.path.abspath(os.path.join(args.grammar,  'spirv.core.grammar.json')),
+                   '-warnExtensions', 'VK_KHR_dynamic_rendering',
                    '-quiet',
                    filename] for filename in ["chassis.cpp",
                                               "chassis.h",
