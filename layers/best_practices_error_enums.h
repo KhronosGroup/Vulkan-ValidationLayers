@@ -240,5 +240,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_SyncObjects_HighNumberOfF
     "UNASSIGNED-BestPractices-SyncObjects-HighNumberOfFences";
 static const char DECORATE_UNUSED *kVUID_BestPractices_SyncObjects_HighNumberOfSemaphores =
     "UNASSIGNED-BestPractices-SyncObjects-HighNumberOfSemaphores";
+static const char DECORATE_UNUSED *kVUID_BestPractices_DynamicRendering_NotSupported =
+    "UNASSIGNED-BestPractices-DynamicRendering-NotSupported";
 
 #endif
