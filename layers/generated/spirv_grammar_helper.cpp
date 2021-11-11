@@ -319,6 +319,7 @@ uint32_t ImageOperandsParamCount(uint32_t image_operand) {
         case spv::ImageOperandsMinLodMask:
         case spv::ImageOperandsMakeTexelAvailableMask:
         case spv::ImageOperandsMakeTexelVisibleMask:
+        case spv::ImageOperandsOffsetsMask:
             return 1;
         case spv::ImageOperandsGradMask:
             return 2;
