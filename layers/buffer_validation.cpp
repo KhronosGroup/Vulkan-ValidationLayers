@@ -3598,41 +3598,40 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
 template <typename RegionType>
 bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                          VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                         const RegionType *pRegions, CopyCommandVersion version) const {
+                                         const RegionType *pRegions, CMD_TYPE cmd_type) const {
     const auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const auto src_image_state = Get<IMAGE_STATE>(srcImage);
     const auto dst_image_state = Get<IMAGE_STATE>(dstImage);
-    const bool is_2khr = (version == COPY_COMMAND_VERSION_2);
-    const CMD_TYPE cmd_type = is_2khr ? CMD_RESOLVEIMAGE2KHR : CMD_RESOLVEIMAGE;
+    const bool is_2 = (cmd_type == CMD_RESOLVEIMAGE2KHR || cmd_type == CMD_RESOLVEIMAGE2);
     const char *func_name = CommandTypeString(cmd_type);
     const char *vuid;
 
     bool skip = false;
     if (cb_node && src_image_state && dst_image_state) {
-        vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcImage-00256" : "VUID-vkCmdResolveImage-srcImage-00256";
+        vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-00256" : "VUID-vkCmdResolveImage-srcImage-00256";
         skip |= ValidateMemoryIsBoundToImage(src_image_state.get(), func_name, vuid);
-        vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstImage-00258" : "VUID-vkCmdResolveImage-dstImage-00258";
+        vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-00258" : "VUID-vkCmdResolveImage-dstImage-00258";
         skip |= ValidateMemoryIsBoundToImage(dst_image_state.get(), func_name, vuid);
         skip |= ValidateCmd(cb_node.get(), cmd_type);
-        vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstImage-02003" : "VUID-vkCmdResolveImage-dstImage-02003";
-        skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR, func_name, vuid);
-        vuid = is_2khr ? "VUID-vkCmdResolveImage2KHR-commandBuffer-01837" : "VUID-vkCmdResolveImage-commandBuffer-01837";
+        vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-02003" : "VUID-vkCmdResolveImage-dstImage-02003";
+        skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT, func_name, vuid);
+        vuid = is_2 ? "VUID-vkCmdResolveImage2-commandBuffer-01837" : "VUID-vkCmdResolveImage-commandBuffer-01837";
         skip |= ValidateProtectedImage(cb_node.get(), src_image_state.get(), func_name, vuid);
-        vuid = is_2khr ? "VUID-vkCmdResolveImage2KHR-commandBuffer-01838" : "VUID-vkCmdResolveImage-commandBuffer-01838";
+        vuid = is_2 ? "VUID-vkCmdResolveImage2-commandBuffer-01838" : "VUID-vkCmdResolveImage-commandBuffer-01838";
         skip |= ValidateProtectedImage(cb_node.get(), dst_image_state.get(), func_name, vuid);
-        vuid = is_2khr ? "VUID-vkCmdResolveImage2KHR-commandBuffer-01839" : "VUID-vkCmdResolveImage-commandBuffer-01839";
+        vuid = is_2 ? "VUID-vkCmdResolveImage2-commandBuffer-01839" : "VUID-vkCmdResolveImage-commandBuffer-01839";
         skip |= ValidateUnprotectedImage(cb_node.get(), dst_image_state.get(), func_name, vuid);
 
         // Validation for VK_EXT_fragment_density_map
         if (src_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
-            vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstImage-02546" : "VUID-vkCmdResolveImage-dstImage-02546";
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-02546" : "VUID-vkCmdResolveImage-dstImage-02546";
             skip |= LogError(cb_node->commandBuffer(), vuid,
                              "%s: srcImage must not have been created with flags containing "
                              "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT",
                              func_name);
         }
         if (dst_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
-            vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstImage-02546" : "VUID-vkCmdResolveImage-dstImage-02546";
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-02546" : "VUID-vkCmdResolveImage-dstImage-02546";
             skip |= LogError(cb_node->commandBuffer(), vuid,
                              "%s: dstImage must not have been created with flags containing "
                              "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT",
@@ -3641,16 +3640,16 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
 
         bool hit_error = false;
         const char *invalid_src_layout_vuid =
-            is_2khr ? ((src_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
-                           ? "VUID-VkResolveImageInfo2KHR-srcImageLayout-01400"
-                           : "VUID-VkResolveImageInfo2KHR-srcImageLayout-00261")
+            is_2 ? ((src_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
+                           ? "VUID-VkResolveImageInfo2-srcImageLayout-01400"
+                           : "VUID-VkResolveImageInfo2-srcImageLayout-00261")
                     : ((src_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
                            ? "VUID-vkCmdResolveImage-srcImageLayout-01400"
                            : "VUID-vkCmdResolveImage-srcImageLayout-00261");
         const char *invalid_dst_layout_vuid =
-            is_2khr ? ((dst_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
-                           ? "VUID-VkResolveImageInfo2KHR-dstImageLayout-01401"
-                           : "VUID-VkResolveImageInfo2KHR-dstImageLayout-00263")
+            is_2 ? ((dst_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
+                           ? "VUID-VkResolveImageInfo2-dstImageLayout-01401"
+                           : "VUID-VkResolveImageInfo2-dstImageLayout-00263")
                     : ((dst_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
                            ? "VUID-vkCmdResolveImage-dstImageLayout-01401"
                            : "VUID-vkCmdResolveImage-dstImageLayout-00263");
@@ -3660,30 +3659,31 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             const RegionType region = pRegions[i];
             const VkImageSubresourceLayers src_subresource = region.srcSubresource;
             const VkImageSubresourceLayers dst_subresource = region.dstSubresource;
+
             skip |= ValidateImageSubresourceLayers(cb_node.get(), &src_subresource, func_name, "srcSubresource", i);
             skip |= ValidateImageSubresourceLayers(cb_node.get(), &dst_subresource, func_name, "dstSubresource", i);
-            vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcImageLayout-00260" : "VUID-vkCmdResolveImage-srcImageLayout-00260";
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImageLayout-00260" : "VUID-vkCmdResolveImage-srcImageLayout-00260";
             skip |= VerifyImageLayout(cb_node.get(), src_image_state.get(), src_subresource, srcImageLayout,
                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, func_name, invalid_src_layout_vuid, vuid, &hit_error);
-            vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstImageLayout-00262" : "VUID-vkCmdResolveImage-dstImageLayout-00262";
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImageLayout-00262" : "VUID-vkCmdResolveImage-dstImageLayout-00262";
             skip |= VerifyImageLayout(cb_node.get(), dst_image_state.get(), dst_subresource, dstImageLayout,
                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, func_name, invalid_dst_layout_vuid, vuid, &hit_error);
-            vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcSubresource-01709" : "VUID-vkCmdResolveImage-srcSubresource-01709";
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-srcSubresource-01709" : "VUID-vkCmdResolveImage-srcSubresource-01709";
             skip |= ValidateImageMipLevel(cb_node.get(), src_image_state.get(), src_subresource.mipLevel, i, func_name,
                                           "srcSubresource", vuid);
-            vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstSubresource-01710" : "VUID-vkCmdResolveImage-dstSubresource-01710";
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-dstSubresource-01710" : "VUID-vkCmdResolveImage-dstSubresource-01710";
             skip |= ValidateImageMipLevel(cb_node.get(), dst_image_state.get(), dst_subresource.mipLevel, i, func_name,
                                           "dstSubresource", vuid);
-            vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcSubresource-01711" : "VUID-vkCmdResolveImage-srcSubresource-01711";
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-srcSubresource-01711" : "VUID-vkCmdResolveImage-srcSubresource-01711";
             skip |= ValidateImageArrayLayerRange(cb_node.get(), src_image_state.get(), src_subresource.baseArrayLayer,
                                                  src_subresource.layerCount, i, func_name, "srcSubresource", vuid);
-            vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstSubresource-01712" : "VUID-vkCmdResolveImage-dstSubresource-01712";
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-dstSubresource-01712" : "VUID-vkCmdResolveImage-dstSubresource-01712";
             skip |= ValidateImageArrayLayerRange(cb_node.get(), dst_image_state.get(), dst_subresource.baseArrayLayer,
                                                  dst_subresource.layerCount, i, func_name, "srcSubresource", vuid);
 
             // layer counts must match
             if (src_subresource.layerCount != dst_subresource.layerCount) {
-                vuid = is_2khr ? "VUID-VkImageResolve2KHR-layerCount-00267" : "VUID-VkImageResolve-layerCount-00267";
+                vuid = is_2 ? "VUID-VkImageResolve2-layerCount-00267" : "VUID-VkImageResolve-layerCount-00267";
                 skip |=
                     LogError(cb_node->commandBuffer(), vuid,
                              "%s: layerCount in source and destination subresource of pRegions[%u] does not match.", func_name, i);
@@ -3691,7 +3691,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             // For each region, src and dest image aspect must be color only
             if ((src_subresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) ||
                 (dst_subresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT)) {
-                vuid = is_2khr ? "VUID-VkImageResolve2KHR-aspectMask-00266" : "VUID-VkImageResolve-aspectMask-00266";
+                vuid = is_2 ? "VUID-VkImageResolve2-aspectMask-00266" : "VUID-VkImageResolve-aspectMask-00266";
                 skip |= LogError(cb_node->commandBuffer(), vuid,
                                  "%s: src and dest aspectMasks for pRegions[%u] must specify only VK_IMAGE_ASPECT_COLOR_BIT.",
                                  func_name, i);
@@ -3705,7 +3705,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                     LogObjectList objlist(cb_node->commandBuffer());
                     objlist.add(src_image_state->image());
                     objlist.add(dst_image_state->image());
-                    vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcImage-04446" : "VUID-vkCmdResolveImage-srcImage-04446";
+                    vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-04446" : "VUID-vkCmdResolveImage-srcImage-04446";
                     skip |= LogError(objlist, vuid,
                                      "%s: pRegions[%u] baseArrayLayer must be 0 and layerCount must be 1 for all "
                                      "subresources if the src or dst image is 3D.",
@@ -3715,7 +3715,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                     LogObjectList objlist(cb_node->commandBuffer());
                     objlist.add(src_image_state->image());
                     objlist.add(dst_image_state->image());
-                    vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcImage-04447" : "VUID-vkCmdResolveImage-srcImage-04447";
+                    vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-04447" : "VUID-vkCmdResolveImage-srcImage-04447";
                     skip |= LogError(objlist, vuid,
                                      "%s: pRegions[%u] baseArrayLayer must be 0 and layerCount must be 1 for all "
                                      "subresources if the src or dst image is 3D.",
@@ -3727,7 +3727,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 if ((pRegions[i].srcOffset.y != 0) || (pRegions[i].extent.height != 1)) {
                     LogObjectList objlist(cb_node->commandBuffer());
                     objlist.add(src_image_state->image());
-                    vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcImage-00271" : "VUID-vkCmdResolveImage-srcImage-00271";
+                    vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-00271" : "VUID-vkCmdResolveImage-srcImage-00271";
                     skip |= LogError(objlist, vuid,
                                      "%s: srcImage (%s) is 1D but pRegions[%u] srcOffset.y (%d) is not 0 or "
                                      "extent.height (%u) is not 1.",
@@ -3739,7 +3739,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 if ((pRegions[i].srcOffset.z != 0) || (pRegions[i].extent.depth != 1)) {
                     LogObjectList objlist(cb_node->commandBuffer());
                     objlist.add(src_image_state->image());
-                    vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcImage-00273" : "VUID-vkCmdResolveImage-srcImage-00273";
+                    vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-00273" : "VUID-vkCmdResolveImage-srcImage-00273";
                     skip |= LogError(objlist, vuid,
                                      "%s: srcImage (%s) is 2D but pRegions[%u] srcOffset.z (%d) is not 0 or "
                                      "extent.depth (%u) is not 1.",
@@ -3752,7 +3752,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 if ((pRegions[i].dstOffset.y != 0) || (pRegions[i].extent.height != 1)) {
                     LogObjectList objlist(cb_node->commandBuffer());
                     objlist.add(dst_image_state->image());
-                    vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstImage-00276" : "VUID-vkCmdResolveImage-dstImage-00276";
+                    vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-00276" : "VUID-vkCmdResolveImage-dstImage-00276";
                     skip |= LogError(objlist, vuid,
                                      "%s: dstImage (%s) is 1D but pRegions[%u] dstOffset.y (%d) is not 0 or "
                                      "extent.height (%u) is not 1.",
@@ -3764,7 +3764,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 if ((pRegions[i].dstOffset.z != 0) || (pRegions[i].extent.depth != 1)) {
                     LogObjectList objlist(cb_node->commandBuffer());
                     objlist.add(dst_image_state->image());
-                    vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstImage-00278" : "VUID-vkCmdResolveImage-dstImage-00278";
+                    vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-00278" : "VUID-vkCmdResolveImage-dstImage-00278";
                     skip |= LogError(objlist, vuid,
                                      "%s: dstImage (%s) is 2D but pRegions[%u] dstOffset.z (%d) is not 0 or "
                                      "extent.depth (%u) is not 1.",
@@ -3782,7 +3782,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 if ((extent_check & kXBit) != 0) {
                     LogObjectList objlist(cb_node->commandBuffer());
                     objlist.add(src_image_state->image());
-                    vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcOffset-00269" : "VUID-vkCmdResolveImage-srcOffset-00269";
+                    vuid = is_2 ? "VUID-VkResolveImageInfo2-srcOffset-00269" : "VUID-vkCmdResolveImage-srcOffset-00269";
                     skip |= LogError(objlist, vuid,
                                      "%s: srcImage (%s) pRegions[%u] x-dimension offset [%1d] + extent [%u] "
                                      "exceeds subResource width [%u].",
@@ -3793,7 +3793,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 if ((extent_check & kYBit) != 0) {
                     LogObjectList objlist(cb_node->commandBuffer());
                     objlist.add(src_image_state->image());
-                    vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcOffset-00270" : "VUID-vkCmdResolveImage-srcOffset-00270";
+                    vuid = is_2 ? "VUID-VkResolveImageInfo2-srcOffset-00270" : "VUID-vkCmdResolveImage-srcOffset-00270";
                     skip |= LogError(objlist, vuid,
                                      "%s: srcImage (%s) pRegions[%u] y-dimension offset [%1d] + extent [%u] "
                                      "exceeds subResource height [%u].",
@@ -3804,7 +3804,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 if ((extent_check & kZBit) != 0) {
                     LogObjectList objlist(cb_node->commandBuffer());
                     objlist.add(src_image_state->image());
-                    vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcOffset-00272" : "VUID-vkCmdResolveImage-srcOffset-00272";
+                    vuid = is_2 ? "VUID-VkResolveImageInfo2-srcOffset-00272" : "VUID-vkCmdResolveImage-srcOffset-00272";
                     skip |= LogError(objlist, vuid,
                                      "%s: srcImage (%s) pRegions[%u] z-dimension offset [%1d] + extent [%u] "
                                      "exceeds subResource depth [%u].",
@@ -3822,7 +3822,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 if ((extent_check & kXBit) != 0) {
                     LogObjectList objlist(cb_node->commandBuffer());
                     objlist.add(dst_image_state->image());
-                    vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstOffset-00274" : "VUID-vkCmdResolveImage-dstOffset-00274";
+                    vuid = is_2 ? "VUID-VkResolveImageInfo2-dstOffset-00274" : "VUID-vkCmdResolveImage-dstOffset-00274";
                     skip |= LogError(objlist, vuid,
                                      "%s: dstImage (%s) pRegions[%u] x-dimension offset [%1d] + extent [%u] "
                                      "exceeds subResource width [%u].",
@@ -3833,7 +3833,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 if ((extent_check & kYBit) != 0) {
                     LogObjectList objlist(cb_node->commandBuffer());
                     objlist.add(dst_image_state->image());
-                    vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstOffset-00275" : "VUID-vkCmdResolveImage-dstOffset-00275";
+                    vuid = is_2 ? "VUID-VkResolveImageInfo2-dstOffset-00275" : "VUID-vkCmdResolveImage-dstOffset-00275";
                     skip |= LogError(objlist, vuid,
                                      "%s: dstImage (%s) pRegions[%u] y-dimension offset [%1d] + extent [%u] "
                                      "exceeds subResource height [%u].",
@@ -3844,7 +3844,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 if ((extent_check & kZBit) != 0) {
                     LogObjectList objlist(cb_node->commandBuffer());
                     objlist.add(dst_image_state->image());
-                    vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstOffset-00277" : "VUID-vkCmdResolveImage-dstOffset-00277";
+                    vuid = is_2 ? "VUID-VkResolveImageInfo2-dstOffset-00277" : "VUID-vkCmdResolveImage-dstOffset-00277";
                     skip |= LogError(objlist, vuid,
                                      "%s: dstImage (%s) pRegions[%u] z-dimension offset [%1d] + extent [%u] "
                                      "exceeds subResource depth [%u].",
@@ -3855,7 +3855,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         }
 
         if (src_image_state->createInfo.format != dst_image_state->createInfo.format) {
-            vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcImage-01386" : "VUID-vkCmdResolveImage-srcImage-01386";
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-01386" : "VUID-vkCmdResolveImage-srcImage-01386";
             skip |= LogError(cb_node->commandBuffer(), vuid, "%s: srcImage format (%s) and dstImage format (%s) are not the same.",
                              func_name, string_VkFormat(src_image_state->createInfo.format),
                              string_VkFormat(dst_image_state->createInfo.format));
@@ -3867,11 +3867,11 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                string_VkImageType(dst_image_state->createInfo.imageType));
         }
         if (src_image_state->createInfo.samples == VK_SAMPLE_COUNT_1_BIT) {
-            vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-srcImage-00257" : "VUID-vkCmdResolveImage-srcImage-00257";
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-00257" : "VUID-vkCmdResolveImage-srcImage-00257";
             skip |= LogError(cb_node->commandBuffer(), vuid, "%s: srcImage sample count is VK_SAMPLE_COUNT_1_BIT.", func_name);
         }
         if (dst_image_state->createInfo.samples != VK_SAMPLE_COUNT_1_BIT) {
-            vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstImage-00259" : "VUID-vkCmdResolveImage-dstImage-00259";
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-00259" : "VUID-vkCmdResolveImage-dstImage-00259";
             skip |= LogError(cb_node->commandBuffer(), vuid, "%s: dstImage sample count (%s) is not VK_SAMPLE_COUNT_1_BIT.",
                              func_name, string_VkSampleCountFlagBits(dst_image_state->createInfo.samples));
         }
@@ -3885,14 +3885,21 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                 const VkImageResolve *pRegions) const {
     return ValidateCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions,
-                                   COPY_COMMAND_VERSION_1);
+                                   CMD_RESOLVEIMAGE);
 }
 
 bool CoreChecks::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                                     const VkResolveImageInfo2KHR *pResolveImageInfo) const {
     return ValidateCmdResolveImage(commandBuffer, pResolveImageInfo->srcImage, pResolveImageInfo->srcImageLayout,
                                    pResolveImageInfo->dstImage, pResolveImageInfo->dstImageLayout, pResolveImageInfo->regionCount,
-                                   pResolveImageInfo->pRegions, COPY_COMMAND_VERSION_2);
+                                   pResolveImageInfo->pRegions, CMD_RESOLVEIMAGE2KHR);
+}
+
+bool CoreChecks::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer,
+                                                 const VkResolveImageInfo2 *pResolveImageInfo) const {
+    return ValidateCmdResolveImage(commandBuffer, pResolveImageInfo->srcImage, pResolveImageInfo->srcImageLayout,
+                                   pResolveImageInfo->dstImage, pResolveImageInfo->dstImageLayout, pResolveImageInfo->regionCount,
+                                   pResolveImageInfo->pRegions, CMD_RESOLVEIMAGE2);
 }
 
 template <typename RegionType>
