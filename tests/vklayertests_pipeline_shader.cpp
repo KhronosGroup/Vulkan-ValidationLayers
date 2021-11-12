@@ -292,7 +292,7 @@ TEST_F(VkLayerTest, BlendingOnFormatWithoutBlendingSupport) {
     features.independentBlend = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(Init(&features));
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-blendEnable-04717");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06041");
 
     VkFormat non_blending_format = VK_FORMAT_UNDEFINED;
     for (uint32_t i = 1; i <= VK_FORMAT_ASTC_12x12_SRGB_BLOCK; i++) {
@@ -367,7 +367,7 @@ TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
         helper.gp_ci_.pColorBlendState = nullptr;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00753");
+                                      "VUID-VkGraphicsPipelineCreateInfo-renderPass-06044");
 }
 
 TEST_F(VkLayerTest, PointSizeFailure) {
@@ -3594,7 +3594,7 @@ TEST_F(VkLayerTest, NumBlendAttachMismatch) {
         helper.pipe_ms_state_ci_ = pipe_ms_state_ci;
         helper.cb_ci_.attachmentCount = 0;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_MSAA, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-attachmentCount-00746");
+    CreatePipelineHelper::OneshotTest(*this, set_MSAA, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06042");
 }
 
 TEST_F(VkLayerTest, CmdClearAttachmentTests) {
@@ -14578,7 +14578,7 @@ TEST_F(VkLayerTest, TestUsingDisabledMultiviewFeatures) {
         pipe.shader_stages_.emplace_back(tes.GetStageCreateInfo());
         pipe.InitState();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-00760");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06047");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -14605,7 +14605,7 @@ TEST_F(VkLayerTest, TestUsingDisabledMultiviewFeatures) {
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
         pipe.InitState();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-00761");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06048");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }

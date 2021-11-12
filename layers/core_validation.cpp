@@ -1273,7 +1273,7 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE *pPipe
                 if (create_info.pRasterizationState && !create_info.pRasterizationState->rasterizerDiscardEnable &&
                     pPipeline->attachments[i].blendEnable && !(format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
                 skip |=
-                    LogError(device, "VUID-VkGraphicsPipelineCreateInfo-blendEnable-04717",
+                    LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06041",
                         "vkCreateGraphicsPipelines(): pipeline.pColorBlendState.pAttachments[%" PRIu32
                         "].blendEnable is VK_TRUE but format %s of the corresponding attachment description (subpass %" PRIu32
                         ", attachment %" PRIu32 ") does not support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.",
@@ -1385,7 +1385,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         // emit errors for renderpass being invalid.
         subpass_desc = &pPipeline->rp_state->createInfo.pSubpasses[create_info.subpass];
         if (create_info.subpass >= pPipeline->rp_state->createInfo.subpassCount) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-subpass-00759",
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06046",
                              "Invalid Pipeline CreateInfo[%" PRIu32
                              "] State: Subpass index %u is out of range for this renderpass (0..%u).",
                              pipelineIndex, create_info.subpass, pPipeline->rp_state->createInfo.subpassCount - 1);
@@ -1396,7 +1396,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
     if (create_info.pColorBlendState != NULL) {
         const safe_VkPipelineColorBlendStateCreateInfo *color_blend_state = create_info.pColorBlendState;
         if (subpass_desc && color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-attachmentCount-00746",
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06042",
                              "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
                              "]: %s subpass %u has colorAttachmentCount of %u which doesn't "
                              "match the pColorBlendState->attachmentCount of %u.",
@@ -1739,7 +1739,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             if (subpass_desc && subpass_desc->pDepthStencilAttachment &&
                 subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
                 if (!create_info.pDepthStencilState) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00752",
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06043",
                                      "Invalid Pipeline CreateInfo[%" PRIu32
                                      "] State: pDepthStencilState is NULL when rasterization is enabled "
                                      "and subpass uses a depth/stencil attachment.",
@@ -1793,7 +1793,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                     }
                 }
                 if (color_attachment_count > 0 && create_info.pColorBlendState == nullptr) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00753",
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06044",
                                      "Invalid Pipeline CreateInfo[%" PRIu32
                                      "] State: pColorBlendState is NULL when rasterization is enabled and "
                                      "subpass uses color attachments.",
@@ -1807,7 +1807,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                     if (!enabled_features.multiview_features.multiviewTessellationShader &&
                         (pPipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
                          pPipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
-                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-00760",
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06047",
                                          "Invalid Pipeline CreateInfo[%" PRIu32 "] State: subpass has %" PRIu32
                                          " bits set in viewMask and pStages includes tessellation shaders, but the "
                                          "VkPhysicalDeviceMultiviewFeatures::multiviewTessellationShader features is not enabled.",
@@ -1815,7 +1815,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                     }
                     if (!enabled_features.multiview_features.multiviewGeometryShader &&
                         pPipeline->active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) {
-                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-00761",
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06048",
                                          "Invalid Pipeline CreateInfo[%" PRIu32 "] State: subpass has %" PRIu32
                                          " bits set in viewMask and pStages includes geometry shader, but the "
                                          "VkPhysicalDeviceMultiviewFeatures::multiviewGeometryShader features is not enabled.",
