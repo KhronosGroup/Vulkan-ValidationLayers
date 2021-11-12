@@ -940,8 +940,8 @@ static const std::map<SubmitError, std::vector<Entry>> kSubmitErrors{
      }},
     {SubmitError::kProtectedFeatureDisabled,
      {
-         {Key(Struct::VkProtectedSubmitInfo), "VUID-VkProtectedSubmitInfo-protectedSubmit-01816"},
-         {Key(Struct::VkSubmitInfo2KHR), "VUID-VkSubmitInfo2KHR-flags-03885"},
+         {Key(Struct::VkProtectedSubmitInfo), "VUID-vkQueueSubmit-queue-06448"},
+         {Key(Struct::VkSubmitInfo2KHR), "VUID-vkQueueSubmit2KHR-queue-06447"},
      }},
     {SubmitError::kBadUnprotectedSubmit,
      {

@@ -124,11 +124,13 @@ struct CB_SUBMISSION {
 class QUEUE_STATE : public BASE_NODE {
   public:
     const uint32_t queueFamilyIndex;
+    const VkDeviceQueueCreateFlags flags;
 
     uint64_t seq;
     std::deque<CB_SUBMISSION> submissions;
 
-    QUEUE_STATE(VkQueue q, uint32_t index) : BASE_NODE(q, kVulkanObjectTypeQueue), queueFamilyIndex(index), seq(0) {}
+    QUEUE_STATE(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags)
+        : BASE_NODE(q, kVulkanObjectTypeQueue), queueFamilyIndex(index), flags(flags), seq(0) {}
 
     VkQueue Queue() const { return handle_.Cast<VkQueue>(); }
 
