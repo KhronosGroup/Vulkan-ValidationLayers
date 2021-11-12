@@ -290,6 +290,15 @@ void ValidationStateTracker::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer co
                                Get<IMAGE_STATE>(pResolveImageInfo->dstImage));
 }
 
+void ValidationStateTracker::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer,
+                                                           const VkResolveImageInfo2 *pResolveImageInfo) {
+    if (disabled[command_buffer_state]) return;
+
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_node->RecordTransferCmd(CMD_RESOLVEIMAGE2, Get<IMAGE_STATE>(pResolveImageInfo->srcImage),
+                               Get<IMAGE_STATE>(pResolveImageInfo->dstImage));
+}
+
 void ValidationStateTracker::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage,
                                                        VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout,
                                                        uint32_t regionCount, const VkImageBlit *pRegions, VkFilter filter) {
