@@ -577,10 +577,10 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             } else if (vulkan_11_features) {
                 protected_memory = vulkan_11_features->protectedMemory;
             }
-            if ((queue_create_info.flags == VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) && (protected_memory == VK_FALSE)) {
+            if (((queue_create_info.flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) != 0) && (protected_memory == VK_FALSE)) {
                 skip |= LogError(physicalDevice, "VUID-VkDeviceQueueCreateInfo-flags-02861",
-                                 "vkCreateDevice: pCreateInfo->flags set to VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT without the "
-                                 "protectedMemory feature being set as well.");
+                                 "vkCreateDevice: pCreateInfo->flags contains VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT without the "
+                                 "protectedMemory feature being enabled as well.");
             }
         }
     }

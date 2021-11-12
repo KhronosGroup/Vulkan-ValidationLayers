@@ -1190,7 +1190,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
                     DispatchGetDeviceQueue(*pDevice, queue_info.queue_family_index, i, &queue);
                 }
                 assert(queue != VK_NULL_HANDLE);
-                state_tracker->Add(std::make_shared<QUEUE_STATE>(queue, queue_info.queue_family_index));
+                state_tracker->Add(std::make_shared<QUEUE_STATE>(queue, queue_info.queue_family_index, queue_info.flags));
             }
         }
     }

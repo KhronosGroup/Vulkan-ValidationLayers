@@ -3646,12 +3646,11 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         auto protected_submit_info = LvlFindInChain<VkProtectedSubmitInfo>(submit->pNext);
         if (protected_submit_info) {
             const bool protected_submit = protected_submit_info->protectedSubmit == VK_TRUE;
-            // Only check feature once for submit
-            if ((protected_submit == true) && (enabled_features.core11.protectedMemory == VK_FALSE)) {
-                skip |= LogError(queue, "VUID-VkProtectedSubmitInfo-protectedSubmit-01816",
-                                 "vkQueueSubmit(): The protectedMemory device feature is disabled, can't submit a protected queue "
-                                 "to %s pSubmits[%u]",
-                                 report_data->FormatHandle(queue).c_str(), submit_idx);
+            if ((protected_submit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) == 0)) {
+                skip |= LogError(queue, "VUID-vkQueueSubmit-queue-06448",
+                                 "vkQueueSubmit(): pSubmits[%u] contains a protected submission to %s which was not created with "
+                                 "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT",
+                                 submit_idx, report_data->FormatHandle(queue).c_str());
             }
 
             // Make sure command buffers are all protected or unprotected
@@ -3740,12 +3739,11 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, queue, submit, loc);
 
         bool protectedSubmit = (submit->flags & VK_SUBMIT_PROTECTED_BIT_KHR) != 0;
-        // Only check feature once for submit
-        if ((protectedSubmit == true) && (enabled_features.core11.protectedMemory == VK_FALSE)) {
-            skip |= LogError(queue, "VUID-VkSubmitInfo2KHR-flags-03885",
-                             "vkQueueSubmit2KHR(): The protectedMemory device feature is disabled, can't submit a protected queue "
-                             "to %s pSubmits[%u]",
-                             report_data->FormatHandle(queue).c_str(), submit_idx);
+        if ((protectedSubmit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)) == 0) {
+            skip |= LogError(queue, "VUID-vkQueueSubmit2KHR-queue-06447",
+                             "vkQueueSubmit2KHR(): pSubmits[%u] contains a protected submission to %s which was not created with "
+                             "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT",
+                             submit_idx, report_data->FormatHandle(queue).c_str());
         }
 
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
