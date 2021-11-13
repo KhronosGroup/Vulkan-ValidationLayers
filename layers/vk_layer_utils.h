@@ -157,6 +157,16 @@ VK_LAYER_EXPORT VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo
 
 static inline bool IsPowerOfTwo(unsigned x) { return x && !(x & (x - 1)); }
 
+static inline uint32_t MostSignificantBit(uint32_t mask) {
+    uint32_t highest_view_bit = 0;
+    for (uint32_t k = 0; k < 32; ++k) {
+        if (((mask >> k) & 1) != 0) {
+            highest_view_bit = k;
+        }
+    }
+    return highest_view_bit;
+}
+
 static inline uint32_t SampleCountSize(VkSampleCountFlagBits sample_count) {
     uint32_t size = 0;
     switch (sample_count) {
