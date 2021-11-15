@@ -340,7 +340,7 @@ foreach(layer_info, layers) {
     if (is_linux || is_android) {
       ldflags = [ "-Wl,-Bsymbolic,--exclude-libs,ALL" ]
     }
-    if (use_x11) {
+    if (ozone_platform_x11) {
       defines += [ "VK_USE_PLATFORM_XLIB_KHR" ]
     }
     if (is_android) {

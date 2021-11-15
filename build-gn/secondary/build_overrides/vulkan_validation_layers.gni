@@ -23,4 +23,4 @@ vulkan_data_subdir = ""
 vulkan_gen_subdir = ""
 
 # Build options
-use_x11 = true
+ozone_platform_x11 = true
