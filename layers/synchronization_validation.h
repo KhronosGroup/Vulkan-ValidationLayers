@@ -272,6 +272,7 @@ class ResourceAccessState : public SyncStageAccess {
         VkPipelineStageFlags2KHR exec_scope;
         SyncStageAccessFlags access_scope;
         OrderingBarrier() = default;
+        OrderingBarrier(const OrderingBarrier &) = default;
         OrderingBarrier(VkPipelineStageFlags2KHR es, SyncStageAccessFlags as) : exec_scope(es), access_scope(as) {}
         OrderingBarrier &operator=(const OrderingBarrier &) = default;
         OrderingBarrier &operator|=(const OrderingBarrier &rhs) {
@@ -733,6 +734,7 @@ class AccessContext {
     struct TrackBack {
         std::vector<SyncBarrier> barriers;
         const AccessContext *context;
+        TrackBack(const TrackBack &) = default;
         TrackBack(const AccessContext *context_, VkQueueFlags queue_flags_,
                   const std::vector<const VkSubpassDependency2 *> &subpass_dependencies_)
             : barriers(), context(context_) {

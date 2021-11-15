@@ -70,6 +70,8 @@ struct Subresource : public VkImageSubresource {
         : VkImageSubresource({aspect_mask_, mip_level_, array_layer_}), aspect_index(aspect_index_) {}
     Subresource(VkImageAspectFlagBits aspect_, uint32_t mip_level_, uint32_t array_layer_, uint32_t aspect_index_)
         : Subresource(static_cast<VkImageAspectFlags>(aspect_), mip_level_, array_layer_, aspect_index_) {}
+
+    Subresource& operator=(const Subresource&) = default;
 };
 
 // Subresource is encoded in (from slowest varying to fastest)
@@ -415,6 +417,7 @@ class ImageRangeGenerator {
     inline const IndexRange& operator*() const { return pos_; }
     inline const IndexRange* operator->() const { return &pos_; }
     ImageRangeGenerator& operator++();
+    ImageRangeGenerator& operator=(const ImageRangeGenerator&) = default;
 
   private:
     bool Convert2DCompatibleTo3D();
