@@ -8913,8 +8913,8 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
-                                                const VkDependencyInfoKHR *pDependencyInfo) const {
+bool CoreChecks::ValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo *pDependencyInfo,
+                                      CMD_TYPE cmd_type) const {
     LogObjectList objects(commandBuffer);
     objects.add(event);
 
@@ -8922,10 +8922,11 @@ bool CoreChecks::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, V
     assert(cb_state);
     bool skip = false;
     if (!enabled_features.core13.synchronization2) {
+        const char* func_name = CommandTypeString(cmd_type);
         skip |= LogError(commandBuffer, "VUID-vkCmdSetEvent2-synchronization2-03824",
-                         "vkCmdSetEvent2KHR(): Synchronization2 feature is not enabled");
+                         "%s(): Synchronization2 feature is not enabled", func_name);
     }
-    skip |= ValidateCmd(cb_state.get(), CMD_SETEVENT);
+    skip |= ValidateCmd(cb_state.get(), cmd_type);
     Location loc(Func::vkCmdSetEvent2, Field::pDependencyInfo);
     if (pDependencyInfo->dependencyFlags != 0) {
         skip |= LogError(objects, "VUID-vkCmdSetEvent2-dependencyFlags-03825", "%s (%s) must be 0",
@@ -8934,6 +8935,16 @@ bool CoreChecks::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, V
     }
     skip |= ValidateDependencyInfo(objects, loc, cb_state.get(), pDependencyInfo);
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
+                                                const VkDependencyInfoKHR *pDependencyInfo) const {
+    return ValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, CMD_SETEVENT2KHR);
+}
+
+bool CoreChecks::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
+                                             const VkDependencyInfo *pDependencyInfo) const {
+    return ValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, CMD_SETEVENT2);
 }
 
 bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const {
