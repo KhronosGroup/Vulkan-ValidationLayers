@@ -1486,7 +1486,10 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     bool PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
                                           VkPipelineStageFlags2KHR stageMask) const override;
+    bool PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
+                                       VkPipelineStageFlags2 stageMask) const override;
     void PostCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask) override;
+    void PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) override;
 
     bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                       VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,

@@ -5298,6 +5298,17 @@ bool SyncValidator::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuff
     return reset_event_op.Validate(*cb_context);
 }
 
+bool SyncValidator::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
+                                                  VkPipelineStageFlags2 stageMask) const {
+    bool skip = false;
+    const auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    if (!cb_context) return skip;
+
+    SyncOpResetEvent reset_event_op(CMD_RESETEVENT2, *this, cb_context->GetQueueFlags(), event, stageMask);
+    return reset_event_op.Validate(*cb_context);
+}
+
 void SyncValidator::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
                                                     VkPipelineStageFlags2KHR stageMask) {
     StateTracker::PostCallRecordCmdResetEvent2KHR(commandBuffer, event, stageMask);
@@ -5306,6 +5317,15 @@ void SyncValidator::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffe
     if (!cb_context) return;
 
     cb_context->RecordSyncOp<SyncOpResetEvent>(CMD_RESETEVENT2KHR, *this, cb_context->GetQueueFlags(), event, stageMask);
+}
+
+void SyncValidator::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
+    StateTracker::PostCallRecordCmdResetEvent2(commandBuffer, event, stageMask);
+    auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    if (!cb_context) return;
+
+    cb_context->RecordSyncOp<SyncOpResetEvent>(CMD_RESETEVENT2, *this, cb_context->GetQueueFlags(), event, stageMask);
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,

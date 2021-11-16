@@ -2765,6 +2765,12 @@ void ValidationStateTracker::PreCallRecordCmdResetEvent2KHR(VkCommandBuffer comm
     cb_state->RecordResetEvent(CMD_RESETEVENT2KHR, event, stageMask);
 }
 
+void ValidationStateTracker::PreCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
+                                                         VkPipelineStageFlags2 stageMask) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordResetEvent(CMD_RESETEVENT2, event, stageMask);
+}
+
 void ValidationStateTracker::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                                         VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
                                                         uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
