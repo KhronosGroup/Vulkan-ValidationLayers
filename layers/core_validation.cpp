@@ -3518,10 +3518,8 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
     }
 }
 
-void CoreChecks::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
-                                               VkResult result) {
-    StateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
-
+void CoreChecks::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+                                    VkResult result) {
     if (result != VK_SUCCESS) return;
     // The triply nested for duplicates that in the StateTracker, but avoids the need for two additional callbacks.
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
@@ -3538,6 +3536,18 @@ void CoreChecks::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCou
             }
         }
     }
+}
+
+void CoreChecks::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+                                               VkResult result) {
+    StateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
+    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
+}
+
+void CoreChecks::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
+                                            VkResult result) {
+    StateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
+    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
 }
 
 struct SemaphoreSubmitState {
@@ -3976,22 +3986,23 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     return skip;
 }
 
-bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                VkFence fence) const {
+bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                VkFence fence, bool is_2khr) const {
     const auto pFence = Get<FENCE_STATE>(fence);
+    const char* func_name = is_2khr ? "vkQueueSubmit2KHR()" : "vkQueueSubmit2()";
     bool skip = ValidateFenceForSubmit(pFence.get(), "VUID-vkQueueSubmit2-fence-04895", "VUID-vkQueueSubmit2-fence-04894",
-                                       "vkQueueSubmit2KHR()");
+                                       func_name);
     if (skip) {
         return true;
     }
 
     if (!enabled_features.core13.synchronization2) {
         skip |= LogError(queue, "VUID-vkQueueSubmit2-synchronization2-03866",
-                         "vkQueueSubmit2KHR(): Synchronization2 feature is not enabled");
+                         "%s: Synchronization2 feature is not enabled", func_name);
     }
 
     const auto queue_state = Get<QUEUE_STATE>(queue);
-    CommandBufferSubmitState cb_submit_state(this, "vkQueueSubmit2KHR()", queue_state.get());
+    CommandBufferSubmitState cb_submit_state(this, func_name, queue_state.get());
     SemaphoreSubmitState sem_submit_state(this,
                                           physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags);
 
@@ -4006,9 +4017,9 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
 
         bool protected_submit = (submit->flags & VK_SUBMIT_PROTECTED_BIT_KHR) != 0;
         if ((protected_submit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)) == 0) {
-            skip |= LogError(queue, "VUID-vkQueueSubmit2KHR-queue-06447",
-                             "vkQueueSubmit2(): pSubmits[%u] contains a protected submission to %s which was not created with "
-                             "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT",
+            skip |= LogError(queue, "VUID-vkQueueSubmit2-queue-06447",
+                             "%s: pSubmits[%u] contains a protected submission to %s which was not created with "
+                             "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT", func_name, 
                              submit_idx, report_data->FormatHandle(queue).c_str());
         }
 
@@ -4027,8 +4038,8 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
                     LogObjectList objlist(cb_state->commandBuffer());
                     objlist.add(queue);
                     skip |= LogError(objlist, "VUID-VkSubmitInfo2-flags-03886",
-                                     "vkQueueSubmit2KHR(): command buffer %s is unprotected while queue %s pSubmits[%u] has "
-                                     "VK_SUBMIT_PROTECTED_BIT_KHR set",
+                                     "%s: command buffer %s is unprotected while queue %s pSubmits[%u] has "
+                                     "VK_SUBMIT_PROTECTED_BIT_KHR set", func_name, 
                                      report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
                                      report_data->FormatHandle(queue).c_str(), submit_idx);
                 }
@@ -4036,8 +4047,8 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
                     LogObjectList objlist(cb_state->commandBuffer());
                     objlist.add(queue);
                     skip |= LogError(objlist, "VUID-VkSubmitInfo2-flags-03887",
-                                     "vkQueueSubmit2KHR(): command buffer %s is protected while queue %s pSubmitInfos[%u] has "
-                                     "VK_SUBMIT_PROTECTED_BIT_KHR not set",
+                                     "%s: command buffer %s is protected while queue %s pSubmitInfos[%u] has "
+                                     "VK_SUBMIT_PROTECTED_BIT_KHR not set", func_name,
                                      report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
                                      report_data->FormatHandle(queue).c_str(), submit_idx);
                 }
@@ -4046,6 +4057,16 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
     }
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
+    VkFence fence) const {
+    return ValidateQueueSubmit2(queue, submitCount, pSubmits, fence, true);
+}
+
+bool CoreChecks::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits,
+    VkFence fence) const {
+    return ValidateQueueSubmit2(queue, submitCount, pSubmits, fence, false);
 }
 
 #ifdef AHB_VALIDATION_SUPPORT

@@ -1152,8 +1152,11 @@ class ValidationStateTracker : public ValidationObject {
                                         const VkDependencyInfoKHR* pDependencyInfos) override;
     void PostCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkQueryPool queryPool,
                                              uint32_t query) override;
+    void RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence, VkResult result);
     void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
                                        VkResult result) override;
+    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
+                                    VkResult result) override;
 
     void RecordGetBufferDeviceAddress(const VkBufferDeviceAddressInfo* pInfo, VkDeviceAddress address);
     void PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,

@@ -1471,8 +1471,8 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
     }
 }
 
-void ValidationStateTracker::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                           VkFence fence, VkResult result) {
+void ValidationStateTracker::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                VkFence fence, VkResult result) {
     if (result != VK_SUCCESS) return;
     auto queue_state = Get<QUEUE_STATE>(queue);
     uint64_t early_retire_seq = 0;
@@ -1508,6 +1508,16 @@ void ValidationStateTracker::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32
     if (early_retire_seq) {
         queue_state->Retire(early_retire_seq);
     }
+}
+
+void ValidationStateTracker::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                           VkFence fence, VkResult result) {
+    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
+}
+
+void ValidationStateTracker::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
+                                                        VkFence fence, VkResult result) {
+    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
 }
 
 void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,

@@ -688,10 +688,8 @@ void DebugPrintf::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount,
     }
 }
 
-void DebugPrintf::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                VkFence fence, VkResult result) {
-    ValidationStateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
-
+void DebugPrintf::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
+                                     VkResult result) {
     if (aborted || (result != VK_SUCCESS)) return;
     bool buffers_present = false;
     // Don't QueueWaitIdle if there's nothing to process
@@ -708,11 +706,23 @@ void DebugPrintf::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
     DispatchQueueWaitIdle(queue);
 
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
+        const VkSubmitInfo2 *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
             ProcessCommandBuffer(queue, submit->pCommandBufferInfos[i].commandBuffer);
         }
     }
+}
+
+void DebugPrintf::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                VkFence fence, VkResult result) {
+    ValidationStateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
+    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
+}
+
+void DebugPrintf::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
+                                             VkResult result) {
+    ValidationStateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
+    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
 }
 
 void DebugPrintf::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,

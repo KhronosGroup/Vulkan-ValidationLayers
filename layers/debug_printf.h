@@ -252,8 +252,11 @@ class DebugPrintf : public ValidationStateTracker {
 
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    VkResult result) override;
+    void RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence, VkResult result);
     void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
                                        VkResult result) override;
+    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
+                                    VkResult result) override;
     void AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point);
 
     std::shared_ptr<CMD_BUFFER_STATE_PRINTF> GetCBState(VkCommandBuffer commandBuffer) {
