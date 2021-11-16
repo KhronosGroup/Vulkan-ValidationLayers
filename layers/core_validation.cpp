@@ -8960,8 +8960,8 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
-                                                  VkPipelineStageFlags2KHR stageMask) const {
+bool CoreChecks::ValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
+                                        CMD_TYPE cmd_type) const {
     const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     LogObjectList objects(commandBuffer);
@@ -8972,10 +8972,20 @@ bool CoreChecks::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer,
         skip |= LogError(commandBuffer, "VUID-vkCmdResetEvent2-synchronization2-03829",
                          "vkCmdResetEvent2KHR(): Synchronization2 feature is not enabled");
     }
-    skip |= ValidateCmd(cb_state.get(), CMD_RESETEVENT);
+    skip |= ValidateCmd(cb_state.get(), cmd_type);
     skip |= ValidatePipelineStage(objects, loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(loc, stageMask);
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
+                                                  VkPipelineStageFlags2KHR stageMask) const {
+    return ValidateCmdResetEvent2(commandBuffer, event, stageMask, CMD_RESETEVENT2KHR);
+}
+
+bool CoreChecks::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
+                                               VkPipelineStageFlags2 stageMask) const {
+    return ValidateCmdResetEvent2(commandBuffer, event, stageMask, CMD_RESETEVENT2);
 }
 
 static bool HasNonFramebufferStagePipelineStageFlags(VkPipelineStageFlags2KHR inflags) {
