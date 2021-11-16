@@ -3527,7 +3527,7 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
         {
             const VkRenderPassCreateInfo2* renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
             const VkSubpassDescription2* subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
-            
+
             for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
                 const auto clear_desc = &pAttachments[attachment_index];
                 uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
@@ -6904,7 +6904,9 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
 bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE *cb_state, const IMAGE_STATE *image_state, const char *cmd_name,
                                         const char *vuid, const char *more_message) const {
     bool skip = false;
-    if ((cb_state->unprotected == true) && (image_state->unprotected == false)) {
+
+    // if driver supports protectedNoFault the operation is valid, just has undefined values
+    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state->unprotected == true) && (image_state->unprotected == false)) {
         LogObjectList objlist(cb_state->commandBuffer());
         objlist.add(image_state->image());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while image %s is a protected image.%s", cmd_name,
@@ -6918,7 +6920,9 @@ bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE *cb_state, const 
 bool CoreChecks::ValidateUnprotectedImage(const CMD_BUFFER_STATE *cb_state, const IMAGE_STATE *image_state, const char *cmd_name,
                                           const char *vuid, const char *more_message) const {
     bool skip = false;
-    if ((cb_state->unprotected == false) && (image_state->unprotected == true)) {
+
+    // if driver supports protectedNoFault the operation is valid, just has undefined values
+    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state->unprotected == false) && (image_state->unprotected == true)) {
         LogObjectList objlist(cb_state->commandBuffer());
         objlist.add(image_state->image());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while image %s is an unprotected image.%s", cmd_name,
@@ -6932,7 +6936,9 @@ bool CoreChecks::ValidateUnprotectedImage(const CMD_BUFFER_STATE *cb_state, cons
 bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE *cb_state, const BUFFER_STATE *buffer_state, const char *cmd_name,
                                          const char *vuid, const char *more_message) const {
     bool skip = false;
-    if ((cb_state->unprotected == true) && (buffer_state->unprotected == false)) {
+
+    // if driver supports protectedNoFault the operation is valid, just has undefined values
+    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state->unprotected == true) && (buffer_state->unprotected == false)) {
         LogObjectList objlist(cb_state->commandBuffer());
         objlist.add(buffer_state->buffer());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while buffer %s is a protected buffer.%s", cmd_name,
@@ -6946,7 +6952,9 @@ bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE *cb_state, const
 bool CoreChecks::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE *cb_state, const BUFFER_STATE *buffer_state, const char *cmd_name,
                                            const char *vuid, const char *more_message) const {
     bool skip = false;
-    if ((cb_state->unprotected == false) && (buffer_state->unprotected == true)) {
+
+    // if driver supports protectedNoFault the operation is valid, just has undefined values
+    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state->unprotected == false) && (buffer_state->unprotected == true)) {
         LogObjectList objlist(cb_state->commandBuffer());
         objlist.add(buffer_state->buffer());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while buffer %s is an unprotected buffer.%s", cmd_name,

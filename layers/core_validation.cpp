@@ -2674,6 +2674,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
 
     for (uint32_t i = 0; i < info_count; ++i) {
         const auto requested_queue_family = infos[i].queueFamilyIndex;
+        const bool protected_create_bit = (infos[i].flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) != 0;
 
         std::string queue_family_var_name = "pCreateInfo->pQueueCreateInfos[" + std::to_string(i) + "].queueFamilyIndex";
         skip |= ValidateQueueFamilyIndex(pd_state, requested_queue_family, "VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381",
@@ -2695,7 +2696,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
             if (it == queue_family_map.end()) {
                 // Add first time seeing queue family index and what the create flags were
                 create_flags new_flags = {not_used, not_used};
-                if ((infos[i].flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) != 0) {
+                if (protected_create_bit) {
                     new_flags.protected_index = requested_queue_family;
                 } else {
                     new_flags.unprocted_index = requested_queue_family;
@@ -2703,7 +2704,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
                 queue_family_map.emplace(requested_queue_family, new_flags);
             } else {
                 // The queue family was seen, so now need to make sure the flags were different
-                if ((infos[i].flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) != 0) {
+                if (protected_create_bit) {
                     if (it->second.protected_index != not_used) {
                         skip |= LogError(pd_state->Handle(), "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802",
                                          "CreateDevice(): %s (=%" PRIu32
@@ -2728,13 +2729,23 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
             }
         }
 
+        const VkQueueFamilyProperties requested_queue_family_props = pd_state->queue_family_properties[requested_queue_family];
+
+        // if using protected flag, make sure queue supports it
+        if (protected_create_bit && ((requested_queue_family_props.queueFlags & VK_QUEUE_PROTECTED_BIT) == 0)) {
+            skip |= LogError(
+                pd_state->Handle(), "VUID-VkDeviceQueueCreateInfo-flags-06449",
+                "CreateDevice(): %s (=%" PRIu32
+                ") does not have VK_QUEUE_PROTECTED_BIT supported, but VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT is being used.",
+                queue_family_var_name.c_str(), requested_queue_family);
+        }
+
         // Verify that requested queue count of queue family is known to be valid at this point in time
         if (requested_queue_family < pd_state->queue_family_known_count) {
             const auto requested_queue_count = infos[i].queueCount;
             const bool queue_family_has_props = requested_queue_family < pd_state->queue_family_properties.size();
             // spec guarantees at least one queue for each queue family
-            const uint32_t available_queue_count =
-                queue_family_has_props ? pd_state->queue_family_properties[requested_queue_family].queueCount : 1;
+            const uint32_t available_queue_count = queue_family_has_props ? requested_queue_family_props.queueCount : 1;
             const char *conditional_ext_cmd = instance_extensions.vk_khr_get_physical_device_properties2
                                                   ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]"
                                                   : "";
@@ -2742,8 +2753,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
             if (requested_queue_count > available_queue_count) {
                 const std::string count_note =
                     queue_family_has_props
-                        ? "i.e. is not less than or equal to " +
-                              std::to_string(pd_state->queue_family_properties[requested_queue_family].queueCount)
+                        ? "i.e. is not less than or equal to " + std::to_string(requested_queue_family_props.queueCount)
                         : "the pQueueFamilyProperties[" + std::to_string(requested_queue_family) + "] was never obtained";
 
                 skip |= LogError(
@@ -3745,8 +3755,8 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
 
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, queue, submit, loc);
 
-        bool protectedSubmit = (submit->flags & VK_SUBMIT_PROTECTED_BIT_KHR) != 0;
-        if ((protectedSubmit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)) == 0) {
+        bool protected_submit = (submit->flags & VK_SUBMIT_PROTECTED_BIT_KHR) != 0;
+        if ((protected_submit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)) == 0) {
             skip |= LogError(queue, "VUID-vkQueueSubmit2KHR-queue-06447",
                              "vkQueueSubmit2KHR(): pSubmits[%u] contains a protected submission to %s which was not created with "
                              "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT",
@@ -3765,7 +3775,7 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
             // Make sure command buffers are all protected or unprotected
             const CMD_BUFFER_STATE *cb_state = GetCBState(submit->pCommandBufferInfos[i].commandBuffer);
             if (cb_state != nullptr) {
-                if ((cb_state->unprotected == true) && (protectedSubmit == true)) {
+                if ((cb_state->unprotected == true) && (protected_submit == true)) {
                     LogObjectList objlist(cb_state->commandBuffer());
                     objlist.add(queue);
                     skip |= LogError(objlist, "VUID-VkSubmitInfo2KHR-flags-03886",
@@ -3774,7 +3784,7 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
                                      report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
                                      report_data->FormatHandle(queue).c_str(), submit_idx);
                 }
-                if ((cb_state->unprotected == false) && (protectedSubmit == false)) {
+                if ((cb_state->unprotected == false) && (protected_submit == false)) {
                     LogObjectList objlist(cb_state->commandBuffer());
                     objlist.add(queue);
                     skip |= LogError(objlist, "VUID-VkSubmitInfo2KHR-flags-03887",
@@ -5480,7 +5490,7 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
                                  i);
 
                 return true;
-            } 
+            }
         }
     }
 

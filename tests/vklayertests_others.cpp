@@ -9266,8 +9266,82 @@ TEST_F(VkLayerTest, UniqueQueueDeviceCreationBothProtected) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DisabledProtectedMemory) {
-    TEST_DESCRIPTION("Validate cases where protectedMemory feature is not enabled");
+TEST_F(VkLayerTest, InvalidProtectedQueue) {
+    TEST_DESCRIPTION("Try creating queue without VK_QUEUE_PROTECTED_BIT capability");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1 extensions, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto protected_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&protected_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (protected_features.protectedMemory == VK_FALSE) {
+        printf("%s test requires protectedMemory, not available. Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    // Try to find a protected queue family type
+    bool unprotected_queue = false;
+    uint32_t queue_family_index = 0;
+    uint32_t queue_family_count = 0;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_families.data());
+
+    // need to find a queue without protected support
+    for (size_t i = 0; i < queue_families.size(); i++) {
+        if ((queue_families[i].queueFlags & VK_QUEUE_PROTECTED_BIT) == 0) {
+            unprotected_queue = true;
+            queue_family_index = i;
+            break;
+        }
+    }
+
+    if (unprotected_queue == false) {
+        printf("%s test requires queue without VK_QUEUE_PROTECTED_BIT. Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    float queue_priority = 1.0;
+    VkDeviceQueueCreateInfo queue_create_info = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    queue_create_info.flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
+    queue_create_info.queueFamilyIndex = queue_family_index;
+    queue_create_info.queueCount = 1;
+    queue_create_info.pQueuePriorities = &queue_priority;
+
+    VkDevice test_device = VK_NULL_HANDLE;
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&protected_features);
+    device_create_info.flags = 0;
+    device_create_info.pQueueCreateInfos = &queue_create_info;
+    device_create_info.queueCreateInfoCount = 1;
+    device_create_info.pEnabledFeatures = nullptr;
+    device_create_info.enabledLayerCount = 0;
+    device_create_info.enabledExtensionCount = 0;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueCreateInfo-flags-06449");
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, InvalidProtectedSubmit) {
+    TEST_DESCRIPTION("Setting protectedSubmit with a queue not created with VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -9285,18 +9359,8 @@ TEST_F(VkLayerTest, DisabledProtectedMemory) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-
-    auto protected_memory_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&protected_memory_features);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-
-    // Set false to trigger VUs
-    protected_memory_features.protectedMemory = VK_FALSE;
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    // creates a queue without VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkCommandPool command_pool;
     VkCommandPoolCreateInfo pool_create_info = {};
