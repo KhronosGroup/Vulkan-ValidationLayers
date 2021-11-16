@@ -7975,3 +7975,15 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
 
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory,
+                                                                           float priority) const {
+    bool skip = false;
+
+    if (priority < 0.0f || priority > 1.0f) {
+        skip |= LogError(device, "VUID-vkSetDeviceMemoryPriorityEXT-priority-06258",
+                         "priority (=%f) must be between `0.0` and `1.0`, inclusive.", priority);
+    }
+
+    return skip;
+}

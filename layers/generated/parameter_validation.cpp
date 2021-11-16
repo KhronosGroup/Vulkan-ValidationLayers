@@ -16606,6 +16606,7 @@ bool StatelessValidation::PreCallValidateSetDeviceMemoryPriorityEXT(
     if (!IsExtEnabled(device_extensions.vk_ext_memory_priority)) skip |= OutputExtensionError("vkSetDeviceMemoryPriorityEXT", VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME);
     if (!IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory)) skip |= OutputExtensionError("vkSetDeviceMemoryPriorityEXT", VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
     skip |= validate_required_handle("vkSetDeviceMemoryPriorityEXT", "memory", memory);
+    if (!skip) skip |= manual_PreCallValidateSetDeviceMemoryPriorityEXT(device, memory, priority);
     return skip;
 }
 

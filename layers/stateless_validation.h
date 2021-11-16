@@ -1785,5 +1785,7 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdBeginConditionalRenderingEXT(
         VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin) const;
 
+    bool manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) const;
+
 #include "parameter_validation.h"
 };  // Class StatelessValidation

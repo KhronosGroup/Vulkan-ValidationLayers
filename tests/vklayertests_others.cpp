@@ -13284,3 +13284,70 @@ TEST_F(VkLayerTest, ValidateExternalMemoryImageLayout) {
     vk::CreateImage(device(), &ici, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, ValidateSetDeviceMemoryPriority) {
+    TEST_DESCRIPTION("Validate vkSetDeviceMemoryPriorityEXT");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME);
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
+    InitState();
+
+    VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageable_device_local_memory_features =
+        LvlInitStruct<VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT>();
+
+    auto phys_dev_features_2 = LvlInitStruct<VkPhysicalDeviceFeatures2>();
+    phys_dev_features_2.pNext = &pageable_device_local_memory_features;
+    vk::GetPhysicalDeviceFeatures2(gpu(), &phys_dev_features_2);
+
+    auto fpSetDeviceMemoryPriorityEXT =
+        (PFN_vkSetDeviceMemoryPriorityEXT)vk::GetDeviceProcAddr(m_device->device(), "vkSetDeviceMemoryPriorityEXT");
+
+    if (pageable_device_local_memory_features.pageableDeviceLocalMemory == 0) {
+        printf("%s pageableDeviceLocalMemory is not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_create_info.size = 1;
+
+    VkBuffer buffer = VK_NULL_HANDLE;
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+
+    VkMemoryRequirements memRequirements;
+    vk::GetBufferMemoryRequirements(device(), buffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocate_info = LvlInitStruct<VkMemoryAllocateInfo>();
+
+    allocate_info.allocationSize = memRequirements.size;
+    allocate_info.memoryTypeIndex = 0;
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    vk::AllocateMemory(device(), &allocate_info, nullptr, &memory);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDeviceMemoryPriorityEXT-priority-06258");
+    fpSetDeviceMemoryPriorityEXT(device(), memory, -1.0f);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDeviceMemoryPriorityEXT-priority-06258");
+    fpSetDeviceMemoryPriorityEXT(device(), memory, 2.0f);
+    m_errorMonitor->VerifyFound();
+
+    vk::FreeMemory(device(), memory, nullptr);
+    vk::DestroyBuffer(device(), buffer, nullptr);
+}

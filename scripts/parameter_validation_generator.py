@@ -266,6 +266,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdSetDiscardRectangleEXT',
             'vkGetQueryPoolResults',
             'vkCmdBeginConditionalRenderingEXT',
+            'vkSetDeviceMemoryPriorityEXT',
             ]
 
         # Commands to ignore
