@@ -7619,6 +7619,9 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     auto protected_memory_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&protected_memory_features);
@@ -7629,8 +7632,13 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
         return;
     };
 
-    // Turns m_commandBuffer into a unprotected command buffer
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties =
+        LvlInitStruct<VkPhysicalDeviceProtectedMemoryProperties>();
+    VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&protected_memory_properties);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    // Turns m_commandBuffer into a unprotected command buffer without passing in a VkCommandPoolCreateFlags
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkCommandPoolObj protectedCommandPool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
     VkCommandBufferObj protectedCommandBuffer(m_device, &protectedCommandPool);
@@ -7852,91 +7860,94 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
+    // will get undefined values, but not invalid if protectedNoFault is supported
+    // Will still create an empty command buffer to test submit VUs if protectedNoFault is supported
+    if (!protected_memory_properties.protectedNoFault) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-commandBuffer-01834");
+        vk::CmdBlitImage(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
+                         VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-commandBuffer-01834");
-    vk::CmdBlitImage(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-commandBuffer-01835");
+        vk::CmdBlitImage(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_protected.handle(),
+                         VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-commandBuffer-01835");
-    vk::CmdBlitImage(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_protected.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-commandBuffer-01805");
+        vk::CmdClearColorImage(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1,
+                               &subresource_range);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-commandBuffer-01805");
-    vk::CmdClearColorImage(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1,
-                           &subresource_range);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-commandBuffer-01822");
+        vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_protected, buffer_unprotected, 1, &buffer_copy);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-commandBuffer-01822");
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_protected, buffer_unprotected, 1, &buffer_copy);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-commandBuffer-01823");
+        vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_unprotected, buffer_protected, 1, &buffer_copy);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-commandBuffer-01823");
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_unprotected, buffer_protected, 1, &buffer_copy);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-01828");
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_protected, image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                 1, &buffer_image_copy);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-01828");
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_protected, image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &buffer_image_copy);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-01829");
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_unprotected, image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                 1, &buffer_image_copy);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-01829");
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_unprotected, image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &buffer_image_copy);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-commandBuffer-01825");
+        vk::CmdCopyImage(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
+                         VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-commandBuffer-01825");
-    vk::CmdCopyImage(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-commandBuffer-01826");
+        vk::CmdCopyImage(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_protected.handle(),
+                         VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-commandBuffer-01826");
-    vk::CmdCopyImage(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_protected.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-commandBuffer-01831");
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_unprotected,
+                                 1, &buffer_image_copy);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-commandBuffer-01831");
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_unprotected, 1,
-                             &buffer_image_copy);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-commandBuffer-01832");
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_protected,
+                                 1, &buffer_image_copy);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-commandBuffer-01832");
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_protected, 1,
-                             &buffer_image_copy);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-commandBuffer-01811");
+        vk::CmdFillBuffer(m_commandBuffer->handle(), buffer_protected, 0, 4, 0);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-commandBuffer-01811");
-    vk::CmdFillBuffer(m_commandBuffer->handle(), buffer_protected, 0, 4, 0);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-commandBuffer-01813");
+        vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer_protected, 0, 4, (void *)update_data);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-commandBuffer-01813");
-    vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer_protected, 0, 4, (void *)update_data);
-    m_errorMonitor->VerifyFound();
+        vk::CmdBeginRenderPass(m_commandBuffer->handle(), &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
 
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-commandBuffer-02504");
+        vk::CmdClearAttachments(m_commandBuffer->handle(), 2, clear_attachments, 2, clear_rect);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-commandBuffer-02504");
-    vk::CmdClearAttachments(m_commandBuffer->handle(), 2, clear_attachments, 2, clear_rect);
-    m_errorMonitor->VerifyFound();
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
+                                  1, &g_pipe.descriptor_set_->set_, 0, nullptr);
+        VkDeviceSize offset = 0;
+        vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer_protected, &offset);
+        vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer_protected, 0, VK_INDEX_TYPE_UINT16);
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &g_pipe.descriptor_set_->set_, 0, nullptr);
-    VkDeviceSize offset = 0;
-    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer_protected, &offset);
-    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer_protected, 0, VK_INDEX_TYPE_UINT16);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02707");  // color attachment
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02707");  // buffer descriptorSet
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02707");  // image descriptorSet
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02707");  // vertex
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02707");  // index
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02707");  // color attachment
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02707");  // buffer descriptorSet
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02707");  // image descriptorSet
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02707");  // vertex
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02707");  // index
+        vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 0, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
 
-    vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 0, 0, 0, 0);
-    m_errorMonitor->VerifyFound();
-
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
+        vk::CmdEndRenderPass(m_commandBuffer->handle());
+    }
     m_commandBuffer->end();
 
     // Use unprotected resources in protected command buffer
@@ -7946,62 +7957,64 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     protectedCommandBuffer.begin();
+    if (!protected_memory_properties.protectedNoFault) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-commandBuffer-01836");
+        vk::CmdBlitImage(protectedCommandBuffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                         image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-commandBuffer-01836");
-    vk::CmdBlitImage(protectedCommandBuffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-commandBuffer-01806");
+        vk::CmdClearColorImage(protectedCommandBuffer.handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color,
+                               1, &subresource_range);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-commandBuffer-01806");
-    vk::CmdClearColorImage(protectedCommandBuffer.handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1,
-                           &subresource_range);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-commandBuffer-01824");
+        vk::CmdCopyBuffer(protectedCommandBuffer.handle(), buffer_protected, buffer_unprotected, 1, &buffer_copy);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-commandBuffer-01824");
-    vk::CmdCopyBuffer(protectedCommandBuffer.handle(), buffer_protected, buffer_unprotected, 1, &buffer_copy);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-01830");
+        vk::CmdCopyBufferToImage(protectedCommandBuffer.handle(), buffer_protected, image_unprotected.handle(),
+                                 VK_IMAGE_LAYOUT_GENERAL, 1, &buffer_image_copy);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-01830");
-    vk::CmdCopyBufferToImage(protectedCommandBuffer.handle(), buffer_protected, image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                             1, &buffer_image_copy);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-commandBuffer-01827");
+        vk::CmdCopyImage(protectedCommandBuffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                         image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-commandBuffer-01827");
-    vk::CmdCopyImage(protectedCommandBuffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-commandBuffer-01833");
+        vk::CmdCopyImageToBuffer(protectedCommandBuffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                 buffer_unprotected, 1, &buffer_image_copy);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-commandBuffer-01833");
-    vk::CmdCopyImageToBuffer(protectedCommandBuffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_unprotected,
-                             1, &buffer_image_copy);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-commandBuffer-01812");
+        vk::CmdFillBuffer(protectedCommandBuffer.handle(), buffer_unprotected, 0, 4, 0);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-commandBuffer-01812");
-    vk::CmdFillBuffer(protectedCommandBuffer.handle(), buffer_unprotected, 0, 4, 0);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-commandBuffer-01814");
+        vk::CmdUpdateBuffer(protectedCommandBuffer.handle(), buffer_unprotected, 0, 4, (void *)update_data);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-commandBuffer-01814");
-    vk::CmdUpdateBuffer(protectedCommandBuffer.handle(), buffer_unprotected, 0, 4, (void *)update_data);
-    m_errorMonitor->VerifyFound();
+        vk::CmdBeginRenderPass(protectedCommandBuffer.handle(), &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
 
-    vk::CmdBeginRenderPass(protectedCommandBuffer.handle(), &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-commandBuffer-02505");
+        vk::CmdClearAttachments(protectedCommandBuffer.handle(), 2, clear_attachments, 2, clear_rect);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-commandBuffer-02505");
-    vk::CmdClearAttachments(protectedCommandBuffer.handle(), 2, clear_attachments, 2, clear_rect);
-    m_errorMonitor->VerifyFound();
+        vk::CmdBindPipeline(protectedCommandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+        vk::CmdBindDescriptorSets(protectedCommandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  g_pipe.pipeline_layout_.handle(), 0, 1, &g_pipe.descriptor_set_->set_, 0, nullptr);
+        VkDeviceSize offset = 0;
+        vk::CmdBindVertexBuffers(protectedCommandBuffer.handle(), 0, 1, &buffer_unprotected, &offset);
+        vk::CmdBindIndexBuffer(protectedCommandBuffer.handle(), buffer_unprotected, 0, VK_INDEX_TYPE_UINT16);
 
-    vk::CmdBindPipeline(protectedCommandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
-    vk::CmdBindDescriptorSets(protectedCommandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
-                              1, &g_pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdBindVertexBuffers(protectedCommandBuffer.handle(), 0, 1, &buffer_unprotected, &offset);
-    vk::CmdBindIndexBuffer(protectedCommandBuffer.handle(), buffer_unprotected, 0, VK_INDEX_TYPE_UINT16);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02712");  // color attachment
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02712");  // descriptorSet
+        vk::CmdDrawIndexed(protectedCommandBuffer.handle(), 1, 0, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02712");  // color attachment
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02712");  // descriptorSet
-    vk::CmdDrawIndexed(protectedCommandBuffer.handle(), 1, 0, 0, 0, 0);
-    m_errorMonitor->VerifyFound();
-
-    vk::CmdEndRenderPass(protectedCommandBuffer.handle());
+        vk::CmdEndRenderPass(protectedCommandBuffer.handle());
+    }
     protectedCommandBuffer.end();
 
     // Try submitting together to test only 1 error occurs for the corresponding command buffer
@@ -8018,6 +8031,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     submit_info.pCommandBuffers = comman_buffers;
 
     protected_submit_info.protectedSubmit = VK_TRUE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-queue-06448");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pNext-04148");
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
