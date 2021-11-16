@@ -3468,7 +3468,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
     skip |= ValidateQueuedQFOTransfers(pCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
 
     const char *vuid = loc.function == Func::vkQueueSubmit ? "VUID-vkQueueSubmit-pCommandBuffers-00072"
-                                                           : "VUID-vkQueueSubmit2KHR-commandBuffer-03876";
+                                                           : "VUID-vkQueueSubmit2-commandBuffer-03876";
     skip |= ValidateCommandBufferState(pCB, loc.StringFunc().c_str(), current_submit_count, vuid);
     return skip;
 }
@@ -3565,8 +3565,9 @@ struct SemaphoreSubmitState {
                 if (last_op) {
                     if (last_op->IsWait()) {
                         auto other_queue = last_op->queue->Handle();
-                        const char *vuid = loc.function == core_error::Func::vkQueueSubmit ? "VUID-vkQueueSubmit-pWaitSemaphores-00068"
-                            : "VUID-vkQueueSubmit2KHR-semaphore-03871";
+                        const char *vuid = loc.function == core_error::Func::vkQueueSubmit
+                                               ? "VUID-vkQueueSubmit-pWaitSemaphores-00068"
+                                               : "VUID-vkQueueSubmit2-semaphore-03871";
                         LogObjectList objlist(semaphore);
                         objlist.add(queue);
                         objlist.add(other_queue);
@@ -3978,14 +3979,14 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
 bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                 VkFence fence) const {
     const auto pFence = Get<FENCE_STATE>(fence);
-    bool skip = ValidateFenceForSubmit(pFence.get(), "VUID-vkQueueSubmit2KHR-fence-04895", "VUID-vkQueueSubmit2KHR-fence-04894",
+    bool skip = ValidateFenceForSubmit(pFence.get(), "VUID-vkQueueSubmit2-fence-04895", "VUID-vkQueueSubmit2-fence-04894",
                                        "vkQueueSubmit2KHR()");
     if (skip) {
         return true;
     }
 
     if (!enabled_features.core13.synchronization2) {
-        skip |= LogError(queue, "VUID-vkQueueSubmit2KHR-synchronization2-03866",
+        skip |= LogError(queue, "VUID-vkQueueSubmit2-synchronization2-03866",
                          "vkQueueSubmit2KHR(): Synchronization2 feature is not enabled");
     }
 
@@ -3999,33 +4000,33 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
         const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
         const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
         uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
-        Location loc(Func::vkQueueSubmit2KHR, Struct::VkSubmitInfo2KHR, Field::pSubmits, submit_idx);
+        Location loc(Func::vkQueueSubmit2, Struct::VkSubmitInfo2, Field::pSubmits, submit_idx);
 
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, queue, submit, loc);
 
         bool protected_submit = (submit->flags & VK_SUBMIT_PROTECTED_BIT_KHR) != 0;
         if ((protected_submit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)) == 0) {
             skip |= LogError(queue, "VUID-vkQueueSubmit2KHR-queue-06447",
-                             "vkQueueSubmit2KHR(): pSubmits[%u] contains a protected submission to %s which was not created with "
+                             "vkQueueSubmit2(): pSubmits[%u] contains a protected submission to %s which was not created with "
                              "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT",
                              submit_idx, report_data->FormatHandle(queue).c_str());
         }
 
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
             auto info_loc = loc.dot(Field::pCommandBufferInfos, i);
-            info_loc.structure = Struct::VkCommandBufferSubmitInfoKHR;
+            info_loc.structure = Struct::VkCommandBufferSubmitInfo;
             const auto cb_state = GetRead<CMD_BUFFER_STATE>(submit->pCommandBufferInfos[i].commandBuffer);
             skip |= cb_submit_state.Validate(info_loc.dot(Field::commandBuffer), *cb_state, perf_pass);
 
             skip |= ValidateDeviceMaskToPhysicalDeviceCount(submit->pCommandBufferInfos[i].deviceMask, queue,
-                                                            "VUID-VkCommandBufferSubmitInfoKHR-deviceMask-03891");
+                                                            "VUID-VkCommandBufferSubmitInfo-deviceMask-03891");
 
             // Make sure command buffers are all protected or unprotected
             if (cb_state != nullptr) {
                 if ((cb_state->unprotected == true) && (protected_submit == true)) {
                     LogObjectList objlist(cb_state->commandBuffer());
                     objlist.add(queue);
-                    skip |= LogError(objlist, "VUID-VkSubmitInfo2KHR-flags-03886",
+                    skip |= LogError(objlist, "VUID-VkSubmitInfo2-flags-03886",
                                      "vkQueueSubmit2KHR(): command buffer %s is unprotected while queue %s pSubmits[%u] has "
                                      "VK_SUBMIT_PROTECTED_BIT_KHR set",
                                      report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
@@ -4034,7 +4035,7 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
                 if ((cb_state->unprotected == false) && (protected_submit == false)) {
                     LogObjectList objlist(cb_state->commandBuffer());
                     objlist.add(queue);
-                    skip |= LogError(objlist, "VUID-VkSubmitInfo2KHR-flags-03887",
+                    skip |= LogError(objlist, "VUID-VkSubmitInfo2-flags-03887",
                                      "vkQueueSubmit2KHR(): command buffer %s is protected while queue %s pSubmitInfos[%u] has "
                                      "VK_SUBMIT_PROTECTED_BIT_KHR not set",
                                      report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
@@ -8921,13 +8922,13 @@ bool CoreChecks::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, V
     assert(cb_state);
     bool skip = false;
     if (!enabled_features.core13.synchronization2) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdSetEvent2KHR-synchronization2-03824",
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetEvent2-synchronization2-03824",
                          "vkCmdSetEvent2KHR(): Synchronization2 feature is not enabled");
     }
     skip |= ValidateCmd(cb_state.get(), CMD_SETEVENT);
-    Location loc(Func::vkCmdSetEvent2KHR, Field::pDependencyInfo);
+    Location loc(Func::vkCmdSetEvent2, Field::pDependencyInfo);
     if (pDependencyInfo->dependencyFlags != 0) {
-        skip |= LogError(objects, "VUID-vkCmdSetEvent2KHR-dependencyFlags-03825", "%s (%s) must be 0",
+        skip |= LogError(objects, "VUID-vkCmdSetEvent2-dependencyFlags-03825", "%s (%s) must be 0",
                          loc.dot(Field::dependencyFlags).Message().c_str(),
                          string_VkDependencyFlags(pDependencyInfo->dependencyFlags).c_str());
     }
@@ -8953,11 +8954,11 @@ bool CoreChecks::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer,
     const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     LogObjectList objects(commandBuffer);
-    Location loc(Func::vkCmdResetEvent2KHR, Field::stageMask);
+    Location loc(Func::vkCmdResetEvent2, Field::stageMask);
 
     bool skip = false;
     if (!enabled_features.core13.synchronization2) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdResetEvent2KHR-synchronization2-03829",
+        skip |= LogError(commandBuffer, "VUID-vkCmdResetEvent2-synchronization2-03829",
                          "vkCmdResetEvent2KHR(): Synchronization2 feature is not enabled");
     }
     skip |= ValidateCmd(cb_state.get(), CMD_RESETEVENT);
@@ -9160,7 +9161,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
                                                     const VkDependencyInfoKHR *dep_info) const {
     bool skip = false;
     const auto& rp_state = cb_state->activeRenderPass;
-    RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier2KHR-pDependencies-02285",
+    RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier2-pDependencies-02285",
                              cb_state->activeSubpass, rp_state->renderPass(), enabled_features,
                              rp_state->self_dependencies[cb_state->activeSubpass], rp_state->createInfo.pDependencies);
 
@@ -9174,26 +9175,26 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
     const auto &sub_desc = rp_state->createInfo.pSubpasses[state.active_subpass];
     for (uint32_t i = 0; i < dep_info->memoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pMemoryBarriers[i];
-        Location loc(outer_loc.function, Struct::VkMemoryBarrier2KHR, Field::pMemoryBarriers, i);
+        Location loc(outer_loc.function, Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
         skip |= state.ValidateStage(loc, mem_barrier.srcStageMask, mem_barrier.dstStageMask);
         skip |= state.ValidateAccess(loc, mem_barrier.srcAccessMask, mem_barrier.dstAccessMask);
     }
     if (0 != dep_info->bufferMemoryBarrierCount) {
         skip |=
-            LogError(state.rp_handle, "VUID-vkCmdPipelineBarrier2KHR-bufferMemoryBarrierCount-01178",
+            LogError(state.rp_handle, "VUID-vkCmdPipelineBarrier2-bufferMemoryBarrierCount-01178",
                      "%s: bufferMemoryBarrierCount is non-zero (%d) for subpass %d of %s.", state.func_name.c_str(),
                      dep_info->bufferMemoryBarrierCount, state.active_subpass, report_data->FormatHandle(state.rp_handle).c_str());
     }
     for (uint32_t i = 0; i < dep_info->imageMemoryBarrierCount; ++i) {
         const auto &img_barrier = dep_info->pImageMemoryBarriers[i];
-        Location loc(outer_loc.function, Struct::VkImageMemoryBarrier2KHR, Field::pImageMemoryBarriers, i);
+        Location loc(outer_loc.function, Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
 
         skip |= state.ValidateStage(loc, img_barrier.srcStageMask, img_barrier.dstStageMask);
         skip |= state.ValidateAccess(loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
 
         if (VK_QUEUE_FAMILY_IGNORED != img_barrier.srcQueueFamilyIndex ||
             VK_QUEUE_FAMILY_IGNORED != img_barrier.dstQueueFamilyIndex) {
-            skip |= LogError(state.rp_handle, "VUID-vkCmdPipelineBarrier2KHR-srcQueueFamilyIndex-01182",
+            skip |= LogError(state.rp_handle, "VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-01182",
                              "%s is %d and dstQueueFamilyIndex is %d but both must be VK_QUEUE_FAMILY_IGNORED.",
                              loc.dot(Field::srcQueueFamilyIndex).Message().c_str(), img_barrier.srcQueueFamilyIndex,
                              img_barrier.dstQueueFamilyIndex);
@@ -9405,15 +9406,15 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer,
 
     bool skip = false;
     if (!enabled_features.core13.synchronization2) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdWaitEvents2KHR-synchronization2-03836",
+        skip |= LogError(commandBuffer, "VUID-vkCmdWaitEvents2-synchronization2-03836",
                          "vkCmdWaitEvents2KHR(): Synchronization2 feature is not enabled");
     }
     for (uint32_t i = 0; (i < eventCount) && !skip; i++) {
         LogObjectList objects(commandBuffer);
         objects.add(pEvents[i]);
-        Location loc(Func::vkCmdWaitEvents2KHR, Field::pDependencyInfos, i);
+        Location loc(Func::vkCmdWaitEvents2, Field::pDependencyInfos, i);
         if (pDependencyInfos[i].dependencyFlags != 0) {
-            skip |= LogError(objects, "VUID-vkCmdWaitEvents2KHR-dependencyFlags-03844", "%s (%s) must be 0.",
+            skip |= LogError(objects, "VUID-vkCmdWaitEvents2-dependencyFlags-03844", "%s (%s) must be 0.",
                              loc.dot(Field::dependencyFlags).Message().c_str(),
                              string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
         }
@@ -9474,7 +9475,7 @@ void CoreChecks::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, 
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfos[i];
-        RecordBarriers(Func::vkCmdWaitEvents2KHR, cb_state.get(), dep_info);
+        RecordBarriers(Func::vkCmdWaitEvents2, cb_state.get(), dep_info);
     }
 }
 
@@ -9519,9 +9520,9 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBu
     assert(cb_state);
     LogObjectList objects(commandBuffer);
 
-    Location loc(Func::vkCmdPipelineBarrier2KHR, Field::pDependencyInfo);
+    Location loc(Func::vkCmdPipelineBarrier2, Field::pDependencyInfo);
     if (!enabled_features.core13.synchronization2) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier2KHR-synchronization2-03848",
+        skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier2-synchronization2-03848",
                          "vkCmdPipelineBarrier2KHR(): Synchronization2 feature is not enabled");
     }
     skip |= ValidateCmd(cb_state.get(), CMD_PIPELINEBARRIER);
@@ -9530,7 +9531,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBu
         if (skip) return true;  // Early return to avoid redundant errors from below calls
     } else {
         if (pDependencyInfo->dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) {
-            skip = LogError(objects, "VUID-vkCmdPipelineBarrier2KHR-dependencyFlags-01186",
+            skip = LogError(objects, "VUID-vkCmdPipelineBarrier2-dependencyFlags-01186",
                             "%s VK_DEPENDENCY_VIEW_LOCAL_BIT must not be set outside of a render pass instance",
                             loc.dot(Field::dependencyFlags).Message().c_str());
         }
@@ -9560,9 +9561,8 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
 
 void CoreChecks::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo) {
     StateTracker::PreCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
-
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    RecordBarriers(Func::vkCmdPipelineBarrier2KHR, cb_state.get(), *pDependencyInfo);
+    RecordBarriers(Func::vkCmdPipelineBarrier2, cb_state.get(), *pDependencyInfo);
     TransitionImageLayouts(cb_state.get(), pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
 }
 
@@ -10156,14 +10156,14 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
     assert(cb_state);
     bool skip = false;
     if (!enabled_features.core13.synchronization2) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdWriteTimestamp2KHR-synchronization2-03858",
+        skip |= LogError(commandBuffer, "VUID-vkCmdWriteTimestamp2-synchronization2-03858",
                          "vkCmdWriteTimestamp2KHR(): Synchronization2 feature is not enabled");
     }
     skip |= ValidateCmd(cb_state.get(), CMD_WRITETIMESTAMP);
 
-    Location loc(Func::vkCmdWriteTimestamp2KHR, Field::stage);
+    Location loc(Func::vkCmdWriteTimestamp2, Field::stage);
     if ((stage & (stage - 1)) != 0) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2KHR-stage-03859",
+        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-stage-03859",
                          "%s (%s) must only set a single pipeline stage.", loc.Message().c_str(),
                          string_VkPipelineStageFlags2KHR(stage).c_str());
     }
@@ -10173,13 +10173,13 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
     const auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
     if (query_pool_state) {
         if (query_pool_state->createInfo.queryType != VK_QUERY_TYPE_TIMESTAMP) {
-            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2KHR-queryPool-03861",
+            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-queryPool-03861",
                              "%s Query Pool %s was not created with VK_QUERY_TYPE_TIMESTAMP.", loc.Message().c_str(),
                              report_data->FormatHandle(queryPool).c_str());
         }
 
         if (slot >= query_pool_state->createInfo.queryCount) {
-            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2KHR-query-04903",
+            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-query-04903",
                              "vkCmdWriteTimestamp2KHR(): query (%" PRIu32 ") is not lower than the number of queries (%" PRIu32
                              ") in Query pool %s.",
                              slot, query_pool_state->createInfo.queryCount, report_data->FormatHandle(queryPool).c_str());
@@ -10189,7 +10189,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
     const uint32_t timestampValidBits =
         physical_device_state->queue_family_properties[cb_state->command_pool->queueFamilyIndex].timestampValidBits;
     if (timestampValidBits == 0) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2KHR-timestampValidBits-03863",
+        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-timestampValidBits-03863",
                          "%s Query Pool %s has a timestampValidBits value of zero.", loc.Message().c_str(),
                          report_data->FormatHandle(queryPool).c_str());
     }

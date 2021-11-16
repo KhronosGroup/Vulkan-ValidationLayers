@@ -3583,7 +3583,7 @@ TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     VkDependencyInfoKHR dependency_info = LvlInitStruct<VkDependencyInfoKHR>();
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents2KHR-synchronization2-03836");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents2-synchronization2-03836");
     fpCmdWaitEvents2KHR(m_commandBuffer->handle(), 1, &event_handle, &dependency_info);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -3635,7 +3635,7 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
 
     VkDependencyInfoKHR dependency_info = LvlInitStruct<VkDependencyInfoKHR>();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier2KHR-synchronization2-03848");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier2-synchronization2-03848");
     vkCmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
     m_errorMonitor->VerifyFound();
 
@@ -3645,11 +3645,11 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
 
     VkPipelineStageFlagBits2KHR stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent2KHR-synchronization2-03829");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent2-synchronization2-03829");
     vkCmdResetEvent2KHR(m_commandBuffer->handle(), event.handle(), stage);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent2KHR-synchronization2-03824");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent2-synchronization2-03824");
     vkCmdSetEvent2KHR(m_commandBuffer->handle(), event.handle(), &dependency_info);
     m_errorMonitor->VerifyFound();
 
@@ -3661,7 +3661,7 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
         vk_testing::QueryPool query_pool;
         query_pool.init(*m_device, qpci);
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2KHR-synchronization2-03858");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2-synchronization2-03858");
         vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), stage, query_pool.handle(), 0);
         m_errorMonitor->VerifyFound();
     }

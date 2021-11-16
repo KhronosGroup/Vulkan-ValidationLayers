@@ -1210,11 +1210,11 @@ void CoreChecks::RecordBarriers(Func func_name, CMD_BUFFER_STATE *cb_state, uint
 
 void CoreChecks::RecordBarriers(Func func_name, CMD_BUFFER_STATE *cb_state, const VkDependencyInfoKHR &dep_info) {
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
-        Location loc(func_name, Struct::VkBufferMemoryBarrier2KHR, Field::pBufferMemoryBarriers, i);
+        Location loc(func_name, Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
         RecordBarrierValidationInfo(loc, cb_state, dep_info.pBufferMemoryBarriers[i], cb_state->qfo_transfer_buffer_barriers);
     }
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
-        Location loc(func_name, Struct::VkImageMemoryBarrier2KHR, Field::pImageMemoryBarriers, i);
+        Location loc(func_name, Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
         const auto &img_barrier = dep_info.pImageMemoryBarriers[i];
         RecordBarrierValidationInfo(loc, cb_state, img_barrier, cb_state->qfo_transfer_image_barriers);
         EnqueueSubmitTimeValidateImageBarrierAttachment(loc, cb_state, img_barrier);
@@ -5376,23 +5376,23 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
     }
     for (uint32_t i = 0; i < dep_info->memoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pMemoryBarriers[i];
-        auto loc = outer_loc.dot(Struct::VkMemoryBarrier2KHR, Field::pMemoryBarriers, i);
+        auto loc = outer_loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier);
     }
     for (uint32_t i = 0; i < dep_info->imageMemoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pImageMemoryBarriers[i];
-        auto loc = outer_loc.dot(Struct::VkImageMemoryBarrier2KHR, Field::pImageMemoryBarriers, i);
+        auto loc = outer_loc.dot(Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier);
         skip |= ValidateImageBarrier(objects, loc, cb_state, mem_barrier);
     }
     {
-        Location loc(outer_loc.function, Struct::VkImageMemoryBarrier2KHR);
+        Location loc(outer_loc.function, Struct::VkImageMemoryBarrier2);
         skip |= ValidateBarriersToImages(loc, cb_state, dep_info->imageMemoryBarrierCount, dep_info->pImageMemoryBarriers);
     }
 
     for (uint32_t i = 0; i < dep_info->bufferMemoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pBufferMemoryBarriers[i];
-        auto loc = outer_loc.dot(Struct::VkBufferMemoryBarrier2KHR, Field::pBufferMemoryBarriers, i);
+        auto loc = outer_loc.dot(Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier);
         skip |= ValidateBufferBarrier(objects, loc, cb_state, mem_barrier);
     }

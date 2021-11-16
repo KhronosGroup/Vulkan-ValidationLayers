@@ -5765,8 +5765,8 @@ bool SyncOpWaitEvents::DoValidate(const CommandBufferAccessContext &cb_context, 
                     const char *vuid =
                         (cmd_ == CMD_WAITEVENTS) ? "VUID-vkCmdResetEvent-event-03834" : "VUID-vkCmdResetEvent-event-03835";
                     if (ignore_reason == SyncEventState::Reset2WaitRace) {
-                        vuid = (cmd_ == CMD_WAITEVENTS) ? "VUID-vkCmdResetEvent2KHR-event-03831"
-                                                        : "VUID-vkCmdResetEvent2KHR-event-03832";
+                        vuid = (cmd_ == CMD_WAITEVENTS) ? "VUID-vkCmdResetEvent2-event-03831"
+                                                        : "VUID-vkCmdResetEvent2-event-03832";
                     }
                     const char *const message =
                         "%s: %s %s operation following %s without intervening execution barrier, may cause race condition. %s";
@@ -5800,7 +5800,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandBufferAccessContext &cb_context, 
                     break;
                 }
                 case SyncEventState::SetVsWait2: {
-                    skip |= sync_state.LogError(event_handle, "VUID-vkCmdWaitEvents2KHR-pEvents-03837",
+                    skip |= sync_state.LogError(event_handle, "VUID-vkCmdWaitEvents2-pEvents-03837",
                                                 "%s: Follows set of %s by %s. Disallowed.", CmdName(),
                                                 sync_state.report_data->FormatHandle(event_handle).c_str(),
                                                 CommandTypeString(sync_event->last_command));
@@ -5843,7 +5843,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandBufferAccessContext &cb_context, 
         // Issue error message that event waited for is not in wait events scope
         // NOTE: This isn't exactly the right VUID for WaitEvents2, but it's as close as we currently have support for
         const char *const vuid =
-            (CMD_WAITEVENTS == cmd_) ? "VUID-vkCmdWaitEvents-srcStageMask-01158" : "VUID-vkCmdWaitEvents2KHR-pEvents-03838";
+            (CMD_WAITEVENTS == cmd_) ? "VUID-vkCmdWaitEvents-srcStageMask-01158" : "VUID-vkCmdWaitEvents2-pEvents-03838";
         const char *const message =
             "%s: srcStageMask 0x%" PRIx64 " contains stages not present in pEvents stageMask. Extra stages are %s.%s";
         const auto command_buffer_handle = cb_context.GetCBState().commandBuffer();

@@ -396,7 +396,7 @@ TEST_F(VkLayerTest, Sync2SecondaryCommandbufferAsPrimary) {
         return;
     }
     auto fpQueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferSubmitInfoKHR-commandBuffer-03890");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferSubmitInfo-commandBuffer-03890");
 
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.begin();
