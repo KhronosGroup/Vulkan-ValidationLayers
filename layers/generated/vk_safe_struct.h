@@ -10661,6 +10661,36 @@ struct safe_VkQueueFamilyGlobalPriorityPropertiesEXT {
     VkQueueFamilyGlobalPriorityPropertiesEXT const *ptr() const { return reinterpret_cast<VkQueueFamilyGlobalPriorityPropertiesEXT const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 minLod;
+    safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT(const VkPhysicalDeviceImageViewMinLodFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT(const safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT& operator=(const safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT();
+    ~safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT();
+    void initialize(const VkPhysicalDeviceImageViewMinLodFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT* copy_src);
+    VkPhysicalDeviceImageViewMinLodFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceImageViewMinLodFeaturesEXT *>(this); }
+    VkPhysicalDeviceImageViewMinLodFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceImageViewMinLodFeaturesEXT const *>(this); }
+};
+
+struct safe_VkImageViewMinLodCreateInfoEXT {
+    VkStructureType sType;
+    const void* pNext;
+    float minLod;
+    safe_VkImageViewMinLodCreateInfoEXT(const VkImageViewMinLodCreateInfoEXT* in_struct);
+    safe_VkImageViewMinLodCreateInfoEXT(const safe_VkImageViewMinLodCreateInfoEXT& copy_src);
+    safe_VkImageViewMinLodCreateInfoEXT& operator=(const safe_VkImageViewMinLodCreateInfoEXT& copy_src);
+    safe_VkImageViewMinLodCreateInfoEXT();
+    ~safe_VkImageViewMinLodCreateInfoEXT();
+    void initialize(const VkImageViewMinLodCreateInfoEXT* in_struct);
+    void initialize(const safe_VkImageViewMinLodCreateInfoEXT* copy_src);
+    VkImageViewMinLodCreateInfoEXT *ptr() { return reinterpret_cast<VkImageViewMinLodCreateInfoEXT *>(this); }
+    VkImageViewMinLodCreateInfoEXT const *ptr() const { return reinterpret_cast<VkImageViewMinLodCreateInfoEXT const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceMultiDrawFeaturesEXT {
     VkStructureType sType;
     void* pNext;

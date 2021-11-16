@@ -397,6 +397,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_host_query_reset{kNotEnabled};
     ExtEnabled vk_ext_image_drm_format_modifier{kNotEnabled};
     ExtEnabled vk_ext_image_robustness{kNotEnabled};
+    ExtEnabled vk_ext_image_view_min_lod{kNotEnabled};
     ExtEnabled vk_ext_index_type_uint8{kNotEnabled};
     ExtEnabled vk_ext_inline_uniform_block{kNotEnabled};
     ExtEnabled vk_ext_line_rasterization{kNotEnabled};
@@ -692,6 +693,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_image_format_list, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}})},
             {VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_image_robustness, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_EXT_IMAGE_VIEW_MIN_LOD_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_image_view_min_lod, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_index_type_uint8, {})},
             {VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_inline_uniform_block, {{
@@ -1232,6 +1235,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
     VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME,
     VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME,
+    VK_EXT_IMAGE_VIEW_MIN_LOD_EXTENSION_NAME,
     VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME,
     VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME,
     VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME,

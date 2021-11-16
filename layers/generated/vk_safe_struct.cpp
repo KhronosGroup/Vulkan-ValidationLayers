@@ -46052,6 +46052,112 @@ void safe_VkQueueFamilyGlobalPriorityPropertiesEXT::initialize(const safe_VkQueu
     }
 }
 
+safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT::safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT(const VkPhysicalDeviceImageViewMinLodFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    minLod(in_struct->minLod)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT::safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT::safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT(const safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    minLod = copy_src.minLod;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT& safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT::operator=(const safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    minLod = copy_src.minLod;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT::~safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT::initialize(const VkPhysicalDeviceImageViewMinLodFeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    minLod = in_struct->minLod;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT::initialize(const safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    minLod = copy_src->minLod;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkImageViewMinLodCreateInfoEXT::safe_VkImageViewMinLodCreateInfoEXT(const VkImageViewMinLodCreateInfoEXT* in_struct) :
+    sType(in_struct->sType),
+    minLod(in_struct->minLod)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImageViewMinLodCreateInfoEXT::safe_VkImageViewMinLodCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_MIN_LOD_CREATE_INFO_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkImageViewMinLodCreateInfoEXT::safe_VkImageViewMinLodCreateInfoEXT(const safe_VkImageViewMinLodCreateInfoEXT& copy_src)
+{
+    sType = copy_src.sType;
+    minLod = copy_src.minLod;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImageViewMinLodCreateInfoEXT& safe_VkImageViewMinLodCreateInfoEXT::operator=(const safe_VkImageViewMinLodCreateInfoEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    minLod = copy_src.minLod;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImageViewMinLodCreateInfoEXT::~safe_VkImageViewMinLodCreateInfoEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageViewMinLodCreateInfoEXT::initialize(const VkImageViewMinLodCreateInfoEXT* in_struct)
+{
+    sType = in_struct->sType;
+    minLod = in_struct->minLod;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImageViewMinLodCreateInfoEXT::initialize(const safe_VkImageViewMinLodCreateInfoEXT* copy_src)
+{
+    sType = copy_src->sType;
+    minLod = copy_src->minLod;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceMultiDrawFeaturesEXT::safe_VkPhysicalDeviceMultiDrawFeaturesEXT(const VkPhysicalDeviceMultiDrawFeaturesEXT* in_struct) :
     sType(in_struct->sType),
     multiDraw(in_struct->multiDraw)
@@ -48979,6 +49085,12 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_EXT:
             safe_pNext = new safe_VkQueueFamilyGlobalPriorityPropertiesEXT(reinterpret_cast<const VkQueueFamilyGlobalPriorityPropertiesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceImageViewMinLodFeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_IMAGE_VIEW_MIN_LOD_CREATE_INFO_EXT:
+            safe_pNext = new safe_VkImageViewMinLodCreateInfoEXT(reinterpret_cast<const VkImageViewMinLodCreateInfoEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceMultiDrawFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceMultiDrawFeaturesEXT *>(pNext));
             break;
@@ -50085,6 +50197,12 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_EXT:
             delete reinterpret_cast<const safe_VkQueueFamilyGlobalPriorityPropertiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_IMAGE_VIEW_MIN_LOD_CREATE_INFO_EXT:
+            delete reinterpret_cast<const safe_VkImageViewMinLodCreateInfoEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceMultiDrawFeaturesEXT *>(header);

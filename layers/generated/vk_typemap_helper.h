@@ -5504,6 +5504,24 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PR
     typedef VkQueueFamilyGlobalPriorityPropertiesEXT Type;
 };
 
+// Map type VkPhysicalDeviceImageViewMinLodFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceImageViewMinLodFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT> {
+    typedef VkPhysicalDeviceImageViewMinLodFeaturesEXT Type;
+};
+
+// Map type VkImageViewMinLodCreateInfoEXT to id VK_STRUCTURE_TYPE_IMAGE_VIEW_MIN_LOD_CREATE_INFO_EXT
+template <> struct LvlTypeMap<VkImageViewMinLodCreateInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_VIEW_MIN_LOD_CREATE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_VIEW_MIN_LOD_CREATE_INFO_EXT> {
+    typedef VkImageViewMinLodCreateInfoEXT Type;
+};
+
 // Map type VkPhysicalDeviceMultiDrawFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceMultiDrawFeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT;

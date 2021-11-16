@@ -4598,7 +4598,7 @@ bool ObjectLifetimes::PreCallValidateCreateCuModuleNVX(
     const VkAllocationCallbacks*                pAllocator,
     VkCuModuleNVX*                              pModule) const {
     bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined);
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateCuModuleNVX-device-parameter", kVUIDUndefined);
 
     return skip;
 }
@@ -4620,9 +4620,9 @@ bool ObjectLifetimes::PreCallValidateCreateCuFunctionNVX(
     const VkAllocationCallbacks*                pAllocator,
     VkCuFunctionNVX*                            pFunction) const {
     bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined);
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateCuFunctionNVX-device-parameter", kVUIDUndefined);
     if (pCreateInfo) {
-        skip |= ValidateObject(pCreateInfo->module, kVulkanObjectTypeCuModuleNVX, false, kVUIDUndefined, kVUIDUndefined);
+        skip |= ValidateObject(pCreateInfo->module, kVulkanObjectTypeCuModuleNVX, false, "VUID-VkCuFunctionCreateInfoNVX-module-parameter", kVUIDUndefined);
     }
 
     return skip;
@@ -4644,8 +4644,8 @@ bool ObjectLifetimes::PreCallValidateDestroyCuModuleNVX(
     VkCuModuleNVX                               module,
     const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined);
-    skip |= ValidateObject(module, kVulkanObjectTypeCuModuleNVX, false, kVUIDUndefined, kVUIDUndefined);
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkDestroyCuModuleNVX-device-parameter", kVUIDUndefined);
+    skip |= ValidateObject(module, kVulkanObjectTypeCuModuleNVX, false, "VUID-vkDestroyCuModuleNVX-module-parameter", "VUID-vkDestroyCuModuleNVX-module-parent");
     skip |= ValidateDestroyObject(module, kVulkanObjectTypeCuModuleNVX, pAllocator, kVUIDUndefined, kVUIDUndefined);
 
     return skip;
@@ -4664,8 +4664,8 @@ bool ObjectLifetimes::PreCallValidateDestroyCuFunctionNVX(
     VkCuFunctionNVX                             function,
     const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined);
-    skip |= ValidateObject(function, kVulkanObjectTypeCuFunctionNVX, false, kVUIDUndefined, kVUIDUndefined);
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkDestroyCuFunctionNVX-device-parameter", kVUIDUndefined);
+    skip |= ValidateObject(function, kVulkanObjectTypeCuFunctionNVX, false, "VUID-vkDestroyCuFunctionNVX-function-parameter", "VUID-vkDestroyCuFunctionNVX-function-parent");
     skip |= ValidateDestroyObject(function, kVulkanObjectTypeCuFunctionNVX, pAllocator, kVUIDUndefined, kVUIDUndefined);
 
     return skip;
@@ -4683,9 +4683,9 @@ bool ObjectLifetimes::PreCallValidateCmdCuLaunchKernelNVX(
     VkCommandBuffer                             commandBuffer,
     const VkCuLaunchInfoNVX*                    pLaunchInfo) const {
     bool skip = false;
-    skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, kVUIDUndefined, kVUIDUndefined);
+    skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdCuLaunchKernelNVX-commandBuffer-parameter", kVUIDUndefined);
     if (pLaunchInfo) {
-        skip |= ValidateObject(pLaunchInfo->function, kVulkanObjectTypeCuFunctionNVX, false, kVUIDUndefined, kVUIDUndefined);
+        skip |= ValidateObject(pLaunchInfo->function, kVulkanObjectTypeCuFunctionNVX, false, "VUID-VkCuLaunchInfoNVX-function-parameter", kVUIDUndefined);
     }
 
     return skip;
