@@ -5390,6 +5390,30 @@ void SyncValidator::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffe
                                                pDependencyInfos);
 }
 
+bool SyncValidator::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                  const VkDependencyInfo *pDependencyInfos) const {
+    bool skip = false;
+    const auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    if (!cb_context) return skip;
+
+    SyncOpWaitEvents wait_events_op(CMD_WAITEVENTS2, *this, cb_context->GetQueueFlags(), eventCount, pEvents, pDependencyInfos);
+    skip |= wait_events_op.Validate(*cb_context);
+    return skip;
+}
+
+void SyncValidator::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                 const VkDependencyInfo *pDependencyInfos) {
+    StateTracker::PostCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
+
+    auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    if (!cb_context) return;
+
+    cb_context->RecordSyncOp<SyncOpWaitEvents>(CMD_WAITEVENTS2, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
+                                               pDependencyInfos);
+}
+
 void SyncEventState::ResetFirstScope() {
     for (const auto address_type : kAddressTypes) {
         first_scope[static_cast<size_t>(address_type)].clear();
@@ -5403,7 +5427,7 @@ void SyncEventState::ResetFirstScope() {
 SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(CMD_TYPE cmd, VkPipelineStageFlags2KHR srcStageMask) const {
     IgnoreReason reason = NotIgnored;
 
-    if ((CMD_WAITEVENTS2KHR == cmd) && (CMD_SETEVENT == last_command)) {
+    if ((CMD_WAITEVENTS2KHR == cmd || CMD_WAITEVENTS2 == cmd) && (CMD_SETEVENT == last_command)) {
         reason = SetVsWait2;
     } else if ((last_command == CMD_RESETEVENT || last_command == CMD_RESETEVENT2KHR) && !HasBarrier(0U, 0U)) {
         reason = (last_command == CMD_RESETEVENT) ? ResetWaitRace : Reset2WaitRace;
@@ -6078,6 +6102,7 @@ bool SyncOpResetEvent::DoValidate(const CommandBufferAccessContext & cb_context,
                 vuid = "SYNC-vkCmdResetEvent-missingbarrier-set";
                 break;
             case CMD_WAITEVENTS:
+            case CMD_WAITEVENTS2:
             case CMD_WAITEVENTS2KHR: {
                 // Needs to be in the barriers chain (either because of a barrier, or because of dstStageMask
                 vuid = "SYNC-vkCmdResetEvent-missingbarrier-wait";
@@ -6183,6 +6208,7 @@ bool SyncOpSetEvent::DoValidate(const CommandBufferAccessContext &cb_context, co
                 message = reset_set;
                 break;
             case CMD_WAITEVENTS:
+            case CMD_WAITEVENTS2:
             case CMD_WAITEVENTS2KHR:
                 // Needs a barrier or is in second execution scope
                 vuid_stem = "-missingbarrier-wait";
