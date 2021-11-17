@@ -13288,11 +13288,10 @@ TEST_F(VkLayerTest, ValidateExternalMemoryImageLayout) {
 TEST_F(VkLayerTest, ValidateSetDeviceMemoryPriority) {
     TEST_DESCRIPTION("Validate vkSetDeviceMemoryPriorityEXT");
 
-    AddRequiredExtensions(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extensions %s and %s are not supported, skipping test.\n", kSkipPrefix, VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
+        printf("%s Extensions %s is not supported, skipping test.\n", kSkipPrefix,
                VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
         return;
     }
