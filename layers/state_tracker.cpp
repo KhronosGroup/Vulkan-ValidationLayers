@@ -2896,6 +2896,12 @@ void ValidationStateTracker::PostCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer
     cb_state->RecordWriteTimestamp(CMD_WRITETIMESTAMP2KHR, pipelineStage, queryPool, slot);
 }
 
+void ValidationStateTracker::PostCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
+                                                              VkQueryPool queryPool, uint32_t slot) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordWriteTimestamp(CMD_WRITETIMESTAMP2, pipelineStage, queryPool, slot);
+}
+
 void ValidationStateTracker::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) {
