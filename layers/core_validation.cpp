@@ -10191,32 +10191,35 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer,
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage,
-                                                      VkQueryPool queryPool, uint32_t slot) const {
+bool CoreChecks::ValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
+                                            uint32_t slot, CMD_TYPE cmd_type) const {
     if (disabled[query_validation]) return false;
     const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
+
+    const char *func_name = CommandTypeString(cmd_type);
     if (!enabled_features.core13.synchronization2) {
         skip |= LogError(commandBuffer, "VUID-vkCmdWriteTimestamp2-synchronization2-03858",
-                         "vkCmdWriteTimestamp2KHR(): Synchronization2 feature is not enabled");
+                         "%s(): Synchronization2 feature is not enabled", func_name);
     }
-    skip |= ValidateCmd(cb_state.get(), CMD_WRITETIMESTAMP);
+    skip |= ValidateCmd(cb_state.get(), cmd_type);
 
     Location loc(Func::vkCmdWriteTimestamp2, Field::stage);
     if ((stage & (stage - 1)) != 0) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-stage-03859",
-                         "%s (%s) must only set a single pipeline stage.", loc.Message().c_str(),
-                         string_VkPipelineStageFlags2KHR(stage).c_str());
+        skip |=
+            LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-stage-03859",
+                     "%s (%s) must only set a single pipeline stage.", func_name, string_VkPipelineStageFlags2KHR(stage).c_str());
     }
     skip |= ValidatePipelineStage(LogObjectList(cb_state->commandBuffer()), loc, cb_state->GetQueueFlags(), stage);
 
     loc.field = Field::queryPool;
     const auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
+
     if (query_pool_state) {
         if (query_pool_state->createInfo.queryType != VK_QUERY_TYPE_TIMESTAMP) {
             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-queryPool-03861",
-                             "%s Query Pool %s was not created with VK_QUERY_TYPE_TIMESTAMP.", loc.Message().c_str(),
+                             "%s Query Pool %s was not created with VK_QUERY_TYPE_TIMESTAMP.", func_name,
                              report_data->FormatHandle(queryPool).c_str());
         }
 
@@ -10232,11 +10235,21 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
         physical_device_state->queue_family_properties[cb_state->command_pool->queueFamilyIndex].timestampValidBits;
     if (timestampValidBits == 0) {
         skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-timestampValidBits-03863",
-                         "%s Query Pool %s has a timestampValidBits value of zero.", loc.Message().c_str(),
+                         "%s Query Pool %s has a timestampValidBits value of zero.", func_name,
                          report_data->FormatHandle(queryPool).c_str());
     }
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage,
+                                                      VkQueryPool queryPool, uint32_t query) const {
+    return ValidateCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, CMD_WRITETIMESTAMP2KHR);
+}
+
+bool CoreChecks::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
+                                                   VkQueryPool queryPool, uint32_t query) const {
+    return ValidateCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, CMD_WRITETIMESTAMP2);
 }
 
 void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
@@ -10260,7 +10273,22 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffe
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     QueryObject query = {queryPool, slot};
-    const char *func_name = "vkCmdWriteTimestamp()";
+    const char *func_name = "vkCmdWriteTimestamp2KHR()";
+    cb_state->queryUpdates.emplace_back([commandBuffer, query, func_name](const ValidationStateTracker *device_data,
+                                                                          bool do_validate, VkQueryPool &firstPerfQueryPool,
+                                                                          uint32_t perfPass, QueryMap *localQueryToStateMap) {
+        if (!do_validate) return false;
+        return VerifyQueryIsReset(device_data, commandBuffer, query, func_name, firstPerfQueryPool, perfPass, localQueryToStateMap);
+    });
+}
+
+void CoreChecks::PreCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
+                                                 VkQueryPool queryPool, uint32_t slot) {
+    if (disabled[query_validation]) return;
+    // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    QueryObject query = {queryPool, slot};
+    const char *func_name = "vkCmdWriteTimestamp2()";
     cb_state->queryUpdates.emplace_back([commandBuffer, query, func_name](const ValidationStateTracker *device_data,
                                                                           bool do_validate, VkQueryPool &firstPerfQueryPool,
                                                                           uint32_t perfPass, QueryMap *localQueryToStateMap) {
