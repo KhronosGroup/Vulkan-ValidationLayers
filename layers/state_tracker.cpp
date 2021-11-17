@@ -2805,6 +2805,17 @@ void ValidationStateTracker::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer comm
     }
 }
 
+void ValidationStateTracker::PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                         const VkDependencyInfo *pDependencyInfos) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    for (uint32_t i = 0; i < eventCount; i++) {
+        const auto &dep_info = pDependencyInfos[i];
+        auto stage_masks = sync_utils::GetGlobalStageMasks(dep_info);
+        cb_state->RecordWaitEvents(CMD_WAITEVENTS2, 1, &pEvents[i], stage_masks.src);
+        cb_state->RecordBarriers(dep_info);
+    }
+}
+
 void ValidationStateTracker::PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                                               VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                                               uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
