@@ -13288,39 +13288,18 @@ TEST_F(VkLayerTest, ValidateExternalMemoryImageLayout) {
 TEST_F(VkLayerTest, ValidateSetDeviceMemoryPriority) {
     TEST_DESCRIPTION("Validate vkSetDeviceMemoryPriorityEXT");
 
-    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extensions %s and %s are not supported, skipping test.\n", kSkipPrefix, VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
+               VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
         return;
     }
-    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME);
-        return;
-    }
-    m_device_extension_names.push_back(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME);
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
-        return;
-    }
-    m_device_extension_names.push_back(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
-    InitState();
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageable_device_local_memory_features =
-        LvlInitStruct<VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT>();
-
-    auto phys_dev_features_2 = LvlInitStruct<VkPhysicalDeviceFeatures2>();
-    phys_dev_features_2.pNext = &pageable_device_local_memory_features;
-    vk::GetPhysicalDeviceFeatures2(gpu(), &phys_dev_features_2);
-
-    auto fpSetDeviceMemoryPriorityEXT =
-        (PFN_vkSetDeviceMemoryPriorityEXT)vk::GetDeviceProcAddr(m_device->device(), "vkSetDeviceMemoryPriorityEXT");
-
-    if (pageable_device_local_memory_features.pageableDeviceLocalMemory == 0) {
-        printf("%s pageableDeviceLocalMemory is not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
+    auto fpSetDeviceMemoryPriorityEXT = reinterpret_cast<PFN_vkSetDeviceMemoryPriorityEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkSetDeviceMemoryPriorityEXT"));
 
     VkBufferCreateInfo buffer_create_info = {};
     buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
