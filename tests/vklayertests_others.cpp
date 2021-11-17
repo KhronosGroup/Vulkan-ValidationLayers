@@ -13295,7 +13295,15 @@ TEST_F(VkLayerTest, ValidateSetDeviceMemoryPriority) {
                VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto pageable_device_local_memory_features = LvlInitStruct<VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&pageable_device_local_memory_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!pageable_device_local_memory_features.pageableDeviceLocalMemory) {
+        printf("%s Test requires (unsupported) pageableDeviceLocalMemory, skipping\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto fpSetDeviceMemoryPriorityEXT = reinterpret_cast<PFN_vkSetDeviceMemoryPriorityEXT>(
         vk::GetDeviceProcAddr(m_device->device(), "vkSetDeviceMemoryPriorityEXT"));
