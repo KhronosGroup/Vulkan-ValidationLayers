@@ -2836,6 +2836,13 @@ void ValidationStateTracker::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer
     cb_state->RecordBarriers(*pDependencyInfo);
 }
 
+void ValidationStateTracker::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer,
+                                                              const VkDependencyInfo *pDependencyInfo) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordCmd(CMD_PIPELINEBARRIER2);
+    cb_state->RecordBarriers(*pDependencyInfo);
+}
+
 void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                          VkFlags flags) {
     if (disabled[query_validation]) return;

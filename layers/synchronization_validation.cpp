@@ -3702,12 +3702,33 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer comman
     return skip;
 }
 
+bool SyncValidator::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer,
+                                                       const VkDependencyInfo *pDependencyInfo) const {
+    bool skip = false;
+    const auto *cb_access_context = GetAccessContext(commandBuffer);
+    assert(cb_access_context);
+    if (!cb_access_context) return skip;
+
+    SyncOpPipelineBarrier pipeline_barrier(CMD_PIPELINEBARRIER2, *this, cb_access_context->GetQueueFlags(), *pDependencyInfo);
+    skip = pipeline_barrier.Validate(*cb_access_context);
+    return skip;
+}
+
 void SyncValidator::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo) {
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     if (!cb_access_context) return;
 
     cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(CMD_PIPELINEBARRIER2KHR, *this, cb_access_context->GetQueueFlags(),
+                                                           *pDependencyInfo);
+}
+
+void SyncValidator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo) {
+    auto *cb_access_context = GetAccessContext(commandBuffer);
+    assert(cb_access_context);
+    if (!cb_access_context) return;
+
+    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(CMD_PIPELINEBARRIER2, *this, cb_access_context->GetQueueFlags(),
                                                            *pDependencyInfo);
 }
 
@@ -5657,7 +5678,7 @@ void SyncOpBarriers::BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &s
 }
 
 void SyncOpBarriers::BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, VkDependencyFlags dependency_flags,
-                                                    uint32_t memory_barrier_count, const VkMemoryBarrier2KHR *barriers) {
+                                                    uint32_t memory_barrier_count, const VkMemoryBarrier2 *barriers) {
     memory_barriers.reserve(memory_barrier_count);
     for (uint32_t barrier_index = 0; barrier_index < memory_barrier_count; barrier_index++) {
         const auto &barrier = barriers[barrier_index];
@@ -5671,7 +5692,7 @@ void SyncOpBarriers::BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, Vk
 
 void SyncOpBarriers::BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                                           VkDependencyFlags dependencyFlags, uint32_t barrier_count,
-                                                          const VkBufferMemoryBarrier2KHR *barriers) {
+                                                          const VkBufferMemoryBarrier2 *barriers) {
     buffer_memory_barriers.reserve(barrier_count);
     for (uint32_t index = 0; index < barrier_count; index++) {
         const auto &barrier = barriers[index];
@@ -5709,7 +5730,7 @@ void SyncOpBarriers::BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sy
 
 void SyncOpBarriers::BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                                          VkDependencyFlags dependencyFlags, uint32_t barrier_count,
-                                                         const VkImageMemoryBarrier2KHR *barriers) {
+                                                         const VkImageMemoryBarrier2 *barriers) {
     image_memory_barriers.reserve(barrier_count);
     for (uint32_t index = 0; index < barrier_count; index++) {
         const auto &barrier = barriers[index];
