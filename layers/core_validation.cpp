@@ -2557,21 +2557,17 @@ bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE *cb_state, co
     return skip;
 }
 
-bool CoreChecks::ValidateIndirectCmd(VkCommandBuffer command_buffer, VkBuffer buffer, CMD_TYPE cmd_type) const {
+bool CoreChecks::ValidateIndirectCmd(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state, CMD_TYPE cmd_type) const {
     bool skip = false;
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller_name = CommandTypeString(cmd_type);
-    const auto cb_state = Get<CMD_BUFFER_STATE>(command_buffer);
-    const auto buffer_state = Get<BUFFER_STATE>(buffer);
 
-    if ((cb_state != nullptr) && (buffer_state != nullptr)) {
-        skip |= ValidateMemoryIsBoundToBuffer(buffer_state, caller_name, vuid.indirect_contiguous_memory);
-        skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, vuid.indirect_buffer_bit,
-                                         caller_name, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
-        if (cb_state->unprotected == false) {
-            skip |= LogError(cb_state->commandBuffer(), vuid.indirect_protected_cb,
-                             "%s: Indirect commands can't be used in protected command buffers.", caller_name);
-        }
+    skip |= ValidateMemoryIsBoundToBuffer(&buffer_state, caller_name, vuid.indirect_contiguous_memory);
+    skip |= ValidateBufferUsageFlags(&buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, vuid.indirect_buffer_bit,
+                                     caller_name, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    if (cb_state.unprotected == false) {
+        skip |= LogError(cb_state.Handle(), vuid.indirect_protected_cb,
+                         "%s: Indirect commands can't be used in protected command buffers.", caller_name);
     }
     return skip;
 }
@@ -3546,20 +3542,17 @@ struct CommandBufferSubmitState {
 
     CommandBufferSubmitState(const CoreChecks *c, const char *func, const QUEUE_STATE *q) : core(c), queue_state(q) {}
 
-    bool Validate(const core_error::Location &loc, VkCommandBuffer cmd, uint32_t perf_pass) {
+    bool Validate(const core_error::Location &loc, const CMD_BUFFER_STATE &cb_node, uint32_t perf_pass) {
         bool skip = false;
-        const auto cb_node = core->Get<CMD_BUFFER_STATE>(cmd);
-        if (cb_node == nullptr) {
-            return skip;
-        }
-        skip |= core->ValidateCmdBufImageLayouts(loc, cb_node, core->imageLayoutMap, overlay_image_layout_map);
+        skip |= core->ValidateCmdBufImageLayouts(loc, &cb_node, core->imageLayoutMap, overlay_image_layout_map);
+        auto cmd = cb_node.commandBuffer();
         current_cmds.push_back(cmd);
-        skip |= core->ValidatePrimaryCommandBufferState(loc, cb_node,
+        skip |= core->ValidatePrimaryCommandBufferState(loc, &cb_node,
                                                         static_cast<int>(std::count(current_cmds.begin(), current_cmds.end(), cmd)),
                                                         &qfo_image_scoreboards, &qfo_buffer_scoreboards);
-        skip |= core->ValidateQueueFamilyIndices(loc, cb_node, queue_state->Queue());
+        skip |= core->ValidateQueueFamilyIndices(loc, &cb_node, queue_state->Queue());
 
-        for (const auto &descriptor_set : cb_node->validate_descriptorsets_in_queuesubmit) {
+        for (const auto &descriptor_set : cb_node.validate_descriptorsets_in_queuesubmit) {
             const auto set_node = core->Get<cvdescriptorset::DescriptorSet>(descriptor_set.first);
             if (!set_node) {
                 continue;
@@ -3578,10 +3571,10 @@ struct CommandBufferSubmitState {
                     if (set_node->GetTotalDescriptorCount() > cvdescriptorset::PrefilterBindRequestMap::kManyDescriptors_) {
                         checked_layouts.emplace();
                     }
-                    skip |= core->ValidateDescriptorSetBindingData(
-                        cb_node, set_node, dynamic_offsets, binding_info, cmd_info.framebuffer, cmd_info.attachments.get(),
-                        cmd_info.subpasses.get(), record_time_validate, function.c_str(),
-                        core->GetDrawDispatchVuid(cmd_info.cmd_type), checked_layouts);
+                    skip |= core->ValidateDescriptorSetBindingData(&cb_node, set_node, dynamic_offsets, binding_info,
+                                                                   cmd_info.framebuffer, cmd_info.attachments.get(),
+                                                                   cmd_info.subpasses.get(), record_time_validate, function.c_str(),
+                                                                   core->GetDrawDispatchVuid(cmd_info.cmd_type), checked_layouts);
                 }
             }
         }
@@ -3592,14 +3585,14 @@ struct CommandBufferSubmitState {
         }
 
         // Call submit-time functions to validate or update local mirrors of state (to preserve const-ness at validate time)
-        for (auto &function : cb_node->queue_submit_functions) {
-            skip |= function(core, queue_state);
+        for (auto &function : cb_node.queue_submit_functions) {
+            skip |= function(*core, *queue_state, cb_node);
         }
-        for (auto &function : cb_node->eventUpdates) {
+        for (auto &function : cb_node.eventUpdates) {
             skip |= function(core, /*do_validate*/ true, &local_event_to_stage_map);
         }
         VkQueryPool first_perf_query_pool = VK_NULL_HANDLE;
-        for (auto &function : cb_node->queryUpdates) {
+        for (auto &function : cb_node.queryUpdates) {
             skip |= function(core, /*do_validate*/ true, first_perf_query_pool, perf_pass, &local_query_to_state_map);
         }
         return skip;
@@ -3627,7 +3620,8 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
 
         Location loc(Func::vkQueueSubmit, Struct::VkSubmitInfo, Field::pSubmits, submit_idx);
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            skip |= cb_submit_state.Validate(loc.dot(Field::pCommandBuffers, i), submit->pCommandBuffers[i], perf_pass);
+            const auto cb_state = Get<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]);
+            skip |= cb_submit_state.Validate(loc.dot(Field::pCommandBuffers, i), *cb_state, perf_pass);
         }
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, queue, submit, loc);
 
@@ -3766,14 +3760,13 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
             auto info_loc = loc.dot(Field::pCommandBufferInfos, i);
             info_loc.structure = Struct::VkCommandBufferSubmitInfoKHR;
-            skip |= cb_submit_state.Validate(info_loc.dot(Field::commandBuffer), submit->pCommandBufferInfos[i].commandBuffer,
-                                             perf_pass);
+            const auto cb_state = Get<CMD_BUFFER_STATE>(submit->pCommandBufferInfos[i].commandBuffer);
+            skip |= cb_submit_state.Validate(info_loc.dot(Field::commandBuffer), *cb_state, perf_pass);
 
             skip |= ValidateDeviceMaskToPhysicalDeviceCount(submit->pCommandBufferInfos[i].deviceMask, queue,
                                                             "VUID-VkCommandBufferSubmitInfoKHR-deviceMask-03891");
 
             // Make sure command buffers are all protected or unprotected
-            const auto cb_state = Get<CMD_BUFFER_STATE>(submit->pCommandBufferInfos[i].commandBuffer);
             if (cb_state != nullptr) {
                 if ((cb_state->unprotected == true) && (protected_submit == true)) {
                     LogObjectList objlist(cb_state->commandBuffer());

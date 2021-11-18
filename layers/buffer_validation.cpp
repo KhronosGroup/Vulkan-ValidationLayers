@@ -1049,8 +1049,8 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &loc, CMD_BUFFER_STA
             const auto typed_handle = BarrierTypedHandle(barrier);
             core_error::LocationCapture loc_capture(loc);
             cb_state->queue_submit_functions.emplace_back(
-                [loc_capture, cb_state, typed_handle, src_queue_family, dst_queue_family](const ValidationStateTracker *device_data,
-                                                                                          const QUEUE_STATE *queue_state) {
+                [loc_capture, typed_handle, src_queue_family, dst_queue_family](
+                    const ValidationStateTracker &device_data, const QUEUE_STATE &queue_state, const CMD_BUFFER_STATE &cb_state) {
                     return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), device_data, queue_state, cb_state, typed_handle,
                                                              src_queue_family, dst_queue_family);
                 });
@@ -5158,13 +5158,13 @@ bool Validate(const CoreChecks *device_data, const CMD_BUFFER_STATE *cb_state, c
 }
 }  // namespace barrier_queue_families
 
-bool CoreChecks::ValidateConcurrentBarrierAtSubmit(const Location &loc, const ValidationStateTracker *state_data,
-                                                   const QUEUE_STATE *queue_state, const CMD_BUFFER_STATE *cb_state,
+bool CoreChecks::ValidateConcurrentBarrierAtSubmit(const Location &loc, const ValidationStateTracker &state_data,
+                                                   const QUEUE_STATE &queue_state, const CMD_BUFFER_STATE &cb_state,
                                                    const VulkanTypedHandle &typed_handle, uint32_t src_queue_family,
                                                    uint32_t dst_queue_family) {
     using barrier_queue_families::ValidatorState;
-    ValidatorState val(state_data, LogObjectList(cb_state->commandBuffer()), loc, typed_handle, VK_SHARING_MODE_CONCURRENT);
-    return ValidatorState::ValidateAtQueueSubmit(queue_state, state_data, src_queue_family, dst_queue_family, val);
+    ValidatorState val(&state_data, LogObjectList(cb_state.Handle()), loc, typed_handle, VK_SHARING_MODE_CONCURRENT);
+    return ValidatorState::ValidateAtQueueSubmit(&queue_state, &state_data, src_queue_family, dst_queue_family, val);
 }
 
 // Type specific wrapper for image barriers

@@ -1667,7 +1667,8 @@ void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* functi
 void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* function_name,
                                        IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                        uint32_t array_layer, uint32_t mip_level) {
-    funcs.push_back([this, function_name, state, usage, array_layer, mip_level](const ValidationStateTracker*, const QUEUE_STATE*) -> bool {
+    funcs.push_back([this, function_name, state, usage, array_layer, mip_level](const ValidationStateTracker&, const QUEUE_STATE&,
+                                                                                const CMD_BUFFER_STATE&) -> bool {
         ValidateImageInQueue(function_name, state, usage, array_layer, mip_level);
         return false;
     });
@@ -3795,7 +3796,7 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
         for (uint32_t cb_index = 0; cb_index < submit_info.commandBufferCount; cb_index++) {
             auto* cb = GetCBState(submit_info.pCommandBuffers[cb_index]);
             for (auto &func : cb->queue_submit_functions) {
-                func(this, queue_state);
+                func(*this, *queue_state, *cb);
             }
         }
     }

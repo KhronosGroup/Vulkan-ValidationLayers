@@ -434,7 +434,7 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                             const VkResolveImageInfo2KHR* pResolveImageInfo) const override;
 
-    using QueueCallbacks = std::vector<std::function<bool (const ValidationStateTracker*, const QUEUE_STATE*)>>;
+    using QueueCallbacks = std::vector<CMD_BUFFER_STATE::QueueCallback>;
 
     void QueueValidateImageView(QueueCallbacks &func, const char* function_name,
                                 IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage);

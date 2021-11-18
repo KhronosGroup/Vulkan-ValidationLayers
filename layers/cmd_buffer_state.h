@@ -278,12 +278,12 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // If secondary, the primary command buffers we will be called by.
     layer_data::unordered_set<CMD_BUFFER_STATE *> linkedCommandBuffers;
     // Validation functions run at primary CB queue submit time
-    std::vector<std::function<bool(const ValidationStateTracker *device_data, const class QUEUE_STATE *queue_state)>>
-        queue_submit_functions;
+    using QueueCallback = std::function<bool(const ValidationStateTracker &device_data, const class QUEUE_STATE &queue_state,
+                                             const CMD_BUFFER_STATE &cb_state)>;
+    std::vector<QueueCallback> queue_submit_functions;
     // Used by some layers to defer actions until vkCmdEndRenderPass time.
     // Layers using this are responsible for inserting the callbacks into queue_submit_functions.
-    std::vector<std::function<bool(const ValidationStateTracker *device_data, const class QUEUE_STATE *queue_state)>>
-        queue_submit_functions_after_render_pass;
+    std::vector<QueueCallback> queue_submit_functions_after_render_pass;
     // Validation functions run when secondary CB is executed in primary
     std::vector<std::function<bool(const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *primary, const FRAMEBUFFER_STATE *)>>
         cmd_execute_commands_functions;
