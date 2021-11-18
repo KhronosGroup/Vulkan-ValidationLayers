@@ -2847,7 +2847,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                              i);
                             }
                             if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT &&
-                                (!line_features || !line_features->stippledSmoothLines || !device_limits.strictLines)) {
+                                (!line_features || !line_features->stippledRectangularLines || !device_limits.strictLines)) {
                                 skip |=
                                     LogError(device, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02774",
                                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
