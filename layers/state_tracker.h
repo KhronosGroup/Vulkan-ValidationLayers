@@ -1142,6 +1142,7 @@ class ValidationStateTracker : public ValidationObject {
                                           const VkImageMemoryBarrier* pImageMemoryBarriers) override;
 
     void PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR* pDependencyInfo) override;
+    void PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) override;
 
     void PreCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
                                       const VkDependencyInfoKHR* pDependencyInfo) override;

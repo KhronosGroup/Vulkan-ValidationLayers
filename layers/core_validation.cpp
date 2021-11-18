@@ -9589,19 +9589,20 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
-                                                       const VkDependencyInfoKHR *pDependencyInfo) const {
+bool CoreChecks::ValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
+                                             CMD_TYPE cmd_type) const {
     bool skip = false;
     const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     LogObjectList objects(commandBuffer);
+    const char *func_name = CommandTypeString(cmd_type);
 
     Location loc(Func::vkCmdPipelineBarrier2, Field::pDependencyInfo);
     if (!enabled_features.core13.synchronization2) {
         skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier2-synchronization2-03848",
-                         "vkCmdPipelineBarrier2KHR(): Synchronization2 feature is not enabled");
+                         "%s(): Synchronization2 feature is not enabled", func_name);
     }
-    skip |= ValidateCmd(cb_state.get(), CMD_PIPELINEBARRIER);
+    skip |= ValidateCmd(cb_state.get(), cmd_type);
     if (cb_state->activeRenderPass) {
         skip |= ValidateRenderPassPipelineBarriers(loc, cb_state.get(), pDependencyInfo);
         if (skip) return true;  // Early return to avoid redundant errors from below calls
@@ -9614,6 +9615,15 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBu
     }
     skip |= ValidateDependencyInfo(objects, loc, cb_state.get(), pDependencyInfo);
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
+                                                       const VkDependencyInfoKHR *pDependencyInfo) const {
+    return ValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, CMD_PIPELINEBARRIER2KHR);
+}
+
+bool CoreChecks::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo) const {
+    return ValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, CMD_PIPELINEBARRIER2);
 }
 
 void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
@@ -9640,6 +9650,15 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuff
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     RecordBarriers(Func::vkCmdPipelineBarrier2, cb_state.get(), *pDependencyInfo);
     TransitionImageLayouts(cb_state.get(), pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
+}
+
+void CoreChecks::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+
+    RecordBarriers(Func::vkCmdPipelineBarrier2, cb_state.get(), *pDependencyInfo);
+    TransitionImageLayouts(cb_state.get(), pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
+
+    StateTracker::PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
 }
 
 bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj, VkFlags flags, uint32_t index,

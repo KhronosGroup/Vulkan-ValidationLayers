@@ -576,11 +576,11 @@ class SyncOpBarriers : public SyncOpBase {
                                      VkDependencyFlags dependencyFlags, uint32_t imageMemoryBarrierCount,
                                      const VkImageMemoryBarrier *pImageMemoryBarriers);
         void MakeMemoryBarriers(VkQueueFlags queue_flags, VkDependencyFlags dependency_flags, uint32_t barrier_count,
-                                const VkMemoryBarrier2KHR *barriers);
+                                const VkMemoryBarrier2 *barriers);
         void MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkDependencyFlags dependency_flags,
-                                      uint32_t barrier_count, const VkBufferMemoryBarrier2KHR *barriers);
+                                      uint32_t barrier_count, const VkBufferMemoryBarrier2 *barriers);
         void MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkDependencyFlags dependency_flags,
-                                     uint32_t barrier_count, const VkImageMemoryBarrier2KHR *barriers);
+                                     uint32_t barrier_count, const VkImageMemoryBarrier2 *barriers);
     };
     std::vector<BarrierSet> barriers_;
 };
@@ -1232,7 +1232,9 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     bool PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
                                                const VkDependencyInfoKHR *pDependencyInfo) const override;
+    bool PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo) const override;
     void PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo) override;
+    void PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo) override;
 
     void PostCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo,
                                           VkResult result) override;
