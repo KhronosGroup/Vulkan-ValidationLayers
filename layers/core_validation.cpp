@@ -10806,8 +10806,8 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
                     attachments[j].overlapping.emplace_back(i);
                     continue;
                 }
-                auto view_state_i = Get<IMAGE_VIEW_STATE>(viewi);
-                auto view_state_j = Get<IMAGE_VIEW_STATE>(viewj);
+                auto *view_state_i = framebuffer->attachments_view_state[i].get();
+                auto *view_state_j = framebuffer->attachments_view_state[j].get();
                 if (!view_state_i || !view_state_j) {
                     continue;
                 }
@@ -10819,8 +10819,8 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
                     attachments[j].overlapping.emplace_back(i);
                     continue;
                 }
-                auto image_data_i = Get<IMAGE_STATE>(view_ci_i.image);
-                auto image_data_j = Get<IMAGE_STATE>(view_ci_j.image);
+                auto *image_data_i = view_state_i->image_state.get();
+                auto *image_data_j = view_state_j->image_state.get();
                 if (!image_data_i || !image_data_j) {
                     continue;
                 }
