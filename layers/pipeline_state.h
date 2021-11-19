@@ -168,7 +168,6 @@ class PIPELINE_STATE : public BASE_NODE {
             bool use_color = false;
             bool use_depth = false;
 
-            
             if (ci->renderPass == VK_NULL_HANDLE) {
                 auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfoKHR>(ci->pNext);
                 if (dynamic_rendering) {

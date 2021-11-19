@@ -654,6 +654,60 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller = CommandTypeString(cmd_type);
 
+    if (pPipeline->rp_state->use_dynamic_rendering) {
+        if (pPipeline->rp_state->dynamic_rendering_pipeline_create_info.viewMask !=
+            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask) {
+                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_view_mask,
+                    "%s: Currently bound pipeline %s viewMask ([%" PRIu32 ") must be equal to pBeginRendering->viewMask ([%" PRIu32 ")",
+                    caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
+                    pPipeline->rp_state->dynamic_rendering_pipeline_create_info.viewMask,
+                    pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask);
+        }
+
+        if (pPipeline->rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount != 
+            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount) {
+                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_count,
+                    "%s: Currently bound pipeline %s colorAttachmentCount ([%" PRIu32 ") must be equal to pBeginRendering->colorAttachmentCount ([%" PRIu32 ")",
+                    caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
+                    pPipeline->rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount,
+                    pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount);
+        }
+
+        if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
+            for (uint32_t i = 0; i < pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
+                if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
+                    auto view_state = GetShared<IMAGE_VIEW_STATE>(pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView);
+                    if (view_state->create_info.format != pPipeline->rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[i]) {
+                        skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_formats,
+                            "%s: Color attachment ([%" PRIu32 ") imageView format (%s) must match corresponding format in pipeline (%s)",
+                            caller, i, string_VkFormat(view_state->create_info.format),
+                                       string_VkFormat(pPipeline->rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[i]));
+                    }
+                }
+            }
+        }
+
+        auto rendering_fragment_shading_rate_attachment_info = LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(
+            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
+        if (rendering_fragment_shading_rate_attachment_info && (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
+            if (!(pPipeline->rp_state->createInfo.flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_fsr,
+                    "%s: Currently bound graphics pipeline %s must have been created with VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+                    caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+            }
+        }
+
+        auto rendering_fragment_shading_rate_density_map = LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(
+            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
+        if (rendering_fragment_shading_rate_density_map && (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
+            if (!(pPipeline->rp_state->createInfo.flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
+                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_fdm,
+                    "%s: Currently bound graphics pipeline %s must have been created with VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
+                    caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+            }
+        }
+    }
+
     // Verify vertex & index buffer for unprotected command buffer.
     // Because vertex & index buffer is read only, it doesn't need to care protected command buffer case.
     if (enabled_features.core11.protectedMemory == VK_TRUE) {
@@ -853,7 +907,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         if (pCB->activeRenderPass) {
             if (pCB->activeRenderPass->use_dynamic_rendering) {
                 // TODO: Mirror the below VUs but using dynamic rendering
-                const auto dynamic_rendering_info = pCB->activeRenderPass->dynamic_rendering_info;
+                const auto dynamic_rendering_info = pCB->activeRenderPass->dynamic_rendering_begin_rendering_info;
             } else {
                 const auto render_pass_info = pCB->activeRenderPass->createInfo.ptr();
                 const VkSubpassDescription2 *subpass_desc = &render_pass_info->pSubpasses[pCB->activeSubpass];
@@ -1255,14 +1309,15 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE *pPipe
         const auto *subpass_desc = &pPipeline->rp_state->createInfo.pSubpasses[create_info.subpass];
 
         uint32_t numberColorAttachments = (pPipeline->rp_state->use_dynamic_rendering)
-                                              ? pPipeline->rp_state->rendering_create_info.colorAttachmentCount
+                                              ? pPipeline->rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount
                                               : subpass_desc->colorAttachmentCount;
 
         for (uint32_t i = 0; i < pPipeline->attachments.size() && i < numberColorAttachments; ++i) {
             VkFormatFeatureFlags format_features;
 
             if (pPipeline->rp_state->use_dynamic_rendering) {
-                format_features = GetPotentialFormatFeatures(pPipeline->rp_state->rendering_create_info.pColorAttachmentFormats[i]);
+                format_features = GetPotentialFormatFeatures(
+                    pPipeline->rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[i]);
             } else {
                 const auto attachment = subpass_desc->pColorAttachments[i].attachment;
                 if (attachment == VK_ATTACHMENT_UNUSED) continue;
@@ -6547,15 +6602,17 @@ bool CoreChecks::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuff
           IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples))) {
         uint32_t first_sample_count_attachment = VK_ATTACHMENT_UNUSED;
         for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
-            auto image_view = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[j].imageView);
-            first_sample_count_attachment = (j == 0u) ? static_cast<uint32_t>(image_view->samples) : first_sample_count_attachment;
+            if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
+                auto image_view = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[j].imageView);
+                first_sample_count_attachment = (j == 0u) ? static_cast<uint32_t>(image_view->samples) : first_sample_count_attachment;
 
-            if (first_sample_count_attachment != image_view->samples) {
-                skip |= LogError(
-                    commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06070",
-                    "vkCmdBeginRenderingKHR(): Color attachment ref %u has sample count %s, whereas first color attachment ref has "
-                    "sample count %u.",
-                    j, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
+                if (first_sample_count_attachment != image_view->samples) {
+                    skip |= LogError(commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06070",
+                                     "vkCmdBeginRenderingKHR(): Color attachment ref %u has sample count %s, whereas first color "
+                                     "attachment ref has "
+                                     "sample count %u.",
+                                     j, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
+                }
             }
         }
     }

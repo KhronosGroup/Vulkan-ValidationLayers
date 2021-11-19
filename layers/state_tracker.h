@@ -1048,7 +1048,6 @@ class ValidationStateTracker : public ValidationObject {
     void RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
                                                    VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate);
     void RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
-    void RecordCmdBeginRenderingRenderPassState(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR* pRenderingInfo);
     void RecordCmdEndRenderingRenderPassState(VkCommandBuffer commandBuffer);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
     void RecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout, VkResult result);

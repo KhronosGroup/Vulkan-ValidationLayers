@@ -86,6 +86,13 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDraw-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDraw_VertexInput;
         blend_enable                       = "VUID-vkCmdDraw-blendEnable-04727";
+        dynamic_rendering_view_mask        = "VUID-vkCmdDraw-viewMask-06178";
+        dynamic_rendering_color_count      = "VUID-vkCmdDraw-colorAttachmentCount-06179";
+        dynamic_rendering_color_formats    = "VUID-vkCmdDraw-colorAttachmentCount-06180";
+        dynamic_rendering_depth_format     = "VUID-vkCmdDraw-pDepthAttachment-06181";
+        dynamic_rendering_stencil_format   = "VUID-vkCmdDraw-pStencilAttachment-06182";
+        dynamic_rendering_fsr              = "VUID-vkCmdDraw-imageView-06183";
+        dynamic_rendering_fdm              = "VUID-vkCmdDraw-imageView-06184";
     }
 };
 
@@ -132,6 +139,13 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawMultiEXT-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawMultiEXT_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawMultiEXT-blendEnable-04727";
+        dynamic_rendering_view_mask        = "VUID-vkCmdDrawMultiEXT-viewMask-06178";
+        dynamic_rendering_color_count      = "VUID-vkCmdDrawMultiEXT-colorAttachmentCount-06179";
+        dynamic_rendering_color_formats    = "VUID-vkCmdDrawMultiEXT-colorAttachmentCount-06180";
+        dynamic_rendering_depth_format     = "VUID-vkCmdDrawMultiEXT-pDepthAttachment-06181";
+        dynamic_rendering_stencil_format   = "VUID-vkCmdDrawMultiEXT-pStencilAttachment-06182";
+        dynamic_rendering_fsr              = "VUID-vkCmdDrawMultiEXT-imageView-06183";
+        dynamic_rendering_fdm              = "VUID-vkCmdDrawMultiEXT-imageView-06184";
     }
 };
 
@@ -178,6 +192,13 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexed-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawIndexed_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawIndexed-blendEnable-04727";
+        dynamic_rendering_view_mask        = "VUID-vkCmdDrawIndexed-viewMask-06178";
+        dynamic_rendering_color_count      = "VUID-vkCmdDrawIndexed-colorAttachmentCount-06179";
+        dynamic_rendering_color_formats    = "VUID-vkCmdDrawIndexed-colorAttachmentCount-06180";
+        dynamic_rendering_depth_format     = "VUID-vkCmdDrawIndexed-pDepthAttachment-06181";
+        dynamic_rendering_stencil_format   = "VUID-vkCmdDrawIndexed-pStencilAttachment-06182";
+        dynamic_rendering_fsr              = "VUID-vkCmdDrawIndexed-imageView-06183";
+        dynamic_rendering_fdm              = "VUID-vkCmdDrawIndexed-imageView-06184";
     }
 };
 
@@ -224,6 +245,13 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         vertex_input_binding_stride = "VUID-vkCmdDrawMultiIndexedEXT-pStrides-04884";
         vertex_input = kVUID_Core_CmdDrawMultiIndexedEXT_VertexInput;
         blend_enable = "VUID-vkCmdDrawMultiIndexedEXT-blendEnable-04727";
+        dynamic_rendering_view_mask = "VUID-vkCmdDrawMultiIndexedEXT-viewMask-06178";
+        dynamic_rendering_color_count = "VUID-vkCmdDrawMultiIndexedEXT-colorAttachmentCount-06179";
+        dynamic_rendering_color_formats = "VUID-vkCmdDrawMultiIndexedEXT-colorAttachmentCount-06180";
+        dynamic_rendering_depth_format = "VUID-vkCmdDrawMultiIndexedEXT-pDepthAttachment-06181";
+        dynamic_rendering_stencil_format = "VUID-vkCmdDrawMultiIndexedEXT-pStencilAttachment-06182";
+        dynamic_rendering_fsr = "VUID-vkCmdDrawMultiIndexedEXT-imageView-06183";
+        dynamic_rendering_fdm = "VUID-vkCmdDrawMultiIndexedEXT-imageView-06184";
     }
 };
 
@@ -272,6 +300,13 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirect-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawIndirect_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawIndirect-blendEnable-04727";
+        dynamic_rendering_view_mask        = "VUID-vkCmdDrawIndirect-viewMask-06178";
+        dynamic_rendering_color_count      = "VUID-vkCmdDrawIndirect-colorAttachmentCount-06179";
+        dynamic_rendering_color_formats    = "VUID-vkCmdDrawIndirect-colorAttachmentCount-06180";
+        dynamic_rendering_depth_format     = "VUID-vkCmdDrawIndirect-pDepthAttachment-06181";
+        dynamic_rendering_stencil_format   = "VUID-vkCmdDrawIndirect-pStencilAttachment-06182";
+        dynamic_rendering_fsr              = "VUID-vkCmdDrawIndirect-imageView-06183";
+        dynamic_rendering_fdm              = "VUID-vkCmdDrawIndirect-imageView-06184";
     }
 };
 
@@ -320,6 +355,13 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexedIndirect-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawIndexedIndirect_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawIndexedIndirect-blendEnable-04727";
+        dynamic_rendering_view_mask        = "VUID-vkCmdDrawIndexedIndirect-viewMask-06178";
+        dynamic_rendering_color_count      = "VUID-vkCmdDrawIndexedIndirect-colorAttachmentCount-06179";
+        dynamic_rendering_color_formats    = "VUID-vkCmdDrawIndexedIndirect-colorAttachmentCount-06180";
+        dynamic_rendering_depth_format     = "VUID-vkCmdDrawIndexedIndirect-pDepthAttachment-06181";
+        dynamic_rendering_stencil_format   = "VUID-vkCmdDrawIndexedIndirect-pStencilAttachment-06182";
+        dynamic_rendering_fsr              = "VUID-vkCmdDrawIndexedIndirect-imageView-06183";
+        dynamic_rendering_fdm              = "VUID-vkCmdDrawIndexedIndirect-imageView-06184";
     }
 };
 

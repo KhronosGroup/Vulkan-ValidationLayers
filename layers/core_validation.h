@@ -85,6 +85,13 @@ struct DrawDispatchVuid {
     const char* vertex_input_binding_stride = kVUIDUndefined;
     const char* vertex_input = kVUIDUndefined;
     const char* blend_enable = kVUIDUndefined;
+    const char* dynamic_rendering_view_mask = kVUIDUndefined;
+    const char* dynamic_rendering_color_count = kVUIDUndefined;
+    const char* dynamic_rendering_color_formats = kVUIDUndefined;
+    const char* dynamic_rendering_depth_format = kVUIDUndefined;
+    const char* dynamic_rendering_stencil_format = kVUIDUndefined;
+    const char* dynamic_rendering_fsr = kVUIDUndefined;
+    const char* dynamic_rendering_fdm = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {

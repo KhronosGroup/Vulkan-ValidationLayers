@@ -451,7 +451,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
                 return activeRenderPass->inheritance_rendering_info.colorAttachmentCount;
             }
             if (activeRenderPass->use_dynamic_rendering) {
-                return activeRenderPass->dynamic_rendering_info.colorAttachmentCount;
+                return activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount;
             }
         }
         return 0;
