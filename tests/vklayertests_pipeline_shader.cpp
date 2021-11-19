@@ -7650,7 +7650,7 @@ TEST_F(VkLayerTest, GraphicsPipelineStageCreationFeedbackCount) {
     auto set_feedback = [&feedback_info](CreatePipelineHelper &helper) { helper.gp_ci_.pNext = &feedback_info; };
 
     CreatePipelineHelper::OneshotTest(*this, set_feedback, kErrorBit,
-                                      "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02668",
+                                      "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02668",
                                       true);
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
@@ -7665,7 +7665,7 @@ TEST_F(VkLayerTest, GraphicsPipelineStageCreationFeedbackCount) {
 
     feedback_info.pipelineStageCreationFeedbackCount = 1;
     CreatePipelineHelper::OneshotTest(*this, set_feedback, kErrorBit,
-                                      "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02668",
+                                      "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02668",
                                       false);
 }
 
@@ -7694,7 +7694,7 @@ TEST_F(VkLayerTest, ComputePipelineStageCreationFeedbackCount) {
 
     feedback_info.pipelineStageCreationFeedbackCount = 2;
     CreateComputePipelineHelper::OneshotTest(
-        *this, set_info, kErrorBit, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02669");
+        *this, set_info, kErrorBit, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02669");
 }
 
 TEST_F(VkLayerTest, NVRayTracingPipelineStageCreationFeedbackCount) {
@@ -7731,7 +7731,7 @@ TEST_F(VkLayerTest, NVRayTracingPipelineStageCreationFeedbackCount) {
 
     feedback_info.pipelineStageCreationFeedbackCount = 2;
     CreateNVRayTracingPipelineHelper::OneshotTest(
-        *this, set_feedback, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02969");
+        *this, set_feedback, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02969");
 }
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderImageFootprintEnabled) {

@@ -2065,7 +2065,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
             if ((feedback_struct != nullptr) &&
                 (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
-                skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02668",
+                skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02668",
                                  "vkCreateGraphicsPipelines(): in pCreateInfo[%" PRIu32
                                  "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"
                                  "(=%" PRIu32 ") must equal VkGraphicsPipelineCreateInfo::stageCount(=%" PRIu32 ").",
@@ -3475,7 +3475,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 1)) {
             skip |=
-                LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02669",
+                LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02669",
                          "vkCreateComputePipelines(): in pCreateInfo[%" PRIu32
                          "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount must equal 1, found %" PRIu32 ".",
                          i, feedback_struct->pipelineStageCreationFeedbackCount);
@@ -5925,7 +5925,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
         }
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
-            skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02969",
+            skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02969",
                              "vkCreateRayTracingPipelinesNV(): in pCreateInfo[%" PRIu32
                              "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"
                              "(=%" PRIu32 ") must equal VkRayTracingPipelineCreateInfoNV::stageCount(=%" PRIu32 ").",
@@ -6072,7 +6072,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         }
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
-            skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02670",
+            skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02670",
                              "vkCreateRayTracingPipelinesKHR: in pCreateInfo[%" PRIu32
                              "], When chained to VkRayTracingPipelineCreateInfoKHR, "
                              "VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"
@@ -7907,7 +7907,7 @@ bool StatelessValidation::manual_PreCallValidateCreatePrivateDataSlotEXT(VkDevic
     bool skip = false;
     const auto *private_data_features = LvlFindInChain<VkPhysicalDevicePrivateDataFeaturesEXT>(device_createinfo_pnext);
     if (private_data_features && private_data_features->privateData == VK_FALSE) {
-        skip |= LogError(device, "VUID-vkCreatePrivateDataSlotEXT-privateData-04564",
+        skip |= LogError(device, "VUID-vkCreatePrivateDataSlot-privateData-04564",
                          "vkCreatePrivateDataSlotEXT(): The privateData feature must be enabled.");
     }
     return skip;
