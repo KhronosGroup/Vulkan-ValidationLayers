@@ -1245,7 +1245,8 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
                                  "vkCreateImageView(): VkImageViewASTCDecodeModeEXT::decodeMode must be "
                                  "VK_FORMAT_R16G16B16A16_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM, or VK_FORMAT_E5B9G9R9_UFLOAT_PACK32.");
             }
-            if (FormatIsCompressed_ASTC(pCreateInfo->format) == false) {
+            if ((FormatIsCompressed_ASTC_LDR(pCreateInfo->format) == false) &&
+                (FormatIsCompressed_ASTC_HDR(pCreateInfo->format) == false)) {
                 skip |= LogError(device, "VUID-VkImageViewASTCDecodeModeEXT-format-04084",
                                  "vkCreateImageView(): is using a VkImageViewASTCDecodeModeEXT but the image view format is %s and "
                                  "not an ASTC format.",

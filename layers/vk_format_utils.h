@@ -38,7 +38,8 @@
 extern "C" {
 #endif
 
-#define VK_MULTIPLANE_FORMAT_MAX_PLANES 3
+static constexpr uint32_t FORMAT_MAX_PLANES = 3;
+static constexpr uint32_t FORMAT_MAX_COMPONENTS = 4;
 
 typedef enum VkFormatCompatibilityClass {
     VK_FORMAT_COMPATIBILITY_CLASS_NONE_BIT = 0,
@@ -146,23 +147,21 @@ VK_LAYER_EXPORT bool FormatIsDepthAndStencil(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsDepthOnly(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsStencilOnly(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsCompressed_ETC2_EAC(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsCompressed_ASTC(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsCompressed_ASTC_LDR(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsCompressed_ASTC_HDR(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsCompressed_BC(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsCompressed_PVRTC(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsSinglePlane_422(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsBlockedImage(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsNorm(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsUNorm(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsSNorm(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsInt(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsSInt(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsUInt(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsFloat(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsUNORM(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsSNORM(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsSINT(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsUINT(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsSFLOAT(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsUFLOAT(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsSRGB(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsUScaled(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsSScaled(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsUSCALED(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsSSCALED(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsSampledInt(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsSampledFloat(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsCompressed(VkFormat format);
@@ -182,7 +181,6 @@ VK_LAYER_EXPORT VkExtent3D FormatTexelBlockExtent(VkFormat format);
 VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 VK_LAYER_EXPORT double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 VK_LAYER_EXPORT VkFormatCompatibilityClass FormatCompatibilityClass(VkFormat format);
-VK_LAYER_EXPORT uint32_t GetPlaneIndex(VkImageAspectFlags aspect);
 VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat fmt, VkImageAspectFlags plane_aspect);
 VK_LAYER_EXPORT VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
 

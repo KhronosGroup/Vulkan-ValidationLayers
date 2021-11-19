@@ -107,8 +107,8 @@ static unsigned GetLocationsConsumedByFormat(VkFormat format) {
 }
 
 static unsigned GetFormatType(VkFormat fmt) {
-    if (FormatIsSInt(fmt)) return FORMAT_TYPE_SINT;
-    if (FormatIsUInt(fmt)) return FORMAT_TYPE_UINT;
+    if (FormatIsSINT(fmt)) return FORMAT_TYPE_SINT;
+    if (FormatIsUINT(fmt)) return FORMAT_TYPE_UINT;
     // Formats such as VK_FORMAT_D16_UNORM_S8_UINT are both
     if (FormatIsDepthAndStencil(fmt)) return FORMAT_TYPE_FLOAT | FORMAT_TYPE_UINT;
     if (fmt == VK_FORMAT_UNDEFINED) return 0;
