@@ -278,7 +278,7 @@ TEST_F(VkLayerTest, PrivateDataFeature) {
     VkPrivateDataSlotEXT data_slot;
     VkPrivateDataSlotCreateInfoEXT data_create_info = LvlInitStruct<VkPrivateDataSlotCreateInfoEXT>();
     data_create_info.flags = 0;
-    m_errorMonitor->SetUnexpectedError("VUID-vkCreatePrivateDataSlotEXT-privateData-04564");
+    m_errorMonitor->SetUnexpectedError("VUID-vkCreatePrivateDataSlot-privateData-04564");
     vkCreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
     m_errorMonitor->VerifyNotFound();
 }
