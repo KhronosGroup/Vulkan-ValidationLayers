@@ -3560,20 +3560,24 @@ TEST_F(VkSyncValTest, SyncEventsCommandHazards) {
 
 TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     TEST_DESCRIPTION("Using CmdWaitEvents2KHR when synchronization2 is not enabled");
-
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
         printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
     m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     InitState();
 
+    bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
     auto fpCmdWaitEvents2KHR = (PFN_vkCmdWaitEvents2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWaitEvents2KHR");
 
     VkEventObj event;
@@ -3586,12 +3590,18 @@ TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents2-synchronization2-03836");
     fpCmdWaitEvents2KHR(m_commandBuffer->handle(), 1, &event_handle, &dependency_info);
     m_errorMonitor->VerifyFound();
+    if (vulkan_13) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents2-synchronization2-03836");
+        vk::CmdWaitEvents2(m_commandBuffer->handle(), 1, &event_handle, &dependency_info);
+        m_errorMonitor->VerifyFound();
+    }
     m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, Sync2FeatureDisabled) {
     TEST_DESCRIPTION("Call sync2 functions when the feature is disabled");
 
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
@@ -3609,6 +3619,7 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
+    bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     synchronization2.synchronization2 = VK_FALSE;  // Invalid
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&synchronization2);
@@ -3663,6 +3674,24 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2-synchronization2-03858");
         vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), stage, query_pool.handle(), 0);
+        m_errorMonitor->VerifyFound();
+        if (vulkan_13) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2-synchronization2-03858");
+            vk::CmdWriteTimestamp2(m_commandBuffer->handle(), stage, query_pool.handle(), 0);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+    if (vulkan_13) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier2-synchronization2-03848");
+        vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &dependency_info);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent2-synchronization2-03829");
+        vk::CmdResetEvent2(m_commandBuffer->handle(), event.handle(), stage);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent2-synchronization2-03824");
+        vk::CmdSetEvent2(m_commandBuffer->handle(), event.handle(), &dependency_info);
         m_errorMonitor->VerifyFound();
     }
 
