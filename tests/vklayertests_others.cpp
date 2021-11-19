@@ -12417,8 +12417,13 @@ TEST_F(VkLayerTest, QueueSubmitWaitingSameSemaphore) {
 
 TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     TEST_DESCRIPTION("Using QueueSubmit2KHR when synchronization2 is not enabled");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    auto version = SetTargetApiVersion(VK_API_VERSION_1_3);
+    if (version < VK_API_VERSION_1_3) {
+        version = SetTargetApiVersion(VK_API_VERSION_1_2);
+    }   
     ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
         printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
         return;
@@ -12427,11 +12432,17 @@ TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     InitState();
 
     auto fpQueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR");
+    auto fpQueueSubmit2 = (PFN_vkQueueSubmit2)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2");
 
     auto submit_info = LvlInitStruct<VkSubmitInfo2KHR>();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-synchronization2-03866");
     fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
+    if (vulkan_13) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-synchronization2-03866");
+        fpQueueSubmit2(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
