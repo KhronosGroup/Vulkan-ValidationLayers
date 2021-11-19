@@ -27,6 +27,7 @@
 #include "vulkan/vulkan.h"
 #include "vk_layer_data.h"
 #include "vk_format_utils.h"
+#include "vk_layer_utils.h"
 
 struct VULKAN_FORMAT_INFO {
     uint32_t size;
@@ -323,11 +324,6 @@ VK_LAYER_EXPORT bool FormatIsCompressed_ETC2_EAC(VkFormat format) {
     return found;
 }
 
-// Return true if format is either a LDR or HDR ASTC compressed textyre format
-VK_LAYER_EXPORT bool FormatIsCompressed_ASTC(VkFormat format) {
-    return (FormatIsCompressed_ASTC_LDR(format) || FormatIsCompressed_ASTC_HDR(format));
-}
-
 // Return true if format is an LDR ASTC compressed texture format
 VK_LAYER_EXPORT bool FormatIsCompressed_ASTC_LDR(VkFormat format) {
     bool found = false;
@@ -469,8 +465,8 @@ VK_LAYER_EXPORT bool FormatIsSinglePlane_422(VkFormat format) {
 
 // Return true if format is compressed
 VK_LAYER_EXPORT bool FormatIsCompressed(VkFormat format) {
-    return (FormatIsCompressed_ASTC(format) || FormatIsCompressed_BC(format) || FormatIsCompressed_ETC2_EAC(format) ||
-            FormatIsCompressed_PVRTC(format));
+    return (FormatIsCompressed_ASTC_HDR(format) || FormatIsCompressed_ASTC_LDR(format) || FormatIsCompressed_BC(format) ||
+            FormatIsCompressed_ETC2_EAC(format) || FormatIsCompressed_PVRTC(format));
 }
 
 // "blocked image" are defined in the spec (vkspec.html#blocked-image)
@@ -595,11 +591,8 @@ VK_LAYER_EXPORT bool FormatIsDepthOnly(VkFormat format) {
     return is_depth;
 }
 
-// Return true if format is of type NORM
-VK_LAYER_EXPORT bool FormatIsNorm(VkFormat format) { return (FormatIsUNorm(format) || FormatIsSNorm(format)); }
-
 // Return true if format is of type UNORM
-VK_LAYER_EXPORT bool FormatIsUNorm(VkFormat format) {
+VK_LAYER_EXPORT bool FormatIsUNORM(VkFormat format) {
     bool is_unorm = false;
 
     switch (format) {
@@ -704,7 +697,7 @@ VK_LAYER_EXPORT bool FormatIsUNorm(VkFormat format) {
 }
 
 // Return true if format is of type SNORM
-VK_LAYER_EXPORT bool FormatIsSNorm(VkFormat format) {
+VK_LAYER_EXPORT bool FormatIsSNORM(VkFormat format) {
     bool is_snorm = false;
 
     switch (format) {
@@ -734,11 +727,8 @@ VK_LAYER_EXPORT bool FormatIsSNorm(VkFormat format) {
     return is_snorm;
 }
 
-// Return true if format is an integer format
-VK_LAYER_EXPORT bool FormatIsInt(VkFormat format) { return (FormatIsSInt(format) || FormatIsUInt(format)); }
-
 // Return true if format is an unsigned integer format
-VK_LAYER_EXPORT bool FormatIsUInt(VkFormat format) {
+VK_LAYER_EXPORT bool FormatIsUINT(VkFormat format) {
     bool is_uint = false;
 
     switch (format) {
@@ -774,7 +764,7 @@ VK_LAYER_EXPORT bool FormatIsUInt(VkFormat format) {
 }
 
 // Return true if format is a signed integer format
-VK_LAYER_EXPORT bool FormatIsSInt(VkFormat format) {
+VK_LAYER_EXPORT bool FormatIsSINT(VkFormat format) {
     bool is_sint = false;
 
     switch (format) {
@@ -808,10 +798,9 @@ VK_LAYER_EXPORT bool FormatIsSInt(VkFormat format) {
     return is_sint;
 }
 
-// Return true if format is a floating-point format
-VK_LAYER_EXPORT bool FormatIsFloat(VkFormat format) {
-    bool is_float = false;
-
+// Return true if all components in the format are an SFLOAT
+VK_LAYER_EXPORT bool FormatIsSFLOAT(VkFormat format) {
+    bool found = false;
     switch (format) {
         case VK_FORMAT_R16_SFLOAT:
         case VK_FORMAT_R16G16_SFLOAT:
@@ -825,17 +814,43 @@ VK_LAYER_EXPORT bool FormatIsFloat(VkFormat format) {
         case VK_FORMAT_R64G64_SFLOAT:
         case VK_FORMAT_R64G64B64_SFLOAT:
         case VK_FORMAT_R64G64B64A64_SFLOAT:
-        case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
-        case VK_FORMAT_E5B9G9R9_UFLOAT_PACK32:
-        case VK_FORMAT_BC6H_UFLOAT_BLOCK:
+        case VK_FORMAT_D32_SFLOAT:
         case VK_FORMAT_BC6H_SFLOAT_BLOCK:
-            is_float = true;
+        case VK_FORMAT_ASTC_4x4_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x4_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x5_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_8x5_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_8x6_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_8x8_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_10x5_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_10x6_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_10x8_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_10x10_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_12x10_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK_EXT:
+            found = true;
             break;
         default:
             break;
     }
+    return found;
+}
 
-    return is_float;
+// Return true if all components in the format are an UFLOAT
+VK_LAYER_EXPORT bool FormatIsUFLOAT(VkFormat format) {
+    bool found = false;
+    switch (format) {
+        case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
+        case VK_FORMAT_E5B9G9R9_UFLOAT_PACK32:
+        case VK_FORMAT_BC6H_UFLOAT_BLOCK:
+            found = true;
+            break;
+        default:
+            break;
+    }
+    return found;
 }
 
 // Return true if format is in the SRGB colorspace
@@ -881,7 +896,7 @@ VK_LAYER_EXPORT bool FormatIsSRGB(VkFormat format) {
 }
 
 // Return true if format is a USCALED format
-VK_LAYER_EXPORT bool FormatIsUScaled(VkFormat format) {
+VK_LAYER_EXPORT bool FormatIsUSCALED(VkFormat format) {
     bool is_uscaled = false;
 
     switch (format) {
@@ -908,7 +923,7 @@ VK_LAYER_EXPORT bool FormatIsUScaled(VkFormat format) {
 }
 
 // Return true if format is a SSCALED format
-VK_LAYER_EXPORT bool FormatIsSScaled(VkFormat format) {
+VK_LAYER_EXPORT bool FormatIsSSCALED(VkFormat format) {
     bool is_sscaled = false;
 
     switch (format) {
@@ -935,10 +950,10 @@ VK_LAYER_EXPORT bool FormatIsSScaled(VkFormat format) {
 }
 
 // Types from "Interpretation of Numeric Format" table
-VK_LAYER_EXPORT bool FormatIsSampledInt(VkFormat format) { return FormatIsInt(format); }
+VK_LAYER_EXPORT bool FormatIsSampledInt(VkFormat format) { return (FormatIsSINT(format) || FormatIsUINT(format)); }
 VK_LAYER_EXPORT bool FormatIsSampledFloat(VkFormat format) {
-    return (FormatIsUNorm(format) || FormatIsSNorm(format) || FormatIsUScaled(format) || FormatIsSScaled(format) ||
-            FormatIsFloat(format) || FormatIsSRGB(format));
+    return (FormatIsUNORM(format) || FormatIsSNORM(format) || FormatIsUSCALED(format) || FormatIsSSCALED(format) ||
+            FormatIsUFLOAT(format) || FormatIsSFLOAT(format) || FormatIsSRGB(format));
 }
 
 // Return texel block sizes for all formats
@@ -1274,7 +1289,7 @@ struct VULKAN_PER_PLANE_COMPATIBILITY {
 };
 
 struct VULKAN_MULTIPLANE_COMPATIBILITY {
-    VULKAN_PER_PLANE_COMPATIBILITY per_plane[VK_MULTIPLANE_FORMAT_MAX_PLANES];
+    VULKAN_PER_PLANE_COMPATIBILITY per_plane[FORMAT_MAX_PLANES];
 };
 
 // Source: Vulkan spec Table 47. Plane Format Compatibility Table
@@ -1355,29 +1370,10 @@ static const std::map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY>kVkMultiplaneCom
 };
 // clang-format on
 
-uint32_t GetPlaneIndex(VkImageAspectFlags aspect) {
-    // Returns an out of bounds index on error
-    switch (aspect) {
-        case VK_IMAGE_ASPECT_PLANE_0_BIT:
-            return 0;
-            break;
-        case VK_IMAGE_ASPECT_PLANE_1_BIT:
-            return 1;
-            break;
-        case VK_IMAGE_ASPECT_PLANE_2_BIT:
-            return 2;
-            break;
-        default:
-            // If more than one plane bit is set, return error condition
-            return VK_MULTIPLANE_FORMAT_MAX_PLANES;
-            break;
-    }
-}
-
 VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect) {
     uint32_t plane_idx = GetPlaneIndex(plane_aspect);
     auto it = kVkMultiplaneCompatibilityMap.find(mp_fmt);
-    if ((it == kVkMultiplaneCompatibilityMap.end()) || (plane_idx >= VK_MULTIPLANE_FORMAT_MAX_PLANES)) {
+    if ((it == kVkMultiplaneCompatibilityMap.end()) || (plane_idx >= FORMAT_MAX_PLANES)) {
         return VK_FORMAT_UNDEFINED;
     }
 
@@ -1388,7 +1384,7 @@ VK_LAYER_EXPORT VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImage
     VkExtent2D divisors = {1, 1};
     uint32_t plane_idx = GetPlaneIndex(plane_aspect);
     auto it = kVkMultiplaneCompatibilityMap.find(mp_fmt);
-    if ((it == kVkMultiplaneCompatibilityMap.end()) || (plane_idx >= VK_MULTIPLANE_FORMAT_MAX_PLANES)) {
+    if ((it == kVkMultiplaneCompatibilityMap.end()) || (plane_idx >= FORMAT_MAX_PLANES)) {
         return divisors;
     }
 

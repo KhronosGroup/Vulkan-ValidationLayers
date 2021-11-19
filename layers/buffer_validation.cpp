@@ -3968,7 +3968,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         // Validate consistency for unsigned formats
-        if (FormatIsUInt(src_format) != FormatIsUInt(dst_format)) {
+        if (FormatIsUINT(src_format) != FormatIsUINT(dst_format)) {
             std::stringstream ss;
             ss << func_name << ": If one of srcImage and dstImage images has unsigned integer format, "
                << "the other one must also have unsigned integer format.  "
@@ -3978,7 +3978,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         // Validate consistency for signed formats
-        if (FormatIsSInt(src_format) != FormatIsSInt(dst_format)) {
+        if (FormatIsSINT(src_format) != FormatIsSINT(dst_format)) {
             std::stringstream ss;
             ss << func_name << ": If one of srcImage and dstImage images has signed integer format, "
                << "the other one must also have signed integer format.  "

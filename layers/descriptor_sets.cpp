@@ -930,8 +930,8 @@ static char const *StringDescriptorReqComponentType(DescriptorReqFlags req) {
 }
 
 unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
-    if (FormatIsSInt(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_SINT;
-    if (FormatIsUInt(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
+    if (FormatIsSINT(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_SINT;
+    if (FormatIsUINT(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
     // Formats such as VK_FORMAT_D16_UNORM_S8_UINT are both
     if (FormatIsDepthAndStencil(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT | DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
     if (fmt == VK_FORMAT_UNDEFINED) return 0;

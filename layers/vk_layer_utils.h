@@ -223,6 +223,25 @@ static inline VkDeviceSize GetIndexAlignment(VkIndexType indexType) {
     }
 }
 
+static inline uint32_t GetPlaneIndex(VkImageAspectFlags aspect) {
+    // Returns an out of bounds index on error
+    switch (aspect) {
+        case VK_IMAGE_ASPECT_PLANE_0_BIT:
+            return 0;
+            break;
+        case VK_IMAGE_ASPECT_PLANE_1_BIT:
+            return 1;
+            break;
+        case VK_IMAGE_ASPECT_PLANE_2_BIT:
+            return 2;
+            break;
+        default:
+            // If more than one plane bit is set, return error condition
+            return FORMAT_MAX_PLANES;
+            break;
+    }
+}
+
 // Perform a zero-tolerant modulo operation
 static inline VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor) {
     VkDeviceSize result = 0;

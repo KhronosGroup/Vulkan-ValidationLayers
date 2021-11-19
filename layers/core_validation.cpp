@@ -15805,7 +15805,7 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
     }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-    if ((external_format == false) && (FormatIsUNorm(conversion_format) == false)) {
+    if ((external_format == false) && (FormatIsUNORM(conversion_format) == false)) {
         const char *vuid = IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)
                                ? "VUID-VkSamplerYcbcrConversionCreateInfo-format-04061"
                                : "VUID-VkSamplerYcbcrConversionCreateInfo-format-04060";
