@@ -3515,7 +3515,7 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                                 image_view_state = (*prim_cb->active_attachments)[image_index];
                             }
                             skip = ValidateClearAttachmentExtent(secondary, attachment_index, image_view_state,
-                                                                 prim_cb->activeRenderPass->dynamic_rendering_info.renderArea,
+                                                                 prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.renderArea,
                                                                  rectCount, clear_rect_copy->data());
                             return skip;
                         };

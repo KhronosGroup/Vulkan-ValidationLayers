@@ -268,7 +268,8 @@ RENDER_PASS_STATE::RENDER_PASS_STATE(VkPipelineRenderingCreateInfoKHR const *pPi
     : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
-      rendering_create_info(pPipelineRenderingCreateInfo ? pPipelineRenderingCreateInfo : &VkPipelineRenderingCreateInfoKHR_default) {}
+      dynamic_rendering_pipeline_create_info(pPipelineRenderingCreateInfo ? pPipelineRenderingCreateInfo
+                                                                          : &VkPipelineRenderingCreateInfoKHR_default) {}
 
 bool RENDER_PASS_STATE::UsesColorAttachment(uint32_t subpass_num) const {
     bool result = false;
@@ -301,7 +302,7 @@ RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderingInfoKHR const *pRenderingInfo)
     : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
-      dynamic_rendering_info(pRenderingInfo) {}
+      dynamic_rendering_begin_rendering_info(pRenderingInfo) {}
 
 RENDER_PASS_STATE::RENDER_PASS_STATE(VkCommandBufferInheritanceRenderingInfoKHR const* pInheritanceRenderingInfo)
     : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),

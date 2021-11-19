@@ -2803,12 +2803,6 @@ void ValidationStateTracker::PostCallRecordCmdEndConditionalRenderingEXT(VkComma
     cb_state->conditional_rendering_subpass = 0;
 }
 
-void ValidationStateTracker::RecordCmdBeginRenderingRenderPassState(VkCommandBuffer commandBuffer,
-                                                                    const VkRenderingInfoKHR *pRenderingInfo) {
-    auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->activeRenderPass = std::make_shared<RENDER_PASS_STATE>(pRenderingInfo);
-}
-
 void ValidationStateTracker::RecordCmdEndRenderingRenderPassState(VkCommandBuffer commandBuffer) {
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->activeRenderPass = nullptr;
@@ -2816,7 +2810,6 @@ void ValidationStateTracker::RecordCmdEndRenderingRenderPassState(VkCommandBuffe
 
 void ValidationStateTracker::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
                                                                const VkRenderingInfoKHR *pRenderingInfo) {
-    RecordCmdBeginRenderingRenderPassState(commandBuffer, pRenderingInfo);
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->BeginRendering(CMD_BEGINRENDERINGKHR, pRenderingInfo);
 }
