@@ -85,6 +85,7 @@ set(COMMON_CPP
     vklayertests_wsi.cpp
     positive/command.cpp
     positive/descriptors.cpp
+    positive/dynamic_rendering.cpp
     positive/image_buffer.cpp
     positive/instance.cpp
     positive/other.cpp

@@ -2416,6 +2416,22 @@ void VkCommandBufferObj::BeginRenderPass(const VkRenderPassBeginInfo &info, VkSu
 
 void VkCommandBufferObj::EndRenderPass() { vk::CmdEndRenderPass(handle()); }
 
+void VkCommandBufferObj::BeginRendering(const VkRenderingInfoKHR &renderingInfo) {
+    PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR =
+        (PFN_vkCmdBeginRenderingKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginRenderingKHR");
+    assert(vkCmdBeginRenderingKHR != nullptr);
+
+    vkCmdBeginRenderingKHR(handle(), &renderingInfo);
+}
+
+void VkCommandBufferObj::EndRendering() {
+    PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR =
+        (PFN_vkCmdEndRenderingKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndRenderingKHR");
+    assert(vkCmdEndRenderingKHR != nullptr);
+
+    vkCmdEndRenderingKHR(handle());
+}
+
 void VkCommandBufferObj::SetViewport(uint32_t firstViewport, uint32_t viewportCount, const VkViewport *pViewports) {
     vk::CmdSetViewport(handle(), firstViewport, viewportCount, pViewports);
 }
