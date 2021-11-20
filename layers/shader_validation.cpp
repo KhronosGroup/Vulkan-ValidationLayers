@@ -1977,6 +1977,14 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
                     invocations = insn.word(3);
                     break;
                 }
+
+                case spv::ExecutionModeLocalSizeId: {
+                    if (!enabled_features.maintenance4_features.maintenance4) {
+                        skip |= LogError(device, "VUID-RuntimeSpirv-LocalSizeId-06434",
+                                         "LocalSizeId execution mode used but maintenance4 feature not enabled");
+                    }
+                    break;
+                }
             }
         }
     }

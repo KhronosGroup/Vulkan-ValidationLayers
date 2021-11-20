@@ -1202,7 +1202,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
             }
 
             // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
-            if (!cb_node->push_constant_data_ranges) {
+            if (!cb_node->push_constant_data_ranges && !enabled_features.maintenance4_features.maintenance4) {
                 LogObjectList objlist(cb_node->commandBuffer());
                 objlist.add(pipeline_layout->layout());
                 objlist.add(pipe->pipeline());

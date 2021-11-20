@@ -311,11 +311,19 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_blend_operation_advanced)) {
-        // Get the needed vertex attribute divisor limits
+        // Get the needed blend operation advanced properties
         auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
         auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&blend_operation_advanced_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.blend_operation_advanced_props = blend_operation_advanced_props;
+    }
+
+    if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
+        // Get the needed maintenance4 properties
+        auto maintance4_props = LvlInitStruct<VkPhysicalDeviceMaintenance4PropertiesKHR>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&maintance4_props);
+        DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+        phys_dev_ext_props.maintenance4_props = maintance4_props;
     }
 
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
@@ -691,6 +699,15 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
             skip |= LogError(device, "VUID-VkBufferCreateInfo-flags-00918",
                              "vkCreateBuffer: if pCreateInfo->flags contains VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT or "
                              "VK_BUFFER_CREATE_SPARSE_ALIASED_BIT, it must also contain VK_BUFFER_CREATE_SPARSE_BINDING_BIT.");
+        }
+
+        const auto *maintenance4_features = LvlFindInChain<VkPhysicalDeviceMaintenance4FeaturesKHR>(device_createinfo_pnext);
+        if (maintenance4_features && maintenance4_features->maintenance4) {
+            if (pCreateInfo->size > phys_dev_ext_props.maintenance4_props.maxBufferSize) {
+                skip |= LogError(device, "VUID-VkBufferCreateInfo-size-06409",
+                                 "vkCreateBuffer: pCreateInfo->size is larger than the maximum allowed buffer size "
+                                 "VkPhysicalDeviceMaintenance4Properties.maxBufferSize");
+            }
         }
     }
 
