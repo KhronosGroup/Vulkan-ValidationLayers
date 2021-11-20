@@ -13348,3 +13348,27 @@ TEST_F(VkLayerTest, ValidateExternalMemoryImageLayout) {
     vk::CreateImage(device(), &ici, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, ValidateCreateSamplerWithBorderColorSwizzle) {
+    TEST_DESCRIPTION("Validate vkCreateSampler with VkSamplerBorderColorComponentMappingCreateInfoEXT");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkSamplerBorderColorComponentMappingCreateInfoEXT border_color_component_mapping = {};
+    border_color_component_mapping.sType = VK_STRUCTURE_TYPE_SAMPLER_BORDER_COLOR_COMPONENT_MAPPING_CREATE_INFO_EXT;
+    border_color_component_mapping.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                                 VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
+
+    VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
+    sampler_create_info.pNext = &border_color_component_mapping;
+
+    VkSampler sampler = VK_NULL_HANDLE;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkSamplerBorderColorComponentMappingCreateInfoEXT-borderColorSwizzle-06437");
+    vk::CreateSampler(device(), &sampler_create_info, nullptr, &sampler);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroySampler(device(), sampler, nullptr);
+}
