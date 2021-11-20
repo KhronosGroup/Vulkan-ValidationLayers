@@ -93,6 +93,10 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         dynamic_rendering_stencil_format   = "VUID-vkCmdDraw-pStencilAttachment-06182";
         dynamic_rendering_fsr              = "VUID-vkCmdDraw-imageView-06183";
         dynamic_rendering_fdm              = "VUID-vkCmdDraw-imageView-06184";
+        dynamic_rendering_color_sample     = "VUID-vkCmdDraw-colorAttachmentCount-06185";
+        dynamic_rendering_depth_sample     = "VUID-vkCmdDraw-pDepthAttachment-06186";
+        dynamic_rendering_stencil_sample   = "VUID-vkCmdDraw-pStencilAttachment-06187";
+        dynamic_rendering_multi_sample     = "VUID-vkCmdDraw-colorAttachmentCount-06188";
     }
 };
 
@@ -146,6 +150,10 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         dynamic_rendering_stencil_format   = "VUID-vkCmdDrawMultiEXT-pStencilAttachment-06182";
         dynamic_rendering_fsr              = "VUID-vkCmdDrawMultiEXT-imageView-06183";
         dynamic_rendering_fdm              = "VUID-vkCmdDrawMultiEXT-imageView-06184";
+        dynamic_rendering_color_sample     = "VUID-vkCmdDrawMultiEXT-colorAttachmentCount-06185";
+        dynamic_rendering_depth_sample     = "VUID-vkCmdDrawMultiEXT-pDepthAttachment-06186";
+        dynamic_rendering_stencil_sample   = "VUID-vkCmdDrawMultiEXT-pStencilAttachment-06187";
+        dynamic_rendering_multi_sample     = "VUID-vkCmdDrawMultiEXT-colorAttachmentCount-06188";
     }
 };
 
@@ -199,6 +207,10 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         dynamic_rendering_stencil_format   = "VUID-vkCmdDrawIndexed-pStencilAttachment-06182";
         dynamic_rendering_fsr              = "VUID-vkCmdDrawIndexed-imageView-06183";
         dynamic_rendering_fdm              = "VUID-vkCmdDrawIndexed-imageView-06184";
+        dynamic_rendering_color_sample     = "VUID-vkCmdDrawIndexed-colorAttachmentCount-06185";
+        dynamic_rendering_depth_sample     = "VUID-vkCmdDrawIndexed-pDepthAttachment-06186";
+        dynamic_rendering_stencil_sample   = "VUID-vkCmdDrawIndexed-pStencilAttachment-06187";
+        dynamic_rendering_multi_sample     = "VUID-vkCmdDrawIndexed-colorAttachmentCount-06188";
     }
 };
 
@@ -252,6 +264,10 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         dynamic_rendering_stencil_format = "VUID-vkCmdDrawMultiIndexedEXT-pStencilAttachment-06182";
         dynamic_rendering_fsr = "VUID-vkCmdDrawMultiIndexedEXT-imageView-06183";
         dynamic_rendering_fdm = "VUID-vkCmdDrawMultiIndexedEXT-imageView-06184";
+        dynamic_rendering_color_sample = "VUID-vkCmdDrawMultiIndexedEXT-colorAttachmentCount-06185";
+        dynamic_rendering_depth_sample = "VUID-vkCmdDrawMultiIndexedEXT-pDepthAttachment-06186";
+        dynamic_rendering_stencil_sample = "VUID-vkCmdDrawIndexedIndirect-pStencilAttachment-06187";
+        dynamic_rendering_multi_sample = "VUID-vkCmdDrawIndexedIndirect-colorAttachmentCount-06188";
     }
 };
 
@@ -307,6 +323,10 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         dynamic_rendering_stencil_format   = "VUID-vkCmdDrawIndirect-pStencilAttachment-06182";
         dynamic_rendering_fsr              = "VUID-vkCmdDrawIndirect-imageView-06183";
         dynamic_rendering_fdm              = "VUID-vkCmdDrawIndirect-imageView-06184";
+        dynamic_rendering_color_sample     = "VUID-vkCmdDrawIndirect-colorAttachmentCount-06185";
+        dynamic_rendering_depth_sample     = "VUID-vkCmdDrawIndirect-pDepthAttachment-06186";
+        dynamic_rendering_stencil_sample   = "VUID-vkCmdDrawIndirect-pStencilAttachment-06187";
+        dynamic_rendering_multi_sample     = "VUID-vkCmdDrawIndirect-colorAttachmentCount-06188";
     }
 };
 
@@ -362,6 +382,10 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         dynamic_rendering_stencil_format   = "VUID-vkCmdDrawIndexedIndirect-pStencilAttachment-06182";
         dynamic_rendering_fsr              = "VUID-vkCmdDrawIndexedIndirect-imageView-06183";
         dynamic_rendering_fdm              = "VUID-vkCmdDrawIndexedIndirect-imageView-06184";
+        dynamic_rendering_color_sample     = "VUID-vkCmdDrawIndexedIndirect-colorAttachmentCount-06185";
+        dynamic_rendering_depth_sample     = "VUID-vkCmdDrawIndexedIndirect-pDepthAttachment-06186";
+        dynamic_rendering_stencil_sample   = "VUID-vkCmdDrawIndexedIndirect-pStencilAttachment-06187";
+        dynamic_rendering_multi_sample     = "VUID-vkCmdDrawIndexedIndirect-colorAttachmentCount-06188";
     }
 };
 
