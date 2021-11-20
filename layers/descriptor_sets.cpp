@@ -1793,7 +1793,25 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(ValidationStateTracker *
         uint32_t update_count = std::min(descriptors_remaining, current_binding.GetDescriptorCount() - offset);
         for (uint32_t di = 0; di < update_count; ++di, ++update_index) {
             descriptors_[global_idx + di]->WriteUpdate(this, state_data_, update, update_index);
-            descriptors_[global_idx + di]->SetDescriptorType(update->descriptorType);
+            VkDeviceSize buffer_size = 0;
+            if ((update->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+                 update->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
+                 update->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
+                 update->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) &&
+                update->pBufferInfo) {
+                const auto buffer_state = dev_data->GetConstCastShared<BUFFER_STATE>(update->pBufferInfo->buffer);
+                if (buffer_state) {
+                    buffer_size = buffer_state->createInfo.size;
+                }
+            } else if ((update->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
+                        update->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
+                       update->pTexelBufferView) {
+                const auto buffer_view = dev_data->GetConstCastShared<BUFFER_VIEW_STATE>(update->pTexelBufferView[di]);
+                if (buffer_view) {
+                    buffer_size = buffer_view->buffer_state->createInfo.size;
+                }
+            }
+            descriptors_[global_idx + di]->SetDescriptorType(update->descriptorType, buffer_size);
         }
         // Roll over to next binding in case of consecutive update
         descriptors_remaining -= update_count;
@@ -2128,7 +2146,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
         } else {
             dst->updated = false;
         }
-        dst->active_descriptor_type = src->active_descriptor_type;
+        dst->SetDescriptorType(src);
     }
 
     if (!(layout_->GetDescriptorBindingFlagsFromBinding(update->dstBinding) &
@@ -2747,7 +2765,9 @@ void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet 
     }
 }
 
-cvdescriptorset::MutableDescriptor::MutableDescriptor() : Descriptor(Mutable) { active_descriptor_class_ = NoDescriptorClass; }
+cvdescriptorset::MutableDescriptor::MutableDescriptor() : Descriptor(Mutable), buffer_size_(0) {
+    active_descriptor_class_ = NoDescriptorClass;
+}
 
 void cvdescriptorset::MutableDescriptor::WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
     const VkWriteDescriptorSet *update, const uint32_t index) {
