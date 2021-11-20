@@ -706,6 +706,85 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
             }
         }
+
+        auto p_attachment_sample_count_info_amd = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pPipeline->create_info.graphics.pNext);
+        auto p_attachment_sample_count_info_nv = LvlFindInChain<VkAttachmentSampleCountInfoNV>(pPipeline->create_info.graphics.pNext);
+        if ((p_attachment_sample_count_info_amd || p_attachment_sample_count_info_nv) &&
+            (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0)) {
+            for (uint32_t i = 0; i < pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
+                if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
+                    auto color_view_state = GetShared<IMAGE_VIEW_STATE>(pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView);
+                    auto color_image_samples = GetShared<IMAGE_STATE>(color_view_state->create_info.image)->createInfo.samples;
+
+                    if (p_attachment_sample_count_info_amd) {
+                        if (color_image_samples != p_attachment_sample_count_info_amd->pColorAttachmentSamples[i]) {
+                            skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_sample,
+                                "%s: Color attachment (%" PRIu32 ") sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD sample count (%s)",
+                                caller, i, string_VkSampleCountFlagBits(color_image_samples),
+                                string_VkSampleCountFlagBits(p_attachment_sample_count_info_amd->pColorAttachmentSamples[i]));
+                        }
+                    }
+
+                    if (p_attachment_sample_count_info_nv) {
+                        if (color_image_samples != p_attachment_sample_count_info_nv->pColorAttachmentSamples[i]) {
+                            skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_sample,
+                                "%s: Color attachment (%" PRIu32 ") sample count (%s) must match corresponding VkAttachmentSampleCountInfoNV sample count (%s)",
+                                caller, i, string_VkSampleCountFlagBits(color_image_samples),
+                                string_VkSampleCountFlagBits(p_attachment_sample_count_info_nv->pColorAttachmentSamples[i]));
+                        }
+                    }
+
+                    if (color_image_samples != pPipeline->create_info.graphics.pMultisampleState->rasterizationSamples) {
+                        skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_multi_sample,
+                            "%s: Color attachment (%" PRIu32 ") sample count (%s) must match corresponding VkPipelineMultisampleStateCreateInfo sample count (%s)",
+                            caller, i, string_VkSampleCountFlagBits(color_image_samples),
+                            string_VkSampleCountFlagBits(pPipeline->create_info.graphics.pMultisampleState->rasterizationSamples));
+                    }
+                }
+            }
+
+            auto depth_view_state = GetShared<IMAGE_VIEW_STATE>(pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView);
+            auto depth_image_samples = GetShared<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
+
+            if (p_attachment_sample_count_info_amd) {
+                if (depth_image_samples != p_attachment_sample_count_info_amd->depthStencilAttachmentSamples) {
+                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_depth_sample,
+                        "%s: Depth attachment sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD sample count (%s)",
+                        caller, string_VkSampleCountFlagBits(depth_image_samples),
+                        string_VkSampleCountFlagBits(p_attachment_sample_count_info_amd->depthStencilAttachmentSamples));
+                }
+            }
+
+            if (p_attachment_sample_count_info_nv) {
+                if (depth_image_samples != p_attachment_sample_count_info_nv->depthStencilAttachmentSamples) {
+                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_depth_sample,
+                        "%s: Depth attachment sample count (%s) must match corresponding VkAttachmentSampleCountInfoNV sample count (%s)",
+                        caller, string_VkSampleCountFlagBits(depth_image_samples),
+                        string_VkSampleCountFlagBits(p_attachment_sample_count_info_nv->depthStencilAttachmentSamples));
+                }
+            }
+
+            auto stencil_view_state = GetShared<IMAGE_VIEW_STATE>(pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView);
+            auto stencil_image_samples = GetShared<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
+
+            if (p_attachment_sample_count_info_amd) {
+                if (stencil_image_samples != p_attachment_sample_count_info_amd->depthStencilAttachmentSamples) {
+                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_stencil_sample,
+                        "%s: Stencil attachment sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD sample count (%s)",
+                        caller, string_VkSampleCountFlagBits(stencil_image_samples),
+                        string_VkSampleCountFlagBits(p_attachment_sample_count_info_amd->depthStencilAttachmentSamples));
+                }
+            }
+
+            if (p_attachment_sample_count_info_nv) {
+                if (stencil_image_samples != p_attachment_sample_count_info_nv->depthStencilAttachmentSamples) {
+                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_stencil_sample,
+                        "%s: Stencil attachment sample count (%s) must match corresponding VkAttachmentSampleCountInfoNV sample count (%s)",
+                        caller, string_VkSampleCountFlagBits(stencil_image_samples),
+                        string_VkSampleCountFlagBits(p_attachment_sample_count_info_nv->depthStencilAttachmentSamples));
+                }
+            }
+        }
     }
 
     // Verify vertex & index buffer for unprotected command buffer.
