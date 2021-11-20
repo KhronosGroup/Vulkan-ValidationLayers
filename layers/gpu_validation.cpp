@@ -1504,6 +1504,16 @@ void GpuAssisted::SetDescriptorInitialized(uint32_t *pData, uint32_t index, cons
             auto buffer_view_state = static_cast<const cvdescriptorset::TexelDescriptor *>(descriptor)->GetBufferViewState();
             pData[index] = static_cast<uint32_t>(buffer_view_state->buffer_state->createInfo.size);
         }
+    } else if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::Mutable) {
+        if (descriptor->active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+            descriptor->active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
+            descriptor->active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
+            descriptor->active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
+            const auto size = static_cast<const cvdescriptorset::MutableDescriptor *>(descriptor)->GetBufferSize();
+            pData[index] = static_cast<uint32_t>(size);
+        } else {
+            pData[index] = 1;
+        }
     } else {
         pData[index] = 1;
     }
