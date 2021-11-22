@@ -1091,6 +1091,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
                                              const VkRenderingInfoKHR* pRenderingInfo) const override;
     bool ValidateRenderingAttachmentInfoKHR(VkCommandBuffer commandBuffer, const VkRenderingAttachmentInfoKHR* pAttachments) const;
+    bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer) const override;
     bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) const override;
     bool PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) const override;
     bool PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,

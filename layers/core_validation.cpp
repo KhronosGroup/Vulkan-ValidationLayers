@@ -2557,6 +2557,71 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                          pipelineIndex);
     }
 
+    const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfoKHR>(create_info.pNext);
+    if (rendering_struct) {
+        for (uint32_t color_index = 0; color_index < rendering_struct->colorAttachmentCount; color_index++) {
+            const VkFormat color_format = rendering_struct->pColorAttachmentFormats[color_index];
+            if (color_format != VK_FORMAT_UNDEFINED) {
+                VkFormatFeatureFlags format_features = GetPotentialFormatFeatures(color_format);
+                if ((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) == 0) {
+                    skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfoKHR-pColorAttachmentFormats-06064",
+                                     "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                     "]: color_format (%s) must be a format with potential format features that include "
+                                     "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
+                                     pipelineIndex, string_VkFormat(color_format));
+                }
+            }
+        }
+
+        if (rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
+            VkFormatFeatureFlags format_features = GetPotentialFormatFeatures(rendering_struct->depthAttachmentFormat);
+            if ((format_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfoKHR-depthAttachmentFormat-06065",
+                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                 "]: depthAttachmentFormat (%s) must be a format with potential format features that include "
+                                 "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
+                                 pipelineIndex, string_VkFormat(rendering_struct->depthAttachmentFormat));
+            }
+        }
+
+        if (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
+            VkFormatFeatureFlags format_features = GetPotentialFormatFeatures(rendering_struct->stencilAttachmentFormat);
+            if ((format_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfoKHR-stencilAttachmentFormat-06164",
+                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                 "]: stencilAttachmentFormat (%s) must be a format with potential format features that include "
+                                 "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
+                                 pipelineIndex, string_VkFormat(rendering_struct->stencilAttachmentFormat));
+            }
+        }
+
+        if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) &&
+            (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) &&
+            (rendering_struct->depthAttachmentFormat != rendering_struct->stencilAttachmentFormat)) {
+            skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfoKHR-depthAttachmentFormat-06165",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: depthAttachmentFormat is not VK_FORMAT_UNDEFINED and stencilAttachmentFormat is not "
+                             "VK_FORMAT_UNDEFINED, but depthAttachmentFormat (%s) does not equal stencilAttachmentFormat (%s)",
+                             pipelineIndex, string_VkFormat(rendering_struct->depthAttachmentFormat),
+                             string_VkFormat(rendering_struct->stencilAttachmentFormat));
+        }
+
+        if ((enabled_features.core11.multiview == VK_FALSE) && (rendering_struct->viewMask != 0)) {
+            skip |=
+                LogError(device, "VUID-VkPipelineRenderingCreateInfoKHR-multiview-06066",
+                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32 "]: multiview is not enabled but viewMask is (%u).",
+                         pipelineIndex, rendering_struct->viewMask);
+        }
+
+        if (MostSignificantBit(rendering_struct->viewMask) >= phys_dev_props_core11.maxMultiviewViewCount) {
+            skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfoKHR-viewMask-06067",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: Most significant bit in "
+                             "VkPipelineRenderingCreateInfoKHR->viewMask(%u) must be less maxMultiviewViewCount(%u)",
+                             pipelineIndex, rendering_struct->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
+        }
+    }
+
     return skip;
 }
 
@@ -6585,6 +6650,18 @@ bool CoreChecks::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuff
     if (!cb_state) return false;
     bool skip = false;
 
+    if (!enabled_features.dynamic_rendering_features.dynamicRendering) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBeginRenderingKHR-dynamicRendering-06446",
+                         "vkCmdBeginRenderingKHR(): dynamicRendering is not enabled.");
+    }
+
+    if ((cb_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) &&
+        ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) != 0)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBeginRenderingKHR-commandBuffer-06068",
+                         "vkCmdBeginRenderingKHR(): pRenderingInfo->flags must not include "
+                         "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR in a secondary command buffer.");
+    }
+
     if (pRenderingInfo->viewMask != 0 && pRenderingInfo->layerCount == 0) {
         skip |= LogError(commandBuffer, "VUID-VkRenderingInfoKHR-viewMask-06069",
                          "vkCmdBeginRenderingKHR(): If viewMask is not 0 (%u), layerCount must not be 0 (%u)",
@@ -7167,6 +7244,25 @@ bool CoreChecks::ValidateRenderingAttachmentInfoKHR(VkCommandBuffer commandBuffe
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer) const {
+    const auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    if (!cb_state) return false;
+    bool skip = false;
+
+    if (cb_state->activeRenderPass) {
+        if (cb_state->activeRenderPass->use_dynamic_rendering == false) {
+            skip |= LogError(
+                commandBuffer, "VUID-vkCmdEndRenderingKHR-None-06161",
+                "Calling vkCmdEndRenderingKHR() in a render pass instance that was not begun with vkCmdBeginRenderingKHR().");
+        }
+        if (cb_state->activeRenderPass->use_dynamic_rendering_inherited == true) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdEndRenderingKHR-commandBuffer-06162",
+                             "Calling vkCmdEndRenderingKHR() in a render pass instance that was not begun in this command buffer.");
+        }
+    }
     return skip;
 }
 
@@ -12923,6 +13019,12 @@ bool CoreChecks::ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, Vk
             vuid = use_rp2 ? "VUID-vkCmdEndRenderPass2-None-03103" : "VUID-vkCmdEndRenderPass-None-00910";
             skip |= LogError(commandBuffer, vuid, "%s: Called before reaching final subpass.", function_name);
         }
+
+        if (rp_state->use_dynamic_rendering) {
+            vuid = use_rp2 ? "VUID-vkCmdEndRenderPass2-None-06171" : "VUID-vkCmdEndRenderPass-None-06170";
+            skip |= LogError(commandBuffer, vuid,
+                             "%s: Called when the render pass instance was begun with vkCmdBeginRenderingKHR().", function_name);
+        }
     }
 
     skip |= ValidateCmd(cb_state, cmd_type);
@@ -13307,6 +13409,25 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         }
     }
 
+    if (cb_state->activeRenderPass) {
+        if ((cb_state->activeRenderPass->use_dynamic_rendering == false) &&
+            (cb_state->activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS)) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdExecuteCommands-contents-06018",
+                             "vkCmdExecuteCommands(): contents must be set to VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS "
+                             "when calling vkCmdExecuteCommands() within a render pass instance begun with "
+                             "vkCmdBeginRenderPass().");
+        }
+
+        if ((cb_state->activeRenderPass->use_dynamic_rendering == true) &&
+            !(cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.flags &
+              VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdExecuteCommands-flags-06024",
+                             "vkCmdExecuteCommands(): VkRenderingInfoKHR::flags must include "
+                             "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR when calling vkCmdExecuteCommands() within a "
+                             "render pass instance begun with vkCmdBeginRenderingKHR().");
+        }
+    }
+
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         const auto sub_cb_state = Get<CMD_BUFFER_STATE>(pCommandBuffers[i]);
         assert(sub_cb_state);
@@ -13349,7 +13470,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     if (cb_state->activeRenderPass->renderPass() != secondary_rp_state->renderPass()) {
                         skip |= ValidateRenderPassCompatibility(
                             "primary command buffer", cb_state->activeRenderPass.get(), "secondary command buffer",
-                            secondary_rp_state, "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
+                            secondary_rp_state, "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
                     }
                     //  If framebuffer for secondary CB is not NULL, then it must match active FB from primaryCB
                     skip |=
@@ -13358,6 +13479,148 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                         //  Inherit primary's activeFramebuffer and while running validate functions
                         for (auto &function : sub_cb_state->cmd_execute_commands_functions) {
                             skip |= function(*sub_cb_state, cb_state, cb_state->activeFramebuffer.get());
+                        }
+                    }
+                }
+
+                if (cb_state->activeRenderPass && (cb_state->activeRenderPass->use_dynamic_rendering == false) &&
+                    (cb_state->activeSubpass != sub_cb_state->beginInfo.pInheritanceInfo->subpass)) {
+                    LogObjectList objlist(pCommandBuffers[i]);
+                    objlist.add(cb_state->activeRenderPass->renderPass());
+                    skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-06019",
+                                     "vkCmdExecuteCommands(): Secondary %s is executed within a %s "
+                                     "instance scope begun by vkCmdBeginRenderPass(), but "
+                                     "VkCommandBufferInheritanceInfo::subpass (%u) does not "
+                                     "match the current subpass (%u).",
+                                     report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                     report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
+                                     sub_cb_state->beginInfo.pInheritanceInfo->subpass, cb_state->activeSubpass);
+                } else if (cb_state->activeRenderPass && (cb_state->activeRenderPass->use_dynamic_rendering == true)) {
+                    if (sub_cb_state->beginInfo.pInheritanceInfo->renderPass != VK_NULL_HANDLE) {
+                        LogObjectList objlist(pCommandBuffers[i]);
+                        objlist.add(cb_state->activeRenderPass->renderPass());
+                        skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pBeginInfo-06025",
+                                         "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                         "by vkCmdBeginRenderingKHR(), but "
+                                         "VkCommandBufferInheritanceInfo::pInheritanceInfo::renderPass is not VK_NULL_HANDLE.",
+                                         report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                         report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                    }
+
+                    if (sub_cb_state->activeRenderPass->use_dynamic_rendering_inherited) {
+                        if (sub_cb_state->activeRenderPass->inheritance_rendering_info.flags !=
+                            (cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.flags &
+                             ~VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)) {
+                            LogObjectList objlist(pCommandBuffers[i]);
+                            objlist.add(cb_state->activeRenderPass->renderPass());
+                            skip |= LogError(
+                                objlist, "VUID-vkCmdExecuteCommands-flags-06026",
+                                "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                "by vkCmdBeginRenderingKHR(), but VkCommandBufferInheritanceRenderingInfoKHR::flags (%u) does "
+                                "not match VkRenderingInfoKHR::flags (%u), excluding "
+                                "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR.",
+                                report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
+                                sub_cb_state->activeRenderPass->inheritance_rendering_info.flags,
+                                cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.flags);
+                        }
+
+                        if (sub_cb_state->activeRenderPass->inheritance_rendering_info.colorAttachmentCount !=
+                            cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount) {
+                            LogObjectList objlist(pCommandBuffers[i]);
+                            objlist.add(cb_state->activeRenderPass->renderPass());
+                            skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-colorAttachmentCount-06027",
+                                             "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                             "by vkCmdBeginRenderingKHR(), but "
+                                             "VkCommandBufferInheritanceRenderingInfoKHR::colorAttachmentCount (%u) does "
+                                             "not match VkRenderingInfoKHR::colorAttachmentCount (%u).",
+                                             report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                             report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
+                                             sub_cb_state->activeRenderPass->inheritance_rendering_info.colorAttachmentCount,
+                                             cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount);
+                        }
+
+                        for (uint32_t index = 0;
+                             index < cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount;
+                             index++) {
+                            if (cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[index]
+                                    .imageView !=
+                                VK_NULL_HANDLE) {
+                                auto image_view_state = Get<IMAGE_VIEW_STATE>(
+                                    cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[index]
+                                        .imageView);
+
+                                if (image_view_state->create_info.format !=
+                                    sub_cb_state->activeRenderPass->inheritance_rendering_info.pColorAttachmentFormats[index]) {
+                                    LogObjectList objlist(pCommandBuffers[i]);
+                                    objlist.add(cb_state->activeRenderPass->renderPass());
+                                    skip |= LogError(
+                                        objlist, "VUID-vkCmdExecuteCommands-imageView-06028",
+                                        "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                        "by vkCmdBeginRenderingKHR(), but "
+                                        "VkCommandBufferInheritanceRenderingInfoKHR::pColorAttachmentFormats at index (%u) does "
+                                        "not match the format of the imageView in VkRenderingInfoKHR::pColorAttachments.",
+                                        report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                        report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(), index);
+                                }
+                            }
+                        }
+
+                        if ((cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment != nullptr) &&
+                            cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView !=
+                                VK_NULL_HANDLE) {
+                            auto image_view_state = Get<IMAGE_VIEW_STATE>(
+                                cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView);
+
+                            if (image_view_state->create_info.format !=
+                                sub_cb_state->activeRenderPass->inheritance_rendering_info.depthAttachmentFormat) {
+                                LogObjectList objlist(pCommandBuffers[i]);
+                                objlist.add(cb_state->activeRenderPass->renderPass());
+                                skip |=
+                                    LogError(objlist, "VUID-vkCmdExecuteCommands-pDepthAttachment-06029",
+                                             "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                             "by vkCmdBeginRenderingKHR(), but "
+                                             "VkCommandBufferInheritanceRenderingInfoKHR::depthAttachmentFormat does "
+                                             "not match the format of the imageView in VkRenderingInfoKHR::pDepthAttachment.",
+                                             report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                             report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                            }
+                        }
+
+                        if ((cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment != nullptr) &&
+                            cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView !=
+                                VK_NULL_HANDLE) {
+                            auto image_view_state = Get<IMAGE_VIEW_STATE>(
+                                cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView);
+
+                            if (image_view_state->create_info.format !=
+                                sub_cb_state->activeRenderPass->inheritance_rendering_info.stencilAttachmentFormat) {
+                                LogObjectList objlist(pCommandBuffers[i]);
+                                objlist.add(cb_state->activeRenderPass->renderPass());
+                                skip |=
+                                    LogError(objlist, "VUID-vkCmdExecuteCommands-pStencilAttachment-06030",
+                                             "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                             "by vkCmdBeginRenderingKHR(), but "
+                                             "VkCommandBufferInheritanceRenderingInfoKHR::stencilAttachmentFormat does "
+                                             "not match the format of the imageView in VkRenderingInfoKHR::pStencilAttachment.",
+                                             report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                             report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                            }
+                        }
+
+                        if (cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask !=
+                            sub_cb_state->activeRenderPass->inheritance_rendering_info.viewMask) {
+                            LogObjectList objlist(pCommandBuffers[i]);
+                            objlist.add(cb_state->activeRenderPass->renderPass());
+                            skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-viewMask-06031",
+                                             "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                             "by vkCmdBeginRenderingKHR(), but "
+                                             "VkCommandBufferInheritanceRenderingInfoKHR::viewMask (%u) does "
+                                             "not match VkRenderingInfoKHR::viewMask (%u).",
+                                             report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                             report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
+                                             sub_cb_state->activeRenderPass->inheritance_rendering_info.viewMask,
+                                             cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask);
                         }
                     }
                 }
