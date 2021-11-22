@@ -1065,6 +1065,23 @@ VkResult DispatchSetPrivateDataEXT(
     return result;
 }
 
+VkResult DispatchSetPrivateData(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlot                           privateDataSlot,
+    uint64_t                                    data)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.SetPrivateData(device, objectType, objectHandle, privateDataSlot, data);
+    privateDataSlot = layer_data->Unwrap(privateDataSlot);
+    if (NotDispatchableHandle(objectType)) {
+        objectHandle = layer_data->Unwrap(objectHandle);
+    }
+    VkResult result = layer_data->device_dispatch_table.SetPrivateData(device, objectType, objectHandle, privateDataSlot, data);
+    return result;
+}
+
 void DispatchGetPrivateDataEXT(
     VkDevice                                    device,
     VkObjectType                                objectType,
@@ -1079,6 +1096,22 @@ void DispatchGetPrivateDataEXT(
         objectHandle = layer_data->Unwrap(objectHandle);
     }
     layer_data->device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
+}
+
+void DispatchGetPrivateData(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlot                           privateDataSlot,
+    uint64_t*                                   pData)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
+    privateDataSlot = layer_data->Unwrap(privateDataSlot);
+    if (NotDispatchableHandle(objectType)) {
+        objectHandle = layer_data->Unwrap(objectHandle);
+    }
+    layer_data->device_dispatch_table.GetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
 }
 
 layer_data::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
@@ -1255,6 +1288,8 @@ VkResult DispatchDeferredOperationJoinKHR(
             'vkSetPrivateDataEXT',
             'vkGetPrivateDataEXT',
             'vkDeferredOperationJoinKHR',
+            'vkSetPrivateData',
+            'vkGetPrivateData',
             # These are for special-casing the pInheritanceInfo issue (must be ignored for primary CBs)
             'vkAllocateCommandBuffers',
             'vkFreeCommandBuffers',
