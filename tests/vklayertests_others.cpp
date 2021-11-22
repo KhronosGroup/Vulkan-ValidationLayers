@@ -1201,7 +1201,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
         (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "value of pCreateInfo->pNext must be NULL");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkEventCreateInfo-pNext-pNext");
     // Set VkMemoryAllocateInfo::pNext to a non-NULL value, when pNext must be NULL.
     // Need to pick a function that has no allowed pNext structure types.
     // Expected to trigger an error with parameter_validation::validate_struct_pnext
