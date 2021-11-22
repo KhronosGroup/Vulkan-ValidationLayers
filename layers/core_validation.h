@@ -1566,6 +1566,12 @@ class CoreChecks : public ValidationStateTracker {
                                          const char* struct_name, const uint32_t struct_size, const uint32_t drawCount,
                                          const VkDeviceSize offset, const BUFFER_STATE* buffer_state) const;
     bool PreCallValidateReleaseProfilingLockKHR(VkDevice device) const override;
+    bool PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator,
+                                                 VkPrivateDataSlotEXT* pPrivateDataSlot) const override;
+    bool PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator,
+                                              VkPrivateDataSlot* pPrivateDataSlot) const override;
     bool PreCallValidateCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker) const override;
     bool PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
                                                            uint32_t bindingCount, const VkBuffer* pBuffers,

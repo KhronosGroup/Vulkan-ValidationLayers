@@ -258,7 +258,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkGetAccelerationStructureBuildSizesKHR',
             'vkCmdWriteAccelerationStructuresPropertiesNV',
             'vkCreateDisplayModeKHR',
-            'vkCreatePrivateDataSlotEXT',
             'vkCmdSetVertexInputEXT',
             'vkCmdPushConstants',
             'vkMergePipelineCaches',

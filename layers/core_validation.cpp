@@ -17031,6 +17031,28 @@ bool CoreChecks::PreCallValidateReleaseProfilingLockKHR(VkDevice device) const {
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT *pCreateInfo,
+                                                         const VkAllocationCallbacks *pAllocator,
+                                                         VkPrivateDataSlotEXT *pPrivateDataSlot) const {
+    bool skip = false;
+    if (!enabled_features.core13.privateData) {
+        skip |= LogError(device, "VUID-vkCreatePrivateDataSlot-privateData-04564",
+                         "vkCreatePrivateDataSlotEXT(): The privateData feature must be enabled.");
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo *pCreateInfo,
+                                                      const VkAllocationCallbacks *pAllocator,
+                                                      VkPrivateDataSlot *pPrivateDataSlot) const {
+    bool skip = false;
+    if (!enabled_features.core13.privateData) {
+        skip |= LogError(device, "VUID-vkCreatePrivateDataSlot-privateData-04564",
+                         "vkCreatePrivateDataSlot(): The privateData feature must be enabled.");
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void *pCheckpointMarker) const {
     {
         const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
