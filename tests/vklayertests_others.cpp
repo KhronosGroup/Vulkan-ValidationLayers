@@ -1356,6 +1356,7 @@ TEST_F(VkLayerTest, SubmitSignaledFence) {
     m_errorMonitor->VerifyFound();
 }
 
+#if 0
 TEST_F(VkLayerTest, LeakAnObject) {
     TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the fence.");
 
@@ -1394,6 +1395,7 @@ TEST_F(VkLayerTest, LeakAnObject) {
     vk::DestroyDevice(leaky_device, nullptr);
     m_errorMonitor->VerifyFound();
 }
+#endif
 
 TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
     TEST_DESCRIPTION(
