@@ -256,6 +256,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
 TEST_F(VkLayerTest, PrivateDataFeature) {
     TEST_DESCRIPTION("Test privateData feature not being enabled.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
@@ -272,15 +273,21 @@ TEST_F(VkLayerTest, PrivateDataFeature) {
     // feature not enabled
     ASSERT_NO_FATAL_FAILURE(InitState());
 
+    bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
     PFN_vkCreatePrivateDataSlotEXT vkCreatePrivateDataSlotEXT =
         (PFN_vkCreatePrivateDataSlotEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCreatePrivateDataSlotEXT");
 
     VkPrivateDataSlotEXT data_slot;
     VkPrivateDataSlotCreateInfoEXT data_create_info = LvlInitStruct<VkPrivateDataSlotCreateInfoEXT>();
     data_create_info.flags = 0;
-    m_errorMonitor->SetUnexpectedError("VUID-vkCreatePrivateDataSlot-privateData-04564");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreatePrivateDataSlot-privateData-04564");
     vkCreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
-    m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->VerifyFound();
+    if (vulkan_13) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreatePrivateDataSlot-privateData-04564");
+        vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, CustomStypeStructString) {
