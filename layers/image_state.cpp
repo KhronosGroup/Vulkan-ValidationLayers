@@ -412,6 +412,11 @@ static VkImageUsageFlags GetInheritedUsage(const VkImageViewCreateInfo *ci, cons
     return (usage_create_info) ? usage_create_info->usage : image_state.createInfo.usage;
 }
 
+static float GetImageViewMinLod(const VkImageViewCreateInfo* ci) {
+    auto image_view_min_lod = LvlFindInChain<VkImageViewMinLodCreateInfoEXT>(ci->pNext);
+    return (image_view_min_lod) ? image_view_min_lod->minLod : 0.0f;
+}
+
 IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkImageView iv, const VkImageViewCreateInfo *ci,
                                    VkFormatFeatureFlags ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
     : BASE_NODE(iv, kVulkanObjectTypeImageView),
@@ -426,6 +431,7 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
                                                 : DescriptorRequirementsBitsFromFormat(ci->format)),
       samplerConversion(GetSamplerConversion(ci)),
       filter_cubic_props(cubic_props),
+      min_lod(GetImageViewMinLod(ci)),
       format_features(ff),
       inherited_usage(GetInheritedUsage(ci, *im)),
       image_state(im) {

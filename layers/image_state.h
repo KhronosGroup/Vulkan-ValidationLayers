@@ -203,6 +203,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     const unsigned descriptor_format_bits;
     const VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
     const VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props;
+    const float min_lod;
     const VkFormatFeatureFlags format_features;
     const VkImageUsageFlags inherited_usage;  // from spec #resources-image-inherited-usage
     std::shared_ptr<IMAGE_STATE> image_state;
