@@ -76,16 +76,6 @@ def BuildVVL(args, build_tests=False):
     cmake_ver_cmd = 'cmake --version'
     RunShellCmd(cmake_ver_cmd)
 
-    GTEST_DIR = RepoRelative("external/googletest")
-    if not os.path.exists(GTEST_DIR):
-        print("Clone Testing Framework Source Code")
-        clone_gtest_cmd = f'git clone https://github.com/google/googletest.git {GTEST_DIR}'
-        RunShellCmd(clone_gtest_cmd)
-
-        print("Get Specified Testing Source")
-        gtest_checkout_cmd = 'git checkout tags/release-1.8.1'
-        RunShellCmd(gtest_checkout_cmd, GTEST_DIR)
-
     utils.make_dirs(VVL_BUILD_DIR)
     print("Run CMake for Validation Layers")
     cmake_cmd = f'cmake -DUPDATE_DEPS=ON -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'

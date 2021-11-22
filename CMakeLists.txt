@@ -102,6 +102,20 @@ else()
     message("********************************************************************************")
     find_package(PythonInterp 3 QUIET)
 endif()
+#backwards compatability settings for other parts of the build system that don't use find_package() variables yet
+if (ROBIN_HOOD_HASHING_INSTALL_DIR)
+    list(APPEND CMAKE_PREFIX_PATH ${ROBIN_HOOD_HASHING_INSTALL_DIR})
+endif()
+if (SPIRV_HEADERS_INSTALL_DIR)
+    list(APPEND CMAKE_PREFIX_PATH ${SPIRV_HEADERS_INSTALL_DIR})
+endif()
+if (SPIRV_TOOLS_INSTALL_DIR)
+    list(APPEND CMAKE_PREFIX_PATH ${SPIRV_TOOLS_INSTALL_DIR})
+endif()
+if (GOOGLETEST_INSTALL_DIR)
+    list(APPEND CMAKE_PREFIX_PATH ${GOOGLETEST_INSTALL_DIR})
+endif()
+
 
 if (TARGET Vulkan::Headers)
     message(STATUS "Using Vulkan headers from Vulkan::Headers target")
@@ -237,10 +251,11 @@ option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
 option(USE_ROBIN_HOOD_HASHING "Use robin-hood-hashing" ON)
 if (USE_ROBIN_HOOD_HASHING)
-    if(NOT ROBIN_HOOD_HASHING_INSTALL_DIR)
-	set(ROBIN_HOOD_HASHING_INSTALL_DIR $ENV{ROBIN_HOOD_HASHING_INSTALL_DIR} PATH "Path to robin-hood-hashing repository")
-    endif()
-    set(ROBIN_HOOD_HASHING_INCLUDE_DIR "${ROBIN_HOOD_HASHING_INSTALL_DIR}/src/include" PATH "Path to robin-hood-hashing/src/include")
+    find_package(robin_hood REQUIRED CONFIG)
+endif()
+
+if(BUILD_LAYERS OR BUILD_TESTS)
+    find_package(SPIRV-Headers REQUIRED CONFIG)
 endif()
 
 if(BUILD_TESTS)
@@ -254,20 +269,7 @@ if(BUILD_TESTS)
         set(GLSLANG_INSTALL_DIR $ENV{GLSLANG_INSTALL_DIR})
     endif()
 
-    # CMake command line option overrides environment variable
-    if(NOT SPIRV_HEADERS_INSTALL_DIR)
-        set(SPIRV_HEADERS_INSTALL_DIR $ENV{SPIRV_HEADERS_INSTALL_DIR})
-    endif()
-
-    if(NOT SPIRV_TOOLS_INSTALL_DIR)
-        set(SPIRV_TOOLS_INSTALL_DIR $ENV{SPIRV_TOOLS_INSTALL_DIR})
-    endif()
-
     if (NOT TARGET glslang)
-        if(NOT SPIRV_HEADERS_INSTALL_DIR)
-            message(FATAL_ERROR "Must define location of SPIRV-Headers -- see BUILD.md")
-        endif()
-
         message(STATUS "Using glslang install located at ${GLSLANG_INSTALL_DIR}")
         set(GLSLANG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
         set(GLSLANG_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
@@ -299,34 +301,6 @@ if(BUILD_TESTS)
     else()
         set(GLSLANG_INCLUDE_DIR "${glslang_SOURCE_DIR}" CACHE PATH "Path to glslang headers")
         set(GLSLANG_LIBRARIES glslang SPIRV SPVRemapper)
-    endif()
-endif()
-
-if(BUILD_TESTS OR BUILD_LAYERS)
-    # spirv-tools
-    if (NOT TARGET SPIRV-Tools)
-        if(NOT SPIRV_TOOLS_INSTALL_DIR)
-            set(SPIRV_TOOLS_INSTALL_DIR "${GLSLANG_INSTALL_DIR}")
-        endif()
-
-        set(SPIRV_HEADERS_INCLUDE_DIR "${SPIRV_HEADERS_INSTALL_DIR}/include" CACHE PATH "Path to spirv-headers")
-        set(SPIRV_TOOLS_BINARY_ROOT "${SPIRV_TOOLS_INSTALL_DIR}/lib"
-            CACHE PATH "User defined path to the SPIRV-Tools binaries for this project")
-        set(SPIRV_TOOLS_OPT_BINARY_ROOT "${SPIRV_TOOLS_INSTALL_DIR}/lib"
-            CACHE PATH "User defined path to the SPIRV-Tools-opt binaries for this project")
-        set(SPIRV_TOOLS_INCLUDE_DIR "${SPIRV_TOOLS_INSTALL_DIR}/include" CACHE PATH "Path to spirv tools headers")
-        set(SPIRV_TOOLS_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
-        set(SPIRV_TOOLS_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
-        set(SPIRV_TOOLS_OPT_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
-        set(SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
-
-        find_library(SPIRV_TOOLS_LIB NAMES SPIRV-Tools HINTS ${SPIRV_TOOLS_SEARCH_PATH})
-        find_library(SPIRV_TOOLS_OPT_LIB NAMES SPIRV-Tools-opt HINTS ${SPIRV_TOOLS_OPT_SEARCH_PATH})
-
-        set(SPIRV_TOOLS_LIBRARIES ${SPIRV_TOOLS_OPT_LIB} ${SPIRV_TOOLS_LIB})
-    else()
-        set(SPIRV_TOOLS_LIBRARIES SPIRV-Tools SPIRV-Tools-opt)
-        set(SPIRV_TOOLS_INCLUDE_DIR "${spirv-tools_SOURCE_DIR}/include" CACHE PATH "Path to spirv tools headers")
     endif()
 endif()
 
@@ -372,7 +346,7 @@ target_include_directories(VkLayer_utils
                                   ${VulkanHeaders_INCLUDE_DIR})
 
 if (USE_ROBIN_HOOD_HASHING)
-    target_include_directories(VkLayer_utils PUBLIC ${ROBIN_HOOD_HASHING_INCLUDE_DIR})
+    target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
     target_compile_definitions(VkLayer_utils PUBLIC USE_ROBIN_HOOD_HASHING)
 endif()
 
@@ -413,37 +387,8 @@ endif()
 
 if(BUILD_TESTS)
     # Attempt to enable googletest if available.
-
-    if(TARGET gtest_main)
-        # Already enabled as a target (perhaps by a project enclosing this one)
-        message(STATUS "Vulkan-ValidationLayers/external: " "googletest already configured - using it")
-    elseif(IS_DIRECTORY "${GOOGLETEST_INSTALL_DIR}")
-        # The googletest directory exists, so enable it as a target.
-        message(STATUS "Vulkan-ValidationLayers/external: " "googletest found - configuring it for tests")
-        set(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
-        set(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject")
-        set(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically")
-        set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
-        # EXCLUDE_FROM_ALL keeps the install target from installing GTEST files.
-        add_subdirectory("${GOOGLETEST_INSTALL_DIR}" ${CMAKE_BINARY_DIR}/googletest)
-    else()
-        message(SEND_ERROR "Could not find googletest directory. Be sure to run update_deps.py with the --tests option to download the appropriate version of googletest")
-        set(BUILD_TESTS OFF)
-    endif()
-
-    if (WIN32)
-        set_target_properties(gtest PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-        set_target_properties(gtest_main PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-    endif()
-
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set_target_properties(gtest PROPERTIES COMPILE_OPTIONS "-w")
-        set_target_properties(gtest_main PROPERTIES COMPILE_OPTIONS "-w")
-    endif()
-
-    if (BUILD_TESTS)
-        add_subdirectory(tests ${CMAKE_BINARY_DIR}/tests)
-    endif()
+    find_package(GTest REQUIRED CONFIG)
+    add_subdirectory(tests ${CMAKE_BINARY_DIR}/tests)
 endif()
 
 if(BUILD_LAYERS OR BUILD_LAYER_SUPPORT_FILES)

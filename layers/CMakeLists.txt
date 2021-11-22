@@ -269,6 +269,8 @@ if(INSTRUMENT_OPTICK)
 endif()
 
 if(BUILD_LAYERS)
+    find_package(SPIRV-Tools REQUIRED CONFIG)
+    find_package(SPIRV-Tools-opt REQUIRED CONFIG)
     AddVkLayer(khronos_validation "${KHRONOS_LAYER_COMPILE_DEFINITIONS}"
         ${CHASSIS_LIBRARY_FILES}
         ${CORE_VALIDATION_LIBRARY_FILES}
@@ -296,15 +298,14 @@ if(BUILD_LAYERS)
 
     # Khronos validation additional dependencies
     target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_INCLUDE_DIR})
-    target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
-    target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
     if(INSTRUMENT_OPTICK)
         target_include_directories(VkLayer_khronos_validation PRIVATE ${OPTICK_SOURCE_DIR})
     endif()
     if (USE_ROBIN_HOOD_HASHING)
         target_include_directories(VkLayer_khronos_validation PRIVATE ${ROBIN_HOOD_HASHING_INCLUDE_DIR})
     endif()
-    target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
+    target_link_libraries(VkLayer_khronos_validation PRIVATE SPIRV-Headers::SPIRV-Headers SPIRV-Tools-static SPIRV-Tools-opt)
+
 
     # The output file needs Unix "/" separators or Windows "\" separators On top of that, Windows separators actually need to be doubled
     # because the json format uses backslash escapes
