@@ -5956,6 +5956,23 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                  " the same number of components and bits per component as the Image's format");
             }
         }
+
+        auto image_view_min_lod = LvlFindInChain<VkImageViewMinLodCreateInfoEXT>(pCreateInfo->pNext);
+        if (image_view_min_lod) {
+            if ((!enabled_features.image_view_min_lod_features.minLod) && (image_view_min_lod->minLod != 0)) {
+                skip |= LogError(device, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06455",
+                                 "vkCreateImageView(): VkImageViewMinLodCreateInfoEXT::minLod = %f, but the minLod feature is not "
+                                 "enabled.  If the minLod feature is not enabled, minLod must be 0.0",
+                                 image_view_min_lod->minLod);
+            }
+            auto max_level = (pCreateInfo->subresourceRange.baseMipLevel + (pCreateInfo->subresourceRange.levelCount - 1));
+            if (image_view_min_lod->minLod > max_level) {
+                skip |= LogError(device, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06456",
+                                 "vkCreateImageView(): minLod (%f) must be less or equal to the index of the last mipmap level "
+                                 "accessible to the view (%" PRIu32 ")",
+                                 image_view_min_lod->minLod, max_level);
+            }
+        }
     }
     return skip;
 }

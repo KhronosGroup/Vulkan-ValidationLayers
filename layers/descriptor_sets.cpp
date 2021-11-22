@@ -2491,6 +2491,16 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
         }
     }
 
+    if ((type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) && (iv_state->min_lod != 0.0f)) {
+        *error_code = "VUID-VkWriteDescriptorSet-descriptorType-06450";
+        std::stringstream error_str;
+        error_str << "ImageView (" << report_data->FormatHandle(image_view)
+                  << ") , written to a descriptor of type VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT with a minLod (" << iv_state->min_lod
+                  << ") that is not 0.0";
+        *error_msg = error_str.str();
+        return false;
+    }
+
     return true;
 }
 

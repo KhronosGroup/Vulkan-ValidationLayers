@@ -963,6 +963,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         if (dynamic_rendering_features) {
             state_tracker->enabled_features.dynamic_rendering_features = *dynamic_rendering_features;
         }
+
+        const auto *image_view_min_lod_features = LvlFindInChain<VkPhysicalDeviceImageViewMinLodFeaturesEXT>(pCreateInfo->pNext);
+        if (image_view_min_lod_features) {
+            state_tracker->enabled_features.image_view_min_lod_features = *image_view_min_lod_features;
+        }
     }
 
     const auto *subgroup_size_control_features = LvlFindInChain<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>(pCreateInfo->pNext);
