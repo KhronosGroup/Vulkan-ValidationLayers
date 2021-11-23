@@ -196,6 +196,61 @@ bool CoreChecks::ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo 
     return skip;
 }
 
+bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(SHADER_MODULE_STATE const* fs, spirv_inst_iter entrypoint,
+                                                                    PIPELINE_STATE const* pipeline) const {
+    bool skip = false;
+
+    struct Attachment {
+        const interface_var* output = nullptr;
+    };
+    std::map<uint32_t, Attachment> location_map;
+
+    // TODO: dual source blend index (spv::DecIndex, zero if not provided)
+    const auto outputs = fs->CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, false);
+    for (const auto& output_it : outputs) {
+        auto const location = output_it.first.first;
+        location_map[location].output = &output_it.second;
+    }
+
+    const bool alpha_to_coverage_enabled = pipeline->create_info.graphics.pMultisampleState != NULL &&
+        pipeline->create_info.graphics.pMultisampleState->alphaToCoverageEnable == VK_TRUE;
+
+    for (uint32_t location = 0; location < pipeline->rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount; ++location) {
+         const auto output = location_map[location].output;
+
+        if (!output && pipeline->attachments[location].colorWriteMask != 0) {
+            skip |= LogWarning(fs->vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
+                "Attachment %" PRIu32
+                " not written by fragment shader; undefined values will be written to attachment",
+                location);
+        } else if (output) {
+            auto format = pipeline->rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[location];
+            const auto attachment_type = GetFormatType(format);
+            const auto output_type = fs->GetFundamentalType(output->type_id);
+
+            // Type checking
+            if (!(output_type & attachment_type)) {
+                skip |=
+                    LogWarning(fs->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
+                        "Attachment %" PRIu32
+                        " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
+                        location, string_VkFormat(format), fs->DescribeType(output->type_id).c_str());
+            }
+        }
+    }
+
+    const auto output_zero = location_map.count(0) ? location_map[0].output : nullptr;
+    bool location_zero_has_alpha = output_zero && fs->get_def(output_zero->type_id) != fs->end() &&
+        fs->GetComponentsConsumedByType(output_zero->type_id, false) == 4;
+    if (alpha_to_coverage_enabled && !location_zero_has_alpha) {
+        skip |= LogError(fs->vk_shader_module(), kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage,
+            "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
+    }
+
+    return skip;
+
+}
+
 bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *fs, spirv_inst_iter entrypoint,
                                                     PIPELINE_STATE const *pipeline, uint32_t subpass_index) const {
     bool skip = false;
@@ -2777,8 +2832,12 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     }
 
     if (fragment_stage && fragment_stage->module->has_valid_spirv) {
-        skip |= ValidateFsOutputsAgainstRenderPass(fragment_stage->module.get(), fragment_stage->entrypoint, pipeline,
-                                                   create_info->subpass);
+        if (pipeline->rp_state->use_dynamic_rendering) {
+            skip |= ValidateFsOutputsAgainstDynamicRenderingRenderPass(fragment_stage->module.get(), fragment_stage->entrypoint, pipeline);
+        } else {
+            skip |= ValidateFsOutputsAgainstRenderPass(fragment_stage->module.get(), fragment_stage->entrypoint, pipeline,
+                                                       create_info->subpass);
+        }
     }
 
     return skip;
