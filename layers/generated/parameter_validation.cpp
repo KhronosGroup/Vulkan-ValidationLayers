@@ -17147,9 +17147,6 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureBuildSizesKHR(
             }
         }
     }
-    if (pBuildInfo != NULL) {
-        skip |= validate_array("vkGetAccelerationStructureBuildSizesKHR", "pBuildInfo->geometryCount", "pMaxPrimitiveCounts", pBuildInfo->geometryCount, &pMaxPrimitiveCounts, true, false, kVUIDUndefined, "VUID-vkGetAccelerationStructureBuildSizesKHR-pMaxPrimitiveCounts-parameter");
-    }
     skip |= validate_struct_type("vkGetAccelerationStructureBuildSizesKHR", "pSizeInfo", "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR", pSizeInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR, true, "VUID-vkGetAccelerationStructureBuildSizesKHR-pSizeInfo-parameter", "VUID-VkAccelerationStructureBuildSizesInfoKHR-sType-sType");
     if (!skip) skip |= manual_PreCallValidateGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
     return skip;

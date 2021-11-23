@@ -1387,6 +1387,15 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                             else:
                                 if lenParam.isoptional:
                                     cpReq = 'false'
+                                # In case of count as field in another struct, look up field to see if count is optional.
+                                len_deref = value.len.split('->')
+                                if len(len_deref) == 2:
+                                    struct_fields = next((struct.members for struct in self.structMembers if struct.name == lenParam.type), None)
+                                    if struct_fields:
+                                        len_field_name = len_deref[1]
+                                        struct_field = next((field for field in struct_fields if field.name == len_field_name), None)
+                                        if struct_field and struct_field.isoptional:
+                                            cvReq = 'false'
                         else:
                             if lenParam.isoptional:
                                 cvReq = 'false'

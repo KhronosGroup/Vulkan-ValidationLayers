@@ -7669,7 +7669,14 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
         ((ray_tracing_pipeline_features && ray_tracing_pipeline_features->rayTracingPipeline == VK_FALSE) ||
          (ray_query_features && ray_query_features->rayQuery == VK_FALSE))) {
         skip |= LogError(device, "VUID-vkGetAccelerationStructureBuildSizesKHR-rayTracingPipeline-03617",
-                         "vkGetAccelerationStructureBuildSizesKHR:The rayTracingPipeline or rayQuery feature must be enabled");
+                         "vkGetAccelerationStructureBuildSizesKHR: The rayTracingPipeline or rayQuery feature must be enabled");
+    }
+    if (pBuildInfo != nullptr) {
+        if (pBuildInfo->geometryCount != 0 && pMaxPrimitiveCounts == nullptr) {
+            skip |= LogError(device, "VUID-vkGetAccelerationStructureBuildSizesKHR-pBuildInfo-03619",
+                             "vkGetAccelerationStructureBuildSizesKHR: If pBuildInfo->geometryCount is not 0, pMaxPrimitiveCounts "
+                             "must be a valid pointer to an array of pBuildInfo->geometryCount uint32_t values");
+        }
     }
     return skip;
 }
