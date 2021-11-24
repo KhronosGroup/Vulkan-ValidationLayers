@@ -68,6 +68,9 @@ def makeGenOpts(args):
     # Spirv elements to emit (list of extensions and capabilities)
     emitSpirv = args.emitSpirv
 
+    # Format elements to emit
+    emitFormats = args.emitFormats
+
     # Whether to disable inclusion protect in headers
     protect = args.protect
 
@@ -79,7 +82,7 @@ def makeGenOpts(args):
 
     # Descriptive names for various regexp patterns used to select
     # versions and extensions
-    allFeatures     = allExtensions = allSpirv = '.*'
+    allFeatures     = allExtensions = allSpirv = allFormats = '.*'
     noFeatures      = noExtensions = noSpirv = None
 
     # Turn lists of names/patterns into matching regular expressions
@@ -88,6 +91,7 @@ def makeGenOpts(args):
     emitExtensionsPat    = makeREstring(emitExtensions, allExtensions)
     featuresPat          = makeREstring(features, allFeatures)
     emitSpirvPat         = makeREstring(emitSpirv, allSpirv)
+    emitFormatsPat       = makeREstring(emitFormats, allFormats)
 
     # Defaults for generating re-inclusion protection wrappers (or not)
     protectFeature = protect
@@ -569,6 +573,26 @@ def makeGenOpts(args):
             valid_usage_path  = args.scripts)
         ]
 
+    # Options for format_utils code-generated header
+    genOpts['vk_format_utils.cpp'] = [
+          FormatUtilsOutputGenerator,
+          FormatUtilsOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_format_utils.cpp',
+            directory         = directory,
+            emitFormats       = emitFormatsPat)
+        ]
+
+    # generator for format_utils.h
+    genOpts['vk_format_utils.h'] = [
+          FormatUtilsOutputGenerator,
+          FormatUtilsOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_format_utils.h',
+            directory         = directory,
+            emitFormats       = emitFormatsPat)
+        ]
+
 # Generate a target based on the options in the matching genOpts{} object.
 # This is encapsulated in a function so it can be profiled and/or timed.
 # The args parameter is an parsed argument object containing the following
@@ -597,6 +621,7 @@ def genTarget(args):
             write('* options.removeExtensions  =', options.removeExtensions, file=sys.stderr)
             write('* options.emitExtensions    =', options.emitExtensions, file=sys.stderr)
             write('* options.emitSpirv         =', options.emitSpirv, file=sys.stderr)
+            write('* options.emitFormats       =', options.emitFormats, file=sys.stderr)
 
         gen = createGenerator(errFile=errWarn,
                               warnFile=errWarn,
@@ -635,6 +660,9 @@ if __name__ == '__main__':
                         default=[],
                         help='Specify a core API feature name or names to add to targets')
     parser.add_argument('-emitSpirv', action='append',
+                        default=[],
+                        help='Specify spirv extensions or capabilities to emit in targets')
+    parser.add_argument('-emitFormats', action='append',
                         default=[],
                         help='Specify spirv extensions or capabilities to emit in targets')
     parser.add_argument('-debug', action='store_true',
@@ -705,6 +733,7 @@ if __name__ == '__main__':
     from spirv_validation_generator import SpirvValidationHelperOutputGenerator, SpirvValidationHelperOutputGeneratorOptions
     from spirv_grammar_generator import SpirvGrammarHelperOutputGenerator, SpirvGrammarHelperOutputGeneratorOptions
     from command_validation_generator import CommandValidationOutputGenerator, CommandValidationOutputGeneratorOptions
+    from format_utils_generator import FormatUtilsOutputGenerator, FormatUtilsOutputGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility
     import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})

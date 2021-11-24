@@ -50,8 +50,6 @@ if(BUILD_LAYER_SUPPORT_FILES)
         cast_utils.h
         hash_util.h
         hash_vk_types.h
-        vk_format_utils.h
-        vk_format_utils.cpp
         vk_layer_config.h
         vk_layer_config.cpp
         vk_layer_data.h
@@ -63,6 +61,8 @@ if(BUILD_LAYER_SUPPORT_FILES)
         vk_loader_platform.h
         xxhash.h
         xxhash.c
+        generated/vk_format_utils.h
+        generated/vk_format_utils.cpp
         generated/vk_validation_error_messages.h
         generated/vk_layer_dispatch_table.h
         generated/vk_dispatch_table_helper.h

@@ -25,7 +25,7 @@ LOCAL_MODULE := layer_utils
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_config.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_extension_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_utils.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_format_utils.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_format_utils.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
