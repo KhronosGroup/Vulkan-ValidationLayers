@@ -66,7 +66,10 @@ TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayObjects) {
     m_errorMonitor->ExpectSuccess();
     uint32_t prop_count = 0;
     vkGetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
-    if (prop_count != 0) {
+    if (prop_count == 0) {
+        printf("%s vkGetPhysicalDeviceDisplayPropertiesKHR returned 0. Skipping.\n", kSkipPrefix);
+        return;
+    } else {
         VkDisplayPropertiesKHR display_props = {};
         // Create a VkDisplayKHR object
         vkGetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, &display_props);
@@ -1946,4 +1949,41 @@ TEST_F(VkPositiveLayerTest, DoubleLayoutTransition) {
     }
 
     m_commandBuffer->end();
+}
+
+TEST_F(VkPositiveLayerTest, RegisterDisplayEvent) {
+    TEST_DESCRIPTION("Call vkRegisterDisplayEventEXT");
+
+    if (!AddRequiredInstanceExtensions(VK_KHR_SURFACE_EXTENSION_NAME) ||
+        !AddRequiredInstanceExtensions(VK_KHR_DISPLAY_EXTENSION_NAME) ||
+        !AddRequiredInstanceExtensions(VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME)) {
+        printf("%s test requires KHR DISPLAY and DISPLAY_CONTROL extensions, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto vkGetPhysicalDeviceDisplayPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPropertiesKHR>(vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceDisplayPropertiesKHR"));
+    auto vkRegisterDisplayEventEXT = reinterpret_cast<PFN_vkRegisterDisplayEventEXT>(vk::GetInstanceProcAddr(instance(), "vkRegisterDisplayEventEXT"));
+    ASSERT_TRUE(vkGetPhysicalDeviceDisplayPropertiesKHR != nullptr);
+    ASSERT_TRUE(vkRegisterDisplayEventEXT != nullptr);
+
+    m_errorMonitor->ExpectSuccess();
+    uint32_t prop_count = 0;
+    vkGetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
+    if (prop_count == 0) {
+        printf("%s vkGetPhysicalDeviceDisplayPropertiesKHR count is 0. Skipping.\n", kSkipPrefix);
+        return;
+    }
+    std::vector<VkDisplayPropertiesKHR> display_props(prop_count);
+    vkGetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, display_props.data());
+    VkFence fence = VK_NULL_HANDLE;
+    auto display_event = LvlInitStruct<VkDisplayEventInfoEXT>();
+    display_event.displayEvent = VK_DISPLAY_EVENT_TYPE_FIRST_PIXEL_OUT_EXT;
+
+    vkRegisterDisplayEventEXT(device(), display_props[0].display, &display_event, nullptr, &fence);
+    if (fence) {
+        vk::DestroyFence(device(), fence, nullptr);
+    }
+    m_errorMonitor->VerifyNotFound();
 }
