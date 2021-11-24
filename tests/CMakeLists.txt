@@ -113,7 +113,7 @@ endif()
 set_source_files_properties(${PROJECT_BINARY_DIR}/vk_safe_struct.cpp PROPERTIES GENERATED TRUE)
 add_executable(vk_layer_validation_tests
                layer_validation_tests.cpp
-               ../layers/vk_format_utils.cpp
+               ../layers/generated/vk_format_utils.cpp
                ../layers/convert_to_renderpass2.cpp
                ../layers/generated/vk_safe_struct.cpp
                ../layers/generated/lvt_function_pointers.cpp

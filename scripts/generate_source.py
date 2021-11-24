@@ -77,6 +77,8 @@ def main(argv):
                                               "spirv_grammar_helper.h",
                                               "command_validation.cpp",
                                               "command_validation.h",
+                                              "vk_format_utils.cpp",
+                                              "vk_format_utils.h",
                                               "corechecks_optick_instrumentation.cpp",
                                               "corechecks_optick_instrumentation.h"]],
                 [common_codegen.repo_relative('scripts/vk_validation_stats.py'),

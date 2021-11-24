@@ -5647,10 +5647,10 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             } else {
                 if (!(image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT)) {
                     // Format MUST be compatible (in the same format compatibility class) as the format the image was created with
-                    const VkFormatCompatibilityClass imageClass = FormatCompatibilityClass(image_format);
-                    const VkFormatCompatibilityClass viewClass = FormatCompatibilityClass(view_format);
-                    // Need to only check if one is NONE_BIT to handle edge case both are NONE_BIT
-                    if ((imageClass != viewClass) || (imageClass == VK_FORMAT_COMPATIBILITY_CLASS_NONE_BIT)) {
+                    auto image_class = FormatCompatibilityClass(image_format);
+                    auto view_class = FormatCompatibilityClass(view_format);
+                    // Need to only check if one is NONE to handle edge case both are NONE
+                    if ((image_class != view_class) || (image_class == FORMAT_COMPATIBILITY_CLASS::NONE)) {
                         const char *error_vuid;
                         if ((!IsExtEnabled(device_extensions.vk_khr_maintenance2)) &&
                             (!IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
