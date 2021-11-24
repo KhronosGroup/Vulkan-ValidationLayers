@@ -586,7 +586,7 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
-            CreateObject(pProperties[i].display);
+            CreateObjectParentInstance(pProperties[i].display);
         }
     }
 }
@@ -599,7 +599,7 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
-            CreateObject(pProperties[i].displayProperties.display);
+            CreateObjectParentInstance(pProperties[i].displayProperties.display);
         }
     }
 }
@@ -612,7 +612,7 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
-            CreateObject(pProperties[i].currentDisplay);
+            CreateObjectParentInstance(pProperties[i].currentDisplay);
         }
     }
 }
@@ -625,7 +625,7 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
-            CreateObject(pProperties[i].displayPlaneProperties.currentDisplay);
+            CreateObjectParentInstance(pProperties[i].displayPlaneProperties.currentDisplay);
         }
     }
 }
@@ -647,7 +647,7 @@ void ThreadSafety::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pDisplays) {
         for (uint32_t index = 0; index < *pDisplayCount; index++) {
-            CreateObject(pDisplays[index]);
+            CreateObjectParentInstance(pDisplays[index]);
         }
     }
 }
@@ -657,7 +657,7 @@ void ThreadSafety::PreCallRecordGetDisplayModePropertiesKHR(
     VkDisplayKHR                                display,
     uint32_t*                                   pPropertyCount,
     VkDisplayModePropertiesKHR*                 pProperties) {
-    StartReadObject(display, "vkGetDisplayModePropertiesKHR");
+    StartReadObjectParentInstance(display, "vkGetDisplayModePropertiesKHR");
 }
 
 void ThreadSafety::PostCallRecordGetDisplayModePropertiesKHR(
@@ -666,7 +666,7 @@ void ThreadSafety::PostCallRecordGetDisplayModePropertiesKHR(
     uint32_t*                                   pPropertyCount,
     VkDisplayModePropertiesKHR*                 pProperties,
     VkResult                                    result) {
-    FinishReadObject(display, "vkGetDisplayModePropertiesKHR");
+    FinishReadObjectParentInstance(display, "vkGetDisplayModePropertiesKHR");
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pProperties != nullptr) {
         for (uint32_t index = 0; index < *pPropertyCount; index++) {
@@ -680,7 +680,7 @@ void ThreadSafety::PreCallRecordGetDisplayModeProperties2KHR(
     VkDisplayKHR                                display,
     uint32_t*                                   pPropertyCount,
     VkDisplayModeProperties2KHR*                pProperties) {
-    StartReadObject(display, "vkGetDisplayModeProperties2KHR");
+    StartReadObjectParentInstance(display, "vkGetDisplayModeProperties2KHR");
 }
 
 void ThreadSafety::PostCallRecordGetDisplayModeProperties2KHR(
@@ -689,7 +689,7 @@ void ThreadSafety::PostCallRecordGetDisplayModeProperties2KHR(
     uint32_t*                                   pPropertyCount,
     VkDisplayModeProperties2KHR*                pProperties,
     VkResult                                    result) {
-    FinishReadObject(display, "vkGetDisplayModeProperties2KHR");
+    FinishReadObjectParentInstance(display, "vkGetDisplayModeProperties2KHR");
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pProperties != nullptr) {
         for (uint32_t index = 0; index < *pPropertyCount; index++) {
@@ -722,10 +722,34 @@ void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
     VkDisplayKHR*                               pDisplay,
     VkResult                                    result) {
     if ((result != VK_SUCCESS) || (pDisplay == nullptr)) return;
-    CreateObject(*pDisplay);
+    CreateObjectParentInstance(*pDisplay);
 }
 
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
+
+void ThreadSafety::PreCallRecordRegisterDisplayEventEXT(
+    VkDevice                                    device,
+    VkDisplayKHR                                display,
+    const VkDisplayEventInfoEXT*                pDisplayEventInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkFence*                                    pFence) {
+    StartReadObjectParentInstance(device, "vkRegisterDisplayEventEXT");
+    StartReadObjectParentInstance(display, "vkRegisterDisplayEventEXT");
+}
+
+void ThreadSafety::PostCallRecordRegisterDisplayEventEXT(
+    VkDevice                                    device,
+    VkDisplayKHR                                display,
+    const VkDisplayEventInfoEXT*                pDisplayEventInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkFence*                                    pFence,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkRegisterDisplayEventEXT");
+    FinishReadObjectParentInstance(display, "vkRegisterDisplayEventEXT");
+    if (result == VK_SUCCESS) {
+        CreateObject(*pFence);
+    }
+}
 
 void ThreadSafety::PreCallRecordDeviceWaitIdle(
     VkDevice                                    device) {
@@ -3753,7 +3777,7 @@ void ThreadSafety::PreCallRecordCreateDisplayModeKHR(
     const VkDisplayModeCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDisplayModeKHR*                           pMode) {
-    StartWriteObject(display, "vkCreateDisplayModeKHR");
+    StartWriteObjectParentInstance(display, "vkCreateDisplayModeKHR");
     // Host access to display must be externally synchronized
 }
 
@@ -3764,7 +3788,7 @@ void ThreadSafety::PostCallRecordCreateDisplayModeKHR(
     const VkAllocationCallbacks*                pAllocator,
     VkDisplayModeKHR*                           pMode,
     VkResult                                    result) {
-    FinishWriteObject(display, "vkCreateDisplayModeKHR");
+    FinishWriteObjectParentInstance(display, "vkCreateDisplayModeKHR");
     if (result == VK_SUCCESS) {
         CreateObject(*pMode);
     }
@@ -5931,14 +5955,14 @@ void ThreadSafety::PostCallRecordCmdSetViewportWScalingNV(
 void ThreadSafety::PreCallRecordReleaseDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display) {
-    StartReadObject(display, "vkReleaseDisplayEXT");
+    StartReadObjectParentInstance(display, "vkReleaseDisplayEXT");
 }
 
 void ThreadSafety::PostCallRecordReleaseDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     VkResult                                    result) {
-    FinishReadObject(display, "vkReleaseDisplayEXT");
+    FinishReadObjectParentInstance(display, "vkReleaseDisplayEXT");
 }
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
@@ -5947,7 +5971,7 @@ void ThreadSafety::PreCallRecordAcquireXlibDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
     VkDisplayKHR                                display) {
-    StartReadObject(display, "vkAcquireXlibDisplayEXT");
+    StartReadObjectParentInstance(display, "vkAcquireXlibDisplayEXT");
 }
 
 void ThreadSafety::PostCallRecordAcquireXlibDisplayEXT(
@@ -5955,7 +5979,7 @@ void ThreadSafety::PostCallRecordAcquireXlibDisplayEXT(
     Display*                                    dpy,
     VkDisplayKHR                                display,
     VkResult                                    result) {
-    FinishReadObject(display, "vkAcquireXlibDisplayEXT");
+    FinishReadObjectParentInstance(display, "vkAcquireXlibDisplayEXT");
 }
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
@@ -5979,7 +6003,7 @@ void ThreadSafety::PreCallRecordDisplayPowerControlEXT(
     VkDisplayKHR                                display,
     const VkDisplayPowerInfoEXT*                pDisplayPowerInfo) {
     StartReadObjectParentInstance(device, "vkDisplayPowerControlEXT");
-    StartReadObject(display, "vkDisplayPowerControlEXT");
+    StartReadObjectParentInstance(display, "vkDisplayPowerControlEXT");
 }
 
 void ThreadSafety::PostCallRecordDisplayPowerControlEXT(
@@ -5988,7 +6012,7 @@ void ThreadSafety::PostCallRecordDisplayPowerControlEXT(
     const VkDisplayPowerInfoEXT*                pDisplayPowerInfo,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkDisplayPowerControlEXT");
-    FinishReadObject(display, "vkDisplayPowerControlEXT");
+    FinishReadObjectParentInstance(display, "vkDisplayPowerControlEXT");
 }
 
 void ThreadSafety::PreCallRecordRegisterDeviceEventEXT(
@@ -6006,27 +6030,6 @@ void ThreadSafety::PostCallRecordRegisterDeviceEventEXT(
     VkFence*                                    pFence,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkRegisterDeviceEventEXT");
-}
-
-void ThreadSafety::PreCallRecordRegisterDisplayEventEXT(
-    VkDevice                                    device,
-    VkDisplayKHR                                display,
-    const VkDisplayEventInfoEXT*                pDisplayEventInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence) {
-    StartReadObjectParentInstance(device, "vkRegisterDisplayEventEXT");
-    StartReadObject(display, "vkRegisterDisplayEventEXT");
-}
-
-void ThreadSafety::PostCallRecordRegisterDisplayEventEXT(
-    VkDevice                                    device,
-    VkDisplayKHR                                display,
-    const VkDisplayEventInfoEXT*                pDisplayEventInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence,
-    VkResult                                    result) {
-    FinishReadObjectParentInstance(device, "vkRegisterDisplayEventEXT");
-    FinishReadObject(display, "vkRegisterDisplayEventEXT");
 }
 
 void ThreadSafety::PreCallRecordGetSwapchainCounterEXT(
@@ -7629,7 +7632,7 @@ void ThreadSafety::PreCallRecordAcquireDrmDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     int32_t                                     drmFd,
     VkDisplayKHR                                display) {
-    StartReadObject(display, "vkAcquireDrmDisplayEXT");
+    StartReadObjectParentInstance(display, "vkAcquireDrmDisplayEXT");
 }
 
 void ThreadSafety::PostCallRecordAcquireDrmDisplayEXT(
@@ -7637,7 +7640,7 @@ void ThreadSafety::PostCallRecordAcquireDrmDisplayEXT(
     int32_t                                     drmFd,
     VkDisplayKHR                                display,
     VkResult                                    result) {
-    FinishReadObject(display, "vkAcquireDrmDisplayEXT");
+    FinishReadObjectParentInstance(display, "vkAcquireDrmDisplayEXT");
 }
 
 void ThreadSafety::PreCallRecordCreatePrivateDataSlotEXT(
@@ -7741,14 +7744,14 @@ void ThreadSafety::PostCallRecordCmdSetFragmentShadingRateEnumNV(
 void ThreadSafety::PreCallRecordAcquireWinrtDisplayNV(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display) {
-    StartReadObject(display, "vkAcquireWinrtDisplayNV");
+    StartReadObjectParentInstance(display, "vkAcquireWinrtDisplayNV");
 }
 
 void ThreadSafety::PostCallRecordAcquireWinrtDisplayNV(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     VkResult                                    result) {
-    FinishReadObject(display, "vkAcquireWinrtDisplayNV");
+    FinishReadObjectParentInstance(display, "vkAcquireWinrtDisplayNV");
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
