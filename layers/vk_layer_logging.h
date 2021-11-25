@@ -363,6 +363,11 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
     VkDebugUtilsMessageSeverityFlagsEXT severity;
     DebugReportFlagsToAnnotFlags(msg_flags, true, &severity, &types);
 
+    std::vector<std::string> object_labels;
+    // Ensures that push_back will not reallocate, thereby providing pointer
+    // stability for pushed strings.
+    object_labels.reserve(objects.object_list.size());
+
     std::vector<VkDebugUtilsObjectNameInfoEXT> object_name_info;
     object_name_info.resize(objects.object_list.size());
     for (uint32_t i = 0; i < objects.object_list.size(); i++) {
@@ -378,9 +383,8 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
             object_label = debug_data->DebugReportGetMarkerObjectName(objects.object_list[i].handle);
         }
         if (!object_label.empty()) {
-            char *local_obj_name = new char[object_label.length() + 1];
-            std::strcpy(local_obj_name, object_label.c_str());
-            object_name_info[i].pObjectName = local_obj_name;
+            object_labels.push_back(std::move(object_label));
+            object_name_info[i].pObjectName = object_labels.back().c_str();
         }
 
         // If this is a queue, add any queue labels to the callback data.
