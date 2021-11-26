@@ -13372,3 +13372,28 @@ TEST_F(VkLayerTest, ValidateCreateSamplerWithBorderColorSwizzle) {
 
     vk::DestroySampler(device(), sampler, nullptr);
 }
+
+TEST_F(VkLayerTest, ValidateBeginRenderingDisabled) {
+    TEST_DESCRIPTION("Validate VK_KHR_dynamic_rendering VUs when disabled");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AddRequiredDeviceExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRenderingKHR-dynamicRendering-06446");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
