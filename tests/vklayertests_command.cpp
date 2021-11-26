@@ -9696,3 +9696,758 @@ TEST_F(VkLayerTest, InvalidBeginTransformFeedbackInMultiviewRenderPass) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, BeginRenderingWithSecondaryContents) {
+    TEST_DESCRIPTION("Test that an error is produced when a secondary command buffer calls BeginRendering with secondary contents");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AddRequiredDeviceExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkRenderingAttachmentInfoKHR color_attachment = {};
+    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfoKHR begin_rendering_info = {};
+    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    secondary.begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRenderingKHR-commandBuffer-06068");
+    secondary.BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    secondary.end();
+}
+
+TEST_F(VkLayerTest, BadRenderPassContentsWhenCallingCmdExecuteCommandsWithBeginRenderPass) {
+    TEST_DESCRIPTION(
+        "Test CmdExecuteCommands inside a render pass begun with CmdBeginRenderPass that hasn't set "
+        "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        nullptr,  // pNext
+        m_renderPass,
+        0,  // subpass
+        m_framebuffer,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+
+    const VkRenderPassBeginInfo rp_bi{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                                      nullptr,  // pNext
+                                      m_renderPass,
+                                      m_framebuffer,
+                                      {{0, 0}, {32, 32}},
+                                      static_cast<uint32_t>(m_renderPassClearValues.size()),
+                                      m_renderPassClearValues.data()};
+
+    m_commandBuffer->BeginRenderPass(rp_bi);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-contents-06018");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, BadRenderPassContentsWhenCallingCmdExecuteCommandsWithBeginRendering) {
+    TEST_DESCRIPTION(
+        "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that hasn't set "
+        "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    
+    if (!AddRequiredDeviceExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
+        return;
+    }
+    
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+    
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
+    
+    VkRenderingAttachmentInfoKHR color_attachment = {};
+    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = {};
+    inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+
+    VkRenderingInfoKHR begin_rendering_info = {};
+    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        &inheritance_rendering_info,  // pNext
+        VK_NULL_HANDLE,
+        0,  // subpass
+        VK_NULL_HANDLE,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-flags-06024");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, BadExecuteCommandsSubpassIndices) {
+    TEST_DESCRIPTION("Test invalid subpass when calling CmdExecuteCommands");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // A renderpass with two subpasses, both writing the same attachment.
+    VkAttachmentDescription attach[] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+    VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkSubpassDescription subpasses[] = {
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr},
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr},
+    };
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 2, subpasses, 0, nullptr};
+    VkRenderPass render_pass;
+    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &render_pass);
+    ASSERT_VK_SUCCESS(err);
+
+    VkImageObj image(m_device);
+    image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass, 1, &imageView, 32, 32, 1};
+    VkFramebuffer framebuffer;
+    err = vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &framebuffer);
+    ASSERT_VK_SUCCESS(err);
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        nullptr,  // pNext
+        render_pass,
+        1,  // subpass
+        framebuffer,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    const VkRenderPassBeginInfo rp_bi{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                                      nullptr,  // pNext
+                                      render_pass,
+                                      framebuffer,
+                                      {{0, 0}, {32, 32}},
+                                      0,
+                                      nullptr};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-06019");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
+    vk::DestroyRenderPass(m_device->device(), render_pass, nullptr);
+}
+
+TEST_F(VkLayerTest, IncompatibleRenderPassesInExecuteCommands) {
+    TEST_DESCRIPTION("Test invalid subpass when calling CmdExecuteCommands");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // A renderpass with two subpasses, both writing the same attachment.
+    VkAttachmentDescription attach[] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+    VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkSubpassDescription subpasses[] = {
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr},
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr},
+    };
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 0, nullptr};
+    VkRenderPass render_pass_1;
+    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &render_pass_1);
+    ASSERT_VK_SUCCESS(err);
+
+    VkRenderPassCreateInfo rpci_2 = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 2, subpasses, 0, nullptr};
+    VkRenderPass render_pass_2;
+    vk::CreateRenderPass(m_device->device(), &rpci_2, nullptr, &render_pass_2);
+    ASSERT_VK_SUCCESS(err);
+
+    VkImageObj image(m_device);
+    image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass_1, 1, &imageView, 32, 32, 1};
+    VkFramebuffer framebuffer;
+    err = vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &framebuffer);
+    ASSERT_VK_SUCCESS(err);
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        nullptr,  // pNext
+        render_pass_2,
+        0,  // subpass
+        VK_NULL_HANDLE,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    const VkRenderPassBeginInfo rp_bi{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                                      nullptr,  // pNext
+                                      render_pass_1,
+                                      framebuffer,
+                                      {{0, 0}, {32, 32}},
+                                      0,
+                                      nullptr};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
+    vk::DestroyRenderPass(m_device->device(), render_pass_2, nullptr);
+    vk::DestroyRenderPass(m_device->device(), render_pass_1, nullptr);
+}
+
+TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithNonNullRenderPass) {
+    TEST_DESCRIPTION(
+        "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that hasn't set "
+        "renderPass to VK_NULL_HANDLE in pInheritanceInfo");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    
+    if (!AddRequiredDeviceExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
+        return;
+    }
+    
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+    
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+   VkAttachmentDescription attach[] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+    VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkSubpassDescription subpasses[] = {
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr},
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr},
+    };
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 2, subpasses, 0, nullptr};
+    VkRenderPass render_pass;
+    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &render_pass);
+    ASSERT_VK_SUCCESS(err);
+
+    VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
+    
+    VkRenderingAttachmentInfoKHR color_attachment = {};
+    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = {};
+    inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+
+    VkRenderingInfoKHR begin_rendering_info = {};
+    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        &inheritance_rendering_info,  // pNext
+        render_pass,
+        0,  // subpass
+        VK_NULL_HANDLE,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pBeginInfo-06025");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+
+    vk::DestroyRenderPass(m_device->device(), render_pass, nullptr);
+}
+
+TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingFlags) {
+    TEST_DESCRIPTION("Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching flags");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AddRequiredDeviceExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
+
+    VkRenderingAttachmentInfoKHR color_attachment = {};
+    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = {};
+    inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+
+    VkRenderingInfoKHR begin_rendering_info = {};
+    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    begin_rendering_info.flags =
+        VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR | VK_RENDERING_SUSPENDING_BIT_KHR | VK_RENDERING_RESUMING_BIT_KHR;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        &inheritance_rendering_info,  // pNext
+        VK_NULL_HANDLE,
+        0,  // subpass
+        VK_NULL_HANDLE,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-flags-06026");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingColorAttachmentCount) {
+    TEST_DESCRIPTION(
+        "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching colorAttachmentCount");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AddRequiredDeviceExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
+
+    VkRenderingAttachmentInfoKHR color_attachment = {};
+    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = {};
+    inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
+    inheritance_rendering_info.colorAttachmentCount = 0;
+    inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+
+    VkRenderingInfoKHR begin_rendering_info = {};
+    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        &inheritance_rendering_info,  // pNext
+        VK_NULL_HANDLE,
+        0,  // subpass
+        VK_NULL_HANDLE,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-colorAttachmentCount-06027");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingColorImageViewFormat) {
+    TEST_DESCRIPTION(
+        "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching color image view format");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AddRequiredDeviceExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkRenderingAttachmentInfoKHR color_attachment = {};
+    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = imageView;
+
+    VkFormat bad_color_formats = {VK_FORMAT_R8G8B8A8_UINT};
+
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = {};
+    inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &bad_color_formats;
+
+    VkRenderingInfoKHR begin_rendering_info = {};
+    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        &inheritance_rendering_info,  // pNext
+        VK_NULL_HANDLE,
+        0,  // subpass
+        VK_NULL_HANDLE,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-imageView-06028");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingDepthStencilImageViewFormat) {
+    TEST_DESCRIPTION(
+        "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching depth/stencil image view "
+        "format");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AddRequiredDeviceExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkImageObj image(m_device);
+    auto depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
+    if (!depth_stencil_format) {
+        printf("%s Couldn't depth stencil image format.\n", kSkipPrefix);
+        return;
+    }
+    image.Init(32, 32, 1, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView imageView = image.targetView(depth_stencil_format, VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfoKHR depth_stencil_attachment = {};
+    depth_stencil_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depth_stencil_attachment.imageView = imageView;
+
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = {};
+    inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
+    inheritance_rendering_info.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
+    inheritance_rendering_info.stencilAttachmentFormat = VK_FORMAT_S8_UINT;
+
+    VkRenderingInfoKHR begin_rendering_info = {};
+    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR;
+    begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
+    begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        &inheritance_rendering_info,  // pNext
+        VK_NULL_HANDLE,
+        0,  // subpass
+        VK_NULL_HANDLE,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pDepthAttachment-06029");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pStencilAttachment-06030");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingViewMask) {
+    TEST_DESCRIPTION(
+        "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching viewMask format");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AddRequiredDeviceExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkRenderingAttachmentInfoKHR color_attachment = {};
+    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
+
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = {};
+    inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
+    inheritance_rendering_info.viewMask = 0;
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+
+    VkRenderingInfoKHR begin_rendering_info = {};
+    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR;
+    begin_rendering_info.viewMask = 1;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        &inheritance_rendering_info,  // pNext
+        VK_NULL_HANDLE,
+        0,  // subpass
+        VK_NULL_HANDLE,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-viewMask-06031");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
