@@ -679,9 +679,45 @@ class MutableDescriptor : public Descriptor {
       }
       VkDeviceSize GetBufferSize() const { return buffer_size_; }
 
+      std::shared_ptr<SAMPLER_STATE> GetSharedSamplerState() const { return sampler_state_; }
+      std::shared_ptr<IMAGE_VIEW_STATE> GetSharedImageViewState() const { return image_view_state_; }
+      VkImageLayout GetImageLayout() const { return image_layout_; }
+      std::shared_ptr<BUFFER_STATE> GetSharedBufferState() const { return buffer_state_; }
+      VkDeviceSize GetOffset() const { return offset_; }
+      VkDeviceSize GetRange() const { return range_; }
+      std::shared_ptr<BUFFER_VIEW_STATE> GetSharedBufferViewState() const { return buffer_view_state_; }
+      VkAccelerationStructureKHR GetAccelerationStructure() const { return acc_; }
+      const ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
+      ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
+      VkAccelerationStructureNV GetAccelerationStructureNV() const { return acc_nv_; }
+      const ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
+      ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
+
+      bool AddParent(BASE_NODE *base_node) override;
+      void RemoveParent(BASE_NODE *base_node) override;
+
     private:
       VkDeviceSize buffer_size_;
       DescriptorClass active_descriptor_class_;
+
+      // Sampler and ImageSampler Descriptor
+      bool immutable_;
+      std::shared_ptr<SAMPLER_STATE> sampler_state_;
+      // Image Descriptor
+      std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
+      VkImageLayout image_layout_;
+      // Texel Descriptor
+      std::shared_ptr<BUFFER_VIEW_STATE> buffer_view_state_;
+      // Buffer Descriptor
+      VkDeviceSize offset_;
+      VkDeviceSize range_;
+      std::shared_ptr<BUFFER_STATE> buffer_state_;
+      // Acceleration Structure Descriptor
+      bool is_khr_;
+      VkAccelerationStructureKHR acc_;
+      std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> acc_state_;
+      VkAccelerationStructureNV acc_nv_;
+      std::shared_ptr<ACCELERATION_STRUCTURE_STATE> acc_state_nv_;
 };
 
 union AnyDescriptor {
