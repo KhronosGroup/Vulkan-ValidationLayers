@@ -1228,7 +1228,11 @@ class StatelessValidation : public ValidationObject {
                     initial_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
                     initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
                     initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
-                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03294" : "VUID-VkAttachmentDescription-format-03280";
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03294"
+                           : (initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
+                              initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL)
+                               ? "VUID-VkAttachmentDescription-format-06487"
+                               : "VUID-VkAttachmentDescription-format-03280";
                     skip |= LogError(device, vuid,
                                      "%s: pCreateInfo->pAttachments[%d].initialLayout must not be "
                                      "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, "
@@ -1241,7 +1245,11 @@ class StatelessValidation : public ValidationObject {
                     final_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
                     final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
                     final_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
-                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03296" : "VUID-VkAttachmentDescription-format-03282";
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03296"
+                           : (final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
+                              final_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL)
+                               ? "VUID-VkAttachmentDescription-format-06488"
+                               : "VUID-VkAttachmentDescription-format-03282";
                     skip |= LogError(device, vuid,
                                      "%s: pCreateInfo->pAttachments[%d].finalLayout must not be "
                                      "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, "
