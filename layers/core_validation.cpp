@@ -6875,12 +6875,24 @@ bool CoreChecks::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuff
                                  "vkCmdBeginRenderingKHR(): pDeviceRenderAreas[%u].offset.x: %d must be greater than or equal to 0",
                                  deviceRenderAreaIndex, offset_x);
             }
+            if ((offset_x + width) > phys_dev_props.limits.maxFramebufferWidth) {
+                skip |= LogError(commandBuffer, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06168",
+                                 "vkCmdBeginRenderingKHR(): pDeviceRenderAreas[%" PRIu32 "] sum of offset.x (%" PRId32
+                                 ") and extent.width (%" PRIu32 ") is greater than maxFramebufferWidth (%" PRIu32 ").",
+                                 deviceRenderAreaIndex, offset_x, width, phys_dev_props.limits.maxFramebufferWidth);
+            }
             auto offset_y = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.y;
             auto height = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
             if (!(offset_y >= 0)) {
                 skip |= LogError(commandBuffer, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06167",
                                  "vkCmdBeginRenderingKHR(): pDeviceRenderAreas[%u].offset.y: %d must be greater than or equal to 0",
                                  deviceRenderAreaIndex, offset_y);
+            }
+            if ((offset_y + height) > phys_dev_props.limits.maxFramebufferHeight) {
+                skip |= LogError(commandBuffer, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06169",
+                                 "vkCmdBeginRenderingKHR(): pDeviceRenderAreas[%" PRIu32 "] sum of offset.y (%" PRId32
+                                 ") and extent.height (%" PRIu32 ") is greater than maxFramebufferHeight (%" PRIu32 ").",
+                                 deviceRenderAreaIndex, offset_y, height, phys_dev_props.limits.maxFramebufferHeight);
             }
 
             for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
