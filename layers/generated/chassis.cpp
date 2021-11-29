@@ -11183,6 +11183,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(
 
 
 
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(
@@ -11306,6 +11307,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetVertexInputEXT(
         intercept->PostCallRecordCmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions, vertexAttributeDescriptionCount, pVertexAttributeDescriptions);
     }
 }
+
 
 
 

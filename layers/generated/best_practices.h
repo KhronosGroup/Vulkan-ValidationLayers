@@ -1926,6 +1926,7 @@ const layer_data::unordered_map<std::string, std::string> special_use_extensions
     {"VK_EXT_debug_marker", "debugging"},
     {"VK_EXT_debug_report", "debugging"},
     {"VK_EXT_debug_utils", "debugging"},
+    {"VK_EXT_depth_clip_control", "glemulation"},
     {"VK_EXT_depth_clip_enable", "d3demulation"},
     {"VK_EXT_device_memory_report", "devtools"},
     {"VK_EXT_line_rasterization", "cadsupport"},

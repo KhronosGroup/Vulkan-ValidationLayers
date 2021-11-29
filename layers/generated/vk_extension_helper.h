@@ -365,6 +365,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_amd_shader_trinary_minmax{kNotEnabled};
     ExtEnabled vk_amd_texture_gather_bias_lod{kNotEnabled};
     ExtEnabled vk_android_external_memory_android_hardware_buffer{kNotEnabled};
+    ExtEnabled vk_arm_rasterization_order_attachment_access{kNotEnabled};
     ExtEnabled vk_ext_4444_formats{kNotEnabled};
     ExtEnabled vk_ext_astc_decode_mode{kNotEnabled};
     ExtEnabled vk_ext_blend_operation_advanced{kNotEnabled};
@@ -376,6 +377,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_conservative_rasterization{kNotEnabled};
     ExtEnabled vk_ext_custom_border_color{kNotEnabled};
     ExtEnabled vk_ext_debug_marker{kNotEnabled};
+    ExtEnabled vk_ext_depth_clip_control{kNotEnabled};
     ExtEnabled vk_ext_depth_clip_enable{kNotEnabled};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotEnabled};
     ExtEnabled vk_ext_descriptor_indexing{kNotEnabled};
@@ -626,6 +628,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_ext_queue_family_foreign, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_dedicated_allocation, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME}}})},
 #endif
+            {VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_arm_rasterization_order_attachment_access, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_4444_FORMATS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_4444_formats, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_astc_decode_mode, {{
@@ -645,6 +649,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_custom_border_color, {})},
             {VK_EXT_DEBUG_MARKER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_debug_marker, {{
                            {&DeviceExtensions::vk_ext_debug_report, VK_EXT_DEBUG_REPORT_EXTENSION_NAME}}})},
+            {VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_clip_control, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_clip_enable, {})},
             {VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_range_unrestricted, {})},
             {VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_descriptor_indexing, {{
@@ -1201,6 +1207,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME,
 #endif
+    VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME,
     VK_EXT_4444_FORMATS_EXTENSION_NAME,
     VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME,
     VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME,
@@ -1212,6 +1219,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME,
     VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME,
     VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
+    VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME,
     VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME,
     VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME,
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,

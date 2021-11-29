@@ -43529,6 +43529,69 @@ void safe_VkPhysicalDevice4444FormatsFeaturesEXT::initialize(const safe_VkPhysic
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM(const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM* in_struct) :
+    sType(in_struct->sType),
+    rasterizationOrderColorAttachmentAccess(in_struct->rasterizationOrderColorAttachmentAccess),
+    rasterizationOrderDepthAttachmentAccess(in_struct->rasterizationOrderDepthAttachmentAccess),
+    rasterizationOrderStencilAttachmentAccess(in_struct->rasterizationOrderStencilAttachmentAccess)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_FEATURES_ARM),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM(const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM& copy_src)
+{
+    sType = copy_src.sType;
+    rasterizationOrderColorAttachmentAccess = copy_src.rasterizationOrderColorAttachmentAccess;
+    rasterizationOrderDepthAttachmentAccess = copy_src.rasterizationOrderDepthAttachmentAccess;
+    rasterizationOrderStencilAttachmentAccess = copy_src.rasterizationOrderStencilAttachmentAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM& safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::operator=(const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    rasterizationOrderColorAttachmentAccess = copy_src.rasterizationOrderColorAttachmentAccess;
+    rasterizationOrderDepthAttachmentAccess = copy_src.rasterizationOrderDepthAttachmentAccess;
+    rasterizationOrderStencilAttachmentAccess = copy_src.rasterizationOrderStencilAttachmentAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::~safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::initialize(const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM* in_struct)
+{
+    sType = in_struct->sType;
+    rasterizationOrderColorAttachmentAccess = in_struct->rasterizationOrderColorAttachmentAccess;
+    rasterizationOrderDepthAttachmentAccess = in_struct->rasterizationOrderDepthAttachmentAccess;
+    rasterizationOrderStencilAttachmentAccess = in_struct->rasterizationOrderStencilAttachmentAccess;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::initialize(const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM* copy_src)
+{
+    sType = copy_src->sType;
+    rasterizationOrderColorAttachmentAccess = copy_src->rasterizationOrderColorAttachmentAccess;
+    rasterizationOrderDepthAttachmentAccess = copy_src->rasterizationOrderDepthAttachmentAccess;
+    rasterizationOrderStencilAttachmentAccess = copy_src->rasterizationOrderStencilAttachmentAccess;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT::safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT(const VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT* in_struct) :
     sType(in_struct->sType),
     formatRgba10x6WithoutYCbCrSampler(in_struct->formatRgba10x6WithoutYCbCrSampler)
@@ -44166,6 +44229,112 @@ void safe_VkPhysicalDeviceDrmPropertiesEXT::initialize(const safe_VkPhysicalDevi
     primaryMinor = copy_src->primaryMinor;
     renderMajor = copy_src->renderMajor;
     renderMinor = copy_src->renderMinor;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceDepthClipControlFeaturesEXT::safe_VkPhysicalDeviceDepthClipControlFeaturesEXT(const VkPhysicalDeviceDepthClipControlFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    depthClipControl(in_struct->depthClipControl)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceDepthClipControlFeaturesEXT::safe_VkPhysicalDeviceDepthClipControlFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceDepthClipControlFeaturesEXT::safe_VkPhysicalDeviceDepthClipControlFeaturesEXT(const safe_VkPhysicalDeviceDepthClipControlFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    depthClipControl = copy_src.depthClipControl;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDepthClipControlFeaturesEXT& safe_VkPhysicalDeviceDepthClipControlFeaturesEXT::operator=(const safe_VkPhysicalDeviceDepthClipControlFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    depthClipControl = copy_src.depthClipControl;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDepthClipControlFeaturesEXT::~safe_VkPhysicalDeviceDepthClipControlFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDepthClipControlFeaturesEXT::initialize(const VkPhysicalDeviceDepthClipControlFeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    depthClipControl = in_struct->depthClipControl;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceDepthClipControlFeaturesEXT::initialize(const safe_VkPhysicalDeviceDepthClipControlFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    depthClipControl = copy_src->depthClipControl;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineViewportDepthClipControlCreateInfoEXT::safe_VkPipelineViewportDepthClipControlCreateInfoEXT(const VkPipelineViewportDepthClipControlCreateInfoEXT* in_struct) :
+    sType(in_struct->sType),
+    negativeOneToOne(in_struct->negativeOneToOne)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPipelineViewportDepthClipControlCreateInfoEXT::safe_VkPipelineViewportDepthClipControlCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPipelineViewportDepthClipControlCreateInfoEXT::safe_VkPipelineViewportDepthClipControlCreateInfoEXT(const safe_VkPipelineViewportDepthClipControlCreateInfoEXT& copy_src)
+{
+    sType = copy_src.sType;
+    negativeOneToOne = copy_src.negativeOneToOne;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPipelineViewportDepthClipControlCreateInfoEXT& safe_VkPipelineViewportDepthClipControlCreateInfoEXT::operator=(const safe_VkPipelineViewportDepthClipControlCreateInfoEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    negativeOneToOne = copy_src.negativeOneToOne;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPipelineViewportDepthClipControlCreateInfoEXT::~safe_VkPipelineViewportDepthClipControlCreateInfoEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineViewportDepthClipControlCreateInfoEXT::initialize(const VkPipelineViewportDepthClipControlCreateInfoEXT* in_struct)
+{
+    sType = in_struct->sType;
+    negativeOneToOne = in_struct->negativeOneToOne;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPipelineViewportDepthClipControlCreateInfoEXT::initialize(const safe_VkPipelineViewportDepthClipControlCreateInfoEXT* copy_src)
+{
+    sType = copy_src->sType;
+    negativeOneToOne = copy_src->negativeOneToOne;
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
@@ -49052,6 +49221,12 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceDrmPropertiesEXT(reinterpret_cast<const VkPhysicalDeviceDrmPropertiesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceDepthClipControlFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceDepthClipControlFeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT:
+            safe_pNext = new safe_VkPipelineViewportDepthClipControlCreateInfoEXT(reinterpret_cast<const VkPipelineViewportDepthClipControlCreateInfoEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *>(pNext));
             break;
@@ -50164,6 +50339,12 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceDrmPropertiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceDepthClipControlFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT:
+            delete reinterpret_cast<const safe_VkPipelineViewportDepthClipControlCreateInfoEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *>(header);
