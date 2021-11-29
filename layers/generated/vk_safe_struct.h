@@ -10017,6 +10017,23 @@ struct safe_VkPhysicalDevice4444FormatsFeaturesEXT {
     VkPhysicalDevice4444FormatsFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevice4444FormatsFeaturesEXT const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM {
+    VkStructureType sType;
+    const void* pNext;
+    VkBool32 rasterizationOrderColorAttachmentAccess;
+    VkBool32 rasterizationOrderDepthAttachmentAccess;
+    VkBool32 rasterizationOrderStencilAttachmentAccess;
+    safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM(const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM* in_struct);
+    safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM(const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM& copy_src);
+    safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM& operator=(const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM& copy_src);
+    safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM();
+    ~safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM();
+    void initialize(const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM* in_struct);
+    void initialize(const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM* copy_src);
+    VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM *ptr() { return reinterpret_cast<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM *>(this); }
+    VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM const *ptr() const { return reinterpret_cast<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT {
     VkStructureType sType;
     void* pNext;
@@ -10165,6 +10182,36 @@ struct safe_VkPhysicalDeviceDrmPropertiesEXT {
     void initialize(const safe_VkPhysicalDeviceDrmPropertiesEXT* copy_src);
     VkPhysicalDeviceDrmPropertiesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceDrmPropertiesEXT *>(this); }
     VkPhysicalDeviceDrmPropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDrmPropertiesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceDepthClipControlFeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 depthClipControl;
+    safe_VkPhysicalDeviceDepthClipControlFeaturesEXT(const VkPhysicalDeviceDepthClipControlFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceDepthClipControlFeaturesEXT(const safe_VkPhysicalDeviceDepthClipControlFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceDepthClipControlFeaturesEXT& operator=(const safe_VkPhysicalDeviceDepthClipControlFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceDepthClipControlFeaturesEXT();
+    ~safe_VkPhysicalDeviceDepthClipControlFeaturesEXT();
+    void initialize(const VkPhysicalDeviceDepthClipControlFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceDepthClipControlFeaturesEXT* copy_src);
+    VkPhysicalDeviceDepthClipControlFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceDepthClipControlFeaturesEXT *>(this); }
+    VkPhysicalDeviceDepthClipControlFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDepthClipControlFeaturesEXT const *>(this); }
+};
+
+struct safe_VkPipelineViewportDepthClipControlCreateInfoEXT {
+    VkStructureType sType;
+    const void* pNext;
+    VkBool32 negativeOneToOne;
+    safe_VkPipelineViewportDepthClipControlCreateInfoEXT(const VkPipelineViewportDepthClipControlCreateInfoEXT* in_struct);
+    safe_VkPipelineViewportDepthClipControlCreateInfoEXT(const safe_VkPipelineViewportDepthClipControlCreateInfoEXT& copy_src);
+    safe_VkPipelineViewportDepthClipControlCreateInfoEXT& operator=(const safe_VkPipelineViewportDepthClipControlCreateInfoEXT& copy_src);
+    safe_VkPipelineViewportDepthClipControlCreateInfoEXT();
+    ~safe_VkPipelineViewportDepthClipControlCreateInfoEXT();
+    void initialize(const VkPipelineViewportDepthClipControlCreateInfoEXT* in_struct);
+    void initialize(const safe_VkPipelineViewportDepthClipControlCreateInfoEXT* copy_src);
+    VkPipelineViewportDepthClipControlCreateInfoEXT *ptr() { return reinterpret_cast<VkPipelineViewportDepthClipControlCreateInfoEXT *>(this); }
+    VkPipelineViewportDepthClipControlCreateInfoEXT const *ptr() const { return reinterpret_cast<VkPipelineViewportDepthClipControlCreateInfoEXT const *>(this); }
 };
 
 struct safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT {

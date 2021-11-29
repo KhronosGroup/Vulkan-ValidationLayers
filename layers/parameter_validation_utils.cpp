@@ -2902,10 +2902,12 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         pCreateInfos[i].pDepthStencilState->pNext, 0, NULL, GeneratedVulkanHeaderVersion,
                         "VUID-VkPipelineDepthStencilStateCreateInfo-pNext-pNext", nullptr);
 
-                    skip |= validate_reserved_flags(
-                        "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pDepthStencilState->flags", ParameterName::IndexVector{i}),
-                        pCreateInfos[i].pDepthStencilState->flags, "VUID-VkPipelineDepthStencilStateCreateInfo-flags-zerobitmask");
+                    skip |=
+                        validate_flags("vkCreateGraphicsPipelines",
+                                       ParameterName("pCreateInfos[%i].pDepthStencilState->flags", ParameterName::IndexVector{i}),
+                                       "VkPipelineDepthStencilStateCreateFlagBits", AllVkPipelineDepthStencilStateCreateFlagBits,
+                                       pCreateInfos[i].pDepthStencilState->flags, kOptionalFlags,
+                                       "VUID-VkPipelineDepthStencilStateCreateInfo-flags-parameter");
 
                     skip |= validate_bool32(
                         "vkCreateGraphicsPipelines",
@@ -3011,10 +3013,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         "VUID-VkPipelineColorBlendStateCreateInfo-pNext-pNext",
                         "VUID-VkPipelineColorBlendStateCreateInfo-sType-unique");
 
-                    skip |= validate_reserved_flags(
-                        "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pColorBlendState->flags", ParameterName::IndexVector{i}),
-                        pCreateInfos[i].pColorBlendState->flags, "VUID-VkPipelineColorBlendStateCreateInfo-flags-zerobitmask");
+                    skip |= validate_flags("vkCreateGraphicsPipelines",
+                                           ParameterName("pCreateInfos[%i].pColorBlendState->flags", ParameterName::IndexVector{i}),
+                                           "VkPipelineColorBlendStateCreateFlagBits", AllVkPipelineColorBlendStateCreateFlagBits,
+                                           pCreateInfos[i].pColorBlendState->flags, kOptionalFlags,
+                                           "VUID-VkPipelineColorBlendStateCreateInfo-flags-parameter");
 
                     skip |= validate_bool32(
                         "vkCreateGraphicsPipelines",

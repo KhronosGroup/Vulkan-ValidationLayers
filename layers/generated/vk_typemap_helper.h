@@ -5146,6 +5146,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FE
     typedef VkPhysicalDevice4444FormatsFeaturesEXT Type;
 };
 
+// Map type VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_FEATURES_ARM
+template <> struct LvlTypeMap<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_FEATURES_ARM;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_FEATURES_ARM> {
+    typedef VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM Type;
+};
+
 // Map type VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RGBA10X6_FORMATS_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RGBA10X6_FORMATS_FEATURES_EXT;
@@ -5218,6 +5227,24 @@ template <> struct LvlTypeMap<VkPhysicalDeviceDrmPropertiesEXT> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT> {
     typedef VkPhysicalDeviceDrmPropertiesEXT Type;
+};
+
+// Map type VkPhysicalDeviceDepthClipControlFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceDepthClipControlFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT> {
+    typedef VkPhysicalDeviceDepthClipControlFeaturesEXT Type;
+};
+
+// Map type VkPipelineViewportDepthClipControlCreateInfoEXT to id VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT
+template <> struct LvlTypeMap<VkPipelineViewportDepthClipControlCreateInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT> {
+    typedef VkPipelineViewportDepthClipControlCreateInfoEXT Type;
 };
 
 // Map type VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT
