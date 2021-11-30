@@ -6440,15 +6440,14 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRendering) {
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
     const VkPipelineLayoutObj pl(m_device, {&dsl});
 
-    VkFormat color_formats[2] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM};
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     auto rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
-    rendering_info.colorAttachmentCount = 2;
-    rendering_info.pColorAttachmentFormats = color_formats;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachmentFormats = &color_format;
 
     auto create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
     pipe.InitGraphicsPipelineCreateInfo(&create_info);
     create_info.pNext = &rendering_info;
-
 
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyNotFound();
