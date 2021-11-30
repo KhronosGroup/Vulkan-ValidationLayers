@@ -2658,9 +2658,6 @@ bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE *pCB, const CMD_
         skip |= LogError(pCB->commandBuffer(), kVUID_Core_DrawState_InvalidCommandBuffer,
                          "%s() cannot be called in a subpass using secondary command buffers.",
                           kGeneratedCommandNameList[cmd_type]);
-    } else if (pCB->activeSubpassContents == VK_SUBPASS_CONTENTS_INLINE && cmd_type == CMD_EXECUTECOMMANDS) {
-        skip |= LogError(pCB->commandBuffer(), kVUID_Core_DrawState_InvalidCommandBuffer,
-                         "vkCmdExecuteCommands() cannot be called in a subpass using inline commands.");
     }
     return skip;
 }
