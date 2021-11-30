@@ -654,7 +654,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller = CommandTypeString(cmd_type);
 
-    if (pPipeline->rp_state->use_dynamic_rendering) {
+    if (pCB->activeRenderPass->use_dynamic_rendering) {
         if (pPipeline->rp_state->dynamic_rendering_pipeline_create_info.viewMask !=
             pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask) {
                 skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_view_mask,
@@ -984,7 +984,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     if (!create_info.pRasterizationState || (create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE)) {
         VkSampleCountFlagBits pso_num_samples = GetNumSamples(pPipeline);
         if (pCB->activeRenderPass) {
-            if (pCB->activeRenderPass->use_dynamic_rendering) {
+            if (pCB->activeRenderPass->use_dynamic_rendering || pCB->activeRenderPass->use_dynamic_rendering_inherited) {
                 // TODO: Mirror the below VUs but using dynamic rendering
                 const auto dynamic_rendering_info = pCB->activeRenderPass->dynamic_rendering_begin_rendering_info;
             } else {
