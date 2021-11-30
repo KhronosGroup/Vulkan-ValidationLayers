@@ -2186,6 +2186,18 @@ TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureEnable) {
     range_test(1.0F, /* positive_test= */ true);
 }
 
+TEST_F(VkLayerTest, InvalidPipelineDepthClipControlFeatureDisable) {
+    // Enable negativeOneToOne (VK_EXT_depth_clip_control) in pipeline when the feature is disabled.
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkPipelineViewportDepthClipControlCreateInfoEXT clip_control = LvlInitStruct<VkPipelineViewportDepthClipControlCreateInfoEXT>();
+    clip_control.negativeOneToOne = VK_TRUE;
+    auto set_shading_enable = [clip_control](CreatePipelineHelper &helper) { helper.vp_state_ci_.pNext = &clip_control; };
+    CreatePipelineHelper::OneshotTest(*this, set_shading_enable, kErrorBit,
+                                      "VUID-VkPipelineViewportDepthClipControlCreateInfoEXT-negativeOneToOne-06470");
+}
+
 TEST_F(VkLayerTest, InvalidPipelineSamplePNext) {
     // Enable sample shading in pipeline when the feature is disabled.
     // Check for VK_KHR_get_physical_device_properties2
