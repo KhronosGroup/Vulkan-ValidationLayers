@@ -306,7 +306,7 @@ RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderingInfoKHR const *pRenderingInfo)
 
 RENDER_PASS_STATE::RENDER_PASS_STATE(VkCommandBufferInheritanceRenderingInfoKHR const* pInheritanceRenderingInfo)
     : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
-    use_dynamic_rendering(true),
+    use_dynamic_rendering(false),
     use_dynamic_rendering_inherited(true),
     inheritance_rendering_info(pInheritanceRenderingInfo) {}
 
