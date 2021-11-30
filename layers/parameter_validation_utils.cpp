@@ -2360,15 +2360,16 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_EXCLUSIVE_SCISSOR_STATE_CREATE_INFO_NV,
                         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV,
                         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV,
+                        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT,
                     };
                     skip |= validate_struct_pnext(
                         "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pViewportState->pNext", ParameterName::IndexVector{i}),
                         "VkPipelineViewportSwizzleStateCreateInfoNV, VkPipelineViewportWScalingStateCreateInfoNV, "
                         "VkPipelineViewportExclusiveScissorStateCreateInfoNV, VkPipelineViewportShadingRateImageStateCreateInfoNV, "
-                        "VkPipelineViewportCoarseSampleOrderStateCreateInfoNV",
+                        "VkPipelineViewportCoarseSampleOrderStateCreateInfoNV, VkPipelineViewportDepthClipControlCreateInfoEXT",
                         viewport_state.pNext, ARRAY_SIZE(allowed_structs_vk_pipeline_viewport_state_create_info),
-                        allowed_structs_vk_pipeline_viewport_state_create_info, 65,
+                        allowed_structs_vk_pipeline_viewport_state_create_info, 200,
                         "VUID-VkPipelineViewportStateCreateInfo-pNext-pNext",
                         "VUID-VkPipelineViewportStateCreateInfo-sType-unique");
 
@@ -2378,15 +2379,16 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         viewport_state.flags, "VUID-VkPipelineViewportStateCreateInfo-flags-zerobitmask");
 
                     auto exclusive_scissor_struct =
-                        LvlFindInChain<VkPipelineViewportExclusiveScissorStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
+                        LvlFindInChain<VkPipelineViewportExclusiveScissorStateCreateInfoNV>(viewport_state.pNext);
                     auto shading_rate_image_struct =
-                        LvlFindInChain<VkPipelineViewportShadingRateImageStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
+                        LvlFindInChain<VkPipelineViewportShadingRateImageStateCreateInfoNV>(viewport_state.pNext);
                     auto coarse_sample_order_struct =
-                        LvlFindInChain<VkPipelineViewportCoarseSampleOrderStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
-                    const auto vp_swizzle_struct =
-                        LvlFindInChain<VkPipelineViewportSwizzleStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
+                        LvlFindInChain<VkPipelineViewportCoarseSampleOrderStateCreateInfoNV>(viewport_state.pNext);
+                    const auto vp_swizzle_struct = LvlFindInChain<VkPipelineViewportSwizzleStateCreateInfoNV>(viewport_state.pNext);
                     const auto vp_w_scaling_struct =
-                        LvlFindInChain<VkPipelineViewportWScalingStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
+                        LvlFindInChain<VkPipelineViewportWScalingStateCreateInfoNV>(viewport_state.pNext);
+                    const auto depth_clip_control_struct =
+                        LvlFindInChain<VkPipelineViewportDepthClipControlCreateInfoEXT>(viewport_state.pNext);
 
                     if (!physical_device_features.multiViewport) {
                         if (!has_dynamic_viewport_with_count && (viewport_state.viewportCount != 1)) {
@@ -2682,6 +2684,20 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                 "] "
                                 "VkPipelineViewportWScalingStateCreateInfoNV.pViewportWScalings (=NULL) is not a valid array.",
                                 i);
+                        }
+                    }
+
+                    if (depth_clip_control_struct) {
+                        const auto *depth_clip_control_features =
+                            LvlFindInChain<VkPhysicalDeviceDepthClipControlFeaturesEXT>(device_createinfo_pnext);
+                        const bool enabled_depth_clip_control =
+                            depth_clip_control_features && depth_clip_control_features->depthClipControl;
+                        if (depth_clip_control_struct->negativeOneToOne && !enabled_depth_clip_control) {
+                            skip |= LogError(device, "VUID-VkPipelineViewportDepthClipControlCreateInfoEXT-negativeOneToOne-06470",
+                                             "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                             "].pViewportState has negativeOneToOne set to VK_TRUE in the pNext chain, but the "
+                                             "depthClipControl feature is not enabled. ",
+                                             i);
                         }
                     }
                 }
