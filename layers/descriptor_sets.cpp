@@ -1133,12 +1133,12 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
             static_cast<const cvdescriptorset::ImageSamplerDescriptor &>(image_descriptor).GetSamplerState());
     } else {
         if (binding_info.second.samplers_used_by_image.size() > index) {
-            for (auto &sampler : binding_info.second.samplers_used_by_image[index]) {
+            for (const auto &desc_index : binding_info.second.samplers_used_by_image[index]) {
+                const auto *desc = descriptor_set->GetDescriptorFromBinding(desc_index.sampler_slot.binding, desc_index.sampler_index);
                 // NOTE: This check _shouldn't_ be necessary due to the checks made in IsSpecificDescriptorType in
                 //       shader_validation.cpp. However, without this check some traces still crash.
-                if (sampler.second && (sampler.second->GetClass() == cvdescriptorset::DescriptorClass::PlainSampler)) {
-                    const auto *sampler_state =
-                        static_cast<const cvdescriptorset::SamplerDescriptor *>(sampler.second)->GetSamplerState();
+                if (desc && (desc->GetClass() == cvdescriptorset::DescriptorClass::PlainSampler)) {
+                    const auto *sampler_state = static_cast<const cvdescriptorset::SamplerDescriptor *>(desc)->GetSamplerState();
                     if (sampler_state) sampler_states.emplace_back(sampler_state);
                 }
             }

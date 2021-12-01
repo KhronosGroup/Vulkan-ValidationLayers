@@ -300,7 +300,7 @@ static PIPELINE_STATE::ActiveSlotMap GetActiveSlots(const PIPELINE_STATE::StageS
                 uint32_t image_index = 0;
                 for (const auto &samplers : use.second.samplers_used_by_image) {
                     for (const auto &sampler : samplers) {
-                        entry.samplers_used_by_image[image_index].emplace(sampler, nullptr);
+                        entry.samplers_used_by_image[image_index].emplace(sampler);
                     }
                     ++image_index;
                 }
@@ -411,25 +411,6 @@ template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const Vk
                                         std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&);
 template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const VkRayTracingPipelineCreateInfoKHR *,
                                         std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&);
-
-void LAST_BOUND_STATE::UpdateSamplerDescriptorsUsedByImage() {
-    if (!pipeline_state) return;
-    if (per_set.empty()) return;
-
-    for (auto &slot : pipeline_state->active_slots) {
-        for (auto &req : slot.second) {
-            for (auto &samplers : req.second.samplers_used_by_image) {
-                for (auto &sampler : samplers) {
-                    if (sampler.first.sampler_slot.set < per_set.size() &&
-                        per_set[sampler.first.sampler_slot.set].bound_descriptor_set) {
-                        sampler.second = per_set[sampler.first.sampler_slot.set].bound_descriptor_set->GetDescriptorFromBinding(
-                            sampler.first.sampler_slot.binding, sampler.first.sampler_index);
-                    }
-                }
-            }
-        }
-    }
-}
 
 void LAST_BOUND_STATE::UnbindAndResetPushDescriptorSet(CMD_BUFFER_STATE *cb_state, cvdescriptorset::DescriptorSet *ds) {
     if (push_descriptor_set) {

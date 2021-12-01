@@ -81,10 +81,8 @@ extern DescriptorReqFlags DescriptorRequirementsBitsFromFormat(VkFormat fmt);
 struct DescriptorRequirement {
     DescriptorReqFlags reqs;
     bool is_writable;
-    std::vector<std::map<SamplerUsedByImage, const cvdescriptorset::Descriptor *>>
-        samplers_used_by_image;  // Copy from StageState.interface_var. It combines from plural shader stages.
-                                 // The index of array is index of image.
-
+    // Copy from StageState.interface_var. It combines from plural shader stages. The index of array is index of image.
+    std::vector<std::set<SamplerUsedByImage>> samplers_used_by_image;
     DescriptorRequirement() : reqs(0), is_writable(false) {}
 };
 
@@ -219,7 +217,7 @@ class PIPELINE_STATE : public BASE_NODE {
     // NOTE: this map is 'almost' const and used in performance critical code paths.
     // The values of existing entries in the DescriptorRequirement::samplers_used_by_image map
     // are updated at various times. Locking requirements are TBD.
-    ActiveSlotMap active_slots;
+    const ActiveSlotMap active_slots;
     const uint32_t max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
 
     const layer_data::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
@@ -328,7 +326,6 @@ struct LAST_BOUND_STATE {
     void Reset();
 
     void UnbindAndResetPushDescriptorSet(CMD_BUFFER_STATE *cb_state, cvdescriptorset::DescriptorSet *ds);
-    void UpdateSamplerDescriptorsUsedByImage();
 
     inline bool IsUsing() const { return pipeline_state ? true : false; }
 };
