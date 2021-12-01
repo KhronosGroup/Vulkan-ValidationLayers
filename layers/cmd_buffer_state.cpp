@@ -1011,7 +1011,13 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
     // Some useful shorthand
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto &last_bound = lastBound[lv_bind_point];
+    last_bound.pipeline_layout = pipeline_layout->layout();
     auto &pipe_compat_ids = pipeline_layout->compat_for_set;
+    // Resize binding arrays
+    uint32_t last_set_index = first_set + set_count - 1;
+    if (last_set_index >= last_bound.per_set.size()) {
+        last_bound.per_set.resize(last_set_index + 1);
+    }
     const uint32_t current_size = static_cast<uint32_t>(last_bound.per_set.size());
 
     // We need this three times in this function, but nowhere else
