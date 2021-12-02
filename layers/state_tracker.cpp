@@ -2031,7 +2031,7 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
                                                                               Get<RENDER_PASS_STATE>(pCreateInfos[i].renderPass),
                                                                               Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
         } else if (enabled_features.core13.dynamicRendering) {
-            auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfoKHR>(pCreateInfos[i].pNext);
+            auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfo>(pCreateInfos[i].pNext);
             cgpl_state->pipe_state.push_back(
                 std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], std::make_shared<RENDER_PASS_STATE>(dynamic_rendering),
                                                  Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
@@ -3037,7 +3037,16 @@ void ValidationStateTracker::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer c
     cb_state->BeginRendering(CMD_BEGINRENDERINGKHR, pRenderingInfo);
 }
 
+void ValidationStateTracker::PreCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->BeginRendering(CMD_BEGINRENDERING, pRenderingInfo);
+}
+
 void ValidationStateTracker::PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer) {
+    RecordCmdEndRenderingRenderPassState(commandBuffer);
+}
+
+void ValidationStateTracker::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer) {
     RecordCmdEndRenderingRenderPassState(commandBuffer);
 }
 

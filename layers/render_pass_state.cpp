@@ -254,8 +254,8 @@ RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo con
     InitRenderPassState(this);
 }
 
-const VkPipelineRenderingCreateInfoKHR VkPipelineRenderingCreateInfoKHR_default = {
-    VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+const VkPipelineRenderingCreateInfo VkPipelineRenderingCreateInfo_default = {
+    VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
     nullptr,
     0,
     0,
@@ -264,12 +264,12 @@ const VkPipelineRenderingCreateInfoKHR VkPipelineRenderingCreateInfoKHR_default 
     VK_FORMAT_UNDEFINED
 };
 
-RENDER_PASS_STATE::RENDER_PASS_STATE(VkPipelineRenderingCreateInfoKHR const *pPipelineRenderingCreateInfo)
+RENDER_PASS_STATE::RENDER_PASS_STATE(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo)
     : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
       dynamic_rendering_pipeline_create_info(pPipelineRenderingCreateInfo ? pPipelineRenderingCreateInfo
-                                                                          : &VkPipelineRenderingCreateInfoKHR_default) {}
+                                                                          : &VkPipelineRenderingCreateInfo_default) {}
 
 bool RENDER_PASS_STATE::UsesColorAttachment(uint32_t subpass_num) const {
     bool result = false;
@@ -298,13 +298,13 @@ bool RENDER_PASS_STATE::UsesDepthStencilAttachment(uint32_t subpass_num) const {
     return result;
 }
 
-RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderingInfoKHR const *pRenderingInfo)
+RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderingInfo const *pRenderingInfo)
     : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
       dynamic_rendering_begin_rendering_info(pRenderingInfo) {}
 
-RENDER_PASS_STATE::RENDER_PASS_STATE(VkCommandBufferInheritanceRenderingInfoKHR const* pInheritanceRenderingInfo)
+RENDER_PASS_STATE::RENDER_PASS_STATE(VkCommandBufferInheritanceRenderingInfo const* pInheritanceRenderingInfo)
     : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
     use_dynamic_rendering(false),
     use_dynamic_rendering_inherited(true),
