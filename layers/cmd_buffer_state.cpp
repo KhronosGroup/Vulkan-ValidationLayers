@@ -702,8 +702,9 @@ void CMD_BUFFER_STATE::EndRenderPass(CMD_TYPE cmd_type) {
     activeFramebuffer = VK_NULL_HANDLE;
 }
 
-void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfoKHR *pRenderingInfo) {
+void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *pRenderingInfo) {
     RecordCmd(cmd_type);
+    begin_rendering_func_name = CommandTypeString(cmd_type);
     activeRenderPass = std::make_shared<RENDER_PASS_STATE>(pRenderingInfo);
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
@@ -812,7 +813,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
             }
             else
             {
-                auto inheritance_rendering_info = lvl_find_in_chain<VkCommandBufferInheritanceRenderingInfoKHR>(beginInfo.pInheritanceInfo->pNext);
+                auto inheritance_rendering_info = lvl_find_in_chain<VkCommandBufferInheritanceRenderingInfo>(beginInfo.pInheritanceInfo->pNext);
                 if (inheritance_rendering_info) {
                     activeRenderPass = std::make_shared<RENDER_PASS_STATE>(inheritance_rendering_info);
                 }
