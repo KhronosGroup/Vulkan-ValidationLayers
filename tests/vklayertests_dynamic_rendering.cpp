@@ -75,17 +75,17 @@ TEST_F(VkLayerTest, CommandBufferInheritanceRenderingInfoKHR) {
     VkResult err = vk::AllocateCommandBuffers(m_device->device(), &cmd_buffer_allocate_info, &secondary_cmd_buffer);
     ASSERT_VK_SUCCESS(err);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-06003");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfoKHR-colorAttachmentCount-06004");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfoKHR-variableMultisampleRate-06005");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfoKHR-depthAttachmentFormat-06007");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfoKHR-multiview-06008");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfoKHR-viewMask-06009");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-colorAttachmentCount-06004");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-variableMultisampleRate-06005");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06007");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-multiview-06008");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-viewMask-06009");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkCommandBufferInheritanceRenderingInfoKHR-stencilAttachmentFormat-06199");
+                                         "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06199");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkCommandBufferInheritanceRenderingInfoKHR-depthAttachmentFormat-06200");
+                                         "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06200");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkCommandBufferInheritanceRenderingInfoKHR-pColorAttachmentFormats-06006");
+                                         "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006");
 
     VkCommandBufferBeginInfo cmd_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     cmd_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
@@ -273,8 +273,8 @@ TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06058");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06060");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfoKHR-multiview-06066");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfoKHR-pColorAttachmentFormats-06064");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfo-multiview-06066");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfo-pColorAttachmentFormats-06064");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
 
