@@ -10120,8 +10120,8 @@ TEST_F(VkLayerTest, InvalidDeviceGroupRenderArea) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02854");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02855");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06166");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06167");
     m_commandBuffer->BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
