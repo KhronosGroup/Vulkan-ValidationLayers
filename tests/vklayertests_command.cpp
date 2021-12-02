@@ -9631,7 +9631,7 @@ TEST_F(VkLayerTest, BeginRenderingWithSecondaryContents) {
 
     secondary.begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRenderingKHR-commandBuffer-06068");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRendering-commandBuffer-06068");
     secondary.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 

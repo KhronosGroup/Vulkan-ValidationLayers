@@ -2680,8 +2680,8 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                         pipelineIndex);
                 }
 
-                if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR) == 0) {
-                    skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfoKHR-pColorAttachmentFormats-06064",
+                if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) == 0) {
+                    skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfo-pColorAttachmentFormats-06064",
                                      "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
                                      "]: color_format (%s) must be a format with potential format features that include "
                                      "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
@@ -2691,9 +2691,9 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
 
         if (rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
-            VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(rendering_struct->depthAttachmentFormat);
-            if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR) == 0) {
-                skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfoKHR-depthAttachmentFormat-06065",
+            VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->depthAttachmentFormat);
+            if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfo-depthAttachmentFormat-06065",
                                  "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
                                  "]: depthAttachmentFormat (%s) must be a format with potential format features that include "
                                  "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
@@ -2702,9 +2702,9 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
 
         if (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
-            VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(rendering_struct->stencilAttachmentFormat);
-            if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR) == 0) {
-                skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfoKHR-stencilAttachmentFormat-06164",
+            VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->stencilAttachmentFormat);
+            if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfo-stencilAttachmentFormat-06164",
                                  "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
                                  "]: stencilAttachmentFormat (%s) must be a format with potential format features that include "
                                  "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
@@ -2715,7 +2715,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) &&
             (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) &&
             (rendering_struct->depthAttachmentFormat != rendering_struct->stencilAttachmentFormat)) {
-            skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfoKHR-depthAttachmentFormat-06165",
+            skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfo-depthAttachmentFormat-06165",
                              "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
                              "]: depthAttachmentFormat is not VK_FORMAT_UNDEFINED and stencilAttachmentFormat is not "
                              "VK_FORMAT_UNDEFINED, but depthAttachmentFormat (%s) does not equal stencilAttachmentFormat (%s)",
@@ -2725,13 +2725,13 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
         if ((enabled_features.core11.multiview == VK_FALSE) && (rendering_struct->viewMask != 0)) {
             skip |=
-                LogError(device, "VUID-VkPipelineRenderingCreateInfoKHR-multiview-06066",
+                LogError(device, "VUID-VkPipelineRenderingCreateInfo-multiview-06066",
                          "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32 "]: multiview is not enabled but viewMask is (%u).",
                          pipelineIndex, rendering_struct->viewMask);
         }
 
         if (MostSignificantBit(rendering_struct->viewMask) >= phys_dev_props_core11.maxMultiviewViewCount) {
-            skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfoKHR-viewMask-06067",
+            skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfo-viewMask-06067",
                              "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
                              "]: Most significant bit in "
                              "VkPipelineRenderingCreateInfoKHR->viewMask(%u) must be less maxMultiviewViewCount(%u)",
@@ -6681,13 +6681,13 @@ bool CoreChecks::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuff
     bool skip = false;
 
     if (!enabled_features.core13.dynamicRendering) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdBeginRenderingKHR-dynamicRendering-06446",
+        skip |= LogError(commandBuffer, "VUID-vkCmdBeginRendering-dynamicRendering-06446",
                          "vkCmdBeginRenderingKHR(): dynamicRendering is not enabled.");
     }
 
     if ((cb_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) &&
         ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) != 0)) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdBeginRenderingKHR-commandBuffer-06068",
+        skip |= LogError(commandBuffer, "VUID-vkCmdBeginRendering-commandBuffer-06068",
                          "vkCmdBeginRenderingKHR(): pRenderingInfo->flags must not include "
                          "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR in a secondary command buffer.");
     }
@@ -6793,7 +6793,7 @@ bool CoreChecks::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuff
                 first_sample_count_attachment = (j == 0u) ? static_cast<uint32_t>(image_view->samples) : first_sample_count_attachment;
 
                 if (first_sample_count_attachment != image_view->samples) {
-                    skip |= LogError(commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06070",
+                    skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06070",
                                      "vkCmdBeginRenderingKHR(): Color attachment ref %u has sample count %s, whereas first color "
                                      "attachment ref has "
                                      "sample count %u.",
@@ -7193,7 +7193,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfoKHR(VkCommandBuffer commandBuffe
 
         if ((!FormatIsSINT(image_view_state->create_info.format) && !FormatIsUINT(image_view_state->create_info.format)) &&
             !(pAttachment->resolveMode == VK_RESOLVE_MODE_NONE || pAttachment->resolveMode == VK_RESOLVE_MODE_AVERAGE_BIT)) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfoKHR-imageView-06129",
+            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06129",
                              "vkCmdBeginRenderingKHR(): Current resolve mode (%s) must be VK_RESOLVE_MODE_NONE or "
                              "VK_RESOLVE_MODE_AVERAGE_BIT for non-integar formats (%s)",
                              string_VkResolveModeFlags(pAttachment->resolveMode).c_str(),
@@ -7202,7 +7202,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfoKHR(VkCommandBuffer commandBuffe
 
         if ((FormatIsSINT(image_view_state->create_info.format) || FormatIsUINT(image_view_state->create_info.format)) &&
             !(pAttachment->resolveMode == VK_RESOLVE_MODE_NONE || pAttachment->resolveMode == VK_RESOLVE_MODE_SAMPLE_ZERO_BIT)) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfoKHR-imageView-06130",
+            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06130",
                 "vkCmdBeginRenderingKHR(): Current resolve mode (%s) must be VK_RESOLVE_MODE_NONE or "
                 "VK_RESOLVE_MODE_SAMPLE_ZERO_BIT for integar formats (%s)",
                 string_VkResolveModeFlags(pAttachment->resolveMode).c_str(),
@@ -7314,11 +7314,11 @@ bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer
         if ((cb_state->activeRenderPass->use_dynamic_rendering == false) &&
             (cb_state->activeRenderPass->use_dynamic_rendering_inherited == false)) {
             skip |= LogError(
-                commandBuffer, "VUID-vkCmdEndRenderingKHR-None-06161",
+                commandBuffer, "VUID-vkCmdEndRendering-None-06161",
                 "Calling vkCmdEndRenderingKHR() in a render pass instance that was not begun with vkCmdBeginRenderingKHR().");
         }
         if (cb_state->activeRenderPass->use_dynamic_rendering_inherited == true) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdEndRenderingKHR-commandBuffer-06162",
+            skip |= LogError(commandBuffer, "VUID-vkCmdEndRendering-commandBuffer-06162",
                              "Calling vkCmdEndRenderingKHR() in a render pass instance that was not begun in this command buffer.");
         }
     }
@@ -7451,19 +7451,19 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 }
 
                 if ((depth_format != VK_FORMAT_UNDEFINED && stencil_format != VK_FORMAT_UNDEFINED) && (depth_format != stencil_format)) {
-                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfoKHR-depthAttachmentFormat-06200",
+                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06200",
                         "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfoKHR->depthAttachmentFormat (%s) must equal VkCommandBufferInheritanceRenderingInfoKHR->stencilAttachmentFormat (%s)",
                         string_VkFormat(depth_format), string_VkFormat(stencil_format));
                 }
 
                 if ((enabled_features.core11.multiview == VK_FALSE) && (p_inherited_rendering_info->viewMask != 0)) {
-                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfoKHR-multiview-06008",
+                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-multiview-06008",
                         "vkBeginCommandBuffer(): If the multiview feature is not enabled, viewMask must be 0 (%u)",
                         p_inherited_rendering_info->viewMask);
                 }
 
                 if (MostSignificantBit(p_inherited_rendering_info->viewMask) >= phys_dev_props_core11.maxMultiviewViewCount) {
-                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfoKHR-viewMask-06009",
+                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-viewMask-06009",
                         "vkBeginCommandBuffer(): Most significant bit VkCommandBufferInheritanceRenderingInfoKHR->viewMask(%u) must be less maxMultiviewViewCount(%u)",
                         p_inherited_rendering_info->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
                 }
