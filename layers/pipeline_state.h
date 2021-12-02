@@ -155,6 +155,7 @@ struct PipelineStageState {
     std::vector<DescriptorUse> descriptor_uses;
     bool has_writable_descriptor;
     bool has_atomic_descriptor;
+    bool wrote_primitive_shading_rate;
 
     PipelineStageState(const VkPipelineShaderStageCreateInfo *stage, std::shared_ptr<const SHADER_MODULE_STATE> &module);
 };
@@ -242,9 +243,6 @@ class PIPELINE_STATE : public BASE_NODE {
     // Flag of which shader stages are active for this pipeline
     const uint32_t active_shaders = 0;
     const VkPrimitiveTopology topology_at_rasterizer;
-
-    layer_data::unordered_set<VkShaderStageFlagBits, hash_util::HashCombiner::WrappedHash<VkShaderStageFlagBits>>
-        wrote_primitive_shading_rate;
 
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const RENDER_PASS_STATE> &&rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
