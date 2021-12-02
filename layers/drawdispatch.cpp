@@ -617,7 +617,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         viewport_count                     = "VUID-vkCmdDrawMeshTasksNV-viewportCount-03417";
         scissor_count                      = "VUID-vkCmdDrawMeshTasksNV-scissorCount-03418";
         viewport_scissor_count             = "VUID-vkCmdDrawMeshTasksNV-viewportCount-03419";
-        primitive_topology                 = "VUID-vkCmdDrawMeshTasksNV-primitiveTopology-03420";
         corner_sampled_address_mode        = "VUID-vkCmdDrawMeshTasksNV-flags-02696";
         subpass_input                      = "VUID-vkCmdDrawMeshTasksNV-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawMeshTasksNV-None-02691";
@@ -635,12 +634,9 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDrawMeshTasksNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawMeshTasksNV-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMeshTasksNV-primitiveFragmentShadingRateWithMultipleViewports-04552";
-        patch_control_points               = "VUID-vkCmdDrawMeshTasksNV-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawMeshTasksNV-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawMeshTasksNV-None-04877";
         logic_op                           = "VUID-vkCmdDrawMeshTasksNV-logicOp-04878";
-        primitive_restart_enable           = "VUID-vkCmdDrawMeshTasksNV-None-04879";
-        vertex_input_binding_stride        = "VUID-vkCmdDrawMeshTasksNV-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawMeshTasksNV_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawMeshTasksNV-blendEnable-04727";
     }
@@ -662,7 +658,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         viewport_count                     = "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-03417";
         scissor_count                      = "VUID-vkCmdDrawMeshTasksIndirectNV-scissorCount-03418";
         viewport_scissor_count             = "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-03419";
-        primitive_topology                 = "VUID-vkCmdDrawMeshTasksIndirectNV-primitiveTopology-03420";
         corner_sampled_address_mode        = "VUID-vkCmdDrawMeshTasksIndirectNV-flags-02696";
         subpass_input                      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02691";
@@ -680,12 +675,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDrawMeshTasksIndirectNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawMeshTasksIndirectNV-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMeshTasksIndirectNV-primitiveFragmentShadingRateWithMultipleViewports-04552";
-        patch_control_points               = "VUID-vkCmdDrawMeshTasksIndirectNV-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-04877";
         logic_op                           = "VUID-vkCmdDrawMeshTasksIndirectNV-logicOp-04878";
-        primitive_restart_enable           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-04879";
-        vertex_input_binding_stride        = "VUID-vkCmdDrawMeshTasksIndirectNV-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawMeshTasksIndirectNV_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawMeshTasksIndirectNV-blendEnable-04727";
     }
@@ -707,7 +699,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         viewport_count                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-03417";
         scissor_count                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-scissorCount-03418";
         viewport_scissor_count             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-03419";
-        primitive_topology                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitiveTopology-03420";
         corner_sampled_address_mode        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-flags-02696";
         subpass_input                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02691";
@@ -725,12 +716,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitiveFragmentShadingRateWithMultipleViewports-04552";
-        patch_control_points               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04875";
         rasterizer_discard_enable          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04876";
         depth_bias_enable                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04877";
         logic_op                           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-logicOp-04878";
-        primitive_restart_enable           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04879";
-        vertex_input_binding_stride        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawMeshTasksIndirectCountNV_VertexInput;
         blend_enable                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-blendEnable-04727";
     }
