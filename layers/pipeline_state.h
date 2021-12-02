@@ -82,7 +82,7 @@ struct DescriptorRequirement {
     DescriptorReqFlags reqs;
     bool is_writable;
     // Copy from StageState.interface_var. It combines from plural shader stages. The index of array is index of image.
-    std::vector<std::set<SamplerUsedByImage>> samplers_used_by_image;
+    std::vector<layer_data::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
     DescriptorRequirement() : reqs(0), is_writable(false) {}
 };
 

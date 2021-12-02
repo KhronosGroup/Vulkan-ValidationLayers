@@ -82,8 +82,8 @@ struct interface_var {
     uint32_t type_id;
     uint32_t offset;
 
-    std::vector<std::set<SamplerUsedByImage>> samplers_used_by_image;  // List of samplers that sample a given image.
-                                                                       // The index of array is index of image.
+    // List of samplers that sample a given image. The index of array is index of image.
+    std::vector<layer_data::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
 
     bool is_patch;
     bool is_block_member;
