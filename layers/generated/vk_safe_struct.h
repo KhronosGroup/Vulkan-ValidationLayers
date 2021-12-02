@@ -5006,6 +5006,7 @@ struct safe_VkVideoEncodeInfoKHR {
     safe_VkVideoReferenceSlotKHR* pSetupReferenceSlot;
     uint32_t referenceSlotCount;
     safe_VkVideoReferenceSlotKHR* pReferenceSlots;
+    uint32_t precedingExternallyEncodedBytes;
     safe_VkVideoEncodeInfoKHR(const VkVideoEncodeInfoKHR* in_struct);
     safe_VkVideoEncodeInfoKHR(const safe_VkVideoEncodeInfoKHR& copy_src);
     safe_VkVideoEncodeInfoKHR& operator=(const safe_VkVideoEncodeInfoKHR& copy_src);
@@ -5019,16 +5020,35 @@ struct safe_VkVideoEncodeInfoKHR {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+struct safe_VkVideoEncodeRateControlLayerInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t averageBitrate;
+    uint32_t maxBitrate;
+    uint32_t frameRateNumerator;
+    uint32_t frameRateDenominator;
+    uint32_t virtualBufferSizeInMs;
+    uint32_t initialVirtualBufferSizeInMs;
+    safe_VkVideoEncodeRateControlLayerInfoKHR(const VkVideoEncodeRateControlLayerInfoKHR* in_struct);
+    safe_VkVideoEncodeRateControlLayerInfoKHR(const safe_VkVideoEncodeRateControlLayerInfoKHR& copy_src);
+    safe_VkVideoEncodeRateControlLayerInfoKHR& operator=(const safe_VkVideoEncodeRateControlLayerInfoKHR& copy_src);
+    safe_VkVideoEncodeRateControlLayerInfoKHR();
+    ~safe_VkVideoEncodeRateControlLayerInfoKHR();
+    void initialize(const VkVideoEncodeRateControlLayerInfoKHR* in_struct);
+    void initialize(const safe_VkVideoEncodeRateControlLayerInfoKHR* copy_src);
+    VkVideoEncodeRateControlLayerInfoKHR *ptr() { return reinterpret_cast<VkVideoEncodeRateControlLayerInfoKHR *>(this); }
+    VkVideoEncodeRateControlLayerInfoKHR const *ptr() const { return reinterpret_cast<VkVideoEncodeRateControlLayerInfoKHR const *>(this); }
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 struct safe_VkVideoEncodeRateControlInfoKHR {
     VkStructureType sType;
     const void* pNext;
     VkVideoEncodeRateControlFlagsKHR flags;
     VkVideoEncodeRateControlModeFlagBitsKHR rateControlMode;
-    uint32_t averageBitrate;
-    uint16_t peakToAverageBitrateRatio;
-    uint16_t frameRateNumerator;
-    uint16_t frameRateDenominator;
-    uint32_t virtualBufferSizeInMs;
+    uint8_t layerCount;
+    safe_VkVideoEncodeRateControlLayerInfoKHR* pLayerConfigs;
     safe_VkVideoEncodeRateControlInfoKHR(const VkVideoEncodeRateControlInfoKHR* in_struct);
     safe_VkVideoEncodeRateControlInfoKHR(const safe_VkVideoEncodeRateControlInfoKHR& copy_src);
     safe_VkVideoEncodeRateControlInfoKHR& operator=(const safe_VkVideoEncodeRateControlInfoKHR& copy_src);
@@ -5954,9 +5974,6 @@ struct safe_VkVideoEncodeH264NaluSliceEXT {
     safe_VkVideoEncodeH264DpbSlotInfoEXT* pRefFinalList0Entries;
     uint8_t refFinalList1EntryCount;
     safe_VkVideoEncodeH264DpbSlotInfoEXT* pRefFinalList1Entries;
-    uint32_t precedingNaluBytes;
-    uint8_t minQp;
-    uint8_t maxQp;
     safe_VkVideoEncodeH264NaluSliceEXT(const VkVideoEncodeH264NaluSliceEXT* in_struct);
     safe_VkVideoEncodeH264NaluSliceEXT(const safe_VkVideoEncodeH264NaluSliceEXT& copy_src);
     safe_VkVideoEncodeH264NaluSliceEXT& operator=(const safe_VkVideoEncodeH264NaluSliceEXT& copy_src);
@@ -6026,6 +6043,51 @@ struct safe_VkVideoEncodeH264ProfileEXT {
     void initialize(const safe_VkVideoEncodeH264ProfileEXT* copy_src);
     VkVideoEncodeH264ProfileEXT *ptr() { return reinterpret_cast<VkVideoEncodeH264ProfileEXT *>(this); }
     VkVideoEncodeH264ProfileEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH264ProfileEXT const *>(this); }
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+struct safe_VkVideoEncodeH264RateControlInfoEXT {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t gopFrameCount;
+    uint32_t idrPeriod;
+    uint32_t consecutiveBFrameCount;
+    VkVideoEncodeH264RateControlStructureFlagBitsEXT rateControlStructure;
+    safe_VkVideoEncodeH264RateControlInfoEXT(const VkVideoEncodeH264RateControlInfoEXT* in_struct);
+    safe_VkVideoEncodeH264RateControlInfoEXT(const safe_VkVideoEncodeH264RateControlInfoEXT& copy_src);
+    safe_VkVideoEncodeH264RateControlInfoEXT& operator=(const safe_VkVideoEncodeH264RateControlInfoEXT& copy_src);
+    safe_VkVideoEncodeH264RateControlInfoEXT();
+    ~safe_VkVideoEncodeH264RateControlInfoEXT();
+    void initialize(const VkVideoEncodeH264RateControlInfoEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH264RateControlInfoEXT* copy_src);
+    VkVideoEncodeH264RateControlInfoEXT *ptr() { return reinterpret_cast<VkVideoEncodeH264RateControlInfoEXT *>(this); }
+    VkVideoEncodeH264RateControlInfoEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH264RateControlInfoEXT const *>(this); }
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+struct safe_VkVideoEncodeH264RateControlLayerInfoEXT {
+    VkStructureType sType;
+    const void* pNext;
+    uint8_t temporalLayerId;
+    VkBool32 useInitialRcQp;
+    VkVideoEncodeH264QpEXT initialRcQp;
+    VkBool32 useMinQp;
+    VkVideoEncodeH264QpEXT minQp;
+    VkBool32 useMaxQp;
+    VkVideoEncodeH264QpEXT maxQp;
+    VkBool32 useMaxFrameSize;
+    VkVideoEncodeH264FrameSizeEXT maxFrameSize;
+    safe_VkVideoEncodeH264RateControlLayerInfoEXT(const VkVideoEncodeH264RateControlLayerInfoEXT* in_struct);
+    safe_VkVideoEncodeH264RateControlLayerInfoEXT(const safe_VkVideoEncodeH264RateControlLayerInfoEXT& copy_src);
+    safe_VkVideoEncodeH264RateControlLayerInfoEXT& operator=(const safe_VkVideoEncodeH264RateControlLayerInfoEXT& copy_src);
+    safe_VkVideoEncodeH264RateControlLayerInfoEXT();
+    ~safe_VkVideoEncodeH264RateControlLayerInfoEXT();
+    void initialize(const VkVideoEncodeH264RateControlLayerInfoEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH264RateControlLayerInfoEXT* copy_src);
+    VkVideoEncodeH264RateControlLayerInfoEXT *ptr() { return reinterpret_cast<VkVideoEncodeH264RateControlLayerInfoEXT *>(this); }
+    VkVideoEncodeH264RateControlLayerInfoEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH264RateControlLayerInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -6230,6 +6292,51 @@ struct safe_VkVideoEncodeH265ProfileEXT {
     void initialize(const safe_VkVideoEncodeH265ProfileEXT* copy_src);
     VkVideoEncodeH265ProfileEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265ProfileEXT *>(this); }
     VkVideoEncodeH265ProfileEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265ProfileEXT const *>(this); }
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+struct safe_VkVideoEncodeH265RateControlInfoEXT {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t gopFrameCount;
+    uint32_t idrPeriod;
+    uint32_t consecutiveBFrameCount;
+    VkVideoEncodeH265RateControlStructureFlagBitsEXT rateControlStructure;
+    safe_VkVideoEncodeH265RateControlInfoEXT(const VkVideoEncodeH265RateControlInfoEXT* in_struct);
+    safe_VkVideoEncodeH265RateControlInfoEXT(const safe_VkVideoEncodeH265RateControlInfoEXT& copy_src);
+    safe_VkVideoEncodeH265RateControlInfoEXT& operator=(const safe_VkVideoEncodeH265RateControlInfoEXT& copy_src);
+    safe_VkVideoEncodeH265RateControlInfoEXT();
+    ~safe_VkVideoEncodeH265RateControlInfoEXT();
+    void initialize(const VkVideoEncodeH265RateControlInfoEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH265RateControlInfoEXT* copy_src);
+    VkVideoEncodeH265RateControlInfoEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265RateControlInfoEXT *>(this); }
+    VkVideoEncodeH265RateControlInfoEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265RateControlInfoEXT const *>(this); }
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+struct safe_VkVideoEncodeH265RateControlLayerInfoEXT {
+    VkStructureType sType;
+    const void* pNext;
+    uint8_t temporalId;
+    VkBool32 useInitialRcQp;
+    VkVideoEncodeH265QpEXT initialRcQp;
+    VkBool32 useMinQp;
+    VkVideoEncodeH265QpEXT minQp;
+    VkBool32 useMaxQp;
+    VkVideoEncodeH265QpEXT maxQp;
+    VkBool32 useMaxFrameSize;
+    VkVideoEncodeH265FrameSizeEXT maxFrameSize;
+    safe_VkVideoEncodeH265RateControlLayerInfoEXT(const VkVideoEncodeH265RateControlLayerInfoEXT* in_struct);
+    safe_VkVideoEncodeH265RateControlLayerInfoEXT(const safe_VkVideoEncodeH265RateControlLayerInfoEXT& copy_src);
+    safe_VkVideoEncodeH265RateControlLayerInfoEXT& operator=(const safe_VkVideoEncodeH265RateControlLayerInfoEXT& copy_src);
+    safe_VkVideoEncodeH265RateControlLayerInfoEXT();
+    ~safe_VkVideoEncodeH265RateControlLayerInfoEXT();
+    void initialize(const VkVideoEncodeH265RateControlLayerInfoEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH265RateControlLayerInfoEXT* copy_src);
+    VkVideoEncodeH265RateControlLayerInfoEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265RateControlLayerInfoEXT *>(this); }
+    VkVideoEncodeH265RateControlLayerInfoEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265RateControlLayerInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
