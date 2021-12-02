@@ -4861,9 +4861,8 @@ bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool qu
     if (qp_state) {
         bool completed_by_get_results = true;
         for (uint32_t i = 0; i < qp_state->createInfo.queryCount; ++i) {
-            QueryObject obj(qp_state->pool(), i);
-            auto query_pass_iter = queryToStateMap.find(obj);
-            if (query_pass_iter != queryToStateMap.end() && query_pass_iter->second != QUERYSTATE_AVAILABLE) {
+            auto state = qp_state->GetQueryState(i, 0);
+            if (state != QUERYSTATE_AVAILABLE) {
                 completed_by_get_results = false;
                 break;
             }
@@ -4900,9 +4899,10 @@ bool CoreChecks::ValidatePerformanceQueryResults(const char *cmd_name, const QUE
     for (uint32_t query_index = firstQuery; query_index < queryCount; query_index++) {
         uint32_t submitted = 0;
         for (uint32_t pass_index = 0; pass_index < query_pool_state->n_performance_passes; pass_index++) {
-            QueryObject obj(QueryObject(query_pool_state->pool(), query_index), pass_index);
-            auto query_pass_iter = queryToStateMap.find(obj);
-            if (query_pass_iter != queryToStateMap.end() && query_pass_iter->second == QUERYSTATE_AVAILABLE) submitted++;
+            auto state = query_pool_state->GetQueryState(query_index, pass_index);
+            if (state == QUERYSTATE_AVAILABLE) {
+                submitted++;
+            }
         }
         if (submitted < query_pool_state->n_performance_passes) {
             skip |= LogError(query_pool_state->pool(), "VUID-vkGetQueryPoolResults-queryType-03231",
@@ -9657,6 +9657,16 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
     return ValidateBeginQuery(cb_state, query_obj, flags, 0, CMD_BEGINQUERY, &vuids);
 }
 
+static QueryState GetLocalQueryState(const QueryMap *localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
+                                     uint32_t perfPass) {
+    QueryObject query = QueryObject(QueryObject(queryPool, queryIndex), perfPass);
+
+    auto iter = localQueryToStateMap->find(query);
+    if (iter != localQueryToStateMap->end()) return iter->second;
+
+    return QUERYSTATE_UNKNOWN;
+}
+
 bool CoreChecks::VerifyQueryIsReset(const ValidationStateTracker *state_data, VkCommandBuffer commandBuffer, QueryObject query_obj,
                                     const char *func_name, VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
                                     QueryMap *localQueryToStateMap) {
@@ -9665,10 +9675,10 @@ bool CoreChecks::VerifyQueryIsReset(const ValidationStateTracker *state_data, Vk
     const auto query_pool_state = state_data->Get<QUERY_POOL_STATE>(query_obj.pool);
     const auto &query_pool_ci = query_pool_state->createInfo;
 
-    QueryState state = state_data->GetQueryState(localQueryToStateMap, query_obj.pool, query_obj.query, perfPass);
+    QueryState state = GetLocalQueryState(localQueryToStateMap, query_obj.pool, query_obj.query, perfPass);
     // If reset was in another command buffer, check the global map
     if (state == QUERYSTATE_UNKNOWN) {
-        state = state_data->GetQueryState(&state_data->queryToStateMap, query_obj.pool, query_obj.query, perfPass);
+        state = query_pool_state->GetQueryState(query_obj.query, perfPass);
     }
     // Performance queries have limitation upon when they can be
     // reset.
@@ -9716,7 +9726,7 @@ bool CoreChecks::ValidatePerformanceQuery(const ValidationStateTracker *state_da
                                      state_data->report_data->FormatHandle(commandBuffer).c_str());
     }
 
-    QueryState command_buffer_state = state_data->GetQueryState(localQueryToStateMap, query_obj.pool, query_obj.query, perfPass);
+    QueryState command_buffer_state = GetLocalQueryState(localQueryToStateMap, query_obj.pool, query_obj.query, perfPass);
     if (command_buffer_state == QUERYSTATE_RESET) {
         skip |= state_data->LogError(
             commandBuffer, query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-None-02863" : "VUID-vkCmdBeginQuery-None-02863",
@@ -9922,7 +9932,7 @@ bool CoreChecks::ValidateCopyQueryPoolResults(const ValidationStateTracker *stat
                                               VkQueryResultFlags flags, QueryMap *localQueryToStateMap) {
     bool skip = false;
     for (uint32_t i = 0; i < queryCount; i++) {
-        QueryState state = state_data->GetQueryState(localQueryToStateMap, queryPool, firstQuery + i, perfPass);
+        QueryState state = GetLocalQueryState(localQueryToStateMap, queryPool, firstQuery + i, perfPass);
         QueryResultType result_type = GetQueryResultType(state, flags);
         if (result_type != QUERYRESULT_SOME_DATA && result_type != QUERYRESULT_UNKNOWN) {
             skip |= state_data->LogError(
@@ -17713,18 +17723,15 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysic
 }
 
 void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-    size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
-    VkResult result) {
+                                                   size_t dataSize, void *pData, VkDeviceSize stride, VkQueryResultFlags flags,
+                                                   VkResult result) {
     if (result != VK_SUCCESS) {
         return;
     }
+    const auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
     if ((flags & VK_QUERY_RESULT_PARTIAL_BIT) == 0) {
         for (uint32_t i = firstQuery; i < queryCount; ++i) {
-            QueryObject obj(queryPool, i);
-            auto query_pass_iter = queryToStateMap.find(obj);
-            if (query_pass_iter != queryToStateMap.end()) {
-                query_pass_iter->second = QUERYSTATE_AVAILABLE;
-            }
+            query_pool_state->SetQueryState(i, 0, QUERYSTATE_AVAILABLE);
         }
     }
 }

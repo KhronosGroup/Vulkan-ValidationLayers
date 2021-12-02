@@ -1763,11 +1763,6 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
 
     Add(std::make_shared<QUERY_POOL_STATE>(*pQueryPool, pCreateInfo, index_count, n_perf_pass, has_cb, has_rb));
 
-    QueryObject query_obj{*pQueryPool, 0u};
-    for (uint32_t i = 0; i < pCreateInfo->queryCount; ++i) {
-        query_obj.query = i;
-        queryToStateMap[query_obj] = QUERYSTATE_UNKNOWN;
-    }
 }
 
 void ValidationStateTracker::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
@@ -2619,16 +2614,6 @@ void ValidationStateTracker::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordCmd(CMD_PIPELINEBARRIER2KHR);
     cb_state->RecordBarriers(*pDependencyInfo);
-}
-
-QueryState ValidationStateTracker::GetQueryState(const QueryMap *localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
-                                                 uint32_t perfPass) const {
-    QueryObject query = QueryObject(QueryObject(queryPool, queryIndex), perfPass);
-
-    auto iter = localQueryToStateMap->find(query);
-    if (iter != localQueryToStateMap->end()) return iter->second;
-
-    return QUERYSTATE_UNKNOWN;
 }
 
 void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
@@ -3647,15 +3632,13 @@ void ValidationStateTracker::RecordResetQueryPool(VkDevice device, VkQueryPool q
     if (!query_pool_state) return;
 
     // Reset the state of existing entries.
-    QueryObject query_obj{queryPool, 0};
     const uint32_t max_query_count = std::min(queryCount, query_pool_state->createInfo.queryCount - firstQuery);
     for (uint32_t i = 0; i < max_query_count; ++i) {
-        query_obj.query = firstQuery + i;
-        queryToStateMap[query_obj] = QUERYSTATE_RESET;
+        auto query_index = firstQuery + i;
+        query_pool_state->SetQueryState(query_index, 0, QUERYSTATE_RESET);
         if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
             for (uint32_t pass_index = 0; pass_index < query_pool_state->n_performance_passes; pass_index++) {
-                query_obj.perf_pass = pass_index;
-                queryToStateMap[query_obj] = QUERYSTATE_RESET;
+                query_pool_state->SetQueryState(query_index, pass_index, QUERYSTATE_RESET);
             }
         }
     }

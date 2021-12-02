@@ -1052,8 +1052,6 @@ class ValidationStateTracker : public ValidationObject {
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
     void RecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout, VkResult result);
     void RecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue, VkResult result);
-    QueryState GetQueryState(const QueryMap* localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
-                             uint32_t perfPass) const;
     void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
     void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bindInfo);
     void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*) const;
@@ -1187,8 +1185,6 @@ class ValidationStateTracker : public ValidationObject {
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
 
     bool performance_lock_acquired = false;
-
-    QueryMap queryToStateMap;
 
   protected:
     // tracks which queue family index were used when creating the device for quick lookup
