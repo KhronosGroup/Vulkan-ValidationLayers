@@ -1362,7 +1362,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                 return LogError(objlist, vuids.linear_sampler,
                                 "Descriptor set %s encountered the following validation error at %s time: Sampler "
                                 "(%s) is set to use VK_FILTER_LINEAR with "
-                                "compareEnable is set to VK_TRUE, but image view's (%s) format (%s) does not "
+                                "compareEnable is set to VK_FALSE, but image view's (%s) format (%s) does not "
                                 "contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.",
                                 report_data->FormatHandle(set).c_str(), caller,
                                 report_data->FormatHandle(sampler_state->sampler()).c_str(),
