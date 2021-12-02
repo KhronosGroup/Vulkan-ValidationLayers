@@ -28,15 +28,16 @@
 #include "base_node.h"
 #include "hash_vk_types.h"
 
+enum QueryState {
+    QUERYSTATE_UNKNOWN,    // Initial state.
+    QUERYSTATE_RESET,      // After resetting.
+    QUERYSTATE_RUNNING,    // Query running.
+    QUERYSTATE_ENDED,      // Query ended but results may not be available.
+    QUERYSTATE_AVAILABLE,  // Results available.
+};
+
 class QUERY_POOL_STATE : public BASE_NODE {
   public:
-    VkQueryPoolCreateInfo createInfo;
-
-    bool has_perf_scope_command_buffer;
-    bool has_perf_scope_render_pass;
-    uint32_t n_performance_passes;
-    uint32_t perf_counter_index_count;
-
     QUERY_POOL_STATE(VkQueryPool qp, const VkQueryPoolCreateInfo *pCreateInfo, uint32_t index_count, uint32_t n_perf_pass,
                      bool has_cb, bool has_rb)
         : BASE_NODE(qp, kVulkanObjectTypeQueryPool),
@@ -44,9 +45,39 @@ class QUERY_POOL_STATE : public BASE_NODE {
           has_perf_scope_command_buffer(has_cb),
           has_perf_scope_render_pass(has_rb),
           n_performance_passes(n_perf_pass),
-          perf_counter_index_count(index_count) {}
+          perf_counter_index_count(index_count),
+          query_states_(pCreateInfo->queryCount) {
+        for (uint32_t i = 0; i < pCreateInfo->queryCount; ++i) {
+            auto perf_size = n_perf_pass > 0 ? n_perf_pass : 1;
+            query_states_[i].reserve(perf_size);
+            for (uint32_t p = 0; p < perf_size; p++) {
+                query_states_[i].emplace_back(QUERYSTATE_UNKNOWN);
+            }
+        }
+    }
 
     VkQueryPool pool() const { return handle_.Cast<VkQueryPool>(); }
+
+    void SetQueryState(uint32_t query, uint32_t perf_pass, QueryState state) {
+        assert(query < query_states_.size());
+        assert((n_performance_passes == 0 && perf_pass == 0) || (perf_pass < n_performance_passes));
+        query_states_[query][perf_pass] = state;
+    }
+    QueryState GetQueryState(uint32_t query, uint32_t perf_pass) const {
+        assert(query < query_states_.size());
+        assert((n_performance_passes == 0 && perf_pass == 0) || (perf_pass < n_performance_passes));
+        return query_states_[query][perf_pass];
+    }
+
+    const VkQueryPoolCreateInfo createInfo;
+
+    const bool has_perf_scope_command_buffer;
+    const bool has_perf_scope_render_pass;
+    const uint32_t n_performance_passes;
+    const uint32_t perf_counter_index_count;
+
+  private:
+    std::vector<small_vector<QueryState, 1>> query_states_;
 };
 
 struct QueryObject {
@@ -87,14 +118,6 @@ struct QueryObject {
 inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
     return ((query1.pool == query2.pool) && (query1.query == query2.query) && (query1.perf_pass == query2.perf_pass));
 }
-
-enum QueryState {
-    QUERYSTATE_UNKNOWN,    // Initial state.
-    QUERYSTATE_RESET,      // After resetting.
-    QUERYSTATE_RUNNING,    // Query running.
-    QUERYSTATE_ENDED,      // Query ended but results may not be available.
-    QUERYSTATE_AVAILABLE,  // Results available.
-};
 
 typedef std::map<QueryObject, QueryState> QueryMap;
 

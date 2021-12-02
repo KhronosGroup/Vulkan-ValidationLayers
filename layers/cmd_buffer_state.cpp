@@ -1289,7 +1289,8 @@ void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
     }
 
     for (const auto &query_state_pair : local_query_to_state_map) {
-        dev_data->queryToStateMap[query_state_pair.first] = query_state_pair.second;
+        auto query_pool_state = dev_data->Get<QUERY_POOL_STATE>(query_state_pair.first.pool);
+        query_pool_state->SetQueryState(query_state_pair.first.query, query_state_pair.first.perf_pass, query_state_pair.second);
     }
 
     for (const auto &function : eventUpdates) {
@@ -1317,7 +1318,8 @@ void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass) {
 
     for (const auto &query_state_pair : local_query_to_state_map) {
         if (query_state_pair.second == QUERYSTATE_ENDED) {
-            dev_data->queryToStateMap[query_state_pair.first] = QUERYSTATE_AVAILABLE;
+            auto query_pool_state = dev_data->Get<QUERY_POOL_STATE>(query_state_pair.first.pool);
+            query_pool_state->SetQueryState(query_state_pair.first.query, query_state_pair.first.perf_pass, QUERYSTATE_AVAILABLE);
         }
     }
 }
