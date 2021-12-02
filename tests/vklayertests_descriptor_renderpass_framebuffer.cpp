@@ -1517,7 +1517,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidFragmentDensityMapReferences) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, &rpfdmi, 0, 1, &attach, 1, &subpass, 0, nullptr};
 
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false,
-                         "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02547", nullptr);
+                         "VUID-VkRenderPassCreateInfo-fragmentDensityMapAttachment-06471", nullptr);
 
     // Set wrong VkImageLayout
     ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
@@ -9628,6 +9628,200 @@ TEST_F(VkLayerTest, FramebufferDepthStencilResolveAttachmentTests) {
     }
 
     vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
+}
+
+TEST_F(VkLayerTest, DepthStencilResolveMode) {
+    TEST_DESCRIPTION("Test valid usage of the VkResolveModeFlagBits");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    // DepthStencilResolve only can be done with RenderPass2
+    if (!CheckCreateRenderPass2Support(this, m_device_extension_names)) {
+        printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+    assert(vkCreateRenderPass2KHR != nullptr);
+
+    VkFormat depthFormat = FindSupportedDepthOnlyFormat(gpu());
+    VkFormat stencilFormat = FindSupportedStencilOnlyFormat(gpu());
+    VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
+    if ((depthFormat == VK_FORMAT_UNDEFINED) || (stencilFormat == VK_FORMAT_UNDEFINED) ||
+        (depthStencilFormat == VK_FORMAT_UNDEFINED)) {
+        printf("%s Did not find a supported depth stencil formats; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceDepthStencilResolveProperties ds_resolve_props = LvlInitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
+    VkPhysicalDeviceProperties2KHR prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ds_resolve_props);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
+
+    VkRenderPass renderPass;
+
+    VkAttachmentDescription2KHR attachmentDescriptions[2] = {};
+    // Depth/stencil attachment
+    attachmentDescriptions[0] = LvlInitStruct<VkAttachmentDescription2KHR>();
+    attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_4_BIT;
+    attachmentDescriptions[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    // Depth/stencil resolve attachment
+    attachmentDescriptions[1] = LvlInitStruct<VkAttachmentDescription2KHR>();
+    attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachmentDescriptions[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference2KHR depthStencilAttachmentReference = LvlInitStruct<VkAttachmentReference2KHR>();
+    depthStencilAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
+    depthStencilAttachmentReference.attachment = 0;
+    VkAttachmentReference2KHR depthStencilResolveAttachmentReference = LvlInitStruct<VkAttachmentReference2KHR>();
+    depthStencilResolveAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
+    depthStencilResolveAttachmentReference.attachment = 1;
+    VkSubpassDescriptionDepthStencilResolveKHR subpassDescriptionDSR = LvlInitStruct<VkSubpassDescriptionDepthStencilResolveKHR>();
+    subpassDescriptionDSR.pDepthStencilResolveAttachment = &depthStencilResolveAttachmentReference;
+    VkSubpassDescription2KHR subpassDescription = LvlInitStruct<VkSubpassDescription2KHR>(&subpassDescriptionDSR);
+    subpassDescription.pDepthStencilAttachment = &depthStencilAttachmentReference;
+
+    VkRenderPassCreateInfo2KHR renderPassCreateInfo = LvlInitStruct<VkRenderPassCreateInfo2KHR>();
+    renderPassCreateInfo.attachmentCount = 2;
+    renderPassCreateInfo.subpassCount = 1;
+    renderPassCreateInfo.pSubpasses = &subpassDescription;
+    renderPassCreateInfo.pAttachments = attachmentDescriptions;
+
+    // Both modes can't be none
+    attachmentDescriptions[0].format = depthStencilFormat;
+    attachmentDescriptions[1].format = depthStencilFormat;
+    subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_NONE;
+    subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_NONE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178");
+    vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+    m_errorMonitor->VerifyFound();
+
+    // Stencil is used but resolve is set to none, depthResolveMode should be ignored
+    attachmentDescriptions[0].format = stencilFormat;
+    attachmentDescriptions[1].format = stencilFormat;
+    subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+    subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_NONE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178");
+    vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+    m_errorMonitor->VerifyFound();
+    subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+
+    // Invalid use of UNUSED
+    depthStencilAttachmentReference.attachment = VK_ATTACHMENT_UNUSED;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03177");
+    vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+    m_errorMonitor->VerifyFound();
+    depthStencilAttachmentReference.attachment = 0;
+
+    // attachmentCount == 2
+    depthStencilResolveAttachmentReference.attachment = 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-pSubpasses-06473");
+    vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+    m_errorMonitor->VerifyFound();
+    depthStencilResolveAttachmentReference.attachment = 1;
+
+    // test invalid sample counts
+    attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03179");
+    vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+    m_errorMonitor->VerifyFound();
+    attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_4_BIT;
+
+    attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_4_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03180");
+    vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+    m_errorMonitor->VerifyFound();
+    attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_1_BIT;
+
+    // test resolve and non-resolve formats are not same types
+    attachmentDescriptions[0].format = stencilFormat;
+    attachmentDescriptions[1].format = depthFormat;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181");
+    vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+    m_errorMonitor->VerifyFound();
+
+    attachmentDescriptions[0].format = depthFormat;
+    attachmentDescriptions[1].format = stencilFormat;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03182");
+    vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+    m_errorMonitor->VerifyFound();
+
+    // test when independentResolve and independentResolve are false
+    attachmentDescriptions[0].format = depthStencilFormat;
+    attachmentDescriptions[1].format = depthStencilFormat;
+    if (ds_resolve_props.independentResolve == VK_FALSE) {
+        if (ds_resolve_props.independentResolveNone == VK_FALSE) {
+            subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_NONE;
+            subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+            m_errorMonitor->SetDesiredFailureMsg(
+                kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185");
+            vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+            m_errorMonitor->VerifyFound();
+        } else {
+            if ((ds_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) != 0) {
+                subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+                subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+                m_errorMonitor->SetDesiredFailureMsg(
+                    kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186");
+                vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+                m_errorMonitor->VerifyFound();
+            }
+            if ((ds_resolve_props.supportedStencilResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) != 0) {
+                subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+                subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+                m_errorMonitor->SetDesiredFailureMsg(
+                    kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186");
+                vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+                m_errorMonitor->VerifyFound();
+            }
+        }
+    } else {
+        // test using unsupported resolve mode, which currently can only be AVERAGE
+        // Need independentResolve to make easier to test
+        if ((ds_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) == 0) {
+            subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+            subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-03183");
+            vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+            m_errorMonitor->VerifyFound();
+        }
+        if ((ds_resolve_props.supportedStencilResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) == 0) {
+            subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+            subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                                 "VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-03184");
+            vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+            m_errorMonitor->VerifyFound();
+        }
+    }
 }
 
 TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentLayout) {
