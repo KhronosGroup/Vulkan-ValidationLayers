@@ -2896,34 +2896,6 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     return skip;
 }
 
-void CoreChecks::RecordGraphicsPipelineShaderDynamicState(PIPELINE_STATE *pipeline_state) {
-    if (phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports ||
-        !IsDynamic(pipeline_state, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT)) {
-        return;
-    }
-
-    for (auto &stage : pipeline_state->stage_state) {
-        if (stage.stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage.stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
-            stage.stage_flag == VK_SHADER_STAGE_MESH_BIT_NV) {
-            bool primitiverate_written = false;
-
-            for (const auto &set : stage.module->GetBuiltinDecorationList()) {
-                auto insn = stage.module->at(set.offset);
-                if (set.builtin == spv::BuiltInPrimitiveShadingRateKHR) {
-                    primitiverate_written = stage.module->IsBuiltInWritten(insn, stage.entrypoint);
-                }
-                if (primitiverate_written) {
-                    break;
-                }
-            }
-
-            if (primitiverate_written) {
-                pipeline_state->wrote_primitive_shading_rate.insert(stage.stage_flag);
-            }
-        }
-    }
-}
-
 bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE *pipeline, const CMD_BUFFER_STATE *pCB,
                                                             const char *caller, const DrawDispatchVuid &vuid) const {
     bool skip = false;
@@ -2933,7 +2905,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
             stage.stage_flag == VK_SHADER_STAGE_MESH_BIT_NV) {
             if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
                 IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && pCB->viewportWithCountCount != 1) {
-                if (pipeline->wrote_primitive_shading_rate.find(stage.stage_flag) != pipeline->wrote_primitive_shading_rate.end()) {
+                if (stage.wrote_primitive_shading_rate) {
                     skip |=
                         LogError(pipeline->pipeline(), vuid.viewport_count_primitive_shading_rate,
                                  "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"

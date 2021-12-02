@@ -248,6 +248,24 @@ static bool HasAtomicDescriptor(const std::vector<PipelineStageState::Descriptor
                        [](const PipelineStageState::DescriptorUse &use) { return use.second.is_writable; });
 }
 
+static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, spirv_inst_iter entrypoint,
+                                      const SHADER_MODULE_STATE *module) {
+    bool primitiverate_written = false;
+    if (stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
+        stage_flag == VK_SHADER_STAGE_MESH_BIT_NV) {
+        for (const auto &set : module->GetBuiltinDecorationList()) {
+            auto insn = module->at(set.offset);
+            if (set.builtin == spv::BuiltInPrimitiveShadingRateKHR) {
+                primitiverate_written = module->IsBuiltInWritten(insn, entrypoint);
+            }
+            if (primitiverate_written) {
+                break;
+            }
+        }
+    }
+    return primitiverate_written;
+}
+
 PipelineStageState::PipelineStageState(const VkPipelineShaderStageCreateInfo *stage,
                                        std::shared_ptr<const SHADER_MODULE_STATE> &module_)
     : module(module_),
@@ -257,7 +275,8 @@ PipelineStageState::PipelineStageState(const VkPipelineShaderStageCreateInfo *st
       accessible_ids(module->MarkAccessibleIds(entrypoint)),
       descriptor_uses(module->CollectInterfaceByDescriptorSlot(accessible_ids)),
       has_writable_descriptor(HasWriteableDescriptor(descriptor_uses)),
-      has_atomic_descriptor(HasAtomicDescriptor(descriptor_uses)) {}
+      has_atomic_descriptor(HasAtomicDescriptor(descriptor_uses)),
+      wrote_primitive_shading_rate(WrotePrimitiveShadingRate(stage_flag, entrypoint, module.get())) {}
 
 static PIPELINE_STATE::StageStateVec GetStageStates(const ValidationStateTracker *state_data,
                                                     const safe_VkPipelineShaderStageCreateInfo *stages, uint32_t stage_count) {

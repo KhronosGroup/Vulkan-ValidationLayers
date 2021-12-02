@@ -5746,20 +5746,6 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     return skip;
 }
 
-void CoreChecks::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                       const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       VkResult result, void *cgpl_state_data) {
-    ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
-                                                                  pPipelines, result, cgpl_state_data);
-    if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
-        for (uint32_t i = 0; i < count; i++) {
-            auto pipeline_state = Get<PIPELINE_STATE>(pPipelines[i]);
-            RecordGraphicsPipelineShaderDynamicState(pipeline_state);
-        }
-    }
-}
-
 bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
