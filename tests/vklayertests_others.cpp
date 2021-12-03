@@ -13184,7 +13184,10 @@ TEST_F(VkLayerTest, ValidateCreateSamplerWithBorderColorSwizzle) {
 TEST_F(VkLayerTest, ValidateBeginRenderingDisabled) {
     TEST_DESCRIPTION("Validate VK_KHR_dynamic_rendering VUs when disabled");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    auto version = SetTargetApiVersion(VK_API_VERSION_1_3);
+    if (version < VK_API_VERSION_1_3) {
+        version = SetTargetApiVersion(VK_API_VERSION_1_1);
+    }
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
 
@@ -13201,7 +13204,9 @@ TEST_F(VkLayerTest, ValidateBeginRenderingDisabled) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
     auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
 
     m_commandBuffer->begin();
@@ -13209,6 +13214,17 @@ TEST_F(VkLayerTest, ValidateBeginRenderingDisabled) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRendering-dynamicRendering-06446");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
+
+    if (vulkan_13) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRendering-dynamicRendering-06446");
+        vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndRendering-None-06161");
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdEndRendering(m_commandBuffer->handle());
+        m_errorMonitor->VerifyFound();
+        m_commandBuffer->EndRenderPass();
+    }
 
     m_commandBuffer->end();
 }
