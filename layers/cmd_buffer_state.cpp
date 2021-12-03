@@ -1088,6 +1088,8 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
 // Set image layout for given VkImageSubresourceRange struct
 void CMD_BUFFER_STATE::SetImageLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &image_subresource_range,
                                       VkImageLayout layout, VkImageLayout expected_layout) {
+    std::cout << "CMD_BUFFER_STATE::" << __func__ << " image=" << std::hex << image_state.image() << std::dec << " layout=" << layout
+	    << " expected_layout=" << expected_layout << std::endl;
     auto *subresource_map = GetImageSubresourceLayoutMap(image_state);
     assert(subresource_map);  // the non-const getter must return a valid pointer
     if (subresource_map->SetSubresourceRangeLayout(*this, image_subresource_range, layout, expected_layout)) {
@@ -1101,6 +1103,7 @@ void CMD_BUFFER_STATE::SetImageViewInitialLayout(const IMAGE_VIEW_STATE &view_st
         return;
     }
     IMAGE_STATE *image_state = view_state.image_state.get();
+    std::cout << "CMD_BUFFER_STATE::" << __func__ << " image=" << std::hex << image_state->image() << std::dec << " layout=" << layout << std::endl;
     auto *subresource_map = GetImageSubresourceLayoutMap(*image_state);
     subresource_map->SetSubresourceRangeInitialLayout(*this, layout, view_state);
 }
@@ -1108,6 +1111,7 @@ void CMD_BUFFER_STATE::SetImageViewInitialLayout(const IMAGE_VIEW_STATE &view_st
 // Set the initial image layout for a passed non-normalized subresource range
 void CMD_BUFFER_STATE::SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range,
                                              VkImageLayout layout) {
+    std::cout << "CMD_BUFFER_STATE::" << __func__ << " image=" << std::hex << image_state.image() << std::dec << " layout=" << layout << std::endl;
     auto *subresource_map = GetImageSubresourceLayoutMap(image_state);
     assert(subresource_map);
     subresource_map->SetSubresourceRangeInitialLayout(*this, image_state.NormalizeSubresourceRange(range), layout);
@@ -1121,12 +1125,14 @@ void CMD_BUFFER_STATE::SetImageInitialLayout(VkImage image, const VkImageSubreso
 
 void CMD_BUFFER_STATE::SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceLayers &layers,
                                              VkImageLayout layout) {
+    std::cout << "CMD_BUFFER_STATE::" << __func__ << " image=" << std::hex << image_state.image() << std::dec << " layout=" << layout << std::endl;
     SetImageInitialLayout(image_state, RangeFromLayers(layers), layout);
 }
 
 // Set image layout for all slices of an image view
 void CMD_BUFFER_STATE::SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, VkImageLayout layout, VkImageLayout layoutStencil) {
     const IMAGE_STATE *image_state = view_state.image_state.get();
+    std::cout << "CMD_BUFFER_STATE::" << __func__ << " image=" << std::hex << image_state->image() << std::dec << " layout=" << layout << std::endl;
 
     VkImageSubresourceRange sub_range = view_state.normalized_subresource_range;
 

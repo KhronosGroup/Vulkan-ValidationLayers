@@ -4338,6 +4338,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
         const auto *global_map = image_state->layout_range_map.get();
         assert(global_map);
 
+	    std::cout << __func__ << ": image=" << std::hex << image_state->image() << " map=" << global_map << " overlay=" << overlay_map << std::dec << std::endl;
         // Note: don't know if it would matter
         // if (global_map->empty() && overlay_map->empty()) // skip this next loop...;
 
@@ -4354,6 +4355,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
 
             VkImageLayout image_layout = kInvalidLayout;
 
+	        std::cout << __func__ << ": image=" << std::hex << image_state->image() << std::dec << " pos=" << pos->first.begin
+                      << "-" << pos->first.end << " A=" << current_layout->pos_A->valid << " B=" << current_layout->pos_B->valid;
             if (current_layout->range.empty()) break;  // When we are past the end of data in overlay and global... stop looking
             if (current_layout->pos_A->valid) {        // pos_A denotes the overlay map in the parallel iterator
                 image_layout = current_layout->pos_A->lower_bound->second;
@@ -4361,12 +4364,14 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
                 image_layout = current_layout->pos_B->lower_bound->second;
             }
             const auto intersected_range = pos->first & current_layout->range;
+            std::cout << " layout=" << image_layout << " initial=" << initial_layout << std::endl;
             if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 // TODO: Set memory invalid which is in mem_tracker currently
             } else if (image_layout != initial_layout) {
                 const auto aspect_mask = image_state->subresource_encoder.Decode(intersected_range.begin).aspectMask;
                 bool matches = ImageLayoutMatches(aspect_mask, image_layout, initial_layout);
                 if (!matches) {
+		    std::cout << __func__ << ": image=" << std::hex << image_state->image() << std::dec << " layout=" << image_layout << " initial=" <<  initial_layout << std::endl;
                     // We can report all the errors for the intersected range directly
                     for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
                         const auto subresource = image_state->subresource_encoder.Decode(index);
