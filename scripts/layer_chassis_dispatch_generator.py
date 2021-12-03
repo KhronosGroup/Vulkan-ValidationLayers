@@ -1172,6 +1172,31 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
     VkResult result = layer_data->device_dispatch_table.BeginCommandBuffer(commandBuffer, (const VkCommandBufferBeginInfo*)local_pBeginInfo);
     return result;
 }
+
+VkResult DispatchDeferredOperationJoinKHR(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      operation)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (wrap_handles)
+    {
+        operation = layer_data->Unwrap(operation);
+    }
+    VkResult result = layer_data->device_dispatch_table.DeferredOperationJoinKHR(device, operation);
+
+    // If this thread completed the operation, free any retained memory.
+    if (result == VK_SUCCESS)
+    {
+        auto iter = layer_data->deferred_operation_cleanup.pop(operation);
+        if (iter != layer_data->deferred_operation_cleanup.end())
+        {
+            std::function<void()> &cleanup_fn = iter->second;
+            cleanup_fn();
+        }
+    }
+
+    return result;
+}
 """
     # Separate generated text for source and headers
     ALL_SECTIONS = ['source_file', 'header_file']
@@ -1229,6 +1254,7 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
             'vkGetPhysicalDeviceToolPropertiesEXT',
             'vkSetPrivateDataEXT',
             'vkGetPrivateDataEXT',
+            'vkDeferredOperationJoinKHR',
             # These are for special-casing the pInheritanceInfo issue (must be ignored for primary CBs)
             'vkAllocateCommandBuffers',
             'vkFreeCommandBuffers',
@@ -1619,11 +1645,23 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
 
     #
     # Clean up local declarations
-    def cleanUpLocalDeclarations(self, indent, prefix, name, len, index):
+    def cleanUpLocalDeclarations(self, indent, prefix, name, len, deferred_name, index):
         cleanup = ''
-        if len is not None:
-            cleanup = '%sif (local_%s%s) {\n' % (indent, prefix, name)
-            cleanup += '%s    delete[] local_%s%s;\n' % (indent, prefix, name)
+        if len is not None or deferred_name is not None:
+            delete_var = "local_%s%s" % (prefix, name)
+            if len is None:
+                delete_code = "delete %s" % (delete_var)
+            else:
+                delete_code = "delete[] %s" % (delete_var)
+            cleanup = '%sif (%s) {\n' % (indent, delete_var)
+            if deferred_name is not None:
+                cleanup += '%s    if (%s != VK_NULL_HANDLE) {\n' % (indent, deferred_name)
+                cleanup += '%s        layer_data->deferred_operation_cleanup.insert(%s, [%s](){ %s; });\n' % (indent, deferred_name, delete_var, delete_code)
+                cleanup += '%s    } else {\n' % (indent)
+                cleanup += '%s        %s;\n' % (indent, delete_code)
+                cleanup += "%s    }\n" % (indent)
+            else:
+                cleanup += '%s    %s;\n' % (indent, delete_code)
             cleanup += "%s}\n" % (indent)
         return cleanup
     #
@@ -1706,6 +1744,8 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
                         safe_type = member.type
                     # Struct Array
                     if member.len is not None:
+                        # Check if this function can be deferred.
+                        deferred_name = next((member.name for member in members if member.type == 'VkDeferredOperationKHR'), None)
                         # Update struct prefix
                         if first_level_param == True:
                             new_prefix = 'local_%s' % member.name
@@ -1737,13 +1777,16 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
                         indent = self.decIndent(indent)
                         pre_code += '%s    }\n' % indent
                         if first_level_param == True:
-                            post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.len, index)
+                            post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.len, deferred_name, index)
                     # Single Struct
                     elif member.ispointer:
+                        # Check if this function can be deferred.
+                        deferred_name = next((member.name for member in members if member.type == 'VkDeferredOperationKHR'), None)
                         # Update struct prefix
                         if first_level_param == True:
                             new_prefix = 'local_%s->' % member.name
-                            decls += '%s%s var_local_%s%s;\n' % (indent, safe_type, prefix, member.name)
+                            if deferred_name is None:
+                                decls += '%s%s var_local_%s%s;\n' % (indent, safe_type, prefix, member.name)
                             decls += '%s%s *local_%s%s = NULL;\n' % (indent, safe_type, prefix, member.name)
                         else:
                             new_prefix = '%s%s->' % (prefix, member.name)
@@ -1751,7 +1794,10 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
                         pre_code += '%s    if (%s%s) {\n' % (indent, prefix, member.name)
                         indent = self.incIndent(indent)
                         if first_level_param == True:
-                            pre_code += '%s    local_%s%s = &var_local_%s%s;\n' % (indent, prefix, member.name, prefix, member.name)
+                            if deferred_name is None:
+                                pre_code += '%s    local_%s%s = &var_local_%s%s;\n' % (indent, prefix, member.name, prefix, member.name)
+                            else:
+                                pre_code += '%s    local_%s = new %s;\n' % (indent, member.name, safe_type)
                             if 'safe_' in safe_type:
                                 pre_code += '%s    local_%s%s->initialize(%s);\n' % (indent, prefix, member.name, member.name)
                             else:
@@ -1766,7 +1812,7 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
                         indent = self.decIndent(indent)
                         pre_code += '%s    }\n' % indent
                         if first_level_param == True:
-                            post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.len, index)
+                            post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.len, deferred_name, index)
                     else:
                         # Update struct prefix
                         if first_level_param == True:
@@ -1980,7 +2026,32 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
                 copy_feedback_source += '        }\n'
                 copy_feedback_source += '    }\n'
                 self.appendSection('source_file', copy_feedback_source)
-            self.appendSection('source_file', "\n".join(str(api_post).rstrip().split("\n")))
+            if ('CreateRayTracingPipelinesKHR' in cmdname):
+                ray_tracing_source    = '    if (deferredOperation != VK_NULL_HANDLE) {\n'
+                ray_tracing_source   += '        auto cleanup_fn = [local_pCreateInfos,pPipelines,createInfoCount,layer_data](){\n'
+                ray_tracing_source   += '                              if (local_pCreateInfos) {\n'
+                ray_tracing_source   += '                                  delete[] local_pCreateInfos;\n'
+                ray_tracing_source   += '                              }\n'
+                ray_tracing_source   += '                              for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {\n'
+                ray_tracing_source   += '                                  if (pPipelines[index0] != VK_NULL_HANDLE) {\n'
+                ray_tracing_source   += '                                      pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);\n'
+                ray_tracing_source   += '                                  }\n'
+                ray_tracing_source   += '                              }\n'
+                ray_tracing_source   += '                          };\n'
+                ray_tracing_source   += '        layer_data->deferred_operation_cleanup.insert(deferredOperation, cleanup_fn);\n'
+                ray_tracing_source   += '    } else {\n'
+                ray_tracing_source   += '        if (local_pCreateInfos) {\n'
+                ray_tracing_source   += '            delete[] local_pCreateInfos;\n'
+                ray_tracing_source   += '        }\n'
+                ray_tracing_source   += '        for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {\n'
+                ray_tracing_source   += '            if (pPipelines[index0] != VK_NULL_HANDLE) {\n'
+                ray_tracing_source   += '                pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);\n'
+                ray_tracing_source   += '            }\n'
+                ray_tracing_source   += '        }\n'
+                ray_tracing_source   += '    }\n'
+                self.appendSection('source_file', ray_tracing_source)
+            else:
+                self.appendSection('source_file', "\n".join(str(api_post).rstrip().split("\n")))
             # Handle the return result variable, if any
             if (resulttype is not None):
                 self.appendSection('source_file', '    return result;')
