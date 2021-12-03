@@ -3320,6 +3320,8 @@ class ValidationObject {
         std::vector<ValidationObject*> object_dispatch;
         LayerObjectTypeId container_type;
 
+        vl_concurrent_unordered_map<VkDeferredOperationKHR, std::function<void()>, 0> deferred_operation_cleanup;
+
         std::string layer_name = "CHASSIS";
 
         // Constructor

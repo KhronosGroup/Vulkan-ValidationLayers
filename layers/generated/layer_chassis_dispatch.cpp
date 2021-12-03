@@ -1247,6 +1247,31 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
     return result;
 }
 
+VkResult DispatchDeferredOperationJoinKHR(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      operation)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (wrap_handles)
+    {
+        operation = layer_data->Unwrap(operation);
+    }
+    VkResult result = layer_data->device_dispatch_table.DeferredOperationJoinKHR(device, operation);
+
+    // If this thread completed the operation, free any retained memory.
+    if (result == VK_SUCCESS)
+    {
+        auto iter = layer_data->deferred_operation_cleanup.pop(operation);
+        if (iter != layer_data->deferred_operation_cleanup.end())
+        {
+            std::function<void()> &cleanup_fn = iter->second;
+            cleanup_fn();
+        }
+    }
+
+    return result;
+}
+
 
 
 // Skip vkCreateInstance dispatch, manually generated
@@ -5882,19 +5907,7 @@ VkResult DispatchGetDeferredOperationResultKHR(
     return result;
 }
 
-VkResult DispatchDeferredOperationJoinKHR(
-    VkDevice                                    device,
-    VkDeferredOperationKHR                      operation)
-{
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.DeferredOperationJoinKHR(device, operation);
-    {
-        operation = layer_data->Unwrap(operation);
-    }
-    VkResult result = layer_data->device_dispatch_table.DeferredOperationJoinKHR(device, operation);
-
-    return result;
-}
+// Skip vkDeferredOperationJoinKHR dispatch, manually generated
 
 VkResult DispatchGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
@@ -9170,7 +9183,11 @@ VkResult DispatchBuildAccelerationStructuresKHR(
     }
     VkResult result = layer_data->device_dispatch_table.BuildAccelerationStructuresKHR(device, deferredOperation, infoCount, (const VkAccelerationStructureBuildGeometryInfoKHR*)local_pInfos, ppBuildRangeInfos);
     if (local_pInfos) {
-        delete[] local_pInfos;
+        if (deferredOperation != VK_NULL_HANDLE) {
+            layer_data->deferred_operation_cleanup.insert(deferredOperation, [local_pInfos](){ delete[] local_pInfos; });
+        } else {
+            delete[] local_pInfos;
+        }
     }
     return result;
 }
@@ -9182,12 +9199,11 @@ VkResult DispatchCopyAccelerationStructureKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CopyAccelerationStructureKHR(device, deferredOperation, pInfo);
-    safe_VkCopyAccelerationStructureInfoKHR var_local_pInfo;
     safe_VkCopyAccelerationStructureInfoKHR *local_pInfo = NULL;
     {
         deferredOperation = layer_data->Unwrap(deferredOperation);
         if (pInfo) {
-            local_pInfo = &var_local_pInfo;
+            local_pInfo = new safe_VkCopyAccelerationStructureInfoKHR;
             local_pInfo->initialize(pInfo);
             if (pInfo->src) {
                 local_pInfo->src = layer_data->Unwrap(pInfo->src);
@@ -9198,7 +9214,13 @@ VkResult DispatchCopyAccelerationStructureKHR(
         }
     }
     VkResult result = layer_data->device_dispatch_table.CopyAccelerationStructureKHR(device, deferredOperation, (const VkCopyAccelerationStructureInfoKHR*)local_pInfo);
-
+    if (local_pInfo) {
+        if (deferredOperation != VK_NULL_HANDLE) {
+            layer_data->deferred_operation_cleanup.insert(deferredOperation, [local_pInfo](){ delete local_pInfo; });
+        } else {
+            delete local_pInfo;
+        }
+    }
     return result;
 }
 
@@ -9209,12 +9231,11 @@ VkResult DispatchCopyAccelerationStructureToMemoryKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo);
-    safe_VkCopyAccelerationStructureToMemoryInfoKHR var_local_pInfo;
     safe_VkCopyAccelerationStructureToMemoryInfoKHR *local_pInfo = NULL;
     {
         deferredOperation = layer_data->Unwrap(deferredOperation);
         if (pInfo) {
-            local_pInfo = &var_local_pInfo;
+            local_pInfo = new safe_VkCopyAccelerationStructureToMemoryInfoKHR;
             local_pInfo->initialize(pInfo);
             if (pInfo->src) {
                 local_pInfo->src = layer_data->Unwrap(pInfo->src);
@@ -9222,7 +9243,13 @@ VkResult DispatchCopyAccelerationStructureToMemoryKHR(
         }
     }
     VkResult result = layer_data->device_dispatch_table.CopyAccelerationStructureToMemoryKHR(device, deferredOperation, (const VkCopyAccelerationStructureToMemoryInfoKHR*)local_pInfo);
-
+    if (local_pInfo) {
+        if (deferredOperation != VK_NULL_HANDLE) {
+            layer_data->deferred_operation_cleanup.insert(deferredOperation, [local_pInfo](){ delete local_pInfo; });
+        } else {
+            delete local_pInfo;
+        }
+    }
     return result;
 }
 
@@ -9233,12 +9260,11 @@ VkResult DispatchCopyMemoryToAccelerationStructureKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo);
-    safe_VkCopyMemoryToAccelerationStructureInfoKHR var_local_pInfo;
     safe_VkCopyMemoryToAccelerationStructureInfoKHR *local_pInfo = NULL;
     {
         deferredOperation = layer_data->Unwrap(deferredOperation);
         if (pInfo) {
-            local_pInfo = &var_local_pInfo;
+            local_pInfo = new safe_VkCopyMemoryToAccelerationStructureInfoKHR;
             local_pInfo->initialize(pInfo);
             if (pInfo->dst) {
                 local_pInfo->dst = layer_data->Unwrap(pInfo->dst);
@@ -9246,7 +9272,13 @@ VkResult DispatchCopyMemoryToAccelerationStructureKHR(
         }
     }
     VkResult result = layer_data->device_dispatch_table.CopyMemoryToAccelerationStructureKHR(device, deferredOperation, (const VkCopyMemoryToAccelerationStructureInfoKHR*)local_pInfo);
-
+    if (local_pInfo) {
+        if (deferredOperation != VK_NULL_HANDLE) {
+            layer_data->deferred_operation_cleanup.insert(deferredOperation, [local_pInfo](){ delete local_pInfo; });
+        } else {
+            delete local_pInfo;
+        }
+    }
     return result;
 }
 
@@ -9492,16 +9524,29 @@ VkResult DispatchCreateRayTracingPipelinesKHR(
         }
     }
 
-    if (local_pCreateInfos) {
-        delete[] local_pCreateInfos;
-    }
-    {
+    if (deferredOperation != VK_NULL_HANDLE) {
+        auto cleanup_fn = [local_pCreateInfos,pPipelines,createInfoCount,layer_data](){
+                              if (local_pCreateInfos) {
+                                  delete[] local_pCreateInfos;
+                              }
+                              for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
+                                  if (pPipelines[index0] != VK_NULL_HANDLE) {
+                                      pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);
+                                  }
+                              }
+                          };
+        layer_data->deferred_operation_cleanup.insert(deferredOperation, cleanup_fn);
+    } else {
+        if (local_pCreateInfos) {
+            delete[] local_pCreateInfos;
+        }
         for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
             if (pPipelines[index0] != VK_NULL_HANDLE) {
                 pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);
             }
         }
     }
+
     return result;
 }
 
