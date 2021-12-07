@@ -1807,7 +1807,8 @@ bool CoreChecks::ValidateAtomicsTypes(SHADER_MODULE_STATE const *src) const {
     return skip;
 }
 
-bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint) const {
+bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint, VkShaderStageFlagBits stage,
+                                        const PIPELINE_STATE *pipeline) const {
     auto entrypoint_id = entrypoint.word(2);
 
     // The first denorm execution mode encountered, along with its bit width.
@@ -2037,6 +2038,21 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
                     if (!enabled_features.maintenance4_features.maintenance4) {
                         skip |= LogError(device, "VUID-RuntimeSpirv-LocalSizeId-06434",
                                          "LocalSizeId execution mode used but maintenance4 feature not enabled");
+                    }
+                    break;
+                }
+
+                case spv::ExecutionModeEarlyFragmentTests: {
+                    if ((stage == VK_SHADER_STAGE_FRAGMENT_BIT) &&
+                        ((pipeline->create_info.graphics.pDepthStencilState->flags &
+                          (VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM |
+                           VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM)) != 0)) {
+                        skip |= LogError(
+                            device, " VUID-VkGraphicsPipelineCreateInfo-pStages-06466",
+                            "The fragment shader enables early fragment tests, but VkPipelineDepthStencilStateCreateInfo::flags == "
+                            "%s",
+                            string_VkPipelineDepthStencilStateCreateFlags(pipeline->create_info.graphics.pDepthStencilState->flags)
+                                .c_str());
                     }
                     break;
                 }
@@ -2581,7 +2597,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     skip |= ValidateShaderStorageImageFormats(module);
     skip |= ValidateShaderStageMaxResources(pStage->stage, pipeline);
     skip |= ValidateAtomicsTypes(module);
-    skip |= ValidateExecutionModes(module, entrypoint);
+    skip |= ValidateExecutionModes(module, entrypoint, pStage->stage, pipeline);
     skip |= ValidateSpecializations(pStage);
     skip |= ValidateDecorations(module);
     if (check_point_size && !pipeline->create_info.graphics.pRasterizationState->rasterizerDiscardEnable) {
