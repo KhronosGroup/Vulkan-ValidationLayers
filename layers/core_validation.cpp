@@ -5539,11 +5539,17 @@ bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass 
 // Access helper functions for external modules
 VkFormatProperties3KHR CoreChecks::GetPDFormatProperties(const VkFormat format) const {
     auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
-    VkFormatProperties format_properties;
-    DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
-    fmt_props_3.linearTilingFeatures = format_properties.linearTilingFeatures;
-    fmt_props_3.optimalTilingFeatures = format_properties.optimalTilingFeatures;
-    fmt_props_3.bufferFeatures = format_properties.bufferFeatures;
+    auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+
+    if (has_format_feature2) {
+        DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &fmt_props_2);
+    } else {
+        VkFormatProperties format_properties;
+        DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
+        fmt_props_3.linearTilingFeatures = format_properties.linearTilingFeatures;
+        fmt_props_3.optimalTilingFeatures = format_properties.optimalTilingFeatures;
+        fmt_props_3.bufferFeatures = format_properties.bufferFeatures;
+    }
     return fmt_props_3;
 }
 
