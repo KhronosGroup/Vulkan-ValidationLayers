@@ -3584,11 +3584,11 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
             if (!write_inline_info) {
                 error_str << "Attempting write update to " << dest_set->StringifySetAndLayout() << " binding #"
                           << update->dstBinding << " with "
-                          << "VkWriteDescriptorSetInlineUniformBlockEXT missing";
+                          << "VkWriteDescriptorSetInlineUniformBlock missing";
             } else {
                 error_str << "Attempting write update to " << dest_set->StringifySetAndLayout() << " binding #"
                           << update->dstBinding << " with "
-                          << "VkWriteDescriptorSetInlineUniformBlockEXT dataSize " << write_inline_info->dataSize
+                          << "VkWriteDescriptorSetInlineUniformBlock dataSize " << write_inline_info->dataSize
                           << " not equal to "
                           << "VkWriteDescriptorSet descriptorCount " << update->descriptorCount;
             }
@@ -3597,11 +3597,11 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
         }
         // This error is probably unreachable due to the previous two errors
         if (write_inline_info && (write_inline_info->dataSize % 4) != 0) {
-            *error_code = "VUID-VkWriteDescriptorSetInlineUniformBlockEXT-dataSize-02222";
+            *error_code = "VUID-VkWriteDescriptorSetInlineUniformBlock-dataSize-02222";
             std::stringstream error_str;
             error_str << "Attempting write update to " << dest_set->StringifySetAndLayout() << " binding #" << update->dstBinding
                       << " with "
-                      << "VkWriteDescriptorSetInlineUniformBlockEXT dataSize " << write_inline_info->dataSize
+                      << "VkWriteDescriptorSetInlineUniformBlock dataSize " << write_inline_info->dataSize
                       << " not a multiple of 4";
             *error_msg = error_str.str();
             return false;
