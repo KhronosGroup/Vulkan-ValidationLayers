@@ -1122,6 +1122,7 @@ class ValidationStateTracker : public ValidationObject {
 
     DeviceFeatures enabled_features = {};
     // Device specific data
+    std::set<std::string> phys_dev_extensions;
     VkPhysicalDeviceMemoryProperties phys_dev_mem_props = {};
     VkPhysicalDeviceProperties phys_dev_props = {};
     VkPhysicalDeviceVulkan11Properties phys_dev_props_core11 = {};
@@ -1129,6 +1130,11 @@ class ValidationStateTracker : public ValidationObject {
     VkDeviceGroupDeviceCreateInfo device_group_create_info = {};
     uint32_t physical_device_count;
     uint32_t custom_border_color_sampler_count = 0;
+
+    // VK_KHR_format_feature_flags2 changes the behavior of the
+    // app/layers/spec if present. So it needs its own special boolean unlike
+    // the enabled_fatures.
+    bool has_format_feature2;
 
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2::pNext chain
     struct DeviceExtensionProperties {
