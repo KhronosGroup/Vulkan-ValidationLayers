@@ -90,12 +90,15 @@ struct SyncStageAccess {
 };
 
 struct ResourceUsageRecord {
+    enum class SubcommandType { kNone, kSubpassTransition, kLoadOp, kStoreOp, kResolveOp, kIndex };
+
     using TagIndex = size_t;
     using Count = uint32_t;
     constexpr static TagIndex kMaxIndex = std::numeric_limits<TagIndex>::max();
     constexpr static Count kMaxCount = std::numeric_limits<Count>::max();
     CMD_TYPE command = CMD_NONE;
     Count seq_num = 0U;
+    SubcommandType sub_command_type = SubcommandType::kNone;
     Count sub_command = 0U;
 
     // This is somewhat repetitive, but it prevents the need for Exec/Submit time touchup, after which usage records can be
@@ -104,9 +107,14 @@ struct ResourceUsageRecord {
     Count reset_count;
 
     ResourceUsageRecord() = default;
-    ResourceUsageRecord(CMD_TYPE command_, Count seq_num_, Count sub_command_, const CMD_BUFFER_STATE *cb_state_,
-                        Count reset_count_)
-        : command(command_), seq_num(seq_num_), sub_command(sub_command_), cb_state(cb_state_), reset_count(reset_count_) {}
+    ResourceUsageRecord(CMD_TYPE command_, Count seq_num_, SubcommandType sub_type_, Count sub_command_,
+                        const CMD_BUFFER_STATE *cb_state_, Count reset_count_)
+        : command(command_),
+          seq_num(seq_num_),
+          sub_command_type(sub_type_),
+          sub_command(sub_command_),
+          cb_state(cb_state_),
+          reset_count(reset_count_) {}
 };
 
 // The resource tag index is relative to the command buffer or queue in which it's found
@@ -929,9 +937,9 @@ class RenderPassAccessContext {
 
     void RecordLayoutTransitions(ResourceUsageTag tag);
     void RecordLoadOperations(ResourceUsageTag tag);
-    void RecordBeginRenderPass(ResourceUsageTag tag);
-    void RecordNextSubpass(ResourceUsageTag prev_subpass_tag, ResourceUsageTag next_subpass_tag);
-    void RecordEndRenderPass(AccessContext *external_context, ResourceUsageTag tag);
+    void RecordBeginRenderPass(ResourceUsageTag tag, ResourceUsageTag load_tag);
+    void RecordNextSubpass(ResourceUsageTag store_tag, ResourceUsageTag barrier_tag, ResourceUsageTag load_tag);
+    void RecordEndRenderPass(AccessContext *external_context, ResourceUsageTag store_tag, ResourceUsageTag barrier_tag);
 
     AccessContext &CurrentContext() { return subpass_contexts_[current_subpass_]; }
     const AccessContext &CurrentContext() const { return subpass_contexts_[current_subpass_]; }
@@ -1038,8 +1046,8 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     const AccessContext *GetCurrentAccessContext() const { return current_context_; }
     const SyncEventsContext *GetCurrentEventsContext() const { return &events_context_; }
     const RenderPassAccessContext *GetCurrentRenderPassContext() const { return current_renderpass_context_; }
-    void RecordBeginRenderPass(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                               const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, ResourceUsageTag tag);
+    ResourceUsageTag RecordBeginRenderPass(CMD_TYPE cmd, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                                           const std::vector<const IMAGE_VIEW_STATE *> &attachment_views);
     void ApplyGlobalBarriersToEvents(const SyncExecScope &src, const SyncExecScope &dst);
 
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const char *func_name) const;
@@ -1050,8 +1058,8 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     void RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, ResourceUsageTag tag);
     bool ValidateDrawSubpassAttachment(const char *func_name) const;
     void RecordDrawSubpassAttachment(ResourceUsageTag tag);
-    void RecordNextSubpass(ResourceUsageTag prev_tag, ResourceUsageTag next_tag);
-    void RecordEndRenderPass(ResourceUsageTag tag);
+    ResourceUsageTag RecordNextSubpass(CMD_TYPE cmd);
+    ResourceUsageTag RecordEndRenderPass(CMD_TYPE cmd);
     void RecordDestroyEvent(VkEvent event);
 
     bool ValidateFirstUse(CommandBufferAccessContext *proxy_context, const char *func_name, uint32_t index) const;
@@ -1063,22 +1071,12 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     const CMD_BUFFER_STATE *GetCommandBufferState() const { return cb_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
 
-    inline ResourceUsageTag NextSubcommandTag(CMD_TYPE command) {
-        ResourceUsageTag next = access_log_.size();
-        access_log_.emplace_back(command, command_number_, ++subcommand_number_, cb_state_.get(), reset_count_);
-        return next;
-    }
-    inline ResourceUsageTag GetTagLimit() const { return access_log_.size(); }
+    ResourceUsageTag NextSubcommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand);
+    ResourceUsageTag GetTagLimit() const { return access_log_.size(); }
 
-    inline ResourceUsageTag NextCommandTag(CMD_TYPE command) {
-        command_number_++;
-        subcommand_number_ = 0;
-        ResourceUsageTag next = access_log_.size();
-        // The lowest bit is a sub-command number used to separate operations at the end of the previous renderpass
-        // from the start of the new one in VkCmdNextRenderpass().
-        access_log_.emplace_back(command, command_number_, subcommand_number_, cb_state_.get(), reset_count_);
-        return next;
-    }
+    ResourceUsageTag NextCommandTag(CMD_TYPE command,
+                                    ResourceUsageRecord::SubcommandType subcommand = ResourceUsageRecord::SubcommandType::kNone);
+    ResourceUsageTag NextIndexedCommandTag(CMD_TYPE command, uint32_t index);
 
     const CMD_BUFFER_STATE &GetCBState() const {
         assert(cb_state_);

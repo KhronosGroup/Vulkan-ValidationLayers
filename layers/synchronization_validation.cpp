@@ -2170,29 +2170,43 @@ void CommandBufferAccessContext::RecordDrawSubpassAttachment(const ResourceUsage
     }
 }
 
-void CommandBufferAccessContext::RecordBeginRenderPass(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                                                       const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
-                                                       const ResourceUsageTag tag) {
+ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(CMD_TYPE cmd, const RENDER_PASS_STATE &rp_state,
+                                                                   const VkRect2D &render_area,
+                                                                   const std::vector<const IMAGE_VIEW_STATE *> &attachment_views) {
     // Create an access context the current renderpass.
+    const auto barrier_tag = NextCommandTag(cmd, ResourceUsageRecord::SubcommandType::kSubpassTransition);
+    const auto load_tag = NextSubcommandTag(cmd, ResourceUsageRecord::SubcommandType::kLoadOp);
     render_pass_contexts_.emplace_back(rp_state, render_area, GetQueueFlags(), attachment_views, &cb_access_context_);
     current_renderpass_context_ = &render_pass_contexts_.back();
-    current_renderpass_context_->RecordBeginRenderPass(tag);
+    current_renderpass_context_->RecordBeginRenderPass(barrier_tag, load_tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
+    return barrier_tag;
 }
 
-void CommandBufferAccessContext::RecordNextSubpass(ResourceUsageTag prev_tag, ResourceUsageTag next_tag) {
+ResourceUsageTag CommandBufferAccessContext::RecordNextSubpass(const CMD_TYPE cmd) {
     assert(current_renderpass_context_);
-    current_renderpass_context_->RecordNextSubpass(prev_tag, next_tag);
+    if (!current_renderpass_context_) return NextCommandTag(cmd);
+
+    auto store_tag = NextCommandTag(cmd, ResourceUsageRecord::SubcommandType::kStoreOp);
+    auto barrier_tag = NextSubcommandTag(cmd, ResourceUsageRecord::SubcommandType::kSubpassTransition);
+    auto load_tag = NextSubcommandTag(cmd, ResourceUsageRecord::SubcommandType::kLoadOp);
+
+    current_renderpass_context_->RecordNextSubpass(store_tag, barrier_tag, load_tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
+    return barrier_tag;
 }
 
-void CommandBufferAccessContext::RecordEndRenderPass(const ResourceUsageTag tag) {
+ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(const CMD_TYPE cmd) {
     assert(current_renderpass_context_);
-    if (!current_renderpass_context_) return;
+    if (!current_renderpass_context_) return NextCommandTag(cmd);
 
-    current_renderpass_context_->RecordEndRenderPass(&cb_access_context_, tag);
+    auto store_tag = NextCommandTag(cmd, ResourceUsageRecord::SubcommandType::kStoreOp);
+    auto barrier_tag = NextSubcommandTag(cmd, ResourceUsageRecord::SubcommandType::kSubpassTransition);
+
+    current_renderpass_context_->RecordEndRenderPass(&cb_access_context_, store_tag, barrier_tag);
     current_context_ = &cb_access_context_;
     current_renderpass_context_ = nullptr;
+    return barrier_tag;
 }
 
 void CommandBufferAccessContext::RecordDestroyEvent(VkEvent event) {
@@ -2287,6 +2301,27 @@ ResourceUsageRange CommandBufferAccessContext::ImportRecordedAccessLog(const Com
     access_log_.insert(access_log_.end(), recorded_context.access_log_.cbegin(), recorded_context.access_log_.end());
     tag_range.end = access_log_.size();
     return tag_range;
+}
+
+ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand) {
+    ResourceUsageTag next = access_log_.size();
+    access_log_.emplace_back(command, command_number_, subcommand, ++subcommand_number_, cb_state_.get(), reset_count_);
+    return next;
+}
+
+ResourceUsageTag CommandBufferAccessContext::NextCommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand) {
+    command_number_++;
+    subcommand_number_ = 0;
+    ResourceUsageTag next = access_log_.size();
+    access_log_.emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_.get(), reset_count_);
+    return next;
+}
+
+ResourceUsageTag CommandBufferAccessContext::NextIndexedCommandTag(CMD_TYPE command, uint32_t index) {
+    if (index == 0) {
+        return NextCommandTag(command, ResourceUsageRecord::SubcommandType::kIndex);
+    }
+    return NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kIndex);
 }
 
 class HazardDetectFirstUse {
@@ -2635,17 +2670,18 @@ RenderPassAccessContext::RenderPassAccessContext(const RENDER_PASS_STATE &rp_sta
     }
     attachment_views_ = CreateAttachmentViewGen(render_area, attachment_views);
 }
-void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag tag) {
+void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag barrier_tag, const ResourceUsageTag load_tag) {
     assert(0 == current_subpass_);
-    subpass_contexts_[current_subpass_].SetStartTag(tag);
-    RecordLayoutTransitions(tag);
-    RecordLoadOperations(tag);
+    subpass_contexts_[current_subpass_].SetStartTag(barrier_tag);
+    RecordLayoutTransitions(barrier_tag);
+    RecordLoadOperations(load_tag);
 }
 
-void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag prev_subpass_tag, const ResourceUsageTag next_subpass_tag) {
+void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag store_tag, const ResourceUsageTag barrier_tag,
+                                                const ResourceUsageTag load_tag) {
     // Resolves are against *prior* subpass context and thus *before* the subpass increment
-    CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, current_subpass_, prev_subpass_tag);
-    CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, current_subpass_, prev_subpass_tag);
+    CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, current_subpass_, store_tag);
+    CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, current_subpass_, store_tag);
 
     if (current_subpass_ + 1 >= subpass_contexts_.size()) {
         return;
@@ -2653,15 +2689,16 @@ void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag prev_subp
     // Move to the next sub-command for the new subpass. The resolve and store are logically part of the previous
     // subpass, so their tag needs to be different from the layout and load operations below.
     current_subpass_++;
-    subpass_contexts_[current_subpass_].SetStartTag(next_subpass_tag);
-    RecordLayoutTransitions(next_subpass_tag);
-    RecordLoadOperations(next_subpass_tag);
+    subpass_contexts_[current_subpass_].SetStartTag(barrier_tag);
+    RecordLayoutTransitions(barrier_tag);
+    RecordLoadOperations(load_tag);
 }
 
-void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_context, const ResourceUsageTag tag) {
+void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_context, const ResourceUsageTag store_tag,
+                                                  const ResourceUsageTag barrier_tag) {
     // Add the resolve and store accesses
-    CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, current_subpass_, tag);
-    CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, current_subpass_, tag);
+    CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, current_subpass_, store_tag);
+    CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, current_subpass_, store_tag);
 
     // Export the accesses from the renderpass...
     external_context->ResolveChildContexts(subpass_contexts_);
@@ -2676,7 +2713,7 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
         const AttachmentViewGen &view_gen = attachment_views_[transition.attachment];
         const auto &last_trackback = subpass_contexts_[transition.prev_pass].GetDstExternalTrackBack();
         assert(&subpass_contexts_[transition.prev_pass] == last_trackback.context);
-        ApplyBarrierOpsFunctor<PipelineBarrierOp> barrier_action(true /* resolve */, last_trackback.barriers.size(), tag);
+        ApplyBarrierOpsFunctor<PipelineBarrierOp> barrier_action(true /* resolve */, last_trackback.barriers.size(), barrier_tag);
         for (const auto &barrier : last_trackback.barriers) {
             barrier_action.EmplaceBack(PipelineBarrierOp(barrier, true));
         }
@@ -6355,13 +6392,10 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
 }
 
 ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext *cb_context) const {
-    const auto tag = cb_context->NextCommandTag(cmd_);
     // TODO PHASE2 need to have a consistent way to record to either command buffer or queue contexts
     assert(rp_state_.get());
-    if (nullptr == rp_state_.get()) return tag;
-    cb_context->RecordBeginRenderPass(*rp_state_.get(), renderpass_begin_info_.renderArea, attachments_, tag);
-
-    return tag;
+    if (nullptr == rp_state_.get()) return cb_context->NextCommandTag(cmd_);
+    return cb_context->RecordBeginRenderPass(cmd_, *rp_state_.get(), renderpass_begin_info_.renderArea, attachments_);
 }
 
 bool SyncOpBeginRenderPass::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
@@ -6393,14 +6427,7 @@ bool SyncOpNextSubpass::Validate(const CommandBufferAccessContext &cb_context) c
 }
 
 ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext *cb_context) const {
-    // TODO PHASE2 need to have a consistent way to record to either command buffer or queue contexts
-    // TODO PHASE2 Need to fix renderpass tagging/segregation of barrier and access operations for QueueSubmit time validation
-    auto prev_tag = cb_context->NextCommandTag(cmd_);
-    auto next_tag = cb_context->NextSubcommandTag(cmd_);
-
-    cb_context->RecordNextSubpass(prev_tag, next_tag);
-    // TODO PHASE2 This needs to be the tag of the barrier operations
-    return prev_tag;
+    return cb_context->RecordNextSubpass(cmd_);
 }
 
 bool SyncOpNextSubpass::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
@@ -6427,10 +6454,7 @@ bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext &cb_context)
 }
 
 ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext *cb_context) const {
-    // TODO PHASE2 need to have a consistent way to record to either command buffer or queue contexts
-    const auto tag = cb_context->NextCommandTag(cmd_);
-    cb_context->RecordEndRenderPass(tag);
-    return tag;
+    return cb_context->RecordEndRenderPass(cmd_);
 }
 
 bool SyncOpEndRenderPass::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
@@ -6468,10 +6492,9 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
     CommandBufferAccessContext proxy_cb_context(*cb_context, CommandBufferAccessContext::AsProxyContext());
 
     // Make working copies of the access and events contexts
-    proxy_cb_context.NextCommandTag(CMD_EXECUTECOMMANDS);
-
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
-        proxy_cb_context.NextSubcommandTag(CMD_EXECUTECOMMANDS);
+        proxy_cb_context.NextIndexedCommandTag(CMD_EXECUTECOMMANDS, cb_index);
+
         const auto *recorded_cb_context = GetAccessContext(pCommandBuffers[cb_index]);
         if (!recorded_cb_context) continue;
 
@@ -6492,9 +6515,8 @@ void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
     StateTracker::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
     auto *cb_context = GetAccessContext(commandBuffer);
     assert(cb_context);
-    cb_context->NextCommandTag(CMD_EXECUTECOMMANDS);
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
-        cb_context->NextSubcommandTag(CMD_EXECUTECOMMANDS);
+        cb_context->NextIndexedCommandTag(CMD_EXECUTECOMMANDS, cb_index);
         const auto *recorded_cb_context = GetAccessContext(pCommandBuffers[cb_index]);
         if (!recorded_cb_context) continue;
         cb_context->RecordExecutedCommandBuffer(*recorded_cb_context, CMD_EXECUTECOMMANDS);
