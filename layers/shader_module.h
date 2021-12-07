@@ -88,10 +88,13 @@ struct interface_var {
     bool is_patch;
     bool is_block_member;
     bool is_relaxed_precision;
+    bool is_readable;
     bool is_writable;
     bool is_atomic_operation;
     bool is_sampler_implicitLod_dref_proj;
     bool is_sampler_bias_offset;
+    bool is_read_without_format;   // For storage images
+    bool is_write_without_format;  // For storage images
     // TODO: collect the name, too? Isn't required to be present.
 
     interface_var()
@@ -101,10 +104,13 @@ struct interface_var {
           is_patch(false),
           is_block_member(false),
           is_relaxed_precision(false),
+          is_readable(false),
           is_writable(false),
           is_atomic_operation(false),
           is_sampler_implicitLod_dref_proj(false),
-          is_sampler_bias_offset(false) {}
+          is_sampler_bias_offset(false),
+          is_read_without_format(false),
+          is_write_without_format(false) {}
 };
 
 // Utils taking a spirv_inst_iter

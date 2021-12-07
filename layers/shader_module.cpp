@@ -1196,6 +1196,7 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_
 // Used by the collection functions to help aid in state tracking
 struct shader_module_used_operators {
     bool updated;
+    std::vector<unsigned> imagread_members;
     std::vector<unsigned> imagwrite_members;
     std::vector<unsigned> atomic_members;
     std::vector<unsigned> store_members;
@@ -1260,6 +1261,11 @@ struct shader_module_used_operators {
                 }
                 case spv::OpStore: {
                     store_members.emplace_back(insn.word(1));  // object id or AccessChain id
+                    break;
+                }
+                case spv::OpImageRead:
+                case spv::OpImageSparseRead: {
+                    imagread_members.emplace_back(insn.word(3));  // Load id
                     break;
                 }
                 case spv::OpImageWrite: {
@@ -1351,15 +1357,26 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
             type = get_def(type.word(3));  // Pointer type
         }
     }
+
     switch (type.opcode()) {
         case spv::OpTypeImage: {
             auto dim = type.word(3);
             if (dim != spv::DimSubpassData) {
                 used_operators.update(this);
 
+                // Sampled == 2 indicates used without a sampler (a storage image)
+                bool is_image_without_format = false;
+                if (type.word(7) == 2) is_image_without_format = type.word(8) == spv::ImageFormatUnknown;
+
                 if (CheckObjectIDFromOpLoad(id, used_operators.imagwrite_members, used_operators.load_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_writable = true;
+                    if (is_image_without_format) out_interface_var.is_write_without_format = true;
+                }
+                if (CheckObjectIDFromOpLoad(id, used_operators.imagread_members, used_operators.load_members,
+                                            used_operators.accesschain_members)) {
+                    out_interface_var.is_readable = true;
+                    if (is_image_without_format) out_interface_var.is_read_without_format = true;
                 }
                 if (CheckObjectIDFromOpLoad(id, used_operators.sampler_implicitLod_dref_proj_members, used_operators.load_members,
                                             used_operators.accesschain_members)) {
