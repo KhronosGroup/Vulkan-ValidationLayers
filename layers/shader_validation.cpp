@@ -1082,6 +1082,17 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
 bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *src) const {
     bool skip = false;
 
+    // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
+    // disabled if VK_KHR_format_feature_flags2 is supported.
+    //
+    //   https://github.com/KhronosGroup/Vulkan-Docs/blob/6177645341afc/appendices/spirvenv.txt#L553
+    //
+    // The other checks need to take into account the format features and so
+    // we apply that in the descriptor set matching validation code (see
+    // descriptor_sets.cpp).
+    if (has_format_feature2)
+        return skip;
+
     // Got through all ImageRead/Write instructions
     for (auto insn : *src) {
         switch (insn.opcode()) {
@@ -1116,13 +1127,11 @@ bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *sr
 
     // Go through all variables for images and check decorations
     for (auto insn : *src) {
-        if (insn.opcode() != spv::OpVariable)
-            continue;
+        if (insn.opcode() != spv::OpVariable) continue;
 
         uint32_t var = insn.word(2);
         spirv_inst_iter type_def = src->GetImageFormatInst(insn.word(1));
-        if (type_def == src->end())
-            continue;
+        if (type_def == src->end()) continue;
         // Only check if the Image Dim operand is not SubpassData
         const auto dim = type_def.word(3);
         if (dim == spv::DimSubpassData) continue;
