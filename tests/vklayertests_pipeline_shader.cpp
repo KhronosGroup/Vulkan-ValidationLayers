@@ -1872,6 +1872,16 @@ TEST_F(VkLayerTest, MissingStorageImageFormatRead) {
         return;
     }
 
+    // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
+    // disabled if VK_KHR_format_feature_flags2 is supported.
+    //
+    //   https://github.com/KhronosGroup/Vulkan-Docs/blob/6177645341afc/appendices/spirvenv.txt#L553
+    //
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        printf("%s %s supported, skipping.\n", kSkipPrefix, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
+        return;
+    }
+
     // Make sure compute pipeline has a compute shader stage set
     const std::string csSource = R"(
                OpCapability Shader
@@ -1914,8 +1924,8 @@ TEST_F(VkLayerTest, MissingStorageImageFormatRead) {
               )";
 
     OneOffDescriptorSet ds(m_device, {
-            {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        });
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                     });
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.InitInfo();
@@ -1938,6 +1948,16 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWrite) {
     vk::GetPhysicalDeviceFeatures(gpu(), &feat);
     if (feat.shaderStorageImageWriteWithoutFormat) {
         printf("%s format less storage image write supported.\n", kSkipPrefix);
+        return;
+    }
+
+    // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
+    // disabled if VK_KHR_format_feature_flags2 is supported.
+    //
+    //   https://github.com/KhronosGroup/Vulkan-Docs/blob/6177645341afc/appendices/spirvenv.txt#L553
+    //
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        printf("%s %s supported, skipping.\n", kSkipPrefix, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
         return;
     }
 
@@ -1980,8 +2000,8 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWrite) {
                   )";
 
     OneOffDescriptorSet ds(m_device, {
-            {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        });
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                     });
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.InitInfo();
@@ -1995,6 +2015,348 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWrite) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, MissingStorageImageFormatReadForFormat) {
+    TEST_DESCRIPTION("Create a shader reading a storage image without an image format");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Required extensions not supported, skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
+            (PFN_vkGetPhysicalDeviceFormatProperties2KHR)vk::GetInstanceProcAddr(instance(),
+                                                                                 "vkGetPhysicalDeviceFormatProperties2KHR");
+
+    struct {
+        VkFormat format;
+        VkFormatProperties3KHR props;
+    } tests[2] = {};
+    int n_tests = 0;
+    bool has_without_format_test = false, has_with_format_test = false;
+
+    // Find storage formats with & without read without format support
+    for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
+        if (has_without_format_test && has_with_format_test) break;
+
+        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
+        auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+
+        vkGetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
+
+        const bool has_storage =
+            (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR) != 0;
+        const bool has_read_without_format =
+            (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR) != 0;
+
+        if (!has_storage) continue;
+
+        if (has_read_without_format) {
+            if (has_without_format_test) continue;
+
+            tests[n_tests].format = (VkFormat)fmt;
+            tests[n_tests].props = fmt_props_3;
+            has_without_format_test = true;
+            n_tests++;
+        } else {
+            if (has_with_format_test) continue;
+
+            tests[n_tests].format = (VkFormat)fmt;
+            tests[n_tests].props = fmt_props_3;
+            has_with_format_test = true;
+            n_tests++;
+        }
+    }
+
+    if (n_tests == 0) {
+        printf("%s Could not build a test case.\n", kSkipPrefix);
+        return;
+    }
+
+    // Make sure compute pipeline has a compute shader stage set
+    const std::string csSource = R"(
+               OpCapability Shader
+               OpCapability StorageImageReadWithoutFormat
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %4 "main"
+               OpExecutionMode %4 LocalSize 1 1 1
+               OpSource GLSL 450
+               OpName %4 "main"
+               OpName %9 "value"
+               OpName %12 "img"
+               OpDecorate %12 DescriptorSet 0
+               OpDecorate %12 Binding 0
+               OpDecorate %22 BuiltIn WorkgroupSize
+               OpDecorate %12 NonReadable
+          %2 = OpTypeVoid
+          %3 = OpTypeFunction %2
+          %6 = OpTypeFloat 32
+          %7 = OpTypeVector %6 4
+          %8 = OpTypePointer Function %7
+         %10 = OpTypeImage %6 2D 0 0 0 2 Unknown
+         %11 = OpTypePointer UniformConstant %10
+         %12 = OpVariable %11 UniformConstant
+         %14 = OpTypeInt 32 1
+         %15 = OpTypeVector %14 2
+         %16 = OpConstant %14 0
+         %17 = OpConstantComposite %15 %16 %16
+         %19 = OpTypeInt 32 0
+         %20 = OpTypeVector %19 3
+         %21 = OpConstant %19 1
+         %22 = OpConstantComposite %20 %21 %21 %21
+          %4 = OpFunction %2 None %3
+          %5 = OpLabel
+          %9 = OpVariable %8 Function
+         %13 = OpLoad %10 %12
+         %18 = OpImageRead %7 %13 %17
+               OpStore %9 %18
+               OpReturn
+               OpFunctionEnd
+              )";
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                     });
+
+    CreateComputePipelineHelper cs_pipeline(*this);
+    cs_pipeline.InitInfo();
+    cs_pipeline.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    cs_pipeline.InitState();
+    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    cs_pipeline.LateBindPipelineInfo();
+    cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
+    cs_pipeline.CreateComputePipeline(true, false);                // need false to prevent late binding
+
+    for (int t = 0; t < n_tests; t++) {
+        VkFormat format = tests[t].format;
+
+        VkImageObj image(m_device);
+        image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+
+        VkDescriptorImageInfo image_info = {};
+        image_info.imageView = image.targetView(format);
+        image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+        VkWriteDescriptorSet descriptor_write = {};
+        descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_write.dstSet = ds.set_;
+        descriptor_write.dstBinding = 0;
+        descriptor_write.descriptorCount = 1;
+        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        descriptor_write.pImageInfo = &image_info;
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+        m_commandBuffer->reset();
+        m_commandBuffer->begin();
+
+        {
+            VkImageMemoryBarrier img_barrier = {};
+            img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            img_barrier.srcAccessMask = VK_ACCESS_HOST_READ_BIT;
+            img_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+            img_barrier.image = image.handle();  // Image mis-matches with FB image
+            img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            img_barrier.subresourceRange.baseArrayLayer = 0;
+            img_barrier.subresourceRange.baseMipLevel = 0;
+            img_barrier.subresourceRange.layerCount = 1;
+            img_barrier.subresourceRange.levelCount = 1;
+            vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
+                                   0, nullptr, 0, nullptr, 1, &img_barrier);
+        }
+
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_);
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(),
+                                  0, 1, &ds.set_, 0, nullptr);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-OpTypeImage-06424");
+        vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+        m_commandBuffer->end();
+
+        if (tests[t].props.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)
+            m_errorMonitor->VerifyNotFound();
+        else
+            m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(VkLayerTest, MissingStorageImageFormatWriteForFormat) {
+    TEST_DESCRIPTION("Create a shader writing a storage image without an image format");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Required extensions not supported, skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
+        (PFN_vkGetPhysicalDeviceFormatProperties2KHR)vk::GetInstanceProcAddr(instance(),
+                                                                             "vkGetPhysicalDeviceFormatProperties2KHR");
+
+    struct {
+        VkFormat format;
+        VkFormatProperties3KHR props;
+    } tests[2] = {};
+    int n_tests = 0;
+    bool has_without_format_test = false, has_with_format_test = false;
+
+    // Find storage formats with & without read without format support
+    for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
+        if (has_without_format_test && has_with_format_test) break;
+
+        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
+        auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+
+        vkGetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
+
+        const bool has_storage =
+            (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR) != 0;
+        const bool has_read_without_format =
+            (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR) != 0;
+
+        if (!has_storage) continue;
+
+        if (has_read_without_format) {
+            if (has_without_format_test) continue;
+
+            tests[n_tests].format = (VkFormat)fmt;
+            tests[n_tests].props = fmt_props_3;
+            has_without_format_test = true;
+            n_tests++;
+        } else {
+            if (has_with_format_test) continue;
+
+            tests[n_tests].format = (VkFormat)fmt;
+            tests[n_tests].props = fmt_props_3;
+            has_with_format_test = true;
+            n_tests++;
+        }
+    }
+
+    if (n_tests == 0) {
+        printf("%s Could not build a test case.\n", kSkipPrefix);
+        return;
+    }
+
+    // Make sure compute pipeline has a compute shader stage set
+    const std::string csSource = R"(
+                  OpCapability Shader
+                  OpCapability StorageImageWriteWithoutFormat
+             %1 = OpExtInstImport "GLSL.std.450"
+                  OpMemoryModel Logical GLSL450
+                  OpEntryPoint GLCompute %main "main"
+                  OpExecutionMode %main LocalSize 1 1 1
+                  OpSource GLSL 450
+                  OpName %main "main"
+                  OpName %img "img"
+                  OpDecorate %img DescriptorSet 0
+                  OpDecorate %img Binding 0
+                  OpDecorate %img NonWritable
+          %void = OpTypeVoid
+             %3 = OpTypeFunction %void
+         %float = OpTypeFloat 32
+             %7 = OpTypeImage %float 2D 0 0 0 2 Unknown
+%_ptr_UniformConstant_7 = OpTypePointer UniformConstant %7
+           %img = OpVariable %_ptr_UniformConstant_7 UniformConstant
+           %int = OpTypeInt 32 1
+         %v2int = OpTypeVector %int 2
+         %int_0 = OpConstant %int 0
+            %14 = OpConstantComposite %v2int %int_0 %int_0
+       %v4float = OpTypeVector %float 4
+       %float_0 = OpConstant %float 0
+            %17 = OpConstantComposite %v4float %float_0 %float_0 %float_0 %float_0
+          %uint = OpTypeInt 32 0
+        %v3uint = OpTypeVector %uint 3
+        %uint_1 = OpConstant %uint 1
+          %main = OpFunction %void None %3
+             %5 = OpLabel
+            %10 = OpLoad %7 %img
+                  OpImageWrite %10 %14 %17
+                  OpReturn
+                  OpFunctionEnd
+                  )";
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                     });
+
+    CreateComputePipelineHelper cs_pipeline(*this);
+    cs_pipeline.InitInfo();
+    cs_pipeline.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    cs_pipeline.InitState();
+    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    cs_pipeline.LateBindPipelineInfo();
+    cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
+    cs_pipeline.CreateComputePipeline(true, false);                // need false to prevent late binding
+
+    for (int t = 0; t < n_tests; t++) {
+        VkFormat format = tests[t].format;
+
+        VkImageObj image(m_device);
+        image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+
+        VkDescriptorImageInfo image_info = {};
+        image_info.imageView = image.targetView(format);
+        image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+        VkWriteDescriptorSet descriptor_write = {};
+        descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_write.dstSet = ds.set_;
+        descriptor_write.dstBinding = 0;
+        descriptor_write.descriptorCount = 1;
+        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        descriptor_write.pImageInfo = &image_info;
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+        m_commandBuffer->reset();
+        m_commandBuffer->begin();
+
+        {
+            VkImageMemoryBarrier img_barrier = {};
+            img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            img_barrier.srcAccessMask = VK_ACCESS_HOST_READ_BIT;
+            img_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+            img_barrier.image = image.handle();  // Image mis-matches with FB image
+            img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            img_barrier.subresourceRange.baseArrayLayer = 0;
+            img_barrier.subresourceRange.baseMipLevel = 0;
+            img_barrier.subresourceRange.layerCount = 1;
+            img_barrier.subresourceRange.levelCount = 1;
+            vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
+                                   0, nullptr, 0, nullptr, 1, &img_barrier);
+        }
+
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_);
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(),
+                                  0, 1, &ds.set_, 0, nullptr);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-OpTypeImage-06423");
+        vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+        m_commandBuffer->end();
+
+        if (tests[t].props.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)
+            m_errorMonitor->VerifyNotFound();
+        else
+            m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(VkLayerTest, MissingNonReadableDecorationStorageImageFormatRead) {
     TEST_DESCRIPTION("Create a shader with a storage image without an image format not marked as non readable");
 
@@ -2004,6 +2366,15 @@ TEST_F(VkLayerTest, MissingNonReadableDecorationStorageImageFormatRead) {
     vk::GetPhysicalDeviceFeatures(gpu(), &feat);
     if (feat.shaderStorageImageReadWithoutFormat) {
         printf("%s format less storage image read supported.\n", kSkipPrefix);
+        return;
+    }
+
+    // We need to skip this test with VK_KHR_format_feature_flags2 supported,
+    // because checks for read/write without format has to be done per format
+    // rather than as a device feature. The code we test here only looks at
+    // the shader.
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        printf("%s %s supported, skipping.\n", kSkipPrefix, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
         return;
     }
 
@@ -2044,8 +2415,8 @@ TEST_F(VkLayerTest, MissingNonReadableDecorationStorageImageFormatRead) {
               )";
 
     OneOffDescriptorSet ds(m_device, {
-            {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        });
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                     });
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.InitInfo();
@@ -2068,6 +2439,15 @@ TEST_F(VkLayerTest, MissingNonWritableDecorationStorageImageFormatWrite) {
     vk::GetPhysicalDeviceFeatures(gpu(), &feat);
     if (feat.shaderStorageImageWriteWithoutFormat) {
         printf("%s format less storage image write supported.\n", kSkipPrefix);
+        return;
+    }
+
+    // We need to skip this test with VK_KHR_format_feature_flags2 supported,
+    // because checks for read/write without format has to be done per format
+    // rather than as a device feature. The code we test here only looks at
+    // the shader.
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        printf("%s %s supported, skipping.\n", kSkipPrefix, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
         return;
     }
 
@@ -2106,8 +2486,8 @@ TEST_F(VkLayerTest, MissingNonWritableDecorationStorageImageFormatWrite) {
                   )";
 
     OneOffDescriptorSet ds(m_device, {
-            {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        });
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                     });
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.InitInfo();

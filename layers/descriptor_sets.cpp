@@ -1265,6 +1265,43 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                             report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format));
         }
 
+        // When KHR_format_feature_flags2 is supported, the read/write without
+        // format support is reported per format rather as a blankey physical
+        // device feature.
+        if (has_format_feature2) {
+            const VkFormatFeatureFlags2KHR img_format_feats = image_view_state->image_state->format_features;
+
+            if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+                if ((reqs & DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT) &&
+                    !(img_format_feats & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
+                    auto set = descriptor_set->GetSet();
+                    LogObjectList objlist(set);
+                    objlist.add(image_view);
+                    return LogError(objlist, vuids.storage_image_read_without_format,
+                                    "Descriptor set %s encountered the following validation error at %s time: Descriptor "
+                                    "in binding #%" PRIu32 " index %" PRIu32
+                                    ", %s, format %s, doesn't "
+                                    "contain VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR",
+                                    report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                    report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format));
+                }
+
+                if ((reqs & DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT) &&
+                    !(img_format_feats & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)) {
+                    auto set = descriptor_set->GetSet();
+                    LogObjectList objlist(set);
+                    objlist.add(image_view);
+                    return LogError(objlist, vuids.storage_image_write_without_format,
+                                    "Descriptor set %s encountered the following validation error at %s time: Descriptor "
+                                    "in binding #%" PRIu32 " index %" PRIu32
+                                    ", %s, format %s, doesn't "
+                                    "contain VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR",
+                                    report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                    report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format));
+                }
+            }
+        }
+
         // Verify if attachments are used in DescriptorSet
         if (attachments && attachments->size() > 0 && subpasses && (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
             bool ds_aspect = (image_view_state->normalized_subresource_range.aspectMask &

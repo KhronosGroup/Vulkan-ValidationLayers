@@ -1496,7 +1496,8 @@ std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::Colle
         assert(insn != end());
 
         if (insn.opcode() == spv::OpVariable &&
-            (insn.word(3) == spv::StorageClassUniform || insn.word(3) == spv::StorageClassUniformConstant ||
+            (insn.word(3) == spv::StorageClassUniform ||
+             insn.word(3) == spv::StorageClassUniformConstant ||
              insn.word(3) == spv::StorageClassStorageBuffer)) {
             auto d = get_decorations(insn.word(2));
             unsigned set = d.descriptor_set;
