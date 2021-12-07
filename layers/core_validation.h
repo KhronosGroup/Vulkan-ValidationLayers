@@ -559,7 +559,8 @@ class CoreChecks : public ValidationStateTracker {
                                    const PIPELINE_STATE* pipeline) const;
     bool ValidateShaderSubgroupSizeControl(VkPipelineShaderStageCreateInfo const* pStage) const;
     bool ValidateAtomicsTypes(SHADER_MODULE_STATE const* src) const;
-    bool ValidateExecutionModes(SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint) const;
+    bool ValidateExecutionModes(SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint, VkShaderStageFlagBits stage,
+                                const PIPELINE_STATE* pipeline) const;
     bool ValidateViConsistency(VkPipelineVertexInputStateCreateInfo const* vi) const;
     bool ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo const* vi, SHADER_MODULE_STATE const* vs,
                                    spirv_inst_iter entrypoint) const;

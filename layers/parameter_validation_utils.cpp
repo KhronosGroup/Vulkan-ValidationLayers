@@ -2896,6 +2896,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                 bool uses_color_attachment = false;
                 bool uses_depthstencil_attachment = false;
+                VkSubpassDescriptionFlags subpass_flags = 0;
                 {
                     std::unique_lock<std::mutex> lock(renderpass_map_mutex);
                     const auto subpasses_uses_it = renderpasses_states.find(pCreateInfos[i].renderPass);
@@ -2907,6 +2908,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         if (subpasses_uses.subpasses_using_depthstencil_attachment.count(pCreateInfos[i].subpass)) {
                             uses_depthstencil_attachment = true;
                         }
+                        subpass_flags = subpasses_uses.subpasses_flags[pCreateInfos[i].subpass];
                     }
                     lock.unlock();
                 }
@@ -3006,6 +3008,59 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          "VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO",
                                          i);
                     }
+
+                    if ((pCreateInfos[i].pDepthStencilState->flags &
+                         VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM) != 0) {
+                        const auto *rasterization_order_attachment_access_feature =
+                            LvlFindInChain<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>(device_createinfo_pnext);
+                        const bool rasterization_order_depth_attachment_access_feature_enabled =
+                            rasterization_order_attachment_access_feature &&
+                            rasterization_order_attachment_access_feature->rasterizationOrderDepthAttachmentAccess == VK_TRUE;
+                        if (!rasterization_order_depth_attachment_access_feature_enabled) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderDepthAttachmentAccess-06463",
+                                "VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::"
+                                "rasterizationOrderDepthAttachmentAccess == VK_FALSE, but "
+                                "VkPipelineDepthStencilStateCreateInfo::flags == %s",
+                                string_VkPipelineDepthStencilStateCreateFlags(pCreateInfos[i].pDepthStencilState->flags).c_str());
+                        }
+
+                        if ((subpass_flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM) == 0) {
+                            skip |= LogError(
+                                device, "VUID-VkGraphicsPipelineCreateInfo-flags-06468",
+                                "VkPipelineDepthStencilStateCreateInfo::flags == %s but "
+                                "VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
+                                string_VkPipelineDepthStencilStateCreateFlags(pCreateInfos[i].pDepthStencilState->flags).c_str(),
+                                string_VkSubpassDescriptionFlags(subpass_flags).c_str());
+                        }
+                    }
+
+                    if ((pCreateInfos[i].pDepthStencilState->flags &
+                         VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM) != 0) {
+                        const auto *rasterization_order_attachment_access_feature =
+                            LvlFindInChain<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>(device_createinfo_pnext);
+                        const bool rasterization_order_stencil_attachment_access_feature_enabled =
+                            rasterization_order_attachment_access_feature &&
+                            rasterization_order_attachment_access_feature->rasterizationOrderStencilAttachmentAccess == VK_TRUE;
+                        if (!rasterization_order_stencil_attachment_access_feature_enabled) {
+                            skip |= LogError(
+                                device,
+                                "VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderStencilAttachmentAccess-06464",
+                                "VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::"
+                                "rasterizationOrderStencilAttachmentAccess == VK_FALSE, but "
+                                "VkPipelineDepthStencilStateCreateInfo::flags == %s",
+                                string_VkPipelineDepthStencilStateCreateFlags(pCreateInfos[i].pDepthStencilState->flags).c_str());
+                        }
+
+                        if ((subpass_flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM) == 0) {
+                            skip |= LogError(
+                                device, "VUID-VkGraphicsPipelineCreateInfo-flags-06469",
+                                "VkPipelineDepthStencilStateCreateInfo::flags == %s but "
+                                "VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
+                                string_VkPipelineDepthStencilStateCreateFlags(pCreateInfos[i].pDepthStencilState->flags).c_str(),
+                                string_VkSubpassDescriptionFlags(subpass_flags).c_str());
+                        }
+                    }
                 }
 
                 const VkStructureType allowed_structs_vk_pipeline_color_blend_state_create_info[] = {
@@ -3034,6 +3089,33 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                            "VkPipelineColorBlendStateCreateFlagBits", AllVkPipelineColorBlendStateCreateFlagBits,
                                            pCreateInfos[i].pColorBlendState->flags, kOptionalFlags,
                                            "VUID-VkPipelineColorBlendStateCreateInfo-flags-parameter");
+
+                    if ((pCreateInfos[i].pColorBlendState->flags &
+                         VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM) != 0) {
+                        const auto *rasterization_order_attachment_access_feature =
+                            LvlFindInChain<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>(device_createinfo_pnext);
+                        const bool rasterization_order_color_attachment_access_feature_enabled =
+                            rasterization_order_attachment_access_feature &&
+                            rasterization_order_attachment_access_feature->rasterizationOrderColorAttachmentAccess == VK_TRUE;
+
+                        if (!rasterization_order_color_attachment_access_feature_enabled) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineColorBlendStateCreateInfo-rasterizationOrderColorAttachmentAccess-06465",
+                                "VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::"
+                                "rasterizationColorAttachmentAccess == VK_FALSE, but "
+                                "VkPipelineColorBlendStateCreateInfo::flags == %s",
+                                string_VkPipelineColorBlendStateCreateFlags(pCreateInfos[i].pColorBlendState->flags).c_str());
+                        }
+
+                        if ((subpass_flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_ARM) == 0) {
+                            skip |= LogError(
+                                device, "VUID-VkGraphicsPipelineCreateInfo-flags-06467",
+                                "VkPipelineColorBlendStateCreateInfo::flags == %s but "
+                                "VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
+                                string_VkPipelineColorBlendStateCreateFlags(pCreateInfos[i].pColorBlendState->flags).c_str(),
+                                string_VkSubpassDescriptionFlags(subpass_flags).c_str());
+                        }
+                    }
 
                     skip |= validate_bool32(
                         "vkCreateGraphicsPipelines",
