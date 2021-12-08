@@ -12579,9 +12579,26 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
 
 TEST_F(VkLayerTest, VerityUnnormalizedCoordinatesSampler) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, the imageview has to be some specific types");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     m_errorMonitor->ExpectSuccess();
+
+    // This generates OpImage*Dref* instruction on R8G8B8A8_UNORM format.
+    // Verify that it is allowed on this implementation if
+    // VK_KHR_format_feature_flags2 is available.
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
+        auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+
+        vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
+
+        if (!(fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR)) {
+            printf("%s R8G8B8A8_UNORM does not support OpImage*Dref* operations, skipping.\n", kSkipPrefix);
+            return;
+        }
+    }
 
     const char vsSource[] = R"glsl(
         #version 450
