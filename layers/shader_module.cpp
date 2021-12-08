@@ -1203,6 +1203,7 @@ struct shader_module_used_operators {
     std::vector<unsigned> atomic_store_members;
     std::vector<unsigned> sampler_implicitLod_dref_proj_members;      // sampler Load id
     std::vector<unsigned> sampler_bias_offset_members;                // sampler Load id
+    std::vector<unsigned> image_dref_members;
     std::vector<std::pair<unsigned, unsigned>> sampledImage_members;  // <image,sampler> Load id
     layer_data::unordered_map<unsigned, unsigned> load_members;
     layer_data::unordered_map<unsigned, std::pair<unsigned, unsigned>> accesschain_members;
@@ -1236,6 +1237,11 @@ struct shader_module_used_operators {
                     }
                     break;
                 }
+                case spv::OpImageDrefGather:
+                case spv::OpImageSparseDrefGather: {
+                    image_dref_members.emplace_back(insn.word(3));  // Load id
+                    break;
+                }
                 case spv::OpImageSampleDrefImplicitLod:
                 case spv::OpImageSampleDrefExplicitLod:
                 case spv::OpImageSampleProjDrefImplicitLod:
@@ -1244,6 +1250,7 @@ struct shader_module_used_operators {
                 case spv::OpImageSparseSampleDrefExplicitLod:
                 case spv::OpImageSparseSampleProjDrefImplicitLod:
                 case spv::OpImageSparseSampleProjDrefExplicitLod: {
+                    image_dref_members.emplace_back(insn.word(3));
                     sampler_implicitLod_dref_proj_members.emplace_back(insn.word(3));  // Load id
                     // ImageOperands in index: 6
                     if (insn.len() > 6 && CheckImageOperandsBiasOffset(insn.word(6))) {
@@ -1391,6 +1398,10 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
                     CheckObjectIDFromOpLoad(id, used_operators.atomic_store_members, used_operators.image_texel_pointer_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_atomic_operation = true;
+                }
+                if (CheckObjectIDFromOpLoad(id, used_operators.image_dref_members, used_operators.load_members,
+                                            used_operators.accesschain_members)) {
+                    out_interface_var.is_dref_operation = true;
                 }
 
                 for (auto &itp_id : used_operators.sampledImage_members) {

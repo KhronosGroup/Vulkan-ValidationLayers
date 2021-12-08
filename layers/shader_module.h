@@ -95,6 +95,7 @@ struct interface_var {
     bool is_sampler_bias_offset;
     bool is_read_without_format;   // For storage images
     bool is_write_without_format;  // For storage images
+    bool is_dref_operation;
     // TODO: collect the name, too? Isn't required to be present.
 
     interface_var()
@@ -110,7 +111,8 @@ struct interface_var {
           is_sampler_implicitLod_dref_proj(false),
           is_sampler_bias_offset(false),
           is_read_without_format(false),
-          is_write_without_format(false) {}
+          is_write_without_format(false),
+          is_dref_operation(false) {}
 };
 
 // Utils taking a spirv_inst_iter

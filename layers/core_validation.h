@@ -101,6 +101,7 @@ struct DrawDispatchVuid {
     const char* dynamic_rendering_06198 = kVUIDUndefined;
     const char* storage_image_read_without_format = kVUIDUndefined;
     const char* storage_image_write_without_format = kVUIDUndefined;
+    const char* depth_compare_sample = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {

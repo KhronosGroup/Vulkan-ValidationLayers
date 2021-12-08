@@ -1300,6 +1300,20 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                                     report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format));
                 }
             }
+
+            if ((reqs & DESCRIPTOR_REQ_IMAGE_DREF) &&
+                !(img_format_feats & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR)) {
+                auto set = descriptor_set->GetSet();
+                LogObjectList objlist(set);
+                objlist.add(image_view);
+                return LogError(objlist, vuids.depth_compare_sample,
+                                "Descriptor set %s encountered the following validation error at %s time: Descriptor "
+                                "in binding #%" PRIu32 " index %" PRIu32
+                                ", %s, format %s, doesn't "
+                                "contain VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR",
+                                report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format));
+            }
         }
 
         // Verify if attachments are used in DescriptorSet

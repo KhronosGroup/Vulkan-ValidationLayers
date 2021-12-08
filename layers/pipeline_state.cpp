@@ -313,6 +313,7 @@ static PIPELINE_STATE::ActiveSlotMap GetActiveSlots(const PIPELINE_STATE::StageS
             if (use.second.is_sampler_bias_offset) reqs |= DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET;
             if (use.second.is_read_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT;
             if (use.second.is_write_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT;
+            if (use.second.is_dref_operation) reqs |= DESCRIPTOR_REQ_IMAGE_DREF;
 
             if (use.second.samplers_used_by_image.size()) {
                 if (use.second.samplers_used_by_image.size() > entry.samplers_used_by_image.size()) {
