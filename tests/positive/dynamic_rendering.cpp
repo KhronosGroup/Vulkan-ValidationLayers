@@ -36,11 +36,6 @@
 
 #include "cast_utils.h"
 
-//
-// POSITIVE VALIDATION TESTS
-//
-// These tests do not expect to encounter ANY validation errors pass only if this is true
-
 TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering.");
 
@@ -126,3 +121,4 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
 
     m_errorMonitor->VerifyNotFound();
 }
+

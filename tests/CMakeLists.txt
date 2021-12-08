@@ -81,6 +81,7 @@ set(COMMON_CPP
     vklayertests_amd_best_practices.cpp
     vklayertests_gpu.cpp
     vklayertests_descriptor_renderpass_framebuffer.cpp
+    vklayertests_dynamic_rendering.cpp
     vklayertests_command.cpp
     vklayertests_imageless_framebuffer.cpp
     vklayertests_portability_subset.cpp
