@@ -215,7 +215,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(SHADER_MODUL
     const bool alpha_to_coverage_enabled = pipeline->create_info.graphics.pMultisampleState != NULL &&
         pipeline->create_info.graphics.pMultisampleState->alphaToCoverageEnable == VK_TRUE;
 
-    for (uint32_t location = 0; location < pipeline->rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount; ++location) {
+    for (uint32_t location = 0; location < location_map.size(); ++location) {
          const auto output = location_map[location].output;
 
         if (!output && pipeline->attachments[location].colorWriteMask != 0) {
@@ -223,7 +223,8 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(SHADER_MODUL
                 "Attachment %" PRIu32
                 " not written by fragment shader; undefined values will be written to attachment",
                 location);
-        } else if (output) {
+        } else if (output &&
+                  (location < pipeline->rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount)) {
             auto format = pipeline->rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[location];
             const auto attachment_type = GetFormatType(format);
             const auto output_type = fs->GetFundamentalType(output->type_id);

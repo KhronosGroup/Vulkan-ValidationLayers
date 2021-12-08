@@ -96,6 +96,9 @@ struct DrawDispatchVuid {
     const char* dynamic_rendering_depth_sample = kVUIDUndefined;
     const char* dynamic_rendering_stencil_sample = kVUIDUndefined;
     const char* dynamic_rendering_multi_sample = kVUIDUndefined;
+    const char* dynamic_rendering_06189 = kVUIDUndefined;
+    const char* dynamic_rendering_06190 = kVUIDUndefined;
+    const char* dynamic_rendering_06198 = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
