@@ -1078,6 +1078,179 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
     return skip;
 }
 
+bool CoreChecks::ValidateDecorationWithStorageType(SHADER_MODULE_STATE const *src, const VkShaderStageFlagBits stage) const {
+    bool skip = false;
+
+    bool fs = stage == VK_SHADER_STAGE_FRAGMENT_BIT;
+    bool tes = stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+
+    for (auto insn : *src) {
+        if (insn.opcode() == spv::OpVariable) {
+            uint32_t var = insn.word(2);
+            for (const auto &set : src->GetBuiltinDecorationList()) {
+                const auto decoration = src->at(set.offset);
+                if (decoration.word(1) == var) {
+                    if (set.builtin == spv::BuiltInSampleId && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-SampleId-SampleId-04355",
+                                         "Variable with id %" PRIu32 " is decorated with SampleID, but StorageClass is not Input.",
+                                         var);
+                    } else if (set.builtin == spv::BuiltInFrontFacing && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-FrontFacing-FrontFacing-04230",
+                            "Variable with id %" PRIu32 " is decorated with FrontFacing, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInFragCoord && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-FragCoord-FragCoord-04211",
+                                         "Variable with id %" PRIu32 " is decorated with FragCoord, but StorageClass is not Input.",
+                                         var);
+                    } else if (fs && set.builtin == spv::BuiltInClipDistance && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-ClipDistance-ClipDistance-04189",
+                                         "Variable with id %" PRIu32
+                                         " in the fragment shader is decorated with ClipDistance, but StorageClass is not Input.",
+                                         var);
+                    } else if (fs && set.builtin == spv::BuiltInCullDistance && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-CullDistance-CullDistance-04198",
+                                         "Variable with id %" PRIu32
+                                         " in the fragment shader is decorated with CullDistance, but StorageClass is not Input.",
+                                         var);
+                    } else if (fs && set.builtin == spv::BuiltInLayer && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-Layer-Layer-04275",
+                                         "Variable with id %" PRIu32
+                                         " in the fragment shader is decorated with Layer, but StorageClass is not Input.",
+                                         var);
+                    } else if (fs && set.builtin == spv::BuiltInViewportIndex && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-ViewportIndex-ViewportIndex-04407",
+                                         "Variable with id %" PRIu32
+                                         " in the fragment shader is decorated with ViewportIndex, but StorageClass is not Input.",
+                                         var);
+                    } else if (set.builtin == spv::BuiltInSampleMask &&
+                               (insn.word(3) != spv::StorageClassInput && insn.word(3) != spv::StorageClassOutput)) {
+                        skip |= LogError(device, "VUID-SampleMask-SampleMask-04358",
+                                         "Variable with id %" PRIu32
+                                         " is decorated with SampleMask, but StorageClass is not Input or Output.",
+                                         var);
+                    } else if (set.builtin == spv::BuiltInPointCoord && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-PointCoord-PointCoord-04312",
+                            "Variable with id %" PRIu32 " is decorated with PointCoord, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInSamplePosition && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-SamplePosition-SamplePosition-04361",
+                            "Variable with id %" PRIu32 " is decorated with SamplePosition, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInVertexIndex && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-VertexIndex-VertexIndex-04399",
+                            "Variable with id %" PRIu32 " is decorated with VertexIndex, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInBaseInstance && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-BaseInstance-BaseInstance-04182",
+                            "Variable with id %" PRIu32 " is decorated with BaseInstance, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInBaseVertex && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-BaseVertex-BaseVertex-04185",
+                            "Variable with id %" PRIu32 " is decorated with BaseVertex, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInDrawIndex && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-DrawIndex-DrawIndex-04208",
+                                         "Variable with id %" PRIu32 " is decorated with DrawIndex, but StorageClass is not Input.",
+                                         var);
+                    } else if (set.builtin == spv::BuiltInInstanceIndex && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-InstanceIndex-InstanceIndex-04264",
+                            "Variable with id %" PRIu32 " is decorated with InstanceIndex, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInNumSubgroups && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-NumSubgroups-NumSubgroups-04294",
+                            "Variable with id %" PRIu32 " is decorated with NumSubgroups, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInNumWorkgroups && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-NumWorkgroups-NumWorkgroups-04297",
+                            "Variable with id %" PRIu32 " is decorated with NumWorkgroups, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInBaryCoordNV && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-BaryCoordNV-BaryCoordNV-04155",
+                            "Variable with id %" PRIu32 " is decorated with BaryCoordNV, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInHelperInvocation && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-HelperInvocation-HelperInvocation-04240",
+                            "Variable with id %" PRIu32 " is decorated with HelperInvocation, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInSubgroupEqMask && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-SubgroupEqMask-SubgroupEqMask-04370",
+                            "Variable with id %" PRIu32 " is decorated with SubgroupEqMask, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInSubgroupGeMask && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-SubgroupGeMask-SubgroupGeMask-04372",
+                            "Variable with id %" PRIu32 " is decorated with SubgroupGeMask, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInSubgroupGtMask && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-SubgroupGtMask-SubgroupGtMask-04374",
+                            "Variable with id %" PRIu32 " is decorated with SubgroupGtMask, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInSubgroupLtMask && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-SubgroupLtMask-SubgroupLtMask-04378",
+                            "Variable with id %" PRIu32 " is decorated with SubgroupLtMask, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInSubgroupLeMask && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-SubgroupLeMask-SubgroupLeMask-04376",
+                            "Variable with id %" PRIu32 " is decorated with SubgroupLeMask, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInSMCountNV && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-SMCountNV-SMCountNV-04363",
+                                         "Variable with id %" PRIu32 " is decorated with SMCountNV, but StorageClass is not Input.",
+                                         var);
+                    } else if (set.builtin == spv::BuiltInLocalInvocationId && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-LocalInvocationId-LocalInvocationId-04282",
+                                         "Variable with id %" PRIu32
+                                         " is decorated with LocalInvocationId, but StorageClass is not Input.",
+                                         var);
+                    } else if (set.builtin == spv::BuiltInLocalInvocationIndex && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-LocalInvocationIndex-LocalInvocationIndex-04285",
+                                         "Variable with id %" PRIu32
+                                         " is decorated with LocalInvocationIndex, but StorageClass is not Input.",
+                                         var);
+                    } else if (set.builtin == spv::BuiltInShadingRateKHR && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-ShadingRateKHR-ShadingRateKHR-04491",
+                                         "Variable with id %" PRIu32
+                                         " is decorated with ShadingRateKHR, but StorageClass is not Input.",
+                                         var);
+                    } else if (set.builtin == spv::BuiltInWorkgroupId && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-WorkgroupId-WorkgroupId-04423",
+                                         "Variable with id %" PRIu32
+                                         " is decorated with WorkgroupId, but StorageClass is not Input.",
+                                         var);
+                    } else if (set.builtin == spv::BuiltInSubgroupSize && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-SubgroupSize-SubgroupSize-04382",
+                            "Variable with id %" PRIu32 " is decorated with SubgroupSize, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInSubgroupLocalInvocationId && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(device, "VUID-SubgroupLocalInvocationId-SubgroupLocalInvocationId-04380",
+                                         "Variable with id %" PRIu32
+                                         " is decorated with SubgroupLocalInvocationId, but StorageClass is not Input.",
+                                         var);
+                    } else if (set.builtin == spv::BuiltInSubgroupId && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-SubgroupId-SubgroupId-04368",
+                            "Variable with id %" PRIu32 " is decorated with SubgroupId, but StorageClass is not Input.", var);
+                    } else if (tes && set.builtin == spv::BuiltInTessLevelInner && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-TessLevelInner-TessLevelInner-04396",
+                            "Variable with id %" PRIu32 " is decorated with TessLevelInner, but StorageClass is not Input.", var);
+                    } else if (tes && set.builtin == spv::BuiltInTessLevelOuter && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-TessLevelOuter-TessLevelOuter-04392",
+                            "Variable with id %" PRIu32 " is decorated with TessLevelOuter, but StorageClass is not Input.", var);
+                    } else if (set.builtin == spv::BuiltInTessCoord && insn.word(3) != spv::StorageClassInput) {
+                        skip |= LogError(
+                            device, "VUID-TessCoord-TessCoord-04388",
+                            "Variable with id %" PRIu32 " is decorated with TessCoord, but StorageClass is not Input.", var);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *src) const {
     bool skip = false;
 
@@ -2578,6 +2751,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     skip |= ValidateShaderStageWritableOrAtomicDescriptor(pStage->stage, stage_state.has_writable_descriptor,
                                                           stage_state.has_atomic_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline, entrypoint);
+    skip |= ValidateDecorationWithStorageType(module, pStage->stage);
     skip |= ValidateShaderStorageImageFormats(module);
     skip |= ValidateShaderStageMaxResources(pStage->stage, pipeline);
     skip |= ValidateAtomicsTypes(module);
