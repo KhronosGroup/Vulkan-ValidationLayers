@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (c) 2015-2021 Google, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2022 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1946,4 +1946,167 @@ TEST_F(VkPositiveLayerTest, DoubleLayoutTransition) {
     }
 
     m_commandBuffer->end();
+}
+
+TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
+    TEST_DESCRIPTION("Signal a timeline semaphore on 2 queues.");
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+        return;
+    }
+
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        printf("%s Timeline semaphore not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    auto fpWaitSemaphores =
+        reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkWaitSemaphoresKHR"));
+    auto fpSignalSemaphore =
+        reinterpret_cast<PFN_vkSignalSemaphoreKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR"));
+
+    vk_testing::Queue *q0 = m_device->graphics_queues()[0];
+    vk_testing::Queue *q1 = nullptr;
+
+    if (m_device->graphics_queues().size() > 1) {
+        q1 = m_device->graphics_queues()[1];
+    }
+    if (q1 == nullptr) {
+        for (auto *q: m_device->compute_queues()) {
+            if (q != q0) {
+                q1 = q;
+                break;
+            }
+        }
+    }
+    if (q1 == nullptr) {
+        for (auto *q: m_device->dma_queues()) {
+            if (q != q0) {
+                q1 = q;
+                break;
+            }
+        }
+    }
+    if (q1 == nullptr) {
+        printf("%s Test requires 2 queues, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    m_errorMonitor->ExpectSuccess();
+    auto buffer_a = layer_data::make_unique<VkBufferObj>();
+    auto buffer_b = layer_data::make_unique<VkBufferObj>();
+    auto buffer_c = layer_data::make_unique<VkBufferObj>();
+    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    buffer_a->init_as_src_and_dst(*m_device, 256, mem_prop);
+    buffer_b->init_as_src_and_dst(*m_device, 256, mem_prop);
+    buffer_c->init_as_src_and_dst(*m_device, 256, mem_prop);
+
+    VkBufferCopy region = {0, 0, 256};
+    VkCommandPoolObj pool0(m_device, q0->get_family_index());
+    VkCommandBufferObj cb0(m_device, &pool0);
+    cb0.begin();
+    vk::CmdCopyBuffer(cb0.handle(), buffer_a->handle(), buffer_b->handle(), 1, &region);
+    cb0.end();
+
+    VkCommandPoolObj pool1(m_device, q1->get_family_index());
+    VkCommandBufferObj cb1(m_device, &pool1);
+    cb1.begin();
+    vk::CmdCopyBuffer(cb1.handle(), buffer_c->handle(), buffer_b->handle(), 1, &region);
+    cb1.end();
+
+    auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+
+    auto semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+    semaphore_create_info.pNext = &semaphore_type_create_info;
+
+    vk_testing::Semaphore semaphore;
+    semaphore.init(*m_device, semaphore_create_info);
+    m_errorMonitor->VerifyNotFound();
+
+    // timeline values, Begins will be signaled by host, Ends by the queues
+    constexpr uint64_t kQ0Begin = 1;
+    constexpr uint64_t kQ0End = 2;
+    constexpr uint64_t kQ1Begin = 3;
+    constexpr uint64_t kQ1End = 4;
+
+    uint64_t submit_wait_value = kQ0Begin;
+    uint64_t submit_signal_value = kQ0End;
+
+    auto timeline_semaphore_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
+    timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
+    timeline_semaphore_submit_info.pWaitSemaphoreValues = &submit_wait_value;
+    timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
+    timeline_semaphore_submit_info.pSignalSemaphoreValues = &submit_signal_value;
+
+    VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.pNext = &timeline_semaphore_submit_info;
+    submit_info.pWaitDstStageMask = &stageFlags;
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &semaphore.handle();
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &semaphore.handle();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cb0.handle();
+
+    // NOTE: this test calls VerifyNotFound after every call, because (now fixed) VVL false positives
+    // would cause the test to hang at some point, with no output.
+    m_errorMonitor->ExpectSuccess();
+    vk::QueueSubmit(q0->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyNotFound();
+
+    submit_wait_value = kQ1Begin;
+    submit_signal_value = kQ1End;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cb1.handle();
+    m_errorMonitor->ExpectSuccess();
+    vk::QueueSubmit(q1->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyNotFound();
+
+    // signal semaphore to allow q0 to proceed
+    auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
+    signal_info.semaphore = semaphore.handle();
+    signal_info.value = kQ0Begin;
+    m_errorMonitor->ExpectSuccess();
+    fpSignalSemaphore(m_device->device(), &signal_info);
+    m_errorMonitor->VerifyNotFound();
+
+    // buffer_a is only used by the q0 commands
+    uint64_t wait_info_value = kQ0End;
+    auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+    wait_info.semaphoreCount = 1;
+    wait_info.pSemaphores = &semaphore.handle();
+    wait_info.pValues = &wait_info_value;
+    m_errorMonitor->ExpectSuccess();
+    fpWaitSemaphores(m_device->device(), &wait_info, 1000000000);
+    buffer_a.reset();
+    m_errorMonitor->VerifyNotFound();
+
+    // signal semaphore to 3 to allow q1 to proceed
+    signal_info.value = kQ1Begin;
+    m_errorMonitor->ExpectSuccess();
+    fpSignalSemaphore(m_device->device(), &signal_info);
+    m_errorMonitor->VerifyNotFound();
+
+    // buffer_b is used by both q0 and q1, buffer_c is used by q1
+    wait_info_value = kQ1End;
+    m_errorMonitor->ExpectSuccess();
+    fpWaitSemaphores(m_device->device(), &wait_info, 1000000000);
+    buffer_b.reset();
+    buffer_c.reset();
+    m_errorMonitor->VerifyNotFound();
+
+    vk::DeviceWaitIdle(m_device->device());
+    m_errorMonitor->VerifyNotFound();
 }
