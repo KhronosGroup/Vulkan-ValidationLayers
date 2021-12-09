@@ -1629,7 +1629,7 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
     bool skip = false;
 
     // validates based on imageCreateFormatFeatures from vkspec.html#resources-image-creation-limits
-    VkFormatFeatureFlags tiling_features = 0;
+    VkFormatFeatureFlags2KHR tiling_features = 0;
     const VkImageTiling image_tiling = pCreateInfo->tiling;
     const VkFormat image_format = pCreateInfo->format;
 
@@ -1676,14 +1676,14 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
             }
         }
     } else {
-        VkFormatProperties format_properties = GetPDFormatProperties(image_format);
+        VkFormatProperties3KHR format_properties = GetPDFormatProperties(image_format);
         tiling_features = (image_tiling == VK_IMAGE_TILING_LINEAR) ? format_properties.linearTilingFeatures
                                                                    : format_properties.optimalTilingFeatures;
     }
 
     // Lack of disjoint format feature support while using the flag
     if (FormatIsMultiplane(image_format) && ((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) &&
-        ((tiling_features & VK_FORMAT_FEATURE_DISJOINT_BIT) == 0)) {
+        ((tiling_features & VK_FORMAT_FEATURE_2_DISJOINT_BIT_KHR) == 0)) {
         skip |= LogError(device, "VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260",
                          "vkCreateImage(): can't use VK_IMAGE_CREATE_DISJOINT_BIT because %s doesn't support "
                          "VK_FORMAT_FEATURE_DISJOINT_BIT based on imageCreateFormatFeatures.",
@@ -2191,8 +2191,8 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
         skip |= ValidateMemoryIsBoundToImage(image_state.get(), "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
         skip |= ValidateCmd(cb_node.get(), CMD_CLEARCOLORIMAGE);
         if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
-            skip |= ValidateImageFormatFeatureFlags(image_state.get(), VK_FORMAT_FEATURE_TRANSFER_DST_BIT, "vkCmdClearColorImage",
-                                                    "VUID-vkCmdClearColorImage-image-01993");
+            skip |= ValidateImageFormatFeatureFlags(image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR,
+                                                    "vkCmdClearColorImage", "VUID-vkCmdClearColorImage-image-01993");
         }
         skip |= ValidateProtectedImage(cb_node.get(), image_state.get(), "vkCmdClearColorImage()",
                                        "VUID-vkCmdClearColorImage-commandBuffer-01805");
@@ -2261,7 +2261,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
                                              "VUID-vkCmdClearDepthStencilImage-image-00010");
         skip |= ValidateCmd(cb_node.get(), CMD_CLEARDEPTHSTENCILIMAGE);
         if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
-            skip |= ValidateImageFormatFeatureFlags(image_state.get(), VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
+            skip |= ValidateImageFormatFeatureFlags(image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR,
                                                     "vkCmdClearDepthStencilImage", "VUID-vkCmdClearDepthStencilImage-image-01994");
         }
         skip |= ValidateClearDepthStencilValue(commandBuffer, *pDepthStencil, "vkCmdClearDepthStencilImage()");
@@ -3227,9 +3227,9 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
     if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01995" : "VUID-vkCmdCopyImage-srcImage-01995";
-        skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_TRANSFER_SRC_BIT, func_name, vuid);
+        skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT_KHR, func_name, vuid);
         vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01996" : "VUID-vkCmdCopyImage-dstImage-01996";
-        skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_TRANSFER_DST_BIT, func_name, vuid);
+        skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR, func_name, vuid);
     }
     skip |= ValidateCmd(cb_node.get(), cmd_type);
     bool hit_error = false;
@@ -3590,7 +3590,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         skip |= ValidateMemoryIsBoundToImage(dst_image_state.get(), func_name, vuid);
         skip |= ValidateCmd(cb_node.get(), cmd_type);
         vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstImage-02003" : "VUID-vkCmdResolveImage-dstImage-02003";
-        skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT, func_name, vuid);
+        skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR, func_name, vuid);
         vuid = is_2khr ? "VUID-vkCmdResolveImage2KHR-commandBuffer-01837" : "VUID-vkCmdResolveImage-commandBuffer-01837";
         skip |= ValidateProtectedImage(cb_node.get(), src_image_state.get(), func_name, vuid);
         vuid = is_2khr ? "VUID-vkCmdResolveImage2KHR-commandBuffer-01838" : "VUID-vkCmdResolveImage-commandBuffer-01838";
@@ -3907,9 +3907,9 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                         "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
         skip |= ValidateCmd(cb_node.get(), cmd_type);
         vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-srcImage-01999" : "VUID-vkCmdBlitImage-srcImage-01999";
-        skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_BLIT_SRC_BIT, func_name, vuid);
+        skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_2_BLIT_SRC_BIT_KHR, func_name, vuid);
         vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-dstImage-02000" : "VUID-vkCmdBlitImage-dstImage-02000";
-        skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_BLIT_DST_BIT, func_name, vuid);
+        skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_2_BLIT_DST_BIT_KHR, func_name, vuid);
         vuid = is_2khr ? "VUID-vkCmdBlitImage2KHR-commandBuffer-01834" : "VUID-vkCmdBlitImage-commandBuffer-01834";
         skip |= ValidateProtectedImage(cb_node.get(), src_image_state.get(), func_name, vuid);
         vuid = is_2khr ? "VUID-vkCmdBlitImage2KHR-commandBuffer-01835" : "VUID-vkCmdBlitImage-commandBuffer-01835";
@@ -3940,11 +3940,13 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
 
         if (VK_FILTER_LINEAR == filter) {
             vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-filter-02001" : "VUID-vkCmdBlitImage-filter-02001";
-            skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT,
+            skip |= ValidateImageFormatFeatureFlags(src_image_state.get(),
+                                                    VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT_KHR,
                                                     func_name, vuid);
         } else if (VK_FILTER_CUBIC_IMG == filter) {
             vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-filter-02002" : "VUID-vkCmdBlitImage-filter-02002";
-            skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG,
+            skip |= ValidateImageFormatFeatureFlags(src_image_state.get(),
+                                                    VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT,
                                                     func_name, vuid);
         }
 
@@ -4472,23 +4474,23 @@ bool CoreChecks::ValidateImageUsageFlags(IMAGE_STATE const *image_state, VkFlags
                               image_state->Handle(), msgCode, func_name, usage_string);
 }
 
-bool CoreChecks::ValidateImageFormatFeatureFlags(IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
+bool CoreChecks::ValidateImageFormatFeatureFlags(IMAGE_STATE const *image_state, VkFormatFeatureFlags2KHR desired,
                                                  char const *func_name, const char *vuid) const {
     bool skip = false;
-    const VkFormatFeatureFlags image_format_features = image_state->format_features;
+    const VkFormatFeatureFlags2KHR image_format_features = image_state->format_features;
     if ((image_format_features & desired) != desired) {
         // Same error, but more details if it was an AHB external format
         if (image_state->HasAHBFormat()) {
             skip |= LogError(image_state->image(), vuid,
-                             "In %s, VkFormatFeatureFlags (0x%08X) does not support required feature %s for the external format "
+                             "In %s, VkFormatFeatureFlags (0x%" PRIxLEAST64 ") does not support required feature %s for the external format "
                              "found in VkAndroidHardwareBufferFormatPropertiesANDROID::formatFeatures used by %s.",
-                             func_name, image_format_features, string_VkFormatFeatureFlags(desired).c_str(),
+                             func_name, image_format_features, string_VkFormatFeatureFlags2KHR(desired).c_str(),
                              report_data->FormatHandle(image_state->image()).c_str());
         } else {
             skip |= LogError(image_state->image(), vuid,
-                             "In %s, VkFormatFeatureFlags (0x%08X) does not support required feature %s for format %u used by %s "
+                             "In %s, VkFormatFeatureFlags (0x%" PRIxLEAST64 ") does not support required feature %s for format %u used by %s "
                              "with tiling %s.",
-                             func_name, image_format_features, string_VkFormatFeatureFlags(desired).c_str(),
+                             func_name, image_format_features, string_VkFormatFeatureFlags2KHR(desired).c_str(),
                              image_state->createInfo.format, report_data->FormatHandle(image_state->image()).c_str(),
                              string_VkImageTiling(image_state->createInfo.tiling));
         }
@@ -4594,9 +4596,9 @@ bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE *buffer_state, const
 
 bool CoreChecks::ValidateBufferViewBuffer(const BUFFER_STATE *buffer_state, const VkBufferViewCreateInfo *pCreateInfo) const {
     bool skip = false;
-    const VkFormatProperties format_properties = GetPDFormatProperties(pCreateInfo->format);
+    const VkFormatProperties3KHR format_properties = GetPDFormatProperties(pCreateInfo->format);
     if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) &&
-        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR)) {
         skip |= LogError(buffer_state->buffer(), "VUID-VkBufferViewCreateInfo-buffer-00933",
                          "vkCreateBufferView(): If buffer was created with `usage` containing "
                          "VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, format (%s) must "
@@ -4604,7 +4606,7 @@ bool CoreChecks::ValidateBufferViewBuffer(const BUFFER_STATE *buffer_state, cons
                          string_VkFormat(pCreateInfo->format));
     }
     if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) &&
-        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT_KHR)) {
         skip |= LogError(buffer_state->buffer(), "VUID-VkBufferViewCreateInfo-buffer-00934",
                          "vkCreateBufferView(): If buffer was created with `usage` containing "
                          "VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, format (%s) must "
@@ -5463,7 +5465,7 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE *image_state,
     // Pass in image_usage here instead of extracting it from image_state in case there's a chained VkImageViewUsageCreateInfo
     bool skip = false;
 
-    VkFormatFeatureFlags tiling_features = 0;
+    VkFormatFeatureFlags2KHR tiling_features = 0;
     const VkImageTiling image_tiling = image_state->createInfo.tiling;
 
     if (image_state->HasAHBFormat()) {
@@ -5493,7 +5495,7 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE *image_state,
             }
         }
     } else {
-        VkFormatProperties format_properties = GetPDFormatProperties(view_format);
+        VkFormatProperties3KHR format_properties = GetPDFormatProperties(view_format);
         tiling_features = (image_tiling == VK_IMAGE_TILING_LINEAR) ? format_properties.linearTilingFeatures
                                                                    : format_properties.optimalTilingFeatures;
     }
@@ -6581,7 +6583,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
 
     if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         vuid = is_2khr ? "VUID-VkCopyImageToBufferInfo2KHR-srcImage-01998" : "VUID-vkCmdCopyImageToBuffer-srcImage-01998";
-        skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_TRANSFER_SRC_BIT, func_name, vuid);
+        skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT_KHR, func_name, vuid);
     }
     bool hit_error = false;
 
@@ -6706,7 +6708,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
 
     if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         vuid = is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-dstImage-01997" : "VUID-vkCmdCopyBufferToImage-dstImage-01997";
-        skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_TRANSFER_DST_BIT, func_name, vuid);
+        skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR, func_name, vuid);
     }
     bool hit_error = false;
 

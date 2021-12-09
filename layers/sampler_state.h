@@ -91,13 +91,13 @@ class SAMPLER_STATE : public BASE_NODE {
 
 class SAMPLER_YCBCR_CONVERSION_STATE : public BASE_NODE {
   public:
-    const VkFormatFeatureFlags format_features;
+    const VkFormatFeatureFlags2KHR format_features;
     const VkFormat format;
     const VkFilter chromaFilter;
     const uint64_t external_format;
 
     SAMPLER_YCBCR_CONVERSION_STATE(VkSamplerYcbcrConversion ycbcr, const VkSamplerYcbcrConversionCreateInfo *info,
-                                   VkFormatFeatureFlags features)
+                                   VkFormatFeatureFlags2KHR features)
         : BASE_NODE(ycbcr, kVulkanObjectTypeSamplerYcbcrConversion),
           format_features(features),
           format(info->format),

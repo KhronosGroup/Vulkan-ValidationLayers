@@ -406,7 +406,7 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateBindAccelerationStructureMemory(VkDevice device, const VkBindAccelerationStructureMemoryInfoNV& info) const;
     // Prototypes for CoreChecks accessor functions
-    VkFormatProperties GetPDFormatProperties(const VkFormat format) const;
+    VkFormatProperties3KHR GetPDFormatProperties(const VkFormat format) const;
     const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties();
 
     bool FormatRequiresYcbcrConversionExplicitly(const VkFormat format) const;
@@ -789,7 +789,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageUsageFlags(IMAGE_STATE const* image_state, VkFlags desired, bool strict, const char* msgCode,
                                  char const* func_name, char const* usage_string) const;
 
-    bool ValidateImageFormatFeatureFlags(IMAGE_STATE const* image_state, VkFormatFeatureFlags desired, char const* func_name,
+    bool ValidateImageFormatFeatureFlags(IMAGE_STATE const* image_state, VkFormatFeatureFlags2KHR desired, char const* func_name,
                                          const char* vuid) const;
 
     bool ValidateImageSubresourceLayers(const CMD_BUFFER_STATE* cb_node, const VkImageSubresourceLayers* subresource_layers,

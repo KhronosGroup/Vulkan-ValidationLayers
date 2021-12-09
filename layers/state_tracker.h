@@ -933,7 +933,7 @@ class ValidationStateTracker : public ValidationObject {
                                            uint32_t vertexAttributeDescriptionCount,
                                            const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) override;
     template <typename CreateInfo>
-    VkFormatFeatureFlags GetExternalFormatFeaturesANDROID(const CreateInfo* create_info) const;
+    VkFormatFeatureFlags2KHR GetExternalFormatFeaturesANDROID(const CreateInfo* create_info) const;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                  VkAndroidHardwareBufferPropertiesANDROID* pProperties,
@@ -993,7 +993,7 @@ class ValidationStateTracker : public ValidationObject {
     std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> GetAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
                                                                             const FRAMEBUFFER_STATE& fb_state) const;
 
-    VkFormatFeatureFlags GetPotentialFormatFeatures(VkFormat format) const;
+    VkFormatFeatureFlags2KHR GetPotentialFormatFeatures(VkFormat format) const;
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const UPDATE_TEMPLATE_STATE* template_state,
                                                     const void* pData);
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
@@ -1177,7 +1177,7 @@ class ValidationStateTracker : public ValidationObject {
     // If vkGetBufferDeviceAddress is called, keep track of buffer <-> address mapping.
     // TODO is it sufficient to track a pointer, or do we need a std::shared_ptr<BUFFER_STATE>?
     vl_concurrent_unordered_map<VkDeviceAddress, BUFFER_STATE*> buffer_address_map_;
-    vl_concurrent_unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
+    vl_concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2KHR> ahb_ext_formats_map;
 
   private:
     VALSTATETRACK_MAP_AND_TRAITS(VkQueue, QUEUE_STATE, queue_map_)
