@@ -14854,3 +14854,2380 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, ValidateDecorationsWithStorageClass) {
+    TEST_DESCRIPTION("Test invalid combinations of decoration with StorageClass");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    bool sample_rate_shading = true;
+    bool clip_distance = true;
+    bool cull_distance = true;
+    bool geometry = true;
+    bool multi_viewport = true;
+    bool shader_draw_parameters = CanEnableDeviceExtension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+    bool fragment_shader_barycentric = CanEnableDeviceExtension(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
+    bool shading_rate = CanEnableDeviceExtension(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    bool tessellation_shader = true;
+
+    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features =
+        LvlInitStruct<VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV>();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features =
+        LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(&fragment_shader_barycentric_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&fragment_shading_rate_features);
+
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (features2.features.sampleRateShading == VK_FALSE) {
+        sample_rate_shading = false;
+    }
+    if (features2.features.shaderClipDistance == VK_FALSE) {
+        clip_distance = false;
+    }
+    if (features2.features.shaderCullDistance == VK_FALSE) {
+        cull_distance = false;
+    }
+    if (features2.features.geometryShader == VK_FALSE) {
+        geometry = false;
+    }
+    if (features2.features.multiViewport == VK_FALSE) {
+        multi_viewport = false;
+    }
+    if (fragment_shader_barycentric_features.fragmentShaderBarycentric == VK_FALSE) {
+        fragment_shader_barycentric = false;
+    }
+    if (fragment_shading_rate_features.pipelineFragmentShadingRate == VK_FALSE) {
+        shading_rate = false;
+    }
+    if (features2.features.tessellationShader == VK_FALSE) {
+        tessellation_shader = false;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (sample_rate_shading) {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability SampleRateShading
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %gl_SampleID %color
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %gl_SampleID "gl_SampleID"  ; id %8
+               OpName %color "color"  ; id %18
+
+               ; Annotations
+               OpDecorate %gl_SampleID Flat
+               OpDecorate %gl_SampleID BuiltIn SampleId
+               OpDecorate %color Location 0
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+%_ptr_Input_int = OpTypePointer Input %int
+%gl_SampleID = OpVariable %_ptr_Input_int Output
+      %int_0 = OpConstant %int 0
+       %bool = OpTypeBool
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+    %float_1 = OpConstant %float 1
+         %20 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+    %float_0 = OpConstant %float 0
+         %23 = OpConstantComposite %v4float %float_0 %float_0 %float_0 %float_0
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+          %9 = OpLoad %int %gl_SampleID
+         %12 = OpIEqual %bool %9 %int_0
+               OpSelectionMerge %14 None
+               OpBranchConditional %12 %13 %21
+         %13 = OpLabel
+               OpStore %color %20
+               OpBranch %14
+         %21 = OpLabel
+               OpStore %color %23
+               OpBranch %14
+         %14 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-SampleId-SampleId-04355");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %gl_FrontFacing
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %color "color"  ; id %9
+               OpName %gl_FrontFacing "gl_FrontFacing"  ; id %12
+
+               ; Annotations
+               OpDecorate %color Location 0
+               OpDecorate %gl_FrontFacing BuiltIn FrontFacing
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+       %bool = OpTypeBool
+%_ptr_Input_bool = OpTypePointer Input %bool
+%gl_FrontFacing = OpVariable %_ptr_Input_bool Output
+    %float_0 = OpConstant %float 0
+    %float_1 = OpConstant %float 1
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %13 = OpLoad %bool %gl_FrontFacing
+         %16 = OpSelect %float %13 %float_1 %float_0
+         %17 = OpCompositeConstruct %v4float %16 %16 %16 %16
+               OpStore %color %17
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-FrontFacing-FrontFacing-04230");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %gl_FragCoord
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %color "color"  ; id %9
+               OpName %gl_FragCoord "gl_FragCoord"  ; id %11
+
+               ; Annotations
+               OpDecorate %color Location 0
+               OpDecorate %gl_FragCoord BuiltIn FragCoord
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+%_ptr_Input_v4float = OpTypePointer Input %v4float
+%gl_FragCoord = OpVariable %_ptr_Input_v4float Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %12 = OpLoad %v4float %gl_FragCoord
+         %13 = OpCompositeExtract %float %12 0
+         %14 = OpCompositeExtract %float %12 1
+         %15 = OpCompositeExtract %float %12 2
+         %16 = OpCompositeExtract %float %12 3
+         %17 = OpCompositeConstruct %v4float %13 %14 %15 %16
+               OpStore %color %17
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-FragCoord-FragCoord-04211");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (clip_distance) {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability ClipDistance
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %gl_ClipDistance
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %color "color"  ; id %9
+               OpName %gl_ClipDistance "gl_ClipDistance"  ; id %14
+
+               ; Annotations
+               OpDecorate %color Location 0
+               OpDecorate %gl_ClipDistance BuiltIn ClipDistance
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%_ptr_Input__arr_float_uint_1 = OpTypePointer Input %_arr_float_uint_1
+%gl_ClipDistance = OpVariable %_ptr_Input__arr_float_uint_1 Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_Input_float = OpTypePointer Input %float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpAccessChain %_ptr_Input_float %gl_ClipDistance %int_0
+         %19 = OpLoad %float %18
+         %20 = OpCompositeConstruct %v4float %19 %19 %19 %19
+               OpStore %color %20
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-ClipDistance-ClipDistance-04189");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (cull_distance) {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability CullDistance
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %gl_CullDistance
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %color "color"  ; id %9
+               OpName %gl_CullDistance "gl_CullDistance"  ; id %14
+
+               ; Annotations
+               OpDecorate %color Location 0
+               OpDecorate %gl_CullDistance BuiltIn CullDistance
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%_ptr_Input__arr_float_uint_1 = OpTypePointer Input %_arr_float_uint_1
+%gl_CullDistance = OpVariable %_ptr_Input__arr_float_uint_1 Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_Input_float = OpTypePointer Input %float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpAccessChain %_ptr_Input_float %gl_CullDistance %int_0
+         %19 = OpLoad %float %18
+         %20 = OpCompositeConstruct %v4float %19 %19 %19 %19
+               OpStore %color %20
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-CullDistance-CullDistance-04198");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (geometry) {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability Geometry
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %gl_Layer
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %color "color"  ; id %9
+               OpName %gl_Layer "gl_Layer"  ; id %12
+
+               ; Annotations
+               OpDecorate %color Location 0
+               OpDecorate %gl_Layer Flat
+               OpDecorate %gl_Layer BuiltIn Layer
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+        %int = OpTypeInt 32 1
+%_ptr_Input_int = OpTypePointer Input %int
+   %gl_Layer = OpVariable %_ptr_Input_int Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %13 = OpLoad %int %gl_Layer
+         %14 = OpConvertSToF %float %13
+         %15 = OpCompositeConstruct %v4float %14 %14 %14 %14
+               OpStore %color %15
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-Layer-Layer-04275");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (multi_viewport) {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability MultiViewport
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %gl_ViewportIndex
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %color "color"  ; id %9
+               OpName %gl_ViewportIndex "gl_ViewportIndex"  ; id %12
+
+               ; Annotations
+               OpDecorate %color Location 0
+               OpDecorate %gl_ViewportIndex Flat
+               OpDecorate %gl_ViewportIndex BuiltIn ViewportIndex
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+        %int = OpTypeInt 32 1
+%_ptr_Input_int = OpTypePointer Input %int
+%gl_ViewportIndex = OpVariable %_ptr_Input_int Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %13 = OpLoad %int %gl_ViewportIndex
+         %14 = OpConvertSToF %float %13
+         %15 = OpCompositeConstruct %v4float %14 %14 %14 %14
+               OpStore %color %15
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-ViewportIndex-ViewportIndex-04407");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %gl_SampleMask
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %color "color"  ; id %9
+               OpName %gl_SampleMask "gl_SampleMask"  ; id %15
+
+               ; Annotations
+               OpDecorate %color Location 0
+               OpDecorate %gl_SampleMask BuiltIn SampleMask
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_int_uint_1 = OpTypeArray %int %uint_1
+%_ptr_Output__arr_int_uint_1 = OpTypePointer Output %_arr_int_uint_1
+%gl_SampleMask = OpVariable %_ptr_Output__arr_int_uint_1 Private
+      %int_0 = OpConstant %int 0
+%_ptr_Output_int = OpTypePointer Output %int
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpAccessChain %_ptr_Output_int %gl_SampleMask %int_0
+         %19 = OpLoad %int %18
+         %20 = OpConvertSToF %float %19
+         %21 = OpCompositeConstruct %v4float %20 %20 %20 %20
+               OpStore %color %21
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-SampleMask-SampleMask-04358");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %gl_PointCoord
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %color "color"  ; id %9
+               OpName %gl_PointCoord "gl_PointCoord"  ; id %12
+
+               ; Annotations
+               OpDecorate %color Location 0
+               OpDecorate %gl_PointCoord BuiltIn PointCoord
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+    %v2float = OpTypeVector %float 2
+%_ptr_Input_v2float = OpTypePointer Input %v2float
+%gl_PointCoord = OpVariable %_ptr_Input_v2float Output
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_float = OpTypePointer Input %float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %16 = OpAccessChain %_ptr_Input_float %gl_PointCoord %uint_0
+         %17 = OpLoad %float %16
+         %18 = OpCompositeConstruct %v4float %17 %17 %17 %17
+               OpStore %color %18
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-PointCoord-PointCoord-04312");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (sample_rate_shading) {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability SampleRateShading
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %gl_SamplePosition
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %color "color"  ; id %9
+               OpName %gl_SamplePosition "gl_SamplePosition"  ; id %12
+
+               ; Annotations
+               OpDecorate %color Location 0
+               OpDecorate %gl_SamplePosition BuiltIn SamplePosition
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+    %v2float = OpTypeVector %float 2
+%_ptr_Input_v2float = OpTypePointer Input %v2float
+%gl_SamplePosition = OpVariable %_ptr_Input_v2float Output
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_float = OpTypePointer Input %float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %16 = OpAccessChain %_ptr_Input_float %gl_SamplePosition %uint_0
+         %17 = OpLoad %float %16
+         %18 = OpCompositeConstruct %v4float %17 %17 %17 %17
+               OpStore %color %18
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-SamplePosition-SamplePosition-04361");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %_ %gl_VertexIndex
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %11
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %13
+               OpName %gl_VertexIndex "gl_VertexIndex"  ; id %17
+
+               ; Annotations
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+               OpDecorate %gl_VertexIndex BuiltIn VertexIndex
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_Input_int = OpTypePointer Input %int
+%gl_VertexIndex = OpVariable %_ptr_Input_int Output
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpLoad %int %gl_VertexIndex
+         %19 = OpConvertSToF %float %18
+         %20 = OpCompositeConstruct %v4float %19 %19 %19 %19
+         %22 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %22 %20
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> vs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {vs->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VertexIndex-VertexIndex-04399");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (shader_draw_parameters) {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability DrawParameters
+               OpExtension "SPV_KHR_shader_draw_parameters"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %_ %gl_BaseInstance
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %11
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %13
+               OpName %gl_BaseInstance "gl_BaseInstance"  ; id %17
+
+               ; Annotations
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+               OpDecorate %gl_BaseInstance BuiltIn BaseInstance
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_Input_int = OpTypePointer Input %int
+%gl_BaseInstance = OpVariable %_ptr_Input_int Output
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpLoad %int %gl_BaseInstance
+         %19 = OpConvertSToF %float %18
+         %20 = OpCompositeConstruct %v4float %19 %19 %19 %19
+         %22 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %22 %20
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> vs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {vs->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-BaseInstance-BaseInstance-04182");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (shader_draw_parameters) {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability DrawParameters
+               OpExtension "SPV_KHR_shader_draw_parameters"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %_ %gl_BaseVertex
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %11
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %13
+               OpName %gl_BaseVertex "gl_BaseVertex"  ; id %17
+
+               ; Annotations
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+               OpDecorate %gl_BaseVertex BuiltIn BaseVertex
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_Input_int = OpTypePointer Input %int
+%gl_BaseVertex = OpVariable %_ptr_Input_int Output
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpLoad %int %gl_BaseVertex
+         %19 = OpConvertSToF %float %18
+         %20 = OpCompositeConstruct %v4float %19 %19 %19 %19
+         %22 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %22 %20
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> vs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {vs->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-BaseVertex-BaseVertex-04185");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (shader_draw_parameters) {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability DrawParameters
+               OpExtension "SPV_KHR_shader_draw_parameters"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %_ %gl_DrawID
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %11
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %13
+               OpName %gl_DrawID "gl_DrawID"  ; id %17
+
+               ; Annotations
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+               OpDecorate %gl_DrawID BuiltIn DrawIndex
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_Input_int = OpTypePointer Input %int
+  %gl_DrawID = OpVariable %_ptr_Input_int Output
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpLoad %int %gl_DrawID
+         %19 = OpConvertSToF %float %18
+         %20 = OpCompositeConstruct %v4float %19 %19 %19 %19
+         %22 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %22 %20
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> vs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {vs->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-DrawIndex-DrawIndex-04208");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %_ %gl_InstanceIndex
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %11
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %13
+               OpName %gl_InstanceIndex "gl_InstanceIndex"  ; id %17
+
+               ; Annotations
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+               OpDecorate %gl_InstanceIndex BuiltIn InstanceIndex
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_Input_int = OpTypePointer Input %int
+%gl_InstanceIndex = OpVariable %_ptr_Input_int Output
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpLoad %int %gl_InstanceIndex
+         %19 = OpConvertSToF %float %18
+         %20 = OpCompositeConstruct %v4float %19 %19 %19 %19
+         %22 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %22 %20
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> vs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {vs->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-InstanceIndex-InstanceIndex-04264");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (fragment_shader_barycentric) {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability FragmentBarycentricNV
+               OpExtension "SPV_NV_fragment_shader_barycentric"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %gl_BaryCoordNV
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpSourceExtension "GL_NV_fragment_shader_barycentric"
+               OpName %main "main"  ; id %4
+               OpName %color "color"  ; id %9
+               OpName %gl_BaryCoordNV "gl_BaryCoordNV"  ; id %12
+
+               ; Annotations
+               OpDecorate %color Location 0
+               OpDecorate %gl_BaryCoordNV BuiltIn BaryCoordNV
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+    %v3float = OpTypeVector %float 3
+%_ptr_Input_v3float = OpTypePointer Input %v3float
+%gl_BaryCoordNV = OpVariable %_ptr_Input_v3float Output
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_float = OpTypePointer Input %float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %16 = OpAccessChain %_ptr_Input_float %gl_BaryCoordNV %uint_0
+         %17 = OpLoad %float %16
+         %18 = OpCompositeConstruct %v4float %17 %17 %17 %17
+               OpStore %color %18
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-BaryCoordNV-BaryCoordNV-04155");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        static const std::string spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %gl_HelperInvocation
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %color "color"  ; id %9
+               OpName %gl_HelperInvocation "gl_HelperInvocation"  ; id %12
+
+               ; Annotations
+               OpDecorate %color Location 0
+               OpDecorate %gl_HelperInvocation BuiltIn HelperInvocation
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+       %bool = OpTypeBool
+%_ptr_Input_bool = OpTypePointer Input %bool
+%gl_HelperInvocation = OpVariable %_ptr_Input_bool Output
+    %float_0 = OpConstant %float 0
+    %float_1 = OpConstant %float 1
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %13 = OpLoad %bool %gl_HelperInvocation
+         %16 = OpSelect %float %13 %float_1 %float_0
+         %17 = OpCompositeConstruct %v4float %16 %16 %16 %16
+               OpStore %color %17
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-HelperInvocation-HelperInvocation-04240");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (shading_rate) {
+        static const std::string vspv_source = R"(
+               OpCapability Shader
+               OpCapability FragmentShadingRateKHR
+               OpExtension "SPV_KHR_fragment_shading_rate"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %gl_PrimitiveShadingRateEXT %_ %gl_InstanceIndex
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpSourceExtension "GL_EXT_fragment_shading_rate"
+               OpName %main "main"  ; id %4
+               OpName %gl_PrimitiveShadingRateEXT "gl_PrimitiveShadingRateEXT"  ; id %8
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %15
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %17
+               OpName %gl_InstanceIndex "gl_InstanceIndex"  ; id %20
+
+               ; Annotations
+               OpDecorate %gl_PrimitiveShadingRateEXT BuiltIn PrimitiveShadingRateKHR
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+               OpDecorate %gl_InstanceIndex BuiltIn InstanceIndex
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+%_ptr_Output_int = OpTypePointer Output %int
+%gl_PrimitiveShadingRateEXT = OpVariable %_ptr_Output_int Output
+      %int_1 = OpConstant %int 1
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+      %int_0 = OpConstant %int 0
+%_ptr_Input_int = OpTypePointer Input %int
+%gl_InstanceIndex = OpVariable %_ptr_Input_int Input
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpStore %gl_PrimitiveShadingRateEXT %int_1
+         %21 = OpLoad %int %gl_InstanceIndex
+         %22 = OpConvertSToF %float %21
+         %23 = OpCompositeConstruct %v4float %22 %22 %22 %22
+         %25 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %25 %23
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        static const std::string fspv_source = R"(
+               OpCapability Shader
+               OpCapability FragmentShadingRateKHR
+               OpExtension "SPV_KHR_fragment_shading_rate"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %gl_ShadingRateEXT %color
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpSourceExtension "GL_EXT_fragment_shading_rate"
+               OpName %main "main"  ; id %4
+               OpName %gl_ShadingRateEXT "gl_ShadingRateEXT"  ; id %8
+               OpName %color "color"  ; id %19
+
+               ; Annotations
+               OpDecorate %gl_ShadingRateEXT Flat
+               OpDecorate %gl_ShadingRateEXT BuiltIn ShadingRateKHR
+               OpDecorate %color Location 0
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+%_ptr_Input_int = OpTypePointer Input %int
+%gl_ShadingRateEXT = OpVariable %_ptr_Input_int Output
+      %int_1 = OpConstant %int 1
+       %bool = OpTypeBool
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+    %float_1 = OpConstant %float 1
+         %21 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+    %float_0 = OpConstant %float 0
+         %24 = OpConstantComposite %v4float %float_0 %float_0 %float_0 %float_0
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+          %9 = OpLoad %int %gl_ShadingRateEXT
+         %11 = OpBitwiseAnd %int %9 %int_1
+         %13 = OpIEqual %bool %11 %int_1
+               OpSelectionMerge %15 None
+               OpBranchConditional %13 %14 %22
+         %14 = OpLabel
+               OpStore %color %21
+               OpBranch %15
+         %22 = OpLabel
+               OpStore %color %24
+               OpBranch %15
+         %15 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+        std::unique_ptr<VkShaderObj> vs =
+            layer_data::make_unique<VkShaderObj>(m_device, vspv_source, VK_SHADER_STAGE_VERTEX_BIT, this);
+        std::unique_ptr<VkShaderObj> fs =
+            layer_data::make_unique<VkShaderObj>(m_device, fspv_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {vs->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-ShadingRateKHR-ShadingRateKHR-04491");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        static const std::string csSource = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_WorkGroupID
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_WorkGroupID "gl_WorkGroupID"  ; id %11
+
+               ; Annotations
+               OpDecorate %gl_WorkGroupID BuiltIn WorkgroupId
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+     %v3uint = OpTypeVector %uint 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+%gl_WorkGroupID = OpVariable %_ptr_Input_v3uint Output
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_uint = OpTypePointer Input %uint
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpAccessChain %_ptr_Input_uint %gl_WorkGroupID %uint_0
+         %15 = OpLoad %uint %14
+               OpStore %x %15
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-WorkgroupId-WorkgroupId-04423");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        static const std::string csSource = R"(
+               OpCapability Shader
+               OpCapability GroupNonUniformVote
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_SubgroupSize
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpSourceExtension "GL_KHR_shader_subgroup_basic"
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_SubgroupSize "gl_SubgroupSize"  ; id %10
+
+               ; Annotations
+               OpDecorate %gl_SubgroupSize RelaxedPrecision
+               OpDecorate %gl_SubgroupSize BuiltIn SubgroupSize
+               OpDecorate %11 RelaxedPrecision
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+%_ptr_Input_uint = OpTypePointer Input %uint
+%gl_SubgroupSize = OpVariable %_ptr_Input_uint Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %11 = OpLoad %uint %gl_SubgroupSize
+               OpStore %x %11
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-SubgroupSize-SubgroupSize-04382");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (tessellation_shader) {
+        static const std::string tcsSource = R"(
+               OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationControl %main "main" %gl_TessLevelOuter %gl_TessLevelInner
+               OpExecutionMode %main OutputVertices 3
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %gl_TessLevelOuter "gl_TessLevelOuter"  ; id %11
+               OpName %gl_TessLevelInner "gl_TessLevelInner"  ; id %24
+
+               ; Annotations
+               OpDecorate %gl_TessLevelOuter Patch
+               OpDecorate %gl_TessLevelOuter BuiltIn TessLevelOuter
+               OpDecorate %gl_TessLevelInner Patch
+               OpDecorate %gl_TessLevelInner BuiltIn TessLevelInner
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+     %uint_4 = OpConstant %uint 4
+%_arr_float_uint_4 = OpTypeArray %float %uint_4
+%_ptr_Output__arr_float_uint_4 = OpTypePointer Output %_arr_float_uint_4
+%gl_TessLevelOuter = OpVariable %_ptr_Output__arr_float_uint_4 Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+    %float_1 = OpConstant %float 1
+%_ptr_Output_float = OpTypePointer Output %float
+     %uint_2 = OpConstant %uint 2
+%_arr_float_uint_2 = OpTypeArray %float %uint_2
+%_ptr_Output__arr_float_uint_2 = OpTypePointer Output %_arr_float_uint_2
+%gl_TessLevelInner = OpVariable %_ptr_Output__arr_float_uint_2 Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_2
+               OpStore %18 %float_1
+         %19 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_1
+               OpStore %19 %float_1
+         %20 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_0
+               OpStore %20 %float_1
+         %25 = OpAccessChain %_ptr_Output_float %gl_TessLevelInner %int_0
+               OpStore %25 %float_1
+               OpReturn
+               OpFunctionEnd
+    )";
+
+        static const std::string tesSource = R"(
+               OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationEvaluation %main "main" %_ %gl_TessLevelInner
+               OpExecutionMode %main Triangles
+               OpExecutionMode %main SpacingEqual
+               OpExecutionMode %main VertexOrderCw
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %11
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %13
+               OpName %gl_TessLevelInner "gl_TessLevelInner"  ; id %19
+
+               ; Annotations
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+               OpDecorate %gl_TessLevelInner Patch
+               OpDecorate %gl_TessLevelInner BuiltIn TessLevelInner
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+     %uint_2 = OpConstant %uint 2
+%_arr_float_uint_2 = OpTypeArray %float %uint_2
+%_ptr_Input__arr_float_uint_2 = OpTypePointer Input %_arr_float_uint_2
+%gl_TessLevelInner = OpVariable %_ptr_Input__arr_float_uint_2 Output
+%_ptr_Input_float = OpTypePointer Input %float
+    %v3float = OpTypeVector %float 3
+     %uint_0 = OpConstant %uint 0
+%_ptr_Output_float = OpTypePointer Output %float
+    %float_1 = OpConstant %float 1
+     %uint_3 = OpConstant %uint 3
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %21 = OpAccessChain %_ptr_Input_float %gl_TessLevelInner %int_0
+         %22 = OpLoad %float %21
+         %24 = OpCompositeConstruct %v3float %22 %22 %22
+         %27 = OpAccessChain %_ptr_Output_float %_ %int_0 %uint_0
+         %28 = OpCompositeExtract %float %24 0
+               OpStore %27 %28
+         %29 = OpAccessChain %_ptr_Output_float %_ %int_0 %uint_1
+         %30 = OpCompositeExtract %float %24 1
+               OpStore %29 %30
+         %31 = OpAccessChain %_ptr_Output_float %_ %int_0 %uint_2
+         %32 = OpCompositeExtract %float %24 2
+               OpStore %31 %32
+         %35 = OpAccessChain %_ptr_Output_float %_ %int_0 %uint_3
+               OpStore %35 %float_1
+               OpReturn
+               OpFunctionEnd
+    )";
+
+        std::unique_ptr<VkShaderObj> tcs =
+            layer_data::make_unique<VkShaderObj>(m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+        std::unique_ptr<VkShaderObj> tes =
+            layer_data::make_unique<VkShaderObj>(m_device, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+
+        VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                     VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+
+        VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_.emplace_back(tcs->GetStageCreateInfo());
+        pipe.shader_stages_.emplace_back(tes->GetStageCreateInfo());
+        pipe.gp_ci_.pTessellationState = &tsci;
+        pipe.gp_ci_.pInputAssemblyState = &iasci;
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-TessLevelInner-TessLevelInner-04396");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (tessellation_shader) {
+        static const std::string tcsSource = R"(
+               OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationControl %main "main" %gl_TessLevelOuter %gl_TessLevelInner
+               OpExecutionMode %main OutputVertices 3
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %gl_TessLevelOuter "gl_TessLevelOuter"  ; id %11
+               OpName %gl_TessLevelInner "gl_TessLevelInner"  ; id %24
+
+               ; Annotations
+               OpDecorate %gl_TessLevelOuter Patch
+               OpDecorate %gl_TessLevelOuter BuiltIn TessLevelOuter
+               OpDecorate %gl_TessLevelInner Patch
+               OpDecorate %gl_TessLevelInner BuiltIn TessLevelInner
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+     %uint_4 = OpConstant %uint 4
+%_arr_float_uint_4 = OpTypeArray %float %uint_4
+%_ptr_Output__arr_float_uint_4 = OpTypePointer Output %_arr_float_uint_4
+%gl_TessLevelOuter = OpVariable %_ptr_Output__arr_float_uint_4 Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+    %float_1 = OpConstant %float 1
+%_ptr_Output_float = OpTypePointer Output %float
+     %uint_2 = OpConstant %uint 2
+%_arr_float_uint_2 = OpTypeArray %float %uint_2
+%_ptr_Output__arr_float_uint_2 = OpTypePointer Output %_arr_float_uint_2
+%gl_TessLevelInner = OpVariable %_ptr_Output__arr_float_uint_2 Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_2
+               OpStore %18 %float_1
+         %19 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_1
+               OpStore %19 %float_1
+         %20 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_0
+               OpStore %20 %float_1
+         %25 = OpAccessChain %_ptr_Output_float %gl_TessLevelInner %int_0
+               OpStore %25 %float_1
+               OpReturn
+               OpFunctionEnd
+    )";
+
+        static const std::string tesSource = R"(
+               OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationEvaluation %main "main" %_ %gl_TessLevelOuter
+               OpExecutionMode %main Triangles
+               OpExecutionMode %main SpacingEqual
+               OpExecutionMode %main VertexOrderCw
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %11
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %13
+               OpName %gl_TessLevelOuter "gl_TessLevelOuter"  ; id %19
+
+               ; Annotations
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+               OpDecorate %gl_TessLevelOuter Patch
+               OpDecorate %gl_TessLevelOuter BuiltIn TessLevelOuter
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+     %uint_4 = OpConstant %uint 4
+%_arr_float_uint_4 = OpTypeArray %float %uint_4
+%_ptr_Input__arr_float_uint_4 = OpTypePointer Input %_arr_float_uint_4
+%gl_TessLevelOuter = OpVariable %_ptr_Input__arr_float_uint_4 Output
+%_ptr_Input_float = OpTypePointer Input %float
+    %v3float = OpTypeVector %float 3
+     %uint_0 = OpConstant %uint 0
+%_ptr_Output_float = OpTypePointer Output %float
+     %uint_2 = OpConstant %uint 2
+    %float_1 = OpConstant %float 1
+     %uint_3 = OpConstant %uint 3
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %21 = OpAccessChain %_ptr_Input_float %gl_TessLevelOuter %int_0
+         %22 = OpLoad %float %21
+         %24 = OpCompositeConstruct %v3float %22 %22 %22
+         %27 = OpAccessChain %_ptr_Output_float %_ %int_0 %uint_0
+         %28 = OpCompositeExtract %float %24 0
+               OpStore %27 %28
+         %29 = OpAccessChain %_ptr_Output_float %_ %int_0 %uint_1
+         %30 = OpCompositeExtract %float %24 1
+               OpStore %29 %30
+         %32 = OpAccessChain %_ptr_Output_float %_ %int_0 %uint_2
+         %33 = OpCompositeExtract %float %24 2
+               OpStore %32 %33
+         %36 = OpAccessChain %_ptr_Output_float %_ %int_0 %uint_3
+               OpStore %36 %float_1
+               OpReturn
+               OpFunctionEnd
+    )";
+
+        std::unique_ptr<VkShaderObj> tcs =
+            layer_data::make_unique<VkShaderObj>(m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+        std::unique_ptr<VkShaderObj> tes =
+            layer_data::make_unique<VkShaderObj>(m_device, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+
+        VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                     VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+
+        VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_.emplace_back(tcs->GetStageCreateInfo());
+        pipe.shader_stages_.emplace_back(tes->GetStageCreateInfo());
+        pipe.gp_ci_.pTessellationState = &tsci;
+        pipe.gp_ci_.pInputAssemblyState = &iasci;
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-TessLevelOuter-TessLevelOuter-04392");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (tessellation_shader) {
+        static const std::string tcsSource = R"(
+               OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationControl %main "main" %gl_TessLevelOuter %gl_TessLevelInner
+               OpExecutionMode %main OutputVertices 3
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %gl_TessLevelOuter "gl_TessLevelOuter"  ; id %11
+               OpName %gl_TessLevelInner "gl_TessLevelInner"  ; id %24
+
+               ; Annotations
+               OpDecorate %gl_TessLevelOuter Patch
+               OpDecorate %gl_TessLevelOuter BuiltIn TessLevelOuter
+               OpDecorate %gl_TessLevelInner Patch
+               OpDecorate %gl_TessLevelInner BuiltIn TessLevelInner
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+     %uint_4 = OpConstant %uint 4
+%_arr_float_uint_4 = OpTypeArray %float %uint_4
+%_ptr_Output__arr_float_uint_4 = OpTypePointer Output %_arr_float_uint_4
+%gl_TessLevelOuter = OpVariable %_ptr_Output__arr_float_uint_4 Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+    %float_1 = OpConstant %float 1
+%_ptr_Output_float = OpTypePointer Output %float
+     %uint_2 = OpConstant %uint 2
+%_arr_float_uint_2 = OpTypeArray %float %uint_2
+%_ptr_Output__arr_float_uint_2 = OpTypePointer Output %_arr_float_uint_2
+%gl_TessLevelInner = OpVariable %_ptr_Output__arr_float_uint_2 Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_2
+               OpStore %18 %float_1
+         %19 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_1
+               OpStore %19 %float_1
+         %20 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %int_0
+               OpStore %20 %float_1
+         %25 = OpAccessChain %_ptr_Output_float %gl_TessLevelInner %int_0
+               OpStore %25 %float_1
+               OpReturn
+               OpFunctionEnd
+    )";
+
+        static const std::string tesSource = R"(
+                              OpCapability Tessellation
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationEvaluation %main "main" %_ %gl_TessCoord
+               OpExecutionMode %main Triangles
+               OpExecutionMode %main SpacingEqual
+               OpExecutionMode %main VertexOrderCw
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %gl_PerVertex "gl_PerVertex"  ; id %11
+               OpMemberName %gl_PerVertex 0 "gl_Position"
+               OpMemberName %gl_PerVertex 1 "gl_PointSize"
+               OpMemberName %gl_PerVertex 2 "gl_ClipDistance"
+               OpMemberName %gl_PerVertex 3 "gl_CullDistance"
+               OpName %_ ""  ; id %13
+               OpName %gl_TessCoord "gl_TessCoord"  ; id %18
+
+               ; Annotations
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+               OpDecorate %gl_TessCoord BuiltIn TessCoord
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %v3float = OpTypeVector %float 3
+%_ptr_Input_v3float = OpTypePointer Input %v3float
+%gl_TessCoord = OpVariable %_ptr_Input_v3float Output
+     %uint_0 = OpConstant %uint 0
+%_ptr_Output_float = OpTypePointer Output %float
+     %uint_2 = OpConstant %uint 2
+    %float_1 = OpConstant %float 1
+     %uint_3 = OpConstant %uint 3
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %19 = OpLoad %v3float %gl_TessCoord
+         %22 = OpAccessChain %_ptr_Output_float %_ %int_0 %uint_0
+         %23 = OpCompositeExtract %float %19 0
+               OpStore %22 %23
+         %24 = OpAccessChain %_ptr_Output_float %_ %int_0 %uint_1
+         %25 = OpCompositeExtract %float %19 1
+               OpStore %24 %25
+         %27 = OpAccessChain %_ptr_Output_float %_ %int_0 %uint_2
+         %28 = OpCompositeExtract %float %19 2
+               OpStore %27 %28
+         %31 = OpAccessChain %_ptr_Output_float %_ %int_0 %uint_3
+               OpStore %31 %float_1
+               OpReturn
+               OpFunctionEnd
+    )";
+
+        std::unique_ptr<VkShaderObj> tcs =
+            layer_data::make_unique<VkShaderObj>(m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+        std::unique_ptr<VkShaderObj> tes =
+            layer_data::make_unique<VkShaderObj>(m_device, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+
+        VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                     VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+
+        VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_.emplace_back(tcs->GetStageCreateInfo());
+        pipe.shader_stages_.emplace_back(tes->GetStageCreateInfo());
+        pipe.gp_ci_.pTessellationState = &tsci;
+        pipe.gp_ci_.pInputAssemblyState = &iasci;
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-TessCoord-TessCoord-04388");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+
+TEST_F(VkLayerTest, ValidateDecorationsWithStorageClassCompute) {
+    TEST_DESCRIPTION("Test invalid combinations of decoration with StorageClass in compute shaders");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_SHADER_SM_BUILTINS_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    bool shader_subgroup_ballot = CanEnableDeviceExtension(VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME);
+    bool shader_sm_builtins = CanEnableDeviceExtension(VK_NV_SHADER_SM_BUILTINS_EXTENSION_NAME);
+
+    VkPhysicalDeviceShaderSMBuiltinsFeaturesNV shader_sm_buildins_features =
+        LvlInitStruct<VkPhysicalDeviceShaderSMBuiltinsFeaturesNV>(&shader_sm_buildins_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
+
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (shader_sm_buildins_features.shaderSMBuiltins == VK_FALSE) {
+        shader_sm_builtins = false;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    {
+        static const std::string csSource = R"(
+               OpCapability Shader
+               OpCapability GroupNonUniformVote
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_NumSubgroups
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpSourceExtension "GL_KHR_shader_subgroup_basic"
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_NumSubgroups "gl_NumSubgroups"  ; id %10
+
+               ; Annotations
+               OpDecorate %gl_NumSubgroups BuiltIn NumSubgroups
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+%_ptr_Input_uint = OpTypePointer Input %uint
+%gl_NumSubgroups = OpVariable %_ptr_Input_uint Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %11 = OpLoad %uint %gl_NumSubgroups
+               OpStore %x %11
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-NumSubgroups-NumSubgroups-04294");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        static const std::string csSource = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_NumWorkGroups
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpSourceExtension "GL_KHR_shader_subgroup_basic"
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_NumWorkGroups "gl_NumWorkGroups"  ; id %11
+
+               ; Annotations
+               OpDecorate %gl_NumWorkGroups BuiltIn NumWorkgroups
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+     %v3uint = OpTypeVector %uint 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+%gl_NumWorkGroups = OpVariable %_ptr_Input_v3uint Output
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_uint = OpTypePointer Input %uint
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpAccessChain %_ptr_Input_uint %gl_NumWorkGroups %uint_0
+         %15 = OpLoad %uint %14
+               OpStore %x %15
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-NumWorkgroups-NumWorkgroups-04297");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (shader_subgroup_ballot) {
+        static const std::string csSource = R"(
+               OpCapability Shader
+               OpCapability GroupNonUniformVote
+               OpCapability GroupNonUniformBallot
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_SubgroupEqMask
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpSourceExtension "GL_KHR_shader_subgroup_ballot"
+               OpSourceExtension "GL_KHR_shader_subgroup_basic"
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_SubgroupEqMask "gl_SubgroupEqMask"  ; id %11
+
+               ; Annotations
+               OpDecorate %gl_SubgroupEqMask BuiltIn SubgroupEqMask
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+     %v4uint = OpTypeVector %uint 4
+%_ptr_Input_v4uint = OpTypePointer Input %v4uint
+%gl_SubgroupEqMask = OpVariable %_ptr_Input_v4uint Output
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_uint = OpTypePointer Input %uint
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpAccessChain %_ptr_Input_uint %gl_SubgroupEqMask %uint_0
+         %15 = OpLoad %uint %14
+               OpStore %x %15
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-SubgroupEqMask-SubgroupEqMask-04370");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (shader_subgroup_ballot) {
+        static const std::string csSource = R"(
+               OpCapability Shader
+               OpCapability GroupNonUniformVote
+               OpCapability GroupNonUniformBallot
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_SubgroupGeMask
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpSourceExtension "GL_KHR_shader_subgroup_ballot"
+               OpSourceExtension "GL_KHR_shader_subgroup_basic"
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_SubgroupGeMask "gl_SubgroupGeMask"  ; id %11
+
+               ; Annotations
+               OpDecorate %gl_SubgroupGeMask BuiltIn SubgroupGeMask
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+     %v4uint = OpTypeVector %uint 4
+%_ptr_Input_v4uint = OpTypePointer Input %v4uint
+%gl_SubgroupGeMask = OpVariable %_ptr_Input_v4uint Output
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_uint = OpTypePointer Input %uint
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpAccessChain %_ptr_Input_uint %gl_SubgroupGeMask %uint_0
+         %15 = OpLoad %uint %14
+               OpStore %x %15
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-SubgroupGeMask-SubgroupGeMask-04372");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (shader_subgroup_ballot) {
+        static const std::string csSource = R"(
+               OpCapability Shader
+               OpCapability GroupNonUniformVote
+               OpCapability GroupNonUniformBallot
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_SubgroupGtMask
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpSourceExtension "GL_KHR_shader_subgroup_ballot"
+               OpSourceExtension "GL_KHR_shader_subgroup_basic"
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_SubgroupGtMask "gl_SubgroupGtMask"  ; id %11
+
+               ; Annotations
+               OpDecorate %gl_SubgroupGtMask BuiltIn SubgroupGtMask
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+     %v4uint = OpTypeVector %uint 4
+%_ptr_Input_v4uint = OpTypePointer Input %v4uint
+%gl_SubgroupGtMask = OpVariable %_ptr_Input_v4uint Output
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_uint = OpTypePointer Input %uint
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpAccessChain %_ptr_Input_uint %gl_SubgroupGtMask %uint_0
+         %15 = OpLoad %uint %14
+               OpStore %x %15
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-SubgroupGtMask-SubgroupGtMask-04374");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (shader_subgroup_ballot) {
+        static const std::string csSource = R"(
+               OpCapability Shader
+               OpCapability GroupNonUniformVote
+               OpCapability GroupNonUniformBallot
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_SubgroupLtMask
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpSourceExtension "GL_KHR_shader_subgroup_ballot"
+               OpSourceExtension "GL_KHR_shader_subgroup_basic"
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_SubgroupLtMask "gl_SubgroupLtMask"  ; id %11
+
+               ; Annotations
+               OpDecorate %gl_SubgroupLtMask BuiltIn SubgroupLtMask
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+     %v4uint = OpTypeVector %uint 4
+%_ptr_Input_v4uint = OpTypePointer Input %v4uint
+%gl_SubgroupLtMask = OpVariable %_ptr_Input_v4uint Output
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_uint = OpTypePointer Input %uint
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpAccessChain %_ptr_Input_uint %gl_SubgroupLtMask %uint_0
+         %15 = OpLoad %uint %14
+               OpStore %x %15
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-SubgroupLtMask-SubgroupLtMask-04378");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (shader_subgroup_ballot) {
+        static const std::string csSource = R"(
+               OpCapability Shader
+               OpCapability GroupNonUniformVote
+               OpCapability GroupNonUniformBallot
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_SubgroupLeMask
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpSourceExtension "GL_KHR_shader_subgroup_ballot"
+               OpSourceExtension "GL_KHR_shader_subgroup_basic"
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_SubgroupLeMask "gl_SubgroupLeMask"  ; id %11
+
+               ; Annotations
+               OpDecorate %gl_SubgroupLeMask BuiltIn SubgroupLeMask
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+     %v4uint = OpTypeVector %uint 4
+%_ptr_Input_v4uint = OpTypePointer Input %v4uint
+%gl_SubgroupLeMask = OpVariable %_ptr_Input_v4uint Output
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_uint = OpTypePointer Input %uint
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpAccessChain %_ptr_Input_uint %gl_SubgroupLeMask %uint_0
+         %15 = OpLoad %uint %14
+               OpStore %x %15
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-SubgroupLeMask-SubgroupLeMask-04376");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (shader_subgroup_ballot) {
+        static const std::string csSource = R"(
+               OpCapability Shader
+               OpCapability SubgroupBallotKHR
+               OpExtension "SPV_KHR_shader_ballot"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_SubGroupInvocationARB
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpSourceExtension "GL_ARB_shader_ballot"
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_SubGroupInvocationARB "gl_SubGroupInvocationARB"  ; id %10
+
+               ; Annotations
+               OpDecorate %gl_SubGroupInvocationARB BuiltIn SubgroupLocalInvocationId
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+%_ptr_Input_uint = OpTypePointer Input %uint
+%gl_SubGroupInvocationARB = OpVariable %_ptr_Input_uint Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %11 = OpLoad %uint %gl_SubGroupInvocationARB
+               OpStore %x %11
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-SubgroupLocalInvocationId-SubgroupLocalInvocationId-04380");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (shader_subgroup_ballot) {
+        static const std::string csSource = R"(
+               OpCapability Shader
+               OpCapability GroupNonUniformVote
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_SubgroupID
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpSourceExtension "GL_KHR_shader_subgroup_basic"
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_SubgroupID "gl_SubgroupID"  ; id %10
+
+               ; Annotations
+               OpDecorate %gl_SubgroupID BuiltIn SubgroupId
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+%_ptr_Input_uint = OpTypePointer Input %uint
+%gl_SubgroupID = OpVariable %_ptr_Input_uint Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %11 = OpLoad %uint %gl_SubgroupID
+               OpStore %x %11
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-SubgroupId-SubgroupId-04368");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (shader_sm_builtins) {
+        static const std::string csSource = R"(
+               OpCapability Shader
+               OpCapability ShaderSMBuiltinsNV
+               OpExtension "SPV_NV_shader_sm_builtins"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_SMCountNV
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpSourceExtension "GL_NV_shader_sm_builtins"
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_SMCountNV "gl_SMCountNV"  ; id %10
+
+               ; Annotations
+               OpDecorate %gl_SMCountNV BuiltIn SMCountNV
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+%_ptr_Input_uint = OpTypePointer Input %uint
+%gl_SMCountNV = OpVariable %_ptr_Input_uint Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %11 = OpLoad %uint %gl_SMCountNV
+               OpStore %x %11
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-SMCountNV-SMCountNV-04363");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        static const std::string csSource = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_LocalInvocationID
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_LocalInvocationID "gl_LocalInvocationID"  ; id %11
+
+               ; Annotations
+               OpDecorate %gl_LocalInvocationID BuiltIn LocalInvocationId
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+     %v3uint = OpTypeVector %uint 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+%gl_LocalInvocationID = OpVariable %_ptr_Input_v3uint Output
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_uint = OpTypePointer Input %uint
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpAccessChain %_ptr_Input_uint %gl_LocalInvocationID %uint_0
+         %15 = OpLoad %uint %14
+               OpStore %x %15
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-LocalInvocationId-LocalInvocationId-04282");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        static const std::string csSource = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_LocalInvocationIndex
+               OpExecutionMode %main LocalSize 1 1 1
+
+               ; Debug Information
+               OpSource GLSL 460
+               OpName %main "main"  ; id %4
+               OpName %x "x"  ; id %8
+               OpName %gl_LocalInvocationIndex "gl_LocalInvocationIndex"  ; id %10
+
+               ; Annotations
+               OpDecorate %gl_LocalInvocationIndex BuiltIn LocalInvocationIndex
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+          %x = OpVariable %_ptr_Workgroup_uint Workgroup
+%_ptr_Input_uint = OpTypePointer Input %uint
+%gl_LocalInvocationIndex = OpVariable %_ptr_Input_uint Output
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %11 = OpLoad %uint %gl_LocalInvocationIndex
+               OpStore %x %11
+               OpReturn
+               OpFunctionEnd
+              )";
+
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.cs_ = layer_data::make_unique<VkShaderObj>(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        cs_pipeline.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-LocalInvocationIndex-LocalInvocationIndex-04285");
+        cs_pipeline.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
