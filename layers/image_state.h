@@ -94,7 +94,7 @@ class IMAGE_STATE : public BINDABLE {
     const VkSwapchainKHR create_from_swapchain;
     std::shared_ptr<SWAPCHAIN_NODE> bind_swapchain;
     uint32_t swapchain_image_index;
-    const VkFormatFeatureFlags format_features;
+    const VkFormatFeatureFlags2KHR format_features;
     // Need to memory requirments for each plane if image is disjoint
     const bool disjoint;  // True if image was created with VK_IMAGE_CREATE_DISJOINT_BIT
     static constexpr int MAX_PLANES = 3;
@@ -113,9 +113,10 @@ class IMAGE_STATE : public BINDABLE {
 
     layer_data::unordered_set<IMAGE_STATE *> aliasing_images;
 
-    IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags features);
+    IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
+                VkFormatFeatureFlags2KHR features);
     IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
-                uint32_t swapchain_index, VkFormatFeatureFlags features);
+                uint32_t swapchain_index, VkFormatFeatureFlags2KHR features);
     IMAGE_STATE(IMAGE_STATE const &rh_obj) = delete;
 
     VkImage image() const { return handle_.Cast<VkImage>(); }
@@ -204,12 +205,12 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     const VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
     const VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props;
     const float min_lod;
-    const VkFormatFeatureFlags format_features;
+    const VkFormatFeatureFlags2KHR format_features;
     const VkImageUsageFlags inherited_usage;  // from spec #resources-image-inherited-usage
     std::shared_ptr<IMAGE_STATE> image_state;
 
     IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
-                     VkFormatFeatureFlags ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
+                     VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
     IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;
 
     VkImageView image_view() const { return handle_.Cast<VkImageView>(); }
