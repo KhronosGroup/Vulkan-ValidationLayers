@@ -14866,3 +14866,256 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessWithoutFeature) {
+    TEST_DESCRIPTION("Test for a creating a pipeline with VK_ARM_rasterization_order_attachment_access enabled");
+    m_errorMonitor->ExpectSuccess();
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
+
+    auto rasterization_order_features = LvlInitStruct<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&rasterization_order_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
+        return;
+    }
+    rasterization_order_features.rasterizationOrderColorAttachmentAccess = 0;
+    rasterization_order_features.rasterizationOrderDepthAttachmentAccess = 0;
+    rasterization_order_features.rasterizationOrderStencilAttachmentAccess = 0;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_errorMonitor->VerifyNotFound();
+
+    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    VkPipelineColorBlendAttachmentState cb_as = {};
+    auto cb_ci = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+    cb_ci.attachmentCount = 1;
+    cb_ci.pAttachments = &cb_as;
+
+    VkAttachmentDescription attachments[2] = {};
+    attachments[0].flags = 0;
+    attachments[0].format = VK_FORMAT_B8G8R8A8_UNORM;
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    attachments[1].flags = 0;
+    attachments[1].format = FindSupportedDepthStencilFormat(this->gpu());
+    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference cAttachRef = {};
+    cAttachRef.attachment = 0;
+    cAttachRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference dsAttachRef = {};
+    dsAttachRef.attachment = 1;
+    dsAttachRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &cAttachRef;
+    subpass.pDepthStencilAttachment = &dsAttachRef;
+    subpass.flags = VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_ARM |
+                    VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM |
+                    VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM;
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+    rpci.attachmentCount = 2;
+    rpci.pAttachments = attachments;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+
+    vk_testing::RenderPass render_pass(*m_device, rpci);
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.gp_ci_.pDepthStencilState = &ds_ci;
+        helper.gp_ci_.pColorBlendState = &cb_ci;
+        helper.gp_ci_.renderPass = render_pass.handle();
+    };
+
+    // Color attachment
+    cb_ci.flags = VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM;
+    ds_ci.flags = 0;
+
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      "VUID-VkPipelineColorBlendStateCreateInfo-rasterizationOrderColorAttachmentAccess-06465");
+
+    // Depth attachment
+    cb_ci.flags = 0;
+    ds_ci.flags = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM;
+
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      "VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderDepthAttachmentAccess-06463");
+
+    // Stencil attachment
+    cb_ci.flags = 0;
+    ds_ci.flags = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM;
+
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      "VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderStencilAttachmentAccess-06464");
+}
+
+TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessNoSubpassFlags) {
+    TEST_DESCRIPTION("Test for a creating a pipeline with VK_ARM_rasterization_order_attachment_access enabled");
+    m_errorMonitor->ExpectSuccess();
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
+
+    auto rasterization_order_features = LvlInitStruct<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&rasterization_order_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
+        return;
+    }
+
+    if (!rasterization_order_features.rasterizationOrderColorAttachmentAccess &&
+        !rasterization_order_features.rasterizationOrderDepthAttachmentAccess &&
+        !rasterization_order_features.rasterizationOrderStencilAttachmentAccess) {
+        printf("%s Test requires (unsupported) rasterizationOrderAttachmentAccess , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_errorMonitor->VerifyNotFound();
+
+    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    VkPipelineColorBlendAttachmentState cb_as = {};
+    auto cb_ci = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+    cb_ci.attachmentCount = 1;
+    cb_ci.pAttachments = &cb_as;
+    VkRenderPass render_pass_handle = VK_NULL_HANDLE;
+
+    auto create_render_pass = [&](VkPipelineDepthStencilStateCreateFlags subpass_flags, vk_testing::RenderPass &render_pass) {
+        VkAttachmentDescription attachments[2] = {};
+        attachments[0].flags = 0;
+        attachments[0].format = VK_FORMAT_B8G8R8A8_UNORM;
+        attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        attachments[1].flags = 0;
+        attachments[1].format = FindSupportedDepthStencilFormat(this->gpu());
+        attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference cAttachRef = {};
+        cAttachRef.attachment = 0;
+        cAttachRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference dsAttachRef = {};
+        dsAttachRef.attachment = 1;
+        dsAttachRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass = {};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &cAttachRef;
+        subpass.pDepthStencilAttachment = &dsAttachRef;
+        subpass.flags = subpass_flags;
+
+        VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+        rpci.attachmentCount = 2;
+        rpci.pAttachments = attachments;
+        rpci.subpassCount = 1;
+        rpci.pSubpasses = &subpass;
+
+        render_pass.init(*this->m_device, rpci);
+    };
+
+    auto set_flgas_pipeline_createinfo = [&](CreatePipelineHelper &helper) {
+        helper.gp_ci_.pDepthStencilState = &ds_ci;
+        helper.gp_ci_.pColorBlendState = &cb_ci;
+        helper.gp_ci_.renderPass = render_pass_handle;
+    };
+
+    vk_testing::RenderPass render_pass_no_flags;
+    create_render_pass(0, render_pass_no_flags);
+    render_pass_handle = render_pass_no_flags.handle();
+
+    // Color attachment
+    if (rasterization_order_features.rasterizationOrderColorAttachmentAccess) {
+        cb_ci.flags = VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM;
+        ds_ci.flags = 0;
+
+        // Expecting VUID-VkGraphicsPipelineCreateInfo-flags-06467 Error
+        CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit,
+                                          "VUID-VkGraphicsPipelineCreateInfo-flags-06467");
+    }
+
+    // Depth attachment
+    if (rasterization_order_features.rasterizationOrderDepthAttachmentAccess) {
+        cb_ci.flags = 0;
+        ds_ci.flags = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM;
+
+        // Expecting VUID-VkGraphicsPipelineCreateInfo-flags-06468 Error
+        CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit,
+                                          "VUID-VkGraphicsPipelineCreateInfo-flags-06468");
+    }
+
+    // Stencil attachment
+    if (rasterization_order_features.rasterizationOrderStencilAttachmentAccess) {
+        cb_ci.flags = 0;
+        ds_ci.flags = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM;
+
+        // Expecting VUID-VkGraphicsPipelineCreateInfo-flags-06469 Error
+        CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit,
+                                          "VUID-VkGraphicsPipelineCreateInfo-flags-06469");
+    }
+
+    if (rasterization_order_features.rasterizationOrderDepthAttachmentAccess) {
+        char const *fsSource = R"glsl(
+            #version 450
+            layout(early_fragment_tests) in;
+            layout(location = 0) out vec4 uFragColor;
+            void main() {
+                uFragColor = vec4(0,1,0,1);
+            }
+        )glsl";
+
+        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        auto set_stages_pipeline_createinfo = [&](CreatePipelineHelper &helper) {
+            helper.gp_ci_.pDepthStencilState = &ds_ci;
+            helper.gp_ci_.pColorBlendState = &cb_ci;
+            helper.gp_ci_.renderPass = render_pass_handle;
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+
+        cb_ci.flags = 0;
+        ds_ci.flags = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM;
+        vk_testing::RenderPass render_pass;
+        create_render_pass(VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM, render_pass);
+        render_pass_handle = render_pass.handle();
+        CreatePipelineHelper::OneshotTest(*this, set_stages_pipeline_createinfo, kErrorBit,
+                                          "VUID-VkGraphicsPipelineCreateInfo-pStages-06466");
+    }
+}
