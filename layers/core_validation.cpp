@@ -6616,22 +6616,25 @@ static bool UniqueImageViews(const VkRenderingInfoKHR* pRenderingInfo, VkImageVi
         }
     }
 
-    if (pRenderingInfo->pDepthAttachment->imageView == imageView) {
-        unique_views = false;
+    if (pRenderingInfo->pDepthAttachment) {
+        if (pRenderingInfo->pDepthAttachment->imageView == imageView) {
+            unique_views = false;
+        }
+
+        if (pRenderingInfo->pDepthAttachment->resolveImageView == imageView) {
+            unique_views = false;
+        }
     }
 
-    if (pRenderingInfo->pDepthAttachment->resolveImageView == imageView) {
-        unique_views = false;
-    }
+    if (pRenderingInfo->pStencilAttachment) {
+        if (pRenderingInfo->pStencilAttachment->imageView == imageView) {
+            unique_views = false;
+        }
 
-    if (pRenderingInfo->pStencilAttachment->imageView == imageView) {
-        unique_views = false;
+        if (pRenderingInfo->pStencilAttachment->resolveImageView == imageView) {
+            unique_views = false;
+        }
     }
-
-    if (pRenderingInfo->pStencilAttachment->resolveImageView == imageView) {
-        unique_views = false;
-    }
-
     return unique_views;
 }
 
