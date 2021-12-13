@@ -10335,6 +10335,15 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
     auto rp_state = Get<RENDER_PASS_STATE>(pCreateInfo->renderPass);
     if (rp_state) {
         const VkRenderPassCreateInfo2 *rpci = rp_state->createInfo.ptr();
+
+        bool b_has_non_zero_view_masks = false;
+        for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
+            if (rpci->pSubpasses[i].viewMask != 0) {
+                b_has_non_zero_view_masks = true;
+                break;
+            }
+        }
+
         if (rpci->attachmentCount != pCreateInfo->attachmentCount) {
             skip |= LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-attachmentCount-00876",
                              "vkCreateFramebuffer(): VkFramebufferCreateInfo attachmentCount of %u does not match attachmentCount "
@@ -10470,6 +10479,35 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                     }
                                 }
                             }
+
+                            if (enabled_features.fragment_density_map_features.fragmentDensityMap &&
+                                api_version >= VK_API_VERSION_1_1) {
+                                const VkRenderPassFragmentDensityMapCreateInfoEXT *fdm_attachment;
+                                fdm_attachment = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci->pNext);
+
+                                if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
+                                    uint32_t layer_count = view_state->normalized_subresource_range.layerCount;
+                                    if (b_has_non_zero_view_masks && layer_count != 1 && layer_count <= highest_view_bit) {
+                                        skip |= LogError(
+                                            device, "VUID-VkFramebufferCreateInfo-renderPass-02746",
+                                            "vkCreateFrameBuffer(): VkFramebufferCreateInfo attachment #%" PRIu32
+                                            " has a layer count (%" PRIu32
+                                            ") different than 1 or lower than the most significant bit in viewMask (%" PRIu32
+                                            ") but renderPass (%s) was specified with non-zero view masks\n",
+                                            i, layer_count, highest_view_bit,
+                                            report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                                    }
+
+                                    if (!b_has_non_zero_view_masks && layer_count != 1) {
+                                        skip |= LogError(
+                                            device, "VUID-VkFramebufferCreateInfo-renderPass-02747",
+                                            "vkCreateFrameBuffer(): VkFramebufferCreateInfo attachment #%" PRIu32
+                                            " had a layer count (%" PRIu32
+                                            ") not equal to 1 but renderPass (%s) was not specified with non-zero view masks\n",
+                                            i, layer_count, report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                                    }
+                                }
+                            }
                         }
 
                         if (enabled_features.fragment_density_map_features.fragmentDensityMap) {
@@ -10508,7 +10546,8 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                         "height: %u, the ceiling value: %u\n",
                                         i, subresource_range.baseMipLevel, i, i, mip_height, ceiling_height);
                                 }
-                                if (view_state->normalized_subresource_range.layerCount != 1) {
+                                if (view_state->normalized_subresource_range.layerCount != 1 &&
+                                    !(api_version >= VK_API_VERSION_1_1 || IsExtEnabled(device_extensions.vk_khr_multiview))) {
                                     skip |= LogError(device, "VUID-VkFramebufferCreateInfo-pAttachments-02744",
                                                      "vkCreateFramebuffer(): pCreateInfo->pAttachments[%" PRIu32
                                                      "] is referenced by "
@@ -10899,13 +10938,6 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                 }
             }
 
-            bool b_has_non_zero_view_masks = false;
-            for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
-                if (rpci->pSubpasses[i].viewMask != 0) {
-                    b_has_non_zero_view_masks = true;
-                    break;
-                }
-            }
 
             if (b_has_non_zero_view_masks && pCreateInfo->layers != 1) {
                 skip |= LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-02531",
