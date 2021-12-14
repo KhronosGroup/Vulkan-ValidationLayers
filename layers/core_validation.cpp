@@ -3258,62 +3258,6 @@ bool CoreChecks::ValidateStageMaskHost(const Location &loc, VkPipelineStageFlags
     return skip;
 }
 
-// Note: This function assumes that the global lock is held by the calling thread.
-// For the given queue, verify the queue state up to the given seq number.
-// Currently the only check is to make sure that if there are events to be waited on prior to
-//  a QueryReset, make sure that all such events have been signalled.
-bool CoreChecks::VerifyQueueStateToSeq(const QUEUE_STATE *initial_queue, uint64_t initial_seq) const {
-    bool skip = false;
-
-    // sequence number we want to validate up to, per queue
-    layer_data::unordered_map<const QUEUE_STATE *, uint64_t> target_seqs{{initial_queue, initial_seq}};
-    // sequence number we've completed validation for, per queue
-    layer_data::unordered_map<const QUEUE_STATE *, uint64_t> done_seqs;
-    std::vector<const QUEUE_STATE *> worklist{initial_queue};
-
-    while (worklist.size()) {
-        auto queue = worklist.back();
-        worklist.pop_back();
-
-        auto target_seq = target_seqs[queue];
-        auto seq = std::max(done_seqs[queue], queue->seq);
-        auto sub_it = queue->submissions.begin() + int(seq - queue->seq);  // seq >= queue->seq
-
-        for (; seq < target_seq; ++sub_it, ++seq) {
-            for (const auto &wait : sub_it->wait_semaphores) {
-                auto other_queue = wait.semaphore->signaler.queue;
-
-                if (!other_queue || other_queue == queue) continue;  // semaphores /always/ point backwards, so no point here.
-
-                auto other_target_seq = std::max(target_seqs[other_queue], wait.semaphore->signaler.seq);
-                auto other_done_seq = std::max(done_seqs[other_queue], other_queue->seq);
-
-                // if this wait is for another queue, and covers new sequence
-                // numbers beyond what we've already validated, mark the new
-                // target seq and (possibly-re)add the queue to the worklist.
-                if (other_done_seq < other_target_seq) {
-                    target_seqs[other_queue] = other_target_seq;
-                    worklist.push_back(other_queue);
-                }
-            }
-        }
-
-        // finally mark the point we've now validated this queue to.
-        done_seqs[queue] = seq;
-    }
-
-    return skip;
-}
-
-// When the given fence is retired, verify outstanding queue operations through the point of the fence
-bool CoreChecks::VerifyQueueStateToFence(VkFence fence) const {
-    auto fence_state = Get<FENCE_STATE>(fence);
-    if (fence_state && fence_state->scope == kSyncScopeInternal && nullptr != fence_state->signaler.queue) {
-        return VerifyQueueStateToSeq(fence_state->signaler.queue, fence_state->signaler.seq);
-    }
-    return false;
-}
-
 bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location &loc, const CMD_BUFFER_STATE *pCB,
                                                       int current_submit_count) const {
     using sync_vuid_maps::GetQueueSubmitVUID;
@@ -4751,16 +4695,6 @@ bool CoreChecks::ValidateMapMemRange(const DEVICE_MEMORY_STATE *mem_info, VkDevi
     return skip;
 }
 
-bool CoreChecks::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
-                                              uint64_t timeout) const {
-    // Verify fence status of submitted fences
-    bool skip = false;
-    for (uint32_t i = 0; i < fenceCount; i++) {
-        skip |= VerifyQueueStateToFence(pFences[i]);
-    }
-    return skip;
-}
-
 bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
                                                VkQueue *pQueue) const {
     bool skip = false;
@@ -4840,19 +4774,6 @@ bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQ
                              queueFamilyIndex, string_VkDeviceQueueCreateFlags(flags).c_str());
         }
     }
-    return skip;
-}
-
-bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) const {
-    const auto queue_state = Get<QUEUE_STATE>(queue);
-    return VerifyQueueStateToSeq(queue_state.get(), queue_state->seq + queue_state->submissions.size());
-}
-
-bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) const {
-    bool skip = false;
-    ForEach<QUEUE_STATE>([this, &skip](const QUEUE_STATE &queue_state) {
-        skip |= VerifyQueueStateToSeq(&queue_state, queue_state.seq + queue_state.submissions.size());
-    });
     return skip;
 }
 
