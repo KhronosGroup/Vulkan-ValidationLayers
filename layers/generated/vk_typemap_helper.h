@@ -5885,13 +5885,28 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATU
     typedef VkPhysicalDeviceRayQueryFeaturesKHR Type;
 };
 
-// Find an entry of the given type in the pNext chain
+// Find an entry of the given type in the const pNext chain
 template <typename T> const T *LvlFindInChain(const void *next) {
     const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
     const T *found = nullptr;
     while (current) {
         if (LvlTypeMap<T>::kSType == current->sType) {
             found = reinterpret_cast<const T*>(current);
+            current = nullptr;
+        } else {
+            current = current->pNext;
+        }
+    }
+    return found;
+}
+
+// Find an entry of the given type in the pNext chain
+template <typename T> T *LvlFindModInChain(void *next) {
+    VkBaseOutStructure *current = reinterpret_cast<VkBaseOutStructure *>(next);
+    T *found = nullptr;
+    while (current) {
+        if (LvlTypeMap<T>::kSType == current->sType) {
+            found = reinterpret_cast<T*>(current);
             current = nullptr;
         } else {
             current = current->pNext;
@@ -5917,13 +5932,28 @@ template <typename T> T LvlInitStruct() {
 }
 
 
-// Find an entry of the given type in the pNext chain
+// Find an entry of the given type in the const pNext chain
 template <typename T> const T *lvl_find_in_chain(const void *next) {
     const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
     const T *found = nullptr;
     while (current) {
         if (LvlTypeMap<T>::kSType == current->sType) {
             found = reinterpret_cast<const T*>(current);
+            current = nullptr;
+        } else {
+            current = current->pNext;
+        }
+    }
+    return found;
+}
+
+// Find an entry of the given type in the pNext chain
+template <typename T> T *lvl_find_mod_in_chain(void *next) {
+    VkBaseOutStructure *current = reinterpret_cast<VkBaseOutStructure *>(next);
+    T *found = nullptr;
+    while (current) {
+        if (LvlTypeMap<T>::kSType == current->sType) {
+            found = reinterpret_cast<T*>(current);
             current = nullptr;
         } else {
             current = current->pNext;
