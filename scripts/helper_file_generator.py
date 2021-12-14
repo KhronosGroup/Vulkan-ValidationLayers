@@ -1873,13 +1873,28 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
 
         # Define the utilities (here so any renaming stays consistent), if this grows large, refactor to a fixed .h file
         utilities_format = '\n'.join((
-            '// Find an entry of the given type in the pNext chain',
+            '// Find an entry of the given type in the const pNext chain',
             'template <typename T> const T *{find_func}(const void *next) {{',
             '    const {header} *current = reinterpret_cast<const {header} *>(next);',
             '    const T *found = nullptr;',
             '    while (current) {{',
             '        if ({type_map}<T>::{id_member} == current->sType) {{',
             '            found = reinterpret_cast<const T*>(current);',
+            '            current = nullptr;',
+            '        }} else {{',
+            '            current = current->pNext;',
+            '        }}',
+            '    }}',
+            '    return found;',
+            '}}',
+            '',
+            '// Find an entry of the given type in the pNext chain',
+            'template <typename T> T *{find_mod_func}(void *next) {{',
+            '    {header} *current = reinterpret_cast<{header} *>(next);',
+            '    T *found = nullptr;',
+            '    while (current) {{',
+            '        if ({type_map}<T>::{id_member} == current->sType) {{',
+            '            found = reinterpret_cast<T*>(current);',
             '            current = nullptr;',
             '        }} else {{',
             '            current = current->pNext;',
@@ -1936,19 +1951,23 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
 
         # Generate Generate utilities for all types
         find_func = 'LvlFindInChain'
+        find_mod_func = 'LvlFindModInChain'
         init_func = 'LvlInitStruct'
         code.append('\n'.join((
             utilities_format.format(id_member=id_member, type_map=typemap,
-                header=generic_header, find_func=find_func, init_func=init_func), ''
+                header=generic_header, find_func=find_func,
+                find_mod_func=find_mod_func, init_func=init_func), ''
             )))
 
         # Generate utilities using legacy names for backwards compatibility
         fprefix = 'lvl_'
         find_func = fprefix + 'find_in_chain'
+        find_mod_func = fprefix + 'find_mod_in_chain'
         init_func = fprefix + 'init_struct'
         code.append('\n'.join((
             utilities_format.format(id_member=id_member, type_map=typemap,
-                header=generic_header, find_func=find_func, init_func=init_func), ''
+                header=generic_header, find_func=find_func,
+                find_mod_func=find_mod_func, init_func=init_func), ''
             )))
 
         return "\n".join(code)
