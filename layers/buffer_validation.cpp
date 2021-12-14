@@ -1629,7 +1629,7 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
     bool skip = false;
 
     // validates based on imageCreateFormatFeatures from vkspec.html#resources-image-creation-limits
-    VkFormatFeatureFlags tiling_features = VK_FORMAT_FEATURE_FLAG_BITS_MAX_ENUM;
+    VkFormatFeatureFlags tiling_features = 0;
     const VkImageTiling image_tiling = pCreateInfo->tiling;
     const VkFormat image_format = pCreateInfo->format;
 
@@ -1645,35 +1645,34 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
         }
 #endif
     } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-        uint64_t drm_format_modifier = 0;
+        layer_data::unordered_set<uint64_t> drm_format_modifiers;
         const VkImageDrmFormatModifierExplicitCreateInfoEXT *drm_explicit =
             LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
         const VkImageDrmFormatModifierListCreateInfoEXT *drm_implicit =
             LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
 
         if (drm_explicit != nullptr) {
-            drm_format_modifier = drm_explicit->drmFormatModifier;
+            drm_format_modifiers.insert(drm_explicit->drmFormatModifier);
         } else {
             // VUID 02261 makes sure its only explict or implict in parameter checking
             assert(drm_implicit != nullptr);
             for (uint32_t i = 0; i < drm_implicit->drmFormatModifierCount; i++) {
-                drm_format_modifier |= drm_implicit->pDrmFormatModifiers[i];
+                drm_format_modifiers.insert(drm_implicit->pDrmFormatModifiers[i]);
             }
         }
 
-        VkFormatProperties2 format_properties_2 = {VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, nullptr};
-        VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
-                                                                    nullptr};
-        format_properties_2.pNext = (void *)&drm_properties_list;
-        DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &format_properties_2);
+        auto fmt_drm_props = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
+        auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_drm_props);
+        DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &fmt_props_2);
         std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
-        drm_properties.resize(drm_properties_list.drmFormatModifierCount);
-        drm_properties_list.pDrmFormatModifierProperties = &drm_properties[0];
-        DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &format_properties_2);
+        drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
+        fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
+        DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &fmt_props_2);
 
-        for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
-            if ((drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier & drm_format_modifier) != 0) {
-                tiling_features |= drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+        for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
+            if (drm_format_modifiers.find(fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier) !=
+                drm_format_modifiers.end()) {
+                tiling_features |= fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
             }
         }
     } else {
@@ -5464,7 +5463,7 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE *image_state,
     // Pass in image_usage here instead of extracting it from image_state in case there's a chained VkImageViewUsageCreateInfo
     bool skip = false;
 
-    VkFormatFeatureFlags tiling_features = VK_FORMAT_FEATURE_FLAG_BITS_MAX_ENUM;
+    VkFormatFeatureFlags tiling_features = 0;
     const VkImageTiling image_tiling = image_state->createInfo.tiling;
 
     if (image_state->HasAHBFormat()) {
@@ -5477,22 +5476,20 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE *image_state,
                                                                        nullptr};
         DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state->image(), &drm_format_properties);
 
-        VkFormatProperties2 format_properties_2 = {VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, nullptr};
-        VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
-                                                                    nullptr};
-        format_properties_2.pNext = (void *)&drm_properties_list;
-        DispatchGetPhysicalDeviceFormatProperties2(physical_device, view_format, &format_properties_2);
+        auto fmt_drm_props = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
+        auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_drm_props);
+        DispatchGetPhysicalDeviceFormatProperties2(physical_device, view_format, &fmt_props_2);
 
         std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
-        drm_properties.resize(drm_properties_list.drmFormatModifierCount);
-        drm_properties_list.pDrmFormatModifierProperties = drm_properties.data();
+        drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
+        fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
 
-        DispatchGetPhysicalDeviceFormatProperties2(physical_device, view_format, &format_properties_2);
+        DispatchGetPhysicalDeviceFormatProperties2(physical_device, view_format, &fmt_props_2);
 
-        for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
-            if ((drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier & drm_format_properties.drmFormatModifier) !=
-                0) {
-                tiling_features |= drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+        for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
+            if (fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_properties.drmFormatModifier) {
+                tiling_features = fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+                break;
             }
         }
     } else {
