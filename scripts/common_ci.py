@@ -121,33 +121,22 @@ def BuildLoader(args):
 #
 # Prepare Mock ICD for use with Layer Validation Tests
 def BuildMockICD(args):
-    if not os.path.exists(RepoRelative("%s/Vulkan-Tools" % EXTERNAL_DIR_NAME)):
+    VT_DIR = RepoRelative("%s/Vulkan-Tools" % EXTERNAL_DIR_NAME)
+    if not os.path.exists(VT_DIR):
         print("Clone Vulkan-Tools Repository")
         clone_tools_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Tools.git'
         RunShellCmd(clone_tools_cmd, EXTERNAL_DIR)
 
-    print("Run CMake for ICD")
     ICD_BUILD_DIR = RepoRelative("%s/Vulkan-Tools/%s" % (EXTERNAL_DIR_NAME,BUILD_DIR_NAME))
+
+    print("Running update_deps.py for ICD")
+    RunShellCmd(f'python3 scripts/update_deps.py --dir {EXTERNAL_DIR_NAME} --config {args.configuration} --arch {args.arch}', VT_DIR)
+
+    print("Run CMake for ICD")
     utils.make_dirs(ICD_BUILD_DIR)
     cmake_cmd = \
         f'cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF -DVULKAN_HEADERS_INSTALL_DIR={EXTERNAL_DIR}/Vulkan-Headers/{BUILD_DIR_NAME}/install {args.cmake} ..'
     RunShellCmd(cmake_cmd, ICD_BUILD_DIR)
-
-    VVL_REG_DIR = "%s/Vulkan-Headers/registry" % EXTERNAL_DIR
-    VT_SCRIPTS_DIR = "%s/Vulkan-Tools/scripts" % EXTERNAL_DIR
-
-    print ("Geneating ICD Source Code")
-    VT_ICD_DIR = "%s/Vulkan-Tools/icd/generated" % EXTERNAL_DIR
-    LVL_GEN_SCRIPT = RepoRelative("scripts/lvl_genvk.py")
-    typemap_cmd = 'python3 %s -registry %s/vk.xml vk_typemap_helper.h' % (LVL_GEN_SCRIPT, VVL_REG_DIR)
-    RunShellCmd(typemap_cmd, VT_ICD_DIR)
-
-    KVT_GEN_SCRIPT = "%s/Vulkan-Tools/scripts/kvt_genvk.py" % EXTERNAL_DIR
-    icd_cpp_cmd = 'python3 %s -registry %s/vk.xml mock_icd.cpp' % (KVT_GEN_SCRIPT, VVL_REG_DIR)
-    RunShellCmd(icd_cpp_cmd, VT_ICD_DIR)
-
-    icd_h_cmd = 'python3 %s -registry %s/vk.xml mock_icd.h' % (KVT_GEN_SCRIPT, VVL_REG_DIR)
-    RunShellCmd(icd_h_cmd, VT_ICD_DIR)
 
     print("Build Mock ICD")
     build_cmd = f'cmake --build . --config {args.configuration}'
