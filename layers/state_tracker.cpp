@@ -1250,7 +1250,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         auto *timeline_semaphore_submit = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
-            uint64_t value = 0;
+            uint64_t value{0};
             if (timeline_semaphore_submit && timeline_semaphore_submit->pWaitSemaphoreValues != nullptr &&
                 (i < timeline_semaphore_submit->waitSemaphoreValueCount)) {
                 value = timeline_semaphore_submit->pWaitSemaphoreValues[i];
@@ -1259,7 +1259,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
         }
 
         for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
-            uint64_t value = 0;
+            uint64_t value{0};
             if (timeline_semaphore_submit && timeline_semaphore_submit->pSignalSemaphoreValues != nullptr &&
                 (i < timeline_semaphore_submit->signalSemaphoreValueCount)) {
                 value = timeline_semaphore_submit->pSignalSemaphoreValues[i];
@@ -1437,21 +1437,18 @@ void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, cons
 
 void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBits handle_type,
                                                         VkSemaphoreImportFlags flags) {
-    auto sema_node = Get<SEMAPHORE_STATE>(semaphore);
-    if (sema_node && sema_node->scope != kSyncScopeExternalPermanent) {
-        if ((handle_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT || flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) &&
-            sema_node->scope == kSyncScopeInternal) {
-            sema_node->scope = kSyncScopeExternalTemporary;
-        } else {
-            sema_node->scope = kSyncScopeExternalPermanent;
-        }
+    auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
+    if (semaphore_state) {
+        semaphore_state->Import(handle_type, flags);
     }
 }
 
 void ValidationStateTracker::PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
                                                               VkResult result) {
     auto semaphore_state = Get<SEMAPHORE_STATE>(pSignalInfo->semaphore);
-    semaphore_state->payload = pSignalInfo->value;
+    if (semaphore_state) {
+        semaphore_state->RetireTimeline(pSignalInfo->value);
+    }
 }
 
 void ValidationStateTracker::RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {
@@ -1485,10 +1482,14 @@ void ValidationStateTracker::RecordWaitSemaphores(VkDevice device, const VkSemap
                                                   VkResult result) {
     if (VK_SUCCESS != result) return;
 
-    for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
-        auto semaphore_state = Get<SEMAPHORE_STATE>(pWaitInfo->pSemaphores[i]);
-        if (semaphore_state) {
-            semaphore_state->Retire(pWaitInfo->pValues[i]);
+    // Same logic as vkWaitForFences(). If some semaphores are not signaled, we will get their status when
+    // the application calls vkGetSemaphoreCounterValue() on each of them.
+    if ((pWaitInfo->flags & VK_SEMAPHORE_WAIT_ANY_BIT) == 0 || pWaitInfo->semaphoreCount == 1) {
+        for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
+            auto semaphore_state = Get<SEMAPHORE_STATE>(pWaitInfo->pSemaphores[i]);
+            if (semaphore_state) {
+                semaphore_state->RetireTimeline(pWaitInfo->pValues[i]);
+            }
         }
     }
 }
@@ -1509,7 +1510,7 @@ void ValidationStateTracker::RecordGetSemaphoreCounterValue(VkDevice device, VkS
 
     auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
     if (semaphore_state) {
-        semaphore_state->Retire(*pValue);
+        semaphore_state->RetireTimeline(*pValue);
     }
 }
 
@@ -2938,9 +2939,8 @@ void ValidationStateTracker::PostCallRecordImportSemaphoreFdKHR(VkDevice device,
 void ValidationStateTracker::RecordGetExternalSemaphoreState(VkSemaphore semaphore,
                                                              VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
-    if (semaphore_state && handle_type != VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
-        // Cannot track semaphore state once it is exported, except for Sync FD handle types which have copy transference
-        semaphore_state->scope = kSyncScopeExternalPermanent;
+    if (semaphore_state) {
+        semaphore_state->Export(handle_type);
     }
 }
 
@@ -3060,12 +3060,12 @@ void ValidationStateTracker::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice
 }
 
 void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
+    auto queue_state = Get<QUEUE_STATE>(queue);
     // Semaphore waits occur before error generation, if the call reached the ICD. (Confirm?)
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         auto semaphore_state = Get<SEMAPHORE_STATE>(pPresentInfo->pWaitSemaphores[i]);
         if (semaphore_state) {
-            semaphore_state->signaler.queue = nullptr;
-            semaphore_state->signaled = false;
+            semaphore_state->EnqueuePresent(queue_state.get());
         }
     }
 
@@ -3086,8 +3086,6 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
             }
         }
     }
-    // Note: even though presentation is directed to a queue, there is no direct ordering between QP and subsequent work, so QP (and
-    // its semaphore waits) /never/ participate in any completion proof.
 }
 
 void ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
@@ -3114,11 +3112,10 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
     }
 
     auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
-    if (semaphore_state && semaphore_state->scope == kSyncScopeInternal) {
+    if (semaphore_state) {
         // Treat as signaled since it is valid to wait on this semaphore, even in cases where it is technically a
         // temporary import
-        semaphore_state->signaled = true;
-        semaphore_state->signaler.queue = nullptr;
+        semaphore_state->EnqueueAcquire();
     }
 
     // Mark the image as acquired.

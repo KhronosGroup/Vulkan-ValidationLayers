@@ -26,8 +26,9 @@
  */
 #pragma once
 #include "base_node.h"
-#include <vector>
 #include <deque>
+#include <set>
+#include <vector>
 
 class CMD_BUFFER_STATE;
 class QUEUE_STATE;
@@ -39,11 +40,6 @@ enum SyncScope {
 };
 
 enum FENCE_STATUS { FENCE_UNSIGNALED, FENCE_INFLIGHT, FENCE_RETIRED };
-
-struct QUEUE_SIGNALER {
-    QUEUE_STATE *queue{nullptr};
-    uint64_t seq{0};
-};
 
 class FENCE_STATE : public REFCOUNTED_NODE {
   public:
@@ -82,53 +78,124 @@ class FENCE_STATE : public REFCOUNTED_NODE {
 
 class SEMAPHORE_STATE : public REFCOUNTED_NODE {
   public:
-    QUEUE_SIGNALER signaler;
-    bool signaled{false};
-    SyncScope scope{kSyncScopeInternal};
-    const VkSemaphoreType type;
-    uint64_t payload;
+    // possible payload values for binary semaphore
+    enum OpType {
+        kNone,
+        kWait,
+        kSignal,
+        kBinaryAcquire,
+        kBinaryPresent,
+    };
+    static inline const char *OpTypeName(OpType t) {
+        switch (t) {
+            case kWait:
+                return "wait";
+            case kSignal:
+                return "signal";
+            case kBinaryAcquire:
+                return "acquire";
+            case kBinaryPresent:
+                return "present";
+            case kNone:
+            default:
+                return "NONE";
+        }
+    }
+
+    struct SemOp {
+        // NOTE: c++11 doesn't allow aggregate initialization and default member
+        // initializers in the same struct. This limitation is removed in c++14
+        OpType op_type;
+        QUEUE_STATE *queue;
+        uint64_t seq;
+        uint64_t payload;
+
+        bool operator<(const SemOp &rhs) const { return payload < rhs.payload; }
+
+        bool IsWait() const { return op_type == kWait || op_type == kBinaryPresent; }
+        bool IsSignal() const { return op_type == kSignal; }
+
+        // NOTE: Present semaphores are waited on by the implementation, not queue operations. We do not yet
+        // have a good way to figure out when this wait completes, so we must assume they are safe to re-use
+        bool CanBeSignaled() const { return op_type == kNone || op_type == kWait || op_type == kBinaryPresent; }
+        bool CanBeWaited() const {  return op_type == kSignal || op_type == kBinaryAcquire; }
+    };
 
     SEMAPHORE_STATE(VkSemaphore sem, const VkSemaphoreTypeCreateInfo *type_create_info)
         : REFCOUNTED_NODE(sem, kVulkanObjectTypeSemaphore),
           type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
-          payload(type_create_info ? type_create_info->initialValue : 0) {}
+          completed_{kNone, nullptr, 0, type_create_info ? type_create_info->initialValue : 0},
+          next_payload_(completed_.payload + 1) {}
 
     VkSemaphore semaphore() const { return handle_.Cast<VkSemaphore>(); }
+    SyncScope Scope() const { return scope_; }
+    // this is the most recently completed operation
+    SemOp Completed() const { return completed_; }
 
-    void Retire(uint64_t next_seq);
-};
+    // Enqueue a semaphore operation. For binary semaphores, the payload value is generated and
+    // returned, so that every semaphore operation has a unique value.
+    bool EnqueueSignal(QUEUE_STATE *queue, uint64_t queue_seq, uint64_t &payload);
+    void EnqueueWait(QUEUE_STATE *queue, uint64_t queue_seq, uint64_t &payload);
 
-struct SEMAPHORE_WAIT {
-    std::shared_ptr<SEMAPHORE_STATE> semaphore;
-    uint64_t payload{0};
-    uint64_t seq{0};
-};
+    // Binary only special cases enqueue functions
+    void EnqueueAcquire();
+    void EnqueuePresent(QUEUE_STATE *queue);
 
-struct SEMAPHORE_SIGNAL {
-    std::shared_ptr<SEMAPHORE_STATE> semaphore;
-    uint64_t payload{0};
-    uint64_t seq{0};
+    // Remove completed operations and return highest sequence numbers for all affected queues
+    using RetireResult = layer_data::unordered_map<QUEUE_STATE *, uint64_t>;
+    RetireResult Retire(QUEUE_STATE *queue, uint64_t payload);
+
+    // Helper for retiring timeline semaphores and then retiring all queues using the semaphore
+    void RetireTimeline(uint64_t payload);
+
+    // look for most recent / highest payload operation that matches
+    layer_data::optional<SemOp> LastOp(std::function<bool(const SemOp &)> filter = nullptr) const;
+
+    bool CanBeSignaled() const;
+    bool CanBeWaited() const;
+    bool HasPendingOps() const { return !operations_.empty(); }
+
+    void Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags);
+    void Export(VkExternalSemaphoreHandleTypeFlagBits handle_type);
+
+    const VkSemaphoreType type;
+
+  private:
+    SyncScope scope_{kSyncScopeInternal};
+    // the most recently completed operation
+    SemOp completed_{};
+    // next payload value for binary semaphore operations
+    uint64_t next_payload_;
+
+    // Set of pending operations ordered by payload. This must be a multiset because
+    // timeline operations can be added in any order and multiple operations
+    // can use the same payload value.
+    std::multiset<SemOp> operations_;
 };
 
 struct CB_SUBMISSION {
+    struct SemaphoreInfo {
+        std::shared_ptr<SEMAPHORE_STATE> semaphore;
+        uint64_t payload{0};
+    };
+
     std::vector<std::shared_ptr<CMD_BUFFER_STATE>> cbs;
-    std::vector<SEMAPHORE_WAIT> wait_semaphores;
-    std::vector<SEMAPHORE_SIGNAL> signal_semaphores;
+    std::vector<SemaphoreInfo> wait_semaphores;
+    std::vector<SemaphoreInfo> signal_semaphores;
     std::shared_ptr<FENCE_STATE> fence;
     uint32_t perf_submit_pass{0};
 
     void AddCommandBuffer(std::shared_ptr<CMD_BUFFER_STATE> &&cb_node) { cbs.emplace_back(std::move(cb_node)); }
 
     void AddSignalSemaphore(std::shared_ptr<SEMAPHORE_STATE> &&semaphore_state, uint64_t value) {
-        SEMAPHORE_SIGNAL signal;
+        SemaphoreInfo signal;
         signal.semaphore = std::move(semaphore_state);
         signal.payload = value;
-        signal.seq = 0;
         signal_semaphores.emplace_back(std::move(signal));
     }
 
     void AddWaitSemaphore(std::shared_ptr<SEMAPHORE_STATE> &&semaphore_state, uint64_t value) {
-        SEMAPHORE_WAIT wait;
+        SemaphoreInfo wait;
         wait.semaphore = std::move(semaphore_state);
         wait.payload = value;
         wait_semaphores.emplace_back(std::move(wait));
@@ -139,19 +206,22 @@ struct CB_SUBMISSION {
 
 class QUEUE_STATE : public BASE_NODE {
   public:
-    const uint32_t queueFamilyIndex;
-    const VkDeviceQueueCreateFlags flags;
-
-    uint64_t seq;
-    std::deque<CB_SUBMISSION> submissions;
-
     QUEUE_STATE(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags)
-        : BASE_NODE(q, kVulkanObjectTypeQueue), queueFamilyIndex(index), flags(flags), seq(0) {}
+        : BASE_NODE(q, kVulkanObjectTypeQueue), queueFamilyIndex(index), flags(flags), seq_(0) {}
 
     VkQueue Queue() const { return handle_.Cast<VkQueue>(); }
 
     uint64_t Submit(CB_SUBMISSION &&submission);
 
-    void Retire(uint64_t next_seq);
-    void Retire() { Retire(seq + submissions.size()); }
+    void Retire(uint64_t until_seq = UINT64_MAX);
+
+    const uint32_t queueFamilyIndex;
+    const VkDeviceQueueCreateFlags flags;
+
+    std::deque<CB_SUBMISSION> submissions;
+
+  private:
+    layer_data::optional<CB_SUBMISSION> NextSubmission(uint64_t until_seq);
+
+    uint64_t seq_;
 };

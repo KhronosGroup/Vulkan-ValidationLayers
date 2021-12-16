@@ -28,10 +28,9 @@
 #include "cmd_buffer_state.h"
 #include "state_tracker.h"
 
-uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
-    const uint64_t next_seq = seq + submissions.size() + 1;
-    bool retire_early = false;
+using SemOp = SEMAPHORE_STATE::SemOp;
 
+uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
     for (auto &cb_node : submission.cbs) {
         for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
             secondary_cmd_buffer->IncrementResources();
@@ -42,34 +41,17 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
         cb_node->Submit(submission.perf_submit_pass);
     }
 
+    const uint64_t next_seq = seq_ + submissions.size() + 1;
+    bool retire_early = false;
     for (auto &wait : submission.wait_semaphores) {
-        switch (wait.semaphore->scope) {
-            case kSyncScopeInternal:
-                if (wait.semaphore->type == VK_SEMAPHORE_TYPE_BINARY) {
-                    wait.semaphore->signaled = false;
-                }
-                break;
-            case kSyncScopeExternalTemporary:
-                wait.semaphore->scope = kSyncScopeInternal;
-                break;
-            default:
-                break;
-        }
-        wait.seq = next_seq;
+        wait.semaphore->EnqueueWait(this, next_seq, wait.payload);
         wait.semaphore->BeginUse();
     }
 
     for (auto &signal : submission.signal_semaphores) {
-        if (signal.semaphore->scope == kSyncScopeInternal) {
-            signal.semaphore->signaler.queue = this;
-            signal.semaphore->signaler.seq = next_seq;
-            if (signal.semaphore->type == VK_SEMAPHORE_TYPE_BINARY) {
-                signal.semaphore->signaled = true;
-            }
-        } else {
+        if (signal.semaphore->EnqueueSignal(this, next_seq, signal.payload)) {
             retire_early = true;
         }
-        signal.seq = next_seq;
         signal.semaphore->BeginUse();
     }
 
@@ -84,56 +66,69 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
     return retire_early ? next_seq : 0;
 }
 
-void QUEUE_STATE::Retire(uint64_t next_seq) {
-    layer_data::unordered_map<QUEUE_STATE *, uint64_t> other_queue_seqs;
-    layer_data::unordered_map<std::shared_ptr<SEMAPHORE_STATE>, uint64_t> timeline_semaphore_counters;
+static void MergeResults(SEMAPHORE_STATE::RetireResult &results, const SEMAPHORE_STATE::RetireResult &sem_result) {
+    for (auto &entry : sem_result) {
+        auto &last_seq = results[entry.first];
+        last_seq = std::max(last_seq, entry.second);
+    }
+}
+
+layer_data::optional<CB_SUBMISSION> QUEUE_STATE::NextSubmission(uint64_t until_seq) {
+    layer_data::optional<CB_SUBMISSION> result;
+    if (seq_ < until_seq && !submissions.empty()) {
+        result.emplace(std::move(submissions.front()));
+        submissions.pop_front();
+        seq_++;
+    }
+    return result;
+}
+
+void QUEUE_STATE::Retire(uint64_t until_seq) {
+    SEMAPHORE_STATE::RetireResult other_queue_seqs;
+
+    layer_data::optional<CB_SUBMISSION> submission;
 
     // Roll this queue forward, one submission at a time.
-    while (seq < next_seq) {
-        auto &submission = submissions.front();
-        for (auto &wait : submission.wait_semaphores) {
-            if (wait.semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) {
-                auto &last_counter = timeline_semaphore_counters[wait.semaphore];
-                last_counter = std::max(last_counter, wait.payload);
-                wait.semaphore->payload = std::max(wait.semaphore->payload, wait.payload);
-            } else if (wait.semaphore->signaler.queue) {
-                auto &last_seq = other_queue_seqs[wait.semaphore->signaler.queue];
-                last_seq = std::max(last_seq, wait.semaphore->signaler.seq);
-            }  // else this is an external semaphore
+    while ((submission = NextSubmission(until_seq))) {
+        for (auto &wait : submission->wait_semaphores) {
+            auto result = wait.semaphore->Retire(this, wait.payload);
+            MergeResults(other_queue_seqs, result);
             wait.semaphore->EndUse();
         }
-
-        for (auto &signal : submission.signal_semaphores) {
-            if (signal.semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE && signal.semaphore->payload < signal.payload) {
-                signal.semaphore->payload = signal.payload;
-            }
+        for (auto &signal : submission->signal_semaphores) {
+            auto result = signal.semaphore->Retire(this, signal.payload);
+            // in the case of timeline semaphores, signaling at payload == N
+            // may unblock waiting queues for payload <= N so we need to
+            // process them
+            MergeResults(other_queue_seqs, result);
             signal.semaphore->EndUse();
         }
+        // Handle updates to how far the current queue has progressed
+        // without going recursive when we call Retire on other_queue_seqs
+        // below.
+        auto self_update = other_queue_seqs.find(this);
+        if (self_update != other_queue_seqs.end()) {
+            until_seq = std::max(until_seq, self_update->second);
+            other_queue_seqs.erase(self_update);
+        }
 
-        for (auto &cb_node : submission.cbs) {
+        for (auto &cb_node : submission->cbs) {
             for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
-                secondary_cmd_buffer->Retire(submission.perf_submit_pass);
+                secondary_cmd_buffer->Retire(submission->perf_submit_pass);
             }
-            cb_node->Retire(submission.perf_submit_pass);
+            cb_node->Retire(submission->perf_submit_pass);
             cb_node->EndUse();
         }
 
-        if (submission.fence) {
-            submission.fence->Retire(false);
-            submission.fence->EndUse();
+        if (submission->fence) {
+            submission->fence->Retire(false);
+            submission->fence->EndUse();
         }
-        submissions.pop_front();
-        seq++;
     }
 
     // Roll other queues forward to the highest seq we saw a wait for
     for (const auto &qs : other_queue_seqs) {
         qs.first->Retire(qs.second);
-    }
-
-    // Roll other semaphores forward to the highest seq we saw a wait for
-    for (const auto &sc : timeline_semaphore_counters) {
-        sc.first->Retire(sc.second);
     }
 }
 
@@ -189,20 +184,112 @@ void FENCE_STATE::Export(VkExternalFenceHandleTypeFlagBits handle_type) {
     }
 }
 
-void SEMAPHORE_STATE::Retire(uint64_t until_payload) {
-    if (signaler.queue) {
-        uint64_t max_seq = 0;
-        for (const auto &submission : signaler.queue->submissions) {
-            for (const auto &signal : submission.signal_semaphores) {
-                if (signal.semaphore.get() == this) {
-                    if (signal.payload <= until_payload && signal.seq > max_seq) {
-                        max_seq = std::max(max_seq, signal.seq);
-                    }
-                }
-            }
+bool SEMAPHORE_STATE::EnqueueSignal(QUEUE_STATE *queue, uint64_t queue_seq, uint64_t &payload) {
+    if (scope_ != kSyncScopeInternal) {
+        return true;  // retire early
+    }
+    if (type == VK_SEMAPHORE_TYPE_BINARY) {
+        payload = next_payload_++;
+    }
+    operations_.emplace(SemOp{kSignal, queue, queue_seq, payload});
+    return false;
+}
+
+void SEMAPHORE_STATE::EnqueueWait(QUEUE_STATE *queue, uint64_t queue_seq, uint64_t &payload) {
+    switch (scope_) {
+        case kSyncScopeExternalTemporary:
+            scope_ = kSyncScopeInternal;
+            break;
+        default:
+            break;
+    }
+    if (type == VK_SEMAPHORE_TYPE_BINARY) {
+        payload = next_payload_++;
+    }
+    operations_.emplace(SemOp{kWait, queue, queue_seq, payload});
+}
+
+void SEMAPHORE_STATE::EnqueueAcquire() {
+    assert(type == VK_SEMAPHORE_TYPE_BINARY);
+    operations_.emplace(SemOp{kBinaryAcquire, nullptr, 0, next_payload_++});
+}
+
+void SEMAPHORE_STATE::EnqueuePresent(QUEUE_STATE *queue) {
+    assert(type == VK_SEMAPHORE_TYPE_BINARY);
+    operations_.emplace(SemOp{kBinaryPresent, queue, 0, next_payload_++});
+}
+
+layer_data::optional<SemOp> SEMAPHORE_STATE::LastOp(std::function<bool(const SemOp &)> filter) const {
+    layer_data::optional<SemOp> result;
+
+    for (auto pos = operations_.rbegin(); pos != operations_.rend(); ++pos) {
+        if (!filter || filter(*pos)) {
+            result.emplace(*pos);
+            break;
         }
-        if (max_seq) {
-            signaler.queue->Retire(max_seq);
+    }
+    return result;
+}
+
+bool SEMAPHORE_STATE::CanBeSignaled() const {
+    if (type == VK_SEMAPHORE_TYPE_TIMELINE) {
+        return true;
+    }
+    auto op = LastOp();
+    return op ? op->CanBeSignaled() : completed_.CanBeSignaled();
+}
+
+bool SEMAPHORE_STATE::CanBeWaited() const {
+    if (type == VK_SEMAPHORE_TYPE_TIMELINE) {
+        return true;
+    }
+    auto op = LastOp();
+    if (op) {
+        return op->op_type == kSignal || op->op_type == kBinaryAcquire;
+    }
+    return completed_.op_type == kSignal || completed_.op_type == kBinaryAcquire;
+}
+
+SEMAPHORE_STATE::RetireResult SEMAPHORE_STATE::Retire(QUEUE_STATE *queue, uint64_t payload) {
+    RetireResult result;
+
+    while (!operations_.empty() && operations_.begin()->payload <= payload) {
+        completed_ = *operations_.begin();
+        operations_.erase(operations_.begin());
+        // Note: even though presentation is directed to a queue, there is no direct ordering between QP and subsequent work,
+        // so QP (and its semaphore waits) /never/ participate in any completion proof. Likewise, Acquire is not associated
+        // with a queue.
+        if (completed_.op_type != kBinaryAcquire && completed_.op_type != kBinaryPresent) {
+            auto &last_seq = result[completed_.queue];
+            last_seq = std::max(last_seq, completed_.seq);
         }
+    }
+    return result;
+}
+
+void SEMAPHORE_STATE::RetireTimeline(uint64_t payload) {
+    if (type == VK_SEMAPHORE_TYPE_TIMELINE) {
+        auto results = Retire(nullptr, payload);
+        for (auto &entry : results) {
+            entry.first->Retire(entry.second);
+        }
+    }
+}
+
+void SEMAPHORE_STATE::Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags) {
+    if (scope_ != kSyncScopeExternalPermanent) {
+        if ((handle_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT || flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) &&
+            scope_ == kSyncScopeInternal) {
+            scope_ = kSyncScopeExternalTemporary;
+        } else {
+            scope_ = kSyncScopeExternalPermanent;
+        }
+    }
+}
+
+void SEMAPHORE_STATE::Export(VkExternalSemaphoreHandleTypeFlagBits handle_type) {
+    if (handle_type != VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
+        // Cannot track semaphore state once it is exported, except for Sync FD handle types which have copy transference
+        scope_ = kSyncScopeExternalPermanent;
     }
 }
