@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -74,12 +74,7 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
     }
 
     if (submission.fence) {
-        if (submission.fence->scope == kSyncScopeInternal) {
-            // Mark fence in use
-            submission.fence->state = FENCE_INFLIGHT;
-            submission.fence->signaler.queue = this;
-            submission.fence->signaler.seq = next_seq;
-        } else {
+        if (submission.fence->EnqueueSignal(this, next_seq)) {
             retire_early = true;
         }
         submission.fence->BeginUse();
@@ -124,9 +119,7 @@ void QUEUE_STATE::Retire(uint64_t next_seq) {
         }
 
         if (submission.fence) {
-            if (submission.fence->scope == kSyncScopeInternal) {
-                submission.fence->state = FENCE_RETIRED;
-            }
+            submission.fence->Retire(false);
             submission.fence->EndUse();
         }
         submissions.pop_front();
@@ -137,23 +130,62 @@ void QUEUE_STATE::Retire(uint64_t next_seq) {
     for (const auto &qs : other_queue_seqs) {
         qs.first->Retire(qs.second);
     }
+
+    // Roll other semaphores forward to the highest seq we saw a wait for
     for (const auto &sc : timeline_semaphore_counters) {
         sc.first->Retire(sc.second);
     }
 }
 
-void FENCE_STATE::Retire() {
-    if (scope == kSyncScopeInternal) {
-        if (signaler.queue) {
+bool FENCE_STATE::EnqueueSignal(QUEUE_STATE *queue_state, uint64_t next_seq) {
+    if (scope_ != kSyncScopeInternal) {
+        return true;
+    }
+    // Mark fence in use
+    state_ = FENCE_INFLIGHT;
+    queue_ = queue_state;
+    seq_ = next_seq;
+    return false;
+}
+
+void FENCE_STATE::Retire(bool notify_queue) {
+    if (scope_ == kSyncScopeInternal) {
+        if (queue_ && notify_queue) {
             // Fence signaller is a queue -- use this as proof that prior operations on that queue have completed.
-            signaler.queue->Retire(signaler.seq);
-        } else {
-            // Fence signaller is the WSI. We're not tracking what the WSI op actually /was/ in CV yet, but we need to mark
-            // the fence as retired.
-            state = FENCE_RETIRED;
+            queue_->Retire(seq_);
+            queue_ = nullptr;
+            seq_ = 0;
         }
-    } else {
-        state = FENCE_RETIRED;
+    }
+    state_ = FENCE_RETIRED;
+}
+
+void FENCE_STATE::Reset() {
+    if (scope_ == kSyncScopeInternal) {
+        state_ = FENCE_UNSIGNALED;
+    } else if (scope_ == kSyncScopeExternalTemporary) {
+        scope_ = kSyncScopeInternal;
+    }
+}
+
+void FENCE_STATE::Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
+    if (scope_ != kSyncScopeExternalPermanent) {
+        if ((handle_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT || flags & VK_FENCE_IMPORT_TEMPORARY_BIT) &&
+            scope_ == kSyncScopeInternal) {
+            scope_ = kSyncScopeExternalTemporary;
+        } else {
+            scope_ = kSyncScopeExternalPermanent;
+        }
+    }
+}
+
+void FENCE_STATE::Export(VkExternalFenceHandleTypeFlagBits handle_type) {
+    if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT) {
+        // Export with reference transference becomes external
+        scope_ = kSyncScopeExternalPermanent;
+    } else if (scope_ == kSyncScopeInternal) {
+        // Export with copy transference has a side effect of resetting the fence
+        state_ = FENCE_UNSIGNALED;
     }
 }
 

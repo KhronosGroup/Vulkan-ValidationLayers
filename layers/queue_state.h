@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,21 +47,37 @@ struct QUEUE_SIGNALER {
 
 class FENCE_STATE : public REFCOUNTED_NODE {
   public:
-    const VkFenceCreateInfo createInfo;
-    QUEUE_SIGNALER signaler;
-    FENCE_STATUS state;
-    SyncScope scope{kSyncScopeInternal};
-
     // Default constructor
     FENCE_STATE(VkFence f, const VkFenceCreateInfo *pCreateInfo)
         : REFCOUNTED_NODE(f, kVulkanObjectTypeFence),
           createInfo(*pCreateInfo),
-          state((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED),
-          scope(kSyncScopeInternal) {}
+          state_((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED),
+          scope_(kSyncScopeInternal) {}
 
     VkFence fence() const { return handle_.Cast<VkFence>(); }
 
-    void Retire();
+    bool EnqueueSignal(QUEUE_STATE *queue_state, uint64_t next_seq);
+
+    void Retire(bool notify_queue = true);
+
+    void Reset();
+
+    void Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags);
+
+    void Export(VkExternalFenceHandleTypeFlagBits handle_type);
+
+    const VkFenceCreateInfo createInfo;
+
+    SyncScope Scope() const { return scope_; }
+    FENCE_STATUS State() const { return state_; }
+    QUEUE_STATE *Queue() const { return queue_; }
+    uint64_t QueueSeq() const { return seq_; }
+
+  private:
+    QUEUE_STATE *queue_{nullptr};
+    uint64_t seq_{0};
+    FENCE_STATUS state_;
+    SyncScope scope_{kSyncScopeInternal};
 };
 
 class SEMAPHORE_STATE : public REFCOUNTED_NODE {
