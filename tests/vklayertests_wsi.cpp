@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (c) 2015-2021 Google, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2022 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1841,8 +1841,38 @@ TEST_F(VkLayerTest, SwapchainAcquireImageWithSignaledSemaphore) {
     vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
     m_errorMonitor->VerifyFound();
 
+    // Add a wait, but don't let it finish.
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = nullptr;
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &semaphore;
+    VkPipelineStageFlags waitMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    submit_info.pWaitDstStageMask = &waitMask;
+
+    m_errorMonitor->ExpectSuccess();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImageKHR-semaphore-01779");
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), semaphore, VK_NULL_HANDLE, &dummy);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAcquireNextImageInfoKHR-semaphore-01781");
+    vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
+    m_errorMonitor->VerifyFound();
+
+    // finish the wait
+    m_errorMonitor->ExpectSuccess();
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    // now it should be possible to acquire
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), semaphore, VK_NULL_HANDLE, &dummy);
+    // ... and wait for the acquire
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
     vk::DestroySemaphore(device(), semaphore, nullptr);
     DestroySwapchain();
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
