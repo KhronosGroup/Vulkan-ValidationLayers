@@ -3432,20 +3432,23 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
     return skip;
 }
 
-bool CoreChecks::ValidateFenceForSubmit(const FENCE_STATE *pFence, const char *inflight_vuid, const char *retired_vuid,
+bool CoreChecks::ValidateFenceForSubmit(const FENCE_STATE *fence_state, const char *inflight_vuid, const char *retired_vuid,
                                         const char *func_name) const {
     bool skip = false;
 
-    if (pFence && pFence->scope == kSyncScopeInternal) {
-        if (pFence->state == FENCE_INFLIGHT) {
-            skip |= LogError(pFence->fence(), inflight_vuid, "%s: %s is already in use by another submission.", func_name,
-                             report_data->FormatHandle(pFence->fence()).c_str());
-        }
-
-        else if (pFence->state == FENCE_RETIRED) {
-            skip |= LogError(pFence->fence(), retired_vuid,
-                             "%s: %s submitted in SIGNALED state.  Fences must be reset before being submitted", func_name,
-                             report_data->FormatHandle(pFence->fence()).c_str());
+    if (fence_state && fence_state->Scope() == kSyncScopeInternal) {
+        switch (fence_state->State()) {
+            case FENCE_INFLIGHT:
+                skip |= LogError(fence_state->fence(), inflight_vuid, "%s: %s is already in use by another submission.", func_name,
+                                 report_data->FormatHandle(fence_state->fence()).c_str());
+                break;
+            case FENCE_RETIRED:
+                skip |= LogError(fence_state->fence(), retired_vuid,
+                                 "%s: %s submitted in SIGNALED state.  Fences must be reset before being submitted", func_name,
+                                 report_data->FormatHandle(fence_state->fence()).c_str());
+                break;
+            default:
+                break;
         }
     }
 
@@ -4825,7 +4828,7 @@ bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, con
     const auto fence_node = Get<FENCE_STATE>(fence);
     bool skip = false;
     if (fence_node) {
-        if (fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
+        if (fence_node->Scope() == kSyncScopeInternal && fence_node->State() == FENCE_INFLIGHT) {
             skip |= LogError(fence, "VUID-vkDestroyFence-fence-01120", "%s is in use.", report_data->FormatHandle(fence).c_str());
         }
     }
@@ -5530,7 +5533,7 @@ bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount
     bool skip = false;
     for (uint32_t i = 0; i < fenceCount; ++i) {
         const auto fence_state = Get<FENCE_STATE>(pFences[i]);
-        if (fence_state && fence_state->scope == kSyncScopeInternal && fence_state->state == FENCE_INFLIGHT) {
+        if (fence_state && fence_state->Scope() == kSyncScopeInternal && fence_state->State() == FENCE_INFLIGHT) {
             skip |= LogError(pFences[i], "VUID-vkResetFences-pFences-01123", "%s is in use.",
                              report_data->FormatHandle(pFences[i]).c_str());
         }
@@ -14980,7 +14983,7 @@ bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device,
 bool CoreChecks::ValidateImportFence(VkFence fence, const char *vuid, const char *caller_name) const {
     const auto fence_node = Get<FENCE_STATE>(fence);
     bool skip = false;
-    if (fence_node && fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
+    if (fence_node && fence_node->Scope() == kSyncScopeInternal && fence_node->State() == FENCE_INFLIGHT) {
         skip |=
             LogError(fence, vuid, "%s: Fence %s that is currently in use.", caller_name, report_data->FormatHandle(fence).c_str());
     }

@@ -1799,11 +1799,7 @@ void ValidationStateTracker::PostCallRecordResetFences(VkDevice device, uint32_t
     for (uint32_t i = 0; i < fenceCount; ++i) {
         auto fence_state = Get<FENCE_STATE>(pFences[i]);
         if (fence_state) {
-            if (fence_state->scope == kSyncScopeInternal) {
-                fence_state->state = FENCE_UNSIGNALED;
-            } else if (fence_state->scope == kSyncScopeExternalTemporary) {
-                fence_state->scope = kSyncScopeInternal;
-            }
+            fence_state->Reset();
         }
     }
 }
@@ -2987,13 +2983,9 @@ void ValidationStateTracker::PostCallRecordGetSemaphoreFdKHR(VkDevice device, co
 void ValidationStateTracker::RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type,
                                                     VkFenceImportFlags flags) {
     auto fence_node = Get<FENCE_STATE>(fence);
-    if (fence_node && fence_node->scope != kSyncScopeExternalPermanent) {
-        if ((handle_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT || flags & VK_FENCE_IMPORT_TEMPORARY_BIT) &&
-            fence_node->scope == kSyncScopeInternal) {
-            fence_node->scope = kSyncScopeExternalTemporary;
-        } else {
-            fence_node->scope = kSyncScopeExternalPermanent;
-        }
+
+    if (fence_node) {
+        fence_node->Import(handle_type, flags);
     }
 }
 
@@ -3006,13 +2998,7 @@ void ValidationStateTracker::PostCallRecordImportFenceFdKHR(VkDevice device, con
 void ValidationStateTracker::RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type) {
     auto fence_state = Get<FENCE_STATE>(fence);
     if (fence_state) {
-        if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT) {
-            // Export with reference transference becomes external
-            fence_state->scope = kSyncScopeExternalPermanent;
-        } else if (fence_state->scope == kSyncScopeInternal) {
-            // Export with copy transference has a side effect of resetting the fence
-            fence_state->state = FENCE_UNSIGNALED;
-        }
+        fence_state->Export(handle_type);
     }
 }
 
@@ -3121,11 +3107,10 @@ void ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(VkDevice de
 void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                          VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) {
     auto fence_state = Get<FENCE_STATE>(fence);
-    if (fence_state && fence_state->scope == kSyncScopeInternal) {
+    if (fence_state) {
         // Treat as inflight since it is valid to wait on this fence, even in cases where it is technically a temporary
         // import
-        fence_state->state = FENCE_INFLIGHT;
-        fence_state->signaler.queue = nullptr;  // ANI isn't on a queue, so this can't participate in a completion proof.
+        fence_state->EnqueueSignal(nullptr, 0);
     }
 
     auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
