@@ -2044,7 +2044,8 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
 
                 case spv::ExecutionModeEarlyFragmentTests: {
                     if ((stage == VK_SHADER_STAGE_FRAGMENT_BIT) &&
-                        ((pipeline->create_info.graphics.pDepthStencilState->flags &
+                        (pipeline && pipeline->create_info.graphics.pDepthStencilState &&
+                         (pipeline->create_info.graphics.pDepthStencilState->flags &
                           (VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM |
                            VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM)) != 0)) {
                         skip |= LogError(
