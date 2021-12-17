@@ -13378,10 +13378,17 @@ TEST_F(VkLayerTest, ValidateBeginRenderingDisabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AddRequiredDeviceExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        return;
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
         return;
     }
 

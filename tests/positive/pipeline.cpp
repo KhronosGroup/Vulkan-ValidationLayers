@@ -6402,11 +6402,16 @@ TEST_F(VkPositiveLayerTest, LineTopologyClasses) {
 TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRendering) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AddRequiredDeviceExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
         return;
     }
+
     m_errorMonitor->ExpectSuccess();
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
@@ -6456,9 +6461,13 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRendering) {
 TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRenderingNoInfo) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled but no rendering info struct.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AddRequiredDeviceExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
         return;
     }
 
