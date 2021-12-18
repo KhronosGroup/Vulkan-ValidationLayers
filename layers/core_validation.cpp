@@ -1007,8 +1007,9 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                         if (imageview_state != nullptr &&
                             attachment < pPipeline->create_info.graphics.pColorBlendState->attachmentCount) {
                             if ((imageview_state->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0 &&
-                            pPipeline->create_info.graphics.pColorBlendState->pAttachments[attachment].blendEnable != VK_FALSE) {
-                            skip |= LogError(pPipeline->pipeline(), vuid.blend_enable,
+                                pPipeline->create_info.graphics.pColorBlendState->pAttachments[i].blendEnable != VK_FALSE) {
+                                skip |=
+                                    LogError(pPipeline->pipeline(), vuid.blend_enable,
                                              "%s: Image view's format features of the color attachment (%" PRIu32
                                              ") of the active subpass do not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT "
                                              "bit, but active pipeline's pAttachments[%" PRIu32 "].blendEnable is not VK_FALSE.",
