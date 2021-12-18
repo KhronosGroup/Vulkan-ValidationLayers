@@ -1830,6 +1830,9 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdBeginConditionalRenderingEXT(
         VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin) const;
 
+    bool ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirementsKHR *pInfo,
+                                               const char *func_name) const;
+
     bool manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                   uint32_t *pSurfaceFormatCount,
                                                                   VkSurfaceFormatKHR *pSurfaceFormats) const;
@@ -1852,6 +1855,12 @@ class StatelessValidation : public ValidationObject {
                                                                         uint32_t *pPresentModeCount,
                                                                         VkPresentModeKHR *pPresentModes) const;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+    bool manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements *pInfo,
+                                                                   VkMemoryRequirements2 *pMemoryRequirements) const;
+    bool manual_PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
+        VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
+        VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) const;
 
 #include "parameter_validation.h"
 };  // Class StatelessValidation
