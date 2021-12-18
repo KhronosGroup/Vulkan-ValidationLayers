@@ -8296,4 +8296,39 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentM
     }
     return skip;
 }
+
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirementsKHR *pInfo,
+                                                                const char *func_name) const {
+    bool skip = false;
+
+    if (pInfo && pInfo->pCreateInfo) {
+        const auto *image_swapchain_create_info = LvlFindInChain<VkImageSwapchainCreateInfoKHR>(pInfo->pCreateInfo);
+        if (image_swapchain_create_info) {
+            skip |= LogError(device, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06416",
+                             "%s(): pInfo->pCreateInfo->pNext chain contains VkImageSwapchainCreateInfoKHR.", func_name);
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(
+    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, VkMemoryRequirements2 *pMemoryRequirements) const {
+    bool skip = false;
+
+    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, "vkGetDeviceImageMemoryRequirementsKHR");
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
+    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) const {
+    bool skip = false;
+
+    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, "vkGetDeviceImageSparseMemoryRequirementsKHR");
+
+    return skip;
+}

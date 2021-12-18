@@ -269,6 +269,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdSetDiscardRectangleEXT',
             'vkGetQueryPoolResults',
             'vkCmdBeginConditionalRenderingEXT',
+            'vkGetDeviceImageMemoryRequirementsKHR',
+            'vkGetDeviceImageSparseMemoryRequirementsKHR',
             'vkCreateWin32SurfaceKHR',
             'vkGetPhysicalDeviceSurfaceFormatsKHR',
             'vkGetPhysicalDeviceSurfacePresentModesKHR',
