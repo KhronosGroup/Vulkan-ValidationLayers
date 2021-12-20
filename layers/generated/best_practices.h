@@ -1936,6 +1936,7 @@ const layer_data::unordered_map<std::string, std::string> special_use_extensions
     {"VK_EXT_transform_feedback", "glemulation, d3demulation, devtools"},
     {"VK_EXT_validation_features", "debugging"},
     {"VK_EXT_validation_flags", "debugging"},
+    {"VK_GOOGLE_surfaceless_query", "glemulation"},
     {"VK_INTEL_performance_query", "devtools"},
     {"VK_KHR_performance_query", "devtools"},
     {"VK_KHR_pipeline_executable_properties", "devtools"},

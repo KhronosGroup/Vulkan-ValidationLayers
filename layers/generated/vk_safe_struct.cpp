@@ -15743,6 +15743,63 @@ void safe_VkDisplayPresentInfoKHR::initialize(const safe_VkDisplayPresentInfoKHR
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 
+safe_VkQueueFamilyQueryResultStatusProperties2KHR::safe_VkQueueFamilyQueryResultStatusProperties2KHR(const VkQueueFamilyQueryResultStatusProperties2KHR* in_struct) :
+    sType(in_struct->sType),
+    supported(in_struct->supported)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkQueueFamilyQueryResultStatusProperties2KHR::safe_VkQueueFamilyQueryResultStatusProperties2KHR() :
+    sType(VK_STRUCTURE_TYPE_QUEUE_FAMILY_QUERY_RESULT_STATUS_PROPERTIES_2_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkQueueFamilyQueryResultStatusProperties2KHR::safe_VkQueueFamilyQueryResultStatusProperties2KHR(const safe_VkQueueFamilyQueryResultStatusProperties2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    supported = copy_src.supported;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkQueueFamilyQueryResultStatusProperties2KHR& safe_VkQueueFamilyQueryResultStatusProperties2KHR::operator=(const safe_VkQueueFamilyQueryResultStatusProperties2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    supported = copy_src.supported;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkQueueFamilyQueryResultStatusProperties2KHR::~safe_VkQueueFamilyQueryResultStatusProperties2KHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkQueueFamilyQueryResultStatusProperties2KHR::initialize(const VkQueueFamilyQueryResultStatusProperties2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    supported = in_struct->supported;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkQueueFamilyQueryResultStatusProperties2KHR::initialize(const safe_VkQueueFamilyQueryResultStatusProperties2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    supported = copy_src->supported;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
 safe_VkVideoQueueFamilyProperties2KHR::safe_VkVideoQueueFamilyProperties2KHR(const VkVideoQueueFamilyProperties2KHR* in_struct) :
     sType(in_struct->sType),
     videoCodecOperations(in_struct->videoCodecOperations)
@@ -27109,7 +27166,8 @@ safe_VkVideoEncodeH264RateControlInfoEXT::safe_VkVideoEncodeH264RateControlInfoE
     gopFrameCount(in_struct->gopFrameCount),
     idrPeriod(in_struct->idrPeriod),
     consecutiveBFrameCount(in_struct->consecutiveBFrameCount),
-    rateControlStructure(in_struct->rateControlStructure)
+    rateControlStructure(in_struct->rateControlStructure),
+    temporalLayerCount(in_struct->temporalLayerCount)
 {
     pNext = SafePnextCopy(in_struct->pNext);
 }
@@ -27126,6 +27184,7 @@ safe_VkVideoEncodeH264RateControlInfoEXT::safe_VkVideoEncodeH264RateControlInfoE
     idrPeriod = copy_src.idrPeriod;
     consecutiveBFrameCount = copy_src.consecutiveBFrameCount;
     rateControlStructure = copy_src.rateControlStructure;
+    temporalLayerCount = copy_src.temporalLayerCount;
     pNext = SafePnextCopy(copy_src.pNext);
 }
 
@@ -27141,6 +27200,7 @@ safe_VkVideoEncodeH264RateControlInfoEXT& safe_VkVideoEncodeH264RateControlInfoE
     idrPeriod = copy_src.idrPeriod;
     consecutiveBFrameCount = copy_src.consecutiveBFrameCount;
     rateControlStructure = copy_src.rateControlStructure;
+    temporalLayerCount = copy_src.temporalLayerCount;
     pNext = SafePnextCopy(copy_src.pNext);
 
     return *this;
@@ -27159,6 +27219,7 @@ void safe_VkVideoEncodeH264RateControlInfoEXT::initialize(const VkVideoEncodeH26
     idrPeriod = in_struct->idrPeriod;
     consecutiveBFrameCount = in_struct->consecutiveBFrameCount;
     rateControlStructure = in_struct->rateControlStructure;
+    temporalLayerCount = in_struct->temporalLayerCount;
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
@@ -27169,6 +27230,7 @@ void safe_VkVideoEncodeH264RateControlInfoEXT::initialize(const safe_VkVideoEnco
     idrPeriod = copy_src->idrPeriod;
     consecutiveBFrameCount = copy_src->consecutiveBFrameCount;
     rateControlStructure = copy_src->rateControlStructure;
+    temporalLayerCount = copy_src->temporalLayerCount;
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -28368,7 +28430,8 @@ safe_VkVideoEncodeH265RateControlInfoEXT::safe_VkVideoEncodeH265RateControlInfoE
     gopFrameCount(in_struct->gopFrameCount),
     idrPeriod(in_struct->idrPeriod),
     consecutiveBFrameCount(in_struct->consecutiveBFrameCount),
-    rateControlStructure(in_struct->rateControlStructure)
+    rateControlStructure(in_struct->rateControlStructure),
+    subLayerCount(in_struct->subLayerCount)
 {
     pNext = SafePnextCopy(in_struct->pNext);
 }
@@ -28385,6 +28448,7 @@ safe_VkVideoEncodeH265RateControlInfoEXT::safe_VkVideoEncodeH265RateControlInfoE
     idrPeriod = copy_src.idrPeriod;
     consecutiveBFrameCount = copy_src.consecutiveBFrameCount;
     rateControlStructure = copy_src.rateControlStructure;
+    subLayerCount = copy_src.subLayerCount;
     pNext = SafePnextCopy(copy_src.pNext);
 }
 
@@ -28400,6 +28464,7 @@ safe_VkVideoEncodeH265RateControlInfoEXT& safe_VkVideoEncodeH265RateControlInfoE
     idrPeriod = copy_src.idrPeriod;
     consecutiveBFrameCount = copy_src.consecutiveBFrameCount;
     rateControlStructure = copy_src.rateControlStructure;
+    subLayerCount = copy_src.subLayerCount;
     pNext = SafePnextCopy(copy_src.pNext);
 
     return *this;
@@ -28418,6 +28483,7 @@ void safe_VkVideoEncodeH265RateControlInfoEXT::initialize(const VkVideoEncodeH26
     idrPeriod = in_struct->idrPeriod;
     consecutiveBFrameCount = in_struct->consecutiveBFrameCount;
     rateControlStructure = in_struct->rateControlStructure;
+    subLayerCount = in_struct->subLayerCount;
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
@@ -28428,6 +28494,7 @@ void safe_VkVideoEncodeH265RateControlInfoEXT::initialize(const safe_VkVideoEnco
     idrPeriod = copy_src->idrPeriod;
     consecutiveBFrameCount = copy_src->consecutiveBFrameCount;
     rateControlStructure = copy_src->rateControlStructure;
+    subLayerCount = copy_src->subLayerCount;
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -47032,6 +47099,248 @@ void safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::initialize(const
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM(const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM* in_struct) :
+    sType(in_struct->sType),
+    fragmentDensityMapOffset(in_struct->fragmentDensityMapOffset)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM(const safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    fragmentDensityMapOffset = copy_src.fragmentDensityMapOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM& safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::operator=(const safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    fragmentDensityMapOffset = copy_src.fragmentDensityMapOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::~safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::initialize(const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM* in_struct)
+{
+    sType = in_struct->sType;
+    fragmentDensityMapOffset = in_struct->fragmentDensityMapOffset;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::initialize(const safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    fragmentDensityMapOffset = copy_src->fragmentDensityMapOffset;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM(const VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM* in_struct) :
+    sType(in_struct->sType),
+    fragmentDensityOffsetGranularity(in_struct->fragmentDensityOffsetGranularity)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_PROPERTIES_QCOM),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM(const safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    fragmentDensityOffsetGranularity = copy_src.fragmentDensityOffsetGranularity;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM& safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::operator=(const safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    fragmentDensityOffsetGranularity = copy_src.fragmentDensityOffsetGranularity;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::~safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::initialize(const VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM* in_struct)
+{
+    sType = in_struct->sType;
+    fragmentDensityOffsetGranularity = in_struct->fragmentDensityOffsetGranularity;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::initialize(const safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    fragmentDensityOffsetGranularity = copy_src->fragmentDensityOffsetGranularity;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM(const VkSubpassFragmentDensityMapOffsetEndInfoQCOM* in_struct) :
+    sType(in_struct->sType),
+    fragmentDensityOffsetCount(in_struct->fragmentDensityOffsetCount),
+    pFragmentDensityOffsets(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pFragmentDensityOffsets) {
+        pFragmentDensityOffsets = new VkOffset2D[in_struct->fragmentDensityOffsetCount];
+        memcpy ((void *)pFragmentDensityOffsets, (void *)in_struct->pFragmentDensityOffsets, sizeof(VkOffset2D)*in_struct->fragmentDensityOffsetCount);
+    }
+}
+
+safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM() :
+    sType(VK_STRUCTURE_TYPE_SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM),
+    pNext(nullptr),
+    pFragmentDensityOffsets(nullptr)
+{}
+
+safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM(const safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    fragmentDensityOffsetCount = copy_src.fragmentDensityOffsetCount;
+    pFragmentDensityOffsets = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pFragmentDensityOffsets) {
+        pFragmentDensityOffsets = new VkOffset2D[copy_src.fragmentDensityOffsetCount];
+        memcpy ((void *)pFragmentDensityOffsets, (void *)copy_src.pFragmentDensityOffsets, sizeof(VkOffset2D)*copy_src.fragmentDensityOffsetCount);
+    }
+}
+
+safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM& safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::operator=(const safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pFragmentDensityOffsets)
+        delete[] pFragmentDensityOffsets;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    fragmentDensityOffsetCount = copy_src.fragmentDensityOffsetCount;
+    pFragmentDensityOffsets = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pFragmentDensityOffsets) {
+        pFragmentDensityOffsets = new VkOffset2D[copy_src.fragmentDensityOffsetCount];
+        memcpy ((void *)pFragmentDensityOffsets, (void *)copy_src.pFragmentDensityOffsets, sizeof(VkOffset2D)*copy_src.fragmentDensityOffsetCount);
+    }
+
+    return *this;
+}
+
+safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::~safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM()
+{
+    if (pFragmentDensityOffsets)
+        delete[] pFragmentDensityOffsets;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::initialize(const VkSubpassFragmentDensityMapOffsetEndInfoQCOM* in_struct)
+{
+    sType = in_struct->sType;
+    fragmentDensityOffsetCount = in_struct->fragmentDensityOffsetCount;
+    pFragmentDensityOffsets = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pFragmentDensityOffsets) {
+        pFragmentDensityOffsets = new VkOffset2D[in_struct->fragmentDensityOffsetCount];
+        memcpy ((void *)pFragmentDensityOffsets, (void *)in_struct->pFragmentDensityOffsets, sizeof(VkOffset2D)*in_struct->fragmentDensityOffsetCount);
+    }
+}
+
+void safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::initialize(const safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    fragmentDensityOffsetCount = copy_src->fragmentDensityOffsetCount;
+    pFragmentDensityOffsets = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pFragmentDensityOffsets) {
+        pFragmentDensityOffsets = new VkOffset2D[copy_src->fragmentDensityOffsetCount];
+        memcpy ((void *)pFragmentDensityOffsets, (void *)copy_src->pFragmentDensityOffsets, sizeof(VkOffset2D)*copy_src->fragmentDensityOffsetCount);
+    }
+}
+
+safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV(const VkPhysicalDeviceLinearColorAttachmentFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    linearColorAttachment(in_struct->linearColorAttachment)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV(const safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    linearColorAttachment = copy_src.linearColorAttachment;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV& safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::operator=(const safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    linearColorAttachment = copy_src.linearColorAttachment;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::~safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::initialize(const VkPhysicalDeviceLinearColorAttachmentFeaturesNV* in_struct)
+{
+    sType = in_struct->sType;
+    linearColorAttachment = in_struct->linearColorAttachment;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::initialize(const safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    linearColorAttachment = copy_src->linearColorAttachment;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkDeviceOrHostAddressKHR::safe_VkDeviceOrHostAddressKHR(const VkDeviceOrHostAddressKHR* in_struct)
 {
     initialize(in_struct);
@@ -49714,6 +50023,18 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM:
+            safe_pNext = new safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM(reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_PROPERTIES_QCOM:
+            safe_pNext = new safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM(reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM:
+            safe_pNext = new safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM(reinterpret_cast<const VkSubpassFragmentDensityMapOffsetEndInfoQCOM *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV:
+            safe_pNext = new safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV(reinterpret_cast<const VkPhysicalDeviceLinearColorAttachmentFeaturesNV *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             safe_pNext = new safe_VkWriteDescriptorSetAccelerationStructureKHR(reinterpret_cast<const VkWriteDescriptorSetAccelerationStructureKHR *>(pNext));
             break;
@@ -49733,6 +50054,9 @@ void *SafePnextCopy(const void *pNext) {
             safe_pNext = new safe_VkPhysicalDeviceRayQueryFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceRayQueryFeaturesKHR *>(pNext));
             break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_QUERY_RESULT_STATUS_PROPERTIES_2_KHR:
+            safe_pNext = new safe_VkQueueFamilyQueryResultStatusProperties2KHR(reinterpret_cast<const VkQueueFamilyQueryResultStatusProperties2KHR *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_VIDEO_QUEUE_FAMILY_PROPERTIES_2_KHR:
             safe_pNext = new safe_VkVideoQueueFamilyProperties2KHR(reinterpret_cast<const VkVideoQueueFamilyProperties2KHR *>(pNext));
             break;
@@ -50851,6 +51175,18 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_PROPERTIES_QCOM:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM:
+            delete reinterpret_cast<const safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV *>(header);
+            break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             delete reinterpret_cast<const safe_VkWriteDescriptorSetAccelerationStructureKHR *>(header);
             break;
@@ -50870,6 +51206,9 @@ void FreePnextChain(const void *pNext) {
             delete reinterpret_cast<const safe_VkPhysicalDeviceRayQueryFeaturesKHR *>(header);
             break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_QUERY_RESULT_STATUS_PROPERTIES_2_KHR:
+            delete reinterpret_cast<const safe_VkQueueFamilyQueryResultStatusProperties2KHR *>(header);
+            break;
         case VK_STRUCTURE_TYPE_VIDEO_QUEUE_FAMILY_PROPERTIES_2_KHR:
             delete reinterpret_cast<const safe_VkVideoQueueFamilyProperties2KHR *>(header);
             break;

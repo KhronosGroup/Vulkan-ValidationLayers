@@ -81,6 +81,7 @@ struct InstanceExtensions {
     ExtEnabled vk_ext_validation_flags{kNotEnabled};
     ExtEnabled vk_fuchsia_imagepipe_surface{kNotEnabled};
     ExtEnabled vk_ggp_stream_descriptor_surface{kNotEnabled};
+    ExtEnabled vk_google_surfaceless_query{kNotEnabled};
     ExtEnabled vk_khr_android_surface{kNotEnabled};
     ExtEnabled vk_khr_device_group_creation{kNotEnabled};
     ExtEnabled vk_khr_display{kNotEnabled};
@@ -152,6 +153,8 @@ struct InstanceExtensions {
             {VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ggp_stream_descriptor_surface, {{
                            {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif
+            {VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_google_surfaceless_query, {{
+                           {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
             {VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_khr_android_surface, {{
                            {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
@@ -300,6 +303,7 @@ static const std::set<std::string> kInstanceExtensionNames = {
 #ifdef VK_USE_PLATFORM_GGP
     VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME,
 #endif
+    VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
 #endif
@@ -559,6 +563,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_geometry_shader_passthrough{kNotEnabled};
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
     ExtEnabled vk_nv_inherited_viewport_scissor{kNotEnabled};
+    ExtEnabled vk_nv_linear_color_attachment{kNotEnabled};
     ExtEnabled vk_nv_mesh_shader{kNotEnabled};
     ExtEnabled vk_nv_ray_tracing{kNotEnabled};
     ExtEnabled vk_nv_ray_tracing_motion_blur{kNotEnabled};
@@ -572,6 +577,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_viewport_array2{kNotEnabled};
     ExtEnabled vk_nv_viewport_swizzle{kNotEnabled};
     ExtEnabled vk_nv_win32_keyed_mutex{kNotEnabled};
+    ExtEnabled vk_qcom_fragment_density_map_offset{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_shader_resolve{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_store_ops{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_transform{kNotEnabled};
@@ -1043,6 +1049,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_geometry_shader_passthrough, {})},
             {VK_NV_GLSL_SHADER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_glsl_shader, {})},
             {VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_inherited_viewport_scissor, {})},
+            {VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_linear_color_attachment, {})},
             {VK_NV_MESH_SHADER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_mesh_shader, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_NV_RAY_TRACING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_ray_tracing, {{
@@ -1068,6 +1075,9 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_NV_WIN32_KEYED_MUTEX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_win32_keyed_mutex, {{
                            {&DeviceExtensions::vk_nv_external_memory_win32, VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME}}})},
 #endif
+            {VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_fragment_density_map_offset, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_ext_fragment_density_map, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME}}})},
             {VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_shader_resolve, {})},
             {VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_store_ops, {})},
             {VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_transform, {{
@@ -1439,6 +1449,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME,
     VK_NV_GLSL_SHADER_EXTENSION_NAME,
     VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME,
+    VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME,
     VK_NV_MESH_SHADER_EXTENSION_NAME,
     VK_NV_RAY_TRACING_EXTENSION_NAME,
     VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME,
@@ -1454,6 +1465,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     VK_NV_WIN32_KEYED_MUTEX_EXTENSION_NAME,
 #endif
+    VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME,
