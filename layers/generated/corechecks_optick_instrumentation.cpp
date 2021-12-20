@@ -4849,18 +4849,18 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer
     CoreChecks::PostCallRecordCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2KHR                            stageMask) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2KHR            stageMask) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdResetEvent2KHR(commandBuffer, event, stageMask);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdResetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2KHR                            stageMask) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdResetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2KHR            stageMask) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdResetEvent2KHR(commandBuffer, event, stageMask);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2KHR                            stageMask) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, VkPipelineStageFlags2KHR            stageMask) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdResetEvent2KHR(commandBuffer, event, stageMask);
 }
@@ -4897,18 +4897,18 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdPipelineBarrier2KHR(VkComman
     CoreChecks::PostCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR                            stage, VkQueryPool                                         queryPool, uint32_t                                            query) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR            stage, VkQueryPool                                         queryPool, uint32_t                                            query) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR                            stage, VkQueryPool                                         queryPool, uint32_t                                            query) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR            stage, VkQueryPool                                         queryPool, uint32_t                                            query) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR                            stage, VkQueryPool                                         queryPool, uint32_t                                            query) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR            stage, VkQueryPool                                         queryPool, uint32_t                                            query) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query);
 }
@@ -4929,18 +4929,18 @@ void CoreChecksOptickInstrumented::PostCallRecordQueueSubmit2KHR(VkQueue        
     CoreChecks::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
 }
 
-bool CoreChecksOptickInstrumented::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR                            stage, VkBuffer                                            dstBuffer, VkDeviceSize                                        dstOffset, uint32_t                                            marker) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR            stage, VkBuffer                                            dstBuffer, VkDeviceSize                                        dstOffset, uint32_t                                            marker) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR                            stage, VkBuffer                                            dstBuffer, VkDeviceSize                                        dstOffset, uint32_t                                            marker) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR            stage, VkBuffer                                            dstBuffer, VkDeviceSize                                        dstOffset, uint32_t                                            marker) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR                            stage, VkBuffer                                            dstBuffer, VkDeviceSize                                        dstOffset, uint32_t                                            marker) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2KHR            stage, VkBuffer                                            dstBuffer, VkDeviceSize                                        dstOffset, uint32_t                                            marker) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
 }

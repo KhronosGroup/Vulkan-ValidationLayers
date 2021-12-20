@@ -190,7 +190,7 @@ static const std::array<CommandSupportedQueueType, CMD_RANGE_SIZE> kGeneratedQue
     {VK_QUEUE_FLAG_BITS_MAX_ENUM, kVUIDUndefined},
     {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdBeginConditionalRenderingEXT-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdBeginDebugUtilsLabelEXT-commandBuffer-cmdpool"},
-    {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdBeginQuery-commandBuffer-cmdpool"},
+    {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_VIDEO_ENCODE_BIT_KHR, "VUID-vkCmdBeginQuery-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdBeginRenderPass-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdBeginRenderPass2-commandBuffer-cmdpool"},
@@ -257,7 +257,7 @@ static const std::array<CommandSupportedQueueType, CMD_RANGE_SIZE> kGeneratedQue
     {VK_QUEUE_VIDEO_ENCODE_BIT_KHR, "VUID-vkCmdEncodeVideoKHR-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdEndConditionalRenderingEXT-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-cmdpool"},
-    {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdEndQuery-commandBuffer-cmdpool"},
+    {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_VIDEO_ENCODE_BIT_KHR, "VUID-vkCmdEndQuery-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdEndRenderPass-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdEndRenderPass2-commandBuffer-cmdpool"},
@@ -280,7 +280,7 @@ static const std::array<CommandSupportedQueueType, CMD_RANGE_SIZE> kGeneratedQue
     {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdResetEvent-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdResetEvent2KHR-commandBuffer-cmdpool"},
-    {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdResetQueryPool-commandBuffer-cmdpool"},
+    {VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_VIDEO_ENCODE_BIT_KHR, "VUID-vkCmdResetQueryPool-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdResolveImage-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdResolveImage2KHR-commandBuffer-cmdpool"},
     {VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdSetBlendConstants-commandBuffer-cmdpool"},
@@ -339,8 +339,8 @@ static const std::array<CommandSupportedQueueType, CMD_RANGE_SIZE> kGeneratedQue
     {VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-commandBuffer-cmdpool"},
     {VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdWriteBufferMarker2AMD-commandBuffer-cmdpool"},
     {VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdWriteBufferMarkerAMD-commandBuffer-cmdpool"},
-    {VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdWriteTimestamp-commandBuffer-cmdpool"},
-    {VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdWriteTimestamp2KHR-commandBuffer-cmdpool"},
+    {VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_VIDEO_ENCODE_BIT_KHR, "VUID-vkCmdWriteTimestamp-commandBuffer-cmdpool"},
+    {VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_VIDEO_ENCODE_BIT_KHR, "VUID-vkCmdWriteTimestamp2KHR-commandBuffer-cmdpool"},
 }};
 
 enum CMD_RENDER_PASS_TYPE {
