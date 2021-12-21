@@ -9819,6 +9819,7 @@ TEST_F(VkLayerTest, BadRenderPassContentsWhenCallingCmdExecuteCommandsWithBeginR
     inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkRenderingInfoKHR begin_rendering_info = {};
     begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
@@ -10052,6 +10053,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithNonNullRenderPass) {
     inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkRenderingInfoKHR begin_rendering_info = {};
     begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
@@ -10122,6 +10124,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingFlags) {
     inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkRenderingInfoKHR begin_rendering_info = {};
     begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
@@ -10192,6 +10195,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingColorAttach
     inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
     inheritance_rendering_info.colorAttachmentCount = 0;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkRenderingInfoKHR begin_rendering_info = {};
     begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
@@ -10266,6 +10270,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingColorImageV
     inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &bad_color_formats;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkRenderingInfoKHR begin_rendering_info = {};
     begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
@@ -10344,6 +10349,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingDepthStenci
     inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
     inheritance_rendering_info.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
     inheritance_rendering_info.stencilAttachmentFormat = VK_FORMAT_S8_UINT;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkRenderingInfoKHR begin_rendering_info = {};
     begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
@@ -10415,6 +10421,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingViewMask) {
     inheritance_rendering_info.viewMask = 0;
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkRenderingInfoKHR begin_rendering_info = {};
     begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
@@ -10449,5 +10456,292 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingViewMask) {
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewRasterizationSamples) {
+    TEST_DESCRIPTION(
+        "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching rasterization samples");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        return;
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkRenderingAttachmentInfoKHR color_attachment = {};
+    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = imageView;
+
+    VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
+
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = {};
+    inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+
+    VkRenderingInfoKHR begin_rendering_info = {};
+    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    // A pool we can reset in.
+    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        &inheritance_rendering_info,  // pNext
+        VK_NULL_HANDLE,
+        0,  // subpass
+        VK_NULL_HANDLE,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+
+    // color samples mismatch
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pNext-06035");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+
+    VkImageObj depthStencilImage(m_device);
+    auto depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
+    if (!depth_stencil_format) {
+        printf("%s Couldn't depth stencil image format.\n", kSkipPrefix);
+        return;
+    }
+    depthStencilImage.Init(32, 32, 1, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL,
+                           0);
+    VkImageView depthStencilImageView =
+        depthStencilImage.targetView(depth_stencil_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfoKHR depth_stencil_attachment = {};
+    depth_stencil_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_stencil_attachment.imageView = depthStencilImageView;
+
+    begin_rendering_info.colorAttachmentCount = 0;
+    begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
+    inheritance_rendering_info.colorAttachmentCount = 0;
+    inheritance_rendering_info.depthAttachmentFormat = depth_stencil_format;
+
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    // depth samples mismatch
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pNext-06036");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+
+    begin_rendering_info.pDepthAttachment = nullptr;
+    begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
+    inheritance_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+    inheritance_rendering_info.stencilAttachmentFormat = depth_stencil_format;
+
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    // stencil samples mismatch
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pNext-06037");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewAttachmentSamples) {
+    TEST_DESCRIPTION(
+        "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching that has mismatching "
+        "attachment samples");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        return;
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    bool amd_samples = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
+        amd_samples = true;
+    }
+
+    bool nv_samples = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
+        nv_samples = true;
+    }
+
+    if (!amd_samples && !nv_samples) {
+        printf("%s Test requires either VK_AMD_mixed_attachment_samples or VK_NV_framebuffer_mixed_samples, skipping\n",
+               kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkRenderingAttachmentInfoKHR color_attachment = {};
+    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = imageView;
+
+    VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
+
+    VkSampleCountFlagBits counts = {VK_SAMPLE_COUNT_2_BIT};
+    auto samples_info = LvlInitStruct<VkAttachmentSampleCountInfoAMD>();
+    samples_info.colorAttachmentCount = 1;
+    samples_info.pColorAttachmentSamples = &counts;
+
+    auto inheritance_rendering_info = LvlInitStruct<VkCommandBufferInheritanceRenderingInfoKHR>(&samples_info);
+    inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkRenderingInfoKHR begin_rendering_info = {};
+    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    // A pool we can reset in.
+    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        &inheritance_rendering_info,  // pNext
+        VK_NULL_HANDLE,
+        0,  // subpass
+        VK_NULL_HANDLE,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+
+    // color samples mismatch
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pNext-06032");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+
+    VkImageObj depthStencilImage(m_device);
+    auto depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
+    if (!depth_stencil_format) {
+        printf("%s Couldn't depth stencil image format.\n", kSkipPrefix);
+        return;
+    }
+    depthStencilImage.Init(32, 32, 1, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL,
+                           0);
+    VkImageView depthStencilImageView =
+        depthStencilImage.targetView(depth_stencil_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfoKHR depth_stencil_attachment = {};
+    depth_stencil_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_stencil_attachment.imageView = depthStencilImageView;
+
+    samples_info.colorAttachmentCount = 0;
+    samples_info.pColorAttachmentSamples = nullptr;
+    begin_rendering_info.colorAttachmentCount = 0;
+    begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
+    inheritance_rendering_info.colorAttachmentCount = 0;
+    inheritance_rendering_info.depthAttachmentFormat = depth_stencil_format;
+    samples_info.depthStencilAttachmentSamples = VK_SAMPLE_COUNT_2_BIT;
+
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    // depth samples mismatch
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pNext-06033");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+
+    begin_rendering_info.pDepthAttachment = nullptr;
+    begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
+    inheritance_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+    inheritance_rendering_info.stencilAttachmentFormat = depth_stencil_format;
+
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    // stencil samples mismatch
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pNext-06034");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+
     m_commandBuffer->end();
 }
