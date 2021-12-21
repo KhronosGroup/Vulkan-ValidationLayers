@@ -2503,3 +2503,51 @@ TEST_F(VkLayerTest, TestCreatingSwapchainWithInvalidExtent) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TestSurfaceQueryImageCompressionControlWithoutExtension) {
+    TEST_DESCRIPTION("Test querying surface image compression control without extension.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
+        printf("%s get surface capabilities2 extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // keep going even control extension is not supported.
+    AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
+
+    auto image_compression_control = LvlInitStruct<VkPhysicalDeviceImageCompressionControlFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&image_compression_control);
+
+    ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
+
+    if (image_compression_control.imageCompressionControl) {
+        // disable imageCompressionControl feature;
+        image_compression_control.imageCompressionControl = VK_FALSE;
+        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    } else {
+        ASSERT_NO_FATAL_FAILURE(InitState());
+    }
+
+    if (!InitSurface()) {
+        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceSurfaceFormats2KHR vkGetPhysicalDeviceSurfaceFormats2KHR =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormats2KHR>(vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfaceFormats2KHR"));
+
+    auto compression_properties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
+    auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>(&compression_properties);
+    surface_info.surface = m_surface;
+    uint32_t count;
+
+    // get compression control properties even of VK_EXT_image_compression_control extension is disabled(or is not supported).
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext");
+    vkGetPhysicalDeviceSurfaceFormats2KHR(gpu(), &surface_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+}

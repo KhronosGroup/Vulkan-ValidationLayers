@@ -15788,3 +15788,249 @@ TEST_F(VkLayerTest, InvalidVkSparseImageMemoryBind) {
     m_errorMonitor->VerifyFound();
     image_bind.offset.z = 0u;
 }
+
+TEST_F(VkLayerTest, InvalidImageCompressionControl) {
+    TEST_DESCRIPTION("Checks image compression controls with invalid parameters.");
+
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
+    if (version < VK_API_VERSION_1_2) {
+        printf("%s At least Vulkan version 1.2 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
+
+    auto image_compression_control = LvlInitStruct<VkPhysicalDeviceImageCompressionControlFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&image_compression_control);
+
+    ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s test requires %s Extension\n", kSkipPrefix, VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
+        return;
+    }
+
+    if (!image_compression_control.imageCompressionControl) {
+        printf("%s Test requires (unsupported) imageCompressionControl , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    auto vkGetImageSubresourceLayout2EXT =
+        reinterpret_cast<PFN_vkGetImageSubresourceLayout2EXT>(vk::GetInstanceProcAddr(instance(), "vkGetImageSubresourceLayout2EXT"));
+    ASSERT_TRUE(vkGetImageSubresourceLayout2EXT != nullptr);
+
+    const bool multi_plane_extensions = CanEnableDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+
+    // A bit set flag bit
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    {
+        auto compression_control = LvlInitStruct<VkImageCompressionControlEXT>();  // specify the desired compression settings
+        compression_control.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_DEFAULT_EXT | VK_IMAGE_COMPRESSION_DISABLED_EXT;
+
+        auto image_create_info = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                               VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_LINEAR);
+        image_create_info.pNext = &compression_control;
+
+        CreateImageTest(*this, &image_create_info, "VUID-VkImageCompressionControlEXT-flags-06747");
+    }
+
+    // Explicit Fixed Rate
+    {
+        auto compression_control = LvlInitStruct<VkImageCompressionControlEXT>();  // specify the desired compression settings
+        compression_control.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT;
+        compression_control.pFixedRateFlags = nullptr;
+
+        auto image_create_info = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                               VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
+        image_create_info.pNext = &compression_control;
+
+        CreateImageTest(*this, &image_create_info, "VUID-VkImageCompressionControlEXT-flags-06748");
+    }
+
+    // Image creation lambda
+    const auto create_compressed_image = [&](VkFormat format, VkImageTiling imageTiling, VkImageObj &image) -> bool {
+        auto compression_control = LvlInitStruct<VkImageCompressionControlEXT>();  // specify the desired compression settings
+        compression_control.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_DEFAULT_EXT;
+
+        auto image_create_info = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format,
+                                                               VK_IMAGE_USAGE_TRANSFER_SRC_BIT, imageTiling);
+        image_create_info.pNext = &compression_control;
+
+        bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+
+        if (supported) {
+            image.init(&image_create_info);
+        }
+
+        return supported;
+    };
+
+    // Image Tiling Mode
+    {
+        VkImageObj image(m_device);
+        if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, image)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-image-00996");
+            VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
+            subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
+
+            VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
+            VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
+
+            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // Exceed MipmapLevel
+    {
+        VkImageObj image(m_device);
+        if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                                 "VUID-vkGetImageSubresourceLayout2EXT-mipLevel-01716");
+            VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
+            subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0};
+
+            VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
+            VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
+
+            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // Exceed ArrayLayers
+    {
+        VkImageObj image(m_device);
+        if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                                 "VUID-vkGetImageSubresourceLayout2EXT-arrayLayer-01717");
+            VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
+            subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1};
+
+            VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
+            VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
+
+            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // Color format aspect
+    {
+        VkImageObj image(m_device);
+        if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                                 "VUID-vkGetImageSubresourceLayout2EXT-format-04461");
+            VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
+            subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0};
+
+            VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
+            VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
+
+            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // Depth format, Stencil aspect
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
+    if (depth_format != VK_FORMAT_UNDEFINED) {
+        VkImageObj image(m_device);
+        if (create_compressed_image(depth_format, VK_IMAGE_TILING_LINEAR, image)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-04462");
+            VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
+            subresource.imageSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0};
+
+            VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
+            VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
+
+            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // Stencil format, Depth aspect
+    const VkFormat stencil_format = FindSupportedStencilOnlyFormat(gpu());
+    if (stencil_format != VK_FORMAT_UNDEFINED) {
+        VkImageObj image(m_device);
+        if (create_compressed_image(stencil_format, VK_IMAGE_TILING_LINEAR, image)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-04463");
+            VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
+            subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0};
+
+            VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
+            VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
+
+            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // AspectMask should be a bitset
+    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
+    if (stencil_format != VK_FORMAT_UNDEFINED) {
+        VkImageObj image(m_device);
+        if (create_compressed_image(depth_stencil_format, VK_IMAGE_TILING_LINEAR, image)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-aspectMask-00997");
+            VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
+            subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0};
+
+            VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
+            VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
+
+            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // Depth/Stencil format aspect
+    {
+        VkImageObj image(m_device);
+        if (create_compressed_image(VK_FORMAT_R8G8B8A8_SNORM, VK_IMAGE_TILING_LINEAR, image)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-04461");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-04464");
+            VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
+            subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0};
+
+            VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
+            VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
+
+            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // 2 plane format
+    const VkFormat two_plane_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
+    if (multi_plane_extensions) {
+        VkImageObj image(m_device);
+        if (create_compressed_image(two_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-01581");
+            VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
+            subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 0};
+
+            VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
+            VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
+
+            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // 3 plane format
+    const VkFormat three_plane_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
+    if (multi_plane_extensions) {
+        VkImageObj image(m_device);
+        if (create_compressed_image(three_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-01582");
+            VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
+            subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
+
+            VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
+            VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
+
+            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+}

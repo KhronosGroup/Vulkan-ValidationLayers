@@ -2562,3 +2562,87 @@ TEST_F(VkPositiveLayerTest, PlaneAspectNone) {
     vk::GetDeviceImageMemoryRequirements(device(), &image_mem_reqs, &mem_reqs_2);
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, ImageCompressionControl) {
+    TEST_DESCRIPTION("Checks for creating fixed rate compression image.");
+
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
+    if (version < VK_API_VERSION_1_2) {
+        printf("%s At least Vulkan version 1.2 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+    auto image_compression_control = LvlInitStruct<VkPhysicalDeviceImageCompressionControlFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&image_compression_control);
+
+    ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s test requires %s and %s Extension\n", kSkipPrefix, VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    if (!image_compression_control.imageCompressionControl) {
+        printf("%s Test requires (unsupported) imageCompressionControl , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    m_errorMonitor->ExpectSuccess();
+
+    // Query possible image format with vkGetPhysicalDeviceImageFormatProperties2KHR
+    auto image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>();
+    image_format_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_format_info.tiling = VK_IMAGE_TILING_LINEAR;
+    image_format_info.type = VK_IMAGE_TYPE_2D;
+    image_format_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+    auto compression_properties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
+    auto image_format_properties = LvlInitStruct<VkImageFormatProperties2>(&compression_properties);
+
+    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
+
+    auto image_ci = vk_testing::Image::create_info();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.tiling = VK_IMAGE_TILING_LINEAR;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    // Create with fixed rate compression image
+    {
+        auto compressionControl = LvlInitStruct<VkImageCompressionControlEXT>();
+        compressionControl.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_DEFAULT_EXT;
+        image_ci.pNext = &compressionControl;
+
+        vk_testing::Image image(*m_device, image_ci);
+    }
+
+    // Create with fixed rate compression image
+    if (compression_properties.imageCompressionFixedRateFlags != VK_IMAGE_COMPRESSION_FIXED_RATE_NONE_EXT) {
+        VkImageCompressionFixedRateFlagsEXT supported_compression_fixed_rate = VK_IMAGE_COMPRESSION_FIXED_RATE_NONE_EXT;
+
+        for (uint32_t index = 0; index < 32; index++) {
+            if ((compression_properties.imageCompressionFixedRateFlags & (1 << index)) != 0) {
+                supported_compression_fixed_rate = (1 << index);
+                break;
+            }
+        }
+
+        ASSERT_TRUE(supported_compression_fixed_rate != VK_IMAGE_COMPRESSION_FIXED_RATE_NONE_EXT);
+
+        VkImageCompressionFixedRateFlagsEXT fixedRageFlags = supported_compression_fixed_rate;
+        auto compressionControl = LvlInitStruct<VkImageCompressionControlEXT>();
+        compressionControl.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT;
+        compressionControl.pFixedRateFlags = &fixedRageFlags;
+        compressionControl.compressionControlPlaneCount = 1;
+        image_ci.pNext = &compressionControl;
+
+        vk_testing::Image image(*m_device, image_ci);
+    }
+
+    m_errorMonitor->VerifyNotFound();
+}
