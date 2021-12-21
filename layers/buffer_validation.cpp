@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2022 Valve Corporation
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
- * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3354,7 +3354,9 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         const uint32_t renderpass_attachment_count = renderpass_create_info->attachmentCount;
         const VkSubpassDescription2 *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
         const auto *framebuffer = cb_node->activeFramebuffer.get();
-        const auto &render_area = cb_node->activeRenderPassBeginInfo.renderArea;
+        const auto &render_area = (cb_node->activeRenderPass->use_dynamic_rendering) ?
+            cb_node->activeRenderPass->dynamic_rendering_begin_rendering_info.renderArea :
+            cb_node->activeRenderPassBeginInfo.renderArea;
 
         for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
             auto clear_desc = &pAttachments[attachment_index];
