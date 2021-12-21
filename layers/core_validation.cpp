@@ -13693,6 +13693,148 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                              sub_cb_state->activeRenderPass->inheritance_rendering_info.viewMask,
                                              cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask);
                         }
+
+                        // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
+                        const auto amd_sample_count = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(
+                            sub_cb_state->activeRenderPass->inheritance_rendering_info.pNext);
+
+                        if (amd_sample_count) {
+                            for (uint32_t index = 0;
+                                 index < cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount;
+                                 index++) {
+                                if (cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[index]
+                                        .imageView != VK_NULL_HANDLE) {
+                                    auto image_view_state = Get<IMAGE_VIEW_STATE>(
+                                        cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[index]
+                                            .imageView);
+
+                                    if (image_view_state->samples != amd_sample_count->pColorAttachmentSamples[index]) {
+                                        LogObjectList objlist(pCommandBuffers[i]);
+                                        objlist.add(cb_state->activeRenderPass->renderPass());
+                                        skip |= LogError(
+                                            objlist, "VUID-vkCmdExecuteCommands-pNext-06032",
+                                            "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                            "by vkCmdBeginRenderingKHR(), but "
+                                            "VkAttachmentSampleCountInfo(AMD/NV)::pColorAttachmentSamples at index (%u) "
+                                            "does "
+                                            "not match the sample count of the imageView in VkRenderingInfoKHR::pColorAttachments.",
+                                            report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                            report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(), index);
+                                    }
+                                }
+                            }
+
+                            if ((cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment != nullptr) &&
+                                cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView !=
+                                    VK_NULL_HANDLE) {
+                                auto image_view_state = Get<IMAGE_VIEW_STATE>(
+                                    cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView);
+
+                                if (image_view_state->samples != amd_sample_count->depthStencilAttachmentSamples) {
+                                    LogObjectList objlist(pCommandBuffers[i]);
+                                    objlist.add(cb_state->activeRenderPass->renderPass());
+                                    skip |= LogError(
+                                        objlist, "VUID-vkCmdExecuteCommands-pNext-06033",
+                                        "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                        "by vkCmdBeginRenderingKHR(), but "
+                                        "VkAttachmentSampleCountInfo(AMD/NV)::depthStencilAttachmentSamples does "
+                                        "not match the sample count of the imageView in VkRenderingInfoKHR::pDepthAttachment.",
+                                        report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                        report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                                }
+                            }
+
+                            if ((cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment !=
+                                 nullptr) &&
+                                cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView !=
+                                    VK_NULL_HANDLE) {
+                                auto image_view_state =
+                                    Get<IMAGE_VIEW_STATE>(cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info
+                                                              .pStencilAttachment->imageView);
+
+                                if (image_view_state->samples != amd_sample_count->depthStencilAttachmentSamples) {
+                                    LogObjectList objlist(pCommandBuffers[i]);
+                                    objlist.add(cb_state->activeRenderPass->renderPass());
+                                    skip |= LogError(
+                                        objlist, "VUID-vkCmdExecuteCommands-pNext-06034",
+                                        "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                        "by vkCmdBeginRenderingKHR(), but "
+                                        "VkAttachmentSampleCountInfo(AMD/NV)::depthStencilAttachmentSamples does "
+                                        "not match the sample count of the imageView in VkRenderingInfoKHR::pStencilAttachment.",
+                                        report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                        report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                                }
+                            }
+                        } else {
+                            for (uint32_t index = 0;
+                                 index < cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount;
+                                 index++) {
+                                if (cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[index]
+                                        .imageView != VK_NULL_HANDLE) {
+                                    auto image_view_state = Get<IMAGE_VIEW_STATE>(
+                                        cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[index]
+                                            .imageView);
+
+                                    if (image_view_state->samples !=
+                                        sub_cb_state->activeRenderPass->inheritance_rendering_info.rasterizationSamples) {
+                                        LogObjectList objlist(pCommandBuffers[i]);
+                                        objlist.add(cb_state->activeRenderPass->renderPass());
+                                        skip |= LogError(
+                                            objlist, "VUID-vkCmdExecuteCommands-pNext-06035",
+                                            "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                            "by vkCmdBeginRenderingKHR(), but the sample count of the image view at index (%u) of "
+                                            "VkRenderingInfoKHR::pColorAttachments does not match "
+                                            "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
+                                            report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                            report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(), index);
+                                    }
+                                }
+                            }
+
+                            if ((cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment != nullptr) &&
+                                cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView !=
+                                    VK_NULL_HANDLE) {
+                                auto image_view_state = Get<IMAGE_VIEW_STATE>(
+                                    cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView);
+
+                                if (image_view_state->samples !=
+                                    sub_cb_state->activeRenderPass->inheritance_rendering_info.rasterizationSamples) {
+                                    LogObjectList objlist(pCommandBuffers[i]);
+                                    objlist.add(cb_state->activeRenderPass->renderPass());
+                                    skip |= LogError(
+                                        objlist, "VUID-vkCmdExecuteCommands-pNext-06036",
+                                        "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                        "by vkCmdBeginRenderingKHR(), but the sample count of the image view for "
+                                        "VkRenderingInfoKHR::pDepthAttachment does not match "
+                                        "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
+                                        report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                        report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                                }
+                            }
+
+                            if ((cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment !=
+                                 nullptr) &&
+                                cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView !=
+                                    VK_NULL_HANDLE) {
+                                auto image_view_state =
+                                    Get<IMAGE_VIEW_STATE>(cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info
+                                                              .pStencilAttachment->imageView);
+
+                                if (image_view_state->samples !=
+                                    sub_cb_state->activeRenderPass->inheritance_rendering_info.rasterizationSamples) {
+                                    LogObjectList objlist(pCommandBuffers[i]);
+                                    objlist.add(cb_state->activeRenderPass->renderPass());
+                                    skip |= LogError(
+                                        objlist, "VUID-vkCmdExecuteCommands-pNext-06037",
+                                        "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                        "by vkCmdBeginRenderingKHR(), but the sample count of the image view for "
+                                        "VkRenderingInfoKHR::pStencilAttachment does not match "
+                                        "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
+                                        report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                        report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                                }
+                            }
+                        }
                     }
                 }
             }
