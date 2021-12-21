@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +27,7 @@
 #pragma once
 #include "base_node.h"
 #include "hash_vk_types.h"
+#include "vk_layer_utils.h"
 
 enum QueryState {
     QUERYSTATE_UNKNOWN,    // Initial state.
@@ -59,14 +60,19 @@ class QUERY_POOL_STATE : public BASE_NODE {
     VkQueryPool pool() const { return handle_.Cast<VkQueryPool>(); }
 
     void SetQueryState(uint32_t query, uint32_t perf_pass, QueryState state) {
+        auto guard = WriteLock();
         assert(query < query_states_.size());
         assert((n_performance_passes == 0 && perf_pass == 0) || (perf_pass < n_performance_passes));
         query_states_[query][perf_pass] = state;
     }
     QueryState GetQueryState(uint32_t query, uint32_t perf_pass) const {
-        assert(query < query_states_.size());
-        assert((n_performance_passes == 0 && perf_pass == 0) || (perf_pass < n_performance_passes));
-        return query_states_[query][perf_pass];
+        auto guard = ReadLock();
+        // this method can get called with invalid arguments during validation
+        if (query < query_states_.size() &&
+            ((n_performance_passes == 0 && perf_pass == 0) || (perf_pass < n_performance_passes))) {
+            return query_states_[query][perf_pass];
+        }
+        return QUERYSTATE_UNKNOWN;
     }
 
     const VkQueryPoolCreateInfo createInfo;
@@ -77,7 +83,11 @@ class QUERY_POOL_STATE : public BASE_NODE {
     const uint32_t perf_counter_index_count;
 
   private:
-    std::vector<small_vector<QueryState, 1>> query_states_;
+    ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
+    WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
+
+    std::vector<small_vector<QueryState, 1, uint32_t>> query_states_;
+    mutable ReadWriteLock lock_;
 };
 
 struct QueryObject {
