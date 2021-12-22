@@ -2843,6 +2843,9 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
             push_fragment_density_support = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
             if (push_fragment_density_support) {
                 m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
+            } else {
+                printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
+                return;
             }
         }
     }

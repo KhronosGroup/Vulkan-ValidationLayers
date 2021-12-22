@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (c) 2015-2021 Google, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2022 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -614,8 +614,10 @@ struct CreateNVRayTracingPipelineHelper {
     void InitShaderGroups();
     void InitShaderGroupsKHR();
     void InitDescriptorSetInfo();
+    void InitDescriptorSetInfoKHR();
     void InitPipelineLayoutInfo();
     void InitShaderInfo();
+    void InitShaderInfoKHR();
     void InitNVRayTracingPipelineInfo();
     void InitKHRRayTracingPipelineInfo();
     void InitPipelineCacheInfo();
