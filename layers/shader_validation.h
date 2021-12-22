@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@
 #include "vulkan/vulkan.h"
 #include <generated/spirv_tools_commit_id.h>
 #include "shader_module.h"
+#include "vk_layer_utils.h"
 
 struct DeviceFeatures;
 struct DeviceExtensions;
@@ -39,13 +40,6 @@ struct shader_stage_attributes {
 };
 
 class ValidationCache {
-    // hashes of shaders that have passed validation before, and can be skipped.
-    // we don't store negative results, as we would have to also store what was
-    // wrong with them; also, we expect they will get fixed, so we're less
-    // likely to see them again.
-    layer_data::unordered_set<uint32_t> good_shader_hashes;
-    ValidationCache() {}
-
   public:
     static VkValidationCacheEXT Create(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
         auto cache = new ValidationCache();
@@ -67,15 +61,16 @@ class ValidationCache {
 
         data = (uint32_t const *)(reinterpret_cast<uint8_t const *>(data) + headerSize);
 
+        auto guard = WriteLock();
         for (; size < pCreateInfo->initialDataSize; data++, size += sizeof(uint32_t)) {
-            good_shader_hashes.insert(*data);
+            good_shader_hashes_.insert(*data);
         }
     }
 
     void Write(size_t *pDataSize, void *pData) {
         const auto headerSize = 2 * sizeof(uint32_t) + VK_UUID_SIZE;  // 4 bytes for header size + 4 bytes for version number + UUID
         if (!pData) {
-            *pDataSize = headerSize + good_shader_hashes.size() * sizeof(uint32_t);
+            *pDataSize = headerSize + good_shader_hashes_.size() * sizeof(uint32_t);
             return;
         }
 
@@ -93,26 +88,41 @@ class ValidationCache {
         Sha1ToVkUuid(SPIRV_TOOLS_COMMIT_ID, reinterpret_cast<uint8_t *>(out));
         out = (uint32_t *)(reinterpret_cast<uint8_t *>(out) + VK_UUID_SIZE);
 
-        for (auto it = good_shader_hashes.begin(); it != good_shader_hashes.end() && actualSize < *pDataSize;
-             it++, out++, actualSize += sizeof(uint32_t)) {
-            *out = *it;
+        {
+            auto guard = ReadLock();
+            for (auto it = good_shader_hashes_.begin(); it != good_shader_hashes_.end() && actualSize < *pDataSize;
+                 it++, out++, actualSize += sizeof(uint32_t)) {
+                *out = *it;
+            }
         }
 
         *pDataSize = actualSize;
     }
 
     void Merge(ValidationCache const *other) {
-        good_shader_hashes.reserve(good_shader_hashes.size() + other->good_shader_hashes.size());
-        for (auto h : other->good_shader_hashes) good_shader_hashes.insert(h);
+        auto other_guard = other->ReadLock();
+        auto guard = WriteLock();
+        good_shader_hashes_.reserve(good_shader_hashes_.size() + other->good_shader_hashes_.size());
+        for (auto h : other->good_shader_hashes_) good_shader_hashes_.insert(h);
     }
 
     static uint32_t MakeShaderHash(VkShaderModuleCreateInfo const *smci);
 
-    bool Contains(uint32_t hash) { return good_shader_hashes.count(hash) != 0; }
+    bool Contains(uint32_t hash) {
+        auto guard = ReadLock();
+        return good_shader_hashes_.count(hash) != 0;
+    }
 
-    void Insert(uint32_t hash) { good_shader_hashes.insert(hash); }
+    void Insert(uint32_t hash) {
+        auto guard = WriteLock();
+        good_shader_hashes_.insert(hash);
+    }
 
   private:
+    ValidationCache() {}
+    ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
+    WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
+
     void Sha1ToVkUuid(const char *sha1_str, uint8_t *uuid) {
         // Convert sha1_str from a hex string to binary. We only need VK_UUID_SIZE bytes of
         // output, so pad with zeroes if the input string is shorter than that, and truncate
@@ -131,6 +141,13 @@ class ValidationCache {
             uuid[i] = static_cast<uint8_t>(std::strtoul(byte_str, nullptr, 16));
         }
     }
+
+    // hashes of shaders that have passed validation before, and can be skipped.
+    // we don't store negative results, as we would have to also store what was
+    // wrong with them; also, we expect they will get fixed, so we're less
+    // likely to see them again.
+    layer_data::unordered_set<uint32_t> good_shader_hashes_;
+    mutable ReadWriteLock lock_;
 };
 
 spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4);
