@@ -168,20 +168,21 @@ class PIPELINE_STATE : public BASE_NODE {
     union CreateInfo {
         CreateInfo(const VkGraphicsPipelineCreateInfo *ci, std::shared_ptr<const RENDER_PASS_STATE> rpstate) {
             bool use_color = false;
-            bool use_depth = false;
+            bool use_depth_stencil = false;
 
             if (ci->renderPass == VK_NULL_HANDLE) {
                 auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfo>(ci->pNext);
                 if (dynamic_rendering) {
                     use_color = (dynamic_rendering->colorAttachmentCount > 0);
-                    use_depth = (dynamic_rendering->depthAttachmentFormat != VK_FORMAT_UNDEFINED);
+                    use_depth_stencil = (dynamic_rendering->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
+                                        (dynamic_rendering->stencilAttachmentFormat != VK_FORMAT_UNDEFINED);
                 }
             } else {
                 use_color = rpstate->UsesColorAttachment(ci->subpass);
-                use_depth = rpstate->UsesDepthStencilAttachment(ci->subpass);
+                use_depth_stencil = rpstate->UsesDepthStencilAttachment(ci->subpass);
             }
 
-            graphics.initialize(ci, use_color, use_depth);
+            graphics.initialize(ci, use_color, use_depth_stencil);
         }
         CreateInfo(const VkComputePipelineCreateInfo *ci) : compute(ci) {}
         CreateInfo(const VkRayTracingPipelineCreateInfoKHR *ci) : raytracing(ci) {}

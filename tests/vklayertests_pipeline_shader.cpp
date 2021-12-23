@@ -15523,6 +15523,9 @@ TEST_F(VkLayerTest, InvalidPipelineRenderingParameters) {
     pipe.InitGraphicsPipelineCreateInfo(&create_info);
     create_info.pNext = &pipeline_rendering_info;
 
+    auto depth_stencil_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    create_info.pDepthStencilState = &depth_stencil_state;
+
     VkFormat depth_format = VK_FORMAT_X8_D24_UNORM_PACK32;
 
     if (ImageFormatAndFeaturesSupported(gpu_, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
