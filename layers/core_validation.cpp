@@ -2641,11 +2641,32 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
     const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
     if (rendering_struct) {
+        if ((pPipeline->active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) &&
+            ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
+             (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) &&
+             (create_info.pDepthStencilState == nullptr)) {
+            skip |= LogError(
+                device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06053",
+                "vkCreateGraphicsPipelines(): Pipeline %" PRIu32
+                " has fragment state and a depth format (%s) or stencil format (%s) and an invalid pDepthStencilState structure",
+                pipelineIndex, string_VkFormat(rendering_struct->depthAttachmentFormat),
+                string_VkFormat(rendering_struct->stencilAttachmentFormat));
+        }
+
+        if ((pPipeline->active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) &&
+            (rendering_struct->colorAttachmentCount != 0) &&
+            (create_info.pColorBlendState == nullptr)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06054",
+                             "vkCreateGraphicsPipelines(): Pipeline %" PRIu32 " has VkPipelineRenderingCreateInfoKHR::colorAttachmentCount (%" PRIu32
+                             ") and an invalid pColorBlendState structure",
+                             pipelineIndex, rendering_struct->colorAttachmentCount);
+        }
+
         if ((rendering_struct->viewMask != 0) && !enabled_features.multiview_features.multiviewTessellationShader &&
             (pPipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
              pPipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06057",
-                             "Pipeline %" PRIu32 " has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
+                             "vkCreateGraphicsPipelines(): Pipeline %" PRIu32 " has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
                              ") and "
                              "multiviewTessellationShader is not enabled, contains tesselation shaders",
                              pipelineIndex, rendering_struct->viewMask);
@@ -2654,7 +2675,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         if ((rendering_struct->viewMask != 0) && !enabled_features.multiview_features.multiviewGeometryShader &&
             (pPipeline->active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT)) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06058",
-                             "Pipeline %" PRIu32 " has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
+                             "vkCreateGraphicsPipelines(): Pipeline %" PRIu32 " has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
                              ") and "
                              "multiviewGeometryShader is not enabled, contains geometry shader",
                              pipelineIndex, rendering_struct->viewMask);
@@ -2662,7 +2683,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
         if ((pPipeline->create_info.graphics.pColorBlendState != nullptr) &&
             (rendering_struct->colorAttachmentCount != pPipeline->create_info.graphics.pColorBlendState->attachmentCount)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06060",
+            skip |= LogError(device, "vkCreateGraphicsPipelines(): VUID-VkGraphicsPipelineCreateInfo-renderPass-06060",
                 "Pipeline %" PRIu32 " interface pColorBlendState->attachmentCount %" PRIu32 " and "
                 "VkPipelineRenderingCreateInfoKHR->colorAttachmentCount %" PRIu32 " must be equal",
                 pipelineIndex, rendering_struct->colorAttachmentCount, pPipeline->create_info.graphics.pColorBlendState->attachmentCount);
@@ -2672,10 +2693,11 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             const VkFormat color_format = rendering_struct->pColorAttachmentFormats[color_index];
             if (color_format != VK_FORMAT_UNDEFINED) {
                 VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(color_format);
-                if (((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT_KHR) == 0) &&
-                     (pPipeline->create_info.graphics.pColorBlendState->pAttachments[color_index].blendEnable != VK_FALSE)) {
+                if (((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) &&
+                    (pPipeline->create_info.graphics.pColorBlendState &&
+                     pPipeline->create_info.graphics.pColorBlendState->pAttachments[color_index].blendEnable != VK_FALSE)) {
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062",
-                        "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                        "vkCreateGraphicsPipelines(): vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
                         "]: pColorBlendState->blendEnable must be false ",
                         pipelineIndex);
                 }
@@ -6813,9 +6835,65 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
     auto fragment_density_map_attachment_info = LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext);
     if (fragment_density_map_attachment_info) {
+        if (!enabled_features.fragment_density_map_features.fragmentDensityMapNonSubsampledImages) {
+            for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
+                if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
+                    auto image_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[j].imageView);
+                    if (!(image_view_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT)) {
+                        skip |= LogError(
+                            commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06107",
+                            "vkCmdBeginRenderingKHR(): color image must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
+                    }
+                }
+            }
+
+            if (pRenderingInfo->pDepthAttachment && (pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE)) {
+                auto depth_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pDepthAttachment->imageView);
+                if (!(depth_view_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT)) {
+                    skip |=
+                        LogError(commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06107",
+                                 "vkCmdBeginRenderingKHR(): depth image must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
+                }
+            }
+
+            if (pRenderingInfo->pStencilAttachment && (pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE)) {
+                auto stencil_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pStencilAttachment->imageView);
+                if (!(stencil_view_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT)) {
+                    skip |=
+                        LogError(commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06107",
+                                 "vkCmdBeginRenderingKHR(): stencil image must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
+                }
+            }
+        }
+
         if (UniqueImageViews(pRenderingInfo, fragment_density_map_attachment_info->imageView) == false) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06116",
-                "%s(): imageView or resolveImageView member of pDepthAttachment, pStencilAttachment, or any element of pColorAttachments must not equal VkRenderingFragmentDensityMapAttachmentInfoEXT->imageView", func_name);
+            skip |= LogError(
+                commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06116",
+                "vkCmdBeginRenderingKHR(): imageView or resolveImageView member of pDepthAttachment, pStencilAttachment, or any"
+                "element of pColorAttachments must not equal VkRenderingFragmentDensityMapAttachmentInfoEXT->imageView");
+        }
+
+        if (fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
+            auto fragment_density_map_view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
+
+            if ((pRenderingInfo->viewMask == 0) &&
+                (fragment_density_map_view_state->create_info.subresourceRange.layerCount != 1)) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06109",
+                                 "vkCmdBeginRenderingKHR(): imageView of VkRenderingFragmentDensityMapAttachmentInfoEXT must "
+                                 "have a laycount ("
+                                 "%" PRIu32 ") equal to 1 when viewMask is equal to 0",
+                                 fragment_density_map_view_state->create_info.subresourceRange.layerCount);
+            }
+
+            if ((pRenderingInfo->viewMask != 0) && (fragment_density_map_view_state->create_info.subresourceRange.layerCount <
+                                                    MostSignificantBit(pRenderingInfo->viewMask))) {
+                skip |=
+                    LogError(commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06108",
+                             "vkCmdBeginRenderingKHR(): imageView of VkRenderingFragmentDensityMapAttachmentInfoEXT must "
+                             "have a laycount ("
+                             "%" PRIu32 ") greater than or equal to the most significant bit in viewMask (%" PRIu32 ")",
+                             fragment_density_map_view_state->create_info.subresourceRange.layerCount, pRenderingInfo->viewMask);
+            }
         }
     }
 
@@ -7201,6 +7279,11 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
     if (pAttachment->imageView != VK_NULL_HANDLE) {
         auto image_view_state = Get<IMAGE_VIEW_STATE>(pAttachment->imageView);
 
+        if (pAttachment->imageLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfoKHR-imageView-06145",
+                             "vkCmdBeginRenderingKHR(): ImageLayout must not be VK_IMAGE_LAYOUT_PRESENT_SRC_KHR");
+        }
+
         if ((!FormatIsSINT(image_view_state->create_info.format) && !FormatIsUINT(image_view_state->create_info.format)) &&
             !(pAttachment->resolveMode == VK_RESOLVE_MODE_NONE || pAttachment->resolveMode == VK_RESOLVE_MODE_AVERAGE_BIT)) {
             skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06129",
@@ -7236,13 +7319,19 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
         }
 
         auto resolve_view_state = Get<IMAGE_VIEW_STATE>(pAttachment->resolveImageView);
-        if (pAttachment->resolveMode != VK_RESOLVE_MODE_NONE && resolve_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06133",
+        if (resolve_view_state && (pAttachment->resolveMode != VK_RESOLVE_MODE_NONE) &&
+            (resolve_view_state->samples != VK_SAMPLE_COUNT_1_BIT)) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfoKHR-imageView-06133",
                              "resolveImageView sample count must have a VK_SAMPLE_COUNT_1_BIT for Resolve Mode %s",
                              string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
         }
 
         if (pAttachment->resolveMode != VK_RESOLVE_MODE_NONE) {
+            if (pAttachment->resolveImageLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfoKHR-imageView-06146",
+                                 "vlCmdBeginRenderingKHR(): resolveImageLayout must not be VK_IMAGE_LAYOUT_PRESENT_SRC_KHR");
+            }
+
             if (pAttachment->resolveImageLayout == VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06144",
                     "%s(): resolveImageLayout must not be VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR", func_name);
@@ -7258,8 +7347,8 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
                     "%s(): resolveImageLayout must not be VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR", func_name);
             }
 
-            if (image_view_state->create_info.format != resolve_view_state->create_info.format) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06134",
+            if (resolve_view_state && (image_view_state->create_info.format != resolve_view_state->create_info.format)) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfoKHR-imageView-06134",
                                  "resolveImageView format (%u) and ImageView format (%u) must have the same VkFormat",
                                  resolve_view_state->create_info.format, image_view_state->create_info.format);
             }
