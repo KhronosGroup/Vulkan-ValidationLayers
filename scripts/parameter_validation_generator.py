@@ -266,6 +266,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdSetDiscardRectangleEXT',
             'vkGetQueryPoolResults',
             'vkCmdBeginConditionalRenderingEXT',
+            'vkCreateWin32SurfaceKHR'
             ]
 
         # Commands to ignore

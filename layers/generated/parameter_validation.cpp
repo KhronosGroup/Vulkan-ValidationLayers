@@ -9664,6 +9664,7 @@ bool StatelessValidation::PreCallValidateCreateWin32SurfaceKHR(
         }
     }
     skip |= validate_required_pointer("vkCreateWin32SurfaceKHR", "pSurface", pSurface, "VUID-vkCreateWin32SurfaceKHR-pSurface-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     return skip;
 }
 
