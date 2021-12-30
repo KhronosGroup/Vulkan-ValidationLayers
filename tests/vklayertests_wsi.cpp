@@ -2420,3 +2420,26 @@ TEST_F(VkLayerTest, TestvkAcquireFullScreenExclusiveModeEXT) {
 #endif
 }
 #endif
+
+TEST_F(VkLayerTest, TestCreatingWin32Surface) {
+    TEST_DESCRIPTION("Test creating win32 surface with invalid hwnd");
+
+#ifndef VK_USE_PLATFORM_WIN32_KHR
+    printf("%s test not supported on platform, skipping test.\n", kSkipPrefix);
+#else
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkWin32SurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkWin32SurfaceCreateInfoKHR>();
+    surface_create_info.hinstance = GetModuleHandle(0);
+    surface_create_info.hwnd = NULL; // Invalid
+
+    VkSurfaceKHR surface;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWin32SurfaceCreateInfoKHR-hwnd-01308");
+    vk::CreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+    m_errorMonitor->VerifyFound();
+#endif
+}
