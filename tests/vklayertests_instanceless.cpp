@@ -253,14 +253,12 @@ TEST_F(VkLayerTest, DestroyInstanceHandleLeak) {
     ASSERT_EQ(physical_device_count, 1);
 
     float dqci_priorities[] = {1.0};
-    VkDeviceQueueCreateInfo dqci = {};
-    dqci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    VkDeviceQueueCreateInfo dqci = LvlInitStruct<VkDeviceQueueCreateInfo>();
     dqci.queueFamilyIndex = 0;
     dqci.queueCount = 1;
     dqci.pQueuePriorities = dqci_priorities;
 
-    VkDeviceCreateInfo dci = {};
-    dci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    VkDeviceCreateInfo dci = LvlInitStruct<VkDeviceCreateInfo>();
     dci.queueCreateInfoCount = 1;
     dci.pQueueCreateInfos = &dqci;
 
