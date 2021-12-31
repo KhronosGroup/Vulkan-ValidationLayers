@@ -52,9 +52,7 @@ TEST_F(VkPortabilitySubsetTest, ValidatePortabilityCreateDevice) {
         }
     }
 
-    VkDeviceCreateInfo dev_info = {};
-    dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    dev_info.pNext = nullptr;
+    VkDeviceCreateInfo dev_info = LvlInitStruct<VkDeviceCreateInfo>();
     dev_info.queueCreateInfoCount = create_queue_infos.size();
     dev_info.pQueueCreateInfos = create_queue_infos.data();
     dev_info.enabledLayerCount = 0;
@@ -116,9 +114,7 @@ TEST_F(VkPortabilitySubsetTest, CreateImage) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    VkImageCreateInfo ci;
-    ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    ci.pNext = NULL;
+    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
     ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     ci.imageType = VK_IMAGE_TYPE_3D;
     ci.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -169,9 +165,7 @@ TEST_F(VkPortabilitySubsetTest, CreateImageView) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    VkImageCreateInfo imageCI;
-    imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageCI.pNext = NULL;
+    VkImageCreateInfo imageCI = LvlInitStruct<VkImageCreateInfo>();
     imageCI.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     imageCI.imageType = VK_IMAGE_TYPE_2D;
     imageCI.format = VK_FORMAT_R4G4B4A4_UNORM_PACK16;
@@ -190,9 +184,7 @@ TEST_F(VkPortabilitySubsetTest, CreateImageView) {
     VkImageObj image(m_device);
     image.init(&imageCI);
 
-    VkImageViewCreateInfo ci;
-    ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    ci.pNext = nullptr;
+    VkImageViewCreateInfo ci = LvlInitStruct<VkImageViewCreateInfo>();
     ci.flags = 0;
     ci.image = image.image();
     ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -424,8 +416,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesRasterizationState) {
     subpass.pColorAttachments = &color_ref;
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-    VkRenderPassCreateInfo rp_info{};
-    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &attachment;
     rp_info.subpassCount = 1;
@@ -590,7 +581,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VkWriteDescriptorSet descriptor_writes[2] = {};
-    descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_writes[0].dstSet = descriptor_set.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
