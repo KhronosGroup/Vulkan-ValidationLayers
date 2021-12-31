@@ -210,9 +210,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
         (PFN_vkSetPrivateDataEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkSetPrivateDataEXT");
 
     VkPrivateDataSlotEXT data_slot;
-    VkPrivateDataSlotCreateInfoEXT data_create_info;
-    data_create_info.sType = VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT;
-    data_create_info.pNext = NULL;
+    VkPrivateDataSlotCreateInfoEXT data_create_info = LvlInitStruct<VkPrivateDataSlotCreateInfoEXT>();
     data_create_info.flags = 0;
     VkResult err = pfn_vkCreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
     if (err != VK_SUCCESS) {
@@ -220,9 +218,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
     }
 
     VkSampler sampler;
-    VkSamplerCreateInfo sampler_info;
-    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler_info.pNext = NULL;
+    VkSamplerCreateInfo sampler_info = LvlInitStruct<VkSamplerCreateInfo>();
     sampler_info.flags = 0;
     sampler_info.magFilter = VK_FILTER_LINEAR;
     sampler_info.minFilter = VK_FILTER_LINEAR;
@@ -280,9 +276,7 @@ TEST_F(VkLayerTest, PrivateDataFeature) {
         (PFN_vkCreatePrivateDataSlotEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCreatePrivateDataSlotEXT");
 
     VkPrivateDataSlotEXT data_slot;
-    VkPrivateDataSlotCreateInfoEXT data_create_info;
-    data_create_info.sType = VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT;
-    data_create_info.pNext = NULL;
+    VkPrivateDataSlotCreateInfoEXT data_create_info = LvlInitStruct<VkPrivateDataSlotCreateInfoEXT>();
     data_create_info.flags = 0;
     m_errorMonitor->SetUnexpectedError("VUID-vkCreatePrivateDataSlotEXT-privateData-04564");
     vkCreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
@@ -311,8 +305,7 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     uint32_t queue_family_index = 0;
-    VkBufferCreateInfo buffer_create_info = {};
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
@@ -320,9 +313,7 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
     VkBufferObj buffer;
     buffer.init(*m_device, buffer_create_info);
     VkBufferView buffer_view;
-    VkBufferViewCreateInfo bvci = {};
-    bvci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
-    bvci.pNext = &custom_struct;  // Add custom struct through pNext
+    VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>(&custom_struct);  // Add custom struct through pNext
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
@@ -364,8 +355,7 @@ TEST_F(VkLayerTest, CustomStypeStructArray) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     uint32_t queue_family_index = 0;
-    VkBufferCreateInfo buffer_create_info = {};
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
@@ -373,9 +363,7 @@ TEST_F(VkLayerTest, CustomStypeStructArray) {
     VkBufferObj buffer;
     buffer.init(*m_device, buffer_create_info);
     VkBufferView buffer_view;
-    VkBufferViewCreateInfo bvci = {};
-    bvci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
-    bvci.pNext = &custom_struct_b;  // Add custom struct through pNext
+    VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>(&custom_struct_b);  // Add custom struct through pNext
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
@@ -653,8 +641,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     // parameter_validation::validate_flags_array
     VkSemaphore semaphore = VK_NULL_HANDLE;
     VkPipelineStageFlags stageFlags = 0;
-    VkSubmitInfo submitInfo = {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submitInfo = LvlInitStruct<VkSubmitInfo>();
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = &semaphore;
     submitInfo.pWaitDstStageMask = &stageFlags;
@@ -748,8 +735,7 @@ TEST_F(VkLayerTest, SpecLinks) {
     mutImage.init(&imageInfo);
     ASSERT_TRUE(mutImage.initialized());
 
-    VkImageViewCreateInfo imgViewInfo = {};
-    imgViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    VkImageViewCreateInfo imgViewInfo = LvlInitStruct<VkImageViewCreateInfo>();
     imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     imgViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;  // different than createImage
     imgViewInfo.subresourceRange.layerCount = 1;
@@ -824,16 +810,12 @@ TEST_F(VkLayerTest, PnextOnlyStructValidation) {
     VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_node_count];
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, queue_props);
     float priorities[] = {1.0f};
-    VkDeviceQueueCreateInfo queue_info{};
-    queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_info.pNext = NULL;
+    VkDeviceQueueCreateInfo queue_info = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_info.flags = 0;
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = 1;
     queue_info.pQueuePriorities = &priorities[0];
-    VkDeviceCreateInfo dev_info = {};
-    dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    dev_info.pNext = NULL;
+    VkDeviceCreateInfo dev_info = LvlInitStruct<VkDeviceCreateInfo>();
     dev_info.queueCreateInfoCount = 1;
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
@@ -858,8 +840,7 @@ TEST_F(VkLayerTest, ReservedParameter) {
     // Expected to trigger an error with
     // parameter_validation::validate_reserved_flags
     VkSemaphore sem_handle = VK_NULL_HANDLE;
-    VkSemaphoreCreateInfo sem_info = {};
-    sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphoreCreateInfo sem_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     sem_info.flags = 1;
     vk::CreateSemaphore(device(), &sem_info, NULL, &sem_handle);
     m_errorMonitor->VerifyFound();
@@ -901,8 +882,7 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     VkDeviceMemory memory_1, memory_2;
     std::string memory_name = "memory_name";
 
-    VkBufferCreateInfo buffer_create_info = {};
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.size = 1;
 
@@ -911,17 +891,14 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     VkMemoryRequirements memRequirements;
     vk::GetBufferMemoryRequirements(device(), buffer, &memRequirements);
 
-    VkMemoryAllocateInfo memory_allocate_info = {};
-    memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>();
     memory_allocate_info.allocationSize = memRequirements.size;
     memory_allocate_info.memoryTypeIndex = 0;
 
     vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory_1);
     vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory_2);
 
-    VkDebugMarkerObjectNameInfoEXT name_info = {};
-    name_info.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT;
-    name_info.pNext = nullptr;
+    VkDebugMarkerObjectNameInfoEXT name_info = LvlInitStruct<VkDebugMarkerObjectNameInfoEXT>();
     name_info.object = (uint64_t)memory_2;
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
     name_info.pObjectName = memory_name.c_str();
@@ -945,15 +922,13 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     std::string commandBuffer_name = "command_buffer_name";
     VkCommandPool commandpool_1;
     VkCommandPool commandpool_2;
-    VkCommandPoolCreateInfo pool_create_info{};
-    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk::CreateCommandPool(device(), &pool_create_info, nullptr, &commandpool_1);
     vk::CreateCommandPool(device(), &pool_create_info, nullptr, &commandpool_2);
 
-    VkCommandBufferAllocateInfo command_buffer_allocate_info{};
-    command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
     command_buffer_allocate_info.commandPool = commandpool_1;
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -964,8 +939,7 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     name_info.pObjectName = commandBuffer_name.c_str();
     fpvkDebugMarkerSetObjectNameEXT(device(), &name_info);
 
-    VkCommandBufferBeginInfo cb_begin_Info = {};
-    cb_begin_Info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkCommandBufferBeginInfo cb_begin_Info = LvlInitStruct<VkCommandBufferBeginInfo>();
     cb_begin_Info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vk::BeginCommandBuffer(commandBuffer, &cb_begin_Info);
 
@@ -1038,8 +1012,7 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     VkDeviceMemory memory_1, memory_2;
     std::string memory_name = "memory_name";
 
-    VkBufferCreateInfo buffer_create_info = {};
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.size = 1;
 
@@ -1048,17 +1021,14 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     VkMemoryRequirements memRequirements;
     vk::GetBufferMemoryRequirements(device(), buffer, &memRequirements);
 
-    VkMemoryAllocateInfo memory_allocate_info = {};
-    memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>();
     memory_allocate_info.allocationSize = memRequirements.size;
     memory_allocate_info.memoryTypeIndex = 0;
 
     vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory_1);
     vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory_2);
 
-    VkDebugUtilsObjectNameInfoEXT name_info = {};
-    name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    name_info.pNext = nullptr;
+    VkDebugUtilsObjectNameInfoEXT name_info = LvlInitStruct<VkDebugUtilsObjectNameInfoEXT>();
     name_info.objectType = VK_OBJECT_TYPE_DEVICE_MEMORY;
     name_info.pObjectName = memory_name.c_str();
 
@@ -1096,15 +1066,13 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     std::string commandBuffer_name = "command_buffer_name";
     VkCommandPool commandpool_1;
     VkCommandPool commandpool_2;
-    VkCommandPoolCreateInfo pool_create_info{};
-    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk::CreateCommandPool(device(), &pool_create_info, nullptr, &commandpool_1);
     vk::CreateCommandPool(device(), &pool_create_info, nullptr, &commandpool_2);
 
-    VkCommandBufferAllocateInfo command_buffer_allocate_info{};
-    command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
     command_buffer_allocate_info.commandPool = commandpool_1;
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -1115,8 +1083,7 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     name_info.pObjectName = commandBuffer_name.c_str();
     fpvkSetDebugUtilsObjectNameEXT(device(), &name_info);
 
-    VkCommandBufferBeginInfo cb_begin_Info = {};
-    cb_begin_Info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkCommandBufferBeginInfo cb_begin_Info = LvlInitStruct<VkCommandBufferBeginInfo>();
     cb_begin_Info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vk::BeginCommandBuffer(commandBuffer, &cb_begin_Info);
 
@@ -1220,18 +1187,14 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     // a structure type that is not allowed.
     // Expected to trigger an error with parameter_validation::validate_struct_pnext
     VkDeviceMemory memory = VK_NULL_HANDLE;
-    VkMemoryAllocateInfo memory_alloc_info = {};
-    memory_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memory_alloc_info.pNext = &app_info;
+    VkMemoryAllocateInfo memory_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&app_info);
     vk::AllocateMemory(device(), &memory_alloc_info, NULL, &memory);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), " chain includes a structure with unexpected VkStructureType ");
     // Same concept as above, but unlike vkAllocateMemory where VkMemoryAllocateInfo is a const
     // in vkGetPhysicalDeviceProperties2, VkPhysicalDeviceProperties2 is not a const
-    VkPhysicalDeviceProperties2 physical_device_properties2 = {};
-    physical_device_properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    physical_device_properties2.pNext = &app_info;
+    VkPhysicalDeviceProperties2 physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&app_info);
 
     vkGetPhysicalDeviceProperties2KHR(gpu(), &physical_device_properties2);
     m_errorMonitor->VerifyFound();
@@ -1269,15 +1232,13 @@ TEST_F(VkLayerTest, UnrecognizedValueBadFlag) {
     // Specify an invalid VkFlags array entry
     // Expected to trigger an error with parameter_validation::validate_flags_array
     VkSemaphore semaphore;
-    VkSemaphoreCreateInfo semaphore_create_info{};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
     // `stage_flags` is set to a value which, currently, is not a defined stage flag
     // `VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM` works well for this
     VkPipelineStageFlags stage_flags = VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM;
     // `waitSemaphoreCount` *must* be greater than 0 to perform this check
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore;
     submit_info.pWaitDstStageMask = &stage_flags;
@@ -1324,9 +1285,7 @@ TEST_F(VkLayerTest, SubmitSignaledFence) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "submitted in SIGNALED state.  Fences must be reset before being submitted");
 
-    VkFenceCreateInfo fenceInfo = {};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.pNext = NULL;
+    VkFenceCreateInfo fenceInfo = LvlInitStruct<VkFenceCreateInfo>();
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1339,9 +1298,7 @@ TEST_F(VkLayerTest, SubmitSignaledFence) {
 
     testFence.init(*m_device, fenceInfo);
 
-    VkSubmitInfo submit_info;
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.pNext = NULL;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 0;
     submit_info.pWaitSemaphores = NULL;
     submit_info.pWaitDstStageMask = NULL;
@@ -1372,21 +1329,19 @@ TEST_F(VkLayerTest, LeakAnObject) {
     ASSERT_TRUE(q_props[0].queueCount > 0);
 
     const float q_priority[] = {1.0f};
-    VkDeviceQueueCreateInfo queue_ci = {};
-    queue_ci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    VkDeviceQueueCreateInfo queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_ci.queueFamilyIndex = 0;
     queue_ci.queueCount = 1;
     queue_ci.pQueuePriorities = q_priority;
 
-    VkDeviceCreateInfo device_ci = {};
-    device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
 
     VkDevice leaky_device;
     ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_ci, nullptr, &leaky_device));
 
-    const VkFenceCreateInfo fence_ci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+    const VkFenceCreateInfo fence_ci = LvlInitStruct<VkFenceCreateInfo>();
     VkFence leaked_fence;
     ASSERT_VK_SUCCESS(vk::CreateFence(leaky_device, &fence_ci, nullptr, &leaked_fence));
 
@@ -1405,18 +1360,14 @@ TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
 
     // Create second device
     float priorities[] = {1.0f};
-    VkDeviceQueueCreateInfo queue_info{};
-    queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_info.pNext = NULL;
+    VkDeviceQueueCreateInfo queue_info = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_info.flags = 0;
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = 1;
     queue_info.pQueuePriorities = &priorities[0];
 
-    VkDeviceCreateInfo device_create_info = {};
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
     auto features = m_device->phy().features();
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pNext = NULL;
     device_create_info.queueCreateInfoCount = 1;
     device_create_info.pQueueCreateInfos = &queue_info;
     device_create_info.enabledLayerCount = 0;
@@ -1519,8 +1470,7 @@ TEST_F(VkLayerTest, MismatchedQueueFamiliesOnSubmit) {
     cmd_buff.end();
 
     // Submit on the wrong queue
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &cmd_buff.handle();
 
@@ -1576,7 +1526,8 @@ TEST_F(VkLayerTest, TemporaryExternalSemaphore) {
 
     // Create a semaphore to export payload from
     VkExportSemaphoreCreateInfoKHR esci = {VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO_KHR, nullptr, handle_type};
-    VkSemaphoreCreateInfo sci = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, &esci, 0};
+    VkSemaphoreCreateInfo sci = LvlInitStruct<VkSemaphoreCreateInfo>(&esci);
+    sci.flags = 0;
 
     VkSemaphore export_semaphore;
     err = vk::CreateSemaphore(m_device->device(), &sci, nullptr, &export_semaphore);
@@ -1688,8 +1639,9 @@ TEST_F(VkLayerTest, TemporaryExternalFence) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Check for external fence import and export capability
-    VkPhysicalDeviceExternalFenceInfoKHR efi = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO_KHR, nullptr, handle_type};
-    VkExternalFencePropertiesKHR efp = {VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES_KHR, nullptr};
+    VkPhysicalDeviceExternalFenceInfoKHR efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
+    efi.handleType = handle_type;
+    VkExternalFencePropertiesKHR efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
     auto vkGetPhysicalDeviceExternalFencePropertiesKHR = (PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR)vk::GetInstanceProcAddr(
         instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR");
     vkGetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
@@ -1785,8 +1737,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferEventDestroyed) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkEvent event;
-    VkEventCreateInfo evci = {};
-    evci.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    VkEventCreateInfo evci = LvlInitStruct<VkEventCreateInfo>();
     VkResult result = vk::CreateEvent(m_device->device(), &evci, NULL, &event);
     ASSERT_VK_SUCCESS(result);
 
@@ -1798,8 +1749,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferEventDestroyed) {
     // Destroy event dependency prior to submit to cause ERROR
     vk::DestroyEvent(m_device->device(), event, NULL);
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -1812,8 +1762,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferQueryPoolDestroyed) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo qpci{};
-    qpci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
     qpci.queryType = VK_QUERY_TYPE_TIMESTAMP;
     qpci.queryCount = 1;
     VkResult result = vk::CreateQueryPool(m_device->device(), &qpci, nullptr, &query_pool);
@@ -1827,8 +1776,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferQueryPoolDestroyed) {
     // Destroy query pool dependency prior to submit to cause ERROR
     vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -1841,15 +1789,11 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
         "Test unenabled VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME & "
         "VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME.");
 
-    VkPhysicalDeviceFeatures2 pd_features2 = {};
-    pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    pd_features2.pNext = nullptr;
+    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
-    VkDeviceCreateInfo device_create_info = {};
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pNext = &pd_features2;
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&pd_features2);
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     VkDevice testDevice;
@@ -1858,9 +1802,7 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
     vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
     m_errorMonitor->VerifyFound();
 
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = {};
-    vadf.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT;
-    vadf.pNext = nullptr;
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>();
     device_create_info.pNext = &vadf;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VK_EXT_vertex_attribute_divisor must be enabled when it creates a device");
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");
@@ -1890,21 +1832,14 @@ TEST_F(VkLayerTest, Features12AndpNext) {
         printf("%s Storage Extension(s) not supported, skipping tests\n", kSkipPrefix);
         return;
     }
-    VkPhysicalDevice16BitStorageFeatures sixteen_bit = {};
-    sixteen_bit.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES;
+    VkPhysicalDevice16BitStorageFeatures sixteen_bit = LvlInitStruct<VkPhysicalDevice16BitStorageFeatures>();
     sixteen_bit.storageBuffer16BitAccess = true;
-    VkPhysicalDeviceVulkan11Features features11 = {};
-    features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-    features11.pNext = &sixteen_bit;
+    VkPhysicalDeviceVulkan11Features features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>(&sixteen_bit);
     features11.storageBuffer16BitAccess = true;
 
-    VkPhysicalDevice8BitStorageFeatures eight_bit = {};
-    eight_bit.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES;
-    eight_bit.pNext = &features11;
+    VkPhysicalDevice8BitStorageFeatures eight_bit = LvlInitStruct<VkPhysicalDevice8BitStorageFeatures>(&features11);
     eight_bit.storageBuffer8BitAccess = true;
-    VkPhysicalDeviceVulkan12Features features12 = {};
-    features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-    features12.pNext = &eight_bit;
+    VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>(&eight_bit);
     features12.storageBuffer8BitAccess = true;
 
     vk_testing::PhysicalDevice physical_device(gpu());
@@ -1917,9 +1852,7 @@ TEST_F(VkLayerTest, Features12AndpNext) {
         }
     }
 
-    VkDeviceCreateInfo device_create_info = {};
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pNext = &features12;
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&features12);
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     VkDevice testDevice;
@@ -1963,9 +1896,7 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
     }
 
     // Explicity set all tested features to false
-    VkPhysicalDeviceVulkan12Features features12 = {};
-    features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-    features12.pNext = nullptr;
+    VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
     features12.drawIndirectCount = VK_FALSE;
     features12.samplerMirrorClampToEdge = VK_FALSE;
     features12.descriptorIndexing = VK_FALSE;
@@ -1973,8 +1904,7 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
     features12.shaderOutputViewportIndex = VK_FALSE;
     features12.shaderOutputLayer = VK_TRUE;  // Set true since both shader_viewport features need to true
 
-    VkPhysicalDeviceVulkan11Features features11 = {};
-    features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+    VkPhysicalDeviceVulkan11Features features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
     features11.pNext = (test_1_2 == true) ? &features12 : nullptr;
     features11.shaderDrawParameters = VK_FALSE;
 
@@ -2012,9 +1942,7 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
         m_errorMonitor->SetUnexpectedError("VUID-VkDeviceCreateInfo-pNext-pNext");
     }
 
-    VkDeviceCreateInfo device_create_info = {};
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pNext = &features11;
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&features11);
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.ppEnabledExtensionNames = device_extensions.data();
@@ -2073,9 +2001,7 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
         }
     }
 
-    VkDeviceCreateInfo device_create_info = {};
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pNext = &features2;
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&features2);
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.ppEnabledExtensionNames = device_extensions.data();
@@ -2127,9 +2053,7 @@ TEST_F(VkLayerTest, FeaturesMultiview) {
         }
     }
 
-    VkDeviceCreateInfo device_create_info = {};
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pNext = &features2;
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&features2);
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.ppEnabledExtensionNames = device_extensions.data();
@@ -2157,15 +2081,13 @@ TEST_F(VkLayerTest, BeginQueryOnTimestampPool) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_create_info{};
-    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-02804");
-    VkCommandBufferBeginInfo begin_info{};
-    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
 
     vk::BeginCommandBuffer(m_commandBuffer->handle(), &begin_info);
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
@@ -2198,9 +2120,7 @@ TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
         return;
     }
 
-    VkValidationCacheCreateInfoEXT validationCacheCreateInfo;
-    validationCacheCreateInfo.sType = VK_STRUCTURE_TYPE_VALIDATION_CACHE_CREATE_INFO_EXT;
-    validationCacheCreateInfo.pNext = NULL;
+    VkValidationCacheCreateInfoEXT validationCacheCreateInfo = LvlInitStruct<VkValidationCacheCreateInfoEXT>();
     validationCacheCreateInfo.initialDataSize = 0;
     validationCacheCreateInfo.pInitialData = NULL;
     validationCacheCreateInfo.flags = 0;
@@ -2224,8 +2144,7 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    VkBufferCreateInfo buffCI = {};
-    buffCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buffCI = LvlInitStruct<VkBufferCreateInfo>();
     buffCI.size = 1024;
     buffCI.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffCI.queueFamilyIndexCount = 2;
@@ -2275,13 +2194,11 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
         return;
     }
     std::vector<float> priorities(queue_props->queueCount, 1.0f);
-    VkDeviceQueueCreateInfo queue_info = {};
-    queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    VkDeviceQueueCreateInfo queue_info = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = queue_props->queueCount;
     queue_info.pQueuePriorities = priorities.data();
-    VkDeviceCreateInfo dev_info{};
-    dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    VkDeviceCreateInfo dev_info = LvlInitStruct<VkDeviceCreateInfo>();
     dev_info.queueCreateInfoCount = 1;
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
@@ -2310,12 +2227,10 @@ TEST_F(VkLayerTest, InvalidQueryPoolCreate) {
     vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
 
     VkDevice local_device;
-    VkDeviceCreateInfo device_create_info = {};
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
     auto features = m_device->phy().features();
     // Intentionally disable pipeline stats
     features.pipelineStatisticsQuery = VK_FALSE;
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pNext = NULL;
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.enabledLayerCount = 0;
@@ -2324,8 +2239,7 @@ TEST_F(VkLayerTest, InvalidQueryPoolCreate) {
     VkResult err = vk::CreateDevice(gpu(), &device_create_info, nullptr, &local_device);
     ASSERT_VK_SUCCESS(err);
 
-    VkQueryPoolCreateInfo qpci{};
-    qpci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
     qpci.queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS;
     qpci.queryCount = 1;
     VkQueryPool query_pool;
@@ -2367,8 +2281,7 @@ TEST_F(VkLayerTest, InvalidQuerySizes) {
 
     const uint32_t query_pool_size = 4;
     VkQueryPool occlusion_query_pool;
-    VkQueryPoolCreateInfo query_pool_create_info{};
-    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_create_info.queryCount = query_pool_size;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &occlusion_query_pool);
@@ -2457,8 +2370,7 @@ TEST_F(VkLayerTest, UnclosedAndDuplicateQueries) {
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 0, &queue);
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_create_info = {};
-    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_create_info.queryCount = 5;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
@@ -2498,16 +2410,14 @@ TEST_F(VkLayerTest, QueryPreciseBit) {
     // Test for precise bit when query type is not OCCLUSION
     if (features.occlusionQueryPrecise) {
         VkEvent event;
-        VkEventCreateInfo event_create_info{};
-        event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+        VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
         vk::CreateEvent(m_device->handle(), &event_create_info, nullptr, &event);
 
         m_commandBuffer->begin();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-00800");
 
         VkQueryPool query_pool;
-        VkQueryPoolCreateInfo query_pool_create_info = {};
-        query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+        VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
         query_pool_create_info.queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS;
         query_pool_create_info.queryCount = 3;
         query_pool_create_info.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT |
@@ -2536,16 +2446,13 @@ TEST_F(VkLayerTest, QueryPreciseBit) {
     features.occlusionQueryPrecise = false;
     VkDeviceObj test_device(0, gpu(), device_extension_names, &features);
 
-    VkCommandPoolCreateInfo pool_create_info{};
-    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = test_device.graphics_queue_node_index_;
 
     VkCommandPool command_pool;
     vk::CreateCommandPool(test_device.handle(), &pool_create_info, nullptr, &command_pool);
 
-    VkCommandBufferAllocateInfo cmd = {};
-    cmd.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cmd.pNext = NULL;
+    VkCommandBufferAllocateInfo cmd = LvlInitStruct<VkCommandBufferAllocateInfo>();
     cmd.commandPool = command_pool;
     cmd.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmd.commandBufferCount = 1;
@@ -2555,8 +2462,7 @@ TEST_F(VkLayerTest, QueryPreciseBit) {
     ASSERT_VK_SUCCESS(err);
 
     VkEvent event;
-    VkEventCreateInfo event_create_info{};
-    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk::CreateEvent(test_device.handle(), &event_create_info, nullptr, &event);
 
     VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
@@ -2566,8 +2472,7 @@ TEST_F(VkLayerTest, QueryPreciseBit) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-00800");
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_create_info = {};
-    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_create_info.queryCount = 2;
     vk::CreateQueryPool(test_device.handle(), &query_pool_create_info, nullptr, &query_pool);
@@ -2605,16 +2510,13 @@ TEST_F(VkLayerTest, StageMaskGsTsEnabled) {
     // The sacrificial device object
     VkDeviceObj test_device(0, gpu(), device_extension_names, &features);
 
-    VkCommandPoolCreateInfo pool_create_info{};
-    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = test_device.graphics_queue_node_index_;
 
     VkCommandPool command_pool;
     vk::CreateCommandPool(test_device.handle(), &pool_create_info, nullptr, &command_pool);
 
-    VkCommandBufferAllocateInfo cmd = {};
-    cmd.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cmd.pNext = NULL;
+    VkCommandBufferAllocateInfo cmd = LvlInitStruct<VkCommandBufferAllocateInfo>();
     cmd.commandPool = command_pool;
     cmd.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmd.commandBufferCount = 1;
@@ -2624,13 +2526,11 @@ TEST_F(VkLayerTest, StageMaskGsTsEnabled) {
     ASSERT_VK_SUCCESS(err);
 
     VkEvent event;
-    VkEventCreateInfo evci = {};
-    evci.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    VkEventCreateInfo evci = LvlInitStruct<VkEventCreateInfo>();
     VkResult result = vk::CreateEvent(test_device.handle(), &evci, NULL, &event);
     ASSERT_VK_SUCCESS(result);
 
-    VkCommandBufferBeginInfo cbbi = {};
-    cbbi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkCommandBufferBeginInfo cbbi = LvlInitStruct<VkCommandBufferBeginInfo>();
     vk::BeginCommandBuffer(cmd_buffer, &cbbi);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent-stageMask-04090");
     vk::CmdSetEvent(cmd_buffer, event, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT);
@@ -2650,8 +2550,7 @@ TEST_F(VkLayerTest, StageMaskHost) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkEvent event;
-    VkEventCreateInfo event_create_info{};
-    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
 
     m_commandBuffer->begin();
@@ -2666,22 +2565,19 @@ TEST_F(VkLayerTest, StageMaskHost) {
 
     m_commandBuffer->end();
 
-    VkSemaphoreCreateInfo semaphore_create_info = {};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     VkSemaphore semaphore;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
 
     VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_HOST_BIT;
-    VkSubmitInfo submit_info = {};
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
 
     // Signal the semaphore so the next test can wait on it.
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore;
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyNotFound();
 
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = nullptr;
     submit_info.waitSemaphoreCount = 1;
@@ -2724,8 +2620,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
     dyn_state_ci.pDynamicStates = dyn_states;
     pipe.dyn_state_ci_ = dyn_state_ci;
@@ -2751,8 +2646,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer to put pool in-flight
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -2796,8 +2690,7 @@ TEST_F(VkLayerTest, FramebufferInUseDestroyedSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer to put it in-flight
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -2821,9 +2714,7 @@ TEST_F(VkLayerTest, FramebufferImageInUseDestroyedSignaled) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkImageCreateInfo image_ci = {};
-    image_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_ci.pNext = NULL;
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_ci.extent.width = 256;
@@ -2854,8 +2745,7 @@ TEST_F(VkLayerTest, FramebufferImageInUseDestroyedSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer to put it (and attached imageView) in-flight
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     // Submit cmd buffer to put framebuffer and children in-flight
@@ -2878,16 +2768,14 @@ TEST_F(VkLayerTest, EventInUseDestroyedSignaled) {
     m_commandBuffer->begin();
 
     VkEvent event;
-    VkEventCreateInfo event_create_info = {};
-    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
     vk::CmdSetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
     m_commandBuffer->end();
     vk::DestroyEvent(m_device->device(), event, nullptr);
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "that is invalid because bound");
@@ -2905,12 +2793,10 @@ TEST_F(VkLayerTest, InUseDestroyedSignaled) {
 
     m_errorMonitor->ExpectSuccess();
 
-    VkSemaphoreCreateInfo semaphore_create_info = {};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     VkSemaphore semaphore;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
-    VkFenceCreateInfo fence_create_info = {};
-    fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
     VkFence fence;
     ASSERT_VK_SUCCESS(vk::CreateFence(m_device->device(), &fence_create_info, nullptr, &fence));
 
@@ -2925,8 +2811,7 @@ TEST_F(VkLayerTest, InUseDestroyedSignaled) {
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     VkEvent event;
-    VkEventCreateInfo event_create_info = {};
-    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
 
     m_commandBuffer->begin();
@@ -2939,8 +2824,7 @@ TEST_F(VkLayerTest, InUseDestroyedSignaled) {
 
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.signalSemaphoreCount = 1;
@@ -2980,8 +2864,7 @@ TEST_F(VkLayerTest, EventStageMaskOneCommandBufferPass) {
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
     VkEvent event;
-    VkEventCreateInfo event_create_info = {};
-    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
 
     commandBuffer1.begin();
@@ -2990,8 +2873,7 @@ TEST_F(VkLayerTest, EventStageMaskOneCommandBufferPass) {
                       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     commandBuffer1.end();
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &commandBuffer1.handle();
     m_errorMonitor->ExpectSuccess();
@@ -3010,8 +2892,7 @@ TEST_F(VkLayerTest, EventStageMaskOneCommandBufferFail) {
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
     VkEvent event;
-    VkEventCreateInfo event_create_info = {};
-    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
 
     commandBuffer1.begin();
@@ -3021,8 +2902,7 @@ TEST_F(VkLayerTest, EventStageMaskOneCommandBufferFail) {
                       0, nullptr, 0, nullptr, 0, nullptr);
     commandBuffer1.end();
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &commandBuffer1.handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcStageMask-parameter");
@@ -3041,16 +2921,14 @@ TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferPass) {
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
     VkEvent event;
-    VkEventCreateInfo event_create_info = {};
-    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
 
     commandBuffer1.begin();
     vk::CmdSetEvent(commandBuffer1.handle(), event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     commandBuffer1.end();
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &commandBuffer1.handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -3077,16 +2955,14 @@ TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferFail) {
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
     VkEvent event;
-    VkEventCreateInfo event_create_info = {};
-    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
 
     commandBuffer1.begin();
     vk::CmdSetEvent(commandBuffer1.handle(), event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     commandBuffer1.end();
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &commandBuffer1.handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -3125,8 +3001,7 @@ TEST_F(VkLayerTest, QueryPoolPartialTimestamp) {
     buffer.init(*m_device, 128, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_ci{};
-    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_ci.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
@@ -3146,8 +3021,7 @@ TEST_F(VkLayerTest, QueryPoolPartialTimestamp) {
     m_commandBuffer->end();
 
     // Submit cmd buffer and wait for it.
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -3187,8 +3061,7 @@ TEST_F(VkLayerTest, PerformanceQueryIntel) {
     buffer.init(*m_device, 128, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_ci{};
-    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL;
     query_pool_ci.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
@@ -3210,8 +3083,7 @@ TEST_F(VkLayerTest, QueryPoolInUseDestroyedSignaled) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_ci{};
-    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_ci.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
@@ -3223,8 +3095,7 @@ TEST_F(VkLayerTest, QueryPoolInUseDestroyedSignaled) {
     m_commandBuffer->end();
 
     // Submit cmd buffer and then destroy query pool while in-flight
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -3267,8 +3138,7 @@ TEST_F(VkLayerTest, PipelineInUseDestroyedSignaled) {
 
         m_commandBuffer->end();
 
-        VkSubmitInfo submit_info = {};
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &m_commandBuffer->handle();
         // Submit cmd buffer and then pipeline destroyed while in-flight
@@ -3311,8 +3181,7 @@ TEST_F(VkLayerTest, ImageViewInUseDestroyedSignaled) {
         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
     dyn_state_ci.pDynamicStates = dyn_states;
     pipe.dyn_state_ci_ = dyn_state_ci;
@@ -3340,8 +3209,7 @@ TEST_F(VkLayerTest, ImageViewInUseDestroyedSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer then destroy sampler
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     // Submit cmd buffer and then destroy imageView while in-flight
@@ -3363,8 +3231,7 @@ TEST_F(VkLayerTest, BufferViewInUseDestroyedSignaled) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t queue_family_index = 0;
-    VkBufferCreateInfo buffer_create_info = {};
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
@@ -3373,8 +3240,7 @@ TEST_F(VkLayerTest, BufferViewInUseDestroyedSignaled) {
     buffer.init(*m_device, buffer_create_info);
 
     VkBufferView view;
-    VkBufferViewCreateInfo bvci = {};
-    bvci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
+    VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>();
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
@@ -3399,8 +3265,7 @@ TEST_F(VkLayerTest, BufferViewInUseDestroyedSignaled) {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
     dyn_state_ci.pDynamicStates = dyn_states;
     pipe.dyn_state_ci_ = dyn_state_ci;
@@ -3430,8 +3295,7 @@ TEST_F(VkLayerTest, BufferViewInUseDestroyedSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     // Submit cmd buffer and then destroy bufferView while in-flight
@@ -3475,8 +3339,7 @@ TEST_F(VkLayerTest, SamplerInUseDestroyedSignaled) {
         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
     dyn_state_ci.pDynamicStates = dyn_states;
     pipe.dyn_state_ci_ = dyn_state_ci;
@@ -3504,8 +3367,7 @@ TEST_F(VkLayerTest, SamplerInUseDestroyedSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer then destroy sampler
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     // Submit cmd buffer and then destroy sampler while in-flight
@@ -3533,12 +3395,10 @@ TEST_F(VkLayerTest, QueueForwardProgressFenceWait) {
     cb1.begin();
     cb1.end();
 
-    VkSemaphoreCreateInfo semaphore_create_info = {};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     VkSemaphore semaphore;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &cb1.handle();
     submit_info.signalSemaphoreCount = 1;
@@ -3578,12 +3438,9 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
 
     commandBuffer.begin();
 
-    VkEventCreateInfo event_info;
+    VkEventCreateInfo event_info = LvlInitStruct<VkEventCreateInfo>();
     VkEvent event;
     VkResult err;
-
-    memset(&event_info, 0, sizeof(event_info));
-    event_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
 
     err = vk::CreateEvent(device(), &event_info, NULL, &event);
     ASSERT_VK_SUCCESS(err);
@@ -3767,8 +3624,7 @@ TEST_F(VkLayerTest, ExecuteUnrecordedPrimaryCB) {
     ASSERT_NO_FATAL_FAILURE(Init());
     // never record m_commandBuffer
 
-    VkSubmitInfo si = {};
-    si.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo si = LvlInitStruct<VkSubmitInfo>();
     si.commandBufferCount = 1;
     si.pCommandBuffers = &m_commandBuffer->handle();
 
@@ -3791,10 +3647,8 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
     const char *extension_names[2] = {"VK_KHR_maintenance1", "VK_AMD_negative_viewport_height"};
     VkDevice testDevice;
-    VkDeviceCreateInfo device_create_info = {};
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
     auto features = m_device->phy().features();
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pNext = NULL;
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.enabledLayerCount = 0;
@@ -3834,8 +3688,7 @@ TEST_F(VkLayerTest, HostQueryResetNotEnabled) {
     auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_create_info{};
-    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
@@ -3867,21 +3720,17 @@ TEST_F(VkLayerTest, HostQueryResetBadFirstQuery) {
 
     m_device_extension_names.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
 
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features{};
-    host_query_reset_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES_EXT;
+    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features =
+        LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
     host_query_reset_features.hostQueryReset = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2 pd_features2{};
-    pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    pd_features2.pNext = &host_query_reset_features;
-
+    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
     auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_create_info{};
-    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
@@ -3925,21 +3774,17 @@ TEST_F(VkLayerTest, HostQueryResetBadRange) {
 
     m_device_extension_names.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
 
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features{};
-    host_query_reset_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES_EXT;
+    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features =
+        LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
     host_query_reset_features.hostQueryReset = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2 pd_features2{};
-    pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    pd_features2.pNext = &host_query_reset_features;
-
+    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
     auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_create_info{};
-    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
@@ -3970,22 +3815,18 @@ TEST_F(VkLayerTest, HostQueryResetInvalidQueryPool) {
 
     m_device_extension_names.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
 
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features{};
-    host_query_reset_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES_EXT;
+    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features =
+        LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
     host_query_reset_features.hostQueryReset = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2 pd_features2{};
-    pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    pd_features2.pNext = &host_query_reset_features;
-
+    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
     auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
 
     // Create and destroy a query pool.
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_create_info{};
-    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
@@ -4016,21 +3857,17 @@ TEST_F(VkLayerTest, HostQueryResetWrongDevice) {
 
     m_device_extension_names.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
 
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features{};
-    host_query_reset_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES_EXT;
+    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features =
+        LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
     host_query_reset_features.hostQueryReset = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2 pd_features2{};
-    pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    pd_features2.pNext = &host_query_reset_features;
-
+    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
     auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_create_info{};
-    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
@@ -4039,9 +3876,7 @@ TEST_F(VkLayerTest, HostQueryResetWrongDevice) {
     vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
     auto features = m_device->phy().features();
 
-    VkDeviceCreateInfo device_create_info = {};
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pNext = &host_query_reset_features;
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&host_query_reset_features);
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.pEnabledFeatures = &features;
@@ -4065,20 +3900,17 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     VkEvent event;
-    VkEventCreateInfo event_create_info{};
-    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
 
     VkCommandPool command_pool;
-    VkCommandPoolCreateInfo pool_create_info{};
-    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool);
 
     VkCommandBuffer command_buffer;
-    VkCommandBufferAllocateInfo command_buffer_allocate_info{};
-    command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
     command_buffer_allocate_info.commandPool = command_pool;
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -4088,16 +3920,14 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 0, &queue);
 
     {
-        VkCommandBufferBeginInfo begin_info{};
-        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
         vk::BeginCommandBuffer(command_buffer, &begin_info);
 
         vk::CmdResetEvent(command_buffer, event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         vk::EndCommandBuffer(command_buffer);
     }
     {
-        VkSubmitInfo submit_info{};
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer;
         submit_info.signalSemaphoreCount = 0;
@@ -4159,9 +3989,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
 
     // Test shading rate image creation
     VkResult result = VK_RESULT_MAX_ENUM;
-    VkImageCreateInfo image_create_info = {};
-    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_create_info.pNext = NULL;
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8_UINT;
     image_create_info.extent.width = 4;
@@ -4203,8 +4031,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
 
     // Test image view creation
     VkImageView view;
-    VkImageViewCreateInfo ivci = {};
-    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_R8_UINT;
@@ -4313,9 +4140,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     VkImageView nonSRIview = nonSRIimage.targetView(VK_FORMAT_B8G8R8A8_UNORM);
 
     // Test SRI layout on non-SRI image
-    VkImageMemoryBarrier img_barrier = {};
-    img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    img_barrier.pNext = nullptr;
+    VkImageMemoryBarrier img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     img_barrier.srcAccessMask = 0;
     img_barrier.dstAccessMask = 0;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -5404,7 +5229,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
     ASSERT_TRUE(VK_NULL_HANDLE != img);
 
     // Add image to allocation chain as dedicated info, re-allocate
-    VkMemoryDedicatedAllocateInfo mdai = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO};
+    VkMemoryDedicatedAllocateInfo mdai = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
     mdai.image = img;
     emai.pNext = &mdai;
     mai.allocationSize = 0;
@@ -5728,8 +5553,7 @@ TEST_F(VkLayerTest, ValidateStride) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkQueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_ci{};
-    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_ci.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
@@ -5739,8 +5563,7 @@ TEST_F(VkLayerTest, ValidateStride) {
     vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -5768,8 +5591,7 @@ TEST_F(VkLayerTest, ValidateStride) {
     m_errorMonitor->VerifyNotFound();
 
     uint32_t qfi = 0;
-    VkBufferCreateInfo buff_create_info = {};
-    buff_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buff_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buff_create_info.size = 128;
     buff_create_info.usage =
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
@@ -5875,8 +5697,7 @@ TEST_F(VkLayerTest, ValidateGeometryNV) {
     aabbbo.init(*m_device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                 VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
 
-    VkBufferCreateInfo unbound_buffer_ci = {};
-    unbound_buffer_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo unbound_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     unbound_buffer_ci.size = 1024;
     unbound_buffer_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
     VkBufferObj unbound_buffer;
@@ -5903,10 +5724,9 @@ TEST_F(VkLayerTest, ValidateGeometryNV) {
     std::memcpy(mapped_aabbbo_buffer_data, (uint8_t *)aabbs.data(), sizeof(float) * aabbs.size());
     aabbbo.memory().unmap();
 
-    VkGeometryNV valid_geometry_triangles = {};
-    valid_geometry_triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
+    VkGeometryNV valid_geometry_triangles = LvlInitStruct<VkGeometryNV>();
     valid_geometry_triangles.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
-    valid_geometry_triangles.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
+    valid_geometry_triangles.geometry.triangles = LvlInitStruct<VkGeometryTrianglesNV>();
     valid_geometry_triangles.geometry.triangles.vertexData = vbo.handle();
     valid_geometry_triangles.geometry.triangles.vertexOffset = 0;
     valid_geometry_triangles.geometry.triangles.vertexCount = 3;
@@ -5918,16 +5738,12 @@ TEST_F(VkLayerTest, ValidateGeometryNV) {
     valid_geometry_triangles.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
     valid_geometry_triangles.geometry.triangles.transformData = tbo.handle();
     valid_geometry_triangles.geometry.triangles.transformOffset = 0;
-    valid_geometry_triangles.geometry.aabbs = {};
-    valid_geometry_triangles.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
+    valid_geometry_triangles.geometry.aabbs = LvlInitStruct<VkGeometryAABBNV>();
 
-    VkGeometryNV valid_geometry_aabbs = {};
-    valid_geometry_aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
+    VkGeometryNV valid_geometry_aabbs = LvlInitStruct<VkGeometryNV>();
     valid_geometry_aabbs.geometryType = VK_GEOMETRY_TYPE_AABBS_NV;
-    valid_geometry_aabbs.geometry.triangles = {};
-    valid_geometry_aabbs.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
-    valid_geometry_aabbs.geometry.aabbs = {};
-    valid_geometry_aabbs.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
+    valid_geometry_aabbs.geometry.triangles = LvlInitStruct<VkGeometryTrianglesNV>();
+    valid_geometry_aabbs.geometry.aabbs = LvlInitStruct<VkGeometryAABBNV>();
     valid_geometry_aabbs.geometry.aabbs.aabbData = aabbbo.handle();
     valid_geometry_aabbs.geometry.aabbs.numAABBs = 1;
     valid_geometry_aabbs.geometry.aabbs.offset = 0;
@@ -5938,9 +5754,8 @@ TEST_F(VkLayerTest, ValidateGeometryNV) {
     assert(vkCreateAccelerationStructureNV != nullptr);
 
     const auto GetCreateInfo = [](const VkGeometryNV &geometry) {
-        VkAccelerationStructureCreateInfoNV as_create_info = {};
-        as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
-        as_create_info.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
+        VkAccelerationStructureCreateInfoNV as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
+        as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
         as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
         as_create_info.info.instanceCount = 0;
         as_create_info.info.geometryCount = 1;
@@ -6131,9 +5946,8 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureNV) {
     VkGeometryNV geometry;
     GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
-    VkAccelerationStructureCreateInfoNV as_create_info = {};
-    as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
-    as_create_info.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
+    VkAccelerationStructureCreateInfoNV as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
+    as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
 
     VkAccelerationStructureNV as = VK_NULL_HANDLE;
 
@@ -6203,12 +6017,10 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureNV) {
 
     // Can not mix different geometry types into single bottom level acceleration structure
     {
-        VkGeometryNV aabb_geometry = {};
-        aabb_geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
+        VkGeometryNV aabb_geometry = LvlInitStruct<VkGeometryNV>();
         aabb_geometry.geometryType = VK_GEOMETRY_TYPE_AABBS_NV;
-        aabb_geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
-        aabb_geometry.geometry.aabbs = {};
-        aabb_geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
+        aabb_geometry.geometry.triangles = LvlInitStruct<VkGeometryTrianglesNV>();
+        aabb_geometry.geometry.aabbs = LvlInitStruct<VkGeometryAABBNV>();
         // Buffer contents do not matter for this test.
         aabb_geometry.geometry.aabbs.aabbData = geometry.geometry.triangles.vertexData;
         aabb_geometry.geometry.aabbs.numAABBs = 1;
@@ -6255,11 +6067,9 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
     assert(vkCreateAccelerationStructureKHR != nullptr);
 
     VkAccelerationStructureKHR as;
-    VkAccelerationStructureCreateInfoKHR as_create_info = {};
+    VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
     VkBufferObj buffer;
     buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
-    as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-    as_create_info.pNext = NULL;
     as_create_info.buffer = buffer.handle();
     as_create_info.createFlags = 0;
     as_create_info.offset = 0;
@@ -6390,9 +6200,8 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
     VkGeometryNV geometry;
     GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
-    VkAccelerationStructureCreateInfoNV as_create_info = {};
-    as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
-    as_create_info.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
+    VkAccelerationStructureCreateInfoNV as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
+    as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
     as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
     as_create_info.info.geometryCount = 1;
     as_create_info.info.pGeometries = &geometry;
@@ -6403,12 +6212,10 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
 
     VkMemoryRequirements as_memory_requirements = as.memory_requirements().memoryRequirements;
 
-    VkBindAccelerationStructureMemoryInfoNV as_bind_info = {};
-    as_bind_info.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
+    VkBindAccelerationStructureMemoryInfoNV as_bind_info = LvlInitStruct<VkBindAccelerationStructureMemoryInfoNV>();
     as_bind_info.accelerationStructure = as.handle();
 
-    VkMemoryAllocateInfo as_memory_alloc = {};
-    as_memory_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    VkMemoryAllocateInfo as_memory_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
     as_memory_alloc.allocationSize = as_memory_requirements.size;
     ASSERT_TRUE(m_device->phy().set_memory_type(as_memory_requirements.memoryTypeBits, &as_memory_alloc, 0));
 
@@ -6543,19 +6350,16 @@ TEST_F(VkLayerTest, ValidateWriteDescriptorSetAccelerationStructureNV) {
                                {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_RAYGEN_BIT_NV, nullptr},
                            });
 
-    VkWriteDescriptorSet descriptor_write = {};
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
 
-    VkWriteDescriptorSetAccelerationStructureNV acc = {};
-    acc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
+    VkWriteDescriptorSetAccelerationStructureNV acc = LvlInitStruct<VkWriteDescriptorSetAccelerationStructureNV>();
     acc.accelerationStructureCount = 1;
-    VkAccelerationStructureCreateInfoNV top_level_as_create_info = {};
-    top_level_as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
-    top_level_as_create_info.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
+    VkAccelerationStructureCreateInfoNV top_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
+    top_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
     top_level_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
     top_level_as_create_info.info.instanceCount = 1;
     top_level_as_create_info.info.geometryCount = 0;
@@ -6585,9 +6389,8 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructureNV) {
     VkGeometryNV geometry;
     GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
-    VkAccelerationStructureCreateInfoNV bot_level_as_create_info = {};
-    bot_level_as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
-    bot_level_as_create_info.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
+    VkAccelerationStructureCreateInfoNV bot_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
+    bot_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
     bot_level_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
     bot_level_as_create_info.info.instanceCount = 0;
     bot_level_as_create_info.info.geometryCount = 1;
@@ -6641,8 +6444,7 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructureNV) {
     m_errorMonitor->VerifyFound();
 
     // Scratch buffer too small
-    VkBufferCreateInfo too_small_scratch_buffer_info = {};
-    too_small_scratch_buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo too_small_scratch_buffer_info = LvlInitStruct<VkBufferCreateInfo>();
     too_small_scratch_buffer_info.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
     too_small_scratch_buffer_info.size = 1;
     VkBufferObj too_small_scratch_buffer(*m_device, too_small_scratch_buffer_info);
@@ -6676,8 +6478,7 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructureNV) {
 
     // invalid scratch buff
     VkBufferObj bot_level_as_invalid_scratch;
-    VkBufferCreateInfo create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo create_info = LvlInitStruct<VkBufferCreateInfo>();
     // invalid usage
     create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
     bot_level_as.create_scratch_buffer(*m_device, &bot_level_as_invalid_scratch, &create_info);
@@ -6719,9 +6520,8 @@ TEST_F(VkLayerTest, ValidateGetAccelerationStructureHandleNV) {
     VkGeometryNV geometry;
     GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
-    VkAccelerationStructureCreateInfoNV bot_level_as_create_info = {};
-    bot_level_as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
-    bot_level_as_create_info.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
+    VkAccelerationStructureCreateInfoNV bot_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
+    bot_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
     bot_level_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
     bot_level_as_create_info.info.instanceCount = 0;
     bot_level_as_create_info.info.geometryCount = 1;
@@ -6765,9 +6565,8 @@ TEST_F(VkLayerTest, ValidateCmdCopyAccelerationStructureNV) {
     VkGeometryNV geometry;
     GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
-    VkAccelerationStructureCreateInfoNV as_create_info = {};
-    as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
-    as_create_info.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
+    VkAccelerationStructureCreateInfoNV as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
+    as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
     as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
     as_create_info.info.instanceCount = 0;
     as_create_info.info.geometryCount = 1;
@@ -6871,8 +6670,7 @@ TEST_F(VkLayerTest, QueryPerformanceCreation) {
 
         counters.resize(nCounters);
         for (auto &c : counters) {
-            c.sType = VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR;
-            c.pNext = nullptr;
+            c = LvlInitStruct<VkPerformanceCounterKHR>();
         }
         vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
@@ -6884,15 +6682,13 @@ TEST_F(VkLayerTest, QueryPerformanceCreation) {
         return;
     }
 
-    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci{};
-    perf_query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = LvlInitStruct<VkQueryPoolPerformanceCreateInfoKHR>();
     perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
     perf_query_pool_ci.counterIndexCount = counters.size();
     std::vector<uint32_t> counterIndices;
     for (uint32_t c = 0; c < counters.size(); c++) counterIndices.push_back(c);
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
-    VkQueryPoolCreateInfo query_pool_ci{};
-    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
 
@@ -6984,8 +6780,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
 
         counters.resize(nCounters);
         for (auto &c : counters) {
-            c.sType = VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR;
-            c.pNext = nullptr;
+            c = LvlInitStruct<VkPerformanceCounterKHR>();
         }
         vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
@@ -7009,14 +6804,11 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
         return;
     }
 
-    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci{};
-    perf_query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = LvlInitStruct<VkQueryPoolPerformanceCreateInfoKHR>();
     perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
     perf_query_pool_ci.counterIndexCount = counterIndices.size();
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
-    VkQueryPoolCreateInfo query_pool_ci{};
-    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
-    query_pool_ci.pNext = &perf_query_pool_ci;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
 
@@ -7034,16 +6826,14 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
     ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
 
     {
-        VkAcquireProfilingLockInfoKHR lock_info{};
-        lock_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR;
+        VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
         VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
         ASSERT_TRUE(result == VK_SUCCESS);
     }
 
     // Not the first command.
     {
-        VkBufferCreateInfo buf_info = {};
-        buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
         buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         buf_info.size = 4096;
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -7054,8 +6844,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
         VkMemoryRequirements mem_reqs;
         vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
-        VkMemoryAllocateInfo alloc_info = {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
         err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
@@ -7071,9 +6860,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
 
         m_commandBuffer->end();
 
-        VkSubmitInfo submit_info;
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit_info.pNext = NULL;
+        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.waitSemaphoreCount = 0;
         submit_info.pWaitSemaphores = NULL;
         submit_info.pWaitDstStageMask = NULL;
@@ -7090,8 +6877,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
 
     // First command: success.
     {
-        VkBufferCreateInfo buf_info = {};
-        buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
         buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         buf_info.size = 4096;
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -7102,8 +6888,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
         VkMemoryRequirements mem_reqs;
         vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
-        VkMemoryAllocateInfo alloc_info = {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
         err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
@@ -7122,9 +6907,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
 
         m_commandBuffer->end();
 
-        VkSubmitInfo submit_info;
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit_info.pNext = NULL;
+        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.waitSemaphoreCount = 0;
         submit_info.pWaitSemaphores = NULL;
         submit_info.pWaitDstStageMask = NULL;
@@ -7196,8 +6979,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterRenderPassScope) {
 
         counters.resize(nCounters);
         for (auto &c : counters) {
-            c.sType = VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR;
-            c.pNext = nullptr;
+            c = LvlInitStruct<VkPerformanceCounterKHR>();
         }
         vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
@@ -7223,14 +7005,11 @@ TEST_F(VkLayerTest, QueryPerformanceCounterRenderPassScope) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci{};
-    perf_query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = LvlInitStruct<VkQueryPoolPerformanceCreateInfoKHR>();
     perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
     perf_query_pool_ci.counterIndexCount = counterIndices.size();
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
-    VkQueryPoolCreateInfo query_pool_ci{};
-    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
-    query_pool_ci.pNext = &perf_query_pool_ci;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
 
@@ -7248,8 +7027,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterRenderPassScope) {
     ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
 
     {
-        VkAcquireProfilingLockInfoKHR lock_info{};
-        lock_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR;
+        VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
         VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
         ASSERT_TRUE(result == VK_SUCCESS);
     }
@@ -7266,9 +7044,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterRenderPassScope) {
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
 
-        VkSubmitInfo submit_info;
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit_info.pNext = NULL;
+        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.waitSemaphoreCount = 0;
         submit_info.pWaitSemaphores = NULL;
         submit_info.pWaitDstStageMask = NULL;
@@ -7337,8 +7113,7 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
 
         counters.resize(nCounters);
         for (auto &c : counters) {
-            c.sType = VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR;
-            c.pNext = nullptr;
+            c = LvlInitStruct<VkPerformanceCounterKHR>();
         }
         vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
@@ -7364,14 +7139,11 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci{};
-    perf_query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = LvlInitStruct<VkQueryPoolPerformanceCreateInfoKHR>();
     perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
     perf_query_pool_ci.counterIndexCount = counterIndices.size();
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
-    VkQueryPoolCreateInfo query_pool_ci{};
-    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
-    query_pool_ci.pNext = &perf_query_pool_ci;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
 
@@ -7389,8 +7161,7 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
     ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
 
     {
-        VkAcquireProfilingLockInfoKHR lock_info{};
-        lock_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR;
+        VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
         VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
         ASSERT_TRUE(result == VK_SUCCESS);
     }
@@ -7401,9 +7172,7 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
         vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
         m_commandBuffer->end();
 
-        VkSubmitInfo submit_info;
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit_info.pNext = NULL;
+        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.waitSemaphoreCount = 0;
         submit_info.pWaitSemaphores = NULL;
         submit_info.pWaitDstStageMask = NULL;
@@ -7417,8 +7186,7 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
     }
 
     {
-        VkBufferCreateInfo buf_info = {};
-        buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
         buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         buf_info.size = 4096;
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -7429,8 +7197,7 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
         VkMemoryRequirements mem_reqs;
         vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
-        VkMemoryAllocateInfo alloc_info = {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
         err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
@@ -7445,8 +7212,7 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
         // Release while recording.
         vkReleaseProfilingLockKHR(device());
         {
-            VkAcquireProfilingLockInfoKHR lock_info{};
-            lock_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR;
+            VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
             VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
             ASSERT_TRUE(result == VK_SUCCESS);
         }
@@ -7455,9 +7221,7 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
 
         m_commandBuffer->end();
 
-        VkSubmitInfo submit_info;
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit_info.pNext = NULL;
+        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.waitSemaphoreCount = 0;
         submit_info.pWaitSemaphores = NULL;
         submit_info.pWaitDstStageMask = NULL;
@@ -7550,8 +7314,7 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
 
         counters.resize(nCounters);
         for (auto &c : counters) {
-            c.sType = VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR;
-            c.pNext = nullptr;
+            c = LvlInitStruct<VkPerformanceCounterKHR>();
         }
         vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
@@ -7560,8 +7323,7 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
             if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_KHR) counterIndices.push_back(counterIdx);
         }
 
-        VkQueryPoolPerformanceCreateInfoKHR create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+        VkQueryPoolPerformanceCreateInfoKHR create_info = LvlInitStruct<VkQueryPoolPerformanceCreateInfoKHR>();
         create_info.queueFamilyIndex = idx;
         create_info.counterIndexCount = counterIndices.size();
         create_info.pCounterIndices = &counterIndices[0];
@@ -7582,14 +7344,11 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci{};
-    perf_query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = LvlInitStruct<VkQueryPoolPerformanceCreateInfoKHR>();
     perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
     perf_query_pool_ci.counterIndexCount = counterIndices.size();
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
-    VkQueryPoolCreateInfo query_pool_ci{};
-    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
-    query_pool_ci.pNext = &perf_query_pool_ci;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
 
@@ -7609,15 +7368,13 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
         (PFN_vkResetQueryPoolEXT)vk::GetInstanceProcAddr(instance(), "vkResetQueryPoolEXT");
 
     {
-        VkAcquireProfilingLockInfoKHR lock_info{};
-        lock_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR;
+        VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
         VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
         ASSERT_TRUE(result == VK_SUCCESS);
     }
 
     {
-        VkBufferCreateInfo buf_info = {};
-        buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
         buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         buf_info.size = 4096;
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -7628,16 +7385,14 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
         VkMemoryRequirements mem_reqs;
         vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
-        VkMemoryAllocateInfo alloc_info = {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
         err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
         ASSERT_VK_SUCCESS(err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
-        VkCommandBufferBeginInfo command_buffer_begin_info{};
-        command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        VkCommandBufferBeginInfo command_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
         command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
         fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 1);
@@ -7650,12 +7405,9 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
 
         // Invalid pass index
         {
-            VkPerformanceQuerySubmitInfoKHR perf_submit_info{};
-            perf_submit_info.sType = VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR;
+            VkPerformanceQuerySubmitInfoKHR perf_submit_info = LvlInitStruct<VkPerformanceQuerySubmitInfoKHR>();
             perf_submit_info.counterPassIndex = nPasses;
-            VkSubmitInfo submit_info{};
-            submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            submit_info.pNext = &perf_submit_info;
+            VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&perf_submit_info);
             submit_info.waitSemaphoreCount = 0;
             submit_info.pWaitSemaphores = NULL;
             submit_info.pWaitDstStageMask = NULL;
@@ -7671,12 +7423,9 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
 
         // Leave the last pass out.
         for (uint32_t passIdx = 0; passIdx < (nPasses - 1); passIdx++) {
-            VkPerformanceQuerySubmitInfoKHR perf_submit_info{};
-            perf_submit_info.sType = VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR;
+            VkPerformanceQuerySubmitInfoKHR perf_submit_info = LvlInitStruct<VkPerformanceQuerySubmitInfoKHR>();
             perf_submit_info.counterPassIndex = passIdx;
-            VkSubmitInfo submit_info{};
-            submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            submit_info.pNext = &perf_submit_info;
+            VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&perf_submit_info);
             submit_info.waitSemaphoreCount = 0;
             submit_info.pWaitSemaphores = NULL;
             submit_info.pWaitDstStageMask = NULL;
@@ -7709,12 +7458,9 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
         m_errorMonitor->VerifyFound();
 
         {
-            VkPerformanceQuerySubmitInfoKHR perf_submit_info{};
-            perf_submit_info.sType = VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR;
+            VkPerformanceQuerySubmitInfoKHR perf_submit_info = LvlInitStruct<VkPerformanceQuerySubmitInfoKHR>();
             perf_submit_info.counterPassIndex = nPasses - 1;
-            VkSubmitInfo submit_info{};
-            submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            submit_info.pNext = &perf_submit_info;
+            VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&perf_submit_info);
             submit_info.waitSemaphoreCount = 0;
             submit_info.pWaitSemaphores = NULL;
             submit_info.pWaitDstStageMask = NULL;
@@ -7836,8 +7582,7 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
 
         counters.resize(nCounters);
         for (auto &c : counters) {
-            c.sType = VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR;
-            c.pNext = nullptr;
+            c = LvlInitStruct<VkPerformanceCounterKHR>();
         }
         vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
@@ -7858,14 +7603,11 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci{};
-    perf_query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = LvlInitStruct<VkQueryPoolPerformanceCreateInfoKHR>();
     perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
     perf_query_pool_ci.counterIndexCount = counterIndices.size();
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
-    VkQueryPoolCreateInfo query_pool_ci{};
-    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
-    query_pool_ci.pNext = &perf_query_pool_ci;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
 
@@ -7883,15 +7625,13 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
     ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
 
     {
-        VkAcquireProfilingLockInfoKHR lock_info{};
-        lock_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR;
+        VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
         VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
         ASSERT_TRUE(result == VK_SUCCESS);
     }
 
     {
-        VkBufferCreateInfo buf_info = {};
-        buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
         buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         buf_info.size = 4096;
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -7902,16 +7642,14 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
         VkMemoryRequirements mem_reqs;
         vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
-        VkMemoryAllocateInfo alloc_info = {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
         err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
         ASSERT_VK_SUCCESS(err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
-        VkCommandBufferBeginInfo command_buffer_begin_info{};
-        command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        VkCommandBufferBeginInfo command_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
         command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBeginQuery-None-02863");
@@ -7924,12 +7662,9 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
         m_commandBuffer->end();
 
         {
-            VkPerformanceQuerySubmitInfoKHR perf_submit_info{};
-            perf_submit_info.sType = VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR;
+            VkPerformanceQuerySubmitInfoKHR perf_submit_info = LvlInitStruct<VkPerformanceQuerySubmitInfoKHR>();
             perf_submit_info.counterPassIndex = 0;
-            VkSubmitInfo submit_info{};
-            submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            submit_info.pNext = &perf_submit_info;
+            VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&perf_submit_info);
             submit_info.waitSemaphoreCount = 0;
             submit_info.pWaitSemaphores = NULL;
             submit_info.pWaitDstStageMask = NULL;
@@ -7977,20 +7712,17 @@ TEST_F(VkLayerTest, QueueSubmitNoTimelineSemaphoreInfo) {
         return;
     }
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
-    semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
 
-    VkSemaphoreCreateInfo semaphore_create_info{};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphore_create_info.pNext = &semaphore_type_create_info;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
     VkSemaphore semaphore;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
 
     VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkSubmitInfo submit_info[2] = {};
-    submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info[0] = LvlInitStruct<VkSubmitInfo>();
     submit_info[0].commandBufferCount = 0;
     submit_info[0].pWaitDstStageMask = &stageFlags;
     submit_info[0].signalSemaphoreCount = 1;
@@ -8000,14 +7732,13 @@ TEST_F(VkLayerTest, QueueSubmitNoTimelineSemaphoreInfo) {
     vk::QueueSubmit(m_device->m_queue, 1, submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info{};
+    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
     uint64_t signalValue = 1;
-    timeline_semaphore_submit_info.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO_KHR;
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pSignalSemaphoreValues = &signalValue;
     submit_info[0].pNext = &timeline_semaphore_submit_info;
 
-    submit_info[1].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info[1] = LvlInitStruct<VkSubmitInfo>();
     submit_info[1].commandBufferCount = 0;
     submit_info[1].pWaitDstStageMask = &stageFlags;
     submit_info[1].waitSemaphoreCount = 1;
@@ -8051,21 +7782,17 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
-    semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
 
-    VkSemaphoreCreateInfo semaphore_create_info{};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphore_create_info.pNext = &semaphore_type_create_info;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
     VkSemaphore semaphore;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
 
-    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = {};
+    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
     uint64_t signalValue = 1;
     uint64_t waitValue = 3;
-    timeline_semaphore_submit_info.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO_KHR;
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pSignalSemaphoreValues = &signalValue;
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
@@ -8073,13 +7800,13 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
 
     VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkSubmitInfo submit_info[2] = {};
-    submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info[0] = LvlInitStruct<VkSubmitInfo>();
     submit_info[0].pNext = &timeline_semaphore_submit_info;
     submit_info[0].pWaitDstStageMask = &stageFlags;
     submit_info[0].signalSemaphoreCount = 1;
     submit_info[0].pSignalSemaphores = &semaphore;
 
-    submit_info[1].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info[1] = LvlInitStruct<VkSubmitInfo>();
     submit_info[1].pNext = &timeline_semaphore_submit_info;
     submit_info[1].pWaitDstStageMask = &stageFlags;
     submit_info[1].waitSemaphoreCount = 1;
@@ -8160,8 +7887,7 @@ TEST_F(VkLayerTest, QueueSubmitBinarySemaphoreNotSignaled) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkSemaphoreCreateInfo semaphore_create_info{};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
 
     VkSemaphore semaphore[3];
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore[0]));
@@ -8170,7 +7896,7 @@ TEST_F(VkLayerTest, QueueSubmitBinarySemaphoreNotSignaled) {
 
     VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkSubmitInfo submit_info[3] = {};
-    submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info[0] = LvlInitStruct<VkSubmitInfo>();
     submit_info[0].pWaitDstStageMask = &stageFlags;
     submit_info[0].waitSemaphoreCount = 1;
     submit_info[0].pWaitSemaphores = &(semaphore[0]);
@@ -8183,7 +7909,7 @@ TEST_F(VkLayerTest, QueueSubmitBinarySemaphoreNotSignaled) {
     vk::QueueSubmit(m_device->m_queue, 1, submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    submit_info[1].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info[1] = LvlInitStruct<VkSubmitInfo>();
     submit_info[1].pWaitDstStageMask = &stageFlags;
     submit_info[1].waitSemaphoreCount = 1;
     submit_info[1].pWaitSemaphores = &(semaphore[1]);
@@ -8196,7 +7922,7 @@ TEST_F(VkLayerTest, QueueSubmitBinarySemaphoreNotSignaled) {
     vk::QueueSubmit(m_device->m_queue, 2, submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    submit_info[2].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info[2] = LvlInitStruct<VkSubmitInfo>();
     submit_info[2].signalSemaphoreCount = 1;
     submit_info[2].pSignalSemaphores = &(semaphore[0]);
 
@@ -8256,18 +7982,17 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreOutOfOrder) {
 
     float priorities[] = {1.0f, 1.0f};
     VkDeviceQueueCreateInfo queue_info[2] = {};
-    queue_info[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_info[0] = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_info[0].queueFamilyIndex = family_index[0];
     queue_info[0].queueCount = queue_count > 1 ? 1 : 2;
     queue_info[0].pQueuePriorities = &(priorities[0]);
 
-    queue_info[1].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_info[1] = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_info[1].queueFamilyIndex = family_index[1];
     queue_info[1].queueCount = queue_count > 1 ? 1 : 2;
     queue_info[1].pQueuePriorities = &(priorities[0]);
 
-    VkDeviceCreateInfo dev_info{};
-    dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    VkDeviceCreateInfo dev_info = LvlInitStruct<VkDeviceCreateInfo>();
     dev_info.queueCreateInfoCount = queue_count > 1 ? 2 : 1;
     dev_info.pQueueCreateInfos = &(queue_info[0]);
     dev_info.enabledLayerCount = 0;
@@ -8286,30 +8011,24 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreOutOfOrder) {
     vk::GetDeviceQueue(dev, family_index[0], queue_index[0], &(queue[0]));
     vk::GetDeviceQueue(dev, family_index[1], queue_index[1], &(queue[1]));
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
-    semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
     semaphore_type_create_info.initialValue = 5;
 
-    VkSemaphoreCreateInfo semaphore_create_info{};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphore_create_info.pNext = &semaphore_type_create_info;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
     VkSemaphore semaphore;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(dev, &semaphore_create_info, nullptr, &semaphore));
 
     uint64_t semaphoreValues[] = {10, 100, 0, 10};
-    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info{};
-    timeline_semaphore_submit_info.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO_KHR;
+    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pWaitSemaphoreValues = &(semaphoreValues[0]);
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pSignalSemaphoreValues = &(semaphoreValues[1]);
 
     VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkSubmitInfo submit_info{};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.pNext = &timeline_semaphore_submit_info;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_semaphore_submit_info);
     submit_info.pWaitDstStageMask = &stageFlags;
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore;
@@ -8357,16 +8076,14 @@ TEST_F(VkLayerTest, InvalidExternalSemaphore) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Create a semaphore fpr importing
-    VkSemaphoreCreateInfo semaphore_create_info = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-    semaphore_create_info.pNext = nullptr;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     semaphore_create_info.flags = 0;
     VkSemaphore import_semaphore;
     VkResult err = vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &import_semaphore);
     ASSERT_VK_SUCCESS(err);
 
     int fd = 0;
-    VkImportSemaphoreFdInfoKHR import_semaphore_fd_info = {VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR};
-    import_semaphore_fd_info.pNext = nullptr;
+    VkImportSemaphoreFdInfoKHR import_semaphore_fd_info = LvlInitStruct<VkImportSemaphoreFdInfoKHR>();
     import_semaphore_fd_info.semaphore = import_semaphore;
     import_semaphore_fd_info.flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR;
     import_semaphore_fd_info.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT;
@@ -8406,13 +8123,10 @@ TEST_F(VkLayerTest, InvalidWaitSemaphoresType) {
         return;
     }
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
-    semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
 
-    VkSemaphoreCreateInfo semaphore_create_info{};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphore_create_info.pNext = &semaphore_type_create_info;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
     VkSemaphore semaphore[2];
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &(semaphore[0])));
@@ -8420,8 +8134,7 @@ TEST_F(VkLayerTest, InvalidWaitSemaphoresType) {
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &(semaphore[1])));
 
-    VkSemaphoreWaitInfo semaphore_wait_info{};
-    semaphore_wait_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+    VkSemaphoreWaitInfo semaphore_wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
     semaphore_wait_info.semaphoreCount = 2;
     semaphore_wait_info.pSemaphores = &semaphore[0];
     const uint64_t wait_values[] = {10, 40};
@@ -8468,14 +8181,11 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreType) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkSemaphoreCreateInfo semaphore_create_info{};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     VkSemaphore semaphore;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
 
-    VkSemaphoreSignalInfo semaphore_signal_info{};
-    semaphore_signal_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
+    VkSemaphoreSignalInfo semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
     semaphore_signal_info.semaphore = semaphore;
     semaphore_signal_info.value = 10;
     auto vkSignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR");
@@ -8518,21 +8228,17 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
-    semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
     semaphore_type_create_info.initialValue = 5;
 
-    VkSemaphoreCreateInfo semaphore_create_info{};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphore_create_info.pNext = &semaphore_type_create_info;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
     VkSemaphore semaphore[2];
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore[0]));
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore[1]));
 
-    VkSemaphoreSignalInfo semaphore_signal_info{};
-    semaphore_signal_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
+    VkSemaphoreSignalInfo semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
     semaphore_signal_info.semaphore = semaphore[0];
     semaphore_signal_info.value = 3;
     auto vkSignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR");
@@ -8544,19 +8250,16 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
     semaphore_signal_info.value = 10;
     ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
 
-    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info{};
+    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
     uint64_t waitValue = 10;
     uint64_t signalValue = 20;
-    timeline_semaphore_submit_info.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO_KHR;
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pWaitSemaphoreValues = &waitValue;
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pSignalSemaphoreValues = &signalValue;
 
     VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkSubmitInfo submit_info{};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.pNext = &timeline_semaphore_submit_info;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_semaphore_submit_info);
     submit_info.pWaitDstStageMask = &stageFlags;
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &(semaphore[1]);
@@ -8602,8 +8305,7 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
             semaphore_type_create_info.initialValue = 0;
             ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &timeline_sem));
 
-            VkSemaphoreCreateInfo binary_semaphore_create_info{};
-            binary_semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+            VkSemaphoreCreateInfo binary_semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
 
             ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &binary_semaphore_create_info, nullptr, &binary_sem));
 
@@ -8663,21 +8365,17 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
     vk::GetPhysicalDeviceProperties2(gpu(), &prop2);
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
-    semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
     semaphore_type_create_info.initialValue = 5;
 
-    VkSemaphoreCreateInfo semaphore_create_info{};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphore_create_info.pNext = &semaphore_type_create_info;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
     VkSemaphore semaphore[2];
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore[0]));
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore[1]));
 
-    VkSemaphoreSignalInfo semaphore_signal_info{};
-    semaphore_signal_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
+    VkSemaphoreSignalInfo semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
     semaphore_signal_info.semaphore = semaphore[0];
     semaphore_signal_info.value = 10;
     ASSERT_VK_SUCCESS(vk::SignalSemaphore(m_device->device(), &semaphore_signal_info));
@@ -8720,9 +8418,7 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
             semaphore_type_create_info.initialValue = 0;
             ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &timeline_sem));
 
-            VkSemaphoreCreateInfo binary_semaphore_create_info{};
-            binary_semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
+            VkSemaphoreCreateInfo binary_semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
             ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &binary_semaphore_create_info, nullptr, &binary_sem));
 
             wait_info.semaphore = timeline_sem;
@@ -8783,8 +8479,7 @@ TEST_F(VkLayerTest, InvalidSemaphoreCounterType) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkSemaphoreCreateInfo semaphore_create_info{};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
 
     VkSemaphore semaphore;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
@@ -8843,9 +8538,7 @@ TEST_F(VkLayerTest, ImageDrmFormatModifer) {
 
     const uint64_t dummy_modifiers[2] = {0, 1};
 
-    VkImageCreateInfo image_info = {};
-    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_info.pNext = nullptr;
+    VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>();
     image_info.imageType = VK_IMAGE_TYPE_2D;
     image_info.arrayLayers = 1;
     image_info.extent = {64, 64, 1};
@@ -8856,17 +8549,14 @@ TEST_F(VkLayerTest, ImageDrmFormatModifer) {
     image_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    VkImageFormatProperties2 image_format_prop = {};
-    image_format_prop.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
-    VkPhysicalDeviceImageFormatInfo2 image_format_info = {};
-    image_format_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
+    VkImageFormatProperties2 image_format_prop = LvlInitStruct<VkImageFormatProperties2>();
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>();
     image_format_info.format = image_info.format;
     image_format_info.tiling = image_info.tiling;
     image_format_info.type = image_info.imageType;
     image_format_info.usage = image_info.usage;
-    VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_mod_info = {};
-    drm_format_mod_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT;
-    drm_format_mod_info.pNext = nullptr;
+    VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_mod_info =
+        LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
     drm_format_mod_info.drmFormatModifier = dummy_modifiers[0];
     drm_format_mod_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     drm_format_mod_info.queueFamilyIndexCount = 0;
@@ -8883,15 +8573,12 @@ TEST_F(VkLayerTest, ImageDrmFormatModifer) {
 
     VkSubresourceLayout dummyPlaneLayout = {0, 0, 0, 0, 0};
 
-    VkImageDrmFormatModifierListCreateInfoEXT drm_format_mod_list = {};
-    drm_format_mod_list.sType = VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT;
-    drm_format_mod_list.pNext = nullptr;
+    VkImageDrmFormatModifierListCreateInfoEXT drm_format_mod_list = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
     drm_format_mod_list.drmFormatModifierCount = 2;
     drm_format_mod_list.pDrmFormatModifiers = dummy_modifiers;
 
-    VkImageDrmFormatModifierExplicitCreateInfoEXT drm_format_mod_explicit = {};
-    drm_format_mod_explicit.sType = VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT;
-    drm_format_mod_explicit.pNext = nullptr;
+    VkImageDrmFormatModifierExplicitCreateInfoEXT drm_format_mod_explicit =
+        LvlInitStruct<VkImageDrmFormatModifierExplicitCreateInfoEXT>();
     drm_format_mod_explicit.drmFormatModifierPlaneCount = 1;
     drm_format_mod_explicit.pPlaneLayouts = &dummyPlaneLayout;
 
@@ -9363,9 +9050,7 @@ TEST_F(VkLayerTest, InvalidProtectedSubmit) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkCommandPool command_pool;
-    VkCommandPoolCreateInfo pool_create_info = {};
-    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    pool_create_info.pNext = nullptr;
+    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_PROTECTED_BIT;
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandPoolCreateInfo-flags-02860");
@@ -9373,9 +9058,7 @@ TEST_F(VkLayerTest, InvalidProtectedSubmit) {
     m_errorMonitor->VerifyFound();
 
     VkBuffer buffer;
-    VkBufferCreateInfo buffer_create_info = {};
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_create_info.pNext = nullptr;
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
     buffer_create_info.size = 4096;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -9385,9 +9068,7 @@ TEST_F(VkLayerTest, InvalidProtectedSubmit) {
     m_errorMonitor->VerifyFound();
 
     VkImage image;
-    VkImageCreateInfo image_create_info{};
-    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_create_info.pNext = nullptr;
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
     image_create_info.extent = {64, 64, 1};
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -9403,9 +9084,7 @@ TEST_F(VkLayerTest, InvalidProtectedSubmit) {
 
     // Try to find memory with protected bit in it at all
     VkDeviceMemory memory_protected = VK_NULL_HANDLE;
-    VkMemoryAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_info.pNext = nullptr;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = 4096;
 
     VkPhysicalDeviceMemoryProperties phys_mem_props;
@@ -9424,14 +9103,10 @@ TEST_F(VkLayerTest, InvalidProtectedSubmit) {
         m_errorMonitor->VerifyFound();
     }
 
-    VkProtectedSubmitInfo protected_submit_info = {};
-    protected_submit_info.sType = VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO;
-    protected_submit_info.pNext = nullptr;
+    VkProtectedSubmitInfo protected_submit_info = LvlInitStruct<VkProtectedSubmitInfo>();
     protected_submit_info.protectedSubmit = VK_TRUE;
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.pNext = &protected_submit_info;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&protected_submit_info);
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
@@ -9483,9 +9158,7 @@ TEST_F(VkLayerTest, InvalidProtectedMemory) {
 
     VkBuffer buffer_protected = VK_NULL_HANDLE;
     VkBuffer buffer_unprotected = VK_NULL_HANDLE;
-    VkBufferCreateInfo buffer_create_info = {};
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_create_info.pNext = nullptr;
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     buffer_create_info.size = 1 << 20;  // 1 MB
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -9507,9 +9180,7 @@ TEST_F(VkLayerTest, InvalidProtectedMemory) {
 
     VkImage image_protected = VK_NULL_HANDLE;
     VkImage image_unprotected = VK_NULL_HANDLE;
-    VkImageCreateInfo image_create_info{};
-    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_create_info.pNext = nullptr;
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     image_create_info.extent = {8, 8, 1};
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -9538,9 +9209,7 @@ TEST_F(VkLayerTest, InvalidProtectedMemory) {
     VkDeviceMemory memory_protected = VK_NULL_HANDLE;
     VkDeviceMemory memory_unprotected = VK_NULL_HANDLE;
 
-    VkMemoryAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_info.pNext = nullptr;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = 0;
 
     // set allocationSize to buffer as it will be larger than the image, but query image to avoid BP warning
@@ -9623,8 +9292,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
         return;
     }
     VkBuffer buffer;
-    VkBufferCreateInfo buf_info = {};
-    buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 4096;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -9634,8 +9302,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
-    VkMemoryAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = 4096;
     VkDeviceMemory mem;
     err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
@@ -9726,8 +9393,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
     VkBuffer buffer;
-    VkBufferCreateInfo buf_info = {};
-    buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 4096;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -9737,8 +9403,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
-    VkMemoryAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = 4096;
     VkDeviceMemory mem;
     err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
@@ -9835,10 +9500,9 @@ TEST_F(VkLayerTest, ValidateVkAccelerationStructureVersionInfoKHR) {
         (PFN_vkGetDeviceAccelerationStructureCompatibilityKHR)vk::GetInstanceProcAddr(
             instance(), "vkGetDeviceAccelerationStructureCompatibilityKHR");
     ASSERT_TRUE(vkGetDeviceAccelerationStructureCompatibilityKHR != nullptr);
-    VkAccelerationStructureVersionInfoKHR valid_version = {};
+    VkAccelerationStructureVersionInfoKHR valid_version = LvlInitStruct<VkAccelerationStructureVersionInfoKHR>();
     VkAccelerationStructureCompatibilityKHR compatablity;
     uint8_t mode[] = {VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR, VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR};
-    valid_version.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_VERSION_INFO_KHR;
     valid_version.pVersionData = mode;
     {
         VkAccelerationStructureVersionInfoKHR invalid_version = valid_version;
@@ -9889,11 +9553,9 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     VkGeometryNV geometryNV;
     GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometryNV);
 
-    VkAccelerationStructureCreateInfoKHR as_create_info = {};
+    VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
     VkBufferObj buffer;
     buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
-    as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-    as_create_info.pNext = NULL;
     as_create_info.buffer = buffer.handle();
     as_create_info.createFlags = 0;
     as_create_info.offset = 0;
@@ -9909,10 +9571,9 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     VkBufferDeviceAddressInfo indexAddressInfo = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL,
                                                   geometryNV.geometry.triangles.indexData};
     VkDeviceAddress indexAddress = vkGetBufferDeviceAddressKHR(m_device->handle(), &indexAddressInfo);
-    VkAccelerationStructureGeometryKHR valid_geometry_triangles = {VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR};
+    VkAccelerationStructureGeometryKHR valid_geometry_triangles = LvlInitStruct<VkAccelerationStructureGeometryKHR>();
     valid_geometry_triangles.geometryType = geometryNV.geometryType;
-    valid_geometry_triangles.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-    valid_geometry_triangles.geometry.triangles.pNext = NULL;
+    valid_geometry_triangles.geometry.triangles = LvlInitStruct<VkAccelerationStructureGeometryTrianglesDataKHR>();
     valid_geometry_triangles.geometry.triangles.vertexFormat = geometryNV.geometry.triangles.vertexFormat;
     valid_geometry_triangles.geometry.triangles.vertexData.deviceAddress = vertexAddress;
     valid_geometry_triangles.geometry.triangles.vertexStride = 8;
@@ -9924,7 +9585,7 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     VkAccelerationStructureGeometryKHR *pGeometry = new VkAccelerationStructureGeometryKHR[1];
     pGeometry[0] = valid_geometry_triangles;
 
-    VkAccelerationStructureBuildGeometryInfoKHR build_info_khr;
+    VkAccelerationStructureBuildGeometryInfoKHR build_info_khr = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
         (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
@@ -9932,16 +9593,13 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&acc_struct_properties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     VkBufferObj bot_level_as_scratch;
-    VkBufferCreateInfo create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo create_info = LvlInitStruct<VkBufferCreateInfo>();
     create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     create_info.size = acc_struct_properties.minAccelerationStructureScratchOffsetAlignment;
     bot_level_as.create_scratch_buffer(*m_device, &bot_level_as_scratch, &create_info);
     VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL,
                                                      bot_level_as_scratch.handle()};
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
-    build_info_khr.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-    build_info_khr.pNext = NULL;
     build_info_khr.flags = 0;
     build_info_khr.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     build_info_khr.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
@@ -10232,9 +9890,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
 
     VkExternalMemoryImageCreateInfoKHR external_image_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO, nullptr,
                                                               handle_type};
-    VkImageCreateInfo image_info{};
-    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_info.pNext = &external_image_info;
+    VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>(&external_image_info);
     image_info.extent = {64, 64, 1};
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_info.imageType = VK_IMAGE_TYPE_2D;
@@ -10411,8 +10067,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
         VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT,    VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT,
         VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT, VK_DYNAMIC_STATE_STENCIL_OP_EXT,
     };
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
     dyn_state_ci.pDynamicStates = dyn_states;
     pipe.dyn_state_ci_ = dyn_state_ci;
@@ -10522,8 +10177,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
             VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
             VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT,
         };
-        VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-        dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
         dyn_state_ci.dynamicStateCount = size(dyn_states);
         dyn_state_ci.pDynamicStates = dyn_states;
         pipe.dyn_state_ci_ = dyn_state_ci;
@@ -10542,8 +10196,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
             VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT, VK_DYNAMIC_STATE_VIEWPORT,  // viewports
             VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT, VK_DYNAMIC_STATE_SCISSOR     // scissors
         };
-        VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-        dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
         dyn_state_ci.dynamicStateCount = 2;
         pipe.dyn_state_ci_ = dyn_state_ci;
         pipe.InitState();
@@ -10576,8 +10229,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     for (size_t i = 0; i < size(dyn_states); ++i) {
         CreatePipelineHelper pipe(*this);
         pipe.InitInfo();
-        VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-        dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
         dyn_state_ci.dynamicStateCount = 2;
         VkDynamicState dyn_state_dupes[2] = {dyn_states[i], dyn_states[i]};
         dyn_state_ci.pDynamicStates = dyn_state_dupes;
@@ -10597,8 +10249,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     // Verify each vkCmdSet command
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
     dyn_state_ci.pDynamicStates = dyn_states;
     pipe.dyn_state_ci_ = dyn_state_ci;
@@ -10667,8 +10318,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
 
     CreatePipelineHelper pipe2(*this);
     pipe2.InitInfo();
-    VkPipelineDynamicStateCreateInfo dyn_state_ci2 = {};
-    dyn_state_ci2.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    VkPipelineDynamicStateCreateInfo dyn_state_ci2 = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci2.dynamicStateCount = 1;
     VkDynamicState dynamic_state2 = VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT;
     dyn_state_ci2.pDynamicStates = &dynamic_state2;
@@ -10684,8 +10334,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
 
     CreatePipelineHelper pipe3(*this);
     pipe3.InitInfo();
-    VkPipelineDynamicStateCreateInfo dyn_state_ci3 = {};
-    dyn_state_ci3.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    VkPipelineDynamicStateCreateInfo dyn_state_ci3 = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci3.dynamicStateCount = 1;
     VkDynamicState dynamic_state3 = VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT;
     dyn_state_ci3.pDynamicStates = &dynamic_state3;
@@ -10888,14 +10537,12 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateDeviceFeatureCombinations) {
     ASSERT_TRUE(q_props[0].queueCount > 0);
 
     const float q_priority[] = {1.0f};
-    VkDeviceQueueCreateInfo queue_ci = {};
-    queue_ci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    VkDeviceQueueCreateInfo queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_ci.queueFamilyIndex = 0;
     queue_ci.queueCount = 1;
     queue_ci.pQueuePriorities = q_priority;
 
-    VkDeviceCreateInfo device_ci = {};
-    device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
 
@@ -10978,22 +10625,16 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     VkDescriptorSet descriptor_set = descriptor_set_obj.GetDescriptorSetHandle();
 
     VkFence fence;
-    VkFenceCreateInfo fence_create_info = {};
-    fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fence_create_info.pNext = nullptr;
+    VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
     vk::CreateFence(device(), &fence_create_info, nullptr, &fence);
 
     VkEvent event;
-    VkEventCreateInfo event_create_info = {};
-    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
-    event_create_info.pNext = nullptr;
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk::CreateEvent(device(), &event_create_info, nullptr, &event);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateCommandBuffers-pAllocateInfo::commandBufferCount-arraylength");
     {
-        VkCommandBufferAllocateInfo info = {};
-        info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        info.pNext = nullptr;
+        VkCommandBufferAllocateInfo info = LvlInitStruct<VkCommandBufferAllocateInfo>();
         info.commandPool = m_commandPool->handle();
         info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         info.commandBufferCount = 0;  // invalid
@@ -11009,9 +10650,7 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     m_errorMonitor->SetUnexpectedError("VUID_Undefined");
     {
         VkDescriptorSetLayout set_layout = descriptor_set_obj.GetDescriptorSetLayout();
-        VkDescriptorSetAllocateInfo info = {};
-        info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        info.pNext = nullptr;
+        VkDescriptorSetAllocateInfo info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
         info.descriptorPool = descriptor_set_obj.handle();
         info.descriptorSetCount = 0;  // invalid
         info.pSetLayouts = &set_layout;
@@ -11201,15 +10840,11 @@ TEST_F(VkLayerTest, InvalidVkSemaphoreTypeCreateInfoCore) {
 
     VkSemaphore semaphore;
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info;
-    semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
-    semaphore_type_create_info.pNext = nullptr;
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     semaphore_type_create_info.initialValue = 1;
 
-    VkSemaphoreCreateInfo semaphore_create_info;
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphore_create_info.pNext = &semaphore_type_create_info;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
     semaphore_create_info.flags = 0;
 
     // timelineSemaphore feature bit not set
@@ -11249,15 +10884,11 @@ TEST_F(VkLayerTest, InvalidVkSemaphoreTypeCreateInfoExtension) {
 
     VkSemaphore semaphore;
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info;
-    semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
-    semaphore_type_create_info.pNext = nullptr;
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     semaphore_type_create_info.initialValue = 1;
 
-    VkSemaphoreCreateInfo semaphore_create_info;
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphore_create_info.pNext = &semaphore_type_create_info;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
     semaphore_create_info.flags = 0;
 
     // timelineSemaphore feature bit not set
@@ -11303,14 +10934,11 @@ TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
-    semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
     semaphore_type_create_info.initialValue = 5;
 
-    VkSemaphoreCreateInfo semaphore_create_info{};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphore_create_info.pNext = &semaphore_type_create_info;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
     VkSemaphore semaphore[2];
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore[0]));
@@ -11320,8 +10948,7 @@ TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
     VkSemaphore extra_binary;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &extra_binary));
 
-    VkSemaphoreSignalInfo semaphore_signal_info{};
-    semaphore_signal_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
+    VkSemaphoreSignalInfo semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
     semaphore_signal_info.semaphore = semaphore[0];
     semaphore_signal_info.value = 3;
     auto vkSignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR");
@@ -11329,9 +10956,8 @@ TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
     semaphore_signal_info.value = 10;
     ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
 
-    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info{};
+    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
     uint64_t signalValue = 20;
-    timeline_semaphore_submit_info.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO_KHR;
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 0;
     timeline_semaphore_submit_info.pWaitSemaphoreValues = nullptr;
     // this array needs a length of 2, even though the binary semaphore won't look at the values array
@@ -11339,9 +10965,7 @@ TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
     timeline_semaphore_submit_info.pSignalSemaphoreValues = &signalValue;
 
     VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkSubmitInfo submit_info{};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.pNext = &timeline_semaphore_submit_info;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_semaphore_submit_info);
     submit_info.pWaitDstStageMask = &stageFlags;
     submit_info.waitSemaphoreCount = 0;
     submit_info.pWaitSemaphores = nullptr;
@@ -12602,8 +12226,7 @@ TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
     }
 
     VkEvent event;
-    VkEventCreateInfo event_create_info = {};
-    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
 
     VkBufferObj buffer;
@@ -13355,8 +12978,8 @@ TEST_F(VkLayerTest, ValidateCreateSamplerWithBorderColorSwizzle) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkSamplerBorderColorComponentMappingCreateInfoEXT border_color_component_mapping = {};
-    border_color_component_mapping.sType = VK_STRUCTURE_TYPE_SAMPLER_BORDER_COLOR_COMPONENT_MAPPING_CREATE_INFO_EXT;
+    VkSamplerBorderColorComponentMappingCreateInfoEXT border_color_component_mapping =
+        LvlInitStruct<VkSamplerBorderColorComponentMappingCreateInfoEXT>();
     border_color_component_mapping.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                                                  VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
 
