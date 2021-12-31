@@ -38,9 +38,7 @@ TEST_F(VkLayerTest, PSOPolygonModeInvalid) {
     ASSERT_NO_FATAL_FAILURE(Init(&device_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineRasterizationStateCreateInfo rs_ci = {};
-    rs_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rs_ci.pNext = nullptr;
+    VkPipelineRasterizationStateCreateInfo rs_ci = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
     rs_ci.lineWidth = 1.0f;
     rs_ci.rasterizerDiscardEnable = VK_TRUE;
 
@@ -251,7 +249,7 @@ TEST_F(VkLayerTest, DisabledIndependentBlend) {
     subpass.pColorAttachments = attachments;
     subpass.colorAttachmentCount = 2;
 
-    VkRenderPassCreateInfo rpci = {};
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 2;
@@ -267,7 +265,6 @@ TEST_F(VkLayerTest, DisabledIndependentBlend) {
     attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     rpci.pAttachments = attach_desc;
-    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 
     VkRenderPass renderpass;
     vk::CreateRenderPass(m_device->device(), &rpci, NULL, &renderpass);
@@ -322,7 +319,7 @@ TEST_F(VkLayerTest, BlendingOnFormatWithoutBlendingSupport) {
     subpass.pColorAttachments = &attachment;
     subpass.colorAttachmentCount = 1;
 
-    VkRenderPassCreateInfo rpci = {};
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
@@ -334,7 +331,6 @@ TEST_F(VkLayerTest, BlendingOnFormatWithoutBlendingSupport) {
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     rpci.pAttachments = &attach_desc;
-    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 
     VkRenderPass rp;
     vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
@@ -683,8 +679,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExceedsSetLimit) {
     layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     layout_binding.pImmutableSamplers = NULL;
 
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = {};
-    ds_layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &layout_binding;
     VkDescriptorSetLayout ds_layout = {};
@@ -695,9 +690,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExceedsSetLimit) {
     const auto excess_layouts = 1 + m_device->phy().properties().limits.maxBoundDescriptorSets;
     std::vector<VkDescriptorSetLayout> dsl_array(excess_layouts, ds_layout);
 
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = {};
-    pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_ci.pNext = NULL;
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.setLayoutCount = excess_layouts;
     pipeline_layout_ci.pSetLayouts = dsl_array.data();
 
@@ -759,12 +752,8 @@ TEST_F(VkLayerTest, CreatePipelineExcessSubsampledPerStageDescriptors) {
     VkDescriptorSetLayoutBinding dslb = {};
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = {};
-    ds_layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    ds_layout_ci.pNext = NULL;
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = {};
-    pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_ci.pNext = NULL;
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -859,12 +848,8 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     VkDescriptorSetLayoutBinding dslb = {};
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = {};
-    ds_layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    ds_layout_ci.pNext = NULL;
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = {};
-    pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_ci.pNext = NULL;
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -1198,12 +1183,8 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     VkDescriptorSetLayoutBinding dslb = {};
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = {};
-    ds_layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    ds_layout_ci.pNext = NULL;
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = {};
-    pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_ci.pNext = NULL;
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -1614,8 +1595,7 @@ TEST_F(VkLayerTest, InvalidPipeline) {
     m_errorMonitor->VerifyFound();
 
     VkBufferObj buffer;
-    VkBufferCreateInfo ci = {};
-    ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo ci = LvlInitStruct<VkBufferCreateInfo>();
     ci.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     ci.size = 1024;
     buffer.init(*m_device, ci);
@@ -2275,7 +2255,7 @@ TEST_F(VkLayerTest, InvalidPipelineRenderPassShaderResolveQCOM) {
     subpass.inputAttachmentCount = 1;
     subpass.pInputAttachments = &attachmentRefs[1];
 
-    VkRenderPassCreateInfo rpci = {};
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 2;
@@ -2291,7 +2271,6 @@ TEST_F(VkLayerTest, InvalidPipelineRenderPassShaderResolveQCOM) {
     attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     rpci.pAttachments = attach_desc;
-    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 
     // renderpass has 1xMSAA colorAttachent and 4xMSAA inputAttachment
     VkRenderPass renderpass;
@@ -2322,9 +2301,7 @@ TEST_F(VkLayerTest, InvalidPipelineRenderPassShaderResolveQCOM) {
     att_state1.blendEnable = VK_TRUE;
     pipeline.AddColorAttachment(0, att_state1);
 
-    VkPipelineMultisampleStateCreateInfo ms_state = {};
-    ms_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    ms_state.pNext = nullptr;
+    VkPipelineMultisampleStateCreateInfo ms_state = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
     ms_state.flags = 0;
     ms_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state.sampleShadingEnable = VK_FALSE;
@@ -2473,9 +2450,7 @@ TEST_F(VkLayerTest, SetDepthRangeUnrestricted) {
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
-    VkPipelineDepthStencilStateCreateInfo ds_ci = {};
-    ds_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    ds_ci.pNext = NULL;
+    VkPipelineDepthStencilStateCreateInfo ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_ci.depthTestEnable = VK_TRUE;
     ds_ci.depthBoundsTestEnable = VK_TRUE;
 
@@ -2500,8 +2475,7 @@ TEST_F(VkLayerTest, SetDepthRangeUnrestricted) {
     pipe.ds_ci_.minDepthBounds = 0.0f;
     pipe.ds_ci_.maxDepthBounds = 0.0f;
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DEPTH_BOUNDS};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = 1;
     dyn_state_ci.pDynamicStates = dyn_states;
     pipe.dyn_state_ci_ = dyn_state_ci;
@@ -2541,29 +2515,22 @@ TEST_F(VkLayerTest, VertexAttributeDivisorExtension) {
         return;
     }
 
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = {};
-    vadf.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT;
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>();
     vadf.vertexAttributeInstanceRateDivisor = VK_TRUE;
     vadf.vertexAttributeInstanceRateZeroDivisor = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2 pd_features2 = {};
-    pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    pd_features2.pNext = &vadf;
-
+    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vadf);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
-    VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props = {};
-    pdvad_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT;
-    VkPhysicalDeviceProperties2 pd_props2 = {};
-    pd_props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    pd_props2.pNext = &pdvad_props;
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props =
+        LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
+    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&pdvad_props);
     vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
-    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = {};
-    pvids_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT;
+    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = LvlInitStruct<VkPipelineVertexInputDivisorStateCreateInfoEXT>();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;
     VkVertexInputBindingDescription vibd = {};
@@ -2642,29 +2609,22 @@ TEST_F(VkLayerTest, VertexAttributeDivisorDisabled) {
         return;
     }
 
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = {};
-    vadf.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT;
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>();
     vadf.vertexAttributeInstanceRateDivisor = VK_FALSE;
     vadf.vertexAttributeInstanceRateZeroDivisor = VK_FALSE;
-    VkPhysicalDeviceFeatures2 pd_features2 = {};
-    pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    pd_features2.pNext = &vadf;
-
+    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vadf);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props = {};
-    pdvad_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT;
-    VkPhysicalDeviceProperties2 pd_props2 = {};
-    pd_props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    pd_props2.pNext = &pdvad_props;
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props =
+        LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
+    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&pdvad_props);
     vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
     vibdd.binding = 0;
     vibdd.divisor = 2;
-    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = {};
-    pvids_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT;
+    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = LvlInitStruct<VkPipelineVertexInputDivisorStateCreateInfoEXT>();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;
     VkVertexInputBindingDescription vibd = {};
@@ -2702,22 +2662,17 @@ TEST_F(VkLayerTest, VertexAttributeDivisorInstanceRateZero) {
         return;
     }
 
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = {};
-    vadf.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT;
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>();
     vadf.vertexAttributeInstanceRateDivisor = VK_TRUE;
     vadf.vertexAttributeInstanceRateZeroDivisor = VK_FALSE;
-    VkPhysicalDeviceFeatures2 pd_features2 = {};
-    pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    pd_features2.pNext = &vadf;
-
+    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vadf);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
     vibdd.binding = 0;
     vibdd.divisor = 0;
-    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = {};
-    pvids_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT;
+    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = LvlInitStruct<VkPipelineVertexInputDivisorStateCreateInfoEXT>();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;
     VkVertexInputBindingDescription vibd = {};
@@ -2752,9 +2707,7 @@ primitive ");
         ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         ds_type_count.descriptorCount = 1;
 
-    VkDescriptorPoolCreateInfo ds_pool_ci = {};
-        ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        ds_pool_ci.pNext = NULL;
+    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
         ds_pool_ci.poolSizeCount = 1;
         ds_pool_ci.pPoolSizes = &ds_type_count;
 
@@ -2770,10 +2723,7 @@ VK_DESCRIPTOR_POOL_USAGE_NON_FREE, 1, &ds_pool_ci, NULL, &ds_pool);
         dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
         dsl_binding.pImmutableSamplers = NULL;
 
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = {};
-        ds_layout_ci.sType =
-VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        ds_layout_ci.pNext = NULL;
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
         ds_layout_ci.bindingCount = 1;
         ds_layout_ci.pBindings = &dsl_binding;
 
@@ -2787,9 +2737,7 @@ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout, &descriptorSet);
     ASSERT_VK_SUCCESS(err);
 
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = {};
-        pipeline_layout_ci.sType =
-VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
         pipeline_layout_ci.pNext = NULL;
         pipeline_layout_ci.setLayoutCount = 1;
         pipeline_layout_ci.pSetLayouts = &ds_layout;
@@ -2812,31 +2760,23 @@ this);
 te(m_device,bindStateVertShaderText,VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
 this);
 
-    shaderStages[0].sType  =
-VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStages[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     shaderStages[0].stage  = VK_SHADER_STAGE_VERTEX_BIT;
     shaderStages[0].shader = vs.handle();
-    shaderStages[1].sType  =
-VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStages[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     shaderStages[1].stage  = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
     shaderStages[1].shader = tc.handle();
-    shaderStages[2].sType  =
-VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStages[2] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     shaderStages[2].stage  = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
     shaderStages[2].shader = te.handle();
 
-    VkPipelineInputAssemblyStateCreateInfo iaCI = {};
-        iaCI.sType =
-VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    VkPipelineInputAssemblyStateCreateInfo iaCI = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
         iaCI.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
 
-    VkPipelineTessellationStateCreateInfo tsCI = {};
-        tsCI.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+    VkPipelineTessellationStateCreateInfo tsCI = LvlInitStruct<VkPipelineTessellationStateCreateInfo>();
         tsCI.patchControlPoints = 0; // This will cause an error
 
-    VkGraphicsPipelineCreateInfo gp_ci = {};
-        gp_ci.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        gp_ci.pNext = NULL;
+    VkGraphicsPipelineCreateInfo gp_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
         gp_ci.stageCount = 3;
         gp_ci.pStages = shaderStages;
         gp_ci.pVertexInputState = NULL;
@@ -2851,9 +2791,7 @@ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         gp_ci.layout = pipeline_layout;
         gp_ci.renderPass = renderPass();
 
-    VkPipelineCacheCreateInfo pc_ci = {};
-        pc_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-        pc_ci.pNext = NULL;
+    VkPipelineCacheCreateInfo pc_ci = LvlInitStruct<VkPipelineCacheCreateInfo>();
         pc_ci.initialSize = 0;
         pc_ci.initialData = 0;
         pc_ci.maxSize = 0;
@@ -3054,8 +2992,7 @@ TEST_F(VkLayerTest, PSOViewportStateTests) {
 
     for (const auto &test_case : dyn_test_cases) {
         const auto break_vp = [&](CreatePipelineHelper &helper) {
-            VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-            dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+            VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
             dyn_state_ci.dynamicStateCount = size(dyn_states);
             dyn_state_ci.pDynamicStates = dyn_states;
             helper.dyn_state_ci_ = dyn_state_ci;
@@ -3096,8 +3033,7 @@ TEST_F(VkLayerTest, ExtensionDynamicStatesSetWOExtensionEnabled) {
         VkDynamicState state[1];
         state[0] = test_case.dynamic_state;
         const auto break_vp = [&](CreatePipelineHelper &helper) {
-            VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-            dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+            VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
             dyn_state_ci.dynamicStateCount = test_case.dynamic_state_count;
             dyn_state_ci.pDynamicStates = state;
             helper.dyn_state_ci_ = dyn_state_ci;
@@ -3264,8 +3200,7 @@ TEST_F(VkLayerTest, PSOViewportStateMultiViewportTests) {
 
     for (const auto &test_case : dyn_test_cases) {
         const auto break_vp = [&](CreatePipelineHelper &helper) {
-            VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
-            dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+            VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
             dyn_state_ci.dynamicStateCount = size(dyn_states);
             dyn_state_ci.pDynamicStates = dyn_states;
             helper.dyn_state_ci_ = dyn_state_ci;
@@ -3375,9 +3310,8 @@ TEST_F(VkLayerTest, PipelineCreationCacheControl) {
         return;
     }
 
-    VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT cache_control_features = {};
-    cache_control_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT;
-    cache_control_features.pNext = nullptr;
+    VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT cache_control_features =
+        LvlInitStruct<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>();
     cache_control_features.pipelineCreationCacheControl = VK_FALSE;  // Tests all assume feature is off
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &cache_control_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -3395,9 +3329,7 @@ TEST_F(VkLayerTest, PipelineCreationCacheControl) {
                                              "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
 
     VkPipelineCache pipeline_cache;
-    VkPipelineCacheCreateInfo cache_create_info = {};
-    cache_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-    cache_create_info.pNext = nullptr;
+    VkPipelineCacheCreateInfo cache_create_info = LvlInitStruct<VkPipelineCacheCreateInfo>();
     cache_create_info.initialDataSize = 0;
     cache_create_info.flags = VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineCacheCreateInfo-pipelineCreationCacheControl-02892");
@@ -3545,9 +3477,7 @@ TEST_F(VkLayerTest, NumSamplesMismatch) {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
-    pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    pipe_ms_state_ci.pNext = NULL;
+    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
     pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
     pipe_ms_state_ci.sampleShadingEnable = 0;
     pipe_ms_state_ci.minSampleShading = 1.0;
@@ -3594,9 +3524,7 @@ TEST_F(VkLayerTest, NumBlendAttachMismatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
-    pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    pipe_ms_state_ci.pNext = NULL;
+    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
     pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     pipe_ms_state_ci.sampleShadingEnable = 0;
     pipe_ms_state_ci.minSampleShading = 1.0;
@@ -3827,15 +3755,13 @@ TEST_F(VkLayerTest, InvalidSPIRVCodeSize) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkShaderModule module;
-    VkShaderModuleCreateInfo moduleCreateInfo;
+    VkShaderModuleCreateInfo moduleCreateInfo = LvlInitStruct<VkShaderModuleCreateInfo>();
     struct icd_spv_header spv;
 
     spv.magic = ICD_SPV_MAGIC;
     spv.version = ICD_SPV_VERSION;
     spv.gen_magic = 0;
 
-    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleCreateInfo.pNext = NULL;
     moduleCreateInfo.pCode = (const uint32_t *)&spv;
     moduleCreateInfo.codeSize = 4;
     moduleCreateInfo.flags = 0;
@@ -3845,10 +3771,8 @@ TEST_F(VkLayerTest, InvalidSPIRVCodeSize) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01376");
     std::vector<uint32_t> shader;
-    VkShaderModuleCreateInfo module_create_info;
+    VkShaderModuleCreateInfo module_create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
     VkShaderModule shader_module;
-    module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    module_create_info.pNext = NULL;
     this->GLSLtoSPV(&m_device->props.limits, VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText, shader);
     module_create_info.pCode = shader.data();
     // Introduce failure by making codeSize a non-multiple of 4
@@ -3868,15 +3792,13 @@ TEST_F(VkLayerTest, InvalidSPIRVMagic) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkShaderModule module;
-    VkShaderModuleCreateInfo moduleCreateInfo;
+    VkShaderModuleCreateInfo moduleCreateInfo = LvlInitStruct<VkShaderModuleCreateInfo>();
     struct icd_spv_header spv;
 
     spv.magic = (uint32_t)~ICD_SPV_MAGIC;
     spv.version = ICD_SPV_VERSION;
     spv.gen_magic = 0;
 
-    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleCreateInfo.pNext = NULL;
     moduleCreateInfo.pCode = (const uint32_t *)&spv;
     moduleCreateInfo.codeSize = sizeof(spv);
     moduleCreateInfo.flags = 0;
@@ -5014,8 +4936,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentNoOutputLocation0ButAlphaToCoverageEna
 
     VkShaderObj fs(m_device, bindStateMinimalShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineMultisampleStateCreateInfo ms_state_ci = {};
-    ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    VkPipelineMultisampleStateCreateInfo ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state_ci.alphaToCoverageEnable = VK_TRUE;
 
@@ -5044,8 +4965,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentNoAlphaLocation0ButAlphaToCoverageEnab
     )glsl";
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineMultisampleStateCreateInfo ms_state_ci = {};
-    ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    VkPipelineMultisampleStateCreateInfo ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state_ci.alphaToCoverageEnable = VK_TRUE;
 
@@ -5451,16 +5371,12 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
         VkShaderObj tcs(m_device, tcsSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
         VkShaderObj tes(m_device, bindStateTeshaderText, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
 
-        VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = {};
-        inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssemblyInfo.pNext = NULL;
+        VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
         inputAssemblyInfo.flags = 0;
         inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
-        VkPipelineTessellationStateCreateInfo tessInfo = {};
-        tessInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-        tessInfo.pNext = NULL;
+        VkPipelineTessellationStateCreateInfo tessInfo = LvlInitStruct<VkPipelineTessellationStateCreateInfo>();
         tessInfo.flags = 0;
         tessInfo.patchControlPoints = 3;
 
@@ -5575,16 +5491,12 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
         VkShaderObj tcs(m_device, bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
         VkShaderObj tes(m_device, tesSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
 
-        VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = {};
-        inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssemblyInfo.pNext = NULL;
+        VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
         inputAssemblyInfo.flags = 0;
         inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
-        VkPipelineTessellationStateCreateInfo tessInfo = {};
-        tessInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-        tessInfo.pNext = NULL;
+        VkPipelineTessellationStateCreateInfo tessInfo = LvlInitStruct<VkPipelineTessellationStateCreateInfo>();
         tessInfo.flags = 0;
         tessInfo.patchControlPoints = 3;
 
@@ -6115,9 +6027,7 @@ TEST_F(VkLayerTest, MultiplePushDescriptorSets) {
     const auto &ds_vk_layouts = MakeVkHandles<VkDescriptorSetLayout>(ds_layouts);
 
     VkPipelineLayout pipeline_layout;
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = {};
-    pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_ci.pNext = NULL;
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = NULL;
     pipeline_layout_ci.setLayoutCount = ds_vk_layouts.size();
@@ -6142,8 +6052,7 @@ TEST_F(VkLayerTest, AMDMixedAttachmentSamplesValidateGraphicsPipeline) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Set a mismatched sample count
-    VkPipelineMultisampleStateCreateInfo ms_state_ci = {};
-    ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    VkPipelineMultisampleStateCreateInfo ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
 
     const auto set_info = [&](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_ = ms_state_ci; };
@@ -6227,7 +6136,7 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
         sp.pResolveAttachments = NULL;
         sp.pDepthStencilAttachment = &dr;
 
-        VkRenderPassCreateInfo rpi = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+        VkRenderPassCreateInfo rpi = LvlInitStruct<VkRenderPassCreateInfo>();
         rpi.attachmentCount = 2;
         rpi.pAttachments = att;
         rpi.subpassCount = 1;
@@ -6321,7 +6230,7 @@ TEST_F(VkLayerTest, FramebufferMixedSamples) {
         sp.pResolveAttachments = NULL;
         sp.pDepthStencilAttachment = &dr;
 
-        VkRenderPassCreateInfo rpi = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+        VkRenderPassCreateInfo rpi = LvlInitStruct<VkRenderPassCreateInfo>();
         rpi.attachmentCount = 2;
         rpi.pAttachments = att;
         rpi.subpassCount = 1;
@@ -6346,7 +6255,7 @@ TEST_F(VkLayerTest, FramebufferMixedSamples) {
 
         ASSERT_VK_SUCCESS(err);
 
-        VkPipelineDepthStencilStateCreateInfo ds = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+        VkPipelineDepthStencilStateCreateInfo ds = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
 
         const auto break_samples = [&rp, &ds, &test_case](CreatePipelineHelper &helper) {
             helper.pipe_ms_state_ci_.rasterizationSamples = test_case.raster_samples;
@@ -6476,7 +6385,7 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesCoverageReduction) {
         sp.pResolveAttachments = nullptr;
         sp.pDepthStencilAttachment = (test_case.depth_samples) ? &dr : nullptr;
 
-        VkRenderPassCreateInfo rpi = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+        VkRenderPassCreateInfo rpi = LvlInitStruct<VkRenderPassCreateInfo>();
         rpi.attachmentCount = (test_case.depth_samples) ? 2 : 1;
         rpi.pAttachments = att;
         rpi.subpassCount = 1;
@@ -6485,8 +6394,8 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesCoverageReduction) {
         VkRenderPass rp;
         ASSERT_VK_SUCCESS(vk::CreateRenderPass(m_device->device(), &rpi, nullptr, &rp));
 
-        VkPipelineDepthStencilStateCreateInfo dss = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
-        VkPipelineCoverageReductionStateCreateInfoNV crs = {VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_REDUCTION_STATE_CREATE_INFO_NV};
+        VkPipelineDepthStencilStateCreateInfo dss = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+        VkPipelineCoverageReductionStateCreateInfoNV crs = LvlInitStruct<VkPipelineCoverageReductionStateCreateInfoNV>();
 
         const auto break_samples = [&rp, &dss, &crs, &test_case](CreatePipelineHelper &helper) {
             crs.flags = 0;
@@ -6563,7 +6472,7 @@ TEST_F(VkLayerTest, FragmentCoverageToColorNV) {
         sp.colorAttachmentCount = cr.size();
         sp.pColorAttachments = cr.data();
 
-        VkRenderPassCreateInfo rpi = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+        VkRenderPassCreateInfo rpi = LvlInitStruct<VkRenderPassCreateInfo>();
         rpi.attachmentCount = att.size();
         rpi.pAttachments = att.data();
         rpi.subpassCount = 1;
@@ -6571,7 +6480,7 @@ TEST_F(VkLayerTest, FragmentCoverageToColorNV) {
 
         const std::array<VkPipelineColorBlendAttachmentState, 3> cba = {{{}, {}, {}}};
 
-        VkPipelineColorBlendStateCreateInfo cbi = {VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
+        VkPipelineColorBlendStateCreateInfo cbi = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
         cbi.attachmentCount = cba.size();
         cbi.pAttachments = cba.data();
 
@@ -6579,7 +6488,7 @@ TEST_F(VkLayerTest, FragmentCoverageToColorNV) {
         VkResult err = vk::CreateRenderPass(m_device->device(), &rpi, nullptr, &rp);
         ASSERT_VK_SUCCESS(err);
 
-        VkPipelineCoverageToColorStateCreateInfoNV cci = {VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_TO_COLOR_STATE_CREATE_INFO_NV};
+        VkPipelineCoverageToColorStateCreateInfoNV cci = LvlInitStruct<VkPipelineCoverageToColorStateCreateInfoNV>();
 
         const auto break_samples = [&cci, &cbi, &rp, &test_case](CreatePipelineHelper &helper) {
             cci.coverageToColorEnable = test_case.enabled;
@@ -7307,9 +7216,8 @@ TEST_F(VkLayerTest, ComputePipelineStageCreationFeedbackCount) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineCreationFeedbackCreateInfoEXT feedback_info = {};
+    VkPipelineCreationFeedbackCreateInfoEXT feedback_info = LvlInitStruct<VkPipelineCreationFeedbackCreateInfoEXT>();
     VkPipelineCreationFeedbackEXT feedbacks[3] = {};
-    feedback_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO_EXT;
     feedback_info.pPipelineCreationFeedback = &feedbacks[0];
     feedback_info.pipelineStageCreationFeedbackCount = 1;
     feedback_info.pPipelineStageCreationFeedbacks = &feedbacks[1];
@@ -7773,8 +7681,7 @@ TEST_F(VkLayerTest, NotCompatibleForSet) {
     }
 
     uint32_t qfi = 0;
-    VkBufferCreateInfo bci = {};
-    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo bci = LvlInitStruct<VkBufferCreateInfo>();
     bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     bci.size = 4;
     bci.queueFamilyIndexCount = 1;
@@ -7805,14 +7712,14 @@ TEST_F(VkLayerTest, NotCompatibleForSet) {
     VkDescriptorBufferInfo uniform_buffer_info = {uniform_buffer.handle(), 0, 5 * sizeof(uint32_t)};
 
     VkWriteDescriptorSet descriptor_writes[2] = {};
-    descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_writes[0].dstSet = binding_descriptor_set.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_writes[0].pBufferInfo = &storage_buffer_info;
 
-    descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[1] = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_writes[1].dstSet = binding_descriptor_set.set_;
     descriptor_writes[1].dstBinding = 1;
     descriptor_writes[1].descriptorCount = 1;  // Write 4 bytes to val
@@ -7833,9 +7740,7 @@ TEST_F(VkLayerTest, NotCompatibleForSet) {
 
     VkShaderObj shader_module(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
 
-    VkPipelineShaderStageCreateInfo stage;
-    stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    stage.pNext = nullptr;
+    VkPipelineShaderStageCreateInfo stage = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     stage.flags = 0;
     stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     stage.module = shader_module.handle();
@@ -7843,9 +7748,7 @@ TEST_F(VkLayerTest, NotCompatibleForSet) {
     stage.pSpecializationInfo = nullptr;
 
     // CreateComputePipelines
-    VkComputePipelineCreateInfo pipeline_info = {};
-    pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    pipeline_info.pNext = nullptr;
+    VkComputePipelineCreateInfo pipeline_info = LvlInitStruct<VkComputePipelineCreateInfo>();
     pipeline_info.flags = 0;
     pipeline_info.layout = pipeline_layout.handle();
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
@@ -7914,22 +7817,19 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
 
     // No raygen stage
     {
-        VkPipelineShaderStageCreateInfo stage_create_info = {};
-        stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
         stage_create_info.module = chit_shader.handle();
         stage_create_info.pName = "main";
 
-        VkRayTracingShaderGroupCreateInfoNV group_create_info = {};
-        group_create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        VkRayTracingShaderGroupCreateInfoNV group_create_info = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group_create_info.generalShader = VK_SHADER_UNUSED_NV;
         group_create_info.closestHitShader = 0;
         group_create_info.anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_info.intersectionShader = VK_SHADER_UNUSED_NV;
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -7944,33 +7844,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
     // Two raygen stages
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_infos[1].module = rgen_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group_create_infos[1].generalShader = 1;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -7984,22 +7883,19 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
 
     // General shader index doesn't exist
     {
-        VkPipelineShaderStageCreateInfo stage_create_info = {};
-        stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_info.module = rgen_shader.handle();
         stage_create_info.pName = "main";
 
-        VkRayTracingShaderGroupCreateInfoNV group_create_info = {};
-        group_create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        VkRayTracingShaderGroupCreateInfoNV group_create_info = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_info.generalShader = 1;  // Bad index here
         group_create_info.closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_info.anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_info.intersectionShader = VK_SHADER_UNUSED_NV;
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -8014,33 +7910,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
     // General shader index doesn't correspond to a raygen/miss/callable shader
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
         stage_create_infos[1].module = chit_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[1].generalShader = 1;  // Index 1 corresponds to a closest hit shader
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8055,33 +7950,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
     // General shader group should not specify non general shader
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
         stage_create_infos[1].module = chit_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[1].generalShader = 0;
         group_create_infos[1].closestHitShader = 0;  // This should not be set for a general shader group
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8096,33 +7990,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
     // Intersection shader invalid index
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
         stage_create_infos[1].module = intr_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = 5;  // invalid index
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8137,33 +8030,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
     // Intersection shader index does not correspond to intersection shader
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
         stage_create_infos[1].module = intr_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = 0;  // Index 0 corresponds to a raygen shader
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8178,33 +8070,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
     // Intersection shader must not be specified for triangle hit group
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
         stage_create_infos[1].module = intr_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = 1;
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8219,33 +8110,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
     // Any hit shader index invalid
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
         stage_create_infos[1].module = ahit_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].anyHitShader = 5;  // Invalid index
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8260,33 +8150,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
     // Any hit shader index does not correspond to an any hit shader
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
         stage_create_infos[1].module = chit_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].anyHitShader = 1;  // Index 1 corresponds to a closest hit shader
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8301,33 +8190,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
     // Closest hit shader index invalid
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
         stage_create_infos[1].module = chit_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].closestHitShader = 5;  // Invalid index
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8342,33 +8230,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
     // Closest hit shader index does not correspond to an closest hit shader
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
         stage_create_infos[1].module = ahit_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].closestHitShader = 1;  // Index 1 corresponds to an any hit shader
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8427,22 +8314,19 @@ TEST_F(VkLayerTest, ValidateRayTracingPipelineNV) {
         reinterpret_cast<PFN_vkCreateRayTracingPipelinesNV>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesNV"));
     ASSERT_TRUE(vkCreateRayTracingPipelinesNV != nullptr);
     VkPipeline pipeline = VK_NULL_HANDLE;
-    VkPipelineShaderStageCreateInfo stage_create_info = {};
-    stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
     ;
     stage_create_info.module = rgen_shader.handle();
     stage_create_info.pName = "main";
-    VkRayTracingShaderGroupCreateInfoNV group_create_info = {};
-    group_create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+    VkRayTracingShaderGroupCreateInfoNV group_create_info = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
     group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
     group_create_info.generalShader = VK_SHADER_UNUSED_NV;
     group_create_info.closestHitShader = VK_SHADER_UNUSED_NV;
     group_create_info.anyHitShader = VK_SHADER_UNUSED_NV;
     group_create_info.intersectionShader = VK_SHADER_UNUSED_NV;
     {
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -8464,8 +8348,7 @@ TEST_F(VkLayerTest, ValidateRayTracingPipelineNV) {
         m_errorMonitor->VerifyFound();
     }
     {
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -8477,8 +8360,7 @@ TEST_F(VkLayerTest, ValidateRayTracingPipelineNV) {
         m_errorMonitor->VerifyFound();
     }
     {
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -8527,8 +8409,7 @@ TEST_F(VkLayerTest, ValidateRayTracingPipelineNV) {
     }
     // test for vkCreateRayTracingPipelinesNV
     {
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -8595,13 +8476,11 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesKHR"));
     ASSERT_TRUE(vkCreateRayTracingPipelinesKHR != nullptr);
     VkPipeline pipeline = VK_NULL_HANDLE;
-    VkPipelineShaderStageCreateInfo stage_create_info = {};
-    stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
     stage_create_info.module = rgen_shader.handle();
     stage_create_info.pName = "main";
-    VkRayTracingShaderGroupCreateInfoKHR group_create_info = {};
-    group_create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+    VkRayTracingShaderGroupCreateInfoKHR group_create_info = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
     group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
     group_create_info.generalShader = 1;  // Bad index here
     group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
@@ -8610,8 +8489,7 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
     VkPipelineLibraryCreateInfoKHR library_count_zero = {VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 0};
     VkPipelineLibraryCreateInfoKHR library_count_one = {VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 1};
     {
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_count_zero;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -8631,8 +8509,7 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         pipeline_ci.groupCount = 1;
     }
     {
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_count_one;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
@@ -8647,8 +8524,7 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         m_errorMonitor->VerifyFound();
     }
     {
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_count_zero;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
@@ -8661,8 +8537,7 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         m_errorMonitor->VerifyFound();
     }
     {
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_count_zero;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
@@ -8685,8 +8560,7 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         m_errorMonitor->VerifyFound();
     }
     {
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_count_zero;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
@@ -8719,8 +8593,7 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
     }
     {
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_count_zero;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
@@ -8816,22 +8689,19 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
     // No raygen stage
     {
-        VkPipelineShaderStageCreateInfo stage_create_info = {};
-        stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
         stage_create_info.module = chit_shader.handle();
         stage_create_info.pName = "main";
 
-        VkRayTracingShaderGroupCreateInfoKHR group_create_info = {};
-        group_create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        VkRayTracingShaderGroupCreateInfoKHR group_create_info = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         group_create_info.generalShader = VK_SHADER_UNUSED_KHR;
         group_create_info.closestHitShader = 0;
         group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
@@ -8846,22 +8716,19 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
     // General shader index doesn't exist
     {
-        VkPipelineShaderStageCreateInfo stage_create_info = {};
-        stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         stage_create_info.module = rgen_shader.handle();
         stage_create_info.pName = "main";
 
-        VkRayTracingShaderGroupCreateInfoKHR group_create_info = {};
-        group_create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        VkRayTracingShaderGroupCreateInfoKHR group_create_info = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_info.generalShader = 1;  // Bad index here
         group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
@@ -8877,33 +8744,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     // General shader index doesn't correspond to a raygen/miss/callable shader
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
         stage_create_infos[1].module = chit_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_infos[1].generalShader = 1;  // Index 1 corresponds to a closest hit shader
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
@@ -8919,33 +8785,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     // General shader group should not specify non general shader
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
         stage_create_infos[1].module = chit_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_infos[1].generalShader = 0;
         group_create_infos[1].closestHitShader = 0;  // This should not be set for a general shader group
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
@@ -8961,33 +8826,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     // Intersection shader invalid index
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
         stage_create_infos[1].module = intr_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].intersectionShader = 5;  // invalid index
 
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
@@ -9003,33 +8867,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     // Intersection shader index does not correspond to intersection shader
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
         stage_create_infos[1].module = intr_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].intersectionShader = 0;  // Index 0 corresponds to a raygen shader
 
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
@@ -9045,33 +8908,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     // Intersection shader must not be specified for triangle hit group
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
         stage_create_infos[1].module = intr_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].intersectionShader = 1;
 
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
@@ -9087,33 +8949,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     // Any hit shader index invalid
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
         stage_create_infos[1].module = ahit_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].anyHitShader = 5;  // IKHRalid index
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
@@ -9130,33 +8991,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     // Any hit shader index does not correspond to an any hit shader
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
         stage_create_infos[1].module = chit_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].anyHitShader = 1;  // Index 1 corresponds to a closest hit shader
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
@@ -9173,33 +9033,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     // Closest hit shader index invalid
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
         stage_create_infos[1].module = chit_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].closestHitShader = 5;  // invalid index
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
@@ -9216,33 +9075,32 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     // Closest hit shader index does not correspond to an closest hit shader
     {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
         stage_create_infos[1].module = ahit_shader.handle();
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_infos[0].generalShader = 0;
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].closestHitShader = 1;  // Index 1 corresponds to an any hit shader
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
@@ -9326,9 +9184,7 @@ TEST_F(VkLayerTest, PipelineStageConditionalRenderingWithWrongQueue) {
                                   nullptr};
     vk::CmdBeginRenderPass(commandBuffer.handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
 
-    VkImageMemoryBarrier imb = {};
-    imb.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    imb.pNext = nullptr;
+    VkImageMemoryBarrier imb = LvlInitStruct<VkImageMemoryBarrier>();
     imb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     imb.dstAccessMask = VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT;
     imb.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -9551,9 +9407,7 @@ TEST_F(VkLayerTest, DuplicateDynamicStates) {
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.InitState();
-    pipe.dyn_state_ci_ = {};
-    pipe.dyn_state_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    pipe.dyn_state_ci_.pNext = nullptr;
+    pipe.dyn_state_ci_ = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     pipe.dyn_state_ci_.flags = 0;
     pipe.dyn_state_ci_.dynamicStateCount = 4;
     pipe.dyn_state_ci_.pDynamicStates = dynamic_states;
@@ -9581,9 +9435,7 @@ TEST_F(VkLayerTest, NonGraphicsDynamicStates) {
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.InitState();
-    pipe.dyn_state_ci_ = {};
-    pipe.dyn_state_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    pipe.dyn_state_ci_.pNext = nullptr;
+    pipe.dyn_state_ci_ = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     pipe.dyn_state_ci_.flags = 0;
     pipe.dyn_state_ci_.dynamicStateCount = 1;
     pipe.dyn_state_ci_.pDynamicStates = &dynamic_state;
@@ -9711,8 +9563,7 @@ TEST_F(VkLayerTest, ValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR) {
     rt_pipe.InitState();
     rt_pipe.CreateKHRRayTracingPipeline();
     VkBuffer buffer;
-    VkBufferCreateInfo buf_info = {};
-    buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 4096;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -9722,8 +9573,7 @@ TEST_F(VkLayerTest, ValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR) {
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
-    VkMemoryAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = 4096;
     VkDeviceMemory mem;
     err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
@@ -9782,15 +9632,11 @@ TEST_F(VkLayerTest, ValidatePipelineExecutablePropertiesFeature) {
         return;
     }
 
-    VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_features = {};
-    pipeline_exe_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR;
-    pipeline_exe_features.pNext = nullptr;
+    VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_features =
+        LvlInitStruct<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR>();
     pipeline_exe_features.pipelineExecutableInfo = VK_FALSE;  // Starting with it off
 
-    VkPhysicalDeviceFeatures2 features2 = {};
-    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    features2.pNext = &pipeline_exe_features;
-
+    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&pipeline_exe_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -9817,15 +9663,11 @@ TEST_F(VkLayerTest, ValidatePipelineExecutablePropertiesFeature) {
     pipe.CreateGraphicsPipeline();
 
     uint32_t count;
-    VkPipelineExecutableInfoKHR pipeline_exe_info = {};
-    pipeline_exe_info.sType = VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR;
-    pipeline_exe_info.pNext = nullptr;
+    VkPipelineExecutableInfoKHR pipeline_exe_info = LvlInitStruct<VkPipelineExecutableInfoKHR>();
     pipeline_exe_info.pipeline = pipe.pipeline_;
     pipeline_exe_info.executableIndex = 0;
 
-    VkPipelineInfoKHR pipeline_info = {};
-    pipeline_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR;
-    pipeline_info.pNext = nullptr;
+    VkPipelineInfoKHR pipeline_info = LvlInitStruct<VkPipelineInfoKHR>();
     pipeline_info.pipeline = pipe.pipeline_;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
@@ -9951,19 +9793,14 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRatePipeline) {
         return;
     }
 
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = {};
-    fsr_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
     fsr_features.pipelineFragmentShadingRate = true;
 
-    VkPhysicalDeviceFeatures2 device_features = {};
-    device_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    device_features.pNext = &fsr_features;
-
+    VkPhysicalDeviceFeatures2 device_features = LvlInitStruct<VkPhysicalDeviceFeatures2>(&fsr_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &device_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineFragmentShadingRateStateCreateInfoKHR fsr_ci = {};
-    fsr_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR;
+    VkPipelineFragmentShadingRateStateCreateInfoKHR fsr_ci = LvlInitStruct<VkPipelineFragmentShadingRateStateCreateInfoKHR>();
     fsr_ci.fragmentSize.width = 1;
     fsr_ci.fragmentSize.height = 1;
 
@@ -10023,8 +9860,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRatePipelineFeatureUsage) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineFragmentShadingRateStateCreateInfoKHR fsr_ci = {};
-    fsr_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR;
+    VkPipelineFragmentShadingRateStateCreateInfoKHR fsr_ci = LvlInitStruct<VkPipelineFragmentShadingRateStateCreateInfoKHR>();
     fsr_ci.fragmentSize.width = 1;
     fsr_ci.fragmentSize.height = 1;
 
@@ -10105,8 +9941,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRatePipelineCombinerOpsLimit) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineFragmentShadingRateStateCreateInfoKHR fsr_ci = {};
-    fsr_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR;
+    VkPipelineFragmentShadingRateStateCreateInfoKHR fsr_ci = LvlInitStruct<VkPipelineFragmentShadingRateStateCreateInfoKHR>();
     fsr_ci.fragmentSize.width = 1;
     fsr_ci.fragmentSize.height = 1;
 
@@ -10479,24 +10314,21 @@ TEST_F(VkLayerTest, SampledInvalidImageViews) {
 
     // first item is combined, second/third item are seperate
     VkWriteDescriptorSet descriptor_writes[3] = {};
-    descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_writes[0].pNext = nullptr;
+    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_writes[0].dstSet = combined_descriptor_set.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[0].pImageInfo = &combined_sampler_info;
 
-    descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_writes[1].pNext = nullptr;
+    descriptor_writes[1] = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_writes[1].dstSet = seperate_descriptor_set.set_;
     descriptor_writes[1].dstBinding = 0;
     descriptor_writes[1].descriptorCount = 1;
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     descriptor_writes[1].pImageInfo = &seperate_sampled_image_info;
 
-    descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_writes[2].pNext = nullptr;
+    descriptor_writes[2] = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_writes[2].dstSet = seperate_descriptor_set.set_;
     descriptor_writes[2].dstBinding = 1;
     descriptor_writes[2].descriptorCount = 1;
@@ -14934,7 +14766,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessWith
                     VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM |
                     VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM;
 
-    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
     rpci.attachmentCount = 2;
     rpci.pAttachments = attachments;
     rpci.subpassCount = 1;
@@ -15042,7 +14874,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessNoSu
         subpass.pDepthStencilAttachment = &dsAttachRef;
         subpass.flags = subpass_flags;
 
-        VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+        VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
         rpci.attachmentCount = 2;
         rpci.pAttachments = attachments;
         rpci.subpassCount = 1;
