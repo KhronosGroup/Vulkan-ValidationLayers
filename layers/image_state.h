@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -249,6 +249,7 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     uint32_t get_swapchain_image_count = 0;
     uint64_t max_present_id = 0;
     const safe_VkImageCreateInfo image_create_info;
+
     std::shared_ptr<SURFACE_STATE> surface;
     ValidationStateTracker *dev_data;
     uint32_t acquired_images = 0;
@@ -329,6 +330,8 @@ class SURFACE_STATE : public BASE_NODE {
     SWAPCHAIN_NODE *swapchain{nullptr};
 
   private:
+    std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
+    mutable std::mutex lock_;
     mutable layer_data::unordered_map<GpuQueue, bool> gpu_queue_support_;
     mutable layer_data::unordered_map<VkPhysicalDevice, std::vector<VkPresentModeKHR>> present_modes_;
     mutable layer_data::unordered_map<VkPhysicalDevice, std::vector<VkSurfaceFormatKHR>> formats_;
