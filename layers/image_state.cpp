@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -579,12 +579,14 @@ void SURFACE_STATE::RemoveParent(BASE_NODE *parent_node) {
 }
 
 void SURFACE_STATE::SetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi, bool supported) {
+    auto guard = Lock();
     assert(phys_dev);
     GpuQueue key{phys_dev, qfi};
     gpu_queue_support_[key] = supported;
 }
 
 bool SURFACE_STATE::GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const {
+    auto guard = Lock();
     assert(phys_dev);
     GpuQueue key{phys_dev, qfi};
     auto iter = gpu_queue_support_.find(key);
@@ -598,11 +600,13 @@ bool SURFACE_STATE::GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) con
 }
 
 void SURFACE_STATE::SetPresentModes(VkPhysicalDevice phys_dev, std::vector<VkPresentModeKHR> &&modes) {
+    auto guard = Lock();
     assert(phys_dev);
     present_modes_[phys_dev] = std::move(modes);
 }
 
 std::vector<VkPresentModeKHR> SURFACE_STATE::GetPresentModes(VkPhysicalDevice phys_dev) const {
+    auto guard = Lock();
     assert(phys_dev);
     auto iter = present_modes_.find(phys_dev);
     if (iter != present_modes_.end()) {
@@ -617,11 +621,13 @@ std::vector<VkPresentModeKHR> SURFACE_STATE::GetPresentModes(VkPhysicalDevice ph
 }
 
 void SURFACE_STATE::SetFormats(VkPhysicalDevice phys_dev, std::vector<VkSurfaceFormatKHR> &&fmts) {
+    auto guard = Lock();
     assert(phys_dev);
     formats_[phys_dev] = std::move(fmts);
 }
 
 std::vector<VkSurfaceFormatKHR> SURFACE_STATE::GetFormats(VkPhysicalDevice phys_dev) const {
+    auto guard = Lock();
     assert(phys_dev);
     auto iter = formats_.find(phys_dev);
     if (iter != formats_.end()) {
@@ -637,11 +643,13 @@ std::vector<VkSurfaceFormatKHR> SURFACE_STATE::GetFormats(VkPhysicalDevice phys_
 }
 
 void SURFACE_STATE::SetCapabilities(VkPhysicalDevice phys_dev, const VkSurfaceCapabilitiesKHR &caps) {
+    auto guard = Lock();
     assert(phys_dev);
     capabilities_[phys_dev] = caps;
 }
 
 VkSurfaceCapabilitiesKHR SURFACE_STATE::GetCapabilities(VkPhysicalDevice phys_dev) const {
+    auto guard = Lock();
     assert(phys_dev);
     auto iter = capabilities_.find(phys_dev);
     if (iter != capabilities_.end()) {
