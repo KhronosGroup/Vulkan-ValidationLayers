@@ -29,6 +29,7 @@
 #include <deque>
 #include <set>
 #include <vector>
+#include "vk_layer_utils.h"
 
 class CMD_BUFFER_STATE;
 class QUEUE_STATE;
@@ -70,10 +71,14 @@ class FENCE_STATE : public REFCOUNTED_NODE {
     uint64_t QueueSeq() const { return seq_; }
 
   private:
+    ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
+    WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
+
     QUEUE_STATE *queue_{nullptr};
     uint64_t seq_{0};
     FENCE_STATUS state_;
     SyncScope scope_{kSyncScopeInternal};
+    mutable ReadWriteLock lock_;
 };
 
 class SEMAPHORE_STATE : public REFCOUNTED_NODE {
@@ -128,9 +133,16 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
           next_payload_(completed_.payload + 1) {}
 
     VkSemaphore semaphore() const { return handle_.Cast<VkSemaphore>(); }
-    SyncScope Scope() const { return scope_; }
-    // this is the most recently completed operation
-    SemOp Completed() const { return completed_; }
+    SyncScope Scope() const {
+        auto guard = ReadLock();
+        return scope_;
+    }
+    // This is the most recently completed operation. It is returned by value so that the caller
+    // has a correct copy even if something else is completing on this queue in a different thread.
+    SemOp Completed() const {
+        auto guard = ReadLock();
+        return completed_;
+    }
 
     // Enqueue a semaphore operation. For binary semaphores, the payload value is generated and
     // returned, so that every semaphore operation has a unique value.
@@ -153,7 +165,10 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
 
     bool CanBeSignaled() const;
     bool CanBeWaited() const;
-    bool HasPendingOps() const { return !operations_.empty(); }
+    bool HasPendingOps() const {
+        auto guard = ReadLock();
+        return !operations_.empty();
+    }
 
     void Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags);
     void Export(VkExternalSemaphoreHandleTypeFlagBits handle_type);
@@ -161,6 +176,9 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     const VkSemaphoreType type;
 
   private:
+    ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
+    WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
+
     SyncScope scope_{kSyncScopeInternal};
     // the most recently completed operation
     SemOp completed_{};
@@ -171,6 +189,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     // timeline operations can be added in any order and multiple operations
     // can use the same payload value.
     std::multiset<SemOp> operations_;
+    mutable ReadWriteLock lock_;
 };
 
 struct CB_SUBMISSION {
@@ -218,10 +237,12 @@ class QUEUE_STATE : public BASE_NODE {
     const uint32_t queueFamilyIndex;
     const VkDeviceQueueCreateFlags flags;
 
-    std::deque<CB_SUBMISSION> submissions;
-
   private:
     layer_data::optional<CB_SUBMISSION> NextSubmission(uint64_t until_seq);
+    ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
+    WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
+    std::deque<CB_SUBMISSION> submissions_;
     uint64_t seq_;
+    mutable ReadWriteLock lock_;
 };
