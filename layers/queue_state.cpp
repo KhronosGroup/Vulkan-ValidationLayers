@@ -40,8 +40,10 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
         cb_node->BeginUse();
         cb_node->Submit(submission.perf_submit_pass);
     }
-
-    const uint64_t next_seq = seq_ + submissions.size() + 1;
+    // Lock required for queue / semaphore operations, but not for command buffer
+    // processing above.
+    auto guard = WriteLock();
+    const uint64_t next_seq = seq_ + submissions_.size() + 1;
     bool retire_early = false;
     for (auto &wait : submission.wait_semaphores) {
         wait.semaphore->EnqueueWait(this, next_seq, wait.payload);
@@ -62,7 +64,7 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
         submission.fence->BeginUse();
     }
 
-    submissions.emplace_back(std::move(submission));
+    submissions_.emplace_back(std::move(submission));
     return retire_early ? next_seq : 0;
 }
 
@@ -74,10 +76,13 @@ static void MergeResults(SEMAPHORE_STATE::RetireResult &results, const SEMAPHORE
 }
 
 layer_data::optional<CB_SUBMISSION> QUEUE_STATE::NextSubmission(uint64_t until_seq) {
+    // Pop the next submission off of the queue so that Retire() doesn't need to worry
+    // about locking.
+    auto guard = WriteLock();
     layer_data::optional<CB_SUBMISSION> result;
-    if (seq_ < until_seq && !submissions.empty()) {
-        result.emplace(std::move(submissions.front()));
-        submissions.pop_front();
+    if (seq_ < until_seq && !submissions_.empty()) {
+        result.emplace(std::move(submissions_.front()));
+        submissions_.pop_front();
         seq_++;
     }
     return result;
@@ -133,6 +138,7 @@ void QUEUE_STATE::Retire(uint64_t until_seq) {
 }
 
 bool FENCE_STATE::EnqueueSignal(QUEUE_STATE *queue_state, uint64_t next_seq) {
+    auto guard = WriteLock();
     if (scope_ != kSyncScopeInternal) {
         return true;
     }
@@ -144,18 +150,27 @@ bool FENCE_STATE::EnqueueSignal(QUEUE_STATE *queue_state, uint64_t next_seq) {
 }
 
 void FENCE_STATE::Retire(bool notify_queue) {
-    if (scope_ == kSyncScopeInternal) {
-        if (queue_ && notify_queue) {
-            // Fence signaller is a queue -- use this as proof that prior operations on that queue have completed.
-            queue_->Retire(seq_);
-            queue_ = nullptr;
-            seq_ = 0;
+    QUEUE_STATE *q = nullptr;
+    uint64_t seq = 0;
+    {
+        // Hold the lock only while updating members, but not
+        // while calling QUEUE_STATE::Retire()
+        auto guard = WriteLock();
+        if (scope_ == kSyncScopeInternal) {
+            q = queue_;
+            seq = seq_;
         }
+        queue_ = nullptr;
+        seq_ = 0;
+        state_ = FENCE_RETIRED;
     }
-    state_ = FENCE_RETIRED;
+    if (q && notify_queue) {
+        q->Retire(seq);
+    }
 }
 
 void FENCE_STATE::Reset() {
+    auto guard = WriteLock();
     if (scope_ == kSyncScopeInternal) {
         state_ = FENCE_UNSIGNALED;
     } else if (scope_ == kSyncScopeExternalTemporary) {
@@ -164,6 +179,7 @@ void FENCE_STATE::Reset() {
 }
 
 void FENCE_STATE::Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
+    auto guard = WriteLock();
     if (scope_ != kSyncScopeExternalPermanent) {
         if ((handle_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT || flags & VK_FENCE_IMPORT_TEMPORARY_BIT) &&
             scope_ == kSyncScopeInternal) {
@@ -175,6 +191,7 @@ void FENCE_STATE::Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceI
 }
 
 void FENCE_STATE::Export(VkExternalFenceHandleTypeFlagBits handle_type) {
+    auto guard = WriteLock();
     if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT) {
         // Export with reference transference becomes external
         scope_ = kSyncScopeExternalPermanent;
@@ -185,6 +202,7 @@ void FENCE_STATE::Export(VkExternalFenceHandleTypeFlagBits handle_type) {
 }
 
 bool SEMAPHORE_STATE::EnqueueSignal(QUEUE_STATE *queue, uint64_t queue_seq, uint64_t &payload) {
+    auto guard = WriteLock();
     if (scope_ != kSyncScopeInternal) {
         return true;  // retire early
     }
@@ -196,6 +214,7 @@ bool SEMAPHORE_STATE::EnqueueSignal(QUEUE_STATE *queue, uint64_t queue_seq, uint
 }
 
 void SEMAPHORE_STATE::EnqueueWait(QUEUE_STATE *queue, uint64_t queue_seq, uint64_t &payload) {
+    auto guard = WriteLock();
     switch (scope_) {
         case kSyncScopeExternalTemporary:
             scope_ = kSyncScopeInternal;
@@ -210,16 +229,19 @@ void SEMAPHORE_STATE::EnqueueWait(QUEUE_STATE *queue, uint64_t queue_seq, uint64
 }
 
 void SEMAPHORE_STATE::EnqueueAcquire() {
+    auto guard = WriteLock();
     assert(type == VK_SEMAPHORE_TYPE_BINARY);
     operations_.emplace(SemOp{kBinaryAcquire, nullptr, 0, next_payload_++});
 }
 
 void SEMAPHORE_STATE::EnqueuePresent(QUEUE_STATE *queue) {
+    auto guard = WriteLock();
     assert(type == VK_SEMAPHORE_TYPE_BINARY);
     operations_.emplace(SemOp{kBinaryPresent, queue, 0, next_payload_++});
 }
 
 layer_data::optional<SemOp> SEMAPHORE_STATE::LastOp(std::function<bool(const SemOp &)> filter) const {
+    auto guard = ReadLock();
     layer_data::optional<SemOp> result;
 
     for (auto pos = operations_.rbegin(); pos != operations_.rend(); ++pos) {
@@ -235,22 +257,30 @@ bool SEMAPHORE_STATE::CanBeSignaled() const {
     if (type == VK_SEMAPHORE_TYPE_TIMELINE) {
         return true;
     }
+    // both LastOp() and Completed() lock, so no locking needed in this method.
     auto op = LastOp();
-    return op ? op->CanBeSignaled() : completed_.CanBeSignaled();
+    if (op) {
+        return op->CanBeSignaled();
+    }
+    auto comp = Completed();
+    return comp.CanBeSignaled();
 }
 
 bool SEMAPHORE_STATE::CanBeWaited() const {
     if (type == VK_SEMAPHORE_TYPE_TIMELINE) {
         return true;
     }
+    // both LastOp() and Completed() lock, so no locking needed in this method.
     auto op = LastOp();
     if (op) {
         return op->op_type == kSignal || op->op_type == kBinaryAcquire;
     }
-    return completed_.op_type == kSignal || completed_.op_type == kBinaryAcquire;
+    auto comp = Completed();
+    return comp.op_type == kSignal || comp.op_type == kBinaryAcquire;
 }
 
 SEMAPHORE_STATE::RetireResult SEMAPHORE_STATE::Retire(QUEUE_STATE *queue, uint64_t payload) {
+    auto guard = WriteLock();
     RetireResult result;
 
     while (!operations_.empty() && operations_.begin()->payload <= payload) {
@@ -277,6 +307,7 @@ void SEMAPHORE_STATE::RetireTimeline(uint64_t payload) {
 }
 
 void SEMAPHORE_STATE::Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags) {
+    auto guard = WriteLock();
     if (scope_ != kSyncScopeExternalPermanent) {
         if ((handle_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT || flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) &&
             scope_ == kSyncScopeInternal) {
@@ -288,6 +319,7 @@ void SEMAPHORE_STATE::Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, 
 }
 
 void SEMAPHORE_STATE::Export(VkExternalSemaphoreHandleTypeFlagBits handle_type) {
+    auto guard = WriteLock();
     if (handle_type != VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
         // Cannot track semaphore state once it is exported, except for Sync FD handle types which have copy transference
         scope_ = kSyncScopeExternalPermanent;
