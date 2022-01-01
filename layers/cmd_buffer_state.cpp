@@ -58,6 +58,7 @@ void COMMAND_POOL_STATE::Free(uint32_t count, const VkCommandBuffer *command_buf
 
 void COMMAND_POOL_STATE::Reset() {
     for (auto &entry : commandBuffers) {
+        auto guard = entry.second->WriteLock();
         entry.second->Reset();
     }
 }
@@ -445,30 +446,33 @@ void CMD_BUFFER_STATE::Destroy() {
 }
 
 void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
-    if (state == CB_RECORDING) {
-        state = CB_INVALID_INCOMPLETE;
-    } else if (state == CB_RECORDED) {
-        state = CB_INVALID_COMPLETE;
-    }
-    assert(!invalid_nodes.empty());
-    LogObjectList log_list;
-    for (auto &obj : invalid_nodes) {
-        log_list.object_list.emplace_back(obj->Handle());
-    }
-    broken_bindings.emplace(invalid_nodes[0]->Handle(), log_list);
-
-    if (unlink) {
+    {
+        auto guard = WriteLock();
+        if (state == CB_RECORDING) {
+            state = CB_INVALID_INCOMPLETE;
+        } else if (state == CB_RECORDED) {
+            state = CB_INVALID_COMPLETE;
+        }
+        assert(!invalid_nodes.empty());
+        LogObjectList log_list;
         for (auto &obj : invalid_nodes) {
-            object_bindings.erase(obj);
-            switch (obj->Type()) {
-                case kVulkanObjectTypeCommandBuffer:
-                    linkedCommandBuffers.erase(static_cast<CMD_BUFFER_STATE *>(obj.get()));
-                    break;
-                case kVulkanObjectTypeImage:
-                    image_layout_map.erase(static_cast<IMAGE_STATE *>(obj.get()));
-                    break;
-                default:
-                    break;
+            log_list.object_list.emplace_back(obj->Handle());
+        }
+        broken_bindings.emplace(invalid_nodes[0]->Handle(), log_list);
+
+        if (unlink) {
+            for (auto &obj : invalid_nodes) {
+                object_bindings.erase(obj);
+                switch (obj->Type()) {
+                    case kVulkanObjectTypeCommandBuffer:
+                        linkedCommandBuffers.erase(static_cast<CMD_BUFFER_STATE *>(obj.get()));
+                        break;
+                    case kVulkanObjectTypeImage:
+                        image_layout_map.erase(static_cast<IMAGE_STATE *>(obj.get()));
+                        break;
+                    default:
+                        break;
+                }
             }
         }
     }
@@ -822,7 +826,7 @@ void CMD_BUFFER_STATE::End(VkResult result) {
 void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCommandBuffer *pCommandBuffers) {
     RecordCmd(CMD_EXECUTECOMMANDS);
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
-        auto sub_cb_state = dev_data->Get<CMD_BUFFER_STATE>(pCommandBuffers[i]);
+        auto sub_cb_state = dev_data->GetWrite<CMD_BUFFER_STATE>(pCommandBuffers[i]);
         assert(sub_cb_state);
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
             if (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
@@ -1196,10 +1200,9 @@ void CMD_BUFFER_STATE::RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipeli
     if (!waitedEvents.count(event)) {
         writeEventsBeforeWait.push_back(event);
     }
-    eventUpdates.emplace_back(
-        [event, stageMask](const ValidationStateTracker *device_data, bool do_validate, EventToStageMap *localEventToStageMap) {
-            return SetEventStageMask(event, stageMask, localEventToStageMap);
-        });
+    eventUpdates.emplace_back([event, stageMask](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap *localEventToStageMap) {
+        return SetEventStageMask(event, stageMask, localEventToStageMap);
+    });
 }
 
 void CMD_BUFFER_STATE::RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
@@ -1215,12 +1218,13 @@ void CMD_BUFFER_STATE::RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipe
         writeEventsBeforeWait.push_back(event);
     }
 
-    eventUpdates.emplace_back([event](const ValidationStateTracker *, bool do_validate, EventToStageMap *localEventToStageMap) {
+    eventUpdates.emplace_back([event](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap *localEventToStageMap) {
         return SetEventStageMask(event, VkPipelineStageFlags2KHR(0), localEventToStageMap);
     });
 }
 
-void CMD_BUFFER_STATE::RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, const VkEvent *pEvents) {
+void CMD_BUFFER_STATE::RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, const VkEvent *pEvents,
+                                        VkPipelineStageFlags2KHR src_stage_mask) {
     RecordCmd(cmd_type);
     for (uint32_t i = 0; i < eventCount; ++i) {
         if (!dev_data->disabled[command_buffer_state]) {
@@ -1297,7 +1301,7 @@ void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
     }
 
     for (const auto &function : eventUpdates) {
-        function(nullptr, /*do_validate*/ false, &local_event_to_stage_map);
+        function(*this, /*do_validate*/ false, &local_event_to_stage_map);
     }
 
     for (const auto &eventStagePair : local_event_to_stage_map) {

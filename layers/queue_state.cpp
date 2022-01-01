@@ -32,7 +32,9 @@ using SemOp = SEMAPHORE_STATE::SemOp;
 
 uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
     for (auto &cb_node : submission.cbs) {
+        auto cb_guard = cb_node->WriteLock();
         for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+            auto secondary_guard = secondary_cmd_buffer->WriteLock();
             secondary_cmd_buffer->IncrementResources();
         }
         cb_node->IncrementResources();
@@ -118,7 +120,9 @@ void QUEUE_STATE::Retire(uint64_t until_seq) {
         }
 
         for (auto &cb_node : submission->cbs) {
+            auto cb_guard = cb_node->WriteLock();
             for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+                auto secondary_guard = secondary_cmd_buffer->WriteLock();
                 secondary_cmd_buffer->Retire(submission->perf_submit_pass);
             }
             cb_node->Retire(submission->perf_submit_pass);

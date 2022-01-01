@@ -287,9 +287,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // Validation functions run when secondary CB is executed in primary
     std::vector<std::function<bool(const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *primary, const FRAMEBUFFER_STATE *)>>
         cmd_execute_commands_functions;
-    std::vector<
-        std::function<bool(const ValidationStateTracker *device_data, bool do_validate, EventToStageMap *localEventToStageMap)>>
-        eventUpdates;
+    std::vector<std::function<bool(CMD_BUFFER_STATE &cb, bool do_validate, EventToStageMap *localEventToStageMap)>> eventUpdates;
     std::vector<std::function<bool(const ValidationStateTracker *device_data, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                    uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
         queryUpdates;
@@ -318,6 +316,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool conditional_rendering_active{false};
     bool conditional_rendering_inside_render_pass{false};
     uint32_t conditional_rendering_subpass{0};
+    mutable ReadWriteLock lock;
+    ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
+    WriteLockGuard WriteLock() { return WriteLockGuard(lock); }
 
     CMD_BUFFER_STATE(ValidationStateTracker *, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                      const COMMAND_POOL_STATE *cmd_pool);
@@ -433,7 +434,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void RecordTransferCmd(CMD_TYPE cmd_type, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2 = nullptr);
     void RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
-    void RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, const VkEvent *pEvents);
+    virtual void RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, const VkEvent *pEvents,
+                                  VkPipelineStageFlags2KHR src_stage_mask);
     void RecordWriteTimestamp(CMD_TYPE cmd_type, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool, uint32_t slot);
 
     void RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,

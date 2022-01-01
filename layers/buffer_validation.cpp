@@ -2185,7 +2185,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
                                                    const VkImageSubresourceRange *pRanges) const {
     bool skip = false;
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
-    const auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    const auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const auto image_state = Get<IMAGE_STATE>(image);
     if (cb_node && image_state) {
         skip |= ValidateMemoryIsBoundToImage(image_state.get(), "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
@@ -2220,7 +2220,7 @@ void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, 
                                                  const VkImageSubresourceRange *pRanges) {
     StateTracker::PreCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
 
-    auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto image_state = Get<IMAGE_STATE>(image);
     if (cb_node && image_state) {
         for (uint32_t i = 0; i < rangeCount; ++i) {
@@ -2253,7 +2253,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     bool skip = false;
 
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
-    const auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    const auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const auto image_state = Get<IMAGE_STATE>(image);
     if (cb_node && image_state) {
         const VkFormat image_format = image_state->createInfo.format;
@@ -2349,7 +2349,8 @@ void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandB
                                                         const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
                                                         const VkImageSubresourceRange *pRanges) {
     StateTracker::PreCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
-    auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto image_state = Get<IMAGE_STATE>(image);
     if (cb_node && image_state) {
         for (uint32_t i = 0; i < rangeCount; ++i) {
@@ -2847,7 +2848,7 @@ template <typename RegionType>
 bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                       const RegionType *pRegions, CopyCommandVersion version) const {
-    const auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    const auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const auto src_image_state = Get<IMAGE_STATE>(srcImage);
     const auto dst_image_state = Get<IMAGE_STATE>(dstImage);
     const VkFormat src_format = src_image_state->createInfo.format;
@@ -3275,7 +3276,7 @@ void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImag
                                            const VkImageCopy *pRegions) {
     StateTracker::PreCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                             pRegions);
-    auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto src_image_state = Get<IMAGE_STATE>(srcImage);
     auto dst_image_state = Get<IMAGE_STATE>(dstImage);
 
@@ -3288,7 +3289,8 @@ void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImag
 
 void CoreChecks::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo) {
     StateTracker::PreCallRecordCmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
-    auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto src_image_state = Get<IMAGE_STATE>(pCopyImageInfo->srcImage);
     auto dst_image_state = Get<IMAGE_STATE>(pCopyImageInfo->dstImage);
 
@@ -3343,7 +3345,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                     const VkClearRect *pRects) const {
     bool skip = false;
-    const auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);  // TODO: Should be const, and never modified during validation
+    const auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_node) return skip;
 
     skip |= ValidateCmd(cb_node.get(), CMD_CLEARATTACHMENTS);
@@ -3482,7 +3484,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                   const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                   const VkClearRect *pRects) {
-    auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     if (cb_node->activeRenderPass && (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
         std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
         if (cb_node->activeRenderPass->use_dynamic_rendering_inherited) {
@@ -3576,7 +3578,7 @@ template <typename RegionType>
 bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                          VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                          const RegionType *pRegions, CopyCommandVersion version) const {
-    const auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    const auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const auto src_image_state = Get<IMAGE_STATE>(srcImage);
     const auto dst_image_state = Get<IMAGE_STATE>(dstImage);
     const bool is_2khr = (version == COPY_COMMAND_VERSION_2);
@@ -3876,7 +3878,7 @@ template <typename RegionType>
 bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                       const RegionType *pRegions, VkFilter filter, CopyCommandVersion version) const {
-    const auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    const auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const auto src_image_state = Get<IMAGE_STATE>(srcImage);
     const auto dst_image_state = Get<IMAGE_STATE>(dstImage);
 
@@ -4237,7 +4239,7 @@ template <typename RegionType>
 void CoreChecks::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                     VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
                                     VkFilter filter) {
-    auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto src_image_state = Get<IMAGE_STATE>(srcImage);
     auto dst_image_state = Get<IMAGE_STATE>(dstImage);
 
@@ -6057,7 +6059,7 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(const BUFFER_STATE *src_buffer_stat
 template <typename RegionType>
 bool CoreChecks::ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                        const RegionType *pRegions, CopyCommandVersion version) const {
-    const auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    const auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const auto src_buffer_state = Get<BUFFER_STATE>(srcBuffer);
     const auto dst_buffer_state = Get<BUFFER_STATE>(dstBuffer);
 
@@ -6150,7 +6152,7 @@ bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView 
 
 bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                               VkDeviceSize size, uint32_t data) const {
-    auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    const auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     auto buffer_state = Get<BUFFER_STATE>(dstBuffer);
     bool skip = false;
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
@@ -6519,7 +6521,7 @@ template <typename BufferImageCopyRegionType>
 bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkBuffer dstBuffer, uint32_t regionCount, const BufferImageCopyRegionType *pRegions,
                                               CopyCommandVersion version) const {
-    const auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    const auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const auto src_image_state = Get<IMAGE_STATE>(srcImage);
     const auto dst_buffer_state = Get<BUFFER_STATE>(dstBuffer);
 
@@ -6635,7 +6637,7 @@ void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer
                                                    VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
     StateTracker::PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
 
-    auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto src_image_state = Get<IMAGE_STATE>(srcImage);
     // Make sure that all image slices record referenced layout
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -6647,7 +6649,7 @@ void CoreChecks::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBu
                                                        const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo) {
     StateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
 
-    auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto src_image_state = Get<IMAGE_STATE>(pCopyImageToBufferInfo->srcImage);
     // Make sure that all image slices record referenced layout
     for (uint32_t i = 0; i < pCopyImageToBufferInfo->regionCount; ++i) {
@@ -6660,7 +6662,7 @@ template <typename RegionType>
 bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                               VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
                                               CopyCommandVersion version) const {
-    const auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    const auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const auto src_buffer_state = Get<BUFFER_STATE>(srcBuffer);
     const auto dst_image_state = Get<IMAGE_STATE>(dstImage);
 
@@ -6781,7 +6783,7 @@ void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer
                                                    const VkBufferImageCopy *pRegions) {
     StateTracker::PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
 
-    auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto dst_image_state = Get<IMAGE_STATE>(dstImage);
     // Make sure that all image slices are record referenced layout
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -6793,7 +6795,7 @@ void CoreChecks::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBu
                                                        const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo2KHR) {
     StateTracker::PreCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo2KHR);
 
-    auto cb_node = Get<CMD_BUFFER_STATE>(commandBuffer);
+    auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto dst_image_state = Get<IMAGE_STATE>(pCopyBufferToImageInfo2KHR->dstImage);
     // Make sure that all image slices are record referenced layout
     for (uint32_t i = 0; i < pCopyBufferToImageInfo2KHR->regionCount; ++i) {

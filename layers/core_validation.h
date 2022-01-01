@@ -130,6 +130,30 @@ struct SubresourceRangeErrorCodes {
 typedef subresource_adapter::BothRangeMap<VkImageLayout, 16> GlobalImageLayoutRangeMap;
 typedef layer_data::unordered_map<const IMAGE_STATE*, layer_data::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
+// Much of the data stored in CMD_BUFFER_STATE is only used by core validation, and is
+// set up by Record calls in class CoreChecks. Because both the state tracker and
+// core methods must lock CMD_BUFFER_STATE, it is possible for a Validate call to
+// 'interrupt' a Record call and get only the state updated by whichever code
+// locked and unlocked the CB first. This can only happen if the application
+// is violating section 3.6 'Threading Behavior' of the specification, which
+// requires that command buffers be externally synchronized. Still, we'd prefer
+// not to crash if that happens. In most cases the core Record method is operating
+// on separate data members from the state tracker. But in the case of vkCmdWaitEvents*,
+// both methods operate on the same state in ways that could very easily crash if
+// not done within the same lock guard. Overriding RecordWaitEvents() allows
+// this to all happen completely while the state tracker is holding the lock.
+// Eventually we'll probably want to move all of the core state into this derived
+// class.
+class CORE_CMD_BUFFER_STATE : public CMD_BUFFER_STATE {
+  public:
+    CORE_CMD_BUFFER_STATE(ValidationStateTracker* dev_data, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
+                          const COMMAND_POOL_STATE* cmd_pool)
+        : CMD_BUFFER_STATE(dev_data, cb, pCreateInfo, cmd_pool) {}
+
+    void RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, const VkEvent* pEvents,
+                          VkPipelineStageFlags2KHR src_stage_mask) override;
+};
+
 class CoreChecks : public ValidationStateTracker {
   public:
     using StateTracker = ValidationStateTracker;
@@ -1250,7 +1274,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                       VkFlags flags) const override;
     void PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) override;
-    void EnqueueVerifyEndQuery(VkCommandBuffer, const QueryObject& query_obj);
+    void EnqueueVerifyEndQuery(CMD_BUFFER_STATE&, const QueryObject& query_obj);
     bool PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) const override;
     void PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) override;
     bool ValidateQueryPoolIndex(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, const char* func_name,
@@ -1634,4 +1658,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                     Display* dpy, VisualID visualID) const override;
 #endif  // VK_USE_PLATFORM_XLIB_KHR
+    std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
+                                                           const COMMAND_POOL_STATE* pool) override {
+        return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<CORE_CMD_BUFFER_STATE>(this, cb, create_info, pool));
+    }
 };      // Class CoreChecks
