@@ -739,6 +739,7 @@ class DescriptorSet : public BASE_NODE {
     using StateTracker = ValidationStateTracker;
     DescriptorSet(const VkDescriptorSet, DESCRIPTOR_POOL_STATE *, const std::shared_ptr<DescriptorSetLayout const> &,
                   uint32_t variable_count, const StateTracker *state_data_const);
+    void LinkChildNodes() override;
     ~DescriptorSet() { Destroy(); }
 
     // A number of common Get* functions that return data based on layout from which this set was created

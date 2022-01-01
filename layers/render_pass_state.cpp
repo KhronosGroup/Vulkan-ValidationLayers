@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -316,7 +316,10 @@ FRAMEBUFFER_STATE::FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreate
     : BASE_NODE(fb, kVulkanObjectTypeFramebuffer),
       createInfo(pCreateInfo),
       rp_state(rpstate),
-      attachments_view_state(std::move(attachments)) {
+      attachments_view_state(std::move(attachments)) {}
+
+void FRAMEBUFFER_STATE::LinkChildNodes() {
+    // Connect child node(s), which cannot safely be done in the constructor.
     for (auto &a : attachments_view_state) {
         a->AddParent(this);
     }

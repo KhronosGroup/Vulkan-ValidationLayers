@@ -252,14 +252,14 @@ const IMAGE_VIEW_STATE *CMD_BUFFER_STATE::GetActiveAttachmentImageViewState(uint
     return active_attachments->at(index);
 }
 
-void CMD_BUFFER_STATE::AddChild(BASE_NODE *child_node) {
+void CMD_BUFFER_STATE::AddChild(std::shared_ptr<BASE_NODE> &child_node) {
     assert(child_node);
     if (child_node->AddParent(this)) {
         object_bindings.insert(child_node);
     }
 }
 
-void CMD_BUFFER_STATE::RemoveChild(BASE_NODE *child_node) {
+void CMD_BUFFER_STATE::RemoveChild(std::shared_ptr<BASE_NODE> &child_node) {
     assert(child_node);
     child_node->RemoveParent(this);
     object_bindings.erase(child_node);
@@ -357,12 +357,6 @@ void CMD_BUFFER_STATE::Reset() {
 
     transform_feedback_active = false;
 
-    // Remove object bindings
-    for (auto *base_obj : object_bindings) {
-        RemoveChild(base_obj);
-    }
-    object_bindings.clear();
-
     // Clean up the label data
     ResetCmdDebugUtilsLabel(dev_data->report_data, commandBuffer());
 
@@ -458,20 +452,20 @@ void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes
     }
     assert(!invalid_nodes.empty());
     LogObjectList log_list;
-    for (auto *obj : invalid_nodes) {
+    for (auto &obj : invalid_nodes) {
         log_list.object_list.emplace_back(obj->Handle());
     }
     broken_bindings.emplace(invalid_nodes[0]->Handle(), log_list);
 
     if (unlink) {
-        for (auto *obj : invalid_nodes) {
+        for (auto &obj : invalid_nodes) {
             object_bindings.erase(obj);
             switch (obj->Type()) {
                 case kVulkanObjectTypeCommandBuffer:
-                    linkedCommandBuffers.erase(static_cast<CMD_BUFFER_STATE *>(obj));
+                    linkedCommandBuffers.erase(static_cast<CMD_BUFFER_STATE *>(obj.get()));
                     break;
                 case kVulkanObjectTypeImage:
-                    image_layout_map.erase(static_cast<IMAGE_STATE *>(obj));
+                    image_layout_map.erase(static_cast<IMAGE_STATE *>(obj.get()));
                     break;
                 default:
                     break;
@@ -626,7 +620,7 @@ void CMD_BUFFER_STATE::BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBegi
 
     // Connect this RP to cmdBuffer
     if (!dev_data->disabled[command_buffer_state] && activeRenderPass) {
-        AddChild(activeRenderPass.get());
+        AddChild(activeRenderPass);
     }
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
@@ -652,7 +646,7 @@ void CMD_BUFFER_STATE::BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBegi
         UpdateAttachmentsView(pRenderPassBegin);
 
         // Connect this framebuffer and its children to this cmdBuffer
-        AddChild(activeFramebuffer.get());
+        AddChild(activeFramebuffer);
     }
 }
 
@@ -783,7 +777,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
 
                         // Connect this framebuffer and its children to this cmdBuffer
                         if (!dev_data->disabled[command_buffer_state]) {
-                            AddChild(activeFramebuffer.get());
+                            AddChild(activeFramebuffer);
                         }
                     }
                 }
@@ -853,7 +847,7 @@ void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCom
 
         sub_cb_state->primaryCommandBuffer = commandBuffer();
         linkedCommandBuffers.insert(sub_cb_state.get());
-        AddChild(sub_cb_state.get());
+        AddChild(sub_cb_state);
         for (auto &function : sub_cb_state->queryUpdates) {
             queryUpdates.push_back(function);
         }
@@ -1178,10 +1172,10 @@ void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bit
 void CMD_BUFFER_STATE::RecordTransferCmd(CMD_TYPE cmd_type, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2) {
     RecordCmd(cmd_type);
     if (buf1) {
-        AddChild(buf1.get());
+        AddChild(buf1);
     }
     if (buf2) {
-        AddChild(buf2.get());
+        AddChild(buf2);
     }
 }
 
@@ -1195,7 +1189,7 @@ void CMD_BUFFER_STATE::RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipeli
     if (!dev_data->disabled[command_buffer_state]) {
         auto event_state = dev_data->Get<EVENT_STATE>(event);
         if (event_state) {
-            AddChild(event_state.get());
+            AddChild(event_state);
         }
     }
     events.push_back(event);
@@ -1213,7 +1207,7 @@ void CMD_BUFFER_STATE::RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipe
     if (!dev_data->disabled[command_buffer_state]) {
         auto event_state = dev_data->Get<EVENT_STATE>(event);
         if (event_state) {
-            AddChild(event_state.get());
+            AddChild(event_state);
         }
     }
     events.push_back(event);
@@ -1232,7 +1226,7 @@ void CMD_BUFFER_STATE::RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, 
         if (!dev_data->disabled[command_buffer_state]) {
             auto event_state = dev_data->Get<EVENT_STATE>(pEvents[i]);
             if (event_state) {
-                AddChild(event_state.get());
+                AddChild(event_state);
             }
         }
         waitedEvents.insert(pEvents[i]);
@@ -1248,13 +1242,13 @@ void CMD_BUFFER_STATE::RecordBarriers(uint32_t memoryBarrierCount, const VkMemor
     for (uint32_t i = 0; i < bufferMemoryBarrierCount; i++) {
         auto buffer_state = dev_data->Get<BUFFER_STATE>(pBufferMemoryBarriers[i].buffer);
         if (buffer_state) {
-            AddChild(buffer_state.get());
+            AddChild(buffer_state);
         }
     }
     for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
         auto image_state = dev_data->Get<IMAGE_STATE>(pImageMemoryBarriers[i].image);
         if (image_state) {
-            AddChild(image_state.get());
+            AddChild(image_state);
         }
     }
 }
@@ -1265,13 +1259,13 @@ void CMD_BUFFER_STATE::RecordBarriers(const VkDependencyInfoKHR &dep_info) {
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
         auto buffer_state = dev_data->Get<BUFFER_STATE>(dep_info.pBufferMemoryBarriers[i].buffer);
         if (buffer_state) {
-            AddChild(buffer_state.get());
+            AddChild(buffer_state);
         }
     }
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
         auto image_state = dev_data->Get<IMAGE_STATE>(dep_info.pImageMemoryBarriers[i].image);
         if (image_state) {
-            AddChild(image_state.get());
+            AddChild(image_state);
         }
     }
 }
@@ -1283,7 +1277,7 @@ void CMD_BUFFER_STATE::RecordWriteTimestamp(CMD_TYPE cmd_type, VkPipelineStageFl
 
     if (!dev_data->disabled[command_buffer_state]) {
         auto pool_state = dev_data->Get<QUERY_POOL_STATE>(queryPool);
-        AddChild(pool_state.get());
+        AddChild(pool_state);
     }
     QueryObject query = {queryPool, slot};
     EndQuery(query);

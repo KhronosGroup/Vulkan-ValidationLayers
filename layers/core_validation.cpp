@@ -3359,10 +3359,10 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
         }
 
         // Ensure that any bound images or buffers created with SHARING_MODE_CONCURRENT have access to the current queue family
-        for (const auto *base_node : pCB->object_bindings) {
+        for (const auto &base_node : pCB->object_bindings) {
             switch (base_node->Type()) {
                 case kVulkanObjectTypeImage: {
-                    auto image_state = static_cast<const IMAGE_STATE *>(base_node);
+                    auto image_state = static_cast<const IMAGE_STATE *>(base_node.get());
                     if (image_state && image_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
                         skip |= ValidImageBufferQueue(pCB, image_state->Handle(), queue_state->queueFamilyIndex,
                                                       image_state->createInfo.queueFamilyIndexCount,
@@ -3371,7 +3371,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
                     break;
                 }
                 case kVulkanObjectTypeBuffer: {
-                    auto buffer_state = static_cast<const BUFFER_STATE *>(base_node);
+                    auto buffer_state = static_cast<const BUFFER_STATE *>(base_node.get());
                     if (buffer_state && buffer_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
                         skip |= ValidImageBufferQueue(pCB, buffer_state->Handle(), queue_state->queueFamilyIndex,
                                                       buffer_state->createInfo.queueFamilyIndexCount,
