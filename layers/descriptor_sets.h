@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,16 +54,6 @@ struct AllocateDescriptorSetsData;
 
 class DESCRIPTOR_POOL_STATE : public BASE_NODE {
   public:
-    ValidationStateTracker *dev_data;
-    const uint32_t maxSets;  // Max descriptor sets allowed in this pool
-    uint32_t availableSets;  // Available descriptor sets in this pool
-
-    const safe_VkDescriptorPoolCreateInfo createInfo;
-    using TypeCountMap = layer_data::unordered_map<uint32_t, uint32_t>;
-    const TypeCountMap maxDescriptorTypeCount;  // Max # of descriptors of each type in this pool
-    TypeCountMap availableDescriptorTypeCount;  // Available # of descriptors of each type in this pool
-    layer_data::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> sets;  // Collection of all sets in this pool
-
     DESCRIPTOR_POOL_STATE(ValidationStateTracker *dev, const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo *pCreateInfo);
     ~DESCRIPTOR_POOL_STATE() { Destroy(); }
 
@@ -72,6 +62,32 @@ class DESCRIPTOR_POOL_STATE : public BASE_NODE {
     void Free(uint32_t count, const VkDescriptorSet *descriptor_sets);
     void Reset();
     void Destroy() override;
+
+    bool InUse() const override;
+    uint32_t GetAvailableCount(uint32_t type) const {
+        auto guard = ReadLock();
+        auto iter = available_counts_.find(type);
+        return iter != available_counts_.end() ? iter->second : 0;
+    }
+
+    uint32_t GetAvailableSets() const {
+        auto guard = ReadLock();
+        return available_sets_;
+    }
+
+    const uint32_t maxSets;  // Max descriptor sets allowed in this pool
+    const safe_VkDescriptorPoolCreateInfo createInfo;
+    using TypeCountMap = layer_data::unordered_map<uint32_t, uint32_t>;
+    const TypeCountMap maxDescriptorTypeCount;  // Max # of descriptors of each type in this pool
+private:
+  ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
+  WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
+
+  uint32_t available_sets_;        // Available descriptor sets in this pool
+  TypeCountMap available_counts_;  // Available # of descriptors of each type in this pool
+  layer_data::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> sets_;  // Collection of all sets in this pool
+  ValidationStateTracker *dev_data_;
+  mutable ReadWriteLock lock_;
 };
 
 class UPDATE_TEMPLATE_STATE : public BASE_NODE {
