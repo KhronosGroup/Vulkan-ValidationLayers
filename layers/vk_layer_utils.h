@@ -352,6 +352,17 @@ typedef std::unique_lock<ReadWriteLock> ReadLockGuard;
 #endif
 typedef std::unique_lock<ReadWriteLock> WriteLockGuard;
 
+// helper class for the very common case of getting and then locking a command buffer (or other state object)
+template <typename T, typename Guard>
+class LockedSharedPtr : public std::shared_ptr<T> {
+  public:
+    LockedSharedPtr(std::shared_ptr<T> &&ptr, Guard &&guard) : std::shared_ptr<T>(std::move(ptr)), guard_(std::move(guard)) {}
+    LockedSharedPtr() : std::shared_ptr<T>(), guard_() {}
+
+  private:
+    Guard guard_;
+};
+
 // Limited concurrent_unordered_map that supports internally-synchronized
 // insert/erase/access. Splits locking across N buckets and uses shared_mutex
 // for read/write locking. Iterators are not supported. The following

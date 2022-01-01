@@ -257,6 +257,8 @@ class ValidationStateTracker : public ValidationObject {
         using HandleType = typename AccessorStateHandle<StateType>::HandleType;
         using SharedType = std::shared_ptr<StateType>;
         using ConstSharedType = std::shared_ptr<const StateType>;
+        using ReadLockedType = LockedSharedPtr<const StateType, ReadLockGuard>;
+        using WriteLockedType = LockedSharedPtr<StateType, WriteLockGuard>;
         using MappedType = std::shared_ptr<StateType>;
         using MapType = vl_concurrent_unordered_map<HandleType, MappedType>;
     };
@@ -339,6 +341,35 @@ class ValidationStateTracker : public ValidationObject {
             return nullptr;
         }
         return std::move(found_it->second);
+    };
+
+    // GetRead() and GetWrite() return an already locked state object. Currently this is only supported by
+    // CMD_BUFFER_STATE, because it has public ReadLock() and WriteLock() methods.
+    // NOTE: Calling base class hook methods with a CMD_BUFFER_STATE lock held will lead to deadlock. Instead,
+    // call the base class hook method before getting/locking the command buffer state for processing in the
+    // derived class method.
+    template <typename State>
+    typename AccessorTraits<State>::ReadLockedType GetRead(typename AccessorTraits<State>::HandleType handle) const {
+        using LockedPtrType = typename AccessorTraits<State>::ReadLockedType;
+        auto ptr = Get<State>(handle);
+        if (ptr) {
+            auto guard = ptr->ReadLock();
+            return LockedPtrType(std::move(ptr), std::move(guard));
+        } else {
+            return LockedPtrType();
+        }
+    };
+
+    template <typename State>
+    typename AccessorTraits<State>::WriteLockedType GetWrite(typename AccessorTraits<State>::HandleType handle) {
+        using LockedPtrType = typename AccessorTraits<State>::WriteLockedType;
+        auto ptr = Get<State>(handle);
+        if (ptr) {
+            auto guard = ptr->WriteLock();
+            return LockedPtrType(std::move(ptr), std::move(guard));
+        } else {
+            return LockedPtrType();
+        }
     };
 
     // When needing to share ownership, control over constness of access with another object (i.e. adding references while
