@@ -258,7 +258,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     layer_data::unordered_set<std::shared_ptr<FRAMEBUFFER_STATE>> framebuffers;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
-    BASE_NODE::NodeSet object_bindings;
+    layer_data::unordered_set<std::shared_ptr<BASE_NODE>> object_bindings;
     layer_data::unordered_map<VulkanTypedHandle, LogObjectList> broken_bindings;
 
     QFOTransferBarrierSets<QFOBufferTransferBarrier> qfo_transfer_buffer_barriers;
@@ -331,14 +331,19 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     IMAGE_VIEW_STATE *GetActiveAttachmentImageViewState(uint32_t index);
     const IMAGE_VIEW_STATE *GetActiveAttachmentImageViewState(uint32_t index) const;
 
-    void AddChild(BASE_NODE *child_node);
-
+    void AddChild(std::shared_ptr<BASE_NODE> &base_node);
     template <typename StateObject>
     void AddChild(std::shared_ptr<StateObject> &child_node) {
-        AddChild(child_node.get());
+        auto base = std::static_pointer_cast<BASE_NODE>(child_node);
+        AddChild(base);
     }
 
-    void RemoveChild(BASE_NODE *child_node);
+    void RemoveChild(std::shared_ptr<BASE_NODE> &base_node);
+    template <typename StateObject>
+    void RemoveChild(std::shared_ptr<StateObject> &child_node) {
+        auto base = std::static_pointer_cast<BASE_NODE>(child_node);
+        RemoveChild(base);
+    }
 
     virtual void Reset();
 

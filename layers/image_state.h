@@ -212,8 +212,12 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
                      VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
     IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;
-
     VkImageView image_view() const { return handle_.Cast<VkImageView>(); }
+
+    void LinkChildNodes() override {
+        // Connect child node(s), which cannot safely be done in the constructor.
+        image_state->AddParent(this);
+    }
 
     virtual ~IMAGE_VIEW_STATE() {
         if (!Destroyed()) {
@@ -270,8 +274,6 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     void AcquireImage(uint32_t image_index);
 
     void Destroy() override;
-
-    const NodeSet &ObjectBindings() const { return parent_nodes_; }
 
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;

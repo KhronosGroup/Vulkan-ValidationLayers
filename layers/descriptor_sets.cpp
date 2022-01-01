@@ -832,7 +832,6 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                     } else {
                         descriptors_.emplace_back(new ((free_descriptor++)->Sampler()) SamplerDescriptor(state_data, nullptr));
                     }
-                    descriptors_.back()->AddParent(this);
                 }
                 break;
             }
@@ -847,7 +846,6 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                         descriptors_.emplace_back(new ((free_descriptor++)->ImageSampler())
                                                       ImageSamplerDescriptor(state_data, nullptr));
                     }
-                    descriptors_.back()->AddParent(this);
                 }
                 break;
             }
@@ -857,27 +855,23 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
             case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Image()) ImageDescriptor(type));
-                    descriptors_.back()->AddParent(this);
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Texel()) TexelDescriptor(type));
-                    descriptors_.back()->AddParent(this);
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
-                    descriptors_.back()->AddParent(this);
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->InlineUniform()) InlineUniformDescriptor(type));
-                    descriptors_.back()->AddParent(this);
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
@@ -885,13 +879,11 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->AccelerationStructure())
                                                   AccelerationStructureDescriptor(type));
-                    descriptors_.back()->AddParent(this);
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Mutable()) MutableDescriptor());
-                    descriptors_.back()->AddParent(this);
                 }
                 break;
             default:
@@ -899,13 +891,19 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                     for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                         dynamic_offset_idx_to_descriptor_list_.push_back(descriptors_.size());
                         descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
-                        descriptors_.back()->AddParent(this);
                     }
                 } else {
                     assert(0);  // Bad descriptor type specified
                 }
                 break;
         }
+    }
+}
+
+void cvdescriptorset::DescriptorSet::LinkChildNodes() {
+    // Connect child node(s), which cannot safely be done in the constructor.
+    for (auto &desc : descriptors_) {
+        desc->AddParent(this);
     }
 }
 

@@ -439,7 +439,7 @@ void LAST_BOUND_STATE::UnbindAndResetPushDescriptorSet(CMD_BUFFER_STATE *cb_stat
     if (push_descriptor_set) {
         for (auto &ps : per_set) {
             if (ps.bound_descriptor_set == push_descriptor_set) {
-                cb_state->RemoveChild(ps.bound_descriptor_set.get());
+                cb_state->RemoveChild(ps.bound_descriptor_set);
                 ps.bound_descriptor_set.reset();
             }
         }

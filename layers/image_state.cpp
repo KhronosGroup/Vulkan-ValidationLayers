@@ -331,10 +331,13 @@ void IMAGE_STATE::AddAliasingImage(IMAGE_STATE *bound_image) {
 
 void IMAGE_STATE::SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset) {
     if ((createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) != 0) {
-        for (auto *base_node : mem->ObjectBindings()) {
-            if (base_node->Type() == kVulkanObjectTypeImage) {
-                auto other_image = static_cast<IMAGE_STATE *>(base_node);
-                AddAliasingImage(other_image);
+        for (auto &entry : mem->ObjectBindings()) {
+            if (entry.first.type == kVulkanObjectTypeImage) {
+                auto base_node = entry.second.lock();
+                if (base_node) {
+                    auto other_image = static_cast<IMAGE_STATE *>(base_node.get());
+                    AddAliasingImage(other_image);
+                }
             }
         }
     }
@@ -346,11 +349,14 @@ void IMAGE_STATE::SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint3
     bind_swapchain = swapchain;
     swapchain_image_index = swapchain_index;
     bind_swapchain->AddParent(this);
-    for (auto *base_node : swapchain->ObjectBindings()) {
-        if (base_node->Type() == kVulkanObjectTypeImage) {
-            auto other_image = static_cast<IMAGE_STATE *>(base_node);
-            if (swapchain_image_index == other_image->swapchain_image_index) {
-                AddAliasingImage(other_image);
+    for (auto &entry : swapchain->ObjectBindings()) {
+        if (entry.first.type == kVulkanObjectTypeImage) {
+            auto base_node = entry.second.lock();
+            if (base_node) {
+                auto other_image = static_cast<IMAGE_STATE *>(base_node.get());
+                if (swapchain_image_index == other_image->swapchain_image_index) {
+                    AddAliasingImage(other_image);
+                }
             }
         }
     }
@@ -435,9 +441,7 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
       min_lod(GetImageViewMinLod(ci)),
       format_features(ff),
       inherited_usage(GetInheritedUsage(ci, *im)),
-      image_state(im) {
-    image_state->AddParent(this);
-}
+      image_state(im) {}
 
 void IMAGE_VIEW_STATE::Destroy() {
     if (image_state) {

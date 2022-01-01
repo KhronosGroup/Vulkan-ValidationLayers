@@ -54,10 +54,11 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
 
     BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
                       VkFormatFeatureFlags2KHR ff)
-        : BASE_NODE(bv, kVulkanObjectTypeBufferView), create_info(*ci), buffer_state(bf), format_features(ff) {
-        if (buffer_state) {
-            buffer_state->AddParent(this);
-        }
+        : BASE_NODE(bv, kVulkanObjectTypeBufferView), create_info(*ci), buffer_state(bf), format_features(ff) {}
+
+    void LinkChildNodes() override {
+        // Connect child node(s), which cannot safely be done in the constructor.
+        buffer_state->AddParent(this);
     }
     virtual ~BUFFER_VIEW_STATE() {
         if (!Destroyed()) {

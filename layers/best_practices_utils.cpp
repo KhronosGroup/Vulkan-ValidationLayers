@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -705,8 +705,8 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
 
     const auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
 
-    for (const auto& node: mem_info->ObjectBindings()) {
-        const auto& obj = node->Handle();
+    for (const auto& item : mem_info->ObjectBindings()) {
+        const auto& obj = item.first;
         LogObjectList objlist(device);
         objlist.add(obj);
         objlist.add(mem_info->mem());
