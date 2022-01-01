@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -6615,15 +6615,9 @@ bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescripto
     if (disabled[object_in_use]) return false;
     bool skip = false;
     const auto pool = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
-    if (pool) {
-        for (const auto &entry : pool->sets) {
-            const auto *ds = entry.second;
-            if (ds && ds->InUse()) {
-                skip |= LogError(descriptorPool, "VUID-vkResetDescriptorPool-descriptorPool-00313",
-                                 "It is invalid to call vkResetDescriptorPool() with descriptor sets in use by a command buffer.");
-                if (skip) break;
-            }
-        }
+    if (pool && pool->InUse()) {
+        skip |= LogError(descriptorPool, "VUID-vkResetDescriptorPool-descriptorPool-00313",
+                         "It is invalid to call vkResetDescriptorPool() with descriptor sets in use by a command buffer.");
     }
     return skip;
 }
