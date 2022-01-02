@@ -254,14 +254,14 @@ void IMAGE_STATE::Unlink() {
         alias_state->aliasing_images.erase(this);
     }
     aliasing_images.clear();
-    if (bind_swapchain) {
-        bind_swapchain->RemoveParent(this);
-        bind_swapchain = nullptr;
-    }
 }
 
 void IMAGE_STATE::Destroy() {
     Unlink();
+    if (bind_swapchain) {
+        bind_swapchain->RemoveParent(this);
+        bind_swapchain = nullptr;
+    }
     BINDABLE::Destroy();
 }
 
@@ -269,6 +269,7 @@ void IMAGE_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, boo
     BINDABLE::NotifyInvalidate(invalid_nodes, unlink);
     if (unlink) {
         Unlink();
+        bind_swapchain = nullptr;
     }
 }
 
