@@ -1530,6 +1530,21 @@ void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFen
     }
 }
 
+void ValidationStateTracker::RecordGetDeviceQueueState(uint32_t queue_family_index, VkDeviceQueueCreateFlags flags, VkQueue queue) {
+    if (Get<QUEUE_STATE>(queue) == nullptr) {
+        Add(std::make_shared<QUEUE_STATE>(queue, queue_family_index, flags));
+    }
+}
+
+void ValidationStateTracker::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
+                                                          VkQueue *pQueue) {
+    RecordGetDeviceQueueState(queueFamilyIndex, {}, *pQueue);
+}
+
+void ValidationStateTracker::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) {
+    RecordGetDeviceQueueState(pQueueInfo->queueFamilyIndex, pQueueInfo->flags, *pQueue);
+}
+
 void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
     if (VK_SUCCESS != result) return;
     auto queue_state = Get<QUEUE_STATE>(queue);
