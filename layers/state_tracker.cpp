@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2082,7 +2082,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         const auto *viewport_state = create_info.pViewportState;
         const auto *dynamic_state = create_info.pDynamicState;
         cb_state->status &= ~cb_state->static_status;
-        cb_state->static_status = MakeStaticStateMask(dynamic_state->ptr());
+        cb_state->static_status = MakeStaticStateMask(dynamic_state ? dynamic_state->ptr() : nullptr);
         cb_state->status |= cb_state->static_status;
         cb_state->dynamic_status = CBSTATUS_ALL_STATE_SET & (~cb_state->static_status);
 
