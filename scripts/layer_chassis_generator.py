@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2021 Valve Corporation
-# Copyright (c) 2015-2021 LunarG, Inc.
-# Copyright (c) 2015-2021 Google Inc.
+# Copyright (c) 2015-2022 Valve Corporation
+# Copyright (c) 2015-2022 LunarG, Inc.
+# Copyright (c) 2015-2022 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -365,6 +365,7 @@ class ValidationObject {
         DeviceExtensions device_extensions = {};
         CHECK_DISABLED disabled = {};
         CHECK_ENABLED enabled = {};
+        bool fine_grained_locking{false};
 
         VkInstance instance = VK_NULL_HANDLE;
         VkPhysicalDevice physical_device = VK_NULL_HANDLE;
@@ -406,6 +407,7 @@ class ValidationObject {
             instance_dispatch_table = framework->instance_dispatch_table;
             enabled = framework->enabled;
             disabled = framework->disabled;
+            fine_grained_locking = framework->fine_grained_locking;
             instance = inst;
         }
 
@@ -420,6 +422,7 @@ class ValidationObject {
                 api_version = dev_obj->api_version;
                 disabled = inst_obj->disabled;
                 enabled = inst_obj->enabled;
+                fine_grained_locking = inst_obj->fine_grained_locking;
                 instance_dispatch_table = inst_obj->instance_dispatch_table;
                 instance_extensions = inst_obj->instance_extensions;
                 device_extensions = dev_obj->device_extensions;
@@ -643,10 +646,10 @@ class ValidationObject {
 // This file is ***GENERATED***.  Do Not Edit.
 // See layer_chassis_generator.py for modifications.
 
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (c) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -824,6 +827,10 @@ void OutputLayerStatusInfo(ValidationObject *context) {
     context->LogPerformanceWarning(context->instance, kVUID_Core_CreateInstance_Debug_Warning,
         "VALIDATION LAYERS WARNING: Using debug builds of the validation layers *will* adversely affect performance.");
 #endif
+    if (context->fine_grained_locking) {
+        context->LogPerformanceWarning(context->instance, kVUID_Core_CreateInstance_Locking_Warning,
+                                       "Fine-grained locking is experimental, crashes or incorrect results are possible.");
+    }
 }
 
 // Non-code-generated chassis API functions
@@ -921,8 +928,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     // Set up enable and disable features flags
     CHECK_ENABLED local_enables {};
     CHECK_DISABLED local_disables {};
+    bool lock_setting;
     ConfigAndEnvSettings config_and_env_settings_data {OBJECT_LAYER_DESCRIPTION, pCreateInfo->pNext, local_enables, local_disables,
-        report_data->filter_message_ids, &report_data->duplicate_message_limit};
+        report_data->filter_message_ids, &report_data->duplicate_message_limit, &lock_setting};
     ProcessConfigAndEnvSettings(&config_and_env_settings_data);
     layer_debug_messenger_actions(report_data, pAllocator, OBJECT_LAYER_DESCRIPTION);
 
@@ -980,6 +988,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     framework->container_type = LayerObjectTypeInstance;
     framework->disabled = local_disables;
     framework->enabled = local_enables;
+    framework->fine_grained_locking = lock_setting;
 
     framework->instance = *pInstance;
     layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);

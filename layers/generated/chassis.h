@@ -2,10 +2,10 @@
 // This file is ***GENERATED***.  Do Not Edit.
 // See layer_chassis_generator.py for modifications.
 
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (c) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3314,6 +3314,7 @@ class ValidationObject {
         DeviceExtensions device_extensions = {};
         CHECK_DISABLED disabled = {};
         CHECK_ENABLED enabled = {};
+        bool fine_grained_locking{false};
 
         VkInstance instance = VK_NULL_HANDLE;
         VkPhysicalDevice physical_device = VK_NULL_HANDLE;
@@ -3355,6 +3356,7 @@ class ValidationObject {
             instance_dispatch_table = framework->instance_dispatch_table;
             enabled = framework->enabled;
             disabled = framework->disabled;
+            fine_grained_locking = framework->fine_grained_locking;
             instance = inst;
         }
 
@@ -3369,6 +3371,7 @@ class ValidationObject {
                 api_version = dev_obj->api_version;
                 disabled = inst_obj->disabled;
                 enabled = inst_obj->enabled;
+                fine_grained_locking = inst_obj->fine_grained_locking;
                 instance_dispatch_table = inst_obj->instance_dispatch_table;
                 instance_extensions = inst_obj->instance_extensions;
                 device_extensions = dev_obj->device_extensions;

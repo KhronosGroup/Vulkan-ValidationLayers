@@ -1,6 +1,6 @@
-/* Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+/* Copyright (c) 2022 The Khronos Group Inc.
+ * Copyright (c) 2022 Valve Corporation
+ * Copyright (c) 2022 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,6 +33,7 @@ typedef struct {
     CHECK_DISABLED &disables;
     std::vector<uint32_t> &message_filter_list;
     int32_t *duplicate_message_limit;
+    bool *fine_grained_locking;
 } ConfigAndEnvSettings;
 
 static const layer_data::unordered_map<std::string, VkValidationFeatureDisableEXT> VkValFeatureDisableLookup = {
