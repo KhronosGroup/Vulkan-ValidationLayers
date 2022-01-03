@@ -157,4 +157,6 @@ khronos_validation.log_filename = stdout
 # Example of how to redirect debug printf messages from the debug callback to stdout
 #khronos_validation.printf_to_stdout = true
 
+# Example of how to enable fine grained locking
+#khronos_validation.fine_grained_locking = true
 ################################################################################

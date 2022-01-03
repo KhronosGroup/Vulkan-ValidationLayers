@@ -168,6 +168,9 @@ class CoreChecks : public ValidationStateTracker {
 
     CoreChecks() { container_type = LayerObjectTypeCoreValidation; }
 
+    ReadLockGuard ReadLock() override;
+    WriteLockGuard WriteLock() override;
+
     // Override base class, we have some extra work to do here
     void InitDeviceValidationObject(bool add_obj, ValidationObject* inst_obj, ValidationObject* dev_obj) override;
 

@@ -1,8 +1,8 @@
 /**************************************************************************
  *
- * Copyright 2014-2021 Valve Software
- * Copyright 2015-2021 Google Inc.
- * Copyright 2019-2021 LunarG, Inc.
+ * Copyright 2014-2022 Valve Software
+ * Copyright 2015-2022 Google Inc.
+ * Copyright 2019-2022 LunarG, Inc.
  * All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -187,6 +187,7 @@ ConfigFile::ConfigFile() : file_is_parsed_(false) {
     value_map_["khronos_validation.debug_action"] = "VK_DBG_LAYER_ACTION_DEFAULT,VK_DBG_LAYER_ACTION_LOG_MSG";
 #endif  // WIN32
     value_map_["khronos_validation.log_filename"] = "stdout";
+    value_map_["khronos_validation.fine_grained_locking"] = "false";
 }
 
 const char *ConfigFile::GetOption(const string &option) {
