@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (c) 2015-2021 Google, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2022 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -3658,6 +3658,43 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     device_create_info.pEnabledFeatures = &features;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374");
+    // The following unexpected error is coming from the LunarG loader. Do not make it a desired message because platforms that do
+    // not use the LunarG loader (e.g. Android) will not see the message and the test will fail.
+    m_errorMonitor->SetUnexpectedError("Failed to create device chain.");
+    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ApiVersion1_1AndNegativeViewport) {
+    TEST_DESCRIPTION("Attempt to enable AMD_negative_viewport_height with api version 1.1");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!(DeviceExtensionSupported(gpu(), nullptr, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME))) {
+        printf("%s AMD_negative viewport height extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1 or greater, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    vk_testing::PhysicalDevice physical_device(gpu_);
+    VkPhysicalDeviceFeatures features = physical_device.features();
+    vk_testing::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    const char *extension_names[1] = {VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME};
+    VkDevice testDevice;
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
+    device_create_info.queueCreateInfoCount = queue_info.size();
+    device_create_info.pQueueCreateInfos = queue_info.data();
+    device_create_info.enabledLayerCount = 0;
+    device_create_info.ppEnabledLayerNames = NULL;
+    device_create_info.enabledExtensionCount = 1;
+    device_create_info.ppEnabledExtensionNames = (const char *const *)extension_names;
+    device_create_info.pEnabledFeatures = &features;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-01840");
     // The following unexpected error is coming from the LunarG loader. Do not make it a desired message because platforms that do
     // not use the LunarG loader (e.g. Android) will not see the message and the test will fail.
     m_errorMonitor->SetUnexpectedError("Failed to create device chain.");
