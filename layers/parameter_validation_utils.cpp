@@ -6209,6 +6209,12 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
                                       "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext",
                                       "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique");
 
+        if (pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
+            skip |= LogError(device, "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06521",
+                             "vkGetPhysicalDeviceSurfacePresentModes2EXT: pSurfaceInfo->surface is VK_NULL_HANDLE and "
+                             "VK_GOOGLE_surfaceless_query is not enabled.");
+        }
+
         skip |= validate_required_handle("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->surface", pSurfaceInfo->surface);
     }
     return skip;
@@ -8125,3 +8131,67 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
 
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice,
+                                                                                   VkSurfaceKHR surface,
+                                                                                   uint32_t *pSurfaceFormatCount,
+                                                                                   VkSurfaceFormatKHR *pSurfaceFormats) const {
+    bool skip = false;
+    if (surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
+        skip |= LogError(
+            physicalDevice, "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-06524",
+            "vkGetPhysicalDeviceSurfaceFormatsKHR(): surface is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
+                                                                                        VkSurfaceKHR surface,
+                                                                                        uint32_t *pPresentModeCount,
+                                                                                        VkPresentModeKHR *pPresentModes) const {
+    bool skip = false;
+    if (surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
+        skip |= LogError(
+            physicalDevice, "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-surface-06524",
+            "vkGetPhysicalDeviceSurfacePresentModesKHR: surface is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+    VkSurfaceCapabilities2KHR *pSurfaceCapabilities) const {
+    bool skip = false;
+    if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
+        skip |= LogError(physicalDevice, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-06520",
+                         "vkGetPhysicalDeviceSurfaceCapabilities2KHR: pSurfaceInfo->surface is VK_NULL_HANDLE and "
+                         "VK_GOOGLE_surfaceless_query is not enabled.");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo, uint32_t *pSurfaceFormatCount,
+    VkSurfaceFormat2KHR *pSurfaceFormats) const {
+    bool skip = false;
+    if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
+        skip |= LogError(physicalDevice, "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceInfo-06521",
+                         "vkGetPhysicalDeviceSurfaceFormats2KHR: pSurfaceInfo->surface is VK_NULL_HANDLE and "
+                         "VK_GOOGLE_surfaceless_query is not enabled.");
+    }
+    return skip;
+}
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo, uint32_t *pPresentModeCount,
+    VkPresentModeKHR *pPresentModes) const {
+    bool skip = false;
+    if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
+        skip |= LogError(physicalDevice, "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06521",
+                         "vkGetPhysicalDeviceSurfacePresentModes2EXT: pSurfaceInfo->surface is VK_NULL_HANDLE and "
+                         "VK_GOOGLE_surfaceless_query is not enabled.");
+    }
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR

@@ -1,9 +1,9 @@
 /* *** THIS FILE IS GENERATED - DO NOT EDIT! ***
  * See parameter_validation_generator.py for modifications
  *
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -8953,6 +8953,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats);
     return skip;
 }
 
@@ -8964,6 +8965,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceSurfacePresentModesKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     skip |= validate_array("vkGetPhysicalDeviceSurfacePresentModesKHR", "pPresentModeCount", "pPresentModes", pPresentModeCount, &pPresentModes, true, false, false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-pPresentModes-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes);
     return skip;
 }
 
@@ -11285,6 +11287,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KH
 
         skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfaceCapabilities2KHR", "pSurfaceCapabilities->pNext", "VkDisplayNativeHdrSurfaceCapabilitiesAMD, VkSharedPresentSurfaceCapabilitiesKHR, VkSurfaceCapabilitiesFullScreenExclusiveEXT, VkSurfaceProtectedCapabilitiesKHR", pSurfaceCapabilities->pNext, ARRAY_SIZE(allowed_structs_VkSurfaceCapabilities2KHR), allowed_structs_VkSurfaceCapabilities2KHR, GeneratedVulkanHeaderVersion, "VUID-VkSurfaceCapabilities2KHR-pNext-pNext", "VUID-VkSurfaceCapabilities2KHR-sType-unique", true, false);
     }
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities);
     return skip;
 }
 
@@ -11311,6 +11314,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(
             skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfaceFormats2KHR", ParameterName("pSurfaceFormats[%i].pNext", ParameterName::IndexVector{ pSurfaceFormatIndex }), NULL, pSurfaceFormats[pSurfaceFormatIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSurfaceFormat2KHR-pNext-pNext", kVUIDUndefined, true, false);
         }
     }
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount, pSurfaceFormats);
     return skip;
 }
 
@@ -15489,6 +15493,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EX
         skip |= validate_struct_pnext("vkGetPhysicalDeviceSurfacePresentModes2EXT", "pSurfaceInfo->pNext", "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT", pSurfaceInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR), allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique", true, true);
     }
     skip |= validate_array("vkGetPhysicalDeviceSurfacePresentModes2EXT", "pPresentModeCount", "pPresentModes", pPresentModeCount, &pPresentModes, true, false, false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pPresentModes-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount, pPresentModes);
     return skip;
 }
 
