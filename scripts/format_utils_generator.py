@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2021 The Khronos Group Inc.
+# Copyright (c) 2022 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -126,9 +126,9 @@ class FormatUtilsOutputGenerator(OutputGenerator):
         copyright += '\n'
         copyright += '/***************************************************************************\n'
         copyright += ' *\n'
-        copyright += ' * Copyright (c) 2015-2021 The Khronos Group Inc.\n'
-        copyright += ' * Copyright (c) 2015-2021 Valve Corporation\n'
-        copyright += ' * Copyright (c) 2015-2021 LunarG, Inc.\n'
+        copyright += ' * Copyright (c) 2015-2022 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2015-2022 Valve Corporation\n'
+        copyright += ' * Copyright (c) 2015-2022 LunarG, Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -316,6 +316,15 @@ struct FORMAT_INFO {
     uint32_t component_count;
     COMPONENT_INFO components[FORMAT_MAX_COMPONENTS];
 };
+
+namespace std {
+template <>
+struct hash<VkFormat> {
+    size_t operator()(VkFormat fmt) const NOEXCEPT {
+        return hash<uint32_t>()(static_cast<uint32_t>(fmt));
+    }
+};
+}
 
 // clang-format off
 static const layer_data::unordered_map<VkFormat, FORMAT_INFO> kVkFormatTable = {

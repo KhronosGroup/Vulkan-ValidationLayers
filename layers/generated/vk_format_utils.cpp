@@ -4,9 +4,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,15 @@ struct FORMAT_INFO {
     uint32_t component_count;
     COMPONENT_INFO components[FORMAT_MAX_COMPONENTS];
 };
+
+namespace std {
+template <>
+struct hash<VkFormat> {
+    size_t operator()(VkFormat fmt) const NOEXCEPT {
+        return hash<uint32_t>()(static_cast<uint32_t>(fmt));
+    }
+};
+}
 
 // clang-format off
 static const layer_data::unordered_map<VkFormat, FORMAT_INFO> kVkFormatTable = {
