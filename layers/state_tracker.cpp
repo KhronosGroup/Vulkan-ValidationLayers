@@ -1174,13 +1174,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 
     // Store queue family data
     if (pCreateInfo->pQueueCreateInfos != nullptr) {
-        uint32_t total_count = 0;
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
             const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
             state_tracker->queue_family_index_set.insert(queue_create_info.queueFamilyIndex);
             state_tracker->device_queue_info_list.push_back(
                 {i, queue_create_info.queueFamilyIndex, queue_create_info.flags, queue_create_info.queueCount});
-            total_count += queue_create_info.queueCount;
         }
         for (const auto &queue_info : state_tracker->device_queue_info_list) {
             for (uint32_t i = 0; i < queue_info.queue_count; i++) {
