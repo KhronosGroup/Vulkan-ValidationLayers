@@ -53,12 +53,12 @@ AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 ASSERT_NO_FATAL_FAILURE(InitFramework());
 
 // Check that all extensions and their dependencies were enabled successfully
-if (!IsRequestedExtensionsEnabled()) {
-    printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
+if (!AreRequestedExtensionsEnabled()) {
+    printf("%s test requires %s extensions which are not available.\n", kSkipPrefix, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     return;
 }
 
-// Finish initializing state, including creating the VkDevice that will be used for the test
+// Finish initializing state, including creating the VkDevice (whith extensions added) that will be used for the test
 ASSERT_NO_FATAL_FAILURE(InitState());
 ```
 
