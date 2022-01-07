@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (c) 2015-2021 Google, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2022 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2504,4 +2504,56 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
     vk::DestroySemaphore(m_device->device(), image_acquired, nullptr);
     vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
+}
+
+TEST_F(VkPositiveLayerTest, ValidExtendedUsageImage) {
+    // This test is meant to reproduce an error seen in CTS test dEQP-VK.image.sample_texture.128_bit_compressed_format
+    TEST_DESCRIPTION("Create an image using VK_IMAGE_CREATE_EXTENDED_USAGE_BIT");
+
+    m_errorMonitor->ExpectSuccess();
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not available\n", kSkipPrefix, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+        return;
+    }
+
+    // Verify that we can create a view with usage INPUT_ATTACHMENT
+    auto image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.flags =
+        VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_BC3_UNORM_BLOCK;
+    image_ci.extent = {
+        80,  // width
+        80,  // height
+        1,   // depth
+    };
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.queueFamilyIndexCount = 0;
+    image_ci.pQueueFamilyIndices = nullptr;
+
+    vk_testing::Image image(*m_device, image_ci);
+    ASSERT_TRUE(image.handle() != VK_NULL_HANDLE);
+
+    auto ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    vk_testing::ImageView view(*m_device, ivci);
+    ASSERT_TRUE(view.handle() != VK_NULL_HANDLE);
+
+    m_errorMonitor->ExpectSuccess();
 }
