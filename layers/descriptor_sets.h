@@ -825,9 +825,6 @@ class DescriptorSet : public BASE_NODE {
 
     void Destroy() override;
 
-    void Reset() {
-        parent_nodes_.clear();
-    }
     // Cached binding and validation support:
     //
     // For the lifespan of a given command buffer recording, do lazy evaluation, caching, and dirtying of

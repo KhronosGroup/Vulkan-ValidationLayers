@@ -434,25 +434,26 @@ template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const Vk
 template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const VkRayTracingPipelineCreateInfoKHR *,
                                         std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&);
 
-void LAST_BOUND_STATE::UnbindAndResetPushDescriptorSet(CMD_BUFFER_STATE *cb_state, cvdescriptorset::DescriptorSet *ds) {
+void LAST_BOUND_STATE::UnbindAndResetPushDescriptorSet(CMD_BUFFER_STATE *cb_state,
+                                                       std::shared_ptr<cvdescriptorset::DescriptorSet> &&ds) {
     if (push_descriptor_set) {
         for (auto &ps : per_set) {
-            if (ps.bound_descriptor_set == push_descriptor_set.get()) {
-                cb_state->RemoveChild(ps.bound_descriptor_set);
-                ps.bound_descriptor_set = nullptr;
+            if (ps.bound_descriptor_set == push_descriptor_set) {
+                cb_state->RemoveChild(ps.bound_descriptor_set.get());
+                ps.bound_descriptor_set.reset();
             }
         }
     }
     cb_state->AddChild(ds);
-    push_descriptor_set.reset(ds);
+    push_descriptor_set = std::move(ds);
 }
 
 void LAST_BOUND_STATE::Reset() {
     pipeline_state = nullptr;
     pipeline_layout = VK_NULL_HANDLE;
     if (push_descriptor_set) {
-        push_descriptor_set->Reset();
+        push_descriptor_set->Destroy();
     }
-    push_descriptor_set = nullptr;
+    push_descriptor_set.reset();
     per_set.clear();
 }

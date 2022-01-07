@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -886,10 +886,11 @@ void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPo
     auto &push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it
     if (!push_descriptor_set || !CompatForSet(set, last_bound, pipeline_layout->compat_for_set)) {
-        last_bound.UnbindAndResetPushDescriptorSet(this, new cvdescriptorset::DescriptorSet(0, nullptr, dsl, 0, dev_data));
+        last_bound.UnbindAndResetPushDescriptorSet(
+            this, std::make_shared<cvdescriptorset::DescriptorSet>(VK_NULL_HANDLE, nullptr, dsl, 0, dev_data));
     }
 
-    UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set.get(), 0, nullptr);
+    UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set, 0, nullptr);
     last_bound.pipeline_layout = pipeline_layout->layout();
 
     // Now that we have either the new or extant push_descriptor set ... do the write updates against it
@@ -925,7 +926,7 @@ void CMD_BUFFER_STATE::UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPo
         for (const auto &set_binding_pair : pipe->active_slots) {
             uint32_t set_index = set_binding_pair.first;
             // Pull the set node
-            cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[set_index].bound_descriptor_set;
+            auto &descriptor_set = state.per_set[set_index].bound_descriptor_set;
 
             // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
 
@@ -944,7 +945,7 @@ void CMD_BUFFER_STATE::UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPo
             bool descriptor_set_changed =
                 !reduced_map.IsManyDescriptors() ||
                 // Update if descriptor set (or contents) has changed
-                state.per_set[set_index].validated_set != descriptor_set ||
+                state.per_set[set_index].validated_set != descriptor_set.get() ||
                 state.per_set[set_index].validated_set_change_count != descriptor_set->GetChangeCount() ||
                 (!dev_data->disabled[image_layout_validation] &&
                  state.per_set[set_index].validated_set_image_layout_change_count != image_layout_change_count);
@@ -955,6 +956,10 @@ void CMD_BUFFER_STATE::UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPo
                                               binding_req_map.end());
 
             if (need_update) {
+                if (!dev_data->disabled[command_buffer_state] && !descriptor_set->IsPushDescriptor()) {
+                    AddChild(descriptor_set);
+                }
+
                 // Bind this set and its active descriptor resources to the command buffer
                 if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
                     // Only record the bindings that haven't already been recorded
@@ -968,7 +973,7 @@ void CMD_BUFFER_STATE::UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPo
                     descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, binding_req_map);
                 }
 
-                state.per_set[set_index].validated_set = descriptor_set;
+                state.per_set[set_index].validated_set = descriptor_set.get();
                 state.per_set[set_index].validated_set_change_count = descriptor_set->GetChangeCount();
                 state.per_set[set_index].validated_set_image_layout_change_count = image_layout_change_count;
                 if (reduced_map.IsManyDescriptors()) {
@@ -994,7 +999,7 @@ void CMD_BUFFER_STATE::UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPo
 void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
                                                      const PIPELINE_LAYOUT_STATE *pipeline_layout, uint32_t first_set,
                                                      uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
-                                                     cvdescriptorset::DescriptorSet *push_descriptor_set,
+                                                     std::shared_ptr<cvdescriptorset::DescriptorSet> &push_descriptor_set,
                                                      uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
     assert((pDescriptorSets == nullptr) ^ (push_descriptor_set == nullptr));
     // Defensive
@@ -1018,9 +1023,9 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
     const uint32_t current_size = static_cast<uint32_t>(last_bound.per_set.size());
 
     // We need this three times in this function, but nowhere else
-    auto push_descriptor_cleanup = [&last_bound](const cvdescriptorset::DescriptorSet *ds) -> bool {
+    auto push_descriptor_cleanup = [&last_bound](const std::shared_ptr<cvdescriptorset::DescriptorSet> &ds) -> bool {
         if (ds && ds->IsPushDescriptor()) {
-            assert(ds == last_bound.push_descriptor_set.get());
+            assert(ds == last_bound.push_descriptor_set);
             last_bound.push_descriptor_set = nullptr;
             return true;
         }
@@ -1059,18 +1064,11 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
     const uint32_t *input_dynamic_offsets = p_dynamic_offsets;  // "read" pointer for dynamic offset data
     for (uint32_t input_idx = 0; input_idx < set_count; input_idx++) {
         auto set_idx = input_idx + first_set;  // set_idx is index within layout, input_idx is index within input descriptor sets
-        // need to hold a reference for the iteration of the loop if we use Get<>.
-        std::shared_ptr<cvdescriptorset::DescriptorSet> shared_ds;
-        cvdescriptorset::DescriptorSet *descriptor_set;
-        if (!push_descriptor_set) {
-            shared_ds = dev_data->Get<cvdescriptorset::DescriptorSet>(pDescriptorSets[input_idx]);
-            descriptor_set = shared_ds.get();
-        } else {
-            descriptor_set = push_descriptor_set;
-        }
+        auto descriptor_set =
+            push_descriptor_set ? push_descriptor_set : dev_data->Get<cvdescriptorset::DescriptorSet>(pDescriptorSets[input_idx]);
 
         // Record binding (or push)
-        if (descriptor_set != last_bound.push_descriptor_set.get()) {
+        if (descriptor_set != last_bound.push_descriptor_set) {
             // Only cleanup the push descriptors if they aren't the currently used set.
             push_descriptor_cleanup(last_bound.per_set[set_idx].bound_descriptor_set);
         }
@@ -1090,7 +1088,7 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
             }
             if (!descriptor_set->IsPushDescriptor()) {
                 // Can't cache validation of push_descriptors
-                validated_descriptor_sets.insert(descriptor_set);
+                validated_descriptor_sets.insert(descriptor_set.get());
             }
         }
     }
