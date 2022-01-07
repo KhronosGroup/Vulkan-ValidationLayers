@@ -477,7 +477,7 @@ class vl_concurrent_unordered_map {
 
     void clear() {
         for (int h = 0; h < BUCKETS; ++h) {
-            ReadLockGuard lock(locks[h].lock);
+            WriteLockGuard lock(locks[h].lock);
             maps[h].clear();
         }
     }
