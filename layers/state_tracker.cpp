@@ -2535,9 +2535,10 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordCmd(CMD_BINDDESCRIPTORSETS);
     auto pipeline_layout = Get<PIPELINE_LAYOUT_STATE>(layout);
+    std::shared_ptr<cvdescriptorset::DescriptorSet> no_push_desc;
 
-    cb_state->UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout.get(), firstSet, setCount, pDescriptorSets, nullptr,
-                                            dynamicOffsetCount, pDynamicOffsets);
+    cb_state->UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout.get(), firstSet, setCount, pDescriptorSets,
+                                            no_push_desc, dynamicOffsetCount, pDynamicOffsets);
 }
 
 void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer,

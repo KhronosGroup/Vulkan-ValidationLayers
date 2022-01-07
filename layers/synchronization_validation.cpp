@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2021 The Khronos Group Inc.
- * Copyright (c) 2019-2021 Valve Corporation
- * Copyright (c) 2019-2021 LunarG, Inc.
+/* Copyright (c) 2019-2022 The Khronos Group Inc.
+ * Copyright (c) 2019-2022 Valve Corporation
+ * Copyright (c) 2019-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1855,7 +1855,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
             continue;
         }
         for (const auto &set_binding : stage_state.descriptor_uses) {
-            cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.set].bound_descriptor_set;
+            const auto *descriptor_set = (*per_sets)[set_binding.first.set].bound_descriptor_set.get();
             cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
                                                                                   set_binding.first.binding);
             const auto descriptor_type = binding_it.GetType();
@@ -1991,7 +1991,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
             continue;
         }
         for (const auto &set_binding : stage_state.descriptor_uses) {
-            cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.set].bound_descriptor_set;
+            const auto *descriptor_set = (*per_sets)[set_binding.first.set].bound_descriptor_set.get();
             cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
                                                                                   set_binding.first.binding);
             const auto descriptor_type = binding_it.GetType();

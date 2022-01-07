@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2021 The Khronos Group Inc.
- * Copyright (c) 2018-2021 Valve Corporation
- * Copyright (c) 2018-2021 LunarG, Inc.
+/* Copyright (c) 2018-2022 The Khronos Group Inc.
+ * Copyright (c) 2018-2022 Valve Corporation
+ * Copyright (c) 2018-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -743,7 +743,7 @@ struct GPUAV_RESTORABLE_PIPELINE_STATE {
             pipeline_layout = last_bound.pipeline_layout;
             descriptor_sets.reserve(last_bound.per_set.size());
             for (std::size_t i = 0; i < last_bound.per_set.size(); i++) {
-                const auto *bound_descriptor_set = last_bound.per_set[i].bound_descriptor_set;
+                const auto &bound_descriptor_set = last_bound.per_set[i].bound_descriptor_set;
                 if (bound_descriptor_set) {
                     descriptor_sets.push_back(bound_descriptor_set->GetSet());
                     if (bound_descriptor_set->IsPushDescriptor()) {

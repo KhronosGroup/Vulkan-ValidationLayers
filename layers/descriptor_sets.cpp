@@ -815,9 +815,6 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
       state_data_(state_data),
       variable_count_(variable_count),
       change_count_(0) {
-    if (pool_state_) {
-        pool_state_->AddParent(this);
-    }
     // Foreach binding, create default descriptors of given type
     descriptors_.reserve(layout_->GetTotalDescriptorCount());
     descriptor_store_.resize(layout_->GetTotalDescriptorCount());
@@ -913,9 +910,6 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
 }
 
 void cvdescriptorset::DescriptorSet::Destroy() {
-    if (pool_state_) {
-        pool_state_->RemoveParent(this);
-    }
     for (auto &desc: descriptors_) {
         desc->RemoveParent(this);
     }
@@ -2156,10 +2150,6 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
 void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, CMD_BUFFER_STATE *cb_node,
                                                      CMD_TYPE cmd_type, const PIPELINE_STATE *pipe,
                                                      const BindingReqMap &binding_req_map) {
-    if (!device_data->disabled[command_buffer_state] && !IsPushDescriptor()) {
-        cb_node->AddChild(this);
-    }
-
     // Descriptor UpdateDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
     if (device_data->disabled[image_layout_validation]) {
         return;
