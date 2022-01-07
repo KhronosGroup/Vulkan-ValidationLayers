@@ -2148,3 +2148,18 @@ TEST_F(VkPositiveLayerTest, WriteDescriptorSetAccelerationStructureNVNullDescrip
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, Spirv16Vulkan13) {
+    TEST_DESCRIPTION("Create a shader using 1.3 spirv environment");
+    m_errorMonitor->ExpectSuccess();
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        printf("%s Tests requires Vulkan 1.3+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
+    m_errorMonitor->VerifyNotFound();
+}
