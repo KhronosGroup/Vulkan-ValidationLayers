@@ -100,6 +100,10 @@ class ValidationCache {
     }
 
     void Merge(ValidationCache const *other) {
+        // self-merging is invalid, but avoid deadlock below just in case.
+        if (other == this) {
+            return;
+        }
         auto other_guard = other->ReadLock();
         auto guard = WriteLock();
         good_shader_hashes_.reserve(good_shader_hashes_.size() + other->good_shader_hashes_.size());
