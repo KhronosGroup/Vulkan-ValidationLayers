@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,64 +53,27 @@ class BASE_NODE {
     template <typename Handle>
     BASE_NODE(Handle h, VulkanObjectType t) : handle_(h, t), destroyed_(false) {}
 
-    virtual ~BASE_NODE() { Destroy(); }
+    virtual ~BASE_NODE();
 
-    virtual void Destroy() {
-        Invalidate();
-        destroyed_ = true;
-    }
+    virtual void Destroy();
 
     bool Destroyed() const { return destroyed_; }
 
     const VulkanTypedHandle &Handle() const { return handle_; }
     VulkanObjectType Type() const { return handle_.type; }
 
-    virtual bool InUse() const {
-        bool result = false;
-        for (auto& node: parent_nodes_) {
-            result |= node->InUse();
-            if (result) {
-                break;
-            }
-        }
-        return result;
-    }
+    virtual bool InUse() const;
 
-    virtual bool AddParent(BASE_NODE *parent_node) {
-        auto result = parent_nodes_.emplace(parent_node);
-        return result.second;
-    }
+    virtual bool AddParent(BASE_NODE *parent_node);
 
-    virtual void RemoveParent(BASE_NODE *parent_node) {
-        parent_nodes_.erase(parent_node);
-    }
+    virtual void RemoveParent(BASE_NODE *parent_node);
 
-    void Invalidate(bool unlink = true) {
-        NodeList invalid_nodes;
-        invalid_nodes.emplace_back(this);
-        for (auto& node: parent_nodes_) {
-            node->NotifyInvalidate(invalid_nodes, unlink);
-        }
-        if (unlink) {
-            parent_nodes_.clear();
-        }
-    }
+    void Invalidate(bool unlink = true);
+
   protected:
     // NOTE: the entries in invalid_nodes will likely be destroyed & deleted
     // after the NotifyInvalidate() calls finish.
-    virtual void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
-        if (parent_nodes_.size() == 0) {
-            return;
-        }
-        NodeList up_nodes = invalid_nodes;
-        up_nodes.emplace_back(this);
-        for (auto& node: parent_nodes_) {
-            node->NotifyInvalidate(up_nodes, unlink);
-        }
-        if (unlink) {
-            parent_nodes_.clear();
-        }
-    }
+    virtual void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink);
 
     VulkanTypedHandle handle_;
 

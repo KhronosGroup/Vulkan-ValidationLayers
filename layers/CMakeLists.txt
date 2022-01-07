@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2021 Valve Corporation
-# Copyright (c) 2014-2021 LunarG, Inc.
+# Copyright (c) 2014-2022 Valve Corporation
+# Copyright (c) 2014-2022 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -162,6 +162,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     core_error_location.h
     core_error_location.cpp
     base_node.h
+    base_node.cpp
     device_memory_state.h
     device_memory_state.cpp
     buffer_state.h
