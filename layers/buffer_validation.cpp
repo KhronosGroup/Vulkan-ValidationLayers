@@ -1770,17 +1770,41 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
     VkImageFormatProperties format_limits = {};
     VkResult result = VK_SUCCESS;
-    if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-        result = DispatchGetPhysicalDeviceImageFormatProperties(physical_device, pCreateInfo->format, pCreateInfo->imageType,
-                                                                pCreateInfo->tiling, pCreateInfo->usage, pCreateInfo->flags,
-                                                                &format_limits);
-    } else {
-        auto modifier_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
-        auto explicit_modifier = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
-        if (modifier_list) {
-            for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
+    // The image is allowed to be created with usage flags that are not supported by the format if created with
+    // VK_IMAGE_CREATE_EXTENDED_USAGE_BIT.
+    const bool extended_usage = (pCreateInfo->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) != 0;
+    if (!extended_usage) {
+        if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+            result = DispatchGetPhysicalDeviceImageFormatProperties(physical_device, pCreateInfo->format, pCreateInfo->imageType,
+                                                                    pCreateInfo->tiling, pCreateInfo->usage, pCreateInfo->flags,
+                                                                    &format_limits);
+        } else {
+            auto modifier_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
+            auto explicit_modifier = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+            if (modifier_list) {
+                for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
+                    auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+                    drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
+                    auto image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&drm_format_modifier);
+                    image_format_info.type = pCreateInfo->imageType;
+                    image_format_info.format = pCreateInfo->format;
+                    image_format_info.tiling = pCreateInfo->tiling;
+                    image_format_info.usage = pCreateInfo->usage;
+                    image_format_info.flags = pCreateInfo->flags;
+                    auto image_format_properties = LvlInitStruct<VkImageFormatProperties2>();
+
+                    result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info,
+                                                                             &image_format_properties);
+                    format_limits = image_format_properties.imageFormatProperties;
+
+                    /* The application gives a list of modifier and the driver
+                     * selects one. If one is wrong, stop there.
+                     */
+                    if (result != VK_SUCCESS) break;
+                }
+            } else if (explicit_modifier) {
                 auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
-                drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
+                drm_format_modifier.drmFormatModifier = explicit_modifier->drmFormatModifier;
                 auto image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&drm_format_modifier);
                 image_format_info.type = pCreateInfo->imageType;
                 image_format_info.format = pCreateInfo->format;
@@ -1792,25 +1816,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                 result =
                     DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
                 format_limits = image_format_properties.imageFormatProperties;
-
-                /* The application gives a list of modifier and the driver
-                 * selects one. If one is wrong, stop there.
-                 */
-                if (result != VK_SUCCESS) break;
             }
-        } else if (explicit_modifier) {
-            auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
-            drm_format_modifier.drmFormatModifier = explicit_modifier->drmFormatModifier;
-            auto image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&drm_format_modifier);
-            image_format_info.type = pCreateInfo->imageType;
-            image_format_info.format = pCreateInfo->format;
-            image_format_info.tiling = pCreateInfo->tiling;
-            image_format_info.usage = pCreateInfo->usage;
-            image_format_info.flags = pCreateInfo->flags;
-            auto image_format_properties = LvlInitStruct<VkImageFormatProperties2>();
-
-            result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
-            format_limits = image_format_properties.imageFormatProperties;
         }
     }
 
@@ -1830,64 +1836,69 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
     } else {
-        if (pCreateInfo->mipLevels > format_limits.maxMipLevels) {
-            const char *format_string = string_VkFormat(pCreateInfo->format);
-            skip |= LogError(device, "VUID-VkImageCreateInfo-mipLevels-02255",
-                             "vkCreateImage(): Image mip levels=%d exceed image format maxMipLevels=%d for format %s.",
-                             pCreateInfo->mipLevels, format_limits.maxMipLevels, format_string);
-        }
+        // Image usage is involved in deriving format_limits; any checks involving format_limits must be skipped if extended_usage
+        // == true.
+        if (!extended_usage) {
+            uint64_t texel_count = static_cast<uint64_t>(pCreateInfo->extent.width) *
+                                   static_cast<uint64_t>(pCreateInfo->extent.height) *
+                                   static_cast<uint64_t>(pCreateInfo->extent.depth) *
+                                   static_cast<uint64_t>(pCreateInfo->arrayLayers) * static_cast<uint64_t>(pCreateInfo->samples);
 
-        uint64_t texel_count = static_cast<uint64_t>(pCreateInfo->extent.width) *
-                               static_cast<uint64_t>(pCreateInfo->extent.height) *
-                               static_cast<uint64_t>(pCreateInfo->extent.depth) * static_cast<uint64_t>(pCreateInfo->arrayLayers) *
-                               static_cast<uint64_t>(pCreateInfo->samples);
+            // Depth/Stencil formats size can't be accurately calculated
+            if (!FormatIsDepthAndStencil(pCreateInfo->format)) {
+                uint64_t total_size =
+                    static_cast<uint64_t>(std::ceil(FormatTexelSize(pCreateInfo->format) * static_cast<double>(texel_count)));
 
-        // Depth/Stencil formats size can't be accurately calculated
-        if (!FormatIsDepthAndStencil(pCreateInfo->format)) {
-            uint64_t total_size =
-                static_cast<uint64_t>(std::ceil(FormatTexelSize(pCreateInfo->format) * static_cast<double>(texel_count)));
+                // Round up to imageGranularity boundary
+                VkDeviceSize image_granularity = phys_dev_props.limits.bufferImageGranularity;
+                uint64_t ig_mask = image_granularity - 1;
+                total_size = (total_size + ig_mask) & ~ig_mask;
 
-            // Round up to imageGranularity boundary
-            VkDeviceSize image_granularity = phys_dev_props.limits.bufferImageGranularity;
-            uint64_t ig_mask = image_granularity - 1;
-            total_size = (total_size + ig_mask) & ~ig_mask;
-
-            if (total_size > format_limits.maxResourceSize) {
-                skip |= LogWarning(device, kVUID_Core_Image_InvalidFormatLimitsViolation,
+                if (total_size > format_limits.maxResourceSize) {
+                    skip |=
+                        LogWarning(device, kVUID_Core_Image_InvalidFormatLimitsViolation,
                                    "vkCreateImage(): resource size exceeds allowable maximum Image resource size = 0x%" PRIxLEAST64
                                    ", maximum resource size = 0x%" PRIxLEAST64 " ",
                                    total_size, format_limits.maxResourceSize);
+                }
             }
-        }
 
-        if (pCreateInfo->arrayLayers > format_limits.maxArrayLayers) {
-            skip |= LogError(device, "VUID-VkImageCreateInfo-arrayLayers-02256",
-                             "vkCreateImage(): arrayLayers=%d exceeds allowable maximum supported by format of %d.",
-                             pCreateInfo->arrayLayers, format_limits.maxArrayLayers);
-        }
+            if (pCreateInfo->mipLevels > format_limits.maxMipLevels) {
+                const char *format_string = string_VkFormat(pCreateInfo->format);
+                skip |= LogError(device, "VUID-VkImageCreateInfo-mipLevels-02255",
+                                 "vkCreateImage(): Image mip levels=%d exceed image format maxMipLevels=%d for format %s.",
+                                 pCreateInfo->mipLevels, format_limits.maxMipLevels, format_string);
+            }
 
-        if ((pCreateInfo->samples & format_limits.sampleCounts) == 0) {
-            skip |= LogError(device, "VUID-VkImageCreateInfo-samples-02258",
-                             "vkCreateImage(): samples %s is not supported by format 0x%.8X.",
-                             string_VkSampleCountFlagBits(pCreateInfo->samples), format_limits.sampleCounts);
-        }
+            if (pCreateInfo->arrayLayers > format_limits.maxArrayLayers) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-arrayLayers-02256",
+                                 "vkCreateImage(): arrayLayers=%d exceeds allowable maximum supported by format of %d.",
+                                 pCreateInfo->arrayLayers, format_limits.maxArrayLayers);
+            }
 
-        if (pCreateInfo->extent.width > format_limits.maxExtent.width) {
-            skip |= LogError(device, "VUID-VkImageCreateInfo-extent-02252",
-                             "vkCreateImage(): extent.width %u exceeds allowable maximum image extent width %u.",
-                             pCreateInfo->extent.width, format_limits.maxExtent.width);
-        }
+            if ((pCreateInfo->samples & format_limits.sampleCounts) == 0) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-samples-02258",
+                                 "vkCreateImage(): samples %s is not supported by format 0x%.8X.",
+                                 string_VkSampleCountFlagBits(pCreateInfo->samples), format_limits.sampleCounts);
+            }
 
-        if (pCreateInfo->extent.height > format_limits.maxExtent.height) {
-            skip |= LogError(device, "VUID-VkImageCreateInfo-extent-02253",
-                             "vkCreateImage(): extent.height %u exceeds allowable maximum image extent height %u.",
-                             pCreateInfo->extent.height, format_limits.maxExtent.height);
-        }
+            if (pCreateInfo->extent.width > format_limits.maxExtent.width) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-extent-02252",
+                                 "vkCreateImage(): extent.width %u exceeds allowable maximum image extent width %u.",
+                                 pCreateInfo->extent.width, format_limits.maxExtent.width);
+            }
 
-        if (pCreateInfo->extent.depth > format_limits.maxExtent.depth) {
-            skip |= LogError(device, "VUID-VkImageCreateInfo-extent-02254",
-                             "vkCreateImage(): extent.depth %u exceeds allowable maximum image extent depth %u.",
-                             pCreateInfo->extent.depth, format_limits.maxExtent.depth);
+            if (pCreateInfo->extent.height > format_limits.maxExtent.height) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-extent-02253",
+                                 "vkCreateImage(): extent.height %u exceeds allowable maximum image extent height %u.",
+                                 pCreateInfo->extent.height, format_limits.maxExtent.height);
+            }
+
+            if (pCreateInfo->extent.depth > format_limits.maxExtent.depth) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-extent-02254",
+                                 "vkCreateImage(): extent.depth %u exceeds allowable maximum image extent depth %u.",
+                                 pCreateInfo->extent.depth, format_limits.maxExtent.depth);
+            }
         }
     }
 
