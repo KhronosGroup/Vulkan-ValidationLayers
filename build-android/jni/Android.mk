@@ -38,6 +38,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayer_khronos_validation
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/device_memory_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/base_node.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/buffer_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/cmd_buffer_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/image_state.cpp
