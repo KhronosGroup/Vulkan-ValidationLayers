@@ -141,12 +141,12 @@ and pass it on the CMake command line for building this repository, as
 described below.
 
 #### Robin Hood hashing
-This repository has a required dependency on the
+This repository has an optional dependency on the
 [robin-hood-hashing repository](https://github.com/martinus/robin-hood-hashing).
 This is a header-only reimplementation of `std::unordered_map` and `std::unordered_set`
 which provides substantial performance improvements on all platforms.
-Since there is nothing to build, the install directory for this repository is the
-directory where the the repository is cloned.
+You must clone this repository and build its `install` target before
+building this repository OR set the cmake option `USE_ROBIN_HOOD_HASHING` to `OFF`.
 
 #### glslang
 
