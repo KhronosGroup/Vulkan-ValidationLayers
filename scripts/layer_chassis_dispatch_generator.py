@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2021 The Khronos Group Inc.
-# Copyright (c) 2015-2021 Valve Corporation
-# Copyright (c) 2015-2021 LunarG, Inc.
-# Copyright (c) 2015-2021 Google Inc.
+# Copyright (c) 2015-2022 The Khronos Group Inc.
+# Copyright (c) 2015-2022 Valve Corporation
+# Copyright (c) 2015-2022 LunarG, Inc.
+# Copyright (c) 2015-2022 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -129,10 +129,10 @@ class LayerChassisDispatchOutputGenerator(OutputGenerator):
 // This file is ***GENERATED***.  Do Not Edit.
 // See layer_chassis_dispatch_generator.py for modifications.
 
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (c) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2028,14 +2028,9 @@ VkResult DispatchDeferredOperationJoinKHR(
                 self.appendSection('source_file', copy_feedback_source)
             if ('CreateRayTracingPipelinesKHR' in cmdname):
                 ray_tracing_source    = '    if (deferredOperation != VK_NULL_HANDLE) {\n'
-                ray_tracing_source   += '        auto cleanup_fn = [local_pCreateInfos,pPipelines,createInfoCount,layer_data](){\n'
+                ray_tracing_source   += '        auto cleanup_fn = [local_pCreateInfos](){\n'
                 ray_tracing_source   += '                              if (local_pCreateInfos) {\n'
                 ray_tracing_source   += '                                  delete[] local_pCreateInfos;\n'
-                ray_tracing_source   += '                              }\n'
-                ray_tracing_source   += '                              for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {\n'
-                ray_tracing_source   += '                                  if (pPipelines[index0] != VK_NULL_HANDLE) {\n'
-                ray_tracing_source   += '                                      pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);\n'
-                ray_tracing_source   += '                                  }\n'
                 ray_tracing_source   += '                              }\n'
                 ray_tracing_source   += '                          };\n'
                 ray_tracing_source   += '        layer_data->deferred_operation_cleanup.insert(deferredOperation, cleanup_fn);\n'
@@ -2043,10 +2038,10 @@ VkResult DispatchDeferredOperationJoinKHR(
                 ray_tracing_source   += '        if (local_pCreateInfos) {\n'
                 ray_tracing_source   += '            delete[] local_pCreateInfos;\n'
                 ray_tracing_source   += '        }\n'
-                ray_tracing_source   += '        for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {\n'
-                ray_tracing_source   += '            if (pPipelines[index0] != VK_NULL_HANDLE) {\n'
-                ray_tracing_source   += '                pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);\n'
-                ray_tracing_source   += '            }\n'
+                ray_tracing_source   += '    }\n'
+                ray_tracing_source   += '    for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {\n'
+                ray_tracing_source   += '        if (pPipelines[index0] != VK_NULL_HANDLE) {\n'
+                ray_tracing_source   += '            pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);\n'
                 ray_tracing_source   += '        }\n'
                 ray_tracing_source   += '    }\n'
                 self.appendSection('source_file', ray_tracing_source)

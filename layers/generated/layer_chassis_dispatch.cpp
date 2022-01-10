@@ -2,10 +2,10 @@
 // This file is ***GENERATED***.  Do Not Edit.
 // See layer_chassis_dispatch_generator.py for modifications.
 
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (c) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -9525,14 +9525,9 @@ VkResult DispatchCreateRayTracingPipelinesKHR(
     }
 
     if (deferredOperation != VK_NULL_HANDLE) {
-        auto cleanup_fn = [local_pCreateInfos,pPipelines,createInfoCount,layer_data](){
+        auto cleanup_fn = [local_pCreateInfos](){
                               if (local_pCreateInfos) {
                                   delete[] local_pCreateInfos;
-                              }
-                              for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
-                                  if (pPipelines[index0] != VK_NULL_HANDLE) {
-                                      pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);
-                                  }
                               }
                           };
         layer_data->deferred_operation_cleanup.insert(deferredOperation, cleanup_fn);
@@ -9540,10 +9535,10 @@ VkResult DispatchCreateRayTracingPipelinesKHR(
         if (local_pCreateInfos) {
             delete[] local_pCreateInfos;
         }
-        for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
-            if (pPipelines[index0] != VK_NULL_HANDLE) {
-                pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);
-            }
+    }
+    for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
+        if (pPipelines[index0] != VK_NULL_HANDLE) {
+            pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);
         }
     }
 
