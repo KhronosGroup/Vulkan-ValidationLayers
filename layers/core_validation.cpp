@@ -3194,7 +3194,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
             std::copy(std::istreambuf_iterator<char>(read_file), {}, std::back_inserter(validation_cache_data));
             read_file.close();
         } else {
-            LogInfo(core_checks->device, "VUID-NONE",
+            LogInfo(core_checks->device, "UNASSIGNED-cache-file-error",
                     "Cannot open shader validation cache at %s for reading (it may not exist yet)",
                     core_checks->validation_cache_path.c_str());
         }
@@ -3223,7 +3223,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
 
         validation_cache_data = (char *)malloc(sizeof(char) * validation_cache_size);
         if (!validation_cache_data) {
-            LogInfo(device, "VUID-NONE", "Validation Cache Memory Error");
+            LogInfo(device, "UNASSIGNED-cache-memory-error", "Validation Cache Memory Error");
             return;
         }
 
@@ -3231,7 +3231,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
             CoreLayerGetValidationCacheDataEXT(device, core_validation_cache, &validation_cache_size, validation_cache_data);
 
         if (result != VK_SUCCESS) {
-            LogInfo(device, "VUID-NONE", "Validation Cache Retrieval Error");
+            LogInfo(device, "UNASSIGNED-cache-retrieval-error", "Validation Cache Retrieval Error");
             return;
         }
 
@@ -3240,7 +3240,8 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
             fwrite(validation_cache_data, sizeof(char), validation_cache_size, write_file);
             fclose(write_file);
         } else {
-            LogInfo(device, "VUID-NONE", "Cannot open shader validation cache at %s for writing", validation_cache_path.c_str());
+            LogInfo(device, "UNASSIGNED-cache-write-error", "Cannot open shader validation cache at %s for writing",
+                    validation_cache_path.c_str());
         }
         free(validation_cache_data);
         CoreLayerDestroyValidationCacheEXT(device, core_validation_cache, NULL);
