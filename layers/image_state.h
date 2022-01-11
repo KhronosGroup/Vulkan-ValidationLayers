@@ -30,6 +30,7 @@
 #include "device_memory_state.h"
 #include "image_layout_map.h"
 #include "vk_format_utils.h"
+#include "vk_layer_utils.h"
 
 class ValidationStateTracker;
 class SURFACE_STATE;
@@ -64,6 +65,16 @@ static inline VkImageSubresourceRange RangeFromLayers(const VkImageSubresourceLa
     subresource_range.levelCount = 1;
     return subresource_range;
 }
+
+class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkImageLayout, 16> {
+  public:
+    GlobalImageLayoutRangeMap(index_type index) : BothRangeMap<VkImageLayout, 16>(index) {}
+    ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
+    WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
+
+  private:
+    mutable ReadWriteLock lock_;
+};
 
 // State for VkImage objects.
 // Parent -> child relationships in the object usage tree:
@@ -111,7 +122,7 @@ class IMAGE_STATE : public BINDABLE {
     std::unique_ptr<const subresource_adapter::ImageRangeEncoder> fragment_encoder;  // Fragment resolution encoder
     const VkDevice store_device_as_workaround;                                       // TODO REMOVE WHEN encoder can be const
 
-    layer_data::unordered_set<IMAGE_STATE *> aliasing_images;
+    std::shared_ptr<GlobalImageLayoutRangeMap> layout_range_map;
 
     IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
                 VkFormatFeatureFlags2KHR features);
@@ -123,6 +134,9 @@ class IMAGE_STATE : public BINDABLE {
 
     bool HasAHBFormat() const { return ahb_format != 0; }
     bool IsCompatibleAliasing(IMAGE_STATE *other_image_state) const;
+
+    // returns true if this image could be using the same memory as another image
+    bool CanAlias() const { return ((createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) != 0) || bind_swapchain; }
 
     bool IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const;
     bool IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_createInfo) const;
@@ -172,8 +186,6 @@ class IMAGE_STATE : public BINDABLE {
         }
     }
 
-    void SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset) override;
-
     void SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint32_t swapchain_index);
 
     VkDeviceSize GetFakeBaseAddress() const override;
@@ -186,9 +198,9 @@ class IMAGE_STATE : public BINDABLE {
         return ::NormalizeSubresourceRange(createInfo, range);
     }
 
+    void SetInitialLayoutMap();
+
   protected:
-    void AddAliasingImage(IMAGE_STATE *bound_image);
-    void Unlink();
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
 };
 

@@ -127,7 +127,6 @@ struct SubresourceRangeErrorCodes {
     const char *base_mip_err, *mip_count_err, *base_layer_err, *layer_count_err;
 };
 
-typedef subresource_adapter::BothRangeMap<VkImageLayout, 16> GlobalImageLayoutRangeMap;
 typedef layer_data::unordered_map<const IMAGE_STATE*, layer_data::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
 // Much of the data stored in CMD_BUFFER_STATE is only used by core validation, and is
@@ -164,7 +163,6 @@ class CoreChecks : public ValidationStateTracker {
 
     GlobalQFOTransferBarrierMap<QFOImageTransferBarrier> qfo_release_image_barrier_map;
     GlobalQFOTransferBarrierMap<QFOBufferTransferBarrier> qfo_release_buffer_barrier_map;
-    GlobalImageLayoutMap imageLayoutMap;
     VkValidationCacheEXT core_validation_cache = VK_NULL_HANDLE;
     std::string validation_cache_path;
 
@@ -313,8 +311,6 @@ class CoreChecks : public ValidationStateTracker {
     bool VerifyRenderAreaBounds(const VkRenderPassBeginInfo* pRenderPassBegin, const char* func_name) const;
     bool VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo* pRenderPassBeginInfo, const char* func_name) const;
     bool ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE* pCB, char const* cmd_name, const char* error_code) const;
-
-    void AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, GlobalImageLayoutMap &image_layout_map);
 
     void RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents);
     bool ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer, CMD_TYPE cmd_type) const;
@@ -795,8 +791,7 @@ class CoreChecks : public ValidationStateTracker {
 
     void PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo) override;
 
-    bool ValidateCmdBufImageLayouts(const Location& loc, const CMD_BUFFER_STATE* pCB,
-                                    const GlobalImageLayoutMap& globalImageLayoutMap, GlobalImageLayoutMap& overlayLayoutMap) const;
+    bool ValidateCmdBufImageLayouts(const Location& loc, const CMD_BUFFER_STATE* pCB, GlobalImageLayoutMap& overlayLayoutMap) const;
 
     void UpdateCmdBufImageLayouts(CMD_BUFFER_STATE* pCB);
 
@@ -1356,10 +1351,16 @@ class CoreChecks : public ValidationStateTracker {
                                                      const VkMappedMemoryRange* pMemRanges) const override;
     bool PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem,
                                         VkDeviceSize memoryOffset) const override;
+    void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
+                                       VkResult result) override;
     bool PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                                          const VkBindImageMemoryInfo* pBindInfos) const override;
+    void PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
+                                        VkResult result) override;
     bool PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
                                             const VkBindImageMemoryInfo* pBindInfos) const override;
+    void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
+                                           VkResult result) override;
     bool PreCallValidateSetEvent(VkDevice device, VkEvent event) const override;
     bool PreCallValidateResetEvent(VkDevice device, VkEvent event) const override;
     bool PreCallValidateGetEventStatus(VkDevice device, VkEvent event) const override;

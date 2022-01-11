@@ -315,6 +315,7 @@ void CMD_BUFFER_STATE::Reset() {
     activeQueries.clear();
     startedQueries.clear();
     image_layout_map.clear();
+    aliased_image_layout_map.clear();
     current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
     vertex_buffer_used = false;
     primaryCommandBuffer = VK_NULL_HANDLE;
@@ -487,17 +488,40 @@ const ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(
     if (it == image_layout_map.cend()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 // The non-const variant only needs the image state, as the factory requires it to construct a new entry
 ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(const IMAGE_STATE &image_state) {
     auto &layout_map = image_layout_map[&image_state];
     if (!layout_map) {
+        // Make sure we don't create a nullptr keyed entry for a zombie Image
+        if (image_state.Destroyed() || !image_state.layout_range_map) {
+            return nullptr;
+        }
         // Was an empty slot... fill it in.
-        layout_map.emplace(image_state);
+        if (image_state.CanAlias()) {
+            // Aliasing images need to share the same local layout map.
+            // Since they use the same global layout state, use it as a key
+            // for the local state. We don't need a lock on the global range
+            // map to do a lookup based on its pointer.
+            const auto *global_layout_map = image_state.layout_range_map.get();
+            auto iter = aliased_image_layout_map.find(global_layout_map);
+            if (iter != aliased_image_layout_map.end()) {
+                layout_map = iter->second;
+            } else {
+                layout_map = std::make_shared<ImageSubresourceLayoutMap>(image_state);
+                // Save the local layout map for the next aliased image.
+                // The global layout map pointer is only used as a key into the local lookup
+                // table so it doesn't need to be locked.
+                aliased_image_layout_map.emplace(global_layout_map, layout_map);
+            }
+
+        } else {
+            layout_map = std::make_shared<ImageSubresourceLayoutMap>(image_state);
+        }
     }
-    return &layout_map;
+    return layout_map.get();
 }
 
 static bool SetQueryState(QueryObject object, QueryState value, QueryMap *localQueryToStateMap) {
@@ -844,9 +868,10 @@ void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCom
             const auto *image_state = sub_layout_map_entry.first;
 
             auto *cb_subres_map = GetImageSubresourceLayoutMap(*image_state);
-            const auto *sub_cb_subres_map = &sub_layout_map_entry.second;
-            assert(cb_subres_map && sub_cb_subres_map);  // Non const get and map traversal should never be null
-            cb_subres_map->UpdateFrom(*sub_cb_subres_map);
+            if (cb_subres_map) {
+                const auto &sub_cb_subres_map = sub_layout_map_entry.second;
+                cb_subres_map->UpdateFrom(*sub_cb_subres_map);
+            }
         }
 
         sub_cb_state->primaryCommandBuffer = commandBuffer();
@@ -1096,16 +1121,8 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
 void CMD_BUFFER_STATE::SetImageLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &image_subresource_range,
                                       VkImageLayout layout, VkImageLayout expected_layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(image_state);
-    assert(subresource_map);  // the non-const getter must return a valid pointer
-    if (subresource_map->SetSubresourceRangeLayout(*this, image_subresource_range, layout, expected_layout)) {
+    if (subresource_map && subresource_map->SetSubresourceRangeLayout(*this, image_subresource_range, layout, expected_layout)) {
         image_layout_change_count++;  // Change the version of this data to force revalidation
-    }
-    for (const auto *alias_state : image_state.aliasing_images) {
-        assert(alias_state);
-        // The map state of the aliases should all be in sync, so no need to check the return value
-        subresource_map = GetImageSubresourceLayoutMap(*alias_state);
-        assert(subresource_map);
-        subresource_map->SetSubresourceRangeLayout(*this, image_subresource_range, layout, expected_layout);
     }
 }
 
@@ -1116,10 +1133,7 @@ void CMD_BUFFER_STATE::SetImageViewInitialLayout(const IMAGE_VIEW_STATE &view_st
     }
     IMAGE_STATE *image_state = view_state.image_state.get();
     auto *subresource_map = GetImageSubresourceLayoutMap(*image_state);
-    subresource_map->SetSubresourceRangeInitialLayout(*this, layout, view_state);
-    for (const auto *alias_state : image_state->aliasing_images) {
-        assert(alias_state);
-        subresource_map = GetImageSubresourceLayoutMap(*alias_state);
+    if (subresource_map) {
         subresource_map->SetSubresourceRangeInitialLayout(*this, layout, view_state);
     }
 }
@@ -1128,13 +1142,8 @@ void CMD_BUFFER_STATE::SetImageViewInitialLayout(const IMAGE_VIEW_STATE &view_st
 void CMD_BUFFER_STATE::SetImageInitialLayout(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range,
                                              VkImageLayout layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(image_state);
-    assert(subresource_map);
-    subresource_map->SetSubresourceRangeInitialLayout(*this, image_state.NormalizeSubresourceRange(range), layout);
-    for (const auto *alias_state : image_state.aliasing_images) {
-        assert(alias_state);
-        subresource_map = GetImageSubresourceLayoutMap(*alias_state);
-        assert(subresource_map);
-        subresource_map->SetSubresourceRangeInitialLayout(*this, alias_state->NormalizeSubresourceRange(range), layout);
+    if (subresource_map) {
+        subresource_map->SetSubresourceRangeInitialLayout(*this, image_state.NormalizeSubresourceRange(range), layout);
     }
 }
 
