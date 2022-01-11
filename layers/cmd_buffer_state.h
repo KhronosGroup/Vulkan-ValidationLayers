@@ -167,7 +167,10 @@ struct CBVertexBufferBindingInfo {
     std::vector<BufferBinding> vertex_buffer_bindings;
 };
 
-typedef layer_data::unordered_map<const IMAGE_STATE *, layer_data::optional<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
+typedef layer_data::unordered_map<const IMAGE_STATE *, std::shared_ptr<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
+
+typedef layer_data::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageSubresourceLayoutMap>>
+    CommandBufferAliasedLayoutMap;
 
 class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
   public:
@@ -271,6 +274,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     layer_data::unordered_set<QueryObject> startedQueries;
     layer_data::unordered_set<QueryObject> resetQueries;
     CommandBufferImageLayoutMap image_layout_map;
+    CommandBufferAliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
+
     CBVertexBufferBindingInfo current_vertex_buffer_binding_info;
     bool vertex_buffer_used;  // Track for perf warning to make sure any bound vtx buffer used
     VkCommandBuffer primaryCommandBuffer;

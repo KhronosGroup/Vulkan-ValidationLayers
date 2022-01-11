@@ -248,16 +248,11 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
         std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
 }
 
-void IMAGE_STATE::Unlink() {
-    for (auto *alias_state : aliasing_images) {
-        assert(alias_state);
-        alias_state->aliasing_images.erase(this);
-    }
-    aliasing_images.clear();
-}
-
 void IMAGE_STATE::Destroy() {
-    Unlink();
+    // NOTE: due to corner cases in aliased images, the layout_range_map MUST not be cleaned up here.
+    // If it is, bad local entries could be created by CMD_BUFFER_STATE::GetImageSubresourceLayoutMap()
+    // If an aliasing image was being destroyed (and layout_range_map was reset()), a nullptr keyed
+    // entry could get put into CMD_BUFFER_STATE::aliased_image_layout_map.
     if (bind_swapchain) {
         bind_swapchain->RemoveParent(this);
         bind_swapchain = nullptr;
@@ -268,7 +263,6 @@ void IMAGE_STATE::Destroy() {
 void IMAGE_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
     BINDABLE::NotifyInvalidate(invalid_nodes, unlink);
     if (unlink) {
-        Unlink();
         bind_swapchain = nullptr;
     }
 }
@@ -313,35 +307,65 @@ bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) const {
         (binding->offset == other_binding->offset) && IsCreateInfoEqual(other_image_state->createInfo)) {
         return true;
     }
-    if (bind_swapchain && (bind_swapchain == other_image_state->bind_swapchain)) {
+    if (bind_swapchain && (bind_swapchain == other_image_state->bind_swapchain) &&
+        (swapchain_image_index == other_image_state->swapchain_image_index)) {
         return true;
     }
     return false;
 }
 
-void IMAGE_STATE::AddAliasingImage(IMAGE_STATE *bound_image) {
-    assert(bound_image);
-    if (bound_image != this && bound_image->IsCompatibleAliasing(this)) {
-        auto inserted = bound_image->aliasing_images.emplace(this);
-        if (inserted.second) {
-            aliasing_images.emplace(bound_image);
-        }
+void IMAGE_STATE::SetInitialLayoutMap() {
+    if (layout_range_map) {
+        return;
     }
-}
-
-void IMAGE_STATE::SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset) {
     if ((createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) != 0) {
-        for (auto &entry : mem->ObjectBindings()) {
+        const auto *binding = Binding();
+        assert(binding);
+        // Look for another aliasing image and point at its layout state.
+        // ObjectBindings() is thread safe since returns by value, and once
+        // the weak_ptr is successfully locked, the other image state won't
+        // be freed out from under us.
+        for (auto &entry : binding->mem_state->ObjectBindings()) {
             if (entry.first.type == kVulkanObjectTypeImage) {
                 auto base_node = entry.second.lock();
                 if (base_node) {
                     auto other_image = static_cast<IMAGE_STATE *>(base_node.get());
-                    AddAliasingImage(other_image);
+                    if (other_image != this && other_image->IsCompatibleAliasing(this)) {
+                        layout_range_map = other_image->layout_range_map;
+                        break;
+                    }
+                }
+            }
+        }
+    } else if (bind_swapchain) {
+        // Swapchains can also alias if multiple images are bound (or retrieved
+        // with vkGetSwapchainImages()) for a (single swapchain, index) pair.
+        // ObjectBindings() is thread safe since returns by value, and once
+        // the weak_ptr is successfully locked, the other image state won't
+        // be freed out from under us.
+        for (auto &entry : bind_swapchain->ObjectBindings()) {
+            if (entry.first.type == kVulkanObjectTypeImage) {
+                auto base_node = entry.second.lock();
+                if (base_node) {
+                    auto other_image = static_cast<IMAGE_STATE *>(base_node.get());
+                    if (other_image != this && other_image->IsCompatibleAliasing(this)) {
+                        layout_range_map = other_image->layout_range_map;
+                        break;
+                    }
                 }
             }
         }
     }
-    BINDABLE::SetMemBinding(mem, memory_offset);
+    // ... otherwise set up the new map.
+    if (!layout_range_map) {
+        // set up the new map completely before making it available
+        auto new_map = std::make_shared<GlobalImageLayoutRangeMap>(subresource_encoder.SubresourceCount());
+        auto range_gen = subresource_adapter::RangeGenerator(subresource_encoder);
+        for (; range_gen->non_empty(); ++range_gen) {
+            new_map->insert(new_map->end(), std::make_pair(*range_gen, createInfo.initialLayout));
+        }
+        layout_range_map = std::move(new_map);
+    }
 }
 
 void IMAGE_STATE::SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint32_t swapchain_index) {
@@ -349,17 +373,6 @@ void IMAGE_STATE::SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint3
     bind_swapchain = swapchain;
     swapchain_image_index = swapchain_index;
     bind_swapchain->AddParent(this);
-    for (auto &entry : swapchain->ObjectBindings()) {
-        if (entry.first.type == kVulkanObjectTypeImage) {
-            auto base_node = entry.second.lock();
-            if (base_node) {
-                auto other_image = static_cast<IMAGE_STATE *>(base_node.get());
-                if (swapchain_image_index == other_image->swapchain_image_index) {
-                    AddAliasingImage(other_image);
-                }
-            }
-        }
-    }
 }
 
 VkDeviceSize IMAGE_STATE::GetFakeBaseAddress() const {

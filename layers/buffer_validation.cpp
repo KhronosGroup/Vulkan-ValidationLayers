@@ -334,8 +334,10 @@ uint32_t FullMipChainLevels(VkExtent3D extent) { return FullMipChainLevels(exten
 uint32_t FullMipChainLevels(VkExtent2D extent) { return FullMipChainLevels(extent.height, extent.width); }
 
 bool CoreChecks::FindLayouts(const IMAGE_STATE &image_state, std::vector<VkImageLayout> &layouts) const {
-    const auto *layout_range_map = GetLayoutRangeMap(imageLayoutMap, image_state);
+    const auto *layout_range_map = image_state.layout_range_map.get();
     if (!layout_range_map) return false;
+
+    auto guard = layout_range_map->ReadLock();
     // TODO: FindLayouts function should mutate into a ValidatePresentableLayout with the loop wrapping the LogError
     //       from the caller. You can then use decode to add the subresource of the range::begin to the error message.
 
@@ -874,7 +876,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                 auto &write_subresource_map = layout_updates[image_state.get()];
                 bool new_write = false;
                 if (!write_subresource_map) {
-                    write_subresource_map.emplace(*image_state);
+                    write_subresource_map = std::make_shared<ImageSubresourceLayoutMap>(*image_state);
                     new_write = true;
                 }
                 const auto &current_subresource_map = current_map.find(image_state.get());
@@ -891,7 +893,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                         continue;
                     }
 
-                    LayoutUseCheckAndMessage layout_check(&read_subresource_map, test_aspect);
+                    LayoutUseCheckAndMessage layout_check(read_subresource_map.get(), test_aspect);
                     auto normalized_isr = image_state->NormalizeSubresourceRange(img_barrier.subresourceRange);
                     normalized_isr.aspectMask = test_aspect;
                     // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to the next "constant value" range
@@ -2069,8 +2071,11 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     if (VK_SUCCESS != result) return;
 
     StateTracker::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, result);
-    auto image_state = Get<IMAGE_STATE>(*pImage);
-    AddInitialLayoutintoImageLayoutMap(*image_state, imageLayoutMap);
+    if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
+        // non-sparse images set up their layout maps when memory is bound
+        auto image_state = Get<IMAGE_STATE>(*pImage);
+        image_state->SetInitialLayoutMap();
+    }
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) const {
@@ -2092,9 +2097,6 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     // Clean up validation specific data
     auto image_state = Get<IMAGE_STATE>(image);
     qfo_release_image_barrier_map.erase(image);
-
-    imageLayoutMap.erase(image_state.get());
-
     // Clean up generic image state
     StateTracker::PreCallRecordDestroyImage(device, image, pAllocator);
 }
@@ -4310,7 +4312,6 @@ struct GlobalLayoutUpdater {
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
 bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFER_STATE *pCB,
-                                            const GlobalImageLayoutMap &globalImageLayoutMap,
                                             GlobalImageLayoutMap &overlayLayoutMap) const {
     if (disabled[image_layout_validation]) return false;
     bool skip = false;
@@ -4324,10 +4325,9 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
         if (layout_map.empty()) continue;
 
         auto *overlay_map = GetLayoutRangeMap(overlayLayoutMap, *image_state);
-        const auto *global_map = GetLayoutRangeMap(globalImageLayoutMap, *image_state);
-        if (global_map == nullptr) {
-            global_map = &empty_map;
-        }
+        const auto *global_map = image_state->layout_range_map.get();
+        assert(global_map);
+        auto global_map_guard = global_map->ReadLock();
 
         // Note: don't know if it would matter
         // if (global_map->empty() && overlay_map->empty()) // skip this next loop...;
@@ -4391,8 +4391,8 @@ void CoreChecks::UpdateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB) {
     for (const auto &layout_map_entry : pCB->image_layout_map) {
         const auto *image_state = layout_map_entry.first;
         const auto &subres_map = layout_map_entry.second;
-        auto *global_map = GetLayoutRangeMap(imageLayoutMap, *image_state);
-        sparse_container::splice(*global_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
+        auto guard = image_state->layout_range_map->WriteLock();
+        sparse_container::splice(*image_state->layout_range_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
     }
 }
 
