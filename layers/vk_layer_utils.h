@@ -442,6 +442,7 @@ class vl_concurrent_unordered_map {
     // find()/end() return a FindResult containing a copy of the value. For end(),
     // return a default value.
     FindResult end() const { return FindResult(false, T()); }
+    FindResult cend() const { return end(); }
 
     FindResult find(const Key &key) const {
         uint32_t h = ConcurrentMapHashObject(key);

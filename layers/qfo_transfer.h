@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -176,7 +176,7 @@ struct QFOTransferBarrierSets {
 // The layer_data stores the map of pending release barriers
 template <typename TransferBarrier>
 using GlobalQFOTransferBarrierMap =
-    layer_data::unordered_map<typename TransferBarrier::HandleType, QFOTransferBarrierSet<TransferBarrier>>;
+    vl_concurrent_unordered_map<typename TransferBarrier::HandleType, QFOTransferBarrierSet<TransferBarrier>>;
 
 // Submit queue uses the Scoreboard to track all release/acquire operations in a batch.
 template <typename TransferBarrier>
