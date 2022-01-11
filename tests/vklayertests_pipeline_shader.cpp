@@ -15371,9 +15371,9 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessNoSu
         cb_ci.flags = VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM;
         ds_ci.flags = 0;
 
-        // Expecting VUID-VkGraphicsPipelineCreateInfo-flags-06467 Error
+        // Expecting VUID-VkGraphicsPipelineCreateInfo-flags-06484 Error
         CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit,
-                                          "VUID-VkGraphicsPipelineCreateInfo-flags-06467");
+                                          "VUID-VkGraphicsPipelineCreateInfo-flags-06484");
     }
 
     // Depth attachment
@@ -15381,9 +15381,9 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessNoSu
         cb_ci.flags = 0;
         ds_ci.flags = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM;
 
-        // Expecting VUID-VkGraphicsPipelineCreateInfo-flags-06468 Error
+        // Expecting VUID-VkGraphicsPipelineCreateInfo-flags-06485 Error
         CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit,
-                                          "VUID-VkGraphicsPipelineCreateInfo-flags-06468");
+                                          "VUID-VkGraphicsPipelineCreateInfo-flags-06485");
     }
 
     // Stencil attachment
@@ -15391,9 +15391,9 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessNoSu
         cb_ci.flags = 0;
         ds_ci.flags = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM;
 
-        // Expecting VUID-VkGraphicsPipelineCreateInfo-flags-06469 Error
+        // Expecting VUID-VkGraphicsPipelineCreateInfo-flags-06486 Error
         CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit,
-                                          "VUID-VkGraphicsPipelineCreateInfo-flags-06469");
+                                          "VUID-VkGraphicsPipelineCreateInfo-flags-06486");
     }
 
     if (rasterization_order_features.rasterizationOrderDepthAttachmentAccess) {

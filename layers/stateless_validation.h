@@ -1442,7 +1442,7 @@ class StatelessValidation : public ValidationObject {
                                                          VkDescriptorSetLayout *pSetLayout) const;
 
     bool validate_WriteDescriptorSet(const char *vkCallingFunction, const uint32_t descriptorWriteCount,
-                                     const VkWriteDescriptorSet *pDescriptorWrites, const bool validateDstSet = true) const;
+                                     const VkWriteDescriptorSet *pDescriptorWrites, const bool isPushDescriptor) const;
     bool manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                     const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
                                                     const VkCopyDescriptorSet *pDescriptorCopies) const;

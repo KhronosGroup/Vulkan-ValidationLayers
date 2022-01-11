@@ -12806,61 +12806,6 @@ TEST_F(VkLayerTest, QueryPoolResultStatusOnly) {
     vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
 }
 
-TEST_F(VkLayerTest, InvalidCopyQueryResults) {
-    TEST_DESCRIPTION("Test CmdCopyQueryPoolResults with unsupported query type");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Test does not run on Vulkan 1.0, skipping test\n", kSkipPrefix);
-        return;
-    }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
-        return;
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    VkQueryPool query_pool_encode;
-    VkQueryPool query_pool_result;
-    VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
-    qpci.queryType = VK_QUERY_TYPE_VIDEO_ENCODE_BITSTREAM_BUFFER_RANGE_KHR;
-    qpci.queryCount = 1;
-
-    VkResult err;
-    err = vk::CreateQueryPool(m_device->device(), &qpci, nullptr, &query_pool_encode);
-    if (err != VK_SUCCESS) {
-        printf("%s Required query not supported, skipping tests\n", kSkipPrefix);
-        return;
-    }
-    qpci.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
-    err = vk::CreateQueryPool(m_device->device(), &qpci, nullptr, &query_pool_result);
-    if (err != VK_SUCCESS) {
-        printf("%s Required query not supported, skipping tests\n", kSkipPrefix);
-        return;
-    }
-
-    VkBufferObj buffer;
-    buffer.init(*m_device, 128, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    m_commandBuffer->begin();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-04812");
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool_encode, 0, 1, buffer.handle(), 0, 0, 0);
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-04812");
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool_result, 0, 1, buffer.handle(), 0, 0, 0);
-    m_errorMonitor->VerifyFound();
-
-    m_commandBuffer->end();
-
-    vk::DestroyQueryPool(device(), query_pool_encode, nullptr);
-    vk::DestroyQueryPool(device(), query_pool_result, nullptr);
-}
-
 TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {
     TEST_DESCRIPTION("Test CmdCopyQueryPoolResults with unsupported query type");
 
