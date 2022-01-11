@@ -3595,7 +3595,7 @@ struct SemaphoreSubmitState {
             return skip;
         }
         switch (semaphore_state->type) {
-            case VK_SEMAPHORE_TYPE_BINARY:
+            case VK_SEMAPHORE_TYPE_BINARY: {
                 if ((semaphore_state->Scope() == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                     if (CannotSignal(*semaphore_state)) {
                         VkQueue other_queue;
@@ -3619,6 +3619,7 @@ struct SemaphoreSubmitState {
                     }
                 }
                 break;
+            }
             case VK_SEMAPHORE_TYPE_TIMELINE: {
                 const auto completed = semaphore_state->Completed();
                 if (value <= completed.payload) {
