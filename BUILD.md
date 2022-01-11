@@ -146,7 +146,8 @@ This repository has an optional dependency on the
 This is a header-only reimplementation of `std::unordered_map` and `std::unordered_set`
 which provides substantial performance improvements on all platforms.
 You must clone this repository and build its `install` target before
-building this repository OR set the cmake option `USE_ROBIN_HOOD_HASHING` to `OFF`.
+building it with the CMake option `RH_STANDALONE_PROJECT` set to `OFF`
+OR set the Vulkan-ValidationLayers CMake option `USE_ROBIN_HOOD_HASHING` to `OFF`.
 
 #### glslang
 
