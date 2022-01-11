@@ -1304,8 +1304,11 @@ void RecordQueuedQFOTransferBarriers(QFOTransferBarrierSets<TransferBarrier> &cb
     // Add release barriers from this submit to the global map
     for (const auto &release : cb_barriers.release) {
         // the global barrier list is mapped by resource handle to allow cleanup on resource destruction
-        // NOTE: We're using [] because creation of a Set is a needed side effect for new handles
-        global_release_barriers[release.handle].insert(release);
+        // NOTE: vl_concurrent_ordered_map::find() makes a thread safe copy of the result, so we must
+        // copy back after updating.
+        auto iter = global_release_barriers.find(release.handle);
+        iter->second.insert(release);
+        global_release_barriers.insert_or_assign(release.handle, iter->second);
     }
 
     // Erase acquired barriers from this submit from the global map -- essentially marking releases as consumed
@@ -1316,7 +1319,11 @@ void RecordQueuedQFOTransferBarriers(QFOTransferBarrierSets<TransferBarrier> &cb
             QFOTransferBarrierSet<TransferBarrier> &set_for_handle = set_it->second;
             set_for_handle.erase(acquire);
             if (set_for_handle.size() == 0) {  // Clean up empty sets
-                global_release_barriers.erase(set_it);
+                global_release_barriers.erase(acquire.handle);
+            } else {
+                // NOTE: vl_concurrent_ordered_map::find() makes a thread safe copy of the result, so we must
+                // copy back after updating.
+                global_release_barriers.insert_or_assign(acquire.handle, set_for_handle);
             }
         }
     }
