@@ -14761,7 +14761,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                     } else {
                         auto loc = outer_loc.dot(Field::pSignalSemaphoreValues, i);
                         skip |= ValidateMaxTimelineSemaphoreValueDifference(
-                            loc, *semaphore_state, timeline_semaphore_submit_info->pWaitSemaphoreValues[i]);
+                            loc, *semaphore_state, timeline_semaphore_submit_info->pSignalSemaphoreValues[i]);
                     }
                     break;
                 case VK_SEMAPHORE_TYPE_BINARY:
