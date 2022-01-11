@@ -3035,7 +3035,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                         if ((subpass_flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM) == 0) {
                             skip |= LogError(
-                                device, "VUID-VkGraphicsPipelineCreateInfo-flags-06468",
+                                device, "VUID-VkGraphicsPipelineCreateInfo-flags-06485",
                                 "VkPipelineDepthStencilStateCreateInfo::flags == %s but "
                                 "VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
                                 string_VkPipelineDepthStencilStateCreateFlags(pCreateInfos[i].pDepthStencilState->flags).c_str(),
@@ -3062,7 +3062,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                         if ((subpass_flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM) == 0) {
                             skip |= LogError(
-                                device, "VUID-VkGraphicsPipelineCreateInfo-flags-06469",
+                                device, "VUID-VkGraphicsPipelineCreateInfo-flags-06486",
                                 "VkPipelineDepthStencilStateCreateInfo::flags == %s but "
                                 "VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
                                 string_VkPipelineDepthStencilStateCreateFlags(pCreateInfos[i].pDepthStencilState->flags).c_str(),
@@ -3117,7 +3117,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                         if ((subpass_flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_ARM) == 0) {
                             skip |= LogError(
-                                device, "VUID-VkGraphicsPipelineCreateInfo-flags-06467",
+                                device, "VUID-VkGraphicsPipelineCreateInfo-flags-06484",
                                 "VkPipelineColorBlendStateCreateInfo::flags == %s but "
                                 "VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
                                 string_VkPipelineColorBlendStateCreateFlags(pCreateInfos[i].pColorBlendState->flags).c_str(),
@@ -4002,7 +4002,7 @@ bool StatelessValidation::manual_PreCallValidateFreeDescriptorSets(VkDevice devi
 
 bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunction, const uint32_t descriptorWriteCount,
                                                       const VkWriteDescriptorSet *pDescriptorWrites,
-                                                      const bool validateDstSet) const {
+                                                      const bool isPushDescriptor) const {
     bool skip = false;
 
     if (pDescriptorWrites != NULL) {
@@ -4015,7 +4015,7 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
             }
 
             // If called from vkCmdPushDescriptorSetKHR, the dstSet member is ignored.
-            if (validateDstSet) {
+            if (!isPushDescriptor) {
                 // dstSet must be a valid VkDescriptorSet handle
                 skip |= validate_required_handle(vkCallingFunction,
                                                  ParameterName("pDescriptorWrites[%i].dstSet", ParameterName::IndexVector{i}),
@@ -4027,19 +4027,33 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                 (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) ||
                 (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
                 (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
-                // If descriptorType is VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-                // pImageInfo must be a pointer to an array of descriptorCount valid VkDescriptorImageInfo structures.
-                // Valid imageView handles are checked in ObjectLifetimes::ValidateDescriptorWrite.
                 if (pDescriptorWrites[i].pImageInfo == nullptr) {
-                    skip |=
-                        LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-00322",
-                                 "%s(): if pDescriptorWrites[%" PRIu32
-                                 "].descriptorType is "
-                                 "VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, "
-                                 "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or "
-                                 "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, pDescriptorWrites[%" PRIu32 "].pImageInfo must not be NULL.",
-                                 vkCallingFunction, i, i);
+                    if (!isPushDescriptor) {
+                        // If descriptorType is VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or
+                        // VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, pImageInfo must be a pointer to an array of descriptorCount valid
+                        // VkDescriptorImageInfo structures. Valid imageView handles are checked in
+                        // ObjectLifetimes::ValidateDescriptorWrite.
+                        skip |= LogError(
+                            device, "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493",
+                            "%s(): if pDescriptorWrites[%" PRIu32
+                            "].descriptorType is VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, "
+                            "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or "
+                            "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, pDescriptorWrites[%" PRIu32 "].pImageInfo must not be NULL.",
+                            vkCallingFunction, i, i);
+                    } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) ||
+                               (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
+                               (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
+                        // If called from vkCmdPushDescriptorSetKHR, pImageInfo is only requred for descriptor types
+                        // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, and
+                        // VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+                        skip |= LogError(device, "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494",
+                                         "%s(): if pDescriptorWrites[%" PRIu32
+                                         "].descriptorType is VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE "
+                                         "or VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, pDescriptorWrites[%" PRIu32
+                                         "].pImageInfo must not be NULL.",
+                                         vkCallingFunction, i, i);
+                    }
                 } else if (pDescriptorWrites[i].descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER) {
                     // If descriptorType is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                     // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, the imageLayout
@@ -4210,7 +4224,7 @@ bool StatelessValidation::manual_PreCallValidateUpdateDescriptorSets(VkDevice de
                                                                      const VkWriteDescriptorSet *pDescriptorWrites,
                                                                      uint32_t descriptorCopyCount,
                                                                      const VkCopyDescriptorSet *pDescriptorCopies) const {
-    return validate_WriteDescriptorSet("vkUpdateDescriptorSets", descriptorWriteCount, pDescriptorWrites);
+    return validate_WriteDescriptorSet("vkUpdateDescriptorSets", descriptorWriteCount, pDescriptorWrites, false);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
@@ -5200,7 +5214,7 @@ bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetKHR(VkComman
                                                                         VkPipelineLayout layout, uint32_t set,
                                                                         uint32_t descriptorWriteCount,
                                                                         const VkWriteDescriptorSet *pDescriptorWrites) const {
-    return validate_WriteDescriptorSet("vkCmdPushDescriptorSetKHR", descriptorWriteCount, pDescriptorWrites, false);
+    return validate_WriteDescriptorSet("vkCmdPushDescriptorSetKHR", descriptorWriteCount, pDescriptorWrites, true);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer,

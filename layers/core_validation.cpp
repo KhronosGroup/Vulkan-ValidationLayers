@@ -10023,14 +10023,6 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
                              "VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL.",
                              report_data->FormatHandle(queryPool).c_str());
         }
-        if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_VIDEO_ENCODE_BITSTREAM_BUFFER_RANGE_KHR ||
-            query_pool_state->createInfo.queryType == VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR) {
-            skip |=
-                LogError(queryPool, "VUID-vkCmdCopyQueryPoolResults-queryType-04812",
-                         "vkCmdCopyQueryPoolResults(): called but QueryPool %s was created with queryType "
-                         "%s.",
-                         report_data->FormatHandle(queryPool).c_str(), string_VkQueryType(query_pool_state->createInfo.queryType));
-        }
     }
 
     return skip;
