@@ -1051,7 +1051,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         std::vector<VkExtensionProperties> props;
         instance_dispatch_table.EnumerateDeviceExtensionProperties(gpu, NULL, &n_props, NULL);
         props.resize(n_props);
-        instance_dispatch_table.EnumerateDeviceExtensionProperties(gpu, NULL, &n_props, &props[0]);
+        instance_dispatch_table.EnumerateDeviceExtensionProperties(gpu, NULL, &n_props, props.data());
 
         for (const auto &ext_prop : props) {
             state_tracker->phys_dev_extensions.insert(ext_prop.extensionName);
