@@ -2392,9 +2392,7 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isK
                                     bool need_push_descriptors, bool deferred_state_init, VkPhysicalDeviceFeatures2KHR *features2) {
     const std::array<const char *, 1> required_instance_extensions = {{VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}};
     for (const char *required_instance_extension : required_instance_extensions) {
-        if (renderFramework->InstanceExtensionSupported(required_instance_extension)) {
-            instance_extension_names.push_back(required_instance_extension);
-        } else {
+        if (!renderFramework->AddRequiredInstanceExtensions(required_instance_extension)) {
             printf("%s %s instance extension not supported, skipping test\n", kSkipPrefix, required_instance_extension);
             return false;
         }
@@ -2440,13 +2438,12 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isK
     }
 
     for (const char *required_device_extension : required_device_extensions) {
-        if (renderFramework->DeviceExtensionSupported(renderFramework->gpu(), nullptr, required_device_extension)) {
-            device_extension_names.push_back(required_device_extension);
-        } else {
+        if (!renderFramework->AddRequiredDeviceExtensions(required_device_extension)) {
             printf("%s %s device extension not supported, skipping test\n", kSkipPrefix, required_device_extension);
             return false;
         }
     }
+
     if (features2) {
         // extension enabled as dependency of RT extension
         auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(

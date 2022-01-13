@@ -6081,6 +6081,8 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureNV) {
 
 TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate acceleration structure creation.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
                                         false, true)) {
         return;
@@ -6180,6 +6182,8 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
 
 TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHRReplayFeature) {
     TEST_DESCRIPTION("Validate acceleration structure creation replay feature.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
                                         false, true)) {
         return;
@@ -9325,6 +9329,8 @@ TEST_F(VkLayerTest, InvalidProtectedMemory) {
 
 TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
     TEST_DESCRIPTION("Validate vkCmdTraceRaysKHR.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
         return;
     }
@@ -9415,6 +9421,8 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
 
 TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     TEST_DESCRIPTION("Validate vkCmdTraceRaysIndirectKHR.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
                                         false, true)) {
         return;
@@ -9518,6 +9526,8 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
 
 TEST_F(VkLayerTest, ValidateVkAccelerationStructureVersionInfoKHR) {
     TEST_DESCRIPTION("Validate VkAccelerationStructureVersionInfoKHR.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
                                         false, true)) {
         return;
@@ -9561,6 +9571,7 @@ TEST_F(VkLayerTest, ValidateVkAccelerationStructureVersionInfoKHR) {
 TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     accel_features.accelerationStructureIndirectBuild = VK_TRUE;
     accel_features.accelerationStructureHostCommands = VK_TRUE;
@@ -12633,6 +12644,7 @@ TEST_F(VkLayerTest, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
 TEST_F(VkLayerTest, ValidateBeginQueryQueryPoolType) {
     TEST_DESCRIPTION("Test CmdBeginQuery with invalid queryPool queryType");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -12809,6 +12821,7 @@ TEST_F(VkLayerTest, QueryPoolResultStatusOnly) {
 TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {
     TEST_DESCRIPTION("Test CmdCopyQueryPoolResults with unsupported query type");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequestedExtensionsEnabled()) {

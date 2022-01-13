@@ -8904,24 +8904,22 @@ TEST_F(VkLayerTest, ValidateRayTracingPipelineNV) {
 }
 TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
     TEST_DESCRIPTION("Validate CreateInfo parameters during ray-tracing pipeline creation");
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (!AddRequiredInstanceExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
-        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (AddRequiredDeviceExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+        AddRequiredDeviceExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
+        AddRequiredDeviceExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+        AddRequiredDeviceExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        AddRequiredDeviceExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        AddRequiredDeviceExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+        AddRequiredDeviceExtensions(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+        AddRequiredDeviceExtensions(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+        AddRequiredDeviceExtensions(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
     } else {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
         return;
@@ -14664,26 +14662,22 @@ TEST_F(VkLayerTest, TestMinAndMaxTexelOffset) {
 TEST_F(VkLayerTest, RayTracingLibraryFlags) {
     TEST_DESCRIPTION("Validate ray tracing pipeline flags match library flags.");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (!AddRequiredInstanceExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
-        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
-        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    if (AddRequiredDeviceExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+        AddRequiredDeviceExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
+        AddRequiredDeviceExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) {
+        AddRequiredDeviceExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        AddRequiredDeviceExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        AddRequiredDeviceExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+        AddRequiredDeviceExtensions(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+        AddRequiredDeviceExtensions(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+        AddRequiredDeviceExtensions(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+        AddRequiredDeviceExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     } else {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
         return;
