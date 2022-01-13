@@ -6333,7 +6333,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02381",
                          "vkCreatePipelineLayout(): sum of acceleration structures NV bindings among all stages (%" PRIu32 ") exceeds device "
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxDescriptorSetAccelerationStructures limit (%" PRIu32 ").",
-                         sum_all_stages[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT],
+                         sum_all_stages[VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV],
                          phys_dev_ext_props.ray_tracing_propsNV.maxDescriptorSetAccelerationStructures);
     }
 
