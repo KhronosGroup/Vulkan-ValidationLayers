@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2017, 2019-2021 The Khronos Group Inc.
-# Copyright (c) 2015-2017, 2019-2021 Valve Corporation
-# Copyright (c) 2015-2017, 2019-2021 LunarG, Inc.
+# Copyright (c) 2015-2017, 2019-2022 The Khronos Group Inc.
+# Copyright (c) 2015-2017, 2019-2022 Valve Corporation
+# Copyright (c) 2015-2017, 2019-2022 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -172,7 +172,16 @@ def RunVVLTests(args):
     if not os.path.isfile(icd_filenames):
         raise Exception(f'VK_ICD_FILENAMES "{icd_filenames}" does not exist')
     lvt_env['VK_ICD_FILENAMES'] = icd_filenames
-
+    # There is a problem in the github CI environment with the latest loader,
+    # Probably because the only ICD available is the mock ICD. Disabling
+    # physical device sorting avoids this problem.
+    lvt_env['VK_LOADER_DISABLE_SELECT'] = '1'
+    
+    print("Environment variables set by script:")
+    print(lvt_env)
+    print("Pre-existing environment variables:")
+    RunShellCmd("env")
+    print("Running tests:")
     RunShellCmd(lvt_cmd, env=lvt_env)
 
 def GetArgParser():
