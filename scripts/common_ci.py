@@ -172,7 +172,13 @@ def RunVVLTests(args):
     if not os.path.isfile(icd_filenames):
         raise Exception(f'VK_ICD_FILENAMES "{icd_filenames}" does not exist')
     lvt_env['VK_ICD_FILENAMES'] = icd_filenames
-
+    lvt_env['VK_LOADER_DEBUG'] = 'all'
+    
+    print("Environment variables set by script:")
+    print(lvt_env)
+    print("Pre-existing environment variables:")
+    RunShellCmd("env")
+    print("Running tests:")
     RunShellCmd(lvt_cmd, env=lvt_env)
 
 def GetArgParser():
