@@ -101,6 +101,8 @@ def BuildLoader(args):
         print("Clone Loader Source Code")
         clone_loader_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Loader.git'
         RunShellCmd(clone_loader_cmd, EXTERNAL_DIR)
+    #presumed 'good' commit
+    RunShellCmd("git checkout 1fb56971c5246ac1e1ca0ebe3ee5dc84d15cb711", LOADER_DIR)
 
     print("Run update_deps.py for Loader Repository")
     update_cmd = 'python3 scripts/update_deps.py --dir external'
