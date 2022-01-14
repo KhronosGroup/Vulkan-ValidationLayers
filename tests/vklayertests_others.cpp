@@ -12085,7 +12085,13 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
 TEST_F(VkLayerTest, ExternalMemoryAndExternalMemoryNV) {
     TEST_DESCRIPTION("Test for both external memory and external memory NV in image create pNext chain.");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if ((!AddRequiredInstanceExtensions(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) ||
+        (!AddRequiredInstanceExtensions(VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME))) {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if ((DeviceExtensionSupported(gpu(), nullptr, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) &&
         (DeviceExtensionSupported(gpu(), nullptr, VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME))) {
