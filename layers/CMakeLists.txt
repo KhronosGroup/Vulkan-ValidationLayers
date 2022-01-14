@@ -331,7 +331,7 @@ if(BUILD_LAYERS)
     # TARGET_FILE_DIR, specifically)
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake" "configure_file(\"\${INPUT_FILE}\" \"\${OUTPUT_FILE}\" @ONLY)")
     foreach(TARGET_NAME ${TARGET_NAMES})
-        set(CONFIG_DEFINES -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in" -DVK_VERSION=1.2.${vk_header_version})
+        set(CONFIG_DEFINES -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in" -DVK_VERSION=1.3.${vk_header_version})
         # If this json file is not a metalayer, get the needed properties from that target
         if(TARGET ${TARGET_NAME})
             set(CONFIG_DEFINES
@@ -356,7 +356,7 @@ if(BUILD_LAYERS)
             set(INSTALL_DEFINES
                 -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in"
                 -DOUTPUT_FILE="${CMAKE_CURRENT_BINARY_DIR}/staging-json/${TARGET_NAME}.json"
-                -DVK_VERSION=1.2.${vk_header_version})
+                -DVK_VERSION=1.3.${vk_header_version})
             # If this json file is not a metalayer, get the needed properties from that target
             if(TARGET ${TARGET_NAME})
                 set(INSTALL_DEFINES ${INSTALL_DEFINES} -DRELATIVE_LAYER_BINARY="$<TARGET_FILE_NAME:${TARGET_NAME}>")
