@@ -1810,10 +1810,11 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, Features12AndpNext) {
+TEST_F(VkLayerTest, Features12Features13AndpNext) {
     TEST_DESCRIPTION("Test VkPhysicalDeviceVulkan12Features and illegal struct in pNext");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
@@ -1841,6 +1842,19 @@ TEST_F(VkLayerTest, Features12AndpNext) {
     eight_bit.storageBuffer8BitAccess = true;
     VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>(&eight_bit);
     features12.storageBuffer8BitAccess = true;
+
+    VkPhysicalDeviceVulkan13Features features13 = {};
+    VkPhysicalDeviceDynamicRenderingFeatures dyn_rendering_features = {};
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
+        dyn_rendering_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+        dyn_rendering_features.dynamicRendering = true;
+        dyn_rendering_features.pNext = &eight_bit;
+        features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+        features13.dynamicRendering = true;
+        features13.pNext = &dyn_rendering_features;
+        features12.pNext = &features13;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-06532");
+    }
 
     vk_testing::PhysicalDevice physical_device(gpu());
     vk_testing::QueueCreateInfoArray queue_info(physical_device.queue_properties());
