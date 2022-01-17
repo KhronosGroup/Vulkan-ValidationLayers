@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2019 LunarG, Inc. -->
+<!-- Copyright 2015-2019,2022 LunarG, Inc. -->
 
 [![Khronos Vulkan][1]][2]
 
@@ -136,11 +136,16 @@ The settings file consists of comment lines and settings lines.  Comment lines b
 |                            | `debug`      | Reserved                                                |
 | *`LayerName`*`.debug_action` | `VK_DBG_LAYER_ACTION_IGNORE`   | Ignore message reporting                                          |
 |                            | `VK_DBG_LAYER_ACTION_LOG_MSG`  | Report messages to log                                            |
-|                            | `VK_DBG_LAYER_ACTION_DEBUG_OUTPUT`    | (Windows) Report messages to debug console of Microsoft Visual Studio
+|                            | `VK_DBG_LAYER_ACTION_DEBUG_OUTPUT`    | (Windows) Report messages to debug console of Microsoft Visual Studio|
 |                            | `VK_DBG_LAYER_ACTION_BREAK`    | Break on messages (not currently used)                                  |
 | *`LayerName`*`.log_filename` | *`filename`*`.txt`             | Name of file to log `report_flags` level messages; default is `stdout` |
 | *`LayerName`*`.enables` | comma separated list of `VkValidationFeatureEnableEXT` enum values as defined in the Vulkan Specification      | Enables the specified validation features         |
 | *`LayerName`*`.disables` | comma separated list of `VkValidationFeatureDisableEXT` enum values as defined in the Vulkan Specification      | Disables the specified validation features         |
+| *`LayerName`*.message_id_filter | comma separated list of VUIDs to be ignored | Any validation message with a VUID string that matches an entry in this list will be ignored |
+| *`LayerName`*`.duplicate_message_limit` | 0 | All validation messages are output |
+|  | any value greater than 0 | If greater than 0, this setting controls how many messages with the same VUID string will be output. Additional messages with the same VUID string will be ignored, which may reduce log file size and improve performance. |
+| *`LayerName`*`.fine_grained_locking` | false (or 0) | Validation code runs with a global lock held, which limits concurrency. This is the default behavior and is how earlier versions of the validation layer behaved. |
+|  | true (or 1) | **Experimental** - validation code runs without global locking. This should allow better performance for multi-threaded applications. But it may cause instability or incorrect errors. See [this document](docs/fine_grained_locking_usage.md) for more information|
 
 
 
@@ -160,6 +165,25 @@ On Windows, you can find a sample layer settings file in `Config\vk_layer_settin
 Consult these sample layer settings files for additional information and detail related to available options and settings.
 
 Note: If layers are activated via `VK_INSTANCE_LAYERS` environment variable and if neither an application-defined callback is defined nor a layer settings file is present, the loader/layers will provide default callbacks enabling output of error-level messages to standard out (and via `OutputDebugString` on Windows).
+
+### Environment Variables
+
+Some settings from the settings file can also be set using environment variables. If an environment variable is set, its value takes precedence over the value in the settings file.
+
+ 
+
+| Setting                                 | Environment variable               |
+| --------------------------------------- | ---------------------------------- |
+| *`LayerName`*`.report_flags`            | *None*                             |
+| *`LayerName`*`.debug_action`            | *None*                             |
+| *`LayerName`*`.log_filename`            | *None*                             |
+| *`LayerName`*`.enables`                 | `VK_LAYER_ENABLES`                 |
+| *`LayerName`*`.disables`                | `VK_LAYER_DISABLES`                |
+| *`LayerName`*.message_id_filter         | `VK_LAYER_MESSAGE_ID_FILTER`       |
+| *`LayerName`*`.duplicate_message_limit` | `VK_LAYER_DUPLICATE_MESSAGE_LIMIT` |
+| *`LayerName`*`.fine_grained_locking`    | `VK_LAYER_FINE_GRAINED_LOCKING`    |
+
+
 
 ### Advanced Layer Configuration, Installation, and Discovery Details
 The Vulkan loader searches specific platform-specific locations to find installed layers.
