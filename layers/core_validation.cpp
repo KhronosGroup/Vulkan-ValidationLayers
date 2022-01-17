@@ -1067,7 +1067,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                         subpass_num_samples |= static_cast<unsigned>(render_pass_info->pAttachments[attachment].samples);
 
                         const auto *imageview_state = pCB->GetActiveAttachmentImageViewState(attachment);
-                        if (imageview_state != nullptr &&
+                        if (imageview_state != nullptr && pPipeline->create_info.graphics.pColorBlendState &&
                             attachment < pPipeline->create_info.graphics.pColorBlendState->attachmentCount) {
                             if ((imageview_state->format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT_KHR) == 0 &&
                                 pPipeline->create_info.graphics.pColorBlendState->pAttachments[i].blendEnable != VK_FALSE) {
