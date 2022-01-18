@@ -4,7 +4,7 @@
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Copyright (c) 2015-2022 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
- * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
+ * Modifications Copyright (C) 2021-2022 ARM, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
