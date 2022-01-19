@@ -287,6 +287,9 @@ class VkPositiveLayerTest : public VkLayerTest {
   protected:
 };
 
+class VkDynamicRenderingLayerTest : public VkLayerTest {};
+class VkPositiveDynamicRenderingLayerTest : public VkLayerTest {};
+
 class VkBestPracticesLayerTest : public VkLayerTest {
   public:
     void InitBestPracticesFramework();

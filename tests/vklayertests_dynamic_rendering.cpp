@@ -17,7 +17,7 @@
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
-TEST_F(VkLayerTest, CommandBufferInheritanceRenderingInfoKHR) {
+TEST_F(VkDynamicRenderingLayerTest, CommandBufferInheritanceRenderingInfoKHR) {
     TEST_DESCRIPTION("VkCommandBufferInheritanceRenderingInfoKHR Dynamic Rendering Tests.");
 
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -94,7 +94,7 @@ TEST_F(VkLayerTest, CommandBufferInheritanceRenderingInfoKHR) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CommandDrawDynamicRendering) {
+TEST_F(VkDynamicRenderingLayerTest, CommandDrawDynamicRendering) {
     TEST_DESCRIPTION("vkCmdDraw* Dynamic Rendering Tests.");
 
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -198,7 +198,7 @@ TEST_F(VkLayerTest, CommandDrawDynamicRendering) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
+TEST_F(VkDynamicRenderingLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     TEST_DESCRIPTION("Test graphics pipeline creation with dynamic rendering.");
     
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -277,10 +277,9 @@ TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfoKHR-pColorAttachmentFormats-06064");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
-
 }
 
-TEST_F(VkLayerTest, DynamicRenderingWithMismatchingViewMask) {
+TEST_F(VkDynamicRenderingLayerTest, DynamicRenderingWithMismatchingViewMask) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering and a mismatching viewMask");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -374,7 +373,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMismatchingViewMask) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachments) {
+TEST_F(VkDynamicRenderingLayerTest, DynamicRenderingWithMistmatchingAttachments) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching color attachment counts and depth/stencil formats");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -570,7 +569,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachments) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachmentSamples) {
+TEST_F(VkDynamicRenderingLayerTest, DynamicRenderingWithMistmatchingAttachmentSamples) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching color/depth/stencil sample counts");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -747,7 +746,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachmentSamples) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingMixedAttachmentSamples) {
+TEST_F(VkDynamicRenderingLayerTest, DynamicRenderingWithMistmatchingMixedAttachmentSamples) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching mixed color/depth/stencil sample counts");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);

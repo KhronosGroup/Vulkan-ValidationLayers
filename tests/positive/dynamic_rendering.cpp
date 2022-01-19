@@ -36,7 +36,7 @@
 
 #include "cast_utils.h"
 
-TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
+TEST_F(VkPositiveDynamicRenderingLayerTest, DynamicRenderingDraw) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -122,7 +122,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
     m_errorMonitor->VerifyNotFound();
 }
 
-TEST_F(VkPositiveLayerTest, CmdClearAttachmentTestsDynamicRendering) {
+TEST_F(VkPositiveDynamicRenderingLayerTest, CmdClearAttachmentTestsDynamicRendering) {
     TEST_DESCRIPTION("Various tests for validating usage of vkCmdClearAttachments with Dynamic Rendering");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
