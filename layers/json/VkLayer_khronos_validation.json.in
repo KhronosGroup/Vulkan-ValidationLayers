@@ -99,7 +99,7 @@
                 },
                 {
                     "label": "Best Practices",
-                    "description": "Provides warnings about potential API misuse but valid usages of the API.",
+                    "description": "Provides warnings on valid API usage that is potential API misuse.",
                     "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "status": "STABLE",
                     "settings": [
@@ -202,7 +202,7 @@
                 {
                     "key": "debug_action",
                     "label": "Debug Action",
-                    "description": "This indicates what action is to be taken when a layer wants to report information",
+                    "description": "Specifies what action is to be taken when a layer reports information",
                     "type": "FLAGS",
                     "flags": [
                         {
@@ -251,7 +251,7 @@
                 {
                     "key": "report_flags",
                     "label": "Message Severity",
-                    "description": "This is a comma-delineated list of options telling the layer what types of messages it should report back",
+                    "description": "Comma-delineated list of options specifying the types of messages to be reported",
                     "type": "FLAGS",
                     "flags": [
                         {
@@ -267,7 +267,7 @@
                         {
                             "key": "perf",
                             "label": "Performance",
-                            "description": "Report using the API in a way that may cause suboptimal performance."
+                            "description": "Report usage of the API that may cause suboptimal performance."
                         },
                         {
                             "key": "error",
@@ -290,7 +290,7 @@
                 {
                     "key": "enable_message_limit",
                     "label": "Limit Duplicated Messages",
-                    "description": "Enable limitation of duplicate messages.",
+                    "description": "Enable limiting of duplicate messages.",
                     "type": "BOOL",
                     "default": true,
                     "settings": [
@@ -298,7 +298,7 @@
                             "key": "duplicate_message_limit",
                             "env": "VK_LAYER_DUPLICATE_MESSAGE_LIMIT",
                             "label": "Max Duplicated Messages",
-                            "description": "Maximum number of times any single validation message would be reported.",
+                            "description": "Maximum number of times any single validation message should be reported.",
                             "type": "INT",
                             "default": 10,
                             "range": {
@@ -327,14 +327,14 @@
                 {
                     "key": "disables",
                     "label": "Disables",
-                    "description": "Setting an option here will disable areas of validation",
+                    "description": "Specify areas of validation to be disabled",
                     "type": "FLAGS",
                     "env": "VK_LAYER_DISABLES",
                     "flags": [
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",
                             "label": "Thread Safety",
-                            "description": "Thread checks. It may help with performance to run with thread-checking disabled most of the time, enabling it occasionally for a quick sanity check, or when debugging difficult application behaviors."
+                            "description": "Thread checks. In order to not degrade performance, it might be best to run your program with thread-checking disabled most of the time, enabling it occasionally for a quick sanity check or when debugging difficult application behaviors."
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",
@@ -354,7 +354,7 @@
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",
                             "label": "Handle Wrapping",
-                            "description": "Handle wrapping checks. Disable this feature if you are running into crashes when authoring new extensions or developing new Vulkan objects/structures"
+                            "description": "Handle wrapping checks. Disable this feature if you are exerience crashes when creating new extensions or developing new Vulkan objects/structures."
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT",
@@ -389,7 +389,7 @@
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT",
                             "label": "Shader Validation Caching",
-                            "description": "Disable caching of shader validation results",
+                            "description": "Disable caching of shader validation results.",
                             "view": "ADVANCED"
                         }
                     ],
@@ -413,7 +413,7 @@
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",
                             "label": "Debug Printf",
-                            "description": "Enables processing of debug printf instructions in shaders and sending debug strings to the debug callback",
+                            "description": "Enables processing of debug printf instructions in shaders and sending debug strings to the debug callback.",
                             "url": "${LUNARG_SDK}/debug_printf.html",
                             "status": "STABLE",
                             "platforms": [ "WINDOWS", "LINUX" ],
@@ -421,7 +421,7 @@
                                 {
                                     "key": "printf_to_stdout",
                                     "label": "Redirect Printf messages to stdout",
-                                    "description": "To redirect Debug Printf messages from the debug callback to stdout",
+                                    "description": "Enable redirection of Debug Printf messages from the debug callback to stdout",
                                     "type": "BOOL",
                                     "default": true,
                                     "platforms": [ "WINDOWS", "LINUX" ],
@@ -438,7 +438,7 @@
                                 {
                                     "key": "printf_verbose",
                                     "label": "Printf verbose",
-                                    "description": "Verbosity of debug printf messages",
+                                    "description": "Set the verbosity of debug printf messages",
                                     "type": "BOOL",
                                     "default": false,
                                     "platforms": [ "WINDOWS", "LINUX" ],
@@ -455,7 +455,7 @@
                                 {
                                     "key": "printf_buffer_size",
                                     "label": "Printf buffer size",
-                                    "description": "The size in bytes of the buffer used by debug printf",
+                                    "description": "Set the size in bytes of the buffer used by debug printf",
                                     "type": "INT",
                                     "default": 1024,
                                     "range": {
@@ -479,7 +479,7 @@
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT",
                             "label": "GPU-Assisted",
-                            "description": "Check for API usage errors at shader execution time",
+                            "description": "Check for API usage errors at shader execution time.",
                             "url": "${LUNARG_SDK}/gpu_validation.html",
                             "platforms": [ "WINDOWS", "LINUX" ],
                             "settings": [
@@ -558,7 +558,7 @@
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD",
                             "label": "AMD-specific best practices",
-                            "description": "Adds check for spec-conforming but non-ideal code one AMD GPUs",
+                            "description": "Adds check for spec-conforming but non-ideal code on AMD GPUs.",
                             "platforms": [ "WINDOWS", "LINUX", "MACOS"]
                         }
                     ],

@@ -10,15 +10,15 @@
 
 The `VK_LAYER_KHRONOS_validation` layer supports the following validation coverage areas:
 
-- [Core validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/core_checks.md)
-- [Stateless parameter validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/stateless_validation.md)
-- [Object lifetime validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/object_lifetimes.md)
-- [GPU-Assisted validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/gpu_validation.md)
-- [Thread safety validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/thread_safety.md)
-- [Synchronization validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/synchronization_usage.md)
-- [Best practices validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/best_practices.md)
-- [Debug Printf functionality](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/debug_printf.md)
-- [Handle wrapping functionality](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/handle_wrapping.md)
+- [Core validation](core_checks.md)
+- [Stateless parameter validation](stateless_validation.md)
+- [Object lifetime validation](object_lifetimes.md)
+- [GPU-Assisted validation](gpu_validation.md)
+- [Thread safety validation](thread_safety.md)
+- [Synchronization validation](synchronization_usage.md)
+- [Best practices validation](best_practices.md)
+- [Debug Printf functionality](debug_printf.md)
+- [Handle wrapping functionality](handle_wrapping.md)
 
 **Note:**
 
@@ -53,7 +53,7 @@ The `VK_EXT_validation_features` flags can be used to disable validation corresp
 | `VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT` | `VK_LAYER_LUNARG_parameter_validation` |
 | `VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT` | `VK_LAYER_LUNARG_object_tracker` |
 | `VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT` | `VK_LAYER_LUNARG_core_validation` |
-| `VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT` | `VK_LAYER_GOOGLE_unqiue_objects` |
+| `VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT` | `VK_LAYER_GOOGLE_unique_objects` |
 
 Refer to [VK_EXT_validation_features](https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/vkspec.html#VK_EXT_validation_features)
 in the Vulkan specification for details on this extension.
@@ -98,6 +98,9 @@ a messenger callback itself. This is especially useful for automation tasks, ens
 Refer to [VK_EXT_debug_utils](https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/vkspec.html#VK_EXT_debug_utils)
 in the Vulkan Specification for details on this feature.
 
+## Layer Options
+
+The options for this layer are specified in VkLayer_khronos_validation.json. The option details are in [khronos_validation_layer.html](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html).
 
 
 
