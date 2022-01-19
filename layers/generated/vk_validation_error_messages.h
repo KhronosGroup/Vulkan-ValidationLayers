@@ -3,8 +3,8 @@
 /*
  * Vulkan
  *
- * Copyright (c) 2016-2021 Google Inc.
- * Copyright (c) 2016-2021 LunarG, Inc.
+ * Copyright (c) 2016-2022 Google Inc.
+ * Copyright (c) 2016-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
