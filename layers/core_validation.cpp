@@ -7163,8 +7163,6 @@ bool CoreChecks::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuff
 
 bool CoreChecks::ValidateRenderingAttachmentInfoKHR(VkCommandBuffer commandBuffer,
                                                     const VkRenderingAttachmentInfoKHR *pAttachment) const {
-    const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    if (!cb_state) return false;
     bool skip = false;
 
     if (pAttachment->imageView != VK_NULL_HANDLE) {
