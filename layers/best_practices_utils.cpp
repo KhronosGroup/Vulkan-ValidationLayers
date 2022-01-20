@@ -1289,6 +1289,19 @@ bool BestPractices::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submi
     return skip;
 }
 
+bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits,
+                                                VkFence fence) const {
+    bool skip = false;
+
+    for (uint32_t submit = 0; submit < submitCount; submit++) {
+        for (uint32_t semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreInfoCount; semaphore++) {
+            skip |= CheckPipelineStageFlags("vkQueueSubmit2", pSubmits[submit].pWaitSemaphoreInfos[semaphore].stageMask);
+        }
+    }
+
+    return skip;
+}
+
 bool BestPractices::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) const {
     bool skip = false;
@@ -1335,6 +1348,11 @@ bool BestPractices::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer
     return CheckDependencyInfo("vkCmdSetEvent2KHR", *pDependencyInfo);
 }
 
+bool BestPractices::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
+                                                const VkDependencyInfo* pDependencyInfo) const {
+    return CheckDependencyInfo("vkCmdSetEvent2", *pDependencyInfo);
+}
+
 bool BestPractices::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event,
                                                  VkPipelineStageFlags stageMask) const {
     bool skip = false;
@@ -1349,6 +1367,15 @@ bool BestPractices::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuff
     bool skip = false;
 
     skip |= CheckPipelineStageFlags("vkCmdResetEvent2KHR", stageMask);
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
+                                                  VkPipelineStageFlags2 stageMask) const {
+    bool skip = false;
+
+    skip |= CheckPipelineStageFlags("vkCmdResetEvent2", stageMask);
 
     return skip;
 }
@@ -1373,6 +1400,16 @@ bool BestPractices::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuff
     bool skip = false;
     for (uint32_t i = 0; i < eventCount; i++) {
         skip = CheckDependencyInfo("vkCmdWaitEvents2KHR", pDependencyInfos[i]);
+    }
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                                     const VkDependencyInfo* pDependencyInfos) const {
+    bool skip = false;
+    for (uint32_t i = 0; i < eventCount; i++) {
+        skip = CheckDependencyInfo("vkCmdWaitEvents2", pDependencyInfos[i]);
     }
 
     return skip;
@@ -1439,6 +1476,11 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer comman
     return CheckDependencyInfo("vkCmdPipelineBarrier2KHR", *pDependencyInfo);
 }
 
+bool BestPractices::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer,
+                                                       const VkDependencyInfo* pDependencyInfo) const {
+    return CheckDependencyInfo("vkCmdPipelineBarrier2", *pDependencyInfo);
+}
+
 bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                      VkQueryPool queryPool, uint32_t query) const {
     bool skip = false;
@@ -1453,6 +1495,15 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer command
     bool skip = false;
 
     skip |= CheckPipelineStageFlags("vkCmdWriteTimestamp2KHR", pipelineStage);
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
+                                                      VkQueryPool queryPool, uint32_t query) const {
+    bool skip = false;
+
+    skip |= CheckPipelineStageFlags("vkCmdWriteTimestamp2", pipelineStage);
 
     return skip;
 }
@@ -3149,6 +3200,20 @@ bool BestPractices::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBu
     return skip;
 }
 
+bool BestPractices::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer,
+                                                    const VkResolveImageInfo2* pResolveImageInfo) const {
+    bool skip = false;
+
+    skip |= VendorCheckEnabled(kBPVendorArm) &&
+            LogPerformanceWarning(device, kVUID_BestPractices_CmdResolveImage2_ResolvingImage,
+                                  "%s Attempting to use vkCmdResolveImage2 to resolve a multisampled image. "
+                                  "This is a very slow and extremely bandwidth intensive path. "
+                                  "You should always resolve multisampled images on-tile with pResolveAttachments in VkRenderPass.",
+                                  VendorSpecificTag(kBPVendorArm));
+
+    return skip;
+}
+
 void BestPractices::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                  VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                  const VkImageResolve* pRegions) {
@@ -3174,6 +3239,22 @@ void BestPractices::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuff
     for (uint32_t i = 0; i < regionCount; i++) {
         QueueValidateImage(funcs, "vkCmdResolveImage2KHR()", src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ, pResolveImageInfo->pRegions[i].srcSubresource);
         QueueValidateImage(funcs, "vkCmdResolveImage2KHR()", dst, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE, pResolveImageInfo->pRegions[i].dstSubresource);
+    }
+}
+
+void BestPractices::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer,
+                                                     const VkResolveImageInfo2* pResolveImageInfo) {
+    auto cb = GetCBState(commandBuffer);
+    auto& funcs = cb->queue_submit_functions;
+    auto* src = GetImageUsageState(pResolveImageInfo->srcImage);
+    auto* dst = GetImageUsageState(pResolveImageInfo->dstImage);
+    uint32_t regionCount = pResolveImageInfo->regionCount;
+
+    for (uint32_t i = 0; i < regionCount; i++) {
+        QueueValidateImage(funcs, "vkCmdResolveImage2()", src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ,
+                           pResolveImageInfo->pRegions[i].srcSubresource);
+        QueueValidateImage(funcs, "vkCmdResolveImage2()", dst, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE,
+                           pResolveImageInfo->pRegions[i].dstSubresource);
     }
 }
 
