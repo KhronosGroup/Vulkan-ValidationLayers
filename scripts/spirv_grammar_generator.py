@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2021 The Khronos Group Inc.
+# Copyright (c) 2021-2022 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -97,9 +97,6 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         self.imageSampleOps = []
         self.imageFetchOps = []
         # Need range to be large as largest possible operand index
-        self.memoryScopeParam = [[] for i in range(5)]
-        self.executionScopeParam = [[] for i in range(5)]
-        self.imageOperandsParam = [[] for i in range(8)]
         self.imageOperandsParamCount = [[] for i in range(3)]
 
         # Lots of switch statements share same ending
@@ -142,7 +139,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         copyright += '\n'
         copyright += '/***************************************************************************\n'
         copyright += ' *\n'
-        copyright += ' * Copyright (c) 2021 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2021-2022 The Khronos Group Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -165,6 +162,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         write(copyright, file=self.outFile)
 
         if self.sourceFile:
+            write('#include "vk_layer_data.h"', file=self.outFile)
             write('#include "spirv_grammar_helper.h"', file=self.outFile)
         elif self.headerFile:
             write('#pragma once', file=self.outFile)
@@ -174,6 +172,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
     #
     # Write generated file content to output file
     def endFile(self):
+        write(self.instructionTable(), file=self.outFile)
         write(self.atomicOperation(), file=self.outFile)
         write(self.groupOperation(), file=self.outFile)
         write(self.imageOperation(), file=self.outFile)
@@ -231,7 +230,14 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
 
                 # Nice side effect of using a dict here is alias opcodes will be last in the grammar file
                 # ex: OpTypeAccelerationStructureNV will be replaced by OpTypeAccelerationStructureKHR
-                self.opcodes[instruction['opcode']] = opname
+                self.opcodes[instruction['opcode']] = {
+                    'name' : opname,
+                    'hasType' : "false",
+                    'hasResult' : "false",
+                    'memoryScopePosition' : 0,
+                    'executionScopePosition' : 0,
+                    'imageOperandsPosition' : 0,
+                }
 
                 if instruction['class'] == 'Atomic':
                     self.atomicsOps.append(opname)
@@ -245,19 +251,48 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                     self.imageSampleOps.append(opname)
                 if 'operands' in instruction:
                     for index, operand in enumerate(instruction['operands']):
+                        if operand['kind'] == 'IdResultType':
+                            self.opcodes[instruction['opcode']]['hasType'] = "true"
+                        if operand['kind'] == 'IdResult':
+                            self.opcodes[instruction['opcode']]['hasResult'] = "true"
                         # some instructions have both types of IdScope
                         # OpReadClockKHR has the wrong 'name' as 'Scope'
                         if operand['kind'] == 'IdScope':
                             if operand['name'] == '\'Execution\'' or operand['name'] == '\'Scope\'':
-                                self.executionScopeParam[index + 1].append(opname)
+                                self.opcodes[instruction['opcode']]['executionScopePosition'] = index + 1
                             elif operand['name'] == '\'Memory\'':
-                                self.memoryScopeParam[index + 1].append(opname)
+                                self.opcodes[instruction['opcode']]['memoryScopePosition'] = index + 1
                             else:
                                 print("Error: unknown operand {} not handled correctly\n".format(opname))
                                 sys.exit(1)
                         if operand['kind'] == 'ImageOperands':
-                            self.imageOperandsParam[index + 1].append(opname)
+                            self.opcodes[instruction['opcode']]['imageOperandsPosition'] = index + 1
 
+    #
+    # Generate table for each opcode instruction
+    def instructionTable(self):
+        output = ''
+        if self.sourceFile:
+            output += '// All information related to each SPIR-V opcode instruction\n'
+            output += 'struct InstructionInfo {\n'
+            output += '    const char* name;\n'
+            output += '    bool has_type; // always operand 0 if present\n'
+            output += '    bool has_result; // always operand 1 if present\n'
+            output += '    uint32_t memory_scope_position; // operand ID position or zero if not present\n'
+            output += '    uint32_t execution_scope_position; // operand ID position or zero if not present\n'
+            output += '    uint32_t image_operands_position; // operand ID position or zero if not present\n'
+            output += '};\n'
+            output += '\n'
+            output += '// Static table to replace having many large switch statement functions for looking up each part\n'
+            output += '// of a given SPIR-V opcode instruction\n'
+            output += '//\n'
+            output += '// clang-format off\n'
+            output += 'static const layer_data::unordered_map<uint32_t, InstructionInfo> kInstructionTable {\n'
+            for opcode, info in sorted(self.opcodes.items()):
+                output += f'    {{spv::{info["name"]}, {{"{info["name"]}", {info["hasType"]}, {info["hasResult"]}, {info["memoryScopePosition"]}, {info["executionScopePosition"]}, {info["imageOperandsPosition"]}}}}},\n'
+            output += '};\n'
+            output += '// clang-format on\n'
+        return output;
     #
     # Generate functions for numeric based functions
     def atomicOperation(self):
@@ -328,44 +363,62 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
     def parameterHelper(self):
         output = ''
         if self.headerFile:
-            output += 'uint32_t MemoryScopeParamPosition(uint32_t opcode);\n'
-            output += 'uint32_t ExecutionScopeParamPosition(uint32_t opcode);\n'
-            output += 'uint32_t ImageOperandsParamPosition(uint32_t opcode);\n'
+            output += 'bool OpcodeHasType(uint32_t opcode);\n'
+            output += 'bool OpcodeHasResult(uint32_t opcode);\n'
+            output += '\n'
+            output += 'uint32_t OpcodeMemoryScopePosition(uint32_t opcode);\n'
+            output += 'uint32_t OpcodeExecutionScopePosition(uint32_t opcode);\n'
+            output += 'uint32_t OpcodeImageOperandsPosition(uint32_t opcode);\n'
+            output += '\n'
             output += 'uint32_t ImageOperandsParamCount(uint32_t opcode);\n'
         elif self.sourceFile:
-            output += '// Return parameter position of memory scope ID or zero if there is none\n'
-            output += 'uint32_t MemoryScopeParamPosition(uint32_t opcode) {\n'
-            output += '    uint32_t position = 0;\n'
-            output += '    switch (opcode) {\n'
-            for index, operands in enumerate(self.memoryScopeParam):
-                for operand in operands:
-                    output += '        case spv::{}:\n'.format(operand)
-                if len(operands) != 0:
-                    output += '            return {};\n'.format(index)
-            output += self.commonParamSwitch('position')
+            output += 'bool OpcodeHasType(uint32_t opcode) {\n'
+            output += '    bool has_type = false;\n'
+            output += '    auto format_info = kInstructionTable.find(opcode);\n'
+            output += '    if (format_info != kInstructionTable.end()) {\n'
+            output += '        has_type = format_info->second.has_type;\n'
+            output += '    }\n'
+            output += '    return has_type;\n'
+            output += '}\n\n'
 
-            output += '// Return parameter position of execution scope ID or zero if there is none\n'
-            output += 'uint32_t ExecutionScopeParamPosition(uint32_t opcode) {\n'
-            output += '    uint32_t position = 0;\n'
-            output += '    switch (opcode) {\n'
-            for index, operands in enumerate(self.executionScopeParam):
-                for operand in operands:
-                    output += '        case spv::{}:\n'.format(operand)
-                if len(operands) != 0:
-                    output += '            return {};\n'.format(index)
-            output += self.commonParamSwitch('position')
+            output += 'bool OpcodeHasResult(uint32_t opcode) {\n'
+            output += '    bool has_result = false;\n'
+            output += '    auto format_info = kInstructionTable.find(opcode);\n'
+            output += '    if (format_info != kInstructionTable.end()) {\n'
+            output += '        has_result = format_info->second.has_result;\n'
+            output += '    }\n'
+            output += '    return has_result;\n'
+            output += '}\n\n'
 
-
-            output += '// Return parameter position of Image Operands or zero if there is none\n'
-            output += 'uint32_t ImageOperandsParamPosition(uint32_t opcode) {\n'
+            output += '// Return operand position of Memory Scope <ID> or zero if there is none\n'
+            output += 'uint32_t OpcodeMemoryScopePosition(uint32_t opcode) {\n'
             output += '    uint32_t position = 0;\n'
-            output += '    switch (opcode) {\n'
-            for index, operands in enumerate(self.imageOperandsParam):
-                for operand in operands:
-                    output += '        case spv::{}:\n'.format(operand)
-                if len(operands) != 0:
-                    output += '            return {};\n'.format(index)
-            output += self.commonParamSwitch('position')
+            output += '    auto format_info = kInstructionTable.find(opcode);\n'
+            output += '    if (format_info != kInstructionTable.end()) {\n'
+            output += '        position = format_info->second.memory_scope_position;\n'
+            output += '    }\n'
+            output += '    return position;\n'
+            output += '}\n\n'
+
+            output += '// Return operand position of Execution Scope <ID> or zero if there is none\n'
+            output += 'uint32_t OpcodeExecutionScopePosition(uint32_t opcode) {\n'
+            output += '    uint32_t position = 0;\n'
+            output += '    auto format_info = kInstructionTable.find(opcode);\n'
+            output += '    if (format_info != kInstructionTable.end()) {\n'
+            output += '        position = format_info->second.execution_scope_position;\n'
+            output += '    }\n'
+            output += '    return position;\n'
+            output += '}\n\n'
+
+            output += '// Return operand position of Image Operands <ID> or zero if there is none\n'
+            output += 'uint32_t OpcodeImageOperandsPosition(uint32_t opcode) {\n'
+            output += '    uint32_t position = 0;\n'
+            output += '    auto format_info = kInstructionTable.find(opcode);\n'
+            output += '    if (format_info != kInstructionTable.end()) {\n'
+            output += '        position = format_info->second.image_operands_position;\n'
+            output += '    }\n'
+            output += '    return position;\n'
+            output += '}\n\n'
 
             output += '// Return number of optional parameter from ImageOperands\n'
             output += 'uint32_t ImageOperandsParamCount(uint32_t image_operand) {\n'
@@ -387,13 +440,14 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
     def stringHelper(self):
         output = ''
         if self.headerFile:
-            output =  'static inline const char* string_SpvOpcode(uint32_t opcode) {\n'
-            output += '    switch ((spv::Op)opcode) {\n'
-            for opcode, name in sorted(self.opcodes.items()):
-                    output += '         case spv::' + name + ':\n'
-                    output += '            return \"' + name + '\";\n'
-            output += '        default:\n'
-            output += '            return \"Unhandled Opcode\";\n'
-            output += '    };\n'
+            output =  'const char* string_SpvOpcode(uint32_t opcode);\n'
+        elif self.sourceFile:
+            output =  'const char* string_SpvOpcode(uint32_t opcode) {\n'
+            output += '    auto format_info = kInstructionTable.find(opcode);\n'
+            output += '    if (format_info != kInstructionTable.end()) {\n'
+            output += '        return format_info->second.name;\n'
+            output += '    } else {\n'
+            output += '        return \"Unhandled Opcode\";\n'
+            output += '    }\n'
             output += '};'
         return output

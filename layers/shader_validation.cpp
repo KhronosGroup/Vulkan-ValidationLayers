@@ -729,7 +729,7 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *m
 bool CoreChecks::ValidateMemoryScope(SHADER_MODULE_STATE const *src, const spirv_inst_iter &insn) const {
     bool skip = false;
 
-    const auto &entry = MemoryScopeParamPosition(insn.opcode());
+    const auto &entry = OpcodeMemoryScopePosition(insn.opcode());
     if (entry > 0) {
         const uint32_t scope_id = insn.word(entry);
         if (enabled_features.core12.vulkanMemoryModel && !enabled_features.core12.vulkanMemoryModelDeviceScope) {
@@ -2356,7 +2356,7 @@ bool CoreChecks::ValidateTexelOffsetLimits(SHADER_MODULE_STATE const *src, spirv
 
     const uint32_t opcode = insn.opcode();
     if (ImageGatherOperation(opcode) || ImageSampleOperation(opcode) || ImageFetchOperation(opcode)) {
-        uint32_t image_operand_position = ImageOperandsParamPosition(opcode);
+        uint32_t image_operand_position = OpcodeImageOperandsPosition(opcode);
         // Image operands can be optional
         if (image_operand_position != 0 && insn.len() > image_operand_position) {
             auto image_operand = insn.word(image_operand_position);
