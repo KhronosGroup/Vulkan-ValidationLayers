@@ -347,7 +347,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     unsigned GetFundamentalType(unsigned type) const;
     spirv_inst_iter GetStructType(spirv_inst_iter def, bool is_array_of_verts) const;
 
-    void DefineStructMember(const spirv_inst_iter &it, const std::vector<uint32_t> &memberDecorate_offsets,
+    void DefineStructMember(const spirv_inst_iter &it, const std::vector<uint32_t> &member_decorate_offsets,
                             shader_struct_member &data) const;
     void RunUsedArray(uint32_t offset, std::vector<uint32_t> array_indices, uint32_t access_chain_word_index,
                       spirv_inst_iter &access_chain_it, const shader_struct_member &data) const;

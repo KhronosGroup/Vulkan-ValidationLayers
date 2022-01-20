@@ -848,7 +848,7 @@ spirv_inst_iter SHADER_MODULE_STATE::GetStructType(spirv_inst_iter def, bool is_
     }
 }
 
-void SHADER_MODULE_STATE::DefineStructMember(const spirv_inst_iter &it, const std::vector<uint32_t> &memberDecorate_offsets,
+void SHADER_MODULE_STATE::DefineStructMember(const spirv_inst_iter &it, const std::vector<uint32_t> &member_decorate_offsets,
                                              shader_struct_member &data) const {
     const auto struct_it = GetStructType(it, false);
     assert(struct_it != end());
@@ -861,7 +861,7 @@ void SHADER_MODULE_STATE::DefineStructMember(const spirv_inst_iter &it, const st
     offsets.resize(struct_it.len() - i);
 
     // The members of struct in SPRIV_R aren't always sort, so we need to know their order.
-    for (const auto offset : memberDecorate_offsets) {
+    for (const auto offset : member_decorate_offsets) {
         const auto member_decorate = at(offset);
         if (member_decorate.word(1) != struct_it.word(1)) {
             continue;
@@ -886,7 +886,7 @@ void SHADER_MODULE_STATE::DefineStructMember(const spirv_inst_iter &it, const st
         }
 
         if (def_member.opcode() == spv::OpTypeStruct) {
-            DefineStructMember(def_member, memberDecorate_offsets, data1);
+            DefineStructMember(def_member, member_decorate_offsets, data1);
         } else if (def_member.opcode() == spv::OpTypePointer) {
             if (def_member.word(2) == spv::StorageClassPhysicalStorageBuffer) {
                 // If it's a pointer with PhysicalStorageBuffer class, this member is essentially a uint64_t containing an address
@@ -894,7 +894,7 @@ void SHADER_MODULE_STATE::DefineStructMember(const spirv_inst_iter &it, const st
                 data1.size = 8;
             } else {
                 // If it's OpTypePointer. it means the member is a buffer, the type will be TypePointer, and then struct
-                DefineStructMember(def_member, memberDecorate_offsets, data1);
+                DefineStructMember(def_member, member_decorate_offsets, data1);
             }
         } else {
             if (def_member.opcode() == spv::OpTypeMatrix) {
@@ -1201,15 +1201,15 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_
 // Used by the collection functions to help aid in state tracking
 struct shader_module_used_operators {
     bool updated;
-    std::vector<unsigned> imagread_members;
-    std::vector<unsigned> imagwrite_members;
+    std::vector<unsigned> image_read_members;
+    std::vector<unsigned> image_write_members;
     std::vector<unsigned> atomic_members;
     std::vector<unsigned> store_members;
     std::vector<unsigned> atomic_store_members;
     std::vector<unsigned> sampler_implicitLod_dref_proj_members;      // sampler Load id
     std::vector<unsigned> sampler_bias_offset_members;                // sampler Load id
     std::vector<unsigned> image_dref_members;
-    std::vector<std::pair<unsigned, unsigned>> sampledImage_members;  // <image,sampler> Load id
+    std::vector<std::pair<unsigned, unsigned>> sampled_image_members;  // <image,sampler> Load id
     layer_data::unordered_map<unsigned, unsigned> load_members;
     layer_data::unordered_map<unsigned, std::pair<unsigned, unsigned>> accesschain_members;
     layer_data::unordered_map<unsigned, unsigned> image_texel_pointer_members;
@@ -1291,16 +1291,16 @@ struct shader_module_used_operators {
                 }
                 case spv::OpImageRead:
                 case spv::OpImageSparseRead: {
-                    imagread_members.emplace_back(insn.word(3));  // Load id
+                    image_read_members.emplace_back(insn.word(3));  // Load id
                     break;
                 }
                 case spv::OpImageWrite: {
-                    imagwrite_members.emplace_back(insn.word(1));  // Load id
+                    image_write_members.emplace_back(insn.word(1));  // Load id
                     break;
                 }
                 case spv::OpSampledImage: {
                     // 3: image load id, 4: sampler load id
-                    sampledImage_members.emplace_back(std::pair<unsigned, unsigned>(insn.word(3), insn.word(4)));
+                    sampled_image_members.emplace_back(std::pair<unsigned, unsigned>(insn.word(3), insn.word(4)));
                     break;
                 }
                 case spv::OpLoad: {
@@ -1394,12 +1394,12 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
                 bool is_image_without_format = false;
                 if (type.word(7) == 2) is_image_without_format = type.word(8) == spv::ImageFormatUnknown;
 
-                if (CheckObjectIDFromOpLoad(id, used_operators.imagwrite_members, used_operators.load_members,
+                if (CheckObjectIDFromOpLoad(id, used_operators.image_write_members, used_operators.load_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_writable = true;
                     if (is_image_without_format) out_interface_var.is_write_without_format = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.imagread_members, used_operators.load_members,
+                if (CheckObjectIDFromOpLoad(id, used_operators.image_read_members, used_operators.load_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_readable = true;
                     if (is_image_without_format) out_interface_var.is_read_without_format = true;
@@ -1423,7 +1423,7 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
                     out_interface_var.is_dref_operation = true;
                 }
 
-                for (auto &itp_id : used_operators.sampledImage_members) {
+                for (auto &itp_id : used_operators.sampled_image_members) {
                     // Find if image id match.
                     uint32_t image_index = 0;
                     auto load_it = used_operators.load_members.find(itp_id.first);
