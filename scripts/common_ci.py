@@ -183,6 +183,10 @@ def RunVVLTests(args):
     RunShellCmd("env")
     print("Running tests:")
     RunShellCmd(lvt_cmd, env=lvt_env)
+    print("Re-Running multithreaded tests with VK_LAYER_FINE_GRAINED_LOCKING=1:")
+    lvt_env['VK_LAYER_FINE_GRAINED_LOCKING'] = '1'
+    RunShellCmd(lvt_cmd + ' --gtest_filter=*Thread*', env=lvt_env)
+
 
 def GetArgParser():
     parser = argparse.ArgumentParser()
