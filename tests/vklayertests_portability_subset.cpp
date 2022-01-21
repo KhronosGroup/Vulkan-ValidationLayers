@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2020-2021 The Khronos Group Inc.
- * Copyright (c) 2020-2021 Valve Corporation
- * Copyright (c) 2020-2021 LunarG, Inc.
+ * Copyright (c) 2020-2022 The Khronos Group Inc.
+ * Copyright (c) 2020-2022 Valve Corporation
+ * Copyright (c) 2020-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -618,7 +618,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkShaderObj tsc_obj(DeviceObj(), bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+    VkShaderObj tsc_obj(this, bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
 
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
@@ -641,7 +641,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
                 gl_Position = vec4(1);
             }
         )glsl";
-        VkShaderObj tes_obj(DeviceObj(), tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+        VkShaderObj tes_obj(this, tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
         pipe.shader_stages_.emplace_back(tes_obj.GetStageCreateInfo());
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-tessellationShader-06326");
         pipe.CreateGraphicsPipeline();
@@ -661,7 +661,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         // Reset TES shader stage
         pipe.InitShaderInfo();
         pipe.shader_stages_.emplace_back(tsc_obj.GetStageCreateInfo());
-        VkShaderObj tes_obj(DeviceObj(), tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+        VkShaderObj tes_obj(this, tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
         pipe.shader_stages_.emplace_back(tes_obj.GetStageCreateInfo());
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-tessellationShader-06327");
@@ -690,9 +690,9 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
         // Reset shader stages
         pipe.shader_stages_.clear();
-        VkShaderObj vs_obj(DeviceObj(), vs_source, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs_obj(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
         pipe.shader_stages_.emplace_back(vs_obj.GetStageCreateInfo());
-        VkShaderObj fs_obj(DeviceObj(), fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        VkShaderObj fs_obj(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
         pipe.shader_stages_.emplace_back(fs_obj.GetStageCreateInfo());
 
         iasci.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -754,26 +754,26 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
     InitBestPracticesFramework(kEnableArmValidation);
     InitState();
 
-    VkShaderObj compute_4_1_1(m_device,
+    VkShaderObj compute_4_1_1(this,
                               "#version 320 es\n"
                               "\n"
                               "layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;\n\n"
                               "void main() {}\n",
-                              VK_SHADER_STAGE_COMPUTE_BIT, this);
+                              VK_SHADER_STAGE_COMPUTE_BIT);
 
-    VkShaderObj compute_4_1_3(m_device,
+    VkShaderObj compute_4_1_3(this,
                               "#version 320 es\n"
                               "\n"
                               "layout(local_size_x = 4, local_size_y = 1, local_size_z = 3) in;\n\n"
                               "void main() {}\n",
-                              VK_SHADER_STAGE_COMPUTE_BIT, this);
+                              VK_SHADER_STAGE_COMPUTE_BIT);
 
-    VkShaderObj compute_16_8_1(m_device,
+    VkShaderObj compute_16_8_1(this,
                                "#version 320 es\n"
                                "\n"
                                "layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;\n\n"
                                "void main() {}\n",
-                               VK_SHADER_STAGE_COMPUTE_BIT, this);
+                               VK_SHADER_STAGE_COMPUTE_BIT);
 
     CreateComputePipelineHelper pipe(*this);
 
@@ -814,26 +814,26 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
     InitBestPracticesFramework(kEnableArmValidation);
     InitState();
 
-    VkShaderObj compute_4_1_1(m_device,
+    VkShaderObj compute_4_1_1(this,
                               "#version 320 es\n"
                               "\n"
                               "layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;\n\n"
                               "void main() {}\n",
-                              VK_SHADER_STAGE_COMPUTE_BIT, this);
+                              VK_SHADER_STAGE_COMPUTE_BIT);
 
-    VkShaderObj compute_4_1_3(m_device,
+    VkShaderObj compute_4_1_3(this,
                               "#version 320 es\n"
                               "\n"
                               "layout(local_size_x = 4, local_size_y = 1, local_size_z = 3) in;\n\n"
                               "void main() {}\n",
-                              VK_SHADER_STAGE_COMPUTE_BIT, this);
+                              VK_SHADER_STAGE_COMPUTE_BIT);
 
-    VkShaderObj compute_16_8_1(m_device,
+    VkShaderObj compute_16_8_1(this,
                                "#version 320 es\n"
                                "\n"
                                "layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;\n\n"
                                "void main() {}\n",
-                               VK_SHADER_STAGE_COMPUTE_BIT, this);
+                               VK_SHADER_STAGE_COMPUTE_BIT);
 
     CreateComputePipelineHelper pipe(*this);
 
@@ -875,30 +875,30 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
     InitBestPracticesFramework(kEnableArmValidation);
     InitState();
 
-    VkShaderObj compute_sampler_2d_8_8_1(m_device,
+    VkShaderObj compute_sampler_2d_8_8_1(this,
                                          "#version 450\n"
                                          "layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;\n\n"
                                          "layout(set = 0, binding = 0) uniform sampler2D uSampler;\n"
                                          "void main() {\n"
                                          "    vec4 value = textureLod(uSampler, vec2(0.5), 0.0);\n"
                                          "}\n",
-                                         VK_SHADER_STAGE_COMPUTE_BIT, this);
-    VkShaderObj compute_sampler_1d_64_1_1(m_device,
+                                         VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderObj compute_sampler_1d_64_1_1(this,
                                           "#version 450\n"
                                           "layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;\n\n"
                                           "layout(set = 0, binding = 0) uniform sampler1D uSampler;\n"
                                           "void main() {\n"
                                           "    vec4 value = textureLod(uSampler, 0.5, 0.0);\n"
                                           "}\n",
-                                          VK_SHADER_STAGE_COMPUTE_BIT, this);
-    VkShaderObj compute_sampler_2d_64_1_1(m_device,
+                                          VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderObj compute_sampler_2d_64_1_1(this,
                                           "#version 450\n"
                                           "layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;\n\n"
                                           "layout(set = 0, binding = 0) uniform sampler2D uSampler;\n"
                                           "void main() {\n"
                                           "    vec4 value = textureLod(uSampler, vec2(0.5), 0.0);\n"
                                           "}\n",
-                                          VK_SHADER_STAGE_COMPUTE_BIT, this);
+                                          VK_SHADER_STAGE_COMPUTE_BIT);
 
     CreateComputePipelineHelper pipe(*this);
 
@@ -965,9 +965,9 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     CreatePipelineHelper graphics_pipeline(*this);
 
     graphics_pipeline.vs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this));
+        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT));
     graphics_pipeline.fs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this));
+        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT));
     graphics_pipeline.InitInfo();
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     graphics_pipeline.InitState();
@@ -1060,9 +1060,9 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     CreatePipelineHelper graphics_pipeline(*this);
 
     graphics_pipeline.vs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this));
+        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT));
     graphics_pipeline.fs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this));
+        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT));
     graphics_pipeline.InitInfo();
 
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1145,9 +1145,9 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     CreatePipelineHelper graphics_pipeline(*this);
 
     graphics_pipeline.vs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this));
+        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT));
     graphics_pipeline.fs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this));
+        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT));
     graphics_pipeline.InitInfo();
 
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1231,9 +1231,9 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     CreatePipelineHelper graphics_pipeline(*this);
 
     graphics_pipeline.vs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this));
+        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT));
     graphics_pipeline.fs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this));
+        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT));
     graphics_pipeline.InitInfo();
 
     graphics_pipeline.dsl_bindings_.resize(2);

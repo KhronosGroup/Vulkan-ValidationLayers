@@ -762,10 +762,10 @@ TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {
         printf("%s Device does not support tessellation shaders; skipped.\n", kSkipPrefix);
         return;
     }
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj tcs(m_device, bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
-    VkShaderObj tes(m_device, bindStateTeshaderText, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj tcs(this, bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(this, bindStateTeshaderText, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
     VkPipelineTessellationDomainOriginStateCreateInfo tessellationDomainOriginStateInfo = {
@@ -2611,7 +2611,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
     ASSERT_VK_SUCCESS(err);
 
     // Create PSO to be used for draw-time errors below
-    VkShaderObj fs(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -3172,7 +3172,7 @@ TEST_F(VkLayerTest, ImageViewInUseDestroyedSignaled) {
     VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     // Create PSO to use the sampler
-    VkShaderObj fs(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -3256,7 +3256,7 @@ TEST_F(VkLayerTest, BufferViewInUseDestroyedSignaled) {
            x = imageLoad(s, 0);
         }
     )glsl";
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -3330,7 +3330,7 @@ TEST_F(VkLayerTest, SamplerInUseDestroyedSignaled) {
     VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     // Create PSO to use the sampler
-    VkShaderObj fs(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -10779,13 +10779,13 @@ TEST_F(VkLayerTest, InvalidSpirvExtension) {
                OpReturn
                OpFunctionEnd
         )spirv";
-    VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM_TRY);
     m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
-    if (!vs.InitFromASMTry(*this, vertex_source.c_str(), SPV_ENV_VULKAN_1_2)) {
+    if (!vs.InitFromASMTry(vertex_source.c_str(), SPV_ENV_VULKAN_1_2)) {
         printf("%s Failed to compile shader\n", kSkipPrefix);
         return;
     }
-    const VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    const VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_Shader_InvalidExtension);
     CreatePipelineHelper pipe(*this);

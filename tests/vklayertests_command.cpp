@@ -1108,8 +1108,8 @@ TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
         }
     )glsl";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe1(m_device);
     pipe1.AddDefaultColorAttachment();
@@ -1287,8 +1287,8 @@ TEST_F(VkLayerTest, DrawTimeImageViewTypeMismatchWithPipeline) {
            color = texture(s, vec3(0));
         }
     )glsl";
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
@@ -1343,8 +1343,8 @@ TEST_F(VkLayerTest, DrawTimeImageMultisampleMismatchWithPipeline) {
            color = texelFetch(s, ivec2(0), 0);
         }
     )glsl";
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
@@ -1398,8 +1398,8 @@ TEST_F(VkLayerTest, DrawTimeImageComponentTypeMismatchWithPipeline) {
            color = texelFetch(s, ivec2(0), 0);
         }
     )glsl";
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
@@ -6033,7 +6033,8 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
     rp_info.subpassCount = 1;
     vk::CreateRenderPass(test_device.handle(), &rp_info, nullptr, &renderpass);
     VkPipelineObj pipeline(&test_device);
-    VkShaderObj vs(&test_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+    vs.InitFromGLSLTry(bindStateVertShaderText, false, SPV_ENV_VULKAN_1_0, &test_device);
     pipeline.AddShader(&vs);
     pipeline.CreateVKPipeline(pipelineLayout.handle(), renderpass);
     m_renderPassBeginInfo.renderPass = renderpass;
@@ -6560,9 +6561,9 @@ TEST_F(VkLayerTest, MeshShaderNV) {
         }
     )glsl";
 
-    VkShaderObj vs(m_device, vertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj ms(m_device, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, vertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj ms(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Test pipeline creation
     {
@@ -6690,7 +6691,7 @@ TEST_F(VkLayerTest, MeshShaderDisabledNV) {
 
     vk::QueueWaitIdle(m_device->m_queue);
 
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineShaderStageCreateInfo meshStage = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     meshStage = vs.GetStageCreateInfo();
     meshStage.stage = VK_SHADER_STAGE_MESH_BIT_NV;
@@ -6799,8 +6800,8 @@ TEST_F(VkLayerTest, ViewportWScalingNV) {
 
     const VkPipelineLayoutObj pl(m_device);
 
-    VkShaderObj vs(m_device, vs_src, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
     pipe.AddDefaultColorAttachment();
@@ -7735,7 +7736,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
            imageStore(si1, ivec2(0), vec4(0));
         }
     )glsl";
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();
@@ -8043,8 +8044,8 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
         }
     )glsl";
 
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();
@@ -8135,8 +8136,8 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
         }
     )glsl";
 
-    VkShaderObj const vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj const fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj const fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 128};
     VkPushConstantRange push_constant_range_small = {VK_SHADER_STAGE_VERTEX_BIT, 4, 4};
@@ -8351,7 +8352,7 @@ TEST_F(VkLayerTest, VerifyFilterCubicSamplerInCmdDraw) {
     VkSampler sampler_rediction;
     vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler_rediction);
 
-    VkShaderObj fs(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();
@@ -8440,7 +8441,7 @@ TEST_F(VkLayerTest, VerifyImgFilterCubicSamplerInCmdDraw) {
             x = texture(s, vec3(1));
         }
     )glsl";
-    VkShaderObj fs(m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();
@@ -8943,7 +8944,7 @@ TEST_F(VkLayerTest, InvalidPrimitiveFragmentShadingRateWriteMultiViewportLimitDy
         }
     )glsl";
 
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
     std::vector<VkRect2D> scissors = {{{0, 0}, {16, 16}}, {{1, 1}, {16, 16}}};
@@ -8953,7 +8954,7 @@ TEST_F(VkLayerTest, InvalidPrimitiveFragmentShadingRateWriteMultiViewportLimitDy
     pipe.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
     const VkPipelineLayoutObj pl(m_device);
     {
-        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
         pipe.AddShader(&vs);
         VkResult err = pipe.CreateVKPipeline(pl.handle(), renderPass());
         ASSERT_VK_SUCCESS(err);

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -648,32 +648,36 @@ class VkDescriptorSetObj : public vk_testing::DescriptorPool {
     vk_testing::DescriptorSet *m_set = NULL;
 };
 
+// What is the incoming source to be turned into VkShaderModuleCreateInfo::pCode
+typedef enum {
+    SPV_SOURCE_GLSL,
+    SPV_SOURCE_ASM,
+    // TRY == Won't try in contructor as need to be called as function that can return the VkResult
+    SPV_SOURCE_GLSL_TRY,
+    SPV_SOURCE_ASM_TRY,
+} SpvSourceType;
+
 class VkShaderObj : public vk_testing::ShaderModule {
   public:
-    VkShaderObj(VkDeviceObj &device, VkShaderStageFlagBits stage, char const *name = "main",
-                const VkSpecializationInfo *specInfo = nullptr);
-    VkShaderObj(VkDeviceObj *device, const char *shaderText, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                char const *name = "main", bool debug = false, const VkSpecializationInfo *specInfo = nullptr,
-                const spv_target_env env = SPV_ENV_VULKAN_1_0);
-    VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                char const *name = "main", const VkSpecializationInfo *specInfo = nullptr,
-                const spv_target_env env = SPV_ENV_VULKAN_1_0);
+    // optional arguments listed order of most likely to be changed manually by a test
+    VkShaderObj(VkRenderFramework *framework, const std::string source, VkShaderStageFlagBits stage,
+                const spv_target_env env = SPV_ENV_VULKAN_1_0, SpvSourceType source_type = SPV_SOURCE_GLSL,
+                const VkSpecializationInfo *spec_info = nullptr, char const *name = "main", bool debug = false);
     VkPipelineShaderStageCreateInfo const &GetStageCreateInfo() const;
 
-    bool InitFromGLSL(VkRenderFramework &framework, const char *shader_code, bool debug = false,
-                      const spv_target_env env = SPV_ENV_VULKAN_1_0);
-    VkResult InitFromGLSLTry(VkRenderFramework &framework, const char *shader_code, bool debug = false,
-                             const spv_target_env env = SPV_ENV_VULKAN_1_0);
-    bool InitFromASM(VkRenderFramework &framework, const std::string &spv_source, const spv_target_env env = SPV_ENV_VULKAN_1_0);
-    VkResult InitFromASMTry(VkRenderFramework &framework, const std::string &spv_source, const spv_target_env = SPV_ENV_VULKAN_1_0);
+    bool InitFromGLSL(const char *shader_code, bool debug = false, const spv_target_env env = SPV_ENV_VULKAN_1_0);
+    VkResult InitFromGLSLTry(const char *shader_code, bool debug = false, const spv_target_env env = SPV_ENV_VULKAN_1_0,
+                             const VkDeviceObj *custom_device = nullptr);
+    bool InitFromASM(const std::string &spv_source, const spv_target_env env = SPV_ENV_VULKAN_1_0);
+    VkResult InitFromASMTry(const std::string &spv_source, const spv_target_env = SPV_ENV_VULKAN_1_0);
 
     // These functions return a pointer to a newly created _and initialized_ VkShaderObj if initialization was successful.
     // Otherwise, {} is returned.
-    static std::unique_ptr<VkShaderObj> CreateFromGLSL(VkDeviceObj &dev, VkRenderFramework &framework, VkShaderStageFlagBits stage,
+    static std::unique_ptr<VkShaderObj> CreateFromGLSL(VkRenderFramework &framework, VkShaderStageFlagBits stage,
                                                        const std::string &code, const char *entry_point = "main",
                                                        const VkSpecializationInfo *spec_info = nullptr,
                                                        const spv_target_env = SPV_ENV_VULKAN_1_0, bool debug = false);
-    static std::unique_ptr<VkShaderObj> CreateFromASM(VkDeviceObj &dev, VkRenderFramework &framework, VkShaderStageFlagBits stage,
+    static std::unique_ptr<VkShaderObj> CreateFromASM(VkRenderFramework &framework, VkShaderStageFlagBits stage,
                                                       const std::string &code, const char *entry_point = "main",
                                                       const VkSpecializationInfo *spec_info = nullptr,
                                                       const spv_target_env spv_env = SPV_ENV_VULKAN_1_0);
@@ -733,6 +737,7 @@ class VkShaderObj : public vk_testing::ShaderModule {
 
   protected:
     VkPipelineShaderStageCreateInfo m_stage_info;
+    VkRenderFramework &m_framework;
     VkDeviceObj &m_device;
 };
 

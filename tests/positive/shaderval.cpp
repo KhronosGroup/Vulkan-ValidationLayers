@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (c) 2015-2021 Google, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2022 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ TEST_F(VkPositiveLayerTest, ShaderRelaxedBlockLayout) {
                   OpFunctionEnd
         )";
     m_errorMonitor->ExpectSuccess();
-    VkShaderObj vs(m_device, spv_source, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -156,7 +156,7 @@ TEST_F(VkPositiveLayerTest, ShaderUboStd430Layout) {
         )";
 
     m_errorMonitor->ExpectSuccess();
-    VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
+    VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -227,7 +227,7 @@ TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
         )";
 
     m_errorMonitor->ExpectSuccess();
-    VkShaderObj vs(m_device, spv_source, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -267,7 +267,7 @@ TEST_F(VkPositiveLayerTest, ShaderNonSemanticInfo) {
         )";
 
     m_errorMonitor->ExpectSuccess();
-    VkShaderObj cs(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this);
+    VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -393,7 +393,7 @@ TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
     pipe.InitInfo();
     pipe.dsl_bindings_.resize(dslb_size);
     memcpy(pipe.dsl_bindings_.data(), dslb, dslb_size * sizeof(VkDescriptorSetLayoutBinding));
-    pipe.cs_.reset(new VkShaderObj(m_device, bindStateMinimalShaderText, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.cs_.reset(new VkShaderObj(this, bindStateMinimalShaderText, VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
     m_errorMonitor->ExpectSuccess();
     pipe.CreateComputePipeline();
@@ -430,7 +430,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
         }
     )glsl";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -472,7 +472,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension2of2) {
         }
     )glsl";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -496,8 +496,8 @@ TEST_F(VkPositiveLayerTest, CreatePipelineFragmentOutputNotWrittenButMasked) {
         void main() {}
     )glsl";
 
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
@@ -525,8 +525,8 @@ TEST_F(VkPositiveLayerTest, PointSizeWriteInFunction) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Create VS declaring PointSize and write to it in a function call.
-    VkShaderObj vs(m_device, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj ps(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
     {
         CreatePipelineHelper pipe(*this);
         pipe.InitInfo();
@@ -553,9 +553,9 @@ TEST_F(VkPositiveLayerTest, PointSizeGeomShaderSuccess) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Create VS declaring PointSize and writing to it
-    VkShaderObj vs(m_device, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj gs(m_device, bindStateGeomPointSizeShaderText, VK_SHADER_STAGE_GEOMETRY_BIT, this);
-    VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(this, bindStateGeomPointSizeShaderText, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderObj ps(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -642,8 +642,8 @@ TEST_F(VkPositiveLayerTest, LoosePointSizeWrite) {
         )";
 
     // Create VS declaring PointSize and write to it in a function call.
-    VkShaderObj vs(m_device, LoosePointSizeWrite, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, LoosePointSizeWrite, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj ps(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     {
         CreatePipelineHelper pipe(*this);
@@ -682,9 +682,9 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature) {
            gl_Position = vec4(float(gl_BaseVertex));
         }
     )glsl";
-    VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
+    if (VK_SUCCESS == vs.InitFromGLSLTry(vsSource)) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
@@ -721,10 +721,10 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature11) {
            gl_Position = vec4(float(gl_BaseVertex));
         }
     )glsl";
-    VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
     // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
-    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, SPV_ENV_VULKAN_1_1)) {
+    if (VK_SUCCESS == vs.InitFromGLSLTry(vsSource, false, SPV_ENV_VULKAN_1_1)) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
@@ -775,10 +775,10 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithFeature) {
            gl_Position = vec4(float(gl_BaseVertex));
         }
     )glsl";
-    VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
     // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
-    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, SPV_ENV_VULKAN_1_1)) {
+    if (VK_SUCCESS == vs.InitFromGLSLTry(vsSource, false, SPV_ENV_VULKAN_1_1)) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
@@ -866,8 +866,7 @@ TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
     const char *current_shader = nullptr;
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
         // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
-        helper.cs_.reset(new VkShaderObj(m_device, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr,
-                                         SPV_ENV_VULKAN_1_1));
+        helper.cs_.reset(new VkShaderObj(this, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1));
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                 {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
@@ -1065,8 +1064,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat) {
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
         // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
-        helper.cs_.reset(new VkShaderObj(m_device, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, nullptr,
-                                         SPV_ENV_VULKAN_1_1));
+        helper.cs_.reset(new VkShaderObj(this, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1));
         helper.dsl_bindings_ = current_bindings;
     };
 
@@ -1347,8 +1345,8 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat2) {
         // This could get triggered in the event that the shader fails to compile
         m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
         // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
-        helper.cs_ = VkShaderObj::CreateFromGLSL(*m_device, *this, VK_SHADER_STAGE_COMPUTE_BIT, current_shader, "main", nullptr,
-                                                 SPV_ENV_VULKAN_1_1);
+        helper.cs_ =
+            VkShaderObj::CreateFromGLSL(*this, VK_SHADER_STAGE_COMPUTE_BIT, current_shader, "main", nullptr, SPV_ENV_VULKAN_1_1);
         // Skip the test if shader failed to compile
         helper.override_skip_ = !static_cast<bool>(helper.cs_);
         helper.dsl_bindings_ = current_bindings;
@@ -1475,7 +1473,7 @@ TEST_F(VkPositiveLayerTest, ValidateComputeShaderSharedMemory) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
-    pipe.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
     m_errorMonitor->ExpectSuccess();
     pipe.CreateComputePipeline();
@@ -1535,7 +1533,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
                         ar3 = 1.0f;
                 }
             )glsl";
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     char const *fsSource = R"glsl(
                 #version 450
@@ -1582,7 +1580,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
                             vec4(xy, zw) * vec4(st, pq) * cdef * vec4(ar1, ar2, ar3, ar4);
                 }
             )glsl";
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1649,8 +1647,8 @@ TEST_F(VkPositiveLayerTest, MeshShaderPointSize) {
         }
     )glsl";
 
-    VkShaderObj ms(m_device, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj ms(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper helper(*this);
     helper.InitInfo();
@@ -1695,7 +1693,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
                     color[2].rgba = vec4(0.75f);
                 }
             )glsl";
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     char const *fsSource = R"glsl(
                 #version 450
@@ -1712,7 +1710,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
                     color = inColor[0].rgba * inColor[1].rgba * inColor[2].rgba;
                 }
             )glsl";
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1820,8 +1818,8 @@ TEST_F(VkPositiveLayerTest, TaskAndMeshShader) {
         }
     )glsl";
 
-    VkShaderObj ts(m_device, taskShaderText, VK_SHADER_STAGE_TASK_BIT_NV, this, "main", false, nullptr, SPV_ENV_VULKAN_1_2);
-    VkShaderObj ms(m_device, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV, this, "main", false, nullptr, SPV_ENV_VULKAN_1_2);
+    VkShaderObj ts(this, taskShaderText, VK_SHADER_STAGE_TASK_BIT_NV, SPV_ENV_VULKAN_1_2);
+    VkShaderObj ms(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV, SPV_ENV_VULKAN_1_2);
 
     const auto break_vp = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo()};
@@ -1928,7 +1926,7 @@ TEST_F(VkPositiveLayerTest, ShaderPointSizeStructMemeberWritten) {
                OpReturn
                OpFunctionEnd
     )asm";
-    auto vs = VkShaderObj::CreateFromASM(*m_device, *this, VK_SHADER_STAGE_VERTEX_BIT, vs_src, "main");
+    auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, vs_src, "main");
 
     if (vs) {
         VkPushConstantRange push_constant_ranges[1]{{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * (16 + 4 + 1)}};
@@ -1995,7 +1993,7 @@ TEST_F(VkPositiveLayerTest, Std430SpirvOptFlags10) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    const VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
 
     const char *fragment_source = R"glsl(
 #version 450
@@ -2025,8 +2023,8 @@ void main() {
     float data = 2.0f;
     VkSpecializationMapEntry entry = {0, 0, sizeof(float)};
     VkSpecializationInfo specialization_info = {1, &entry, sizeof(float), &data};
-    const VkShaderObj fs(m_device, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main", false, &specialization_info,
-                         SPV_ENV_VULKAN_1_0);
+    const VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+                         &specialization_info);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -2062,7 +2060,7 @@ TEST_F(VkPositiveLayerTest, Std430SpirvOptFlags12) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    const VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
 
     const char *fragment_source = R"glsl(
 #version 450
@@ -2092,8 +2090,8 @@ void main() {
     float data = 2.0f;
     VkSpecializationMapEntry entry = {0, 0, sizeof(float)};
     VkSpecializationInfo specialization_info = {1, &entry, sizeof(float), &data};
-    const VkShaderObj fs(m_device, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main", false, &specialization_info,
-                         SPV_ENV_VULKAN_1_0);
+    const VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+                         &specialization_info);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();

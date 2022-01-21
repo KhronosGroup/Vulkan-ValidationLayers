@@ -4268,8 +4268,8 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
                x = imageLoad(s, 0);
             }
         )glsl";
-        VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         pipe.InitInfo();
         pipe.InitState();
@@ -9823,11 +9823,11 @@ TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
         pipe.InitInfo();
 
         if (test_struct.format_type == FLOAT) {
-            fs = new VkShaderObj(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+            fs = new VkShaderObj(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
         } else if (test_struct.format_type == SINT) {
-            fs = new VkShaderObj(m_device, bindStateFragiSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+            fs = new VkShaderObj(this, bindStateFragiSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
         } else if (test_struct.format_type == UINT) {
-            fs = new VkShaderObj(m_device, bindStateFraguSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+            fs = new VkShaderObj(this, bindStateFraguSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
         }
 
         pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
@@ -9906,7 +9906,7 @@ TEST_F(VkLayerTest, IllegalAddressModeWithCornerSampledNV) {
     VkImageView view = test_image.targetView(image_info.format);
 
     CreatePipelineHelper pipe(*this);
-    VkShaderObj fs(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     pipe.InitInfo();
 
@@ -12363,8 +12363,8 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
            x = texture(s, vec2(1));
         }
     )glsl";
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
@@ -12602,7 +12602,7 @@ TEST_F(VkLayerTest, UnnormalizedCoordinatesCombinedSampler) {
         }
     }
 
-    VkShaderObj vs(m_device, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(this, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT);
 
     const char fsSource[] = R"glsl(
         #version 450
@@ -12624,7 +12624,7 @@ TEST_F(VkLayerTest, UnnormalizedCoordinatesCombinedSampler) {
             x = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));
         }
     )glsl";
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();
@@ -12707,7 +12707,7 @@ TEST_F(VkLayerTest, UnnormalizedCoordinatesSeparateSampler) {
         }
     }
 
-    VkShaderObj vs(m_device, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(this, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT);
 
     const char fsSource[] = R"glsl(
         #version 450
@@ -12734,7 +12734,7 @@ TEST_F(VkLayerTest, UnnormalizedCoordinatesSeparateSampler) {
             x = textureLodOffset(sampler2D(si_good_2, s2), vec2(0), 0, ivec2(0));
         }
     )glsl";
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();
