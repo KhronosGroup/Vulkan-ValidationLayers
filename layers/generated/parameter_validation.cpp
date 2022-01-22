@@ -249,7 +249,7 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instan
     bool skip = false;
     if (api_version < promoted_version) {
         skip = LogError(instance,
-                        kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %s"
+                        kVUID_PVError_ApiVersionViolation, "Attempted to call %s() with an effective API version of %s"
                         "but this API was not promoted until version %s.", api_name, StringAPIVersion(api_version).c_str(),
                         StringAPIVersion(promoted_version).c_str());
     }
@@ -263,7 +263,7 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice 
         auto effective_api_version = std::min(target_pdev->second->apiVersion, api_version);
         if (effective_api_version < promoted_version) {
             skip = LogError(instance,
-                            kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %s, "
+                            kVUID_PVError_ApiVersionViolation, "Attempted to call %s() with an effective API version of %s, "
                             "which is the minimum of version requested in pApplicationInfo (%s) and supported by this physical device (%s), "
                             "but this API was not promoted until version %s.", api_name, StringAPIVersion(effective_api_version).c_str(),
                             StringAPIVersion(api_version).c_str(), StringAPIVersion(target_pdev->second->apiVersion).c_str(),
@@ -4597,7 +4597,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
 bool StatelessValidation::OutputExtensionError(const std::string &api_name, const std::string &extension_name) const {
     return LogError(instance,
-                    kVUID_PVError_ExtensionNotEnabled, "Attemped to call %s() but its required extension %s has not been enabled\n",
+                    kVUID_PVError_ExtensionNotEnabled, "Attempted to call %s() but its required extension %s has not been enabled\n",
                     api_name.c_str(), extension_name.c_str());
 }
 

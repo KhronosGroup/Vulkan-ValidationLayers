@@ -475,7 +475,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             api_func += '    bool skip = false;\n'
             api_func += '    if (api_version < promoted_version) {\n'
             api_func += '        skip = LogError(instance,\n'
-            api_func += '                        kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %s"\n'
+            api_func += '                        kVUID_PVError_ApiVersionViolation, "Attempted to call %s() with an effective API version of %s"\n'
             api_func += '                        "but this API was not promoted until version %s.", api_name, StringAPIVersion(api_version).c_str(),\n'
             api_func += '                        StringAPIVersion(promoted_version).c_str());\n'
             api_func += '    }\n'
@@ -488,7 +488,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             api_func += '        auto effective_api_version = std::min(target_pdev->second->apiVersion, api_version);\n'
             api_func += '        if (effective_api_version < promoted_version) {\n'
             api_func += '            skip = LogError(instance,\n'
-            api_func += '                            kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %s, "\n'
+            api_func += '                            kVUID_PVError_ApiVersionViolation, "Attempted to call %s() with an effective API version of %s, "\n'
             api_func += '                            "which is the minimum of version requested in pApplicationInfo (%s) and supported by this physical device (%s), "\n'
             api_func += '                            "but this API was not promoted until version %s.", api_name, StringAPIVersion(effective_api_version).c_str(),\n'
             api_func += '                            StringAPIVersion(api_version).c_str(), StringAPIVersion(target_pdev->second->apiVersion).c_str(),\n'
@@ -592,7 +592,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
 
             ext_template  = 'bool StatelessValidation::OutputExtensionError(const std::string &api_name, const std::string &extension_name) const {\n'
             ext_template += '    return LogError(instance,\n'
-            ext_template += '                    kVUID_PVError_ExtensionNotEnabled, "Attemped to call %s() but its required extension %s has not been enabled\\n",\n'
+            ext_template += '                    kVUID_PVError_ExtensionNotEnabled, "Attempted to call %s() but its required extension %s has not been enabled\\n",\n'
             ext_template += '                    api_name.c_str(), extension_name.c_str());\n'
             ext_template += '}\n'
             write(ext_template, file=self.outFile)
