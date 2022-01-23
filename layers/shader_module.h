@@ -34,6 +34,9 @@ class PIPELINE_STATE;
 
 // A forward iterator over spirv instructions. Provides easy access to len, opcode, and content words
 // without the caller needing to care too much about the physical SPIRV module layout.
+//
+// For more information of the physical module layout to help understand this struct:
+// https://github.com/KhronosGroup/SPIRV-Guide/blob/master/chapters/parsing_instructions.md
 struct spirv_inst_iter {
     std::vector<uint32_t>::const_iterator zero;
     std::vector<uint32_t>::const_iterator it;
@@ -379,15 +382,13 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAttachmentIndex(
         layer_data::unordered_set<uint32_t> const &accessible_ids) const;
 
-    // Get the image type from a variable id or load operation that reference an image
-    spirv_inst_iter GetImageFormatInst(uint32_t id) const;
-
     uint32_t GetNumComponentsInBaseType(const spirv_inst_iter &iter) const;
     std::array<uint32_t, 3> GetWorkgroupSize(VkPipelineShaderStageCreateInfo const *pStage,
                                              const std::unordered_map<uint32_t, std::vector<uint32_t>>& id_value_map) const;
     uint32_t GetTypeBitsSize(const spirv_inst_iter &iter) const;
     uint32_t GetTypeBytesSize(const spirv_inst_iter &iter) const;
     uint32_t GetBaseType(const spirv_inst_iter &iter) const;
+    uint32_t GetTypeId(uint32_t id) const;
     uint32_t CalcComputeSharedMemory(VkShaderStageFlagBits stage,
                                      const spirv_inst_iter &insn) const;
 
