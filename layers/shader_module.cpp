@@ -1795,40 +1795,6 @@ std::vector<std::pair<uint32_t, interface_var>> SHADER_MODULE_STATE::CollectInte
     return out;
 }
 
-spirv_inst_iter SHADER_MODULE_STATE::GetImageFormatInst(uint32_t id) const
-{
-    do {
-        auto def = get_def(id);
-        if (def == end())
-            return def;
-
-        switch (def.opcode()) {
-           case spv::OpLoad:
-           case spv::OpAccessChain:
-           case spv::OpCompositeConstruct:
-           case spv::OpVariable: {
-               id = def.word(1);
-               break;
-           }
-
-           case spv::OpTypeArray:
-           case spv::OpTypeRuntimeArray:
-               id = def.word(2);
-               break;
-
-           case spv::OpTypePointer:
-               id = def.word(3);
-               break;
-
-           case spv::OpTypeImage:
-               return def;
-
-           default:
-               return end();
-        }
-    } while (true);
-}
-
 uint32_t SHADER_MODULE_STATE::GetNumComponentsInBaseType(const spirv_inst_iter &iter) const {
     const uint32_t opcode = iter.opcode();
     if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt) {
@@ -1956,6 +1922,12 @@ uint32_t SHADER_MODULE_STATE::GetBaseType(const spirv_inst_iter &iter) const {
         return GetBaseType(type);
     }
     return 0;
+}
+
+// Returns type_id if id has type or zero otherwise
+uint32_t SHADER_MODULE_STATE::GetTypeId(uint32_t id) const {
+    const auto type = get_def(id);
+    return OpcodeHasType(type.opcode()) ? type.word(1) : 0;
 }
 
 uint32_t SHADER_MODULE_STATE::CalcComputeSharedMemory(VkShaderStageFlagBits stage,
