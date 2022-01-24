@@ -634,6 +634,30 @@ std::string SHADER_MODULE_STATE::DescribeType(unsigned type) const {
     return ss.str();
 }
 
+std::string SHADER_MODULE_STATE::DescribeInstruction(const spirv_inst_iter &insn) const {
+    std::ostringstream ss;
+    const uint32_t opcode = insn.opcode();
+    uint32_t operand_offset = 1;  // where to start printing operands
+    // common disassembled for SPIR-V is
+    // %result = Opcode %result_type %operands
+    if (OpcodeHasResult(opcode)) {
+        operand_offset++;
+        ss << "%" << (OpcodeHasType(opcode) ? insn.word(2) : insn.word(1)) << " = ";
+    }
+
+    ss << string_SpvOpcode(opcode);
+
+    if (OpcodeHasType(opcode)) {
+        operand_offset++;
+        ss << " %" << insn.word(1);
+    }
+
+    for (uint32_t i = operand_offset; i < insn.len(); i++) {
+        ss << " %" << insn.word(i);
+    }
+    return ss.str();
+}
+
 const SHADER_MODULE_STATE::EntryPoint *SHADER_MODULE_STATE::FindEntrypointStruct(char const *name,
                                                                                  VkShaderStageFlagBits stageBits) const {
     auto range = static_data_.entry_points.equal_range(name);
