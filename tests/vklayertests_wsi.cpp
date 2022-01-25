@@ -381,6 +381,11 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
         return;
     }
 
+    if (!AddRequiredInstanceExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+        return;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!AddSwapchainDeviceExtension()) {
@@ -898,11 +903,8 @@ TEST_F(VkLayerTest, InvalidSwapchainImageFormatList) {
         return;
     }
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME) &&
-        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
-    } else {
+    if (!AddRequiredDeviceExtensions(VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME) ||
+        !AddRequiredDeviceExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) {
         printf("%s Required extensions not supported, skipping tests\n", kSkipPrefix);
         return;
     }
