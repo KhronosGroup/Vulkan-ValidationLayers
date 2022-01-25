@@ -4459,7 +4459,6 @@ TEST_F(VkPositiveLayerTest, PhysicalStorageBuffer) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     std::vector<const char *> exts = {
-        "VK_EXT_buffer_device_address",  // TODO (ncesario) why does VK_KHR_buffer_device_address not work?
         "VK_KHR_shader_non_semantic_info",
         "VK_EXT_scalar_block_layout",
     };
