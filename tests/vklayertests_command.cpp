@@ -7137,6 +7137,7 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBindTransformFeedbackBuffersEXT) {
         auto info = LvlInitStruct<VkBufferCreateInfo>();
         // info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
         info.size = 4;
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-usage-parameter");
         VkBufferObj const buffer_obj(*m_device, info);
 
         VkDeviceSize const offsets[1]{};
@@ -7266,6 +7267,7 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBeginTransformFeedbackEXT) {
         auto info = LvlInitStruct<VkBufferCreateInfo>();
         // info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
         info.size = 4;
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-usage-parameter");
         VkBufferObj const buffer_obj(*m_device, info);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372");
@@ -7395,6 +7397,7 @@ TEST_F(VkLayerTest, TransformFeedbackCmdEndTransformFeedbackEXT) {
             auto info = LvlInitStruct<VkBufferCreateInfo>();
             // info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
             info.size = 4;
+            m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-usage-parameter");
             VkBufferObj const buffer_obj(*m_device, info);
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380");
@@ -9194,7 +9197,8 @@ TEST_F(VkLayerTest, InvalidClearColorAttachmentsWithMultiview) {
 
     VkImageObj image(m_device);
     image.Init(image_create_info);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
+                                             VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     VkFramebufferCreateInfo framebufferCreateInfo = LvlInitStruct<VkFramebufferCreateInfo>();
     framebufferCreateInfo.width = 32;
