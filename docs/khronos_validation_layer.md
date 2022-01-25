@@ -55,7 +55,7 @@ The `VK_EXT_validation_features` flags can be used to disable validation corresp
 | `VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT` | `VK_LAYER_LUNARG_core_validation` |
 | `VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT` | `VK_LAYER_GOOGLE_unqiue_objects` |
 
-Refer to [VK_EXT_validation_features](https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#VK_EXT_validation_features)
+Refer to [VK_EXT_validation_features](https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/vkspec.html#VK_EXT_validation_features)
 in the Vulkan specification for details on this extension.
 
 ### <a name="debugutils"></a>VK\_EXT\_debug\_utils
@@ -95,7 +95,7 @@ adb shell setprop debug.vvl.forcelayerlog 1
 The debug.vvl namespace signifies validation layers, and setting this property forces the validation layer callback to always execute, even if the app registers
 a messenger callback itself. This is especially useful for automation tasks, ensuring that errors can be read in a parseable format.
 
-Refer to [VK_EXT_debug_utils](https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#VK_EXT_debug_utils)
+Refer to [VK_EXT_debug_utils](https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/vkspec.html#VK_EXT_debug_utils)
 in the Vulkan Specification for details on this feature.
 
 
