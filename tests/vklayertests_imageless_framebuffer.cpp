@@ -334,8 +334,12 @@ TEST_F(VkLayerTest, ImagelessFramebufferRenderPassBeginImageViewMismatchTests) {
     renderPassAttachmentBeginInfo.pAttachments = &imageView2;
     framebufferAttachmentImageInfo.height = framebufferAttachmentImageInfo.height / 2;
     framebufferAttachmentImageInfo.width = framebufferAttachmentImageInfo.width / 2;
+    framebufferCreateInfo.height = framebufferCreateInfo.height / 2;
+    framebufferCreateInfo.width = framebufferCreateInfo.width / 2;
     vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
     renderPassBeginInfo.framebuffer = framebuffer;
+    renderPassBeginInfo.renderArea.extent.height = renderPassBeginInfo.renderArea.extent.height / 2;
+    renderPassBeginInfo.renderArea.extent.width = renderPassBeginInfo.renderArea.extent.width / 2;
     vk::BeginCommandBuffer(m_commandBuffer->handle(), &cmd_begin_info);
     m_errorMonitor->ExpectSuccess();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -1520,11 +1524,10 @@ TEST_F(VkLayerTest, FramebufferAttachmentImageInfoPNext) {
     TEST_DESCRIPTION("Begin render pass with missing framebuffer attachment");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) {
+    if (!AddRequiredDeviceExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) {
         printf("%s test requires VK_KHR_imageless_framebuffer, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
