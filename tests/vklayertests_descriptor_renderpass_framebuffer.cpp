@@ -2622,7 +2622,7 @@ TEST_F(VkLayerTest, InvalidSampleLocations) {
          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
         {0, depth_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
          VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
-         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
+         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL}};
     m_renderPass_attachments.push_back(descriptions[0]);
     m_renderPass_attachments.push_back(descriptions[1]);
     VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
@@ -6400,11 +6400,12 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassFragmentDensityMap
         "object's creation renderpass since only the former uses a Fragment Density Map.");
 
     // Check for VK_KHR_get_physical_device_properties2
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!AddRequiredInstanceExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     if (!rp2Supported) {
@@ -6428,26 +6429,17 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassFragmentDensityMap
     VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);  // We shouldn't need a fragment shader
     // but add it to be able to run on more devices
 
-    VkAttachmentDescription attach[2];
-    attach[0].format = VK_FORMAT_B8G8R8A8_UNORM;
-    attach[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    attach[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    attach[1].format = VK_FORMAT_R8G8_UNORM;
-    attach[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attach[1].finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
-
-    VkAttachmentReference color_att = {};
-    color_att.attachment = 0;
-    color_att.layout = VK_IMAGE_LAYOUT_GENERAL;
+    VkAttachmentDescription attach = {};
+    attach.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_att;
 
     VkAttachmentReference ref = {};
-    ref.attachment = 1;
+    ref.attachment = 0;
     ref.layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
 
     VkRenderPassFragmentDensityMapCreateInfoEXT rpfdmi = {};
@@ -6455,8 +6447,8 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassFragmentDensityMap
     rpfdmi.fragmentDensityMapAttachment = ref;
 
     VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpfdmi);
-    rpci.attachmentCount = 2;
-    rpci.pAttachments = attach;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach;
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
 
@@ -6472,22 +6464,13 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassFragmentDensityMap
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    VkImageView iv[2];
-    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
-    ivci.image = image.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = VK_FORMAT_B8G8R8A8_UNORM;
-    ivci.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                       VK_COMPONENT_SWIZZLE_IDENTITY};
-    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk::CreateImageView(m_device->device(), &ivci, NULL, &iv[0]);
-    vk::CreateImageView(m_device->device(), &ivci, NULL, &iv[1]);
+    VkImageView iv = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
 
     // Create a framebuffer with rp1
     VkFramebufferCreateInfo fbci = LvlInitStruct<VkFramebufferCreateInfo>();
     fbci.renderPass = rp1;
-    fbci.attachmentCount = 2;
-    fbci.pAttachments = iv;
+    fbci.attachmentCount = 1;
+    fbci.pAttachments = &iv;
     fbci.width = 128;
     fbci.height = 128;
     fbci.layers = 1;
@@ -6536,8 +6519,6 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassFragmentDensityMap
     vk::DestroyRenderPass(m_device->device(), rp1, nullptr);
     vk::DestroyRenderPass(m_device->device(), rp2, nullptr);
     vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-    vk::DestroyImageView(m_device->device(), iv[0], nullptr);
-    vk::DestroyImageView(m_device->device(), iv[1], nullptr);
 }
 
 TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
@@ -10040,7 +10021,22 @@ TEST_F(VkLayerTest, MutableDescriptorPoolsWithPartialOverlap) {
 TEST_F(VkLayerTest, InvalidCreateDescriptorPoolAllocateFlags) {
     TEST_DESCRIPTION("Create descriptor pool with invalid flags.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+        return;
+    }
+    auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mutable_descriptor_type_features);
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
+        printf("%s mutableDescriptorType feature not supported. Skipped.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorPoolSize ds_type_count = {};
@@ -10081,11 +10077,18 @@ TEST_F(VkLayerTest, InvalidCreateDescriptorPoolAllocateFlags) {
 
 TEST_F(VkLayerTest, InvalidRenderArea) {
     TEST_DESCRIPTION("Begin render pass with render area that is not within the framebuffer.");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    bool device_group_supported = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-        device_group_supported = true;
+
+    // Enable api version 1.1 since the extensions were promoted there. Otherwise, try to enable extensions
+    bool is_required_api = SetTargetApiVersion(VK_API_VERSION_1_1) >= VK_API_VERSION_1_1;
+    bool device_group_supported = true;
+    if (!is_required_api && !AddRequiredInstanceExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
+        device_group_supported = false;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    is_required_api = (DeviceValidationVersion() >= VK_API_VERSION_1_1);
+    if (!is_required_api && !AddRequiredDeviceExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+        device_group_supported = false;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -10219,12 +10222,21 @@ TEST_F(VkLayerTest, SwapchainAcquireImageRetired) {
 
 TEST_F(VkLayerTest, InvalidDeviceGroupRenderArea) {
     TEST_DESCRIPTION("Begin render pass with device group render area that is not within the framebuffer.");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+
+    // Enable api version 1.1 since the extensions were promoted there. Otherwise, try to enable extensions
+    bool is_required_api = SetTargetApiVersion(VK_API_VERSION_1_1) >= VK_API_VERSION_1_1;
+    if (!is_required_api && !AddRequiredInstanceExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
+        printf("%s %s extension not supported skipped.\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    is_required_api = (DeviceValidationVersion() >= VK_API_VERSION_1_1);
+    if (!is_required_api && !AddRequiredDeviceExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
         printf("%s %s extension not supported skipped.\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -10537,6 +10549,7 @@ TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
 TEST_F(VkLayerTest, AccelerationStructureBindings) {
     TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR than allowed");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
