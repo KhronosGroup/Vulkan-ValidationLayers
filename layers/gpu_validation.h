@@ -68,7 +68,7 @@ struct GpuAssistedBufferInfo {
 struct GpuAssistedShaderTracker {
     VkPipeline pipeline;
     VkShaderModule shader_module;
-    std::vector<unsigned int> pgm;
+    std::vector<uint32_t> pgm;
 };
 
 struct GpuVuid {
@@ -246,14 +246,13 @@ class GpuAssisted : public ValidationStateTracker {
                                                     VkResult result, void* crtpl_state_data) override;
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator) override;
     void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) override;
-    bool InstrumentShader(const VkShaderModuleCreateInfo* pCreateInfo, std::vector<unsigned int>& new_pgm,
-                          uint32_t* unique_shader_id);
+    bool InstrumentShader(const VkShaderModuleCreateInfo* pCreateInfo, std::vector<uint32_t>& new_pgm, uint32_t* unique_shader_id);
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          void* csm_state_data) override;
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, GpuAssistedBufferInfo &buffer_info,
         uint32_t operation_index, uint32_t* const debug_output_buffer);
- 
+
     void SetDescriptorInitialized(uint32_t* pData, uint32_t index, const cvdescriptorset::Descriptor* descriptor);
     void UpdateInstrumentationBuffer(CMD_BUFFER_STATE_GPUAV* cb_node);
     const GpuVuid& GetGpuVuid(CMD_TYPE cmd_type) const;
