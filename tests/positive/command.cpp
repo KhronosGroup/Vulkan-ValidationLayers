@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (c) 2015-2021 Google, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2022 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1129,4 +1129,56 @@ TEST_F(VkPositiveLayerTest, DestroyQueryPoolAfterGetQueryPoolResults) {
     } while (res != VK_SUCCESS);
 
     vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+}
+
+TEST_F(VkPositiveLayerTest, WriteTimestampNoneAndAll) {
+    TEST_DESCRIPTION("Test using vkCmdWriteTimestamp2 with NONE and ALL_COMMANDS.");
+
+    m_errorMonitor->ExpectSuccess();
+
+    if (!AddRequiredInstanceExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    synchronization2.synchronization2 = VK_TRUE;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
+    features2.pNext = &synchronization2;
+    InitState(nullptr, &features2);
+    if (synchronization2.synchronization2 != VK_TRUE) {
+        printf("%s VkPhysicalDeviceSynchronization2FeaturesKHR::synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    uint32_t queue_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
+    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+        printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    auto vkCmdWriteTimestamp2KHR =
+        reinterpret_cast<PFN_vkCmdWriteTimestamp2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteTimestamp2KHR"));
+
+    vk_testing::QueryPool query_pool;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_ci.queryCount = 2;
+    query_pool.init(*m_device, query_pool_ci);
+
+    m_commandBuffer->begin();
+    vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_NONE_KHR, query_pool.handle(), 0);
+    vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR, query_pool.handle(), 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyNotFound();
 }
