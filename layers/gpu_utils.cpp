@@ -489,7 +489,7 @@ bool GetLineAndFilename(const std::string string, uint32_t *linenumber, std::str
 
 // Extract the filename, line number, and column number from the correct OpLine and build a message string from it.
 // Scan the source (from OpSource) to find the line of source at the reported line number and place it in another message string.
-void UtilGenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint32_t *debug_record, bool from_printf,
+void UtilGenerateSourceMessages(const std::vector<uint32_t> &pgm, const uint32_t *debug_record, bool from_printf,
                                 std::string &filename_msg, std::string &source_msg) {
     using namespace spvtools;
     std::ostringstream filename_stream;

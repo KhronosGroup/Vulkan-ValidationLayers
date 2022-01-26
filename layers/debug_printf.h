@@ -44,7 +44,7 @@ struct DPFBufferInfo {
 struct DPFShaderTracker {
     VkPipeline pipeline;
     VkShaderModule shader_module;
-    std::vector<unsigned int> pgm;
+    std::vector<uint32_t> pgm;
 };
 
 enum vartype { varsigned, varunsigned, varfloat };
@@ -163,13 +163,12 @@ class DebugPrintf : public ValidationStateTracker {
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     VkResult result, void* crtpl_state_data) override;
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator) override;
-    bool InstrumentShader(const VkShaderModuleCreateInfo* pCreateInfo, std::vector<unsigned int>& new_pgm,
-                          uint32_t* unique_shader_id);
+    bool InstrumentShader(const VkShaderModuleCreateInfo* pCreateInfo, std::vector<uint32_t>& new_pgm, uint32_t* unique_shader_id);
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          void* csm_state_data) override;
     std::vector<DPFSubstring> ParseFormatString(std::string format_string);
-    std::string FindFormatString(std::vector<unsigned int> pgm, uint32_t string_id);
+    std::string FindFormatString(std::vector<uint32_t> pgm, uint32_t string_id);
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, DPFBufferInfo &buffer_info,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer);
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,

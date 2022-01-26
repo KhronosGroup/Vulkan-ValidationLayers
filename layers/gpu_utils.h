@@ -454,5 +454,5 @@ void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCom
                                const uint32_t *debug_record, const VkShaderModule shader_module_handle,
                                const VkPipeline pipeline_handle, const VkPipelineBindPoint pipeline_bind_point,
                                const uint32_t operation_index, std::string &msg);
-void UtilGenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint32_t *debug_record, bool from_printf,
+void UtilGenerateSourceMessages(const std::vector<uint32_t> &pgm, const uint32_t *debug_record, bool from_printf,
                                 std::string &filename_msg, std::string &source_msg);

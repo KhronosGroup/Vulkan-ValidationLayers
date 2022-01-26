@@ -125,7 +125,7 @@ struct create_buffer_api_state {
 struct create_shader_module_api_state {
     uint32_t unique_shader_id;
     VkShaderModuleCreateInfo instrumented_create_info;
-    std::vector<unsigned int> instrumented_pgm;
+    std::vector<uint32_t> instrumented_pgm;
 };
 
 #define VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, instance_scope)        \

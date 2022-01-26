@@ -117,7 +117,7 @@ std::string shader_struct_member::GetLocationDesc(uint32_t index_used_bytes) con
     return desc;
 }
 
-static unsigned ExecutionModelToShaderStageFlagBits(unsigned mode) {
+static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
     switch (mode) {
         case spv::ExecutionModelVertex:
             return VK_SHADER_STAGE_VERTEX_BIT;
@@ -530,7 +530,7 @@ void SHADER_MODULE_STATE::PreprocessShaderBinary(const spv_target_env env) {
     }
 }
 
-char const *StorageClassName(unsigned sc) {
+char const *StorageClassName(uint32_t sc) {
     switch (sc) {
         case spv::StorageClassInput:
             return "input";
@@ -563,7 +563,7 @@ char const *StorageClassName(unsigned sc) {
     }
 }
 
-void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream &ss, unsigned type) const {
+void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream &ss, uint32_t type) const {
     auto insn = get_def(type);
     assert(insn != end());
 
@@ -599,7 +599,7 @@ void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream &ss, unsigned typ
             break;
         case spv::OpTypeStruct: {
             ss << "struct of (";
-            for (unsigned i = 2; i < insn.len(); i++) {
+            for (uint32_t i = 2; i < insn.len(); i++) {
                 DescribeTypeInner(ss, insn.word(i));
                 if (i == insn.len() - 1) {
                     ss << ")";
@@ -628,7 +628,7 @@ void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream &ss, unsigned typ
     }
 }
 
-std::string SHADER_MODULE_STATE::DescribeType(unsigned type) const {
+std::string SHADER_MODULE_STATE::DescribeType(uint32_t type) const {
     std::ostringstream ss;
     DescribeTypeInner(ss, type);
     return ss.str();
@@ -704,7 +704,7 @@ bool SHADER_MODULE_STATE::FindLocalSize(const spirv_inst_iter &entrypoint, uint3
 
 // If the instruction at id is a constant or copy of a constant, returns a valid iterator pointing to that instruction.
 // Otherwise, returns src->end().
-spirv_inst_iter SHADER_MODULE_STATE::GetConstantDef(unsigned id) const {
+spirv_inst_iter SHADER_MODULE_STATE::GetConstantDef(uint32_t id) const {
     auto value = get_def(id);
 
     // If id is a copy, see where it was copied from
@@ -720,7 +720,7 @@ spirv_inst_iter SHADER_MODULE_STATE::GetConstantDef(unsigned id) const {
 }
 
 // Either returns the constant value described by the instruction at id, or 1
-uint32_t SHADER_MODULE_STATE::GetConstantValueById(unsigned id) const {
+uint32_t SHADER_MODULE_STATE::GetConstantValueById(uint32_t id) const {
     auto value = GetConstantDef(id);
 
     if (end() == value) {
@@ -751,7 +751,7 @@ int32_t SHADER_MODULE_STATE::GetShaderResourceDimensionality(const interface_var
     }
 }
 
-unsigned SHADER_MODULE_STATE::GetLocationsConsumedByType(unsigned type, bool strip_array_level) const {
+uint32_t SHADER_MODULE_STATE::GetLocationsConsumedByType(uint32_t type, bool strip_array_level) const {
     auto insn = get_def(type);
     assert(insn != end());
 
@@ -785,7 +785,7 @@ unsigned SHADER_MODULE_STATE::GetLocationsConsumedByType(unsigned type, bool str
     }
 }
 
-unsigned SHADER_MODULE_STATE::GetComponentsConsumedByType(unsigned type, bool strip_array_level) const {
+uint32_t SHADER_MODULE_STATE::GetComponentsConsumedByType(uint32_t type, bool strip_array_level) const {
     auto insn = get_def(type);
     assert(insn != end());
 
@@ -834,7 +834,7 @@ unsigned SHADER_MODULE_STATE::GetComponentsConsumedByType(unsigned type, bool st
 
 // characterizes a SPIR-V type appearing in an interface to a FF stage, for comparison to a VkFormat's characterization above.
 // also used for input attachments, as we statically know their format.
-unsigned SHADER_MODULE_STATE::GetFundamentalType(unsigned type) const {
+uint32_t SHADER_MODULE_STATE::GetFundamentalType(uint32_t type) const {
     auto insn = get_def(type);
     assert(insn != end());
 
@@ -1225,18 +1225,18 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_
 // Used by the collection functions to help aid in state tracking
 struct shader_module_used_operators {
     bool updated;
-    std::vector<unsigned> image_read_members;
-    std::vector<unsigned> image_write_members;
-    std::vector<unsigned> atomic_members;
-    std::vector<unsigned> store_members;
-    std::vector<unsigned> atomic_store_members;
-    std::vector<unsigned> sampler_implicitLod_dref_proj_members;      // sampler Load id
-    std::vector<unsigned> sampler_bias_offset_members;                // sampler Load id
-    std::vector<unsigned> image_dref_members;
-    std::vector<std::pair<unsigned, unsigned>> sampled_image_members;  // <image,sampler> Load id
-    layer_data::unordered_map<unsigned, unsigned> load_members;
-    layer_data::unordered_map<unsigned, std::pair<unsigned, unsigned>> accesschain_members;
-    layer_data::unordered_map<unsigned, unsigned> image_texel_pointer_members;
+    std::vector<uint32_t> image_read_members;
+    std::vector<uint32_t> image_write_members;
+    std::vector<uint32_t> atomic_members;
+    std::vector<uint32_t> store_members;
+    std::vector<uint32_t> atomic_store_members;
+    std::vector<uint32_t> sampler_implicitLod_dref_proj_members;  // sampler Load id
+    std::vector<uint32_t> sampler_bias_offset_members;            // sampler Load id
+    std::vector<uint32_t> image_dref_members;
+    std::vector<std::pair<uint32_t, uint32_t>> sampled_image_members;  // <image,sampler> Load id
+    layer_data::unordered_map<uint32_t, uint32_t> load_members;
+    layer_data::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> accesschain_members;
+    layer_data::unordered_map<uint32_t, uint32_t> image_texel_pointer_members;
 
     shader_module_used_operators() : updated(false) {}
 
@@ -1324,7 +1324,7 @@ struct shader_module_used_operators {
                 }
                 case spv::OpSampledImage: {
                     // 3: image load id, 4: sampler load id
-                    sampled_image_members.emplace_back(std::pair<unsigned, unsigned>(insn.word(3), insn.word(4)));
+                    sampled_image_members.emplace_back(std::pair<uint32_t, uint32_t>(insn.word(3), insn.word(4)));
                     break;
                 }
                 case spv::OpLoad: {
@@ -1336,10 +1336,10 @@ struct shader_module_used_operators {
                     if (insn.len() == 4) {
                         // If it is for struct, the length is only 4.
                         // 2: AccessChain id, 3: object id
-                        accesschain_members.emplace(insn.word(2), std::pair<unsigned, unsigned>(insn.word(3), 0));
+                        accesschain_members.emplace(insn.word(2), std::pair<uint32_t, uint32_t>(insn.word(3), 0));
                     } else {
                         // 2: AccessChain id, 3: object id, 4: object id of array index
-                        accesschain_members.emplace(insn.word(2), std::pair<unsigned, unsigned>(insn.word(3), insn.word(4)));
+                        accesschain_members.emplace(insn.word(2), std::pair<uint32_t, uint32_t>(insn.word(3), insn.word(4)));
                     }
                     break;
                 }
@@ -1363,9 +1363,9 @@ struct shader_module_used_operators {
     }
 };
 
-static bool CheckObjectIDFromOpLoad(uint32_t object_id, const std::vector<unsigned> &operator_members,
-                                    const layer_data::unordered_map<unsigned, unsigned> &load_members,
-                                    const layer_data::unordered_map<unsigned, std::pair<unsigned, unsigned>> &accesschain_members) {
+static bool CheckObjectIDFromOpLoad(uint32_t object_id, const std::vector<uint32_t> &operator_members,
+                                    const layer_data::unordered_map<uint32_t, uint32_t> &load_members,
+                                    const layer_data::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> &accesschain_members) {
     for (auto load_id : operator_members) {
         if (object_id == load_id) return true;
         auto load_it = load_members.find(load_id);
@@ -1393,7 +1393,7 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
                                                    interface_var &out_interface_var,
                                                    shader_module_used_operators &used_operators) const {
     uint32_t type_id = id_it.word(1);
-    unsigned int id = id_it.word(2);
+    uint32_t id = id_it.word(2);
 
     auto type = get_def(type_id);
 
@@ -1514,7 +1514,7 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
         }
 
         case spv::OpTypeStruct: {
-            layer_data::unordered_set<unsigned> nonwritable_members;
+            layer_data::unordered_set<uint32_t> nonwritable_members;
             if (get_decorations(type.word(1)).flags & decoration_set::buffer_block_bit) is_storage_buffer = true;
             for (auto insn : static_data_.member_decoration_inst) {
                 if (insn.word(1) == type.word(1) && insn.word(3) == spv::DecorationNonWritable) {
@@ -1565,8 +1565,8 @@ std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::Colle
              insn.word(3) == spv::StorageClassUniformConstant ||
              insn.word(3) == spv::StorageClassStorageBuffer)) {
             auto d = get_decorations(insn.word(2));
-            unsigned set = d.descriptor_set;
-            unsigned binding = d.binding;
+            uint32_t set = d.descriptor_set;
+            uint32_t binding = d.binding;
 
             interface_var v = {};
             v.id = insn.word(2);
@@ -1585,8 +1585,8 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLo
     const spirv_inst_iter &entrypoint) const {
     layer_data::unordered_set<uint32_t> location_list;
     const auto outputs = CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, false);
-    layer_data::unordered_set<unsigned> store_members;
-    layer_data::unordered_map<unsigned, unsigned> accesschain_members;
+    layer_data::unordered_set<uint32_t> store_members;
+    layer_data::unordered_map<uint32_t, uint32_t> accesschain_members;
 
     for (auto insn : *this) {
         switch (insn.opcode()) {
@@ -1643,17 +1643,17 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, inte
         return false;
     }
 
-    layer_data::unordered_map<unsigned, unsigned> member_components;
-    layer_data::unordered_map<unsigned, unsigned> member_relaxed_precision;
-    layer_data::unordered_map<unsigned, unsigned> member_patch;
+    layer_data::unordered_map<uint32_t, uint32_t> member_components;
+    layer_data::unordered_map<uint32_t, uint32_t> member_relaxed_precision;
+    layer_data::unordered_map<uint32_t, uint32_t> member_patch;
 
     // Walk all the OpMemberDecorate for type's result id -- first pass, collect components.
     for (auto insn : static_data_.member_decoration_inst) {
         if (insn.word(1) == type.word(1)) {
-            unsigned member_index = insn.word(2);
+            uint32_t member_index = insn.word(2);
 
             if (insn.word(3) == spv::DecorationComponent) {
-                unsigned component = insn.word(4);
+                uint32_t component = insn.word(4);
                 member_components[member_index] = component;
             }
 
@@ -1672,18 +1672,18 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, inte
     // Second pass -- produce the output, from Location decorations
     for (auto insn : static_data_.member_decoration_inst) {
         if (insn.word(1) == type.word(1)) {
-            unsigned member_index = insn.word(2);
-            unsigned member_type_id = type.word(2 + member_index);
+            uint32_t member_index = insn.word(2);
+            uint32_t member_type_id = type.word(2 + member_index);
 
             if (insn.word(3) == spv::DecorationLocation) {
-                unsigned location = insn.word(4);
-                unsigned num_locations = GetLocationsConsumedByType(member_type_id, false);
+                uint32_t location = insn.word(4);
+                uint32_t num_locations = GetLocationsConsumedByType(member_type_id, false);
                 auto component_it = member_components.find(member_index);
-                unsigned component = component_it == member_components.end() ? 0 : component_it->second;
+                uint32_t component = component_it == member_components.end() ? 0 : component_it->second;
                 bool is_relaxed_precision = member_relaxed_precision.find(member_index) != member_relaxed_precision.end();
                 bool member_is_patch = is_patch || member_patch.count(member_index) > 0;
 
-                for (unsigned int offset = 0; offset < num_locations; offset++) {
+                for (uint32_t offset = 0; offset < num_locations; offset++) {
                     interface_var v = {};
                     v.id = id;
                     // TODO: member index in interface_var too?
@@ -1717,12 +1717,12 @@ std::map<location_t, interface_var> SHADER_MODULE_STATE::CollectInterfaceByLocat
         bool passthrough = sinterface == spv::StorageClassOutput && insn.word(3) == spv::StorageClassInput &&
                            (d.flags & decoration_set::passthrough_bit) != 0;
         if (insn.word(3) == static_cast<uint32_t>(sinterface) || passthrough) {
-            unsigned id = insn.word(2);
-            unsigned type = insn.word(1);
+            uint32_t id = insn.word(2);
+            uint32_t type = insn.word(1);
 
             auto location = d.location;
             int builtin = d.builtin;
-            unsigned component = d.component;
+            uint32_t component = d.component;
             bool is_patch = (d.flags & decoration_set::patch_bit) != 0;
             bool is_relaxed_precision = (d.flags & decoration_set::relaxed_precision_bit) != 0;
             bool is_per_vertex = (d.flags & decoration_set::per_vertex_bit) != 0;
@@ -1733,8 +1733,8 @@ std::map<location_t, interface_var> SHADER_MODULE_STATE::CollectInterfaceByLocat
                        location != decoration_set::kInvalidValue) {
                 // A user-defined interface variable, with a location. Where a variable occupied multiple locations, emit
                 // one result for each.
-                unsigned num_locations = GetLocationsConsumedByType(type, (is_array_of_verts && !is_patch) || is_per_vertex);
-                for (unsigned int offset = 0; offset < num_locations; offset++) {
+                uint32_t num_locations = GetLocationsConsumedByType(type, (is_array_of_verts && !is_patch) || is_per_vertex);
+                for (uint32_t offset = 0; offset < num_locations; offset++) {
                     interface_var v = {};
                     v.id = id;
                     v.type_id = type;
@@ -1804,7 +1804,7 @@ std::vector<std::pair<uint32_t, interface_var>> SHADER_MODULE_STATE::CollectInte
                 assert(def != end());
                 if (def.opcode() == spv::OpVariable && def.word(3) == spv::StorageClassUniformConstant) {
                     auto num_locations = GetLocationsConsumedByType(def.word(1), false);
-                    for (unsigned int offset = 0; offset < num_locations; offset++) {
+                    for (uint32_t offset = 0; offset < num_locations; offset++) {
                         interface_var v = {};
                         v.id = id;
                         v.type_id = def.word(1);

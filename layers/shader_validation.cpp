@@ -92,7 +92,7 @@ static bool TypesMatch(SHADER_MODULE_STATE const *a, SHADER_MODULE_STATE const *
     return BaseTypesMatch(a, b, a_base_insn, b_base_insn);
 }
 
-static unsigned GetLocationsConsumedByFormat(VkFormat format) {
+static uint32_t GetLocationsConsumedByFormat(VkFormat format) {
     switch (format) {
         case VK_FORMAT_R64G64B64A64_SFLOAT:
         case VK_FORMAT_R64G64B64A64_SINT:
@@ -106,7 +106,7 @@ static unsigned GetLocationsConsumedByFormat(VkFormat format) {
     }
 }
 
-static unsigned GetFormatType(VkFormat fmt) {
+static uint32_t GetFormatType(VkFormat fmt) {
     if (FormatIsSINT(fmt)) return FORMAT_TYPE_SINT;
     if (FormatIsUINT(fmt)) return FORMAT_TYPE_UINT;
     // Formats such as VK_FORMAT_D16_UNORM_S8_UINT are both
@@ -127,7 +127,7 @@ bool CoreChecks::ValidateViConsistency(VkPipelineVertexInputStateCreateInfo cons
     layer_data::unordered_map<uint32_t, VkVertexInputBindingDescription const *> bindings;
     bool skip = false;
 
-    for (unsigned i = 0; i < vi->vertexBindingDescriptionCount; i++) {
+    for (uint32_t i = 0; i < vi->vertexBindingDescriptionCount; i++) {
         auto desc = &vi->pVertexBindingDescriptions[i];
         auto &binding = bindings[desc->binding];
         if (binding) {
@@ -503,7 +503,7 @@ bool CoreChecks::ValidateSpecializations(VkPipelineShaderStageCreateInfo const *
 
 // TODO (jbolz): Can this return a const reference?
 static std::set<uint32_t> TypeToDescriptorTypeSet(SHADER_MODULE_STATE const *module_state, uint32_t type_id,
-                                                  unsigned &descriptor_count, bool is_khr) {
+                                                  uint32_t &descriptor_count, bool is_khr) {
     auto type = module_state->get_def(type_id);
     bool is_storage_buffer = false;
     descriptor_count = 1;
@@ -1407,7 +1407,7 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *module_sta
                     // Validate that the type parameters are all supported for one of the
                     // operands of a cooperative matrix property.
                     bool valid = false;
-                    for (unsigned i = 0; i < cooperative_matrix_properties.size(); ++i) {
+                    for (uint32_t i = 0; i < cooperative_matrix_properties.size(); ++i) {
                         if (cooperative_matrix_properties[i].AType == m.component_type &&
                             cooperative_matrix_properties[i].MSize == m.rows && cooperative_matrix_properties[i].KSize == m.cols &&
                             cooperative_matrix_properties[i].scope == m.scope) {
@@ -1460,7 +1460,7 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *module_sta
                     // Validate that the type parameters are all supported for the same
                     // cooperative matrix property.
                     bool valid = false;
-                    for (unsigned i = 0; i < cooperative_matrix_properties.size(); ++i) {
+                    for (uint32_t i = 0; i < cooperative_matrix_properties.size(); ++i) {
                         if (cooperative_matrix_properties[i].AType == a.component_type &&
                             cooperative_matrix_properties[i].MSize == a.rows && cooperative_matrix_properties[i].KSize == a.cols &&
                             cooperative_matrix_properties[i].scope == a.scope &&
@@ -2690,7 +2690,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     for (auto use : stage_state.descriptor_uses) {
         // Verify given pipelineLayout has requested setLayout with requested binding
         const auto &binding = GetDescriptorBinding(pipeline->pipeline_layout.get(), use.first);
-        unsigned required_descriptor_count;
+        uint32_t required_descriptor_count;
         bool is_khr = binding && binding->descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         std::set<uint32_t> descriptor_types =
             TypeToDescriptorTypeSet(module_state, use.second.type_id, required_descriptor_count, is_khr);
