@@ -623,7 +623,7 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
     };
 };
 
-bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE const *src, spirv_inst_iter& insn) const {
+bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(spirv_inst_iter& insn) const {
     bool skip = false;
 
     if (insn.opcode() == spv::OpCapability) {

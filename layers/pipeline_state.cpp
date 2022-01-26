@@ -249,14 +249,14 @@ static bool HasAtomicDescriptor(const std::vector<PipelineStageState::Descriptor
 }
 
 static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, spirv_inst_iter entrypoint,
-                                      const SHADER_MODULE_STATE *module) {
+                                      const SHADER_MODULE_STATE *module_state) {
     bool primitiverate_written = false;
     if (stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
         stage_flag == VK_SHADER_STAGE_MESH_BIT_NV) {
-        for (const auto &set : module->GetBuiltinDecorationList()) {
-            auto insn = module->at(set.offset);
+        for (const auto &set : module_state->GetBuiltinDecorationList()) {
+            auto insn = module_state->at(set.offset);
             if (set.builtin == spv::BuiltInPrimitiveShadingRateKHR) {
-                primitiverate_written = module->IsBuiltInWritten(insn, entrypoint);
+                primitiverate_written = module_state->IsBuiltInWritten(insn, entrypoint);
             }
             if (primitiverate_written) {
                 break;
@@ -267,16 +267,16 @@ static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, spirv_in
 }
 
 PipelineStageState::PipelineStageState(const VkPipelineShaderStageCreateInfo *stage,
-                                       std::shared_ptr<const SHADER_MODULE_STATE> &module_)
-    : module(module_),
+                                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state)
+    : module_state(module_state),
       create_info(stage),
       stage_flag(stage->stage),
-      entrypoint(module->FindEntrypoint(stage->pName, stage->stage)),
-      accessible_ids(module->MarkAccessibleIds(entrypoint)),
-      descriptor_uses(module->CollectInterfaceByDescriptorSlot(accessible_ids)),
+      entrypoint(module_state->FindEntrypoint(stage->pName, stage->stage)),
+      accessible_ids(module_state->MarkAccessibleIds(entrypoint)),
+      descriptor_uses(module_state->CollectInterfaceByDescriptorSlot(accessible_ids)),
       has_writable_descriptor(HasWriteableDescriptor(descriptor_uses)),
       has_atomic_descriptor(HasAtomicDescriptor(descriptor_uses)),
-      wrote_primitive_shading_rate(WrotePrimitiveShadingRate(stage_flag, entrypoint, module.get())) {}
+      wrote_primitive_shading_rate(WrotePrimitiveShadingRate(stage_flag, entrypoint, module_state.get())) {}
 
 static PIPELINE_STATE::StageStateVec GetStageStates(const ValidationStateTracker *state_data,
                                                     const safe_VkPipelineShaderStageCreateInfo *stages, uint32_t stage_count) {
@@ -286,8 +286,8 @@ static PIPELINE_STATE::StageStateVec GetStageStates(const ValidationStateTracker
     for (uint32_t stage_idx = 0; stage_idx < 32; ++stage_idx) {
         for (uint32_t i = 0; i < stage_count; i++) {
             if (stages[i].stage == (1 << stage_idx)) {
-                auto module = state_data->Get<SHADER_MODULE_STATE>(stages[i].module);
-                stage_states.emplace_back(stages[i].ptr(), module);
+                auto module_state = state_data->Get<SHADER_MODULE_STATE>(stages[i].module);
+                stage_states.emplace_back(stages[i].ptr(), module_state);
             }
         }
     }
@@ -297,7 +297,7 @@ static PIPELINE_STATE::StageStateVec GetStageStates(const ValidationStateTracker
 static PIPELINE_STATE::ActiveSlotMap GetActiveSlots(const PIPELINE_STATE::StageStateVec &stage_states) {
     PIPELINE_STATE::ActiveSlotMap active_slots;
     for (const auto &stage : stage_states) {
-        if (stage.entrypoint == stage.module->end()) {
+        if (stage.entrypoint == stage.module_state->end()) {
             continue;
         }
         // Capture descriptor uses for the pipeline
@@ -307,7 +307,7 @@ static PIPELINE_STATE::ActiveSlotMap GetActiveSlots(const PIPELINE_STATE::StageS
             entry.is_writable |= use.second.is_writable;
 
             auto &reqs = entry.reqs;
-            reqs |= stage.module->DescriptorTypeToReqs(use.second.type_id);
+            reqs |= stage.module_state->DescriptorTypeToReqs(use.second.type_id);
             if (use.second.is_atomic_operation) reqs |= DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION;
             if (use.second.is_sampler_implicitLod_dref_proj) reqs |= DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ;
             if (use.second.is_sampler_bias_offset) reqs |= DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET;
@@ -351,11 +351,11 @@ static uint32_t GetActiveShaders(const VkPipelineShaderStageCreateInfo *stages, 
 static layer_data::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_STATE::StageStateVec &stage_states) {
     layer_data::unordered_set<uint32_t> result;
     for (const auto &stage : stage_states) {
-        if (stage.entrypoint == stage.module->end()) {
+        if (stage.entrypoint == stage.module_state->end()) {
             continue;
         }
         if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT) {
-            result = stage.module->CollectWritableOutputLocationinFS(stage.entrypoint);
+            result = stage.module_state->CollectWritableOutputLocationinFS(stage.entrypoint);
             break;
         }
     }
@@ -366,10 +366,10 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE::StageSt
                                                    const safe_VkPipelineInputAssemblyStateCreateInfo *assembly_state) {
     VkPrimitiveTopology result = assembly_state ? assembly_state->topology : static_cast<VkPrimitiveTopology>(0);
     for (const auto &stage : stage_states) {
-        if (stage.entrypoint == stage.module->end()) {
+        if (stage.entrypoint == stage.module_state->end()) {
             continue;
         }
-        auto stage_topo = stage.module->GetTopology(stage.entrypoint);
+        auto stage_topo = stage.module_state->GetTopology(stage.entrypoint);
         if (stage_topo) {
             result = *stage_topo;
         }

@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2021 The Khronos Group Inc.
- * Copyright (c) 2020-2021 Valve Corporation
- * Copyright (c) 2020-2021 LunarG, Inc.
+/* Copyright (c) 2020-2022 The Khronos Group Inc.
+ * Copyright (c) 2020-2022 Valve Corporation
+ * Copyright (c) 2020-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -232,13 +232,13 @@ void UtilPreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreat
 
         if (replace_shaders) {
             for (uint32_t stage = 0; stage < stageCount; ++stage) {
-                const auto shader =
+                const auto module_state =
                     object_ptr->template Get<SHADER_MODULE_STATE>(Accessor::GetShaderModule(pCreateInfos[pipeline], stage));
 
                 VkShaderModule shader_module;
                 auto create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
-                create_info.pCode = shader->words.data();
-                create_info.codeSize = shader->words.size() * sizeof(uint32_t);
+                create_info.pCode = module_state->words.data();
+                create_info.codeSize = module_state->words.size() * sizeof(uint32_t);
                 VkResult result = DispatchCreateShaderModule(object_ptr->device, &create_info, pAllocator, &shader_module);
                 if (result == VK_SUCCESS) {
                     Accessor::SetShaderModule(&(*new_pipeline_create_infos)[pipeline], shader_module, stage);
@@ -287,15 +287,15 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
                                             pAllocator);
             }
 
-            std::shared_ptr<const SHADER_MODULE_STATE> shader_state;
+            std::shared_ptr<const SHADER_MODULE_STATE> module_state;
             if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                shader_state =
+                module_state =
                     object_ptr->template Get<SHADER_MODULE_STATE>(pipeline_state->create_info.graphics.pStages[stage].module);
             } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
                 assert(stage == 0);
-                shader_state = object_ptr->template Get<SHADER_MODULE_STATE>(pipeline_state->create_info.compute.stage.module);
+                module_state = object_ptr->template Get<SHADER_MODULE_STATE>(pipeline_state->create_info.compute.stage.module);
             } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-                shader_state =
+                module_state =
                     object_ptr->template Get<SHADER_MODULE_STATE>(pipeline_state->create_info.raytracing.pStages[stage].module);
             } else {
                 assert(false);
@@ -306,9 +306,9 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
             // The core_validation ShaderModule tracker saves the binary too, but discards it when the ShaderModule
             // is destroyed.  Applications may destroy ShaderModules after they are placed in a pipeline and before
             // the pipeline is used, so we have to keep another copy.
-            if (shader_state && shader_state->has_valid_spirv) code = shader_state->words;
+            if (module_state && module_state->has_valid_spirv) code = module_state->words;
 
-            object_ptr->shader_map[shader_state->gpu_validation_shader_id].pipeline = pipeline_state->pipeline();
+            object_ptr->shader_map[module_state->gpu_validation_shader_id].pipeline = pipeline_state->pipeline();
             // Be careful to use the originally bound (instrumented) shader here, even if PreCallRecord had to back it
             // out with a non-instrumented shader.  The non-instrumented shader (found in pCreateInfo) was destroyed above.
             VkShaderModule shader_module = VK_NULL_HANDLE;
@@ -322,8 +322,8 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
             } else {
                 assert(false);
             }
-            object_ptr->shader_map[shader_state->gpu_validation_shader_id].shader_module = shader_module;
-            object_ptr->shader_map[shader_state->gpu_validation_shader_id].pgm = std::move(code);
+            object_ptr->shader_map[module_state->gpu_validation_shader_id].shader_module = shader_module;
+            object_ptr->shader_map[module_state->gpu_validation_shader_id].pgm = std::move(code);
         }
     }
 }

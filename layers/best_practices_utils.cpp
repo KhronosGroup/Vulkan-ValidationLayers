@@ -159,10 +159,10 @@ bool BestPractices::ValidateSpecialUseExtensions(const char* api_name, const cha
         const char* const format = "%s(): Attempting to enable extension %s, but this extension is intended to support %s "
                                    "and it is strongly recommended that it be otherwise avoided.";
         auto& special_uses = dep_info_it->second;
-        
+
         if (special_uses.find("cadsupport") != std::string::npos) {
-            skip |= LogWarning(instance, special_use_vuids.cadsupport, format, api_name, extension_name, 
-                "specialized functionality used by CAD/CAM applications");
+            skip |= LogWarning(instance, special_use_vuids.cadsupport, format, api_name, extension_name,
+                               "specialized functionality used by CAD/CAM applications");
         }
         if (special_uses.find("d3demulation") != std::string::npos) {
             skip |= LogWarning(instance, special_use_vuids.d3demulation, format, api_name, extension_name,
@@ -1139,13 +1139,13 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 
 bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& createInfo) const {
     bool skip = false;
-    auto module = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
+    auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
     // Generate warnings about work group sizes based on active resources.
-    auto entrypoint = module->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
-    if (entrypoint == module->end()) return false;
+    auto entrypoint = module_state->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
+    if (entrypoint == module_state->end()) return false;
 
     uint32_t x = 1, y = 1, z = 1;
-    module->FindLocalSize(entrypoint, x, y, z);
+    module_state->FindLocalSize(entrypoint, x, y, z);
 
     uint32_t thread_count = x * y * z;
 
@@ -1172,8 +1172,8 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
                                       kThreadGroupDispatchCountAlignmentArm);
     }
 
-    auto accessible_ids = module->MarkAccessibleIds(entrypoint);
-    auto descriptor_uses = module->CollectInterfaceByDescriptorSlot(accessible_ids);
+    auto accessible_ids = module_state->MarkAccessibleIds(entrypoint);
+    auto descriptor_uses = module_state->CollectInterfaceByDescriptorSlot(accessible_ids);
 
     unsigned dimensions = 0;
     if (x > 1) dimensions++;
@@ -1187,7 +1187,7 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     // or we may have a linearly tiled image, but these cases are quite unlikely in practice.
     bool accesses_2d = false;
     for (const auto& usage : descriptor_uses) {
-        auto dim = module->GetShaderResourceDimensionality(usage.second);
+        auto dim = module_state->GetShaderResourceDimensionality(usage.second);
         if (dim < 0) continue;
         auto spvdim = spv::Dim(dim);
         if (spvdim != spv::Dim1D && spvdim != spv::DimBuffer) accesses_2d = true;
@@ -3441,7 +3441,8 @@ bool BestPractices::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
                                                       const VkImageSubresourceRange* pRanges) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        skip |= LogPerformanceWarning(device, kVUID_BestPractices_ClearAttachment_ClearImage, 
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_ClearAttachment_ClearImage,
             "%s Performance warning: using vkCmdClearColorImage is not recommended. Prefer using LOAD_OP_CLEAR or "
             "vkCmdClearAttachments instead",
             VendorSpecificTag(kBPVendorAMD));

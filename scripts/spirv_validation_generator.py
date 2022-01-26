@@ -385,7 +385,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
     # The main function to validate all the extensions and capabilities
     def validateFunction(self):
         output = '''
-bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE const *src, spirv_inst_iter& insn) const {
+bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(spirv_inst_iter& insn) const {
     bool skip = false;
 
     if (insn.opcode() == spv::OpCapability) {
