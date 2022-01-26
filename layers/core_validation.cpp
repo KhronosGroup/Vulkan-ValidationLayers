@@ -9677,18 +9677,18 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
 
 void CoreChecks::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo) {
     StateTracker::PreCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
+
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     RecordBarriers(Func::vkCmdPipelineBarrier2, cb_state.get(), *pDependencyInfo);
     TransitionImageLayouts(cb_state.get(), pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
 }
 
 void CoreChecks::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo) {
-    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    StateTracker::PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
 
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     RecordBarriers(Func::vkCmdPipelineBarrier2, cb_state.get(), *pDependencyInfo);
     TransitionImageLayouts(cb_state.get(), pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
-
-    StateTracker::PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
 }
 
 bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj, VkFlags flags, uint32_t index,
