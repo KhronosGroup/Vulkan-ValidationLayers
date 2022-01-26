@@ -149,7 +149,7 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
 };
 
 struct PipelineStageState {
-    std::shared_ptr<const SHADER_MODULE_STATE> module;
+    std::shared_ptr<const SHADER_MODULE_STATE> module_state;
     const VkPipelineShaderStageCreateInfo *create_info;
     VkShaderStageFlagBits stage_flag;
     spirv_inst_iter entrypoint;
@@ -160,7 +160,7 @@ struct PipelineStageState {
     bool has_atomic_descriptor;
     bool wrote_primitive_shading_rate;
 
-    PipelineStageState(const VkPipelineShaderStageCreateInfo *stage, std::shared_ptr<const SHADER_MODULE_STATE> &module);
+    PipelineStageState(const VkPipelineShaderStageCreateInfo *stage, std::shared_ptr<const SHADER_MODULE_STATE> &module_state);
 };
 
 class PIPELINE_STATE : public BASE_NODE {

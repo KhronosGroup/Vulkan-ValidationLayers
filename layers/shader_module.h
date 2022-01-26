@@ -230,7 +230,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // Static/const data extracted from a SPIRV module.
     struct SpirvStaticData {
         SpirvStaticData() = default;
-        SpirvStaticData(const SHADER_MODULE_STATE &mod);
+        SpirvStaticData(const SHADER_MODULE_STATE &module_state);
 
         // A mapping of <id> to the first word of its def. this is useful because walking type
         // trees, constant expressions, etc requires jumping all over the instruction stream.
@@ -361,7 +361,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
                              const shader_struct_member &data) const;
 
     // Push consants
-    static void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &mod,
+    static void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &module_state,
                                             std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint> &entry_points);
 
     uint32_t DescriptorTypeToReqs(uint32_t type_id) const;
@@ -397,7 +397,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // Used to populate the shader module object
     void PreprocessShaderBinary(spv_target_env env);
 
-    static std::unordered_multimap<std::string, EntryPoint> ProcessEntryPoints(const SHADER_MODULE_STATE &mod);
+    static std::unordered_multimap<std::string, EntryPoint> ProcessEntryPoints(const SHADER_MODULE_STATE &module_state);
 };
 
 // String helpers functions to give better error messages

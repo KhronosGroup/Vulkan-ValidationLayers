@@ -478,9 +478,9 @@ std::vector<DPFSubstring> DebugPrintf::ParseFormatString(const std::string forma
 
 std::string DebugPrintf::FindFormatString(std::vector<unsigned int> pgm, uint32_t string_id) {
     std::string format_string;
-    SHADER_MODULE_STATE shader(pgm);
-    if (shader.words.size() > 0) {
-        for (const auto &insn : shader) {
+    SHADER_MODULE_STATE module_state(pgm);
+    if (module_state.words.size() > 0) {
+        for (const auto &insn : module_state) {
             if (insn.opcode() == spv::OpString) {
                 uint32_t offset = insn.offset();
                 if (pgm[offset + 1] == string_id) {

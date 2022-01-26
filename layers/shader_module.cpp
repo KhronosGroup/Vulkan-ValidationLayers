@@ -310,8 +310,8 @@ layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const
     return result;
 }
 
-SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE &mod) {
-    for (auto insn : mod) {
+SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE &module_state) {
+    for (auto insn : module_state) {
         switch (insn.opcode()) {
             // Types
             case spv::OpTypeVoid:
@@ -427,20 +427,20 @@ SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE 
                     // All atomics have a pointer referenced
                     spirv_inst_iter access;
                     if (insn.opcode() == spv::OpAtomicStore) {
-                        access = mod.get_def(insn.word(1));
+                        access = module_state.get_def(insn.word(1));
                     } else {
-                        access = mod.get_def(insn.word(3));
+                        access = module_state.get_def(insn.word(3));
                         def_index[insn.word(2)] = insn.offset();
                     }
 
                     atomic_instruction atomic;
 
-                    auto pointer = mod.get_def(access.word(1));
+                    auto pointer = module_state.get_def(access.word(1));
                     // spirv-val should catch if not pointer
                     assert(pointer.opcode() == spv::OpTypePointer);
                     atomic.storage_class = pointer.word(2);
 
-                    auto data_type = mod.get_def(pointer.word(3));
+                    auto data_type = module_state.get_def(pointer.word(3));
                     atomic.type = data_type.opcode();
 
                     // TODO - Should have a proper GetBitWidth like spirv-val does
@@ -454,18 +454,18 @@ SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE 
         }
     }
 
-    entry_points = SHADER_MODULE_STATE::ProcessEntryPoints(mod);
+    entry_points = SHADER_MODULE_STATE::ProcessEntryPoints(module_state);
     multiple_entry_points = entry_points.size() > 1;
 }
 
 // static
 std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint> SHADER_MODULE_STATE::ProcessEntryPoints(
-    const SHADER_MODULE_STATE &mod) {
+    const SHADER_MODULE_STATE &module_state) {
     std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint> entry_points;
     function_set func_set = {};
     EntryPoint *entry_point = nullptr;
 
-    for (auto insn : mod) {
+    for (auto insn : module_state) {
         // offset is not 0, it means it's updated and the offset is in a Function.
         if (func_set.offset) {
             func_set.op_lists.emplace(insn.opcode(), insn.offset());
@@ -509,7 +509,7 @@ std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint> SHADER_MOD
         }
     }
 
-    SHADER_MODULE_STATE::SetPushConstantUsedInShader(mod, entry_points);
+    SHADER_MODULE_STATE::SetPushConstantUsedInShader(module_state, entry_points);
     return entry_points;
 }
 
@@ -1043,27 +1043,27 @@ void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, const 
 
 // static
 void SHADER_MODULE_STATE::SetPushConstantUsedInShader(
-    const SHADER_MODULE_STATE &mod, std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint> &entry_points) {
+    const SHADER_MODULE_STATE &module_state, std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint> &entry_points) {
     for (auto &entrypoint : entry_points) {
         auto range = entrypoint.second.decorate_list.equal_range(spv::OpVariable);
         for (auto it = range.first; it != range.second; ++it) {
-            const auto def_insn = mod.at(it->second);
+            const auto def_insn = module_state.at(it->second);
 
             if (def_insn.word(3) == spv::StorageClassPushConstant) {
-                spirv_inst_iter type = mod.get_def(def_insn.word(1));
+                spirv_inst_iter type = module_state.get_def(def_insn.word(1));
                 const auto range2 = entrypoint.second.decorate_list.equal_range(spv::OpMemberDecorate);
                 std::vector<uint32_t> offsets;
 
                 for (auto it2 = range2.first; it2 != range2.second; ++it2) {
-                    auto member_decorate = mod.at(it2->second);
+                    auto member_decorate = module_state.at(it2->second);
                     if (member_decorate.len() == 5 && member_decorate.word(3) == spv::DecorationOffset) {
                         offsets.emplace_back(member_decorate.offset());
                     }
                 }
                 entrypoint.second.push_constant_used_in_shader.root = &entrypoint.second.push_constant_used_in_shader;
-                mod.DefineStructMember(type, offsets, entrypoint.second.push_constant_used_in_shader);
-                mod.SetUsedStructMember(def_insn.word(2), entrypoint.second.function_set_list,
-                                        entrypoint.second.push_constant_used_in_shader);
+                module_state.DefineStructMember(type, offsets, entrypoint.second.push_constant_used_in_shader);
+                module_state.SetUsedStructMember(def_insn.word(2), entrypoint.second.function_set_list,
+                                                 entrypoint.second.push_constant_used_in_shader);
             }
         }
     }
@@ -1247,11 +1247,11 @@ struct shader_module_used_operators {
                    : false;
     }
 
-    void update(SHADER_MODULE_STATE const *module) {
+    void update(SHADER_MODULE_STATE const *module_state) {
         if (updated) return;
         updated = true;
 
-        for (auto insn : *module) {
+        for (auto insn : *module_state) {
             switch (insn.opcode()) {
                 case spv::OpImageSampleImplicitLod:
                 case spv::OpImageSampleProjImplicitLod:
@@ -1260,7 +1260,7 @@ struct shader_module_used_operators {
                 case spv::OpImageSparseSampleProjImplicitLod:
                 case spv::OpImageSparseSampleProjExplicitLod: {
                     // combined image samples are just OpLoad, but also can be separate image and sampler
-                    auto id = module->get_def(insn.word(3));  // <id> Sampled Image
+                    auto id = module_state->get_def(insn.word(3));  // <id> Sampled Image
                     auto load_id = (id.opcode() == spv::OpSampledImage) ? id.word(4) : insn.word(3);
                     sampler_implicitLod_dref_proj_members.emplace_back(load_id);
                     // ImageOperands in index: 5
@@ -1272,7 +1272,7 @@ struct shader_module_used_operators {
                 case spv::OpImageDrefGather:
                 case spv::OpImageSparseDrefGather: {
                     // combined image samples are just OpLoad, but also can be separate image and sampler
-                    auto id = module->get_def(insn.word(3));  // <id> Sampled Image
+                    auto id = module_state->get_def(insn.word(3));  // <id> Sampled Image
                     auto load_id = (id.opcode() == spv::OpSampledImage) ? id.word(3) : insn.word(3);
                     image_dref_members.emplace_back(load_id);
                     break;
@@ -1286,7 +1286,7 @@ struct shader_module_used_operators {
                 case spv::OpImageSparseSampleProjDrefImplicitLod:
                 case spv::OpImageSparseSampleProjDrefExplicitLod: {
                     // combined image samples are just OpLoad, but also can be separate image and sampler
-                    auto id = module->get_def(insn.word(3));  // <id> Sampled Image
+                    auto id = module_state->get_def(insn.word(3));  // <id> Sampled Image
                     auto sampler_load_id = (id.opcode() == spv::OpSampledImage) ? id.word(4) : insn.word(3);
                     auto image_load_id = (id.opcode() == spv::OpSampledImage) ? id.word(3) : insn.word(3);
 
@@ -1303,7 +1303,7 @@ struct shader_module_used_operators {
                     // ImageOperands in index: 5
                     if (insn.len() > 5 && CheckImageOperandsBiasOffset(insn.word(5))) {
                         // combined image samples are just OpLoad, but also can be separate image and sampler
-                        auto id = module->get_def(insn.word(3));  // <id> Sampled Image
+                        auto id = module_state->get_def(insn.word(3));  // <id> Sampled Image
                         auto load_id = (id.opcode() == spv::OpSampledImage) ? id.word(4) : insn.word(3);
                         sampler_bias_offset_members.emplace_back(load_id);
                     }

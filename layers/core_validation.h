@@ -563,41 +563,42 @@ class CoreChecks : public ValidationStateTracker {
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const override;
     bool ValidatePipelineShaderStage(const PIPELINE_STATE* pipeline, const PipelineStageState& stage_state,
                                      bool check_point_size) const;
-    bool ValidatePointListShaderState(const PIPELINE_STATE* pipeline, SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint,
-                                      VkShaderStageFlagBits stage) const;
-    bool ValidatePrimitiveRateShaderState(const PIPELINE_STATE* pipeline, SHADER_MODULE_STATE const* src,
+    bool ValidatePointListShaderState(const PIPELINE_STATE* pipeline, SHADER_MODULE_STATE const* module_state,
+                                      spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) const;
+    bool ValidatePrimitiveRateShaderState(const PIPELINE_STATE* pipeline, SHADER_MODULE_STATE const* module_state,
                                           spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) const;
-    bool ValidateTexelOffsetLimits(SHADER_MODULE_STATE const* src, spirv_inst_iter& insn) const;
-    bool ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE const* src, spirv_inst_iter& insn) const;
+    bool ValidateTexelOffsetLimits(SHADER_MODULE_STATE const* module_state, spirv_inst_iter& insn) const;
+    bool ValidateShaderCapabilitiesAndExtensions(spirv_inst_iter& insn) const;
     bool ValidateShaderStageWritableOrAtomicDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor,
                                                        bool has_atomic_descriptor) const;
-    bool ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
-                                              const PIPELINE_STATE* pipeline, spirv_inst_iter entrypoint) const;
-    bool ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const* src, const spirv_inst_iter& insn) const;
+    bool ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const* module_state,
+                                              VkPipelineShaderStageCreateInfo const* pStage, const PIPELINE_STATE* pipeline,
+                                              spirv_inst_iter entrypoint) const;
+    bool ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const* module_state, const spirv_inst_iter& insn) const;
     bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const PIPELINE_STATE* pipeline) const;
-    bool ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const* src, VkShaderStageFlagBits stage,
+    bool ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const* module_state, VkShaderStageFlagBits stage,
                                             spirv_inst_iter& insn) const;
-    bool ValidateMemoryScope(SHADER_MODULE_STATE const* src, const spirv_inst_iter& insn) const;
-    bool ValidateWorkgroupSize(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
+    bool ValidateMemoryScope(SHADER_MODULE_STATE const* module_state, const spirv_inst_iter& insn) const;
+    bool ValidateWorkgroupSize(SHADER_MODULE_STATE const* module_state, VkPipelineShaderStageCreateInfo const* pStage,
                                const std::unordered_map<uint32_t, std::vector<uint32_t>>& id_value_map) const;
-    bool ValidateCooperativeMatrix(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
+    bool ValidateCooperativeMatrix(SHADER_MODULE_STATE const* module_state, VkPipelineShaderStageCreateInfo const* pStage,
                                    const PIPELINE_STATE* pipeline) const;
-    bool ValidateShaderResolveQCOM(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
+    bool ValidateShaderResolveQCOM(SHADER_MODULE_STATE const* module_state, VkPipelineShaderStageCreateInfo const* pStage,
                                    const PIPELINE_STATE* pipeline) const;
     bool ValidateShaderSubgroupSizeControl(VkPipelineShaderStageCreateInfo const* pStage) const;
-    bool ValidateAtomicsTypes(SHADER_MODULE_STATE const* src) const;
-    bool ValidateExecutionModes(SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint, VkShaderStageFlagBits stage,
+    bool ValidateAtomicsTypes(SHADER_MODULE_STATE const* module_state) const;
+    bool ValidateExecutionModes(SHADER_MODULE_STATE const* module_state, spirv_inst_iter entrypoint, VkShaderStageFlagBits stage,
                                 const PIPELINE_STATE* pipeline) const;
     bool ValidateViConsistency(VkPipelineVertexInputStateCreateInfo const* vi) const;
-    bool ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo const* vi, SHADER_MODULE_STATE const* vs,
+    bool ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo const* vi, SHADER_MODULE_STATE const* module_state,
                                    spirv_inst_iter entrypoint) const;
-    bool ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const* fs, spirv_inst_iter entrypoint,
+    bool ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const* module_state, spirv_inst_iter entrypoint,
                                             PIPELINE_STATE const* pipeline, uint32_t subpass_index) const;
-    bool ValidateFsOutputsAgainstDynamicRenderingRenderPass(SHADER_MODULE_STATE const* fs, spirv_inst_iter entrypoint,
+    bool ValidateFsOutputsAgainstDynamicRenderingRenderPass(SHADER_MODULE_STATE const* module_state, spirv_inst_iter entrypoint,
                                                             PIPELINE_STATE const* pipeline) const;
-    bool ValidatePushConstantUsage(const PIPELINE_STATE& pipeline, SHADER_MODULE_STATE const* src,
+    bool ValidatePushConstantUsage(const PIPELINE_STATE& pipeline, SHADER_MODULE_STATE const* module_state,
                                    VkPipelineShaderStageCreateInfo const* pStage, const std::string& vuid) const;
-    bool ValidateBuiltinLimits(SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint) const;
+    bool ValidateBuiltinLimits(SHADER_MODULE_STATE const* module_state, spirv_inst_iter entrypoint) const;
     PushConstantByteState ValidatePushConstantSetUpdate(const std::vector<uint8_t>& push_constant_data_update,
                                                         const shader_struct_member& push_constant_used_in_shader,
                                                         uint32_t& out_issue_index) const;
@@ -608,9 +609,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const* producer, spirv_inst_iter producer_entrypoint,
                                         shader_stage_attributes const* producer_stage, SHADER_MODULE_STATE const* consumer,
                                         spirv_inst_iter consumer_entrypoint, shader_stage_attributes const* consumer_stage) const;
-    bool ValidateDecorations(SHADER_MODULE_STATE const* module) const;
-    bool ValidateTransformFeedback(SHADER_MODULE_STATE const* src) const;
-    bool ValidateShaderClock(SHADER_MODULE_STATE const* module, spirv_inst_iter& insn) const;
+    bool ValidateDecorations(SHADER_MODULE_STATE const* module_state) const;
+    bool ValidateTransformFeedback(SHADER_MODULE_STATE const* module_state) const;
+    bool ValidateShaderClock(SHADER_MODULE_STATE const* module_state, spirv_inst_iter& insn) const;
 
     template <typename RegionType>
     bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* src_img,
@@ -1549,7 +1550,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore sempahore, uint64_t* pValue, const char* apiName) const;
     bool PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore sempahore, uint64_t* pValue) const override;
     bool PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore sempahore, uint64_t* pValue) const override;
-    bool ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE* shader, const spirv_inst_iter& entrypoint,
+    bool ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE* module_state, const spirv_inst_iter& entrypoint,
                                        const PipelineStageState& stage_state) const;
 
     bool ValidateQueryRange(VkDevice device, VkQueryPool queryPool, uint32_t totalCount, uint32_t firstQuery, uint32_t queryCount,
