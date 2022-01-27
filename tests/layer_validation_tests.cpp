@@ -1150,6 +1150,9 @@ uint32_t VkLayerTest::SetTargetApiVersion(uint32_t target_api_version) {
     if (target_api_version <= m_instance_api_version) {
         m_target_api_version = target_api_version;
         app_info_.apiVersion = m_target_api_version;
+    } else {
+        m_target_api_version = m_instance_api_version;
+        app_info_.apiVersion = m_target_api_version;
     }
     return m_target_api_version;
 }
