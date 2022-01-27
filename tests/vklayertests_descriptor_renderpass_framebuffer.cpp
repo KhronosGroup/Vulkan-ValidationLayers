@@ -4432,7 +4432,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetImageSamplerDestroyed) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    // Now update descriptor to be valid, but then free descriptor
+    // Now update descriptor to be valid, but then update and free descriptor
     img_info.imageView = view2;
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_commandBuffer->begin(&info);
@@ -4452,6 +4452,11 @@ TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetImageSamplerDestroyed) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    // Immediately try to update the descriptor set in the active command buffer - failure expected
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateDescriptorSets-None-03047");
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyFound();
 
     // Immediately try to destroy the descriptor set in the active command buffer - failure expected
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-pDescriptorSets-00309");
