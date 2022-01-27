@@ -6626,3 +6626,28 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAc
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, AttachmentsDisableRasterization) {
+    TEST_DESCRIPTION(
+        "Create a pipeline with rasterization disabled, containing a valid pColorBlendState and color attachments, but a fragment "
+        "shader that does not have any outputs");
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const std::string fs_src = R"glsl(
+        #version 450
+        void main(){ }
+    )glsl";
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.fs_ = layer_data::make_unique<VkShaderObj>(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_errorMonitor->VerifyNotFound();
+}
