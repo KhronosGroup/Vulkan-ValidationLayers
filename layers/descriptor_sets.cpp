@@ -1862,8 +1862,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     if (dst_set->InUse() &&
         !(dst_layout->GetDescriptorBindingFlagsFromBinding(update->dstBinding) &
           (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
-        // TODO : Re-using Free Idle error code, need copy update idle error code
-        *error_code = "VUID-vkFreeDescriptorSets-pDescriptorSets-00309";
+        *error_code = "VUID-vkUpdateDescriptorSets-None-03047";
         std::stringstream error_str;
         error_str << "Cannot call " << func_name << " to perform copy update on descriptor set "
                   << report_data->FormatHandle(dst_set->GetSet()) << " that is in use by a command buffer";
@@ -3538,8 +3537,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
     // Verify idle ds
     if (dest_set->InUse() && !(dest.GetDescriptorBindingFlags() & (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
                                                                          VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
-        // TODO : Re-using Free Idle error code, need write update idle error code
-        *error_code = "VUID-vkFreeDescriptorSets-pDescriptorSets-00309";
+        *error_code = "VUID-vkUpdateDescriptorSets-None-03047";
         std::stringstream error_str;
         error_str << "Cannot call " << func_name << " to perform write update on " << dest_set->StringifySetAndLayout()
                   << " that is in use by a command buffer";
