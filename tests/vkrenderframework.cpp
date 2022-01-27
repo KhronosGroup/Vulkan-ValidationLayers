@@ -685,9 +685,14 @@ void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *feat
     }
 }
 
+// static
+bool VkRenderFramework::IgnoreDisableChecks() {
+    static const bool skip_disable_checks = GetEnvironment("VK_LAYER_TESTS_IGNORE_DISABLE_CHECKS") != "";
+    return skip_disable_checks;
+}
+
 bool VkRenderFramework::IsPlatform(PlatformType platform) {
-    static const bool skip_platform_check = GetEnvironment("VK_LAYER_TESTS_SKIP_PLATFORM_CHECK") != "";
-    if (skip_platform_check) {
+    if (VkRenderFramework::IgnoreDisableChecks()) {
         return false;
     } else {
         return (!vk_gpu_table.find(platform)->second.compare(physDevProps().deviceName));
@@ -695,11 +700,15 @@ bool VkRenderFramework::IsPlatform(PlatformType platform) {
 }
 
 bool VkRenderFramework::IsDriver(VkDriverId driver_id) {
-    // Assumes api version 1.2+
-    auto driver_properties = LvlInitStruct<VkPhysicalDeviceDriverProperties>();
-    auto physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
-    vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
-    return(driver_properties.driverID == driver_id);
+    if (VkRenderFramework::IgnoreDisableChecks()) {
+        return false;
+    } else {
+        // Assumes api version 1.2+
+        auto driver_properties = LvlInitStruct<VkPhysicalDeviceDriverProperties>();
+        auto physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
+        vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
+        return (driver_properties.driverID == driver_id);
+    }
 }
 
 void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props) { *props = physDevProps_; }
