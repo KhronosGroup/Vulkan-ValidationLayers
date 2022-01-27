@@ -4221,8 +4221,8 @@ void ValidationStateTracker::PreCallRecordCmdSetPrimitiveTopology(VkCommandBuffe
     cb_state->primitiveTopology = primitiveTopology;
 }
 
-void ValidationStateTracker::RecordCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                              const VkViewport *pViewports, CMD_TYPE cmdType) {
+void ValidationStateTracker::RecordCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+                                                           const VkViewport *pViewports, CMD_TYPE cmdType) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(cmdType, CBSTATUS_VIEWPORT_WITH_COUNT_SET);
     uint32_t bits = (1u << viewportCount) - 1u;
@@ -4239,12 +4239,12 @@ void ValidationStateTracker::RecordCmdSetViewportWithCountEXT(VkCommandBuffer co
 
 void ValidationStateTracker::PreCallRecordCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                                      const VkViewport *pViewports) {
-    RecordCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports, CMD_SETVIEWPORTWITHCOUNTEXT);
+    RecordCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, CMD_SETVIEWPORTWITHCOUNTEXT);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-    const VkViewport *pViewports) {
-    RecordCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports, CMD_SETVIEWPORTWITHCOUNT);
+                                                                  const VkViewport *pViewports) {
+    RecordCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, CMD_SETVIEWPORTWITHCOUNT);
 }
 
 void ValidationStateTracker::RecordCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
