@@ -286,41 +286,45 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *m
     const bool alpha_to_coverage_enabled = pipeline->create_info.graphics.pMultisampleState != NULL &&
                                            pipeline->create_info.graphics.pMultisampleState->alphaToCoverageEnable == VK_TRUE;
 
-    for (const auto &location_it : location_map) {
-        const auto reference = location_it.second.reference;
-        if (reference != nullptr && reference->attachment == VK_ATTACHMENT_UNUSED) {
-            continue;
-        }
-
-        const auto location = location_it.first;
-        const auto attachment = location_it.second.attachment;
-        const auto output = location_it.second.output;
-        if (attachment && !output) {
-            if (pipeline->attachments[location].colorWriteMask != 0) {
-                skip |= LogWarning(module_state->vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
-                                   "Attachment %" PRIu32
-                                   " not written by fragment shader; undefined values will be written to attachment",
-                                   location);
+    // Don't check any color attachments if rasterization is disabled
+    if (!pipeline->create_info.graphics.pRasterizationState->rasterizerDiscardEnable) {
+        for (const auto &location_it : location_map) {
+            const auto reference = location_it.second.reference;
+            if (reference != nullptr && reference->attachment == VK_ATTACHMENT_UNUSED) {
+                continue;
             }
-        } else if (!attachment && output) {
-            if (!(alpha_to_coverage_enabled && location == 0)) {
-                skip |= LogWarning(module_state->vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
+
+            const auto location = location_it.first;
+            const auto attachment = location_it.second.attachment;
+            const auto output = location_it.second.output;
+            if (attachment && !output) {
+                if (pipeline->attachments[location].colorWriteMask != 0) {
+                    skip |= LogWarning(module_state->vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
+                                       "Attachment %" PRIu32
+                                       " not written by fragment shader; undefined values will be written to attachment",
+                                       location);
+                }
+            } else if (!attachment && output) {
+                if (!(alpha_to_coverage_enabled && location == 0)) {
+                    skip |=
+                        LogWarning(module_state->vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
                                    "fragment shader writes to output location %" PRIu32 " with no matching attachment", location);
-            }
-        } else if (attachment && output) {
-            const auto attachment_type = GetFormatType(attachment->format);
-            const auto output_type = module_state->GetFundamentalType(output->type_id);
+                }
+            } else if (attachment && output) {
+                const auto attachment_type = GetFormatType(attachment->format);
+                const auto output_type = module_state->GetFundamentalType(output->type_id);
 
-            // Type checking
-            if (!(output_type & attachment_type)) {
-                skip |=
-                    LogWarning(module_state->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
-                               "Attachment %" PRIu32
-                               " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
-                               location, string_VkFormat(attachment->format), module_state->DescribeType(output->type_id).c_str());
+                // Type checking
+                if (!(output_type & attachment_type)) {
+                    skip |= LogWarning(
+                        module_state->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
+                        "Attachment %" PRIu32
+                        " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
+                        location, string_VkFormat(attachment->format), module_state->DescribeType(output->type_id).c_str());
+                }
+            } else {            // !attachment && !output
+                assert(false);  // at least one exists in the map
             }
-        } else {            // !attachment && !output
-            assert(false);  // at least one exists in the map
         }
     }
 
