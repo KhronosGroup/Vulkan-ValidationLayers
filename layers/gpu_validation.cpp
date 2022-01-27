@@ -1070,7 +1070,7 @@ bool GpuAssisted::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, ui
     if (srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) {
         ReportSetupProblem(commandBuffer,
                            "CmdWaitEvents recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
-                           "GPU_Assisted validation waits on queue completion. "
+                           "GPU-Assisted validation waits on queue completion. "
                            "This wait could block the host's signaling of this event, resulting in deadlock.");
     }
     ValidationStateTracker::PreCallValidateCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask,
@@ -1081,17 +1081,17 @@ bool GpuAssisted::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, ui
 
 bool GpuAssisted::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                                    const VkDependencyInfoKHR *pDependencyInfos) const {
-    VkPipelineStageFlags2KHR srcStageMask = 0;
+    VkPipelineStageFlags2KHR src_stage_mask = 0;
 
     for (uint32_t i = 0; i < eventCount; i++) {
         auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
-        srcStageMask = stage_masks.src;
+        src_stage_mask |= stage_masks.src;
     }
 
-    if (srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) {
+    if (src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
         ReportSetupProblem(commandBuffer,
                            "CmdWaitEvents2KHR recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
-                           "GPU_Assisted validation waits on queue completion. "
+                           "GPU-Assisted validation waits on queue completion. "
                            "This wait could block the host's signaling of this event, resulting in deadlock.");
     }
     ValidationStateTracker::PreCallValidateCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
@@ -1100,17 +1100,17 @@ bool GpuAssisted::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer
 
 bool GpuAssisted::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                                 const VkDependencyInfo *pDependencyInfos) const {
-    VkPipelineStageFlags2 srcStageMask = 0;
+    VkPipelineStageFlags2 src_stage_mask = 0;
 
     for (uint32_t i = 0; i < eventCount; i++) {
         auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
-        srcStageMask = stage_masks.src;
+        src_stage_mask |= stage_masks.src;
     }
 
-    if (srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) {
+    if (src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
         ReportSetupProblem(commandBuffer,
                            "CmdWaitEvents2 recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
-                           "GPU_Assisted validation waits on queue completion. "
+                           "GPU-Assisted validation waits on queue completion. "
                            "This wait could block the host's signaling of this event, resulting in deadlock.");
     }
     ValidationStateTracker::PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);

@@ -170,14 +170,14 @@ bool DebugPrintf::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, ui
 
 bool DebugPrintf::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                                    const VkDependencyInfoKHR *pDependencyInfos) const {
-    VkPipelineStageFlags2KHR srcStageMask = 0;
+    VkPipelineStageFlags2KHR src_stage_mask = 0;
 
     for (uint32_t i = 0; i < eventCount; i++) {
         auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
-        srcStageMask = stage_masks.src;
+        src_stage_mask |= stage_masks.src;
     }
 
-    if (srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) {
+    if (src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
         ReportSetupProblem(commandBuffer,
                            "CmdWaitEvents2KHR recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
                            "Debug Printf waits on queue completion. "
@@ -188,14 +188,14 @@ bool DebugPrintf::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer
 
 bool DebugPrintf::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                                    const VkDependencyInfo *pDependencyInfos) const {
-    VkPipelineStageFlags2 srcStageMask = 0;
+    VkPipelineStageFlags2 src_stage_mask = 0;
 
     for (uint32_t i = 0; i < eventCount; i++) {
         auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
-        srcStageMask = stage_masks.src;
+        src_stage_mask |= stage_masks.src;
     }
 
-    if (srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) {
+    if (src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
         ReportSetupProblem(commandBuffer,
                            "CmdWaitEvents2 recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
                            "Debug Printf waits on queue completion. "
