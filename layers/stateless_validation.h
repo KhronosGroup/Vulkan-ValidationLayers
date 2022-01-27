@@ -1778,10 +1778,6 @@ class StatelessValidation : public ValidationObject {
                                                                      const uint32_t *pMaxPrimitiveCounts,
                                                                      VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo) const;
 
-    bool manual_PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT *pCreateInfo,
-                                                        const VkAllocationCallbacks *pAllocator,
-                                                        VkPrivateDataSlotEXT *pPrivateDataSlot) const;
-
     bool manual_PreCallValidateCmdSetVertexInputEXT(
         VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
         const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,

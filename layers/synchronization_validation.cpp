@@ -6119,6 +6119,7 @@ bool SyncOpResetEvent::DoValidate(const CommandBufferAccessContext & cb_context,
         switch (sync_event->last_command) {
             case CMD_SETEVENT:
             case CMD_SETEVENT2KHR:
+            case CMD_SETEVENT2:
                 // Needs a barrier between set and reset
                 vuid = "SYNC-vkCmdResetEvent-missingbarrier-set";
                 break;
@@ -6218,12 +6219,14 @@ bool SyncOpSetEvent::DoValidate(const CommandBufferAccessContext &cb_context, co
         switch (sync_event->last_command) {
             case CMD_RESETEVENT:
             case CMD_RESETEVENT2KHR:
+            case CMD_RESETEVENT2:
                 // Needs a barrier between reset and set
                 vuid_stem = "-missingbarrier-reset";
                 message = reset_set;
                 break;
             case CMD_SETEVENT:
             case CMD_SETEVENT2KHR:
+            case CMD_SETEVENT2:
                 // Needs a barrier between set and set
                 vuid_stem = "-missingbarrier-set";
                 message = reset_set;
