@@ -135,7 +135,7 @@ def BuildMockICD(args):
     print("Run CMake for ICD")
     utils.make_dirs(ICD_BUILD_DIR)
     cmake_cmd = \
-        f'cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF -DVULKAN_HEADERS_INSTALL_DIR={EXTERNAL_DIR}/Vulkan-Headers/{BUILD_DIR_NAME}/install {args.cmake} ..'
+        f'cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF -C {VT_DIR}/{EXTERNAL_DIR_NAME}/helper.cmake {args.cmake} ..'
     RunShellCmd(cmake_cmd, ICD_BUILD_DIR)
 
     print("Build Mock ICD")
