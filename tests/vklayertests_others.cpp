@@ -1820,7 +1820,6 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
 TEST_F(VkLayerTest, Features12Features13AndpNext) {
     TEST_DESCRIPTION("Test VkPhysicalDeviceVulkan12Features and illegal struct in pNext");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
     SetTargetApiVersion(VK_API_VERSION_1_3);
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -10093,12 +10092,9 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
 
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_3);
-    if (version < VK_API_VERSION_1_3) {
-        version = SetTargetApiVersion(VK_API_VERSION_1_1);
-        if (version < VK_API_VERSION_1_1) {
-            printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-            return;
-        }
+    if (version < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -10249,12 +10245,9 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
 
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_3);
-    if (version < VK_API_VERSION_1_3) {
-        version = SetTargetApiVersion(VK_API_VERSION_1_1);
-        if (version < VK_API_VERSION_1_1) {
-            printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-            return;
-        }
+    if (version < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -11214,12 +11207,9 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Disabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 VUs");
 
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_3);
-    if (version < VK_API_VERSION_1_3) {
-        version = SetTargetApiVersion(VK_API_VERSION_1_1);
-        if (version < VK_API_VERSION_1_1) {
-            printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-            return;
-        }
+    if (version < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -12424,10 +12414,8 @@ TEST_F(VkLayerTest, QueueSubmitWaitingSameSemaphore) {
 
 TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     TEST_DESCRIPTION("Using QueueSubmit2KHR when synchronization2 is not enabled");
-    auto version = SetTargetApiVersion(VK_API_VERSION_1_3);
-    if (version < VK_API_VERSION_1_3) {
-        version = SetTargetApiVersion(VK_API_VERSION_1_2);
-    }   
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
@@ -13184,11 +13172,7 @@ TEST_F(VkLayerTest, ValidateCreateSamplerWithBorderColorSwizzle) {
 TEST_F(VkLayerTest, ValidateBeginRenderingDisabled) {
     TEST_DESCRIPTION("Validate VK_KHR_dynamic_rendering VUs when disabled");
 
-    auto version = SetTargetApiVersion(VK_API_VERSION_1_3);
-    if (version < VK_API_VERSION_1_3) {
-        version = SetTargetApiVersion(VK_API_VERSION_1_1);
-    }
-
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
