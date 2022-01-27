@@ -6,7 +6,7 @@
       "sub_dir" : "glslang",
       "build_dir" : "glslang/build",
       "install_dir" : "glslang/build/install",
-      "commit": "c9706bdda0ac22b9856f1aa8261e5b9e15cd20c5",
+      "commit": "c34bb3b6c55f6ab084124ad964be95a699700d34",
       "cmake_options" : [
         "-DUSE_CCACHE=ON"
       ],
