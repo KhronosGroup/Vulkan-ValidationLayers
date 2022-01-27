@@ -172,16 +172,7 @@ def RunVVLTests(args):
     if not os.path.isfile(icd_filenames):
         raise Exception(f'VK_ICD_FILENAMES "{icd_filenames}" does not exist')
     lvt_env['VK_ICD_FILENAMES'] = icd_filenames
-    # There is a problem in the github CI environment with the latest loader,
-    # Probably because the only ICD available is the mock ICD. Disabling
-    # physical device sorting avoids this problem.
-    lvt_env['VK_LOADER_DISABLE_SELECT'] = '1'
-    
-    print("Environment variables set by script:")
-    print(lvt_env)
-    print("Pre-existing environment variables:")
-    RunShellCmd("env")
-    print("Running tests:")
+
     RunShellCmd(lvt_cmd, env=lvt_env)
     print("Re-Running multithreaded tests with VK_LAYER_FINE_GRAINED_LOCKING=1:")
     lvt_env['VK_LAYER_FINE_GRAINED_LOCKING'] = '1'
