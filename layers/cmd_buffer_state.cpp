@@ -1149,7 +1149,7 @@ void CMD_BUFFER_STATE::SetImageInitialLayout(const IMAGE_STATE &image_state, con
 }
 
 void CMD_BUFFER_STATE::SetImageInitialLayout(VkImage image, const VkImageSubresourceRange &range, VkImageLayout layout) {
-    const auto image_state = dev_data->Get<IMAGE_STATE>(image);
+    auto image_state = dev_data->Get<IMAGE_STATE>(image);
     if (!image_state) return;
     SetImageInitialLayout(*image_state, range, layout);
 }

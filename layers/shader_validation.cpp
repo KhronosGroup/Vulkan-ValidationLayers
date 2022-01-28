@@ -3044,7 +3044,7 @@ uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE *pipeline, VkShad
 
     if (create_info.pLibraryInfo) {
         for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
-            const auto library_pipeline = Get<PIPELINE_STATE>(create_info.pLibraryInfo->pLibraries[i]);
+            auto library_pipeline = Get<PIPELINE_STATE>(create_info.pLibraryInfo->pLibraries[i]);
             total += CalcShaderStageCount(library_pipeline.get(), stageBit);
         }
     }
@@ -3095,7 +3095,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
         }
         if (create_info.pLibraryInfo) {
             for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
-                const auto library_pipelinestate = Get<PIPELINE_STATE>(create_info.pLibraryInfo->pLibraries[i]);
+                auto library_pipelinestate = Get<PIPELINE_STATE>(create_info.pLibraryInfo->pLibraries[i]);
                 const auto &library_create_info = library_pipelinestate->create_info.raytracing;
                 if (library_create_info.maxPipelineRayRecursionDepth != create_info.maxPipelineRayRecursionDepth) {
                     skip |= LogError(

@@ -1542,14 +1542,14 @@ void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const
     auto dedicated = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
     if (dedicated) {
         if (dedicated->buffer) {
-            const auto buffer_state = Get<BUFFER_STATE>(dedicated->buffer);
+            auto buffer_state = Get<BUFFER_STATE>(dedicated->buffer);
             assert(buffer_state);
             if (!buffer_state) {
                 return;
             }
             dedicated_binding.emplace(dedicated->buffer, buffer_state->createInfo);
         } else if (dedicated->image) {
-            const auto image_state = Get<IMAGE_STATE>(dedicated->image);
+            auto image_state = Get<IMAGE_STATE>(dedicated->image);
             assert(image_state);
             if (!image_state) {
                 return;
@@ -3756,7 +3756,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
 
     cb_state->RecordCmd(CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR);
-    const auto template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
+    auto template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
     if (template_state) {
         auto layout_data = Get<PIPELINE_LAYOUT_STATE>(layout);
         auto dsl = layout_data ? layout_data->GetDsl(set) : nullptr;
