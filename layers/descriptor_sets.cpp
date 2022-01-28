@@ -1605,7 +1605,7 @@ bool CoreChecks::ValidateTexelDescriptor(const char *caller, const DrawDispatchV
     }
     if (buffer_view) {
         auto buffer = buffer_view_state->create_info.buffer;
-        auto buffer_state = buffer_view_state->buffer_state.get();
+        const auto *buffer_state = buffer_view_state->buffer_state.get();
         if (buffer_state->Destroyed()) {
             auto set = descriptor_set->GetSet();
             return LogError(set, vuids.descriptor_valid,
@@ -1818,8 +1818,8 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(ValidationStateTracker *
 // Validate Copy update
 bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const DescriptorSet *dst_set, const DescriptorSet *src_set,
                                     const char *func_name, std::string *error_code, std::string *error_msg) const {
-    auto dst_layout = dst_set->GetLayout().get();
-    auto src_layout = src_set->GetLayout().get();
+    const auto *dst_layout = dst_set->GetLayout().get();
+    const auto *src_layout = src_set->GetLayout().get();
 
     // Verify dst layout still valid
     if (dst_layout->Destroyed()) {
@@ -2120,8 +2120,8 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
     auto dst_start_idx = layout_->GetGlobalIndexRangeFromBinding(update->dstBinding).start + update->dstArrayElement;
     // Update parameters all look good so perform update
     for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-        auto src = src_set->descriptors_[src_start_idx + di].get();
-        auto dst = descriptors_[dst_start_idx + di].get();
+        auto *src = src_set->descriptors_[src_start_idx + di].get();
+        auto *dst = descriptors_[dst_start_idx + di].get();
         if (src->updated) {
             dst->CopyUpdate(this, state_data_, src);
             some_update_ = true;
@@ -3504,7 +3504,7 @@ bool cvdescriptorset::VerifyUpdateConsistency(debug_report_data *report_data,
 //  If an error would occur for this update, return false and fill in details in error_msg string
 bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update, const char *func_name,
                                      std::string *error_code, std::string *error_msg, bool push) const {
-    const auto dest_layout = dest_set->GetLayout().get();
+    const auto *dest_layout = dest_set->GetLayout().get();
 
     // Verify dst layout still valid
     if (dest_layout->Destroyed()) {
@@ -3716,7 +3716,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                 const ImageSamplerDescriptor *desc =
                     (const ImageSamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
                 if (image_view) {
-                    auto image_state = iv_state->image_state.get();
+                    const auto *image_state = iv_state->image_state.get();
                     if (!ValidateImageUpdate(image_view, image_layout, update->descriptorType, func_name, error_code, error_msg)) {
                         std::stringstream error_str;
                         error_str << "Attempted write update to combined image sampler descriptor failed due to: "
