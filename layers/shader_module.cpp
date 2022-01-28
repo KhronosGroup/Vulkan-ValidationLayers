@@ -652,8 +652,14 @@ std::string SHADER_MODULE_STATE::DescribeInstruction(const spirv_inst_iter &insn
         ss << " %" << insn.word(1);
     }
 
+    // TODO - For now don't list the '%' for any operands since they are only for reference IDs. Without generating a table of each
+    // instructions operand types and covering the many edge cases (such as optional, paired, or variable operands) this is the
+    // simplest way to print the instruction and give the developer something to look into when an error occurs.
+    //
+    // For now this safely should be able to assume it will never come across a LiteralString such as in OpExtInstImport or
+    // OpEntryPoint
     for (uint32_t i = operand_offset; i < insn.len(); i++) {
-        ss << " %" << insn.word(i);
+        ss << " " << insn.word(i);
     }
     return ss.str();
 }

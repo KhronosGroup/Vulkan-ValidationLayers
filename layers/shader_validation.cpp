@@ -643,25 +643,19 @@ bool CoreChecks::ValidateShaderStageWritableOrAtomicDescriptor(VkShaderStageFlag
 
     if (has_writable_descriptor || has_atomic_descriptor) {
         switch (stage) {
-            case VK_SHADER_STAGE_COMPUTE_BIT:
-            case VK_SHADER_STAGE_RAYGEN_BIT_NV:
-            case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
-            case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
-            case VK_SHADER_STAGE_MISS_BIT_NV:
-            case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
-            case VK_SHADER_STAGE_CALLABLE_BIT_NV:
-            case VK_SHADER_STAGE_TASK_BIT_NV:
-            case VK_SHADER_STAGE_MESH_BIT_NV:
-                /* No feature requirements for writes and atomics from compute
-                 * raytracing, or mesh stages */
-                break;
             case VK_SHADER_STAGE_FRAGMENT_BIT:
                 skip |= RequireFeature(enabled_features.core.fragmentStoresAndAtomics, "fragmentStoresAndAtomics",
                                        "VUID-RuntimeSpirv-NonWritable-06340");
                 break;
-            default:
+            case VK_SHADER_STAGE_VERTEX_BIT:
+            case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+            case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+            case VK_SHADER_STAGE_GEOMETRY_BIT:
                 skip |= RequireFeature(enabled_features.core.vertexPipelineStoresAndAtomics, "vertexPipelineStoresAndAtomics",
                                        "VUID-RuntimeSpirv-NonWritable-06341");
+                break;
+            default:
+                // No feature requirements for writes and atomics for other stages
                 break;
         }
     }
@@ -732,26 +726,21 @@ bool CoreChecks::ValidateMemoryScope(SHADER_MODULE_STATE const *module_state, co
     const auto &entry = OpcodeMemoryScopePosition(insn.opcode());
     if (entry > 0) {
         const uint32_t scope_id = insn.word(entry);
-        if (enabled_features.core12.vulkanMemoryModel && !enabled_features.core12.vulkanMemoryModelDeviceScope) {
-            const auto &iter = module_state->GetConstantDef(scope_id);
-            if (iter != module_state->end()) {
-                if (GetConstantValue(iter) == spv::Scope::ScopeDevice) {
-                    skip |= LogError(device, "VUID-RuntimeSpirv-vulkanMemoryModel-06265",
-                                     "VkPhysicalDeviceVulkan12Features::vulkanMemoryModel is enabled and "
-                                     "VkPhysicalDeviceVulkan12Features::vulkanMemoryModelDeviceScope is disabled, but\n%s\nuses "
-                                     "Device memory scope.",
-                                     module_state->DescribeInstruction(insn).c_str());
-                }
-            }
-        } else if (!enabled_features.core12.vulkanMemoryModel) {
-            const auto &iter = module_state->GetConstantDef(scope_id);
-            if (iter != module_state->end()) {
-                if (GetConstantValue(iter) == spv::Scope::ScopeQueueFamily) {
-                    skip |= LogError(device, "VUID-RuntimeSpirv-vulkanMemoryModel-06266",
-                                     "VkPhysicalDeviceVulkan12Features::vulkanMemoryModel is not enabled, but\n%s\nuses "
-                                     "QueueFamily memory scope.",
-                                     module_state->DescribeInstruction(insn).c_str());
-                }
+        const auto &scope_def = module_state->GetConstantDef(scope_id);
+        if (scope_def != module_state->end()) {
+            const auto scope_type = GetConstantValue(scope_def);
+            if (enabled_features.core12.vulkanMemoryModel && !enabled_features.core12.vulkanMemoryModelDeviceScope &&
+                scope_type == spv::Scope::ScopeDevice) {
+                skip |= LogError(device, "VUID-RuntimeSpirv-vulkanMemoryModel-06265",
+                                 "VkPhysicalDeviceVulkan12Features::vulkanMemoryModel is enabled and "
+                                 "VkPhysicalDeviceVulkan12Features::vulkanMemoryModelDeviceScope is disabled, but\n%s\nuses "
+                                 "Device memory scope.",
+                                 module_state->DescribeInstruction(insn).c_str());
+            } else if (!enabled_features.core12.vulkanMemoryModel && scope_type == spv::Scope::ScopeQueueFamily) {
+                skip |= LogError(device, "VUID-RuntimeSpirv-vulkanMemoryModel-06266",
+                                 "VkPhysicalDeviceVulkan12Features::vulkanMemoryModel is not enabled, but\n%s\nuses "
+                                 "QueueFamily memory scope.",
+                                 module_state->DescribeInstruction(insn).c_str());
             }
         }
     }
@@ -1146,17 +1135,19 @@ bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *mo
                 if (!enabled_features.core.shaderStorageImageReadWithoutFormat &&
                     !(img_decorations.flags & decoration_set::nonreadable_bit)) {
                     skip |= LogError(device, "VUID-RuntimeSpirv-OpTypeImage-06270",
-                                     "shaderStorageImageReadWithoutFormat not supported but OpVariable (ID %" PRIu32
-                                     ") with a Unknown format is not decorated with NonReadable",
-                                     var_id);
+                                     "shaderStorageImageReadWithoutFormat is not supported but\n%s\nhas an Image\n%s\nwith Unknown "
+                                     "format and is not decorated with NonReadable",
+                                     module_state->DescribeInstruction(module_state->get_def(var_id)).c_str(),
+                                     module_state->DescribeInstruction(type_def).c_str());
                 }
 
                 if (!enabled_features.core.shaderStorageImageWriteWithoutFormat &&
                     !(img_decorations.flags & decoration_set::nonwritable_bit)) {
                     skip |= LogError(device, "VUID-RuntimeSpirv-OpTypeImage-06269",
-                                     "shaderStorageImageWriteWithoutFormat not supported but OpVariable (ID %" PRIu32
-                                     ") with a Unknown format is not decorated with NonWritable",
-                                     var_id);
+                                     "shaderStorageImageWriteWithoutFormat is not supported but\n%s\nhas an Image\n%s\nwith "
+                                     "Unknown format and is not decorated with NonWritable",
+                                     module_state->DescribeInstruction(module_state->get_def(var_id)).c_str(),
+                                     module_state->DescribeInstruction(type_def).c_str());
                 }
             }
             break;
@@ -1864,15 +1855,18 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                     if (bit_width == 16 && !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat16) {
                         skip |= LogError(
                             device, "VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat16-06293",
-                            "Shader requires SignedZeroInfNanPreserve for bit width 16 but it is not enabled on the device");
+                            "Shader requires SignedZeroInfNanPreserve for bit width 16 but it is not enabled on the device\n%s",
+                            module_state->DescribeInstruction(insn).c_str());
                     } else if (bit_width == 32 && !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat32) {
                         skip |= LogError(
                             device, "VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat32-06294",
-                            "Shader requires SignedZeroInfNanPreserve for bit width 32 but it is not enabled on the device");
+                            "Shader requires SignedZeroInfNanPreserve for bit width 32 but it is not enabled on the device\n%s",
+                            module_state->DescribeInstruction(insn).c_str());
                     } else if (bit_width == 64 && !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat64) {
                         skip |= LogError(
                             device, "VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat64-06295",
-                            "Shader requires SignedZeroInfNanPreserve for bit width 64 but it is not enabled on the device");
+                            "Shader requires SignedZeroInfNanPreserve for bit width 64 but it is not enabled on the device\n%s",
+                            module_state->DescribeInstruction(insn).c_str());
                     }
                     break;
                 }
@@ -1881,13 +1875,17 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                     auto bit_width = insn.word(3);
                     if (bit_width == 16 && !phys_dev_props_core12.shaderDenormPreserveFloat16) {
                         skip |= LogError(device, "VUID-RuntimeSpirv-shaderDenormPreserveFloat16-06296",
-                                         "Shader requires DenormPreserve for bit width 16 but it is not enabled on the device");
+                                         "Shader requires DenormPreserve for bit width 16 but it is not enabled on the device\n%s",
+                                         module_state->DescribeInstruction(insn).c_str());
+                        ;
                     } else if (bit_width == 32 && !phys_dev_props_core12.shaderDenormPreserveFloat32) {
                         skip |= LogError(device, "VUID-RuntimeSpirv-shaderDenormPreserveFloat32-06297",
-                                         "Shader requires DenormPreserve for bit width 32 but it is not enabled on the device");
+                                         "Shader requires DenormPreserve for bit width 32 but it is not enabled on the device\n%s",
+                                         module_state->DescribeInstruction(insn).c_str());
                     } else if (bit_width == 64 && !phys_dev_props_core12.shaderDenormPreserveFloat64) {
                         skip |= LogError(device, "VUID-RuntimeSpirv-shaderDenormPreserveFloat64-06298",
-                                         "Shader requires DenormPreserve for bit width 64 but it is not enabled on the device");
+                                         "Shader requires DenormPreserve for bit width 64 but it is not enabled on the device\n%s",
+                                         module_state->DescribeInstruction(insn).c_str());
                     }
 
                     if (first_denorm_execution_mode.first == spv::ExecutionModeMax) {
@@ -1900,7 +1898,8 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                                     skip |= LogError(device, "VUID-RuntimeSpirv-denormBehaviorIndependence-06289",
                                                      "Shader uses different denorm execution modes for 16 and 64-bit but "
                                                      "denormBehaviorIndependence is "
-                                                     "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY on the device");
+                                                     "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY on the device\n%s",
+                                                     module_state->DescribeInstruction(insn).c_str());
                                 }
                                 break;
 
@@ -1911,7 +1910,8 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                                 skip |= LogError(device, "VUID-RuntimeSpirv-denormBehaviorIndependence-06290",
                                                  "Shader uses different denorm execution modes for different bit widths but "
                                                  "denormBehaviorIndependence is "
-                                                 "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE on the device");
+                                                 "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE on the device\n%s",
+                                                 module_state->DescribeInstruction(insn).c_str());
                                 break;
 
                             default:
@@ -1924,14 +1924,20 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                 case spv::ExecutionModeDenormFlushToZero: {
                     auto bit_width = insn.word(3);
                     if (bit_width == 16 && !phys_dev_props_core12.shaderDenormFlushToZeroFloat16) {
-                        skip |= LogError(device, "VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat16-06299",
-                                         "Shader requires DenormFlushToZero for bit width 16 but it is not enabled on the device");
+                        skip |=
+                            LogError(device, "VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat16-06299",
+                                     "Shader requires DenormFlushToZero for bit width 16 but it is not enabled on the device\n%s",
+                                     module_state->DescribeInstruction(insn).c_str());
                     } else if (bit_width == 32 && !phys_dev_props_core12.shaderDenormFlushToZeroFloat32) {
-                        skip |= LogError(device, "VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat32-06300",
-                                         "Shader requires DenormFlushToZero for bit width 32 but it is not enabled on the device");
+                        skip |=
+                            LogError(device, "VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat32-06300",
+                                     "Shader requires DenormFlushToZero for bit width 32 but it is not enabled on the device\n%s",
+                                     module_state->DescribeInstruction(insn).c_str());
                     } else if (bit_width == 64 && !phys_dev_props_core12.shaderDenormFlushToZeroFloat64) {
-                        skip |= LogError(device, "VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat64-06301",
-                                         "Shader requires DenormFlushToZero for bit width 64 but it is not enabled on the device");
+                        skip |=
+                            LogError(device, "VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat64-06301",
+                                     "Shader requires DenormFlushToZero for bit width 64 but it is not enabled on the device\n%s",
+                                     module_state->DescribeInstruction(insn).c_str());
                     }
 
                     if (first_denorm_execution_mode.first == spv::ExecutionModeMax) {
@@ -1944,7 +1950,8 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                                     skip |= LogError(device, "VUID-RuntimeSpirv-denormBehaviorIndependence-06289",
                                                      "Shader uses different denorm execution modes for 16 and 64-bit but "
                                                      "denormBehaviorIndependence is "
-                                                     "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY on the device");
+                                                     "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY on the device\n%s",
+                                                     module_state->DescribeInstruction(insn).c_str());
                                 }
                                 break;
 
@@ -1955,7 +1962,8 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                                 skip |= LogError(device, "VUID-RuntimeSpirv-denormBehaviorIndependence-06290",
                                                  "Shader uses different denorm execution modes for different bit widths but "
                                                  "denormBehaviorIndependence is "
-                                                 "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE on the device");
+                                                 "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE on the device\n%s",
+                                                 module_state->DescribeInstruction(insn).c_str());
                                 break;
 
                             default:
@@ -1969,13 +1977,16 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                     auto bit_width = insn.word(3);
                     if (bit_width == 16 && !phys_dev_props_core12.shaderRoundingModeRTEFloat16) {
                         skip |= LogError(device, "VUID-RuntimeSpirv-shaderRoundingModeRTEFloat16-06302",
-                                         "Shader requires RoundingModeRTE for bit width 16 but it is not enabled on the device");
+                                         "Shader requires RoundingModeRTE for bit width 16 but it is not enabled on the device\n%s",
+                                         module_state->DescribeInstruction(insn).c_str());
                     } else if (bit_width == 32 && !phys_dev_props_core12.shaderRoundingModeRTEFloat32) {
                         skip |= LogError(device, "VUID-RuntimeSpirv-shaderRoundingModeRTEFloat32-06303",
-                                         "Shader requires RoundingModeRTE for bit width 32 but it is not enabled on the device");
+                                         "Shader requires RoundingModeRTE for bit width 32 but it is not enabled on the device\n%s",
+                                         module_state->DescribeInstruction(insn).c_str());
                     } else if (bit_width == 64 && !phys_dev_props_core12.shaderRoundingModeRTEFloat64) {
                         skip |= LogError(device, "VUID-RuntimeSpirv-shaderRoundingModeRTEFloat64-06304",
-                                         "Shader requires RoundingModeRTE for bit width 64 but it is not enabled on the device");
+                                         "Shader requires RoundingModeRTE for bit width 64 but it is not enabled on the device\n%s",
+                                         module_state->DescribeInstruction(insn).c_str());
                     }
 
                     if (first_rounding_mode.first == spv::ExecutionModeMax) {
@@ -1988,7 +1999,8 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                                     skip |= LogError(device, "VUID-RuntimeSpirv-roundingModeIndependence-06291",
                                                      "Shader uses different rounding modes for 16 and 64-bit but "
                                                      "roundingModeIndependence is "
-                                                     "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY on the device");
+                                                     "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY on the device\n%s",
+                                                     module_state->DescribeInstruction(insn).c_str());
                                 }
                                 break;
 
@@ -1999,7 +2011,8 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                                 skip |= LogError(device, "VUID-RuntimeSpirv-roundingModeIndependence-06292",
                                                  "Shader uses different rounding modes for different bit widths but "
                                                  "roundingModeIndependence is "
-                                                 "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE on the device");
+                                                 "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE on the device\n%s",
+                                                 module_state->DescribeInstruction(insn).c_str());
                                 break;
 
                             default:
@@ -2013,13 +2026,16 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                     auto bit_width = insn.word(3);
                     if (bit_width == 16 && !phys_dev_props_core12.shaderRoundingModeRTZFloat16) {
                         skip |= LogError(device, "VUID-RuntimeSpirv-shaderRoundingModeRTZFloat16-06305",
-                                         "Shader requires RoundingModeRTZ for bit width 16 but it is not enabled on the device");
+                                         "Shader requires RoundingModeRTZ for bit width 16 but it is not enabled on the device\n%s",
+                                         module_state->DescribeInstruction(insn).c_str());
                     } else if (bit_width == 32 && !phys_dev_props_core12.shaderRoundingModeRTZFloat32) {
                         skip |= LogError(device, "VUID-RuntimeSpirv-shaderRoundingModeRTZFloat32-06306",
-                                         "Shader requires RoundingModeRTZ for bit width 32 but it is not enabled on the device");
+                                         "Shader requires RoundingModeRTZ for bit width 32 but it is not enabled on the device\n%s",
+                                         module_state->DescribeInstruction(insn).c_str());
                     } else if (bit_width == 64 && !phys_dev_props_core12.shaderRoundingModeRTZFloat64) {
                         skip |= LogError(device, "VUID-RuntimeSpirv-shaderRoundingModeRTZFloat64-06307",
-                                         "Shader requires RoundingModeRTZ for bit width 64 but it is not enabled on the device");
+                                         "Shader requires RoundingModeRTZ for bit width 64 but it is not enabled on the device\n%s",
+                                         module_state->DescribeInstruction(insn).c_str());
                     }
 
                     if (first_rounding_mode.first == spv::ExecutionModeMax) {
@@ -2032,7 +2048,8 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                                     skip |= LogError(device, "VUID-RuntimeSpirv-roundingModeIndependence-06291",
                                                      "Shader uses different rounding modes for 16 and 64-bit but "
                                                      "roundingModeIndependence is "
-                                                     "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY on the device");
+                                                     "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY on the device\n%s",
+                                                     module_state->DescribeInstruction(insn).c_str());
                                 }
                                 break;
 
@@ -2043,7 +2060,8 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                                 skip |= LogError(device, "VUID-RuntimeSpirv-roundingModeIndependence-06292",
                                                  "Shader uses different rounding modes for different bit widths but "
                                                  "roundingModeIndependence is "
-                                                 "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE on the device");
+                                                 "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE on the device\n%s",
+                                                 module_state->DescribeInstruction(insn).c_str());
                                 break;
 
                             default:
@@ -2468,12 +2486,14 @@ bool CoreChecks::ValidateShaderClock(SHADER_MODULE_STATE const *module_state, sp
             // if scope isn't Subgroup or Device, spirv-val will catch
             if ((scope_type == spv::ScopeSubgroup) && (enabled_features.shader_clock_features.shaderSubgroupClock == VK_FALSE)) {
                 skip |= LogError(device, "VUID-RuntimeSpirv-shaderSubgroupClock-06267",
-                                 "%s: OpReadClockKHR is used with a Subgroup scope but shaderSubgroupClock was not enabled.",
-                                 report_data->FormatHandle(module_state->vk_shader_module()).c_str());
+                                 "%s: OpReadClockKHR is used with a Subgroup scope but shaderSubgroupClock was not enabled.\n%s",
+                                 report_data->FormatHandle(module_state->vk_shader_module()).c_str(),
+                                 module_state->DescribeInstruction(insn).c_str());
             } else if ((scope_type == spv::ScopeDevice) && (enabled_features.shader_clock_features.shaderDeviceClock == VK_FALSE)) {
                 skip |= LogError(device, "VUID-RuntimeSpirv-shaderDeviceClock-06268",
-                                 "%s: OpReadClockKHR is used with a Device scope but shaderDeviceClock was not enabled.",
-                                 report_data->FormatHandle(module_state->vk_shader_module()).c_str());
+                                 "%s: OpReadClockKHR is used with a Device scope but shaderDeviceClock was not enabled.\n%s",
+                                 report_data->FormatHandle(module_state->vk_shader_module()).c_str(),
+                                 module_state->DescribeInstruction(insn).c_str());
             }
             break;
         }
