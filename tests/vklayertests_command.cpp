@@ -4170,6 +4170,14 @@ TEST_F(VkLayerTest, CopyImageAspectMismatch) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_errorMonitor->VerifyFound();
 
+    // Check no performance warnings regarding layout are thrown when copying from and to the same image
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    m_errorMonitor->ExpectSuccess(kPerformanceWarningBit);
+    vk::CmdCopyImage(m_commandBuffer->handle(), depth_image.handle(), VK_IMAGE_LAYOUT_GENERAL, depth_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    m_errorMonitor->VerifyNotFound();
+
     m_commandBuffer->end();
 }
 
