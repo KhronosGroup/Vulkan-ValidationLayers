@@ -1259,7 +1259,7 @@ static bool VerifySetLayoutCompatibility(const debug_report_data *report_data, c
         return false;
     }
     if (descriptor_set->IsPushDescriptor()) return true;
-    auto layout_node = pipeline_layout->set_layouts[layoutIndex].get();
+    const auto *layout_node = pipeline_layout->set_layouts[layoutIndex].get();
     return cvdescriptorset::VerifySetLayoutCompatibility(report_data, layout_node, descriptor_set->GetLayout().get(), &errorMsg);
 }
 
@@ -1312,7 +1312,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     }
     // Now complete other state checks
     string error_string;
-    auto const &pipeline_layout = pipe->pipeline_layout.get();
+    const auto *pipeline_layout = pipe->pipeline_layout.get();
 
     // Check if the current pipeline is compatible for the maximum used set with the bound sets.
     if (pipe->active_slots.size() > 0 && !CompatForSet(pipe->max_active_slot, state, pipeline_layout->compat_for_set)) {
@@ -1505,7 +1505,7 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE *pPipe
 bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STATE>> const &pPipelines, int pipelineIndex) const {
     bool skip = false;
 
-    const auto pipeline = pPipelines[pipelineIndex].get();
+    const auto *pipeline = pPipelines[pipelineIndex].get();
     const auto &create_info = pipeline->create_info.graphics;
     // If create derivative bit is set, check that we've specified a base
     // pipeline correctly, and that the base pipeline was created to allow
@@ -7873,7 +7873,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
             "vkCmdBindShadingRateImageNV: If imageView is not VK_NULL_HANDLE, it must have a format of VK_FORMAT_R8_UINT.");
     }
 
-    const auto image_state = view_state->image_state.get();
+    const auto *image_state = view_state->image_state.get();
     auto usage = image_state->createInfo.usage;
     if (!(usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV)) {
         skip |= LogError(imageView, "VUID-vkCmdBindShadingRateImageNV-imageView-02061",
