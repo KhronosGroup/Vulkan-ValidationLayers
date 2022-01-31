@@ -19,6 +19,7 @@ The `VK_LAYER_KHRONOS_validation` layer supports the following validation covera
 - [Best practices validation](best_practices.md)
 - [Debug Printf functionality](debug_printf.md)
 - [Handle wrapping functionality](handle_wrapping.md)
+- [Fine grained locking functionality](fine_grained_locking_usage.md)
 
 **Note:**
 
