@@ -10,8 +10,6 @@
 GPU-Assisted Validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation` layer.
 This document covers the design of the layer portion of the implementation.
 
-GPU-Assisted Validation can easily be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK. Or you can manually enable and configure by following the directions below.
-
 ## Basic Operation
 
 The basic operation of GPU-Assisted Validation is comprised of instrumenting shader code to perform run-time checking of shaders and
@@ -99,67 +97,6 @@ Note that currently, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT validation is n
 The vkGetBufferDeviceAddressEXT routine can be used to get a GPU address that a shader can use to directly address a particular buffer.
 GPU-Assisted Validation code keeps track of all such addresses, along with the size of the associated buffer, and creates an input buffer listing all such address/size pairs
 Shader code is instrumented to validate buffer_reference addresses and report any reads or writes that do no fall within the listed address/size regions._
-
-## GPU-Assisted Validation Options
-
-Here are the options related to activating GPU-Assisted Validation:
-
-1. Enable GPU-Assisted Validation - GPU-Assisted Validation is off by default and must be enabled.
-
-    GPU-Assisted Validation is disabled by default because the shader instrumentation may introduce significant
-    shader performance degradation and additional resource consumption.
-    GPU-Assisted Validation requires additional resources such as device memory and descriptors.
-    It is desirable for the user to opt-in to this feature because of these requirements.
-    In addition, there are several limitations that may adversely affect application behavior,
-    as described later in this document.
-
-2. Reserve a Descriptor Set Binding Slot - Modifies the value of the `VkPhysicalDeviceLimits::maxBoundDescriptorSets`
-   property to return a value one less than the actual device's value to "reserve" a descriptor set binding slot for use by GPU validation.
-
-   This option is likely only of interest to applications that dynamically adjust their descriptor set bindings to adjust for
-   the limits of the device.
-
-### Enabling and Specifying Options with a Configuration File
-
-The existing layer configuration file mechanism can be used to enable GPU-Assisted Validation.
-This mechanism is described on the
-[LunarXchange website](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html),
-in the "Layers Overview and Configuration" document.
-
-To turn on GPU validation, add the following to your layer settings file, which is often
-named `vk_layer_settings.txt`.
-
-```code
-khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT 
-```
-
-To turn on GPU validation and request to reserve a binding slot:
-
-```code
-khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT 
-```
-
-Some platforms do not support configuration of the validation layers with this configuration file.
-Programs running on these platforms must then use the programmatic interface.
-
-### Enabling and Specifying Options with the Programmatic Interface
-
-The `VK_EXT_validation_features` extension can be used to enable GPU-Assisted Validation at CreateInstance time.
-
-Here is sample code illustrating how to enable it:
-
-```C
-VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
-VkValidationFeaturesEXT features = {};
-features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-features.enabledValidationFeatureCount = 1;
-features.pEnabledValidationFeatures = enables;
-
-VkInstanceCreateInfo info = {};
-info.pNext = &features;
-```
-
-Use the `VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT` enum to reserve a binding slot.
 
 ## GPU-Assisted Validation Limitations
 
@@ -958,16 +895,15 @@ vkEndCommandBuffer(...)
 
 ## GPU-Assisted Buffer Access Validation
 
-When GPU-Assisted Validation is active, either the descriptor indexing input buffer
-(if descriptor indexing is enabled) or an input buffer of the same format without array
-sizes is used to inform instrumented shaders of the size of each of the buffers the shader
-may access.  If the shader accesses a buffer beyond the declared length of the buffer, the
-instrumentation will return an error to the validation layer.  This checking applies to to
-all uniform and storage buffers. If a buffer access is found to be out of bounds, it will
-not be performed.  Instead, writes will be skipped, and reads will return 0.
-Note that this validation can be disabled by setting "khronos_validation.gpuav_buffer_oob = false" 
-in a vk_layer_settings.txt file. Note also that if a robust buffer access extension is enabled
-this buffer access checking will be disabled, since such accesses become valid.
+When out-of-bounds checking in GPU-Assisted Validation is enabled, either the descriptor
+indexing input buffer (if descriptor indexing is enabled) or an input buffer of the same
+format without array sizes is used to inform instrumented shaders of the size of each of
+the buffers the shader may access.  If the shader accesses a buffer beyond the declared
+length of the buffer, the instrumentation will return an error to the validation layer.
+This checking applies to to all uniform and storage buffers. If a buffer access is found
+to be out of bounds, it will not be performed.  Instead, writes will be skipped, and
+reads will return 0.  Note also that if a robust buffer access extension is enabled,
+this buffer access checking will be disabled since such accesses become valid.
 
 ## GPU-Assisted Validation Testing
 

@@ -18,22 +18,6 @@ Thread Safety, Object Lifetime, Handle Wrapping and Stateless validation have al
 Fine grained locking can easily be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK. You can also manually enable it following instructions below.
 
 
-
-## Enabling Fine Grained Locking
-
-This feature is disabled by default. To turn it on, add the following to your layer settings file,
-`vk_layer_settings.txt`:
-
-```code
-khronos_validation.fine_grained_locking = true
-```
-
-To enable using environment variables, set the following variable:
-
-```code
-VK_LAYER_FINE_GRAINED_LOCKING=1
-```
-
 ### Known Limitations
 
 Currently there is not a way to enable this setting via `VK_EXT_validation_features` or other programmatic interface. This will be addressed in a future release.

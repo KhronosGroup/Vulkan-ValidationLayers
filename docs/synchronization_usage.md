@@ -7,15 +7,9 @@
 
 # Synchronization Validation
 
-Synchronization Validation
-
 Synchronization Validation is implemented in the `VK_LAYER_KHRONOS_validation layer`. When enabled, the Synchronization Object is intended to identify resource access conflicts due to missing or incorrect synchronization operations between actions (Draw, Copy, Dispatch, Blit) reading or writing the same regions of memory.
 
 Synchronization will ideally be run periodically after resolving any outstanding validation checks from all other validation objects, so that issues may be addressed in early stages of development.
-
-Synchronization can easily be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK. You can also manually enable Synchronization following instructions below.
-
-
 
 The specific areas covered by this layer are currently tracked in the
 [Synchronization Validation Project](https://github.com/KhronosGroup/Vulkan-ValidationLayers/projects/5).
@@ -94,43 +88,6 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 - Memory access checks not suppressed for VK_CULL_MODE_FRONT_AND_BACK.
 - Does not include component granularity access tracking.
 - Host synchronization not supported.
-
-## Enabling Synchronization Validation
-
-Synchronization Validation is disabled by default. To turn on Synchronization Validation, add the following to your layer settings file,
-`vk_layer_settings.txt`:
-
-```code
-khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT
-```
-
-To enable using environment variables, set the following variable:
-
-```code
-VK_LAYER_ENABLES=VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT
-```
-
-Mobile platforms (such as Android) do not support configuration of the validation layers with this configuration file.
-Programs running on these platforms must then use the programmatic interface.
-
-As Synchronization Validation is resource intensive, it is recommended to disable all other validation layer objects.
-
-### Enabling and Specifying Options with the Programmatic Interface
-
-The `VK_EXT_validation_features` extension can be used to enable Synchronization Validation at CreateInstance time.
-
-Here is sample code illustrating how to enable it:
-
-```code
-VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};
-VkValidationFeaturesEXT features = {};
-features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-features.enabledValidationFeatureCount = 1;
-features.pEnabledValidationFeatures = enables;
-
-VkInstanceCreateInfo info = {};
-info.pNext = &features;
-```
 
 ## Typical Synchronization Validation Usage
 

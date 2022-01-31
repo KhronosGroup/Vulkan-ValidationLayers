@@ -130,21 +130,6 @@ and see the Debug Printf output.
 3. See the Debug Printf output in Launcher window:
 ![Vkconfig Result](images/vkconfig_result.png)
 
-### Debug Printf messages from Validation Layers via Environment Variables
-With validation layers installed or available, you can set environment variables that will enable
-the display of any Debug Printf messages that your program generates. Setting the following
-environment variables and then running your program should send any Debug Printf messages
-it generates to stdout:
-
-* Set VK_LAYER_PATH to directory containing KHRONOS_validation layer (i.e.
-/VulkanSDK/<SDK version>/bin)
-* Set VK_INSTANCE_LAYERS to VK_LAYER_KHRONOS_validation
-* Set VK_LAYER_ENABLES to
-VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
-* Set VK_LAYER_DISABLES to VK_VALIDATION_FEATURE_DISABLE_ALL_EXT
-* Set DEBUG_PRINTF_TO_STDOUT to true
-* Run your program
-
 ### Debug Printf Format String
 
 The format string for this implementation of debug printf is more restricted than the traditional printf format string.
@@ -174,31 +159,6 @@ Would print "Here's a vector of floats 1.20, 2.20, 3.20, 4.20"
 
 debugPrintfEXT("Unsigned long as decimal %lu and as hex 0x%lx", bigvar, bigvar);
 Would print "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001"
-
-### Debug Printf Settings
-
-The following settings are available for Debug Printf: 1) Printf to stdout, 2) Verbose, and 3) Print
-buffer size:
-
-![Vkconfig Settings](images/vkconfig_settings.png)
-
-#### Printf to stdout
-Debug Printf messages can be sent to a registered debug callback or sent to stdout.
-This can also be enabled by setting the environment variable DEBUG_PRINTF_TO_STDOUT.
-Note that this can be used to send only the Debug Printf messages, and no other validation
-messages to stdout, and the callback boilerplate will not be applied to the messages.
-
-#### Verbose
-Debug Printf messages can show just the basic information and messages, or if the
-verbose option is selected, the messages will contain pipeline stage, shader id, line
-number, and other information in addition to the resulting string.
-
-#### Printf buffer size
-This setting allows you to specify the size of the per draw buffer, in bytes of device
-memory, for returning Debug Printf values. The default is 1024 bytes. Each printf will
-require 32 bytes for header information and an additional four bytes for each 32-bit
-value being printed and an additional 8 bytes for each 64-bit value. If printfs are
-truncated due to lack of memory, a warning will be sent to the Vulkan debug callback.
 
 ### Limitations
 * Debug Printf cannot be used at the same time as GPU Assisted Validation.
