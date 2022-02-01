@@ -2103,6 +2103,11 @@ TEST_F(VkLayerTest, RenderPassBeginInvalidRenderArea) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (IsPlatform(kShieldTVb)) {
+        printf("%s ShieldTV reports api version 1.1, but does not list VK_KHR_device_group, skipping for this platform.\n",
+               kSkipPrefix);
+        return;
+    }
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     bool device_group_supported = false;
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
