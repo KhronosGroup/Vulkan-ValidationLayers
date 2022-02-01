@@ -149,4 +149,16 @@ class BINDABLE : public BASE_NODE {
     }
 
     virtual VkDeviceSize GetFakeBaseAddress() const;
+
+    bool Invalid() const override {
+        if (Destroyed()) {
+            return true;
+        }
+        for (const auto &entry : bound_memory_) {
+            if (!entry.second.mem_state || entry.second.mem_state->Invalid()) {
+                return true;
+            }
+        }
+        return false;
+    }
 };

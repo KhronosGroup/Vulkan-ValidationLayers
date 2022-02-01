@@ -246,6 +246,8 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     VkOffset3D GetOffset() const;
     VkExtent3D GetExtent() const;
     uint32_t GetAttachmentLayerCount() const;
+
+    bool Invalid() const override { return Destroyed() || !image_state || image_state->Invalid(); }
 };
 
 struct SWAPCHAIN_IMAGE {
