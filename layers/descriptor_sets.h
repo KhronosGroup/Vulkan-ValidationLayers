@@ -420,6 +420,9 @@ class Descriptor {
     virtual void SetDescriptorType(VkDescriptorType type, VkDeviceSize buffer_size) { active_descriptor_type = type; }
     virtual void SetDescriptorType(const Descriptor *src) { active_descriptor_type = src->active_descriptor_type; }
 
+    // return true if resources used by this descriptor are destroyed or otherwise missing
+    virtual bool Invalid() const { return false; }
+
     bool updated;  // Has descriptor been updated?
     DescriptorClass descriptor_class;
     VkDescriptorType active_descriptor_type;
@@ -471,6 +474,8 @@ class SamplerDescriptor : public Descriptor {
             sampler_state_->RemoveParent(base_node);
         }
     }
+    bool Invalid() const override { return !sampler_state_ || sampler_state_->Invalid(); }
+
   private:
     bool immutable_;
     std::shared_ptr<SAMPLER_STATE> sampler_state_;
@@ -501,6 +506,9 @@ class ImageDescriptor : public Descriptor {
             image_view_state_->RemoveParent(base_node);
         }
     }
+
+    bool Invalid() const override { return !image_view_state_ || image_view_state_->Invalid(); }
+
   protected:
     ImageDescriptor(DescriptorClass class_);
     std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
@@ -531,6 +539,9 @@ class ImageSamplerDescriptor : public ImageDescriptor {
             sampler_state_->RemoveParent(base_node);
         }
     }
+
+    bool Invalid() const override { return ImageDescriptor::Invalid() || !sampler_state_ || sampler_state_->Invalid(); }
+
   private:
     std::shared_ptr<SAMPLER_STATE> sampler_state_;
     bool immutable_;
@@ -559,6 +570,9 @@ class TexelDescriptor : public Descriptor {
             buffer_view_state_->RemoveParent(base_node);
         }
     }
+
+    bool Invalid() const override { return !buffer_view_state_ || buffer_view_state_->Invalid(); }
+
   private:
     std::shared_ptr<BUFFER_VIEW_STATE> buffer_view_state_;
 };
@@ -588,6 +602,8 @@ class BufferDescriptor : public Descriptor {
             buffer_state_->RemoveParent(base_node);
         }
     }
+    bool Invalid() const override { return !buffer_state_ || buffer_state_->Invalid(); }
+
   private:
     VkDeviceSize offset_;
     VkDeviceSize range_;
@@ -634,6 +650,14 @@ class AccelerationStructureDescriptor : public Descriptor {
             acc_state_nv_->RemoveParent(base_node);
         }
     }
+    bool Invalid() const override {
+        if (is_khr_) {
+            return !acc_state_ || acc_state_->Invalid();
+        } else {
+            return !acc_state_nv_ || acc_state_nv_->Invalid();
+        }
+    }
+
   private:
     bool is_khr_;
     VkAccelerationStructureKHR acc_;
@@ -695,6 +719,8 @@ class MutableDescriptor : public Descriptor {
 
       bool AddParent(BASE_NODE *base_node) override;
       void RemoveParent(BASE_NODE *base_node) override;
+
+      bool Invalid() const override;
 
     private:
       VkDeviceSize buffer_size_;

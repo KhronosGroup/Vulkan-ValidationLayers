@@ -76,6 +76,9 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE> {
 
     bool Destroyed() const { return destroyed_; }
 
+    // returns true if this vulkan object or any it uses have been destroyed
+    virtual bool Invalid() const { return Destroyed(); }
+
     const VulkanTypedHandle &Handle() const { return handle_; }
     VulkanObjectType Type() const { return handle_.type; }
 

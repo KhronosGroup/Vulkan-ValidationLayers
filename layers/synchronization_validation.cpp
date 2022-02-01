@@ -1846,7 +1846,6 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
-    using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
     for (const auto &stage_state : pipe->stage_state) {
@@ -1874,18 +1873,15 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                 switch (descriptor->GetClass()) {
                     case DescriptorClass::ImageSampler:
                     case DescriptorClass::Image: {
-                        const IMAGE_VIEW_STATE *img_view_state = nullptr;
-                        VkImageLayout image_layout;
-                        if (descriptor->GetClass() == DescriptorClass::ImageSampler) {
-                            const auto image_sampler_descriptor = static_cast<const ImageSamplerDescriptor *>(descriptor);
-                            img_view_state = image_sampler_descriptor->GetImageViewState();
-                            image_layout = image_sampler_descriptor->GetImageLayout();
-                        } else {
-                            const auto image_descriptor = static_cast<const ImageDescriptor *>(descriptor);
-                            img_view_state = image_descriptor->GetImageViewState();
-                            image_layout = image_descriptor->GetImageLayout();
+                        if (descriptor->Invalid()) {
+                            continue;
                         }
-                        if (!img_view_state) continue;
+
+                        // NOTE: ImageSamplerDescriptor inherits from ImageDescriptor, so this cast works for both types.
+                        const auto *image_descriptor = static_cast<const ImageDescriptor *>(descriptor);
+                        const auto *img_view_state = image_descriptor->GetImageViewState();
+                        VkImageLayout image_layout = image_descriptor->GetImageLayout();
+
                         HazardResult hazard;
                         // NOTE: 2D ImageViews of VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT Images are not allowed in
                         // Descriptors, so we do not have to worry about depth slicing here.
@@ -1920,9 +1916,12 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         break;
                     }
                     case DescriptorClass::TexelBuffer: {
-                        auto buf_view_state = static_cast<const TexelDescriptor *>(descriptor)->GetBufferViewState();
-                        if (!buf_view_state) continue;
-                        const BUFFER_STATE *buf_state = buf_view_state->buffer_state.get();
+                        const auto *texel_descriptor = static_cast<const TexelDescriptor *>(descriptor);
+                        if (texel_descriptor->Invalid()) {
+                            continue;
+                        }
+                        const auto *buf_view_state = texel_descriptor->GetBufferViewState();
+                        const auto *buf_state = buf_view_state->buffer_state.get();
                         const ResourceAccessRange range = MakeRange(*buf_view_state);
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.hazard && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
@@ -1941,8 +1940,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                     }
                     case DescriptorClass::GeneralBuffer: {
                         const auto *buffer_descriptor = static_cast<const BufferDescriptor *>(descriptor);
-                        auto buf_state = buffer_descriptor->GetBufferState();
-                        if (!buf_state) continue;
+                        if (buffer_descriptor->Invalid()) {
+                            continue;
+                        }
+                        const auto *buf_state = buffer_descriptor->GetBufferState();
                         const ResourceAccessRange range =
                             MakeRange(*buf_state, buffer_descriptor->GetOffset(), buffer_descriptor->GetRange());
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
@@ -1982,7 +1983,6 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
-    using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
     for (const auto &stage_state : pipe->stage_state) {
@@ -2009,13 +2009,12 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                 switch (descriptor->GetClass()) {
                     case DescriptorClass::ImageSampler:
                     case DescriptorClass::Image: {
-                        const IMAGE_VIEW_STATE *img_view_state = nullptr;
-                        if (descriptor->GetClass() == DescriptorClass::ImageSampler) {
-                            img_view_state = static_cast<const ImageSamplerDescriptor *>(descriptor)->GetImageViewState();
-                        } else {
-                            img_view_state = static_cast<const ImageDescriptor *>(descriptor)->GetImageViewState();
+                        // NOTE: ImageSamplerDescriptor inherits from ImageDescriptor, so this cast works for both types.
+                        const auto *image_descriptor = static_cast<const ImageDescriptor *>(descriptor);
+                        if (image_descriptor->Invalid()) {
+                            continue;
                         }
-                        if (!img_view_state) continue;
+                        const auto *img_view_state = image_descriptor->GetImageViewState();
                         // NOTE: 2D ImageViews of VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT Images are not allowed in
                         // Descriptors, so we do not have to worry about depth slicing here.
                         // See: VUID 00343
@@ -2033,17 +2032,22 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         break;
                     }
                     case DescriptorClass::TexelBuffer: {
-                        auto buf_view_state = static_cast<const TexelDescriptor *>(descriptor)->GetBufferViewState();
-                        if (!buf_view_state) continue;
-                        const BUFFER_STATE *buf_state = buf_view_state->buffer_state.get();
+                        const auto *texel_descriptor = static_cast<const TexelDescriptor *>(descriptor);
+                        if (texel_descriptor->Invalid()) {
+                            continue;
+                        }
+                        const auto *buf_view_state = texel_descriptor->GetBufferViewState();
+                        const auto *buf_state = buf_view_state->buffer_state.get();
                         const ResourceAccessRange range = MakeRange(*buf_view_state);
                         current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag);
                         break;
                     }
                     case DescriptorClass::GeneralBuffer: {
                         const auto *buffer_descriptor = static_cast<const BufferDescriptor *>(descriptor);
-                        auto buf_state = buffer_descriptor->GetBufferState();
-                        if (!buf_state) continue;
+                        if (buffer_descriptor->Invalid()) {
+                            continue;
+                        }
+                        const auto *buf_state = buffer_descriptor->GetBufferState();
                         const ResourceAccessRange range =
                             MakeRange(*buf_state, buffer_descriptor->GetOffset(), buffer_descriptor->GetRange());
                         current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag);

@@ -2986,6 +2986,39 @@ void cvdescriptorset::MutableDescriptor::RemoveParent(BASE_NODE *base_node) {
     }
 }
 
+bool cvdescriptorset::MutableDescriptor::Invalid() const {
+    switch (active_descriptor_type) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            return !sampler_state_ || sampler_state_->Destroyed();
+
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+            return !sampler_state_ || sampler_state_->Invalid() || !image_view_state_ || image_view_state_->Invalid();
+
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            return !buffer_view_state_ || buffer_view_state_->Invalid();
+
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+            return !image_view_state_ || image_view_state_->Invalid();
+
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+            return !buffer_state_ || buffer_state_->Invalid();
+
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+            return !acc_state_ || acc_state_->Invalid();
+
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+            return !acc_state_nv_ || acc_state_nv_->Invalid();
+        default:
+            return false;
+    }
+}
+
 // This is a helper function that iterates over a set of Write and Copy updates, pulls the DescriptorSet* for updated
 //  sets, and then calls their respective Validate[Write|Copy]Update functions.
 // If the update hits an issue for which the callback returns "true", meaning that the call down the chain should

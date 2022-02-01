@@ -77,4 +77,5 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
         }
         BASE_NODE::Destroy();
     }
+    bool Invalid() const override { return Destroyed() || !buffer_state || buffer_state->Invalid(); }
 };
