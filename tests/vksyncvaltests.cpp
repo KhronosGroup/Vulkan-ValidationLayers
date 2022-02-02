@@ -3684,3 +3684,241 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
+    TEST_DESCRIPTION("Verify unused descriptors are ignored and don't crash syncval if they've been destroyed.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredInstanceExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s test required extensions not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
+    features2.pNext = &indexing_features;
+
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    if (!indexing_features.descriptorBindingPartiallyBound) {
+        printf("%s Partially bound bindings not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!indexing_features.descriptorBindingUpdateUnusedWhilePending) {
+        printf("%s Updating unused while pending is not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    m_errorMonitor->ExpectSuccess();
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags = {};
+    constexpr size_t kNumDescriptors = 6;
+
+    std::array<VkDescriptorBindingFlagsEXT, kNumDescriptors> ds_binding_flags;
+    for (auto &elem : ds_binding_flags) {
+        elem = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
+    }
+
+    layout_createinfo_binding_flags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
+    layout_createinfo_binding_flags.pNext = NULL;
+    layout_createinfo_binding_flags.bindingCount = ds_binding_flags.size();
+    layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags.data();
+
+    // Prepare descriptors
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {2, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {3, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {4, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       0, &layout_createinfo_binding_flags, 0);
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    uint32_t qfi = 0;
+    auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.size = 32;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_create_info.queueFamilyIndexCount = 1;
+    buffer_create_info.pQueueFamilyIndices = &qfi;
+
+    VkBufferObj doit_buffer;
+    doit_buffer.init(*m_device, buffer_create_info);
+
+    auto buffer = layer_data::make_unique<VkBufferObj>();
+    buffer->init(*m_device, buffer_create_info);
+
+    VkDescriptorBufferInfo buffer_info[2] = {};
+    buffer_info[0].buffer = doit_buffer.handle();
+    buffer_info[0].offset = 0;
+    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[1].buffer = buffer->handle();
+    buffer_info[1].offset = 0;
+    buffer_info[1].range = sizeof(uint32_t);
+
+    VkBufferObj texel_buffer;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    texel_buffer.init(*m_device, buffer_create_info);
+
+    auto bvci = LvlInitStruct<VkBufferViewCreateInfo>();
+    bvci.buffer = texel_buffer.handle();
+    bvci.format = VK_FORMAT_R32_SFLOAT;
+    bvci.offset = 0;
+    bvci.range = VK_WHOLE_SIZE;
+
+    auto texel_bufferview = layer_data::make_unique<vk_testing::BufferView>();
+    texel_bufferview->init(*m_device, bvci);
+
+    auto index_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    index_buffer_create_info.size = sizeof(uint32_t);
+    index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    VkBufferObj index_buffer;
+    index_buffer.init(*m_device, index_buffer_create_info);
+
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj sampled_image(m_device);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
+    sampled_image.Init(image_ci);
+    auto sampled_view = layer_data::make_unique<vk_testing::ImageView>();
+    auto imageview_ci = SafeSaneImageViewCreateInfo(sampled_image, format, VK_IMAGE_ASPECT_COLOR_BIT);
+    sampled_view->init(*m_device, imageview_ci);
+
+    VkImageObj combined_image(m_device);
+    image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
+    combined_image.Init(image_ci);
+    imageview_ci = SafeSaneImageViewCreateInfo(combined_image, format, VK_IMAGE_ASPECT_COLOR_BIT);
+    auto combined_view = layer_data::make_unique<vk_testing::ImageView>();
+    combined_view->init(*m_device, imageview_ci);
+
+    vk_testing::Sampler sampler;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler.init(*m_device, sampler_ci);
+
+    VkDescriptorImageInfo image_info[3] = {};
+    image_info[0].sampler = sampler.handle();
+    image_info[0].imageView = VK_NULL_HANDLE;
+    image_info[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info[1].sampler = VK_NULL_HANDLE;
+    image_info[1].imageView = sampled_view->handle();
+    image_info[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info[2].sampler = sampler.handle();
+    image_info[2].imageView = combined_view->handle();
+    image_info[2].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    // Update all descriptors
+    std::array<VkWriteDescriptorSet, kNumDescriptors> descriptor_writes;
+    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[0].dstSet = descriptor_set.set_;
+    descriptor_writes[0].dstBinding = 0;
+    descriptor_writes[0].descriptorCount = 1;
+    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_writes[0].pBufferInfo = &buffer_info[0];
+
+    descriptor_writes[1] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[1].dstSet = descriptor_set.set_;
+    descriptor_writes[1].dstBinding = 1;
+    descriptor_writes[1].descriptorCount = 1;
+    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_writes[1].pBufferInfo = &buffer_info[1];
+
+    descriptor_writes[2] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[2].dstSet = descriptor_set.set_;
+    descriptor_writes[2].dstBinding = 2;
+    descriptor_writes[2].descriptorCount = 1;
+    descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    descriptor_writes[2].pTexelBufferView = &texel_bufferview->handle();
+
+    descriptor_writes[3] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[3].dstSet = descriptor_set.set_;
+    descriptor_writes[3].dstBinding = 3;
+    descriptor_writes[3].descriptorCount = 1;
+    descriptor_writes[3].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    descriptor_writes[3].pImageInfo = &image_info[0];
+
+    descriptor_writes[4] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[4].dstSet = descriptor_set.set_;
+    descriptor_writes[4].dstBinding = 4;
+    descriptor_writes[4].descriptorCount = 1;
+    descriptor_writes[4].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_writes[4].pImageInfo = &image_info[1];
+
+    descriptor_writes[5] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[5].dstSet = descriptor_set.set_;
+    descriptor_writes[5].dstBinding = 5;
+    descriptor_writes[5].descriptorCount = 1;
+    descriptor_writes[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_writes[5].pImageInfo = &image_info[2];
+
+    vk::UpdateDescriptorSets(m_device->device(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
+
+    // only descriptor 0 is used, the rest are going to get destroyed
+    char const *shader_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform foo_0 { int val; } doit;
+        layout(set = 0, binding = 1) uniform foo_1 { int val; } readit;
+        layout(set = 0, binding = 2) uniform samplerBuffer texels;
+        layout(set = 0, binding = 3) uniform sampler samp;
+        layout(set = 0, binding = 4) uniform texture2D img;
+        layout(set = 0, binding = 5) uniform sampler2D sampled_image;
+
+        void main() {
+            vec4 x;
+            vec4 y;
+            vec4 z;
+            if (doit.val == 0) {
+                gl_Position = vec4(0.0);
+                x = vec4(0.0);
+                y = vec4(0.0);
+                z = vec4(0.0);
+            } else {
+                gl_Position = vec4(readit.val);
+                x = texelFetch(texels, 5);
+                y = texture(sampler2D(img, samp), vec2(0));
+                z = texture(sampled_image, vec2(0));
+	    }
+        }
+    )glsl";
+
+    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddDefaultColorAttachment();
+    pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
+    VkCommandBufferBeginInfo begin_info = {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    m_commandBuffer->begin(&begin_info);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+
+    // destroy resources for the unused descriptors
+    buffer.reset();
+    texel_bufferview.reset();
+    sampled_view.reset();
+    combined_view.reset();
+
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 1, 0, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    vk::QueueWaitIdle(m_device->m_queue);
+    m_errorMonitor->VerifyNotFound();
+}
