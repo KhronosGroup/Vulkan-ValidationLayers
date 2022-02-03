@@ -5549,45 +5549,79 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE *image_state,
                                                                    : format_properties.optimalTilingFeatures;
     }
 
+    bool extended_usage = image_state->createInfo.flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
+    VkImageUsageFlags error_index = 0u;
+    const auto &format_usage_features = FormatUsageFeaturesMap();
+
     if (tiling_features == 0) {
         skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-None-02273",
                          "vkCreateImageView(): pCreateInfo->format %s with tiling %s has no supported format features on this "
                          "physical device.",
                          string_VkFormat(view_format), string_VkImageTiling(image_tiling));
-    } else if ((image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) && !(tiling_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
-        skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-usage-02274",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                         "VK_IMAGE_USAGE_SAMPLED_BIT.",
-                         string_VkFormat(view_format), string_VkImageTiling(image_tiling));
-    } else if ((image_usage & VK_IMAGE_USAGE_STORAGE_BIT) && !(tiling_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
-        skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-usage-02275",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                         "VK_IMAGE_USAGE_STORAGE_BIT.",
-                         string_VkFormat(view_format), string_VkImageTiling(image_tiling));
-    } else if ((image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) && !(tiling_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
-        skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-usage-02276",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                         "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.",
-                         string_VkFormat(view_format), string_VkImageTiling(image_tiling));
-    } else if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
-               !(tiling_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-        skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-usage-02277",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                         "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                         string_VkFormat(view_format), string_VkImageTiling(image_tiling));
-    } else if ((image_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
-               !(tiling_features & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT))) {
-        skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-usage-02652",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                         string_VkFormat(view_format), string_VkImageTiling(image_tiling));
-    } else if ((image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) &&
-               !(tiling_features & VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
-        if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
-            skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-usage-04550",
+    } else {
+        for (size_t i = 0; i < format_usage_features.size(); ++i) {
+            const auto &c = format_usage_features[i];
+            if (image_usage & c.first) {
+                bool t = tiling_features & c.second;
+                if (extended_usage) {
+                    if (t) {
+                        break;
+                    }
+                } else {
+                    if (!t) {
+                        error_index = c.first;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    switch (error_index) {
+        case VK_IMAGE_USAGE_SAMPLED_BIT: {
+            skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-usage-02274",
                              "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                             "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.",
+                             "VK_IMAGE_USAGE_SAMPLED_BIT.",
                              string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+            break;
+        }
+        case VK_IMAGE_USAGE_STORAGE_BIT: {
+            skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-usage-02275",
+                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
+                             "VK_IMAGE_USAGE_STORAGE_BIT.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+            break;
+        }
+        case VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT: {
+            skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-usage-02276",
+                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
+                             "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+            break;
+        }
+        case VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT: {
+            skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-usage-02277",
+                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
+                             "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+            break;
+        }
+        case VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT: {
+            skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-usage-02652",
+                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
+                             "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+            break;
+        }
+        case VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR: {
+            if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
+                skip |= LogError(image_state->image(), "VUID-VkImageViewCreateInfo-usage-04550",
+                                 "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not "
+                                 "support usage that includes "
+                                 "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.",
+                                 string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+                break;
+            }
         }
     }
 
