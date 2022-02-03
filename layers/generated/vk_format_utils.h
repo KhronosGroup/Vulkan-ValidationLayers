@@ -28,6 +28,7 @@
 
 #pragma once
 #include <vulkan/vk_layer.h>
+#include <vector>
 
 #ifdef __cplusplus
 extern "C" {
@@ -212,6 +213,9 @@ static inline bool FormatIsBlockedImage(VkFormat format) {
 static inline bool FormatIsColor(VkFormat format) {
     return !(FormatIsUndef(format) || FormatIsDepthOrStencil(format) || FormatIsMultiplane(format));
 }
+
+VK_LAYER_EXPORT const std::vector<std::pair<VkImageUsageFlags, VkFormatFeatureFlagBits>> &FormatUsageFeaturesMap();
+
 
 #ifdef __cplusplus
 }

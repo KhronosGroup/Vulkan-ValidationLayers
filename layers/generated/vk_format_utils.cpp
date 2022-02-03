@@ -29,7 +29,6 @@
 #include "vk_format_utils.h"
 #include "vk_layer_utils.h"
 #include <map>
-#include <vector>
 
 
 enum class COMPONENT_TYPE {
@@ -1902,3 +1901,16 @@ double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask) {
 }
 
 
+// Utils/misc
+const std::vector<std::pair<VkImageUsageFlags, VkFormatFeatureFlagBits>> &FormatUsageFeaturesMap() {
+    static std::vector<std::pair<VkImageUsageFlags, VkFormatFeatureFlagBits>> map = {
+        {VK_IMAGE_USAGE_SAMPLED_BIT, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT},
+        {VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT},
+        {VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT},
+        {VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT},
+        {VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT |
+                                                                                   VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)},
+        {VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR}};
+
+    return map;
+}

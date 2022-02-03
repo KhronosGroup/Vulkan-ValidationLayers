@@ -152,10 +152,10 @@ class FormatUtilsOutputGenerator(OutputGenerator):
             write('#include "vk_format_utils.h"', file=self.outFile)
             write('#include "vk_layer_utils.h"', file=self.outFile)
             write('#include <map>', file=self.outFile)
-            write('#include <vector>', file=self.outFile)
         elif self.headerFile:
             write('#pragma once', file=self.outFile)
             write('#include <vulkan/vk_layer.h>', file=self.outFile)
+            write('#include <vector>', file=self.outFile)
             export = '''
 #ifdef __cplusplus
 extern "C" {
@@ -798,5 +798,23 @@ static inline bool FormatIsBlockedImage(VkFormat format) {
 // So anything that could NOT be a "color format" is a color format
 static inline bool FormatIsColor(VkFormat format) {
     return !(FormatIsUndef(format) || FormatIsDepthOrStencil(format) || FormatIsMultiplane(format));
+}
+
+VK_LAYER_EXPORT const std::vector<std::pair<VkImageUsageFlags, VkFormatFeatureFlagBits>> &FormatUsageFeaturesMap();
+'''
+        elif self.sourceFile:
+            output += '''
+// Utils/misc
+const std::vector<std::pair<VkImageUsageFlags, VkFormatFeatureFlagBits>> &FormatUsageFeaturesMap() {
+    static std::vector<std::pair<VkImageUsageFlags, VkFormatFeatureFlagBits>> map = {
+        {VK_IMAGE_USAGE_SAMPLED_BIT, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT},
+        {VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT},
+        {VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT},
+        {VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT},
+        {VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT |
+                                                                                   VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)},
+        {VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR}};
+
+    return map;
 }'''
         return output
