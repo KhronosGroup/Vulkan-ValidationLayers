@@ -2681,9 +2681,11 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     }
 
     if (total_shared_size > phys_dev_props.limits.maxComputeSharedMemorySize) {
-        skip |= LogError(device, kVUID_Core_Shader_MaxComputeSharedMemorySize,
-                         "Shader uses %" PRIu32 " bytes of shared memory, more than allowed by physicalDeviceLimits::maxComputeSharedMemorySize (%" PRIu32 ")",
-                         total_shared_size, phys_dev_props.limits.maxComputeSharedMemorySize);
+        skip |=
+            LogError(device, "VUID-RuntimeSpirv-Workgroup-06530",
+                     "Shader uses %" PRIu32
+                     " bytes of shared memory, more than allowed by physicalDeviceLimits::maxComputeSharedMemorySize (%" PRIu32 ")",
+                     total_shared_size, phys_dev_props.limits.maxComputeSharedMemorySize);
     }
 
     skip |= ValidateTransformFeedback(module_state);
