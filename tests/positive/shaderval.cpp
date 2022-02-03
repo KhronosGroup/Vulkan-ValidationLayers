@@ -231,6 +231,103 @@ TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayout) {
+    TEST_DESCRIPTION(
+        "Validate compute shader shared memory does not exceed maxComputeSharedMemorySize when using "
+        "VK_KHR_workgroup_memory_explicit_layout");
+    // More background: When workgroupMemoryExplicitLayout is enabled and there are 2 or more structs, the
+    // maxComputeSharedMemorySize is the MAX of the structs since they share the same WorkGroup memory. Test makes sure validation
+    // is not doing an ADD and correctly doing a MAX operation in this case.
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Test requires Vulkan >= 1.2.\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix,
+               VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
+        return;
+    }
+
+    auto explicit_layout_features = LvlInitStruct<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&explicit_layout_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &explicit_layout_features));
+
+    if (!explicit_layout_features.workgroupMemoryExplicitLayout) {
+        printf("%s workgroupMemoryExplicitLayout feature not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const uint32_t max_shared_vec4 = max_shared_memory_size / 16;
+
+    std::stringstream csSource;
+    csSource << R"glsl(
+        #version 450
+        #extension GL_EXT_shared_memory_block : enable
+
+        // Both structs by themselves are 16 bytes less than the max
+        shared X {
+            vec4 x1[)glsl";
+    csSource << (max_shared_vec4 - 2);
+    csSource << R"glsl(];
+            vec4 x2;
+        };
+
+        shared Y {
+            int y1[)glsl";
+    csSource << (max_shared_ints - 8);
+    csSource << R"glsl(];
+            int y2;
+        };
+
+        void main() {
+            x2.x = 0.0f; // prevent dead-code elimination
+            y2 = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, csSource.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2));
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkPositiveLayerTest, ComputeSharedMemoryAtLimit) {
+    TEST_DESCRIPTION("Validate compute shader shared memory is valid at the exact maxComputeSharedMemorySize");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    m_errorMonitor->ExpectSuccess();
+
+    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+
+    std::stringstream csSource;
+    csSource << R"glsl(
+        #version 450
+        shared int a[)glsl";
+    csSource << (max_shared_ints);
+    csSource << R"glsl(];
+        void main(){}
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, csSource.str(), VK_SHADER_STAGE_COMPUTE_BIT));
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, ShaderNonSemanticInfo) {
     // This is a positive test, no errors expected
     // Verifies the ability to use non-semantic extended instruction sets when the extension is enabled

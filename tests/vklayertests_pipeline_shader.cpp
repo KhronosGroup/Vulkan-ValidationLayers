@@ -13345,31 +13345,93 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ValidateComputeShaderSharedMemoryOverLimits) {
+TEST_F(VkLayerTest, ComputeSharedMemoryOverLimit) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const auto max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
-    const auto max_shared_ints = max_shared_memory_size / 4;
+    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream csSource;
     // Make sure compute pipeline has a compute shader stage set
-    csSource << R"(
+    csSource << R"glsl(
         #version 450
-        shared int a[)";
+        shared int a[)glsl";
     csSource << (max_shared_ints + 16);
-    csSource << R"(];
+    csSource << R"glsl(];
         void main(){
         }
-    )";
+    )glsl";
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.cs_.reset(new VkShaderObj(this, csSource.str(), VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "UNASSIGNED-CoreValidation-Shader-MaxComputeSharedMemorySize");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Workgroup-06530");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ComputeSharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
+    TEST_DESCRIPTION(
+        "Validate compute shader shared memory does not exceed maxComputeSharedMemorySize when using "
+        "VK_KHR_workgroup_memory_explicit_layout");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Test requires Vulkan >= 1.2.\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix,
+               VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
+        return;
+    }
+
+    auto explicit_layout_features = LvlInitStruct<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&explicit_layout_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &explicit_layout_features));
+
+    if (!explicit_layout_features.workgroupMemoryExplicitLayout) {
+        printf("%s workgroupMemoryExplicitLayout feature not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+
+    std::stringstream csSource;
+    csSource << R"glsl(
+        #version 450
+        #extension GL_EXT_shared_memory_block : enable
+
+        shared X {
+            int x;
+        };
+
+        shared Y {
+            int y1[)glsl";
+    csSource << (max_shared_ints + 16);
+    csSource << R"glsl(];
+            int y2;
+        };
+
+        void main() {
+            x = 0; // prevent dead-code elimination
+            y2 = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, csSource.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2));
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Workgroup-06530");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
