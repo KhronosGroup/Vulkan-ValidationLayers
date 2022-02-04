@@ -10070,24 +10070,18 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     m_errorMonitor->VerifyFound();
 }
 
-template <typename ExtType, typename CoreType, typename Parm>
-void ExtendedDynStateCalls(ErrorMonitor *error_monitor, VkCommandBuffer cmd_buf, ExtType ext_call, CoreType core_call,
-                           const char *vuid, Parm parm, bool vulkan_13) {
+template <typename ExtType, typename Parm>
+void ExtendedDynStateCalls(ErrorMonitor *error_monitor, VkCommandBuffer cmd_buf, ExtType ext_call,
+                           const char *vuid, Parm parm) {
     error_monitor->SetDesiredFailureMsg(kErrorBit, vuid);
     ext_call(cmd_buf, parm);
     error_monitor->VerifyFound();
-    if (vulkan_13) {
-        assert(core_call != nullptr);
-        error_monitor->SetDesiredFailureMsg(kErrorBit, vuid);
-        core_call(cmd_buf, parm);
-        error_monitor->VerifyFound();
-    }
 }
 
 TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
 
-    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_3);
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
     if (version < VK_API_VERSION_1_1) {
         printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
         return;
@@ -10113,7 +10107,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
     extended_dynamic_state_features.extendedDynamicState = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
     auto vkCmdSetCullModeEXT = (PFN_vkCmdSetCullModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCullModeEXT");
     auto vkCmdSetFrontFaceEXT = (PFN_vkCmdSetFrontFaceEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFrontFaceEXT");
     auto vkCmdSetPrimitiveTopologyEXT =
@@ -10160,79 +10153,44 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
     VkCommandBufferObj commandBuffer(m_device, m_commandPool);
     commandBuffer.begin();
 
-    auto vkCmdSetCullMode = reinterpret_cast<PFN_vkCmdSetCullMode>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCullMode"));
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetCullModeEXT, vkCmdSetCullMode,
-                          "VUID-vkCmdSetCullMode-None-03384", VK_CULL_MODE_NONE, vulkan_13);
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetCullModeEXT,
+                          "VUID-vkCmdSetCullModeEXT-None-03384", VK_CULL_MODE_NONE);
 
-    auto vkCmdSetDepthBoundsTestEnable = reinterpret_cast<PFN_vkCmdSetDepthBoundsTestEnable>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthBoundsTestEnable"));
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthBoundsTestEnableEXT, vkCmdSetDepthBoundsTestEnable,
-        "VUID-vkCmdSetDepthBoundsTestEnable-None-03349", VK_FALSE, vulkan_13);
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthBoundsTestEnableEXT,
+        "VUID-vkCmdSetDepthBoundsTestEnableEXT-None-03349", VK_FALSE);
 
-    auto vkCmdSetDepthCompareOp = reinterpret_cast<PFN_vkCmdSetDepthCompareOp>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthCompareOp"));
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthCompareOpEXT, vkCmdSetDepthCompareOp,
-        "VUID-vkCmdSetDepthCompareOp-None-03353", VK_COMPARE_OP_NEVER, vulkan_13);
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthCompareOpEXT,
+        "VUID-vkCmdSetDepthCompareOpEXT-None-03353", VK_COMPARE_OP_NEVER);
 
-    auto vkCmdSetDepthTestEnable = reinterpret_cast<PFN_vkCmdSetDepthTestEnable>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthTestEnable"));
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthTestEnableEXT, vkCmdSetDepthTestEnable,
-        "VUID-vkCmdSetDepthTestEnable-None-03352", VK_FALSE, vulkan_13);
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthTestEnableEXT,
+        "VUID-vkCmdSetDepthTestEnableEXT-None-03352", VK_FALSE);
 
-    auto vkCmdSetDepthWriteEnable = reinterpret_cast<PFN_vkCmdSetDepthWriteEnable>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthWriteEnable"));
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthWriteEnableEXT, vkCmdSetDepthWriteEnable,
-        "VUID-vkCmdSetDepthWriteEnable-None-03354", VK_FALSE, vulkan_13);
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthWriteEnableEXT,
+        "VUID-vkCmdSetDepthWriteEnableEXT-None-03354", VK_FALSE);
 
-    auto vkCmdSetFrontFace =
-        reinterpret_cast<PFN_vkCmdSetFrontFace>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFrontFace"));
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetFrontFaceEXT, vkCmdSetFrontFace,
-                          "VUID-vkCmdSetFrontFace-None-03383", VK_FRONT_FACE_CLOCKWISE, vulkan_13);
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetFrontFaceEXT,
+                          "VUID-vkCmdSetFrontFaceEXT-None-03383", VK_FRONT_FACE_CLOCKWISE);
 
-    auto vkCmdSetPrimitiveTopology =
-        reinterpret_cast<PFN_vkCmdSetPrimitiveTopology>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveTopology"));
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetPrimitiveTopologyEXT, vkCmdSetPrimitiveTopology,
-                          "VUID-vkCmdSetPrimitiveTopology-None-03347", VK_PRIMITIVE_TOPOLOGY_POINT_LIST, vulkan_13);
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetPrimitiveTopologyEXT,
+                          "VUID-vkCmdSetPrimitiveTopologyEXT-None-03347", VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-None-03396");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCountEXT-None-03396");
     VkRect2D scissor = {{0, 0}, {1, 1}};
     vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor);
     m_errorMonitor->VerifyFound();
-    if (vulkan_13) {
-        auto vkCmdSetScissorWithCount =
-            reinterpret_cast<PFN_vkCmdSetScissorWithCount>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCount"));
-        assert(vkCmdSetScissorWithCount != nullptr);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-None-03396");
-        vkCmdSetScissorWithCount(commandBuffer.handle(), 1, &scissor);
-        m_errorMonitor->VerifyFound();
-    }
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetStencilOp-None-03351");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetStencilOpEXT-None-03351");
     vkCmdSetStencilOpEXT(commandBuffer.handle(), VK_STENCIL_FACE_BACK_BIT, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO,
                          VK_STENCIL_OP_ZERO, VK_COMPARE_OP_NEVER);
     m_errorMonitor->VerifyFound();
-    if (vulkan_13) {
-        auto vkCmdSetStencilOp =
-            reinterpret_cast<PFN_vkCmdSetStencilOp>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetStencilOp"));
-        assert(vkCmdSetStencilOp != nullptr);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetStencilOp-None-03351");
-        vkCmdSetStencilOp(commandBuffer.handle(), VK_STENCIL_FACE_BACK_BIT, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO,
-            VK_STENCIL_OP_ZERO, VK_COMPARE_OP_NEVER);
-        m_errorMonitor->VerifyFound();
-    }
 
-    auto vkCmdSetStencilTestEnable = reinterpret_cast<PFN_vkCmdSetStencilTestEnable>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetStencilTestEnable"));
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetStencilTestEnableEXT, vkCmdSetStencilTestEnable,
-        "VUID-vkCmdSetStencilTestEnable-None-03350", VK_FALSE, vulkan_13);
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetStencilTestEnableEXT,
+        "VUID-vkCmdSetStencilTestEnableEXT-None-03350", VK_FALSE);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCount-None-03393");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCountEXT-None-03393");
     VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
     vkCmdSetViewportWithCountEXT(commandBuffer.handle(), 1, &viewport);
     m_errorMonitor->VerifyFound();
-    if (vulkan_13) {
-        auto vkCmdSetViewportWithCount =
-            reinterpret_cast<PFN_vkCmdSetViewportWithCount>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCount"));
-        assert(vkCmdSetViewportWithCount != nullptr);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCount-None-03393");
-        vkCmdSetViewportWithCount(commandBuffer.handle(), 1, &viewport);
-        m_errorMonitor->VerifyFound();
-    }
 
     commandBuffer.end();
 }
@@ -11202,7 +11160,7 @@ TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
 TEST_F(VkLayerTest, ValidateExtendedDynamicState2Disabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 VUs");
 
-    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_3);
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
     if (version < VK_API_VERSION_1_1) {
         printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
         return;
@@ -11232,24 +11190,12 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Disabled) {
     extended_dynamic_state2_features.extendedDynamicState2 = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
     auto vkCmdSetRasterizerDiscardEnableEXT =
         (PFN_vkCmdSetRasterizerDiscardEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetRasterizerDiscardEnableEXT");
     auto vkCmdSetDepthBiasEnableEXT =
         (PFN_vkCmdSetDepthBiasEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthBiasEnableEXT");
     auto vkCmdSetPrimitiveRestartEnableEXT =
         (PFN_vkCmdSetPrimitiveRestartEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveRestartEnableEXT");
-    auto vkCmdSetRasterizerDiscardEnable =
-        (PFN_vkCmdSetRasterizerDiscardEnable)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetRasterizerDiscardEnable");
-    auto vkCmdSetDepthBiasEnable =
-        (PFN_vkCmdSetDepthBiasEnable)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthBiasEnable");
-    auto vkCmdSetPrimitiveRestartEnable =
-        (PFN_vkCmdSetPrimitiveRestartEnable)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveRestartEnable");
-    if (vulkan_13) {
-        assert(vkCmdSetRasterizerDiscardEnable != nullptr);
-        assert(vkCmdSetDepthBiasEnable != nullptr);
-        assert(vkCmdSetPrimitiveRestartEnable != nullptr);
-    }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -11269,31 +11215,17 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Disabled) {
     VkCommandBufferObj m_commandBuffer(m_device, m_commandPool);
     m_commandBuffer.begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizerDiscardEnable-None-04871");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizerDiscardEnableEXT-None-04871");
     vkCmdSetRasterizerDiscardEnableEXT(m_commandBuffer.handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBiasEnable-None-04872");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBiasEnableEXT-None-04872");
     vkCmdSetDepthBiasEnableEXT(m_commandBuffer.handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPrimitiveRestartEnable-None-04866");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPrimitiveRestartEnableEXT-None-04866");
     vkCmdSetPrimitiveRestartEnableEXT(m_commandBuffer.handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
-
-    if (vulkan_13) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizerDiscardEnable-None-04871");
-        vkCmdSetRasterizerDiscardEnable(m_commandBuffer.handle(), VK_TRUE);
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBiasEnable-None-04872");
-        vkCmdSetDepthBiasEnable(m_commandBuffer.handle(), VK_TRUE);
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPrimitiveRestartEnable-None-04866");
-        vkCmdSetPrimitiveRestartEnable(m_commandBuffer.handle(), VK_TRUE);
-        m_errorMonitor->VerifyFound();
-    }
 
     m_commandBuffer.end();
 }
