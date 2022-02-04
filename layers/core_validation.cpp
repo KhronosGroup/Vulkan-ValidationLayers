@@ -2446,7 +2446,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                               "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
 
     // VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03378
-    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState &&
+    if (api_version < VK_API_VERSION_1_3 && !enabled_features.extended_dynamic_state_features.extendedDynamicState &&
         (IsDynamic(pPipeline, VK_DYNAMIC_STATE_CULL_MODE_EXT) || IsDynamic(pPipeline, VK_DYNAMIC_STATE_FRONT_FACE_EXT) ||
          IsDynamic(pPipeline, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT) ||
          IsDynamic(pPipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) ||
@@ -2465,7 +2465,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
     }
 
     // VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04868
-    if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2 &&
+    if (api_version < VK_API_VERSION_1_3 && !enabled_features.extended_dynamic_state2_features.extendedDynamicState2 &&
         (IsDynamic(pPipeline, VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) ||
          IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE_EXT) ||
          IsDynamic(pPipeline, VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT))) {
@@ -17580,7 +17580,7 @@ bool CoreChecks::PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, 
 
     if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2LogicOp) {
         skip |= LogError(commandBuffer, "VUID-vkCmdSetLogicOpEXT-None-04867",
-                         "vkCmdSetLogicOpEXT: extendedDynamicState feature is not enabled.");
+                         "vkCmdSetLogicOpEXT: extendedDynamicState2LogicOp feature is not enabled.");
     }
     return skip;
 }
@@ -17592,7 +17592,7 @@ bool CoreChecks::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer comm
 
     if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2PatchControlPoints) {
         skip |= LogError(commandBuffer, "VUID-vkCmdSetPatchControlPointsEXT-None-04873",
-                         "vkCmdSetPatchControlPointsEXT: extendedDynamicState feature is not enabled.");
+                         "vkCmdSetPatchControlPointsEXT: extendedDynamicState2PatchControlPoints feature is not enabled.");
     }
     if (patchControlPoints > phys_dev_props.limits.maxTessellationPatchSize) {
         skip |= LogError(commandBuffer, "VUID-vkCmdSetPatchControlPointsEXT-patchControlPoints-04874",
@@ -17611,27 +17611,11 @@ bool CoreChecks::PreCallValidateCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer
                                         "vkCmdSetRasterizerDiscardEnableEXT: extendedDynamicState feature is not enabled.");
 }
 
-bool CoreChecks::PreCallValidateCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer,
-                                                              VkBool32 rasterizerDiscardEnable) const {
-    const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(*cb_state, CMD_SETRASTERIZERDISCARDENABLE,
-                                        enabled_features.extended_dynamic_state_features.extendedDynamicState,
-                                        "VUID-vkCmdSetRasterizerDiscardEnable-None-04871",
-                                        "vkCmdSetRasterizerDiscardEnable: extendedDynamicState feature is not enabled.");
-}
-
 bool CoreChecks::PreCallValidateCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) const {
     const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     return ValidateExtendedDynamicState(
         *cb_state, CMD_SETDEPTHBIASENABLEEXT, enabled_features.extended_dynamic_state_features.extendedDynamicState,
         "VUID-vkCmdSetDepthBiasEnable-None-04872", "vkCmdSetDepthBiasEnableEXT: extendedDynamicState feature is not enabled.");
-}
-
-bool CoreChecks::PreCallValidateCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) const {
-    const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(
-        *cb_state, CMD_SETDEPTHBIASENABLE, enabled_features.extended_dynamic_state_features.extendedDynamicState,
-        "VUID-vkCmdSetDepthBiasEnable-None-04872", "vkCmdSetDepthBiasEnable: extendedDynamicState feature is not enabled.");
 }
 
 bool CoreChecks::PreCallValidateCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer,
@@ -17643,26 +17627,11 @@ bool CoreChecks::PreCallValidateCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer 
                                         "vkCmdSetPrimitiveRestartEnableEXT: extendedDynamicState feature is not enabled.");
 }
 
-bool CoreChecks::PreCallValidateCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) const {
-    const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(*cb_state, CMD_SETPRIMITIVERESTARTENABLE,
-                                        enabled_features.extended_dynamic_state_features.extendedDynamicState,
-                                        "VUID-vkCmdSetPrimitiveRestartEnable-None-04866",
-                                        "vkCmdSetPrimitiveRestartEnable: extendedDynamicState feature is not enabled.");
-}
-
 bool CoreChecks::PreCallValidateCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) const {
     const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     return ValidateExtendedDynamicState(
         *cb_state, CMD_SETCULLMODEEXT, enabled_features.extended_dynamic_state_features.extendedDynamicState,
         "VUID-vkCmdSetCullMode-None-03384", "vkCmdSetCullModeEXT: extendedDynamicState feature is not enabled.");
-}
-
-bool CoreChecks::PreCallValidateCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) const {
-    const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(
-        *cb_state, CMD_SETCULLMODE, enabled_features.extended_dynamic_state_features.extendedDynamicState,
-        "VUID-vkCmdSetCullMode-None-03384", "vkCmdSetCullMode: extendedDynamicState feature is not enabled.");
 }
 
 bool CoreChecks::PreCallValidateCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace) const {
@@ -17672,27 +17641,12 @@ bool CoreChecks::PreCallValidateCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer
         "VUID-vkCmdSetFrontFace-None-03383", "vkCmdSetFrontFaceEXT: extendedDynamicState feature is not enabled.");
 }
 
-bool CoreChecks::PreCallValidateCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace) const {
-    const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(
-        *cb_state, CMD_SETFRONTFACE, enabled_features.extended_dynamic_state_features.extendedDynamicState,
-        "VUID-vkCmdSetFrontFace-None-03383", "vkCmdSetFrontFace: extendedDynamicState feature is not enabled.");
-}
-
 bool CoreChecks::PreCallValidateCmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer,
                                                            VkPrimitiveTopology primitiveTopology) const {
     const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     return ValidateExtendedDynamicState(
         *cb_state, CMD_SETPRIMITIVETOPOLOGYEXT, enabled_features.extended_dynamic_state_features.extendedDynamicState,
         "VUID-vkCmdSetPrimitiveTopology-None-03347", "vkCmdSetPrimitiveTopologyEXT: extendedDynamicState feature is not enabled.");
-}
-
-bool CoreChecks::PreCallValidateCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer,
-                                                        VkPrimitiveTopology primitiveTopology) const {
-    const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(
-        *cb_state, CMD_SETPRIMITIVETOPOLOGY, enabled_features.extended_dynamic_state_features.extendedDynamicState,
-        "VUID-vkCmdSetPrimitiveTopology-None-03347", "vkCmdSetPrimitiveTopology: extendedDynamicState feature is not enabled.");
 }
 
 bool CoreChecks::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
@@ -17712,9 +17666,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandB
                                                         const VkViewport *pViewports) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
-    skip = ValidateExtendedDynamicState(
-        *cb_state, CMD_SETVIEWPORTWITHCOUNT, enabled_features.extended_dynamic_state_features.extendedDynamicState,
-        "VUID-vkCmdSetViewportWithCount-None-03393", "vkCmdSetViewportWithCount: extendedDynamicState feature is not enabled.");
+    skip = ValidateCmd(cb_state.get(), CMD_SETVIEWPORTWITHCOUNTEXT);
     skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetViewportWithCount-commandBuffer-04819",
                                            "vkCmdSetViewportWithCount");
 
@@ -17738,9 +17690,7 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBu
                                                        const VkRect2D *pScissors) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
-    skip = ValidateExtendedDynamicState(
-        *cb_state, CMD_SETSCISSORWITHCOUNT, enabled_features.extended_dynamic_state_features.extendedDynamicState,
-        "VUID-vkCmdSetScissorWithCount-None-03396", "vkCmdSetScissorWithCount: extendedDynamicState feature is not enabled.");
+    skip = ValidateCmd(cb_state.get(), CMD_SETSCISSORWITHCOUNT);
     skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetScissorWithCount-commandBuffer-04820",
                                            "vkCmdSetScissorWithCount");
 
@@ -17803,13 +17753,6 @@ bool CoreChecks::PreCallValidateCmdSetDepthTestEnableEXT(VkCommandBuffer command
         "VUID-vkCmdSetDepthTestEnable-None-03352", "vkCmdSetDepthTestEnableEXT: extendedDynamicState feature is not enabled.");
 }
 
-bool CoreChecks::PreCallValidateCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) const {
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(
-        *cb_state, CMD_SETDEPTHTESTENABLE, enabled_features.extended_dynamic_state_features.extendedDynamicState,
-        "VUID-vkCmdSetDepthTestEnable-None-03352", "vkCmdSetDepthTestEnable: extendedDynamicState feature is not enabled.");
-}
-
 bool CoreChecks::PreCallValidateCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     return ValidateExtendedDynamicState(
@@ -17817,25 +17760,11 @@ bool CoreChecks::PreCallValidateCmdSetDepthWriteEnableEXT(VkCommandBuffer comman
         "VUID-vkCmdSetDepthWriteEnable-None-03354", "vkCmdSetDepthWriteEnableEXT: extendedDynamicState feature is not enabled.");
 }
 
-bool CoreChecks::PreCallValidateCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) const {
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(
-        *cb_state, CMD_SETDEPTHWRITEENABLE, enabled_features.extended_dynamic_state_features.extendedDynamicState,
-        "VUID-vkCmdSetDepthWriteEnable-None-03354", "vkCmdSetDepthWriteEnable: extendedDynamicState feature is not enabled.");
-}
-
 bool CoreChecks::PreCallValidateCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     return ValidateExtendedDynamicState(
         *cb_state, CMD_SETDEPTHCOMPAREOPEXT, enabled_features.extended_dynamic_state_features.extendedDynamicState,
         "VUID-vkCmdSetDepthCompareOp-None-03353", "vkCmdSetDepthCompareOpEXT: extendedDynamicState feature is not enabled.");
-}
-
-bool CoreChecks::PreCallValidateCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) const {
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(
-        *cb_state, CMD_SETDEPTHCOMPAREOP, enabled_features.extended_dynamic_state_features.extendedDynamicState,
-        "VUID-vkCmdSetDepthCompareOp-None-03353", "vkCmdSetDepthCompareOp: extendedDynamicState feature is not enabled.");
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer,
@@ -17847,26 +17776,11 @@ bool CoreChecks::PreCallValidateCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer c
                                         "vkCmdSetDepthBoundsTestEnableEXT: extendedDynamicState feature is not enabled.");
 }
 
-bool CoreChecks::PreCallValidateCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) const {
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(*cb_state, CMD_SETDEPTHBOUNDSTESTENABLE,
-                                        enabled_features.extended_dynamic_state_features.extendedDynamicState,
-                                        "VUID-vkCmdSetDepthBoundsTestEnable-None-03349",
-                                        "vkCmdSetDepthBoundsTestEnable: extendedDynamicState feature is not enabled.");
-}
-
 bool CoreChecks::PreCallValidateCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     return ValidateExtendedDynamicState(
         *cb_state, CMD_SETSTENCILTESTENABLEEXT, enabled_features.extended_dynamic_state_features.extendedDynamicState,
         "VUID-vkCmdSetStencilTestEnable-None-03350", "vkCmdSetStencilTestEnableEXT: extendedDynamicState feature is not enabled.");
-}
-
-bool CoreChecks::PreCallValidateCmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) const {
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(
-        *cb_state, CMD_SETSTENCILTESTENABLE, enabled_features.extended_dynamic_state_features.extendedDynamicState,
-        "VUID-vkCmdSetStencilTestEnable-None-03350", "vkCmdSetStencilTestEnable: extendedDynamicState feature is not enabled.");
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
@@ -17875,14 +17789,6 @@ bool CoreChecks::PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer commandBuffer
     return ValidateExtendedDynamicState(
         *cb_state, CMD_SETSTENCILOPEXT, enabled_features.extended_dynamic_state_features.extendedDynamicState,
         "VUID-vkCmdSetStencilOp-None-03351", "vkCmdSetStencilOpEXT: extendedDynamicState feature is not enabled.");
-}
-
-bool CoreChecks::PreCallValidateCmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
-                                                VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) const {
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(
-        *cb_state, CMD_SETSTENCILOP, enabled_features.extended_dynamic_state_features.extendedDynamicState,
-        "VUID-vkCmdSetStencilOp-None-03351", "vkCmdSetStencilOp: extendedDynamicState feature is not enabled.");
 }
 
 bool CoreChecks::PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
