@@ -12805,6 +12805,7 @@ TEST_F(VkLayerTest, UnnormalizedCoordinatesSeparateSampler) {
 
 TEST_F(VkLayerTest, CreateImageViewIncompatibleFormat) {
     TEST_DESCRIPTION("Tests for VUID-VkImageViewCreateInfo-image-01761");
+    // original issue https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2203
 
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -12864,7 +12865,7 @@ TEST_F(VkLayerTest, CreateImageViewIncompatibleFormat) {
     imgViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
     CreateImageViewTest(*this, &imgViewInfo, error_vuid);
 
-    // With a compatible format, there should be no error
+    // With a identical format, there should be no error
     imgViewInfo.format = imageInfo.format;
     CreateImageViewTest(*this, &imgViewInfo, {});
 
@@ -12874,10 +12875,7 @@ TEST_F(VkLayerTest, CreateImageViewIncompatibleFormat) {
     ASSERT_TRUE(mut_compat_image.initialized());
 
     imgViewInfo.image = mut_compat_image.handle();
-    imgViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
-    // Now the Image and ImageView formats are incompatible, but the image was created with
-    // VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT, so there should be no error. This is specifically for testing issue
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2203.
+    imgViewInfo.format = VK_FORMAT_R8_SINT;  // different, but size compatible
     CreateImageViewTest(*this, &imgViewInfo, {});
 }
 
@@ -13636,7 +13634,7 @@ TEST_F(VkLayerTest, InvalidMemoryAllocatepNextChain) {
 #endif
 }
 
-TEST_F(VkLayerTest, CreateImageViewWithInvalidLevelOrLayerCount) {
+TEST_F(VkLayerTest, BlockTexelViewInvalidLevelOrLayerCount) {
     TEST_DESCRIPTION(
         "Attempts to create an Image View with an image using VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT, but levelCount and "
         "layerCount are not 1.");
@@ -13679,7 +13677,7 @@ TEST_F(VkLayerTest, CreateImageViewWithInvalidLevelOrLayerCount) {
     VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.format = VK_FORMAT_R16G16B16A16_UNORM;
     ivci.subresourceRange.baseMipLevel = 0;
     ivci.subresourceRange.baseArrayLayer = 0;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -13802,7 +13800,7 @@ TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreateImageViewWithInvalidViewType) {
+TEST_F(VkLayerTest, BlockTexelViewInvalidType) {
     TEST_DESCRIPTION(
         "Create Image with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT and non-compressed format and ImageView with view type "
         "VK_IMAGE_VIEW_TYPE_3D.");
@@ -13842,7 +13840,7 @@ TEST_F(VkLayerTest, CreateImageViewWithInvalidViewType) {
     VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
-    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.format = VK_FORMAT_R16G16B16A16_UNORM;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     ivci.subresourceRange.baseMipLevel = 0;
     ivci.subresourceRange.layerCount = 1;
@@ -13851,6 +13849,60 @@ TEST_F(VkLayerTest, CreateImageViewWithInvalidViewType) {
 
     // Test for error message
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-04739");
+}
+
+TEST_F(VkLayerTest, BlockTexelViewInvalidFormat) {
+    TEST_DESCRIPTION("Create Image with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT with non compatible formats.");
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!CanEnableDeviceExtension(VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
+        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE_2 extension, unavailable - skipped.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_BC1_RGBA_SRGB_BLOCK;  // 64-bit block size
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkImageObj image(m_device);
+    if (!image.IsCompatibleCheck(image_create_info)) {
+        printf("%s Image usage and format not compatible on device\n", kSkipPrefix);
+        return;
+    }
+    image.Init(image_create_info, 0);
+
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.levelCount = 1;
+
+    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;  // 32-bit block size
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01583");
+
+    ivci.format = VK_FORMAT_BC1_RGB_SRGB_BLOCK;  // 64-bit block size, but not same format class
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01583");
+
+    ivci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;  // 64-bit block size, and same format class
+    CreateImageViewTest(*this, &ivci);
 }
 
 TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
