@@ -4293,12 +4293,14 @@ std::map<uint32_t, VkFormat> ahb_format_map_a2v = {
 // AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT      VK_IMAGE_CREATE_PROTECTED_BIT
 // None                                         VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT
 // None                                         VK_IMAGE_CREATE_EXTENDED_USAGE_BIT
+// AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER        VK_IMAGE_USAGE_STORAGE_BIT
 
 // Same casting rationale. De-mixing the table to prevent type confusion and aliasing
 std::map<uint64_t, VkImageUsageFlags> ahb_usage_map_a2v = {
     { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE,    (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) },
     { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER,     (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) },
     { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE,  0 },   // No equivalent
+    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER,  VK_IMAGE_USAGE_STORAGE_BIT },
 };
 
 std::map<uint64_t, VkImageCreateFlags> ahb_create_map_a2v = {
@@ -4312,6 +4314,7 @@ std::map<VkImageUsageFlags, uint64_t> ahb_usage_map_v2a = {
     { VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,  (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE },
     { VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,  (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER  },
     { VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,  (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER  },
+    { VK_IMAGE_USAGE_STORAGE_BIT,  (uint64_t)AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER  },
 };
 
 std::map<VkImageCreateFlags, uint64_t> ahb_create_map_v2a = {
@@ -4500,14 +4503,15 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
             auto image_state = Get<IMAGE_STATE>(mem_ded_alloc_info->image);
             const auto *ici = &image_state->createInfo;
 
-            // The Android hardware buffer's usage must include at least one of AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER or
-            // AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE
-            if (0 == (ahb_desc.usage & (AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER | AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE))) {
+            // Dedicated allocation have limit usage flags supported
+            if (0 == (ahb_desc.usage & (AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER | AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE |
+                                        AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER))) {
                 skip |= LogError(
                     device, "VUID-VkMemoryAllocateInfo-pNext-02386",
                     "vkAllocateMemory: VkMemoryAllocateInfo struct with chained VkImportAndroidHardwareBufferInfoANDROID and a "
                     "dedicated allocation requirement, while the AHardwareBuffer's usage (0x%" PRIx64
-                    ") contains neither AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER nor AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE.",
+                    ") contains neither AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER, AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER, nor "
+                    "AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE.",
                     ahb_desc.usage);
             }
 
