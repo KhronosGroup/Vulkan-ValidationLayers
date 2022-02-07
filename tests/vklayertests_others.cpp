@@ -10154,40 +10154,40 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
     commandBuffer.begin();
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetCullModeEXT,
-                          "VUID-vkCmdSetCullModeEXT-None-03384", VK_CULL_MODE_NONE);
+                          "VUID-vkCmdSetCullMode-None-03384", VK_CULL_MODE_NONE);
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthBoundsTestEnableEXT,
-        "VUID-vkCmdSetDepthBoundsTestEnableEXT-None-03349", VK_FALSE);
+        "VUID-vkCmdSetDepthBoundsTestEnable-None-03349", VK_FALSE);
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthCompareOpEXT,
-        "VUID-vkCmdSetDepthCompareOpEXT-None-03353", VK_COMPARE_OP_NEVER);
+        "VUID-vkCmdSetDepthCompareOp-None-03353", VK_COMPARE_OP_NEVER);
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthTestEnableEXT,
-        "VUID-vkCmdSetDepthTestEnableEXT-None-03352", VK_FALSE);
+        "VUID-vkCmdSetDepthTestEnable-None-03352", VK_FALSE);
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthWriteEnableEXT,
-        "VUID-vkCmdSetDepthWriteEnableEXT-None-03354", VK_FALSE);
+        "VUID-vkCmdSetDepthWriteEnable-None-03354", VK_FALSE);
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetFrontFaceEXT,
-                          "VUID-vkCmdSetFrontFaceEXT-None-03383", VK_FRONT_FACE_CLOCKWISE);
+                          "VUID-vkCmdSetFrontFace-None-03383", VK_FRONT_FACE_CLOCKWISE);
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetPrimitiveTopologyEXT,
-                          "VUID-vkCmdSetPrimitiveTopologyEXT-None-03347", VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+                          "VUID-vkCmdSetPrimitiveTopology-None-03347", VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCountEXT-None-03396");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-None-03396");
     VkRect2D scissor = {{0, 0}, {1, 1}};
     vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetStencilOpEXT-None-03351");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetStencilOp-None-03351");
     vkCmdSetStencilOpEXT(commandBuffer.handle(), VK_STENCIL_FACE_BACK_BIT, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO,
                          VK_STENCIL_OP_ZERO, VK_COMPARE_OP_NEVER);
     m_errorMonitor->VerifyFound();
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetStencilTestEnableEXT,
-        "VUID-vkCmdSetStencilTestEnableEXT-None-03350", VK_FALSE);
+        "VUID-vkCmdSetStencilTestEnable-None-03350", VK_FALSE);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCountEXT-None-03393");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCount-None-03393");
     VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
     vkCmdSetViewportWithCountEXT(commandBuffer.handle(), 1, &viewport);
     m_errorMonitor->VerifyFound();
@@ -11215,15 +11215,15 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Disabled) {
     VkCommandBufferObj m_commandBuffer(m_device, m_commandPool);
     m_commandBuffer.begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizerDiscardEnableEXT-None-04871");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizerDiscardEnable-None-04871");
     vkCmdSetRasterizerDiscardEnableEXT(m_commandBuffer.handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBiasEnableEXT-None-04872");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBiasEnable-None-04872");
     vkCmdSetDepthBiasEnableEXT(m_commandBuffer.handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPrimitiveRestartEnableEXT-None-04866");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPrimitiveRestartEnable-None-04866");
     vkCmdSetPrimitiveRestartEnableEXT(m_commandBuffer.handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
 
