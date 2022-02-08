@@ -43,6 +43,7 @@ struct layer_data {
     VkInstance instance;
     VkPhysicalDeviceProperties phy_device_props;
     std::unordered_map<VkFormat, VkFormatProperties, std::hash<int> > format_properties_map;
+    std::unordered_map<VkFormat, VkFormatProperties3, std::hash<int> > format_properties3_map;
     VkPhysicalDeviceFeatures phy_device_features;
     VkLayerInstanceDispatchTable dispatch_table;
 };
@@ -94,12 +95,18 @@ VKAPI_ATTR void VKAPI_CALL SetPhysicalDeviceFormatPropertiesEXT(VkPhysicalDevice
     layer_data *phy_dev_data = GetLayerDataPtr(physicalDevice, device_profile_api_dev_data_map);
 
     memcpy(&(phy_dev_data->format_properties_map[format]), &newProperties, sizeof(VkFormatProperties));
+
+    // Need to set in the case a test uses SetPhysicalDeviceFormatProperties1() functions but because it is a 1.3 device and
+    // the validation code will call GetPhysicalDeviceFormatProperties2() expecting VkFormatProperties3 to be filled
+    VkFormatProperties3 fmt_props_3 = LvlInitStruct<VkFormatProperties3>();
+    fmt_props_3.linearTilingFeatures = static_cast<VkFormatFeatureFlags2>(newProperties.linearTilingFeatures);
+    fmt_props_3.optimalTilingFeatures = static_cast<VkFormatFeatureFlags2>(newProperties.optimalTilingFeatures);
+    fmt_props_3.bufferFeatures = static_cast<VkFormatFeatureFlags2>(newProperties.bufferFeatures);
+    memcpy(&(phy_dev_data->format_properties3_map[format]), &fmt_props_3, sizeof(VkFormatProperties3));
 }
 
 VKAPI_ATTR void VKAPI_CALL GetOriginalPhysicalDeviceFormatProperties2EXT(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                          VkFormatProperties2 *properties) {
-    // Currently only supports getting VkFormatProperties
-    // TODO: Add support for VkDrmFormatModifierPropertiesListEXT and future pNext structs of VkFormatProperties2
     std::lock_guard<std::mutex> lock(global_lock);
     layer_data *phy_dev_data = GetLayerDataPtr(physicalDevice, device_profile_api_dev_data_map);
     layer_data *instance_data = GetLayerDataPtr(phy_dev_data->instance, device_profile_api_dev_data_map);
@@ -112,6 +119,10 @@ VKAPI_ATTR void VKAPI_CALL SetPhysicalDeviceFormatProperties2EXT(VkPhysicalDevic
     layer_data *phy_dev_data = GetLayerDataPtr(physicalDevice, device_profile_api_dev_data_map);
 
     memcpy(&(phy_dev_data->format_properties_map[format]), &(newProperties.formatProperties), sizeof(VkFormatProperties));
+    VkFormatProperties3 *fmt_props_3 = LvlFindModInChain<VkFormatProperties3>(newProperties.pNext);
+    if (fmt_props_3) {
+        memcpy(&(phy_dev_data->format_properties3_map[format]), fmt_props_3, sizeof(VkFormatProperties3));
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL GetOriginalPhysicalDeviceFeaturesEXT(VkPhysicalDevice physicalDevice,
@@ -210,7 +221,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties(VkPhysicalDevice ph
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
                                                               VkFormatProperties2 *pProperties) {
-    VkFormatProperties3KHR *fmt_props_3 = LvlFindModInChain<VkFormatProperties3KHR>(pProperties->pNext);
+    VkFormatProperties3 *fmt_props_3 = LvlFindModInChain<VkFormatProperties3>(pProperties->pNext);
     std::lock_guard<std::mutex> lock(global_lock);
     layer_data *phy_dev_data = GetLayerDataPtr(physicalDevice, device_profile_api_dev_data_map);
     layer_data *instance_data = GetLayerDataPtr(phy_dev_data->instance, device_profile_api_dev_data_map);
@@ -218,12 +229,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalDevice p
     if (device_format_map_it != phy_dev_data->format_properties_map.end()) {
         memcpy((void *)&(pProperties->formatProperties), &phy_dev_data->format_properties_map[format], sizeof(VkFormatProperties));
         if (fmt_props_3) {
-            fmt_props_3->linearTilingFeatures =
-                static_cast<VkFormatFeatureFlags2KHR>(pProperties->formatProperties.linearTilingFeatures);
-            fmt_props_3->optimalTilingFeatures =
-                static_cast<VkFormatFeatureFlags2KHR>(pProperties->formatProperties.optimalTilingFeatures);
-            fmt_props_3->bufferFeatures =
-                static_cast<VkFormatFeatureFlags2KHR>(pProperties->formatProperties.bufferFeatures);
+            memcpy(fmt_props_3, &phy_dev_data->format_properties3_map[format], sizeof(VkFormatProperties3));
         }
     } else {
         instance_data->dispatch_table.GetPhysicalDeviceFormatProperties2(physicalDevice, format, pProperties);
