@@ -1608,6 +1608,7 @@ bool CoreChecks::ValidateTexelDescriptor(const char *caller, const DrawDispatchV
     if (buffer_view) {
         auto buffer = buffer_view_state->create_info.buffer;
         const auto *buffer_state = buffer_view_state->buffer_state.get();
+        const VkFormat buffer_view_format = buffer_view_state->create_info.format;
         if (buffer_state->Destroyed()) {
             auto set = descriptor_set->GetSet();
             return LogError(set, vuids.descriptor_valid,
@@ -1616,7 +1617,7 @@ bool CoreChecks::ValidateTexelDescriptor(const char *caller, const DrawDispatchV
                             report_data->FormatHandle(set).c_str(), caller, binding, index,
                             report_data->FormatHandle(buffer).c_str());
         }
-        auto format_bits = DescriptorRequirementsBitsFromFormat(buffer_view_state->create_info.format);
+        auto format_bits = DescriptorRequirementsBitsFromFormat(buffer_view_format);
 
         if (!(reqs & format_bits)) {
             // bad component type
@@ -1625,13 +1626,15 @@ bool CoreChecks::ValidateTexelDescriptor(const char *caller, const DrawDispatchV
                             "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
                             "binding #%" PRIu32 " index %" PRIu32 " requires %s component type, but bound descriptor format is %s.",
                             report_data->FormatHandle(set).c_str(), caller, binding, index, StringDescriptorReqComponentType(reqs),
-                            string_VkFormat(buffer_view_state->create_info.format));
+                            string_VkFormat(buffer_view_format));
         }
 
+        const VkFormatFeatureFlags2KHR format_features = buffer_view_state->format_features;
+        const VkDescriptorType descriptor_type = descriptor_set->GetTypeFromBinding(binding);
+
         // Verify VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT
-        if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) &&
-            (descriptor_set->GetTypeFromBinding(binding) == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
-            !(buffer_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
+        if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
+            !(format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
             auto set = descriptor_set->GetSet();
             LogObjectList objlist(set);
             objlist.add(buffer_view);
@@ -1641,8 +1644,41 @@ bool CoreChecks::ValidateTexelDescriptor(const char *caller, const DrawDispatchV
                             ", %s, format %s, doesn't "
                             "contain VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.",
                             report_data->FormatHandle(set).c_str(), caller, binding, index,
-                            report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_state->create_info.format));
+                            report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format));
         }
+
+        if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
+            if ((reqs & DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT) &&
+                !(format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
+                auto set = descriptor_set->GetSet();
+                LogObjectList objlist(set);
+                objlist.add(buffer_view);
+                return LogError(objlist, vuids.storage_image_read_without_format,
+                                "Descriptor set %s encountered the following validation error at %s time: Descriptor "
+                                "in binding #%" PRIu32 " index %" PRIu32
+                                ", %s, buffer view format %s feature flags (%s) doesn't "
+                                "contain VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR",
+                                report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
+                                string_VkFormatFeatureFlags2KHR(format_features).c_str());
+            }
+
+            if ((reqs & DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT) &&
+                !(format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)) {
+                auto set = descriptor_set->GetSet();
+                LogObjectList objlist(set);
+                objlist.add(buffer_view);
+                return LogError(objlist, vuids.storage_image_write_without_format,
+                                "Descriptor set %s encountered the following validation error at %s time: Descriptor "
+                                "in binding #%" PRIu32 " index %" PRIu32
+                                ", %s, buffer view format %s feature flags (%s) doesn't "
+                                "contain VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR",
+                                report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
+                                string_VkFormatFeatureFlags2KHR(format_features).c_str());
+            }
+        }
+
         if (enabled_features.core11.protectedMemory == VK_TRUE) {
             if (ValidateProtectedBuffer(cb_node, buffer_view_state->buffer_state.get(), caller, vuids.unprotected_command_buffer,
                                         "Buffer is in a descriptorSet")) {
