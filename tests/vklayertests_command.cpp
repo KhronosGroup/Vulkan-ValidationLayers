@@ -1140,9 +1140,9 @@ TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
     VkDeviceSize offset = 1;
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.handle());
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Invalid attribAddress alignment for vertex attribute 0");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Invalid attribAddress alignment for vertex attribute 1");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Invalid attribAddress alignment for vertex attribute 2");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 0
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 1
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 2
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1150,9 +1150,9 @@ TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
     offset = 0;
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.handle());
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Invalid attribAddress alignment for vertex attribute 0");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 0
     // Attribute[1] is aligned properly even with a wrong stride
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Invalid attribAddress alignment for vertex attribute 2");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 2
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
