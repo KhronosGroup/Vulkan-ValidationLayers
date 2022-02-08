@@ -1261,50 +1261,52 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
         // format support is reported per format rather as a blankey physical
         // device feature.
         if (has_format_feature2) {
-            const VkFormatFeatureFlags2KHR img_format_feats = image_view_state->image_state->format_features;
+            const VkFormatFeatureFlags2 format_features = image_view_state->format_features;
 
             if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                 if ((reqs & DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT) &&
-                    !(img_format_feats & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
+                    !(format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT)) {
                     auto set = descriptor_set->GetSet();
                     LogObjectList objlist(set);
                     objlist.add(image_view);
                     return LogError(objlist, vuids.storage_image_read_without_format,
                                     "Descriptor set %s encountered the following validation error at %s time: Descriptor "
                                     "in binding #%" PRIu32 " index %" PRIu32
-                                    ", %s, format %s, doesn't "
-                                    "contain VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR",
+                                    ", %s, image view format %s feature flags (%s) doesn't "
+                                    "contain VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT",
                                     report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                    report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format));
+                                    report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format),
+                                    string_VkFormatFeatureFlags2(format_features).c_str());
                 }
 
                 if ((reqs & DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT) &&
-                    !(img_format_feats & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)) {
+                    !(format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
                     auto set = descriptor_set->GetSet();
                     LogObjectList objlist(set);
                     objlist.add(image_view);
                     return LogError(objlist, vuids.storage_image_write_without_format,
                                     "Descriptor set %s encountered the following validation error at %s time: Descriptor "
                                     "in binding #%" PRIu32 " index %" PRIu32
-                                    ", %s, format %s, doesn't "
-                                    "contain VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR",
+                                    ", %s, image view format %s feature flags (%s) doesn't "
+                                    "contain VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
                                     report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                    report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format));
+                                    report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format),
+                                    string_VkFormatFeatureFlags2(format_features).c_str());
                 }
             }
 
-            if ((reqs & DESCRIPTOR_REQ_IMAGE_DREF) &&
-                !(img_format_feats & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR)) {
+            if ((reqs & DESCRIPTOR_REQ_IMAGE_DREF) && !(format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
                 auto set = descriptor_set->GetSet();
                 LogObjectList objlist(set);
                 objlist.add(image_view);
                 return LogError(objlist, vuids.depth_compare_sample,
                                 "Descriptor set %s encountered the following validation error at %s time: Descriptor "
                                 "in binding #%" PRIu32 " index %" PRIu32
-                                ", %s, format %s, doesn't "
-                                "contain VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR",
+                                ", %s, image view format %s feature flags (%s) doesn't "
+                                "contain VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
                                 report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format));
+                                report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format),
+                                string_VkFormatFeatureFlags2(format_features).c_str());
             }
         }
 

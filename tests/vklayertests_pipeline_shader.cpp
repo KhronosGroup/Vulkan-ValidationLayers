@@ -2212,7 +2212,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWriteForFormat) {
     int n_tests = 0;
     bool has_without_format_test = false, has_with_format_test = false;
 
-    // Find storage formats with & without read without format support
+    // Find storage formats with & without write without format support
     for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
         if (has_without_format_test && has_with_format_test) break;
 
@@ -2223,12 +2223,12 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWriteForFormat) {
 
         const bool has_storage =
             (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR) != 0;
-        const bool has_read_without_format =
-            (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR) != 0;
+        const bool has_write_without_format =
+            (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR) != 0;
 
         if (!has_storage) continue;
 
-        if (has_read_without_format) {
+        if (has_write_without_format) {
             if (has_without_format_test) continue;
 
             tests[n_tests].format = (VkFormat)fmt;

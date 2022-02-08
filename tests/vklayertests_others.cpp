@@ -1834,7 +1834,7 @@ TEST_F(VkLayerTest, Features12Features13AndpNext) {
         printf("%s Vulkan12Struct requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
         return;
     }
- 
+
     VkPhysicalDevice16BitStorageFeatures sixteen_bit = LvlInitStruct<VkPhysicalDevice16BitStorageFeatures>();
     sixteen_bit.storageBuffer16BitAccess = true;
     VkPhysicalDeviceVulkan11Features features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>(&sixteen_bit);

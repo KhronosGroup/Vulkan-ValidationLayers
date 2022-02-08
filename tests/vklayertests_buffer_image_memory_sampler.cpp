@@ -13668,7 +13668,9 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidLevelOrLayerCount) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageObj image(m_device);
-    if (!image.IsCompatibleCheck(image_create_info)) {
+    VkFormatProperties image_fmt;
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_create_info.format, &image_fmt);
+    if (!image.IsCompatible(image_create_info.usage, image_fmt.optimalTilingFeatures)) {
         printf("%s Image usage and format not compatible on device\n", kSkipPrefix);
         return;
     }
@@ -13831,7 +13833,9 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidType) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageObj image(m_device);
-    if (!image.IsCompatibleCheck(image_create_info)) {
+    VkFormatProperties image_fmt;
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_create_info.format, &image_fmt);
+    if (!image.IsCompatible(image_create_info.usage, image_fmt.optimalTilingFeatures)) {
         printf("%s Image usage and format not compatible on device\n", kSkipPrefix);
         return;
     }
@@ -13880,7 +13884,9 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidFormat) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageObj image(m_device);
-    if (!image.IsCompatibleCheck(image_create_info)) {
+    VkFormatProperties image_fmt;
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_create_info.format, &image_fmt);
+    if (!image.IsCompatible(image_create_info.usage, image_fmt.optimalTilingFeatures)) {
         printf("%s Image usage and format not compatible on device\n", kSkipPrefix);
         return;
     }
