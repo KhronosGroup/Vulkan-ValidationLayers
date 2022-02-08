@@ -8,3 +8,7 @@
 
 The thread safety validation object checks multi-threading of API calls for validity.  Checks performed
 include ensuring that only one thread at a time uses an object in free-threaded API calls.
+
+Thread safety validatioin can be enabled and configured using Validation Layer settings described in 
+[khronos_validation_layer.html](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details).
+

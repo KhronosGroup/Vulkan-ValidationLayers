@@ -8,11 +8,16 @@
 
 # VK\_LAYER\_KHRONOS\_validation
 
+Vulkan is an Explicit API, enabling direct control over how GPUs actually work. By design, minimal error
+checking is done inside a Vulkan driver - applications have full control and responsibility for correct operation.
+Any errors in Vulkan usage can result in unexpected behavior or even a crash.  The `VK_LAYER_KHRONOS_validation` layer
+can be used to to assist developers in isolating incorrect usage, and in verifying that applications
+correctly use the API.
+
+
 The `VK_LAYER_KHRONOS_validation` layer supports the following validation coverage areas:
 
 - [Core validation](core_checks.md)
-- [Stateless parameter validation](stateless_validation.md)
-- [Object lifetime validation](object_lifetimes.md)
 - [GPU-Assisted validation](gpu_validation.md)
 - [Thread safety validation](thread_safety.md)
 - [Synchronization validation](synchronization_usage.md)

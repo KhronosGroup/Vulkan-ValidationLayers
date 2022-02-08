@@ -9,13 +9,15 @@
 
 The Vulkan-ValidationLayer code has been updated to not globally lock every Vulkan call. Waiting on this lock causes performance problems for multi-threaded applications, and most Vulkan games are heavily multi-threaded.  This feature has been tested with 15+ released games and improves performance in almost all of them, and many improve by about 150%.
 
-However, changes to locking strategy in a multi threaded program are a frequent cause of crashes, incorrect results, or deadlock. For the first release of this feature, it is off by default and can be enabled using the instructions below. Once the new locking strategy has been proven to not cause stability problems, it will be on by default and then can be turned off, if necessary for debugging.
+However, changes to locking strategy in a multi threaded program are a frequent cause of crashes, incorrect results, or deadlock. For the first release of this feature, it is off by default and needs to be explictly enabled. Once the new locking strategy has been proven to not cause stability problems, it will be on by default and then can be turned off, if necessary for debugging.
 
 Currently, this Fine Grained Locking is only available for Core Validation.  Best Practices, Synchronization Validation, GPU Assisted Validation and Debug Printf still always run with global locking. Support for these types of validation will be added in a future release.
 
 Thread Safety, Object Lifetime, Handle Wrapping and Stateless validation have always avoided global locking and they are thus unaffected by this feature.
 
-Fine grained locking can easily be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK. You can also manually enable it following instructions below.
+Fine grained locking can be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK.  You can also manually
+enable and configure it using Validation Layer settings described in
+[khronos_validation_layer.html](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details).
 
 
 ### Known Limitations
