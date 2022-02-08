@@ -13,6 +13,9 @@ by the Vulkan specification but that may lead to application problems.
 
 Best Practices will ideally be run periodically along with normal validation checks so that issues may be addressed in early stages of development.
 
+Best Practices Validation settings can be set by configuring the Validation Layer. These settings are described in
+[khronos_validation_layer.html](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details).
+
 The specific areas covered by this layer are currently tracked in the
 [Best Practices Project](https://github.com/KhronosGroup/Vulkan-ValidationLayers/projects/1).
 Requests for additional checks can be requested by creating a Github issue.
