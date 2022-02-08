@@ -644,8 +644,11 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
         printf("%s This test crashes on the NexusPlayer platform\n", kSkipPrefix);
         return;
     }
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    ASSERT_TRUE(m_depth_stencil_fmt != 0);
 
-    InitRenderTarget();
+    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    InitRenderTarget(m_depthStencil->BindInfo());
 
     VkAttachmentDescription attachment{};
     attachment.samples = VK_SAMPLE_COUNT_4_BIT;
@@ -732,6 +735,7 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_only.pipeline_);
     for (size_t i = 0; i < 30; i++) m_commandBuffer->DrawIndexed(indices.size(), 1000, 0, 0, 0);

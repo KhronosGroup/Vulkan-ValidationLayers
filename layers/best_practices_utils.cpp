@@ -1049,14 +1049,30 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
         GraphicsPipelineCIs& cis = graphicsPipelineCIs[pipeline_handle];
 
         auto& create_info = cgpl_state->pCreateInfos[i];
+        auto rp = Get<RENDER_PASS_STATE>(create_info.renderPass);
 
         if (create_info.pColorBlendState) {
-            cis.colorBlendStateCI.emplace(create_info.pColorBlendState);
+            // pColorBlendState is ignored if the pipeline has rasterization disabled or if no color attachments are used
+            bool uses_color_attachments = false;
+            for (uint32_t j = 0; j < rp->createInfo.subpassCount; j++) {
+                uses_color_attachments |= rp->UsesColorAttachment(j);
+            }
+            if (uses_color_attachments && !create_info.pRasterizationState->rasterizerDiscardEnable) {
+                cis.colorBlendStateCI.emplace(create_info.pColorBlendState);
+            }
         }
 
         if (create_info.pDepthStencilState) {
-            cis.depthStencilStateCI.emplace(create_info.pDepthStencilState);
+            // pDepthStencilState is ignored if the pipeline has rasterization disabled or if no depth/stencil attachment is used
+            bool uses_depth_stencil = false;
+            for (uint32_t j = 0; j < rp->createInfo.subpassCount; j++) {
+                uses_depth_stencil |= rp->UsesDepthStencilAttachment(j);
+            }
+            if (uses_depth_stencil && !create_info.pRasterizationState->rasterizerDiscardEnable) {
+                cis.depthStencilStateCI.emplace(create_info.pDepthStencilState);
+            }
         }
+
         if (create_info.renderPass == VK_NULL_HANDLE) {
             // TODO: this is necessary to avoid crashing
             LogWarning(device, kVUID_BestPractices_DynamicRendering_NotSupported,
@@ -1065,7 +1081,6 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
             continue;
         }
         // Record which frame buffer attachments we should consider to be accessed when a draw call is performed.
-        auto rp = Get<RENDER_PASS_STATE>(create_info.renderPass);
         auto& subpass = rp->createInfo.pSubpasses[create_info.subpass];
         cis.accessFramebufferAttachments.clear();
 
