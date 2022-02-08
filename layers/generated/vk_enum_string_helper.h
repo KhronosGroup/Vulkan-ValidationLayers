@@ -1394,8 +1394,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_EMIT_PICTURE_PARAMETERS_EXT";
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_EXT:
-            return "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_EXT";
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_SEGMENT_EXT:
+            return "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_SEGMENT_EXT";
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PROFILE_EXT:
@@ -1688,8 +1688,8 @@ static inline const char* string_VkImageAspectFlagBits(VkImageAspectFlagBits inp
             return "VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT";
         case VK_IMAGE_ASPECT_METADATA_BIT:
             return "VK_IMAGE_ASPECT_METADATA_BIT";
-        case VK_IMAGE_ASPECT_NONE_KHR:
-            return "VK_IMAGE_ASPECT_NONE_KHR";
+        case VK_IMAGE_ASPECT_NONE:
+            return "VK_IMAGE_ASPECT_NONE";
         case VK_IMAGE_ASPECT_PLANE_0_BIT:
             return "VK_IMAGE_ASPECT_PLANE_0_BIT";
         case VK_IMAGE_ASPECT_PLANE_1_BIT:
@@ -7825,8 +7825,8 @@ static inline const char* string_VkVideoEncodeH265InputModeFlagBitsEXT(VkVideoEn
             return "VK_VIDEO_ENCODE_H265_INPUT_MODE_FRAME_BIT_EXT";
         case VK_VIDEO_ENCODE_H265_INPUT_MODE_NON_VCL_BIT_EXT:
             return "VK_VIDEO_ENCODE_H265_INPUT_MODE_NON_VCL_BIT_EXT";
-        case VK_VIDEO_ENCODE_H265_INPUT_MODE_SLICE_BIT_EXT:
-            return "VK_VIDEO_ENCODE_H265_INPUT_MODE_SLICE_BIT_EXT";
+        case VK_VIDEO_ENCODE_H265_INPUT_MODE_SLICE_SEGMENT_BIT_EXT:
+            return "VK_VIDEO_ENCODE_H265_INPUT_MODE_SLICE_SEGMENT_BIT_EXT";
         default:
             return "Unhandled VkVideoEncodeH265InputModeFlagBitsEXT";
     }
@@ -7860,8 +7860,8 @@ static inline const char* string_VkVideoEncodeH265OutputModeFlagBitsEXT(VkVideoE
             return "VK_VIDEO_ENCODE_H265_OUTPUT_MODE_FRAME_BIT_EXT";
         case VK_VIDEO_ENCODE_H265_OUTPUT_MODE_NON_VCL_BIT_EXT:
             return "VK_VIDEO_ENCODE_H265_OUTPUT_MODE_NON_VCL_BIT_EXT";
-        case VK_VIDEO_ENCODE_H265_OUTPUT_MODE_SLICE_BIT_EXT:
-            return "VK_VIDEO_ENCODE_H265_OUTPUT_MODE_SLICE_BIT_EXT";
+        case VK_VIDEO_ENCODE_H265_OUTPUT_MODE_SLICE_SEGMENT_BIT_EXT:
+            return "VK_VIDEO_ENCODE_H265_OUTPUT_MODE_SLICE_SEGMENT_BIT_EXT";
         default:
             return "Unhandled VkVideoEncodeH265OutputModeFlagBitsEXT";
     }
