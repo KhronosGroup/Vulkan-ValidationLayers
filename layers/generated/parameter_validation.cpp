@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 204;
+const uint32_t GeneratedVulkanHeaderVersion = 205;
 
 const VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_NONE|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR|VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV|VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV|VK_ACCESS_NONE_KHR;
 const VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -47,7 +47,7 @@ const VkEventCreateFlags AllVkEventCreateFlagBits = VK_EVENT_CREATE_DEVICE_ONLY_
 const VkFenceCreateFlags AllVkFenceCreateFlagBits = VK_FENCE_CREATE_SIGNALED_BIT;
 const VkFormatFeatureFlags AllVkFormatFeatureFlagBits = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT|VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT|VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT|VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT|VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT|VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT|VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT|VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT|VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT|VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT|VK_FORMAT_FEATURE_BLIT_SRC_BIT|VK_FORMAT_FEATURE_BLIT_DST_BIT|VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT|VK_FORMAT_FEATURE_TRANSFER_DST_BIT|VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT|VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT|VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT|VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_BIT|VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT|VK_FORMAT_FEATURE_DISJOINT_BIT|VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT|VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT|VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG|VK_FORMAT_FEATURE_VIDEO_DECODE_OUTPUT_BIT_KHR|VK_FORMAT_FEATURE_VIDEO_DECODE_DPB_BIT_KHR|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR|VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR|VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT_EXT|VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR|VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT_KHR|VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT_KHR|VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT_KHR|VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_BIT_KHR|VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT_KHR|VK_FORMAT_FEATURE_DISJOINT_BIT_KHR|VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT_KHR|VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT|VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT|VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR|VK_FORMAT_FEATURE_VIDEO_ENCODE_INPUT_BIT_KHR|VK_FORMAT_FEATURE_VIDEO_ENCODE_DPB_BIT_KHR;
 const VkFramebufferCreateFlags AllVkFramebufferCreateFlagBits = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT|VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
-const VkImageAspectFlags AllVkImageAspectFlagBits = VK_IMAGE_ASPECT_COLOR_BIT|VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT|VK_IMAGE_ASPECT_METADATA_BIT|VK_IMAGE_ASPECT_PLANE_0_BIT|VK_IMAGE_ASPECT_PLANE_1_BIT|VK_IMAGE_ASPECT_PLANE_2_BIT|VK_IMAGE_ASPECT_PLANE_0_BIT_KHR|VK_IMAGE_ASPECT_PLANE_1_BIT_KHR|VK_IMAGE_ASPECT_PLANE_2_BIT_KHR|VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT|VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT|VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT|VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT|VK_IMAGE_ASPECT_NONE_KHR;
+const VkImageAspectFlags AllVkImageAspectFlagBits = VK_IMAGE_ASPECT_COLOR_BIT|VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT|VK_IMAGE_ASPECT_METADATA_BIT|VK_IMAGE_ASPECT_PLANE_0_BIT|VK_IMAGE_ASPECT_PLANE_1_BIT|VK_IMAGE_ASPECT_PLANE_2_BIT|VK_IMAGE_ASPECT_NONE|VK_IMAGE_ASPECT_PLANE_0_BIT_KHR|VK_IMAGE_ASPECT_PLANE_1_BIT_KHR|VK_IMAGE_ASPECT_PLANE_2_BIT_KHR|VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT|VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT|VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT|VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT|VK_IMAGE_ASPECT_NONE_KHR;
 const VkImageCreateFlags AllVkImageCreateFlagBits = VK_IMAGE_CREATE_SPARSE_BINDING_BIT|VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT|VK_IMAGE_CREATE_SPARSE_ALIASED_BIT|VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT|VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT|VK_IMAGE_CREATE_ALIAS_BIT|VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT|VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT|VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT|VK_IMAGE_CREATE_EXTENDED_USAGE_BIT|VK_IMAGE_CREATE_PROTECTED_BIT|VK_IMAGE_CREATE_DISJOINT_BIT|VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV|VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR|VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR|VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR|VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR|VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT|VK_IMAGE_CREATE_DISJOINT_BIT_KHR|VK_IMAGE_CREATE_ALIAS_BIT_KHR|VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT|VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM;
 const VkImageUsageFlags AllVkImageUsageFlagBits = VK_IMAGE_USAGE_TRANSFER_SRC_BIT|VK_IMAGE_USAGE_TRANSFER_DST_BIT|VK_IMAGE_USAGE_SAMPLED_BIT|VK_IMAGE_USAGE_STORAGE_BIT|VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT|VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT|VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT|VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR|VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR|VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR|VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV|VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT|VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR|VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR|VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR|VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR|VK_IMAGE_USAGE_INVOCATION_MASK_BIT_HUAWEI;
 const VkImageViewCreateFlags AllVkImageViewCreateFlagBits = VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT|VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT;
@@ -132,16 +132,13 @@ const VkVideoEncodeH264RateControlStructureFlagsEXT AllVkVideoEncodeH264RateCont
 const VkVideoEncodeH265CtbSizeFlagsEXT AllVkVideoEncodeH265CtbSizeFlagBitsEXT = VK_VIDEO_ENCODE_H265_CTB_SIZE_8_BIT_EXT|VK_VIDEO_ENCODE_H265_CTB_SIZE_16_BIT_EXT|VK_VIDEO_ENCODE_H265_CTB_SIZE_32_BIT_EXT|VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_EXT;
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-const VkVideoEncodeH265InputModeFlagsEXT AllVkVideoEncodeH265InputModeFlagBitsEXT = VK_VIDEO_ENCODE_H265_INPUT_MODE_FRAME_BIT_EXT|VK_VIDEO_ENCODE_H265_INPUT_MODE_SLICE_BIT_EXT|VK_VIDEO_ENCODE_H265_INPUT_MODE_NON_VCL_BIT_EXT;
+const VkVideoEncodeH265InputModeFlagsEXT AllVkVideoEncodeH265InputModeFlagBitsEXT = VK_VIDEO_ENCODE_H265_INPUT_MODE_FRAME_BIT_EXT|VK_VIDEO_ENCODE_H265_INPUT_MODE_SLICE_SEGMENT_BIT_EXT|VK_VIDEO_ENCODE_H265_INPUT_MODE_NON_VCL_BIT_EXT;
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-const VkVideoEncodeH265OutputModeFlagsEXT AllVkVideoEncodeH265OutputModeFlagBitsEXT = VK_VIDEO_ENCODE_H265_OUTPUT_MODE_FRAME_BIT_EXT|VK_VIDEO_ENCODE_H265_OUTPUT_MODE_SLICE_BIT_EXT|VK_VIDEO_ENCODE_H265_OUTPUT_MODE_NON_VCL_BIT_EXT;
+const VkVideoEncodeH265OutputModeFlagsEXT AllVkVideoEncodeH265OutputModeFlagBitsEXT = VK_VIDEO_ENCODE_H265_OUTPUT_MODE_FRAME_BIT_EXT|VK_VIDEO_ENCODE_H265_OUTPUT_MODE_SLICE_SEGMENT_BIT_EXT|VK_VIDEO_ENCODE_H265_OUTPUT_MODE_NON_VCL_BIT_EXT;
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 const VkVideoEncodeH265RateControlStructureFlagsEXT AllVkVideoEncodeH265RateControlStructureFlagBitsEXT = VK_VIDEO_ENCODE_H265_RATE_CONTROL_STRUCTURE_UNKNOWN_EXT|VK_VIDEO_ENCODE_H265_RATE_CONTROL_STRUCTURE_FLAT_BIT_EXT|VK_VIDEO_ENCODE_H265_RATE_CONTROL_STRUCTURE_DYADIC_BIT_EXT;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-const VkVideoDecodeH264PictureLayoutFlagsEXT AllVkVideoDecodeH264PictureLayoutFlagBitsEXT = VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_PROGRESSIVE_EXT|VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_INTERLACED_INTERLEAVED_LINES_BIT_EXT|VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_INTERLACED_SEPARATE_PLANES_BIT_EXT;
 #endif
 const VkExternalMemoryHandleTypeFlagsNV AllVkExternalMemoryHandleTypeFlagBitsNV = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV|VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT_NV|VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_IMAGE_BIT_NV|VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_IMAGE_KMT_BIT_NV;
 const VkConditionalRenderingFlagsEXT AllVkConditionalRenderingFlagBitsEXT = VK_CONDITIONAL_RENDERING_INVERTED_BIT_EXT;
@@ -2603,7 +2600,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
             if (is_const_param) {
                 VkAttachmentSampleCountInfoAMD *structure = (VkAttachmentSampleCountInfoAMD *) header;
-                skip |= validate_array("VkAttachmentSampleCountInfoAMD", "colorAttachmentCount", "pColorAttachmentSamples", structure->colorAttachmentCount, &structure->pColorAttachmentSamples, true, false, "VUID-VkAttachmentSampleCountInfoAMD-colorAttachmentCount-arraylength", "VUID-VkAttachmentSampleCountInfoAMD-pColorAttachmentSamples-parameter");
+                skip |= validate_array("VkAttachmentSampleCountInfoAMD", "colorAttachmentCount", "pColorAttachmentSamples", structure->colorAttachmentCount, &structure->pColorAttachmentSamples, false, true, kVUIDUndefined, "VUID-VkAttachmentSampleCountInfoAMD-pColorAttachmentSamples-parameter");
 
                 skip |= validate_flags("VkAttachmentSampleCountInfoAMD", "depthStencilAttachmentSamples", "VkSampleCountFlagBits", AllVkSampleCountFlagBits, structure->depthStencilAttachmentSamples, kOptionalSingleBit, "VUID-VkAttachmentSampleCountInfoAMD-depthStencilAttachmentSamples-parameter");
             }
@@ -3245,40 +3242,40 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                     skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", "pReferenceFinalLists->pReferenceModifications", structure->pReferenceFinalLists->pReferenceModifications, "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceModifications-parameter");
                 }
 
-                skip |= validate_struct_type_array("VkVideoEncodeH265VclFrameInfoEXT", "naluSliceEntryCount", "pNaluSliceEntries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_EXT", structure->naluSliceEntryCount, structure->pNaluSliceEntries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_EXT, true, true, "VUID-VkVideoEncodeH265NaluSliceEXT-sType-sType", "VUID-VkVideoEncodeH265VclFrameInfoEXT-pNaluSliceEntries-parameter", "VUID-VkVideoEncodeH265VclFrameInfoEXT-naluSliceEntryCount-arraylength");
+                skip |= validate_struct_type_array("VkVideoEncodeH265VclFrameInfoEXT", "naluSliceSegmentEntryCount", "pNaluSliceSegmentEntries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_SEGMENT_EXT", structure->naluSliceSegmentEntryCount, structure->pNaluSliceSegmentEntries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_SEGMENT_EXT, true, true, "VUID-VkVideoEncodeH265NaluSliceSegmentEXT-sType-sType", "VUID-VkVideoEncodeH265VclFrameInfoEXT-pNaluSliceSegmentEntries-parameter", "VUID-VkVideoEncodeH265VclFrameInfoEXT-naluSliceSegmentEntryCount-arraylength");
 
-                if (structure->pNaluSliceEntries != NULL)
+                if (structure->pNaluSliceSegmentEntries != NULL)
                 {
-                    for (uint32_t naluSliceEntryIndex = 0; naluSliceEntryIndex < structure->naluSliceEntryCount; ++naluSliceEntryIndex)
+                    for (uint32_t naluSliceSegmentEntryIndex = 0; naluSliceSegmentEntryIndex < structure->naluSliceSegmentEntryCount; ++naluSliceSegmentEntryIndex)
                     {
-                        skip |= validate_struct_type("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_REFERENCE_LISTS_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_REFERENCE_LISTS_EXT, false, "VUID-VkVideoEncodeH265NaluSliceEXT-pReferenceFinalLists-parameter", "VUID-VkVideoEncodeH265ReferenceListsEXT-sType-sType");
+                        skip |= validate_struct_type("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceSegmentEntries[%i].pReferenceFinalLists", ParameterName::IndexVector{ naluSliceSegmentEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_REFERENCE_LISTS_EXT", structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_REFERENCE_LISTS_EXT, false, "VUID-VkVideoEncodeH265NaluSliceSegmentEXT-pReferenceFinalLists-parameter", "VUID-VkVideoEncodeH265ReferenceListsEXT-sType-sType");
 
-                        if (structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists != NULL)
+                        if (structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists != NULL)
                         {
-                            skip |= validate_struct_type_array("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->referenceList0EntryCount", ParameterName::IndexVector{ naluSliceEntryIndex }), ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceList0Entries", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->referenceList0EntryCount, structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList0Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT, false, true, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceList0Entries-parameter", kVUIDUndefined);
+                            skip |= validate_struct_type_array("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceSegmentEntries[%i].pReferenceFinalLists->referenceList0EntryCount", ParameterName::IndexVector{ naluSliceSegmentEntryIndex }), ParameterName("pNaluSliceSegmentEntries[%i].pReferenceFinalLists->pReferenceList0Entries", ParameterName::IndexVector{ naluSliceSegmentEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT", structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists->referenceList0EntryCount, structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists->pReferenceList0Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT, false, true, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceList0Entries-parameter", kVUIDUndefined);
 
-                            if (structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList0Entries != NULL)
+                            if (structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists->pReferenceList0Entries != NULL)
                             {
-                                for (uint32_t referenceList0EntryIndex = 0; referenceList0EntryIndex < structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->referenceList0EntryCount; ++referenceList0EntryIndex)
+                                for (uint32_t referenceList0EntryIndex = 0; referenceList0EntryIndex < structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists->referenceList0EntryCount; ++referenceList0EntryIndex)
                                 {
-                                    skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceList0Entries[%i].pStdReferenceInfo", ParameterName::IndexVector{ naluSliceEntryIndex, referenceList0EntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList0Entries[referenceList0EntryIndex].pStdReferenceInfo, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+                                    skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceSegmentEntries[%i].pReferenceFinalLists->pReferenceList0Entries[%i].pStdReferenceInfo", ParameterName::IndexVector{ naluSliceSegmentEntryIndex, referenceList0EntryIndex }), structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists->pReferenceList0Entries[referenceList0EntryIndex].pStdReferenceInfo, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-pStdReferenceInfo-parameter");
                                 }
                             }
 
-                            skip |= validate_struct_type_array("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->referenceList1EntryCount", ParameterName::IndexVector{ naluSliceEntryIndex }), ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceList1Entries", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->referenceList1EntryCount, structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList1Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT, false, true, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceList1Entries-parameter", kVUIDUndefined);
+                            skip |= validate_struct_type_array("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceSegmentEntries[%i].pReferenceFinalLists->referenceList1EntryCount", ParameterName::IndexVector{ naluSliceSegmentEntryIndex }), ParameterName("pNaluSliceSegmentEntries[%i].pReferenceFinalLists->pReferenceList1Entries", ParameterName::IndexVector{ naluSliceSegmentEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT", structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists->referenceList1EntryCount, structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists->pReferenceList1Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT, false, true, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceList1Entries-parameter", kVUIDUndefined);
 
-                            if (structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList1Entries != NULL)
+                            if (structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists->pReferenceList1Entries != NULL)
                             {
-                                for (uint32_t referenceList1EntryIndex = 0; referenceList1EntryIndex < structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->referenceList1EntryCount; ++referenceList1EntryIndex)
+                                for (uint32_t referenceList1EntryIndex = 0; referenceList1EntryIndex < structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists->referenceList1EntryCount; ++referenceList1EntryIndex)
                                 {
-                                    skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceList1Entries[%i].pStdReferenceInfo", ParameterName::IndexVector{ naluSliceEntryIndex, referenceList1EntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList1Entries[referenceList1EntryIndex].pStdReferenceInfo, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+                                    skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceSegmentEntries[%i].pReferenceFinalLists->pReferenceList1Entries[%i].pStdReferenceInfo", ParameterName::IndexVector{ naluSliceSegmentEntryIndex, referenceList1EntryIndex }), structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists->pReferenceList1Entries[referenceList1EntryIndex].pStdReferenceInfo, "VUID-VkVideoEncodeH265DpbSlotInfoEXT-pStdReferenceInfo-parameter");
                                 }
                             }
 
-                            skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceModifications", ParameterName::IndexVector{ naluSliceEntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceModifications, "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceModifications-parameter");
+                            skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceSegmentEntries[%i].pReferenceFinalLists->pReferenceModifications", ParameterName::IndexVector{ naluSliceSegmentEntryIndex }), structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pReferenceFinalLists->pReferenceModifications, "VUID-VkVideoEncodeH265ReferenceListsEXT-pReferenceModifications-parameter");
                         }
 
-                        skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pSliceHeaderStd", ParameterName::IndexVector{ naluSliceEntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pSliceHeaderStd, "VUID-VkVideoEncodeH265NaluSliceEXT-pSliceHeaderStd-parameter");
+                        skip |= validate_required_pointer("VkVideoEncodeH265VclFrameInfoEXT", ParameterName("pNaluSliceSegmentEntries[%i].pSliceSegmentHeaderStd", ParameterName::IndexVector{ naluSliceSegmentEntryIndex }), structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pSliceSegmentHeaderStd, "VUID-VkVideoEncodeH265NaluSliceSegmentEXT-pSliceSegmentHeaderStd-parameter");
                     }
                 }
 
@@ -3330,15 +3327,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-        // Validation code for VkVideoDecodeH264ProfileEXT structure members
-        case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_EXT: { // Covers VUID-VkVideoDecodeH264ProfileEXT-sType-sType
-            if (is_const_param) {
-                VkVideoDecodeH264ProfileEXT *structure = (VkVideoDecodeH264ProfileEXT *) header;
-                skip |= validate_flags("VkVideoDecodeH264ProfileEXT", "pictureLayout", "VkVideoDecodeH264PictureLayoutFlagBitsEXT", AllVkVideoDecodeH264PictureLayoutFlagBitsEXT, structure->pictureLayout, kRequiredFlags, "VUID-VkVideoDecodeH264ProfileEXT-pictureLayout-parameter", "VUID-VkVideoDecodeH264ProfileEXT-pictureLayout-requiredbitmask");
-            }
-        } break;
-#endif // VK_ENABLE_BETA_EXTENSIONS
+        // No Validation code for VkVideoDecodeH264ProfileEXT structure members  -- Covers VUID-VkVideoDecodeH264ProfileEXT-sType-sType
 
         // No Validation code for VkVideoDecodeH264CapabilitiesEXT structure members  -- Covers VUID-VkVideoDecodeH264CapabilitiesEXT-sType-sType
 
@@ -9418,7 +9407,9 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2(
         {
             for (uint32_t imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < pDependencyInfo->imageMemoryBarrierCount; ++imageMemoryBarrierIndex)
             {
-                skip |= validate_struct_pnext("vkCmdSetEvent2", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), NULL, pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2-pNext-pNext", kVUIDUndefined, false, true);
+                const VkStructureType allowed_structs_VkImageMemoryBarrier2[] = { VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT };
+
+                skip |= validate_struct_pnext("vkCmdSetEvent2", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier2), allowed_structs_VkImageMemoryBarrier2, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2-pNext-pNext", "VUID-VkImageMemoryBarrier2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdSetEvent2", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkPipelineStageFlagBits2", AllVkPipelineStageFlagBits2, pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkImageMemoryBarrier2-srcStageMask-parameter");
 
@@ -9511,7 +9502,9 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2(
             {
                 for (uint32_t imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < pDependencyInfos[eventIndex].imageMemoryBarrierCount; ++imageMemoryBarrierIndex)
                 {
-                    skip |= validate_struct_pnext("vkCmdWaitEvents2", ParameterName("pDependencyInfos[%i].pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ eventIndex, imageMemoryBarrierIndex }), NULL, pDependencyInfos[eventIndex].pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2-pNext-pNext", kVUIDUndefined, false, true);
+                    const VkStructureType allowed_structs_VkImageMemoryBarrier2[] = { VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT };
+
+                    skip |= validate_struct_pnext("vkCmdWaitEvents2", ParameterName("pDependencyInfos[%i].pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ eventIndex, imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pDependencyInfos[eventIndex].pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier2), allowed_structs_VkImageMemoryBarrier2, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2-pNext-pNext", "VUID-VkImageMemoryBarrier2-sType-unique", false, true);
 
                     skip |= validate_flags("vkCmdWaitEvents2", ParameterName("pDependencyInfos[%i].pImageMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ eventIndex, imageMemoryBarrierIndex }), "VkPipelineStageFlagBits2", AllVkPipelineStageFlagBits2, pDependencyInfos[eventIndex].pImageMemoryBarriers[imageMemoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkImageMemoryBarrier2-srcStageMask-parameter");
 
@@ -9590,7 +9583,9 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2(
         {
             for (uint32_t imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < pDependencyInfo->imageMemoryBarrierCount; ++imageMemoryBarrierIndex)
             {
-                skip |= validate_struct_pnext("vkCmdPipelineBarrier2", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), NULL, pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2-pNext-pNext", kVUIDUndefined, false, true);
+                const VkStructureType allowed_structs_VkImageMemoryBarrier2[] = { VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT };
+
+                skip |= validate_struct_pnext("vkCmdPipelineBarrier2", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier2), allowed_structs_VkImageMemoryBarrier2, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2-pNext-pNext", "VUID-VkImageMemoryBarrier2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdPipelineBarrier2", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkPipelineStageFlagBits2", AllVkPipelineStageFlagBits2, pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkImageMemoryBarrier2-srcStageMask-parameter");
 
@@ -9773,7 +9768,9 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage2(
         {
             for (uint32_t regionIndex = 0; regionIndex < pCopyBufferToImageInfo->regionCount; ++regionIndex)
             {
-                skip |= validate_struct_pnext("vkCmdCopyBufferToImage2", ParameterName("pCopyBufferToImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pCopyBufferToImageInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2-pNext-pNext", kVUIDUndefined, false, true);
+                const VkStructureType allowed_structs_VkBufferImageCopy2[] = { VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM };
+
+                skip |= validate_struct_pnext("vkCmdCopyBufferToImage2", ParameterName("pCopyBufferToImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pCopyBufferToImageInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkBufferImageCopy2), allowed_structs_VkBufferImageCopy2, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2-pNext-pNext", "VUID-VkBufferImageCopy2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdCopyBufferToImage2", ParameterName("pCopyBufferToImageInfo->pRegions[%i].imageSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pCopyBufferToImageInfo->pRegions[regionIndex].imageSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -9807,7 +9804,9 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer2(
         {
             for (uint32_t regionIndex = 0; regionIndex < pCopyImageToBufferInfo->regionCount; ++regionIndex)
             {
-                skip |= validate_struct_pnext("vkCmdCopyImageToBuffer2", ParameterName("pCopyImageToBufferInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pCopyImageToBufferInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2-pNext-pNext", kVUIDUndefined, false, true);
+                const VkStructureType allowed_structs_VkBufferImageCopy2[] = { VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM };
+
+                skip |= validate_struct_pnext("vkCmdCopyImageToBuffer2", ParameterName("pCopyImageToBufferInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pCopyImageToBufferInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkBufferImageCopy2), allowed_structs_VkBufferImageCopy2, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2-pNext-pNext", "VUID-VkBufferImageCopy2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdCopyImageToBuffer2", ParameterName("pCopyImageToBufferInfo->pRegions[%i].imageSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pCopyImageToBufferInfo->pRegions[regionIndex].imageSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -9843,7 +9842,9 @@ bool StatelessValidation::PreCallValidateCmdBlitImage2(
         {
             for (uint32_t regionIndex = 0; regionIndex < pBlitImageInfo->regionCount; ++regionIndex)
             {
-                skip |= validate_struct_pnext("vkCmdBlitImage2", ParameterName("pBlitImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pBlitImageInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageBlit2-pNext-pNext", kVUIDUndefined, false, true);
+                const VkStructureType allowed_structs_VkImageBlit2[] = { VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM };
+
+                skip |= validate_struct_pnext("vkCmdBlitImage2", ParameterName("pBlitImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pBlitImageInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageBlit2), allowed_structs_VkImageBlit2, GeneratedVulkanHeaderVersion, "VUID-VkImageBlit2-pNext-pNext", "VUID-VkImageBlit2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdBlitImage2", ParameterName("pBlitImageInfo->pRegions[%i].srcSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pBlitImageInfo->pRegions[regionIndex].srcSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -13602,7 +13603,9 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2KHR(
         {
             for (uint32_t imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < pDependencyInfo->imageMemoryBarrierCount; ++imageMemoryBarrierIndex)
             {
-                skip |= validate_struct_pnext("vkCmdSetEvent2KHR", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), NULL, pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2-pNext-pNext", kVUIDUndefined, false, true);
+                const VkStructureType allowed_structs_VkImageMemoryBarrier2[] = { VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT };
+
+                skip |= validate_struct_pnext("vkCmdSetEvent2KHR", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier2), allowed_structs_VkImageMemoryBarrier2, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2-pNext-pNext", "VUID-VkImageMemoryBarrier2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdSetEvent2KHR", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkPipelineStageFlagBits2", AllVkPipelineStageFlagBits2, pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkImageMemoryBarrier2-srcStageMask-parameter");
 
@@ -13699,7 +13702,9 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2KHR(
             {
                 for (uint32_t imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < pDependencyInfos[eventIndex].imageMemoryBarrierCount; ++imageMemoryBarrierIndex)
                 {
-                    skip |= validate_struct_pnext("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ eventIndex, imageMemoryBarrierIndex }), NULL, pDependencyInfos[eventIndex].pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2-pNext-pNext", kVUIDUndefined, false, true);
+                    const VkStructureType allowed_structs_VkImageMemoryBarrier2[] = { VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT };
+
+                    skip |= validate_struct_pnext("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ eventIndex, imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pDependencyInfos[eventIndex].pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier2), allowed_structs_VkImageMemoryBarrier2, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2-pNext-pNext", "VUID-VkImageMemoryBarrier2-sType-unique", false, true);
 
                     skip |= validate_flags("vkCmdWaitEvents2KHR", ParameterName("pDependencyInfos[%i].pImageMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ eventIndex, imageMemoryBarrierIndex }), "VkPipelineStageFlagBits2", AllVkPipelineStageFlagBits2, pDependencyInfos[eventIndex].pImageMemoryBarriers[imageMemoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkImageMemoryBarrier2-srcStageMask-parameter");
 
@@ -13780,7 +13785,9 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2KHR(
         {
             for (uint32_t imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < pDependencyInfo->imageMemoryBarrierCount; ++imageMemoryBarrierIndex)
             {
-                skip |= validate_struct_pnext("vkCmdPipelineBarrier2KHR", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), NULL, pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2-pNext-pNext", kVUIDUndefined, false, true);
+                const VkStructureType allowed_structs_VkImageMemoryBarrier2[] = { VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT };
+
+                skip |= validate_struct_pnext("vkCmdPipelineBarrier2KHR", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].pNext", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkSampleLocationsInfoEXT", pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageMemoryBarrier2), allowed_structs_VkImageMemoryBarrier2, GeneratedVulkanHeaderVersion, "VUID-VkImageMemoryBarrier2-pNext-pNext", "VUID-VkImageMemoryBarrier2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdPipelineBarrier2KHR", ParameterName("pDependencyInfo->pImageMemoryBarriers[%i].srcStageMask", ParameterName::IndexVector{ imageMemoryBarrierIndex }), "VkPipelineStageFlagBits2", AllVkPipelineStageFlagBits2, pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].srcStageMask, kOptionalFlags, "VUID-VkImageMemoryBarrier2-srcStageMask-parameter");
 
@@ -14012,7 +14019,9 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage2KHR(
         {
             for (uint32_t regionIndex = 0; regionIndex < pCopyBufferToImageInfo->regionCount; ++regionIndex)
             {
-                skip |= validate_struct_pnext("vkCmdCopyBufferToImage2KHR", ParameterName("pCopyBufferToImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pCopyBufferToImageInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2-pNext-pNext", kVUIDUndefined, false, true);
+                const VkStructureType allowed_structs_VkBufferImageCopy2[] = { VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM };
+
+                skip |= validate_struct_pnext("vkCmdCopyBufferToImage2KHR", ParameterName("pCopyBufferToImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pCopyBufferToImageInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkBufferImageCopy2), allowed_structs_VkBufferImageCopy2, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2-pNext-pNext", "VUID-VkBufferImageCopy2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdCopyBufferToImage2KHR", ParameterName("pCopyBufferToImageInfo->pRegions[%i].imageSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pCopyBufferToImageInfo->pRegions[regionIndex].imageSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -14047,7 +14056,9 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer2KHR(
         {
             for (uint32_t regionIndex = 0; regionIndex < pCopyImageToBufferInfo->regionCount; ++regionIndex)
             {
-                skip |= validate_struct_pnext("vkCmdCopyImageToBuffer2KHR", ParameterName("pCopyImageToBufferInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pCopyImageToBufferInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2-pNext-pNext", kVUIDUndefined, false, true);
+                const VkStructureType allowed_structs_VkBufferImageCopy2[] = { VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM };
+
+                skip |= validate_struct_pnext("vkCmdCopyImageToBuffer2KHR", ParameterName("pCopyImageToBufferInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pCopyImageToBufferInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkBufferImageCopy2), allowed_structs_VkBufferImageCopy2, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2-pNext-pNext", "VUID-VkBufferImageCopy2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdCopyImageToBuffer2KHR", ParameterName("pCopyImageToBufferInfo->pRegions[%i].imageSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pCopyImageToBufferInfo->pRegions[regionIndex].imageSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -14084,7 +14095,9 @@ bool StatelessValidation::PreCallValidateCmdBlitImage2KHR(
         {
             for (uint32_t regionIndex = 0; regionIndex < pBlitImageInfo->regionCount; ++regionIndex)
             {
-                skip |= validate_struct_pnext("vkCmdBlitImage2KHR", ParameterName("pBlitImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pBlitImageInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageBlit2-pNext-pNext", kVUIDUndefined, false, true);
+                const VkStructureType allowed_structs_VkImageBlit2[] = { VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM };
+
+                skip |= validate_struct_pnext("vkCmdBlitImage2KHR", ParameterName("pBlitImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pBlitImageInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageBlit2), allowed_structs_VkImageBlit2, GeneratedVulkanHeaderVersion, "VUID-VkImageBlit2-pNext-pNext", "VUID-VkImageBlit2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCmdBlitImage2KHR", ParameterName("pBlitImageInfo->pRegions[%i].srcSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pBlitImageInfo->pRegions[regionIndex].srcSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -17814,11 +17827,14 @@ bool StatelessValidation::PreCallValidateSetBufferCollectionImageConstraintsFUCH
 
                 skip |= validate_reserved_flags("vkSetBufferCollectionImageConstraintsFUCHSIA", ParameterName("pImageConstraintsInfo->pFormatConstraints[%i].flags", ParameterName::IndexVector{ formatConstraintsIndex }), pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].flags, "VUID-VkImageFormatConstraintsInfoFUCHSIA-flags-zerobitmask");
 
-                skip |= validate_struct_type("vkSetBufferCollectionImageConstraintsFUCHSIA", ParameterName("pImageConstraintsInfo->pFormatConstraints[%i].pColorSpaces", ParameterName::IndexVector{ formatConstraintsIndex }), "VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA", pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].pColorSpaces, VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA, true, "VUID-VkImageFormatConstraintsInfoFUCHSIA-pColorSpaces-parameter", "VUID-VkSysmemColorSpaceFUCHSIA-sType-sType");
+                skip |= validate_struct_type_array("vkSetBufferCollectionImageConstraintsFUCHSIA", ParameterName("pImageConstraintsInfo->pFormatConstraints[%i].colorSpaceCount", ParameterName::IndexVector{ formatConstraintsIndex }), ParameterName("pImageConstraintsInfo->pFormatConstraints[%i].pColorSpaces", ParameterName::IndexVector{ formatConstraintsIndex }), "VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA", pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].colorSpaceCount, pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].pColorSpaces, VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA, true, true, "VUID-VkSysmemColorSpaceFUCHSIA-sType-sType", "VUID-VkImageFormatConstraintsInfoFUCHSIA-pColorSpaces-parameter", "VUID-VkImageFormatConstraintsInfoFUCHSIA-colorSpaceCount-arraylength");
 
                 if (pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].pColorSpaces != NULL)
                 {
-                    skip |= validate_struct_pnext("vkSetBufferCollectionImageConstraintsFUCHSIA", ParameterName("pImageConstraintsInfo->pFormatConstraints[%i].pColorSpaces->pNext", ParameterName::IndexVector{ formatConstraintsIndex }), NULL, pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].pColorSpaces->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSysmemColorSpaceFUCHSIA-pNext-pNext", kVUIDUndefined, false, true);
+                    for (uint32_t colorSpaceIndex = 0; colorSpaceIndex < pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].colorSpaceCount; ++colorSpaceIndex)
+                    {
+                        skip |= validate_struct_pnext("vkSetBufferCollectionImageConstraintsFUCHSIA", ParameterName("pImageConstraintsInfo->pFormatConstraints[%i].pColorSpaces[%i].pNext", ParameterName::IndexVector{ formatConstraintsIndex, colorSpaceIndex }), NULL, pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].pColorSpaces[colorSpaceIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSysmemColorSpaceFUCHSIA-pNext-pNext", kVUIDUndefined, false, true);
+                    }
                 }
             }
         }

@@ -1129,28 +1129,8 @@ void ThreadSafety::PreCallRecordQueueBindSparse(
     const VkBindSparseInfo*                     pBindInfo,
     VkFence                                     fence) {
     StartWriteObject(queue, "vkQueueBindSparse");
-    if (pBindInfo) {
-        for (uint32_t index=0; index < bindInfoCount; index++) {
-            if (pBindInfo[index].pBufferBinds) {
-                for (uint32_t index2=0; index2 < pBindInfo[index].bufferBindCount; index2++) {
-                    StartWriteObject(pBindInfo[index].pBufferBinds[index2].buffer, "vkQueueBindSparse");
-                }
-            }
-            if (pBindInfo[index].pImageOpaqueBinds) {
-                for (uint32_t index2=0; index2 < pBindInfo[index].imageOpaqueBindCount; index2++) {
-                    StartWriteObject(pBindInfo[index].pImageOpaqueBinds[index2].image, "vkQueueBindSparse");
-                }
-            }
-            if (pBindInfo[index].pImageBinds) {
-                for (uint32_t index2=0; index2 < pBindInfo[index].imageBindCount; index2++) {
-                    StartWriteObject(pBindInfo[index].pImageBinds[index2].image, "vkQueueBindSparse");
-                }
-            }
-        }
-    }
     StartWriteObject(fence, "vkQueueBindSparse");
     // Host access to queue must be externally synchronized
-    // Host access to pBindInfo[].pBufferBinds[].buffer,pBindInfo[].pImageOpaqueBinds[].image,pBindInfo[].pImageBinds[].image must be externally synchronized
     // Host access to fence must be externally synchronized
 }
 
@@ -1161,28 +1141,8 @@ void ThreadSafety::PostCallRecordQueueBindSparse(
     VkFence                                     fence,
     VkResult                                    result) {
     FinishWriteObject(queue, "vkQueueBindSparse");
-    if (pBindInfo) {
-        for (uint32_t index=0; index < bindInfoCount; index++) {
-            if (pBindInfo[index].pBufferBinds) {
-                for (uint32_t index2=0; index2 < pBindInfo[index].bufferBindCount; index2++) {
-                    FinishWriteObject(pBindInfo[index].pBufferBinds[index2].buffer, "vkQueueBindSparse");
-                }
-            }
-            if (pBindInfo[index].pImageOpaqueBinds) {
-                for (uint32_t index2=0; index2 < pBindInfo[index].imageOpaqueBindCount; index2++) {
-                    FinishWriteObject(pBindInfo[index].pImageOpaqueBinds[index2].image, "vkQueueBindSparse");
-                }
-            }
-            if (pBindInfo[index].pImageBinds) {
-                for (uint32_t index2=0; index2 < pBindInfo[index].imageBindCount; index2++) {
-                    FinishWriteObject(pBindInfo[index].pImageBinds[index2].image, "vkQueueBindSparse");
-                }
-            }
-        }
-    }
     FinishWriteObject(fence, "vkQueueBindSparse");
     // Host access to queue must be externally synchronized
-    // Host access to pBindInfo[].pBufferBinds[].buffer,pBindInfo[].pImageOpaqueBinds[].image,pBindInfo[].pImageBinds[].image must be externally synchronized
     // Host access to fence must be externally synchronized
 }
 

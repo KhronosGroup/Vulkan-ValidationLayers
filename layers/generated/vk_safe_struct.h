@@ -6645,21 +6645,21 @@ struct safe_VkVideoEncodeH265ReferenceListsEXT {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoEncodeH265NaluSliceEXT {
+struct safe_VkVideoEncodeH265NaluSliceSegmentEXT {
     VkStructureType sType;
     const void* pNext;
     uint32_t ctbCount;
     safe_VkVideoEncodeH265ReferenceListsEXT* pReferenceFinalLists;
-    const StdVideoEncodeH265SliceHeader* pSliceHeaderStd;
-    safe_VkVideoEncodeH265NaluSliceEXT(const VkVideoEncodeH265NaluSliceEXT* in_struct);
-    safe_VkVideoEncodeH265NaluSliceEXT(const safe_VkVideoEncodeH265NaluSliceEXT& copy_src);
-    safe_VkVideoEncodeH265NaluSliceEXT& operator=(const safe_VkVideoEncodeH265NaluSliceEXT& copy_src);
-    safe_VkVideoEncodeH265NaluSliceEXT();
-    ~safe_VkVideoEncodeH265NaluSliceEXT();
-    void initialize(const VkVideoEncodeH265NaluSliceEXT* in_struct);
-    void initialize(const safe_VkVideoEncodeH265NaluSliceEXT* copy_src);
-    VkVideoEncodeH265NaluSliceEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265NaluSliceEXT *>(this); }
-    VkVideoEncodeH265NaluSliceEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265NaluSliceEXT const *>(this); }
+    const StdVideoEncodeH265SliceSegmentHeader* pSliceSegmentHeaderStd;
+    safe_VkVideoEncodeH265NaluSliceSegmentEXT(const VkVideoEncodeH265NaluSliceSegmentEXT* in_struct);
+    safe_VkVideoEncodeH265NaluSliceSegmentEXT(const safe_VkVideoEncodeH265NaluSliceSegmentEXT& copy_src);
+    safe_VkVideoEncodeH265NaluSliceSegmentEXT& operator=(const safe_VkVideoEncodeH265NaluSliceSegmentEXT& copy_src);
+    safe_VkVideoEncodeH265NaluSliceSegmentEXT();
+    ~safe_VkVideoEncodeH265NaluSliceSegmentEXT();
+    void initialize(const VkVideoEncodeH265NaluSliceSegmentEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH265NaluSliceSegmentEXT* copy_src);
+    VkVideoEncodeH265NaluSliceSegmentEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265NaluSliceSegmentEXT *>(this); }
+    VkVideoEncodeH265NaluSliceSegmentEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265NaluSliceSegmentEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -6668,8 +6668,8 @@ struct safe_VkVideoEncodeH265VclFrameInfoEXT {
     VkStructureType sType;
     const void* pNext;
     safe_VkVideoEncodeH265ReferenceListsEXT* pReferenceFinalLists;
-    uint32_t naluSliceEntryCount;
-    safe_VkVideoEncodeH265NaluSliceEXT* pNaluSliceEntries;
+    uint32_t naluSliceSegmentEntryCount;
+    safe_VkVideoEncodeH265NaluSliceSegmentEXT* pNaluSliceSegmentEntries;
     const StdVideoEncodeH265PictureInfo* pCurrentPictureInfo;
     safe_VkVideoEncodeH265VclFrameInfoEXT(const VkVideoEncodeH265VclFrameInfoEXT* in_struct);
     safe_VkVideoEncodeH265VclFrameInfoEXT(const safe_VkVideoEncodeH265VclFrameInfoEXT& copy_src);
@@ -10265,7 +10265,7 @@ struct safe_VkPhysicalDevice4444FormatsFeaturesEXT {
 
 struct safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM {
     VkStructureType sType;
-    const void* pNext;
+    void* pNext;
     VkBool32 rasterizationOrderColorAttachmentAccess;
     VkBool32 rasterizationOrderDepthAttachmentAccess;
     VkBool32 rasterizationOrderStencilAttachmentAccess;

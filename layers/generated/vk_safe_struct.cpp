@@ -29670,101 +29670,101 @@ void safe_VkVideoEncodeH265ReferenceListsEXT::initialize(const safe_VkVideoEncod
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 
-safe_VkVideoEncodeH265NaluSliceEXT::safe_VkVideoEncodeH265NaluSliceEXT(const VkVideoEncodeH265NaluSliceEXT* in_struct) :
+safe_VkVideoEncodeH265NaluSliceSegmentEXT::safe_VkVideoEncodeH265NaluSliceSegmentEXT(const VkVideoEncodeH265NaluSliceSegmentEXT* in_struct) :
     sType(in_struct->sType),
     ctbCount(in_struct->ctbCount),
     pReferenceFinalLists(nullptr),
-    pSliceHeaderStd(nullptr)
+    pSliceSegmentHeaderStd(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
     if (in_struct->pReferenceFinalLists)
         pReferenceFinalLists = new safe_VkVideoEncodeH265ReferenceListsEXT(in_struct->pReferenceFinalLists);
-    if (in_struct->pSliceHeaderStd) {
-        pSliceHeaderStd = new StdVideoEncodeH265SliceHeader(*in_struct->pSliceHeaderStd);
+    if (in_struct->pSliceSegmentHeaderStd) {
+        pSliceSegmentHeaderStd = new StdVideoEncodeH265SliceSegmentHeader(*in_struct->pSliceSegmentHeaderStd);
     }
 }
 
-safe_VkVideoEncodeH265NaluSliceEXT::safe_VkVideoEncodeH265NaluSliceEXT() :
-    sType(VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_EXT),
+safe_VkVideoEncodeH265NaluSliceSegmentEXT::safe_VkVideoEncodeH265NaluSliceSegmentEXT() :
+    sType(VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_SEGMENT_EXT),
     pNext(nullptr),
     pReferenceFinalLists(nullptr),
-    pSliceHeaderStd(nullptr)
+    pSliceSegmentHeaderStd(nullptr)
 {}
 
-safe_VkVideoEncodeH265NaluSliceEXT::safe_VkVideoEncodeH265NaluSliceEXT(const safe_VkVideoEncodeH265NaluSliceEXT& copy_src)
+safe_VkVideoEncodeH265NaluSliceSegmentEXT::safe_VkVideoEncodeH265NaluSliceSegmentEXT(const safe_VkVideoEncodeH265NaluSliceSegmentEXT& copy_src)
 {
     sType = copy_src.sType;
     ctbCount = copy_src.ctbCount;
     pReferenceFinalLists = nullptr;
-    pSliceHeaderStd = nullptr;
+    pSliceSegmentHeaderStd = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
     if (copy_src.pReferenceFinalLists)
         pReferenceFinalLists = new safe_VkVideoEncodeH265ReferenceListsEXT(*copy_src.pReferenceFinalLists);
-    if (copy_src.pSliceHeaderStd) {
-        pSliceHeaderStd = new StdVideoEncodeH265SliceHeader(*copy_src.pSliceHeaderStd);
+    if (copy_src.pSliceSegmentHeaderStd) {
+        pSliceSegmentHeaderStd = new StdVideoEncodeH265SliceSegmentHeader(*copy_src.pSliceSegmentHeaderStd);
     }
 }
 
-safe_VkVideoEncodeH265NaluSliceEXT& safe_VkVideoEncodeH265NaluSliceEXT::operator=(const safe_VkVideoEncodeH265NaluSliceEXT& copy_src)
+safe_VkVideoEncodeH265NaluSliceSegmentEXT& safe_VkVideoEncodeH265NaluSliceSegmentEXT::operator=(const safe_VkVideoEncodeH265NaluSliceSegmentEXT& copy_src)
 {
     if (&copy_src == this) return *this;
 
     if (pReferenceFinalLists)
         delete pReferenceFinalLists;
-    if (pSliceHeaderStd)
-        delete pSliceHeaderStd;
+    if (pSliceSegmentHeaderStd)
+        delete pSliceSegmentHeaderStd;
     if (pNext)
         FreePnextChain(pNext);
 
     sType = copy_src.sType;
     ctbCount = copy_src.ctbCount;
     pReferenceFinalLists = nullptr;
-    pSliceHeaderStd = nullptr;
+    pSliceSegmentHeaderStd = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
     if (copy_src.pReferenceFinalLists)
         pReferenceFinalLists = new safe_VkVideoEncodeH265ReferenceListsEXT(*copy_src.pReferenceFinalLists);
-    if (copy_src.pSliceHeaderStd) {
-        pSliceHeaderStd = new StdVideoEncodeH265SliceHeader(*copy_src.pSliceHeaderStd);
+    if (copy_src.pSliceSegmentHeaderStd) {
+        pSliceSegmentHeaderStd = new StdVideoEncodeH265SliceSegmentHeader(*copy_src.pSliceSegmentHeaderStd);
     }
 
     return *this;
 }
 
-safe_VkVideoEncodeH265NaluSliceEXT::~safe_VkVideoEncodeH265NaluSliceEXT()
+safe_VkVideoEncodeH265NaluSliceSegmentEXT::~safe_VkVideoEncodeH265NaluSliceSegmentEXT()
 {
     if (pReferenceFinalLists)
         delete pReferenceFinalLists;
-    if (pSliceHeaderStd)
-        delete pSliceHeaderStd;
+    if (pSliceSegmentHeaderStd)
+        delete pSliceSegmentHeaderStd;
     if (pNext)
         FreePnextChain(pNext);
 }
 
-void safe_VkVideoEncodeH265NaluSliceEXT::initialize(const VkVideoEncodeH265NaluSliceEXT* in_struct)
+void safe_VkVideoEncodeH265NaluSliceSegmentEXT::initialize(const VkVideoEncodeH265NaluSliceSegmentEXT* in_struct)
 {
     sType = in_struct->sType;
     ctbCount = in_struct->ctbCount;
     pReferenceFinalLists = nullptr;
-    pSliceHeaderStd = nullptr;
+    pSliceSegmentHeaderStd = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
     if (in_struct->pReferenceFinalLists)
         pReferenceFinalLists = new safe_VkVideoEncodeH265ReferenceListsEXT(in_struct->pReferenceFinalLists);
-    if (in_struct->pSliceHeaderStd) {
-        pSliceHeaderStd = new StdVideoEncodeH265SliceHeader(*in_struct->pSliceHeaderStd);
+    if (in_struct->pSliceSegmentHeaderStd) {
+        pSliceSegmentHeaderStd = new StdVideoEncodeH265SliceSegmentHeader(*in_struct->pSliceSegmentHeaderStd);
     }
 }
 
-void safe_VkVideoEncodeH265NaluSliceEXT::initialize(const safe_VkVideoEncodeH265NaluSliceEXT* copy_src)
+void safe_VkVideoEncodeH265NaluSliceSegmentEXT::initialize(const safe_VkVideoEncodeH265NaluSliceSegmentEXT* copy_src)
 {
     sType = copy_src->sType;
     ctbCount = copy_src->ctbCount;
     pReferenceFinalLists = nullptr;
-    pSliceHeaderStd = nullptr;
+    pSliceSegmentHeaderStd = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
     if (copy_src->pReferenceFinalLists)
         pReferenceFinalLists = new safe_VkVideoEncodeH265ReferenceListsEXT(*copy_src->pReferenceFinalLists);
-    if (copy_src->pSliceHeaderStd) {
-        pSliceHeaderStd = new StdVideoEncodeH265SliceHeader(*copy_src->pSliceHeaderStd);
+    if (copy_src->pSliceSegmentHeaderStd) {
+        pSliceSegmentHeaderStd = new StdVideoEncodeH265SliceSegmentHeader(*copy_src->pSliceSegmentHeaderStd);
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -29775,17 +29775,17 @@ void safe_VkVideoEncodeH265NaluSliceEXT::initialize(const safe_VkVideoEncodeH265
 safe_VkVideoEncodeH265VclFrameInfoEXT::safe_VkVideoEncodeH265VclFrameInfoEXT(const VkVideoEncodeH265VclFrameInfoEXT* in_struct) :
     sType(in_struct->sType),
     pReferenceFinalLists(nullptr),
-    naluSliceEntryCount(in_struct->naluSliceEntryCount),
-    pNaluSliceEntries(nullptr),
+    naluSliceSegmentEntryCount(in_struct->naluSliceSegmentEntryCount),
+    pNaluSliceSegmentEntries(nullptr),
     pCurrentPictureInfo(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
     if (in_struct->pReferenceFinalLists)
         pReferenceFinalLists = new safe_VkVideoEncodeH265ReferenceListsEXT(in_struct->pReferenceFinalLists);
-    if (naluSliceEntryCount && in_struct->pNaluSliceEntries) {
-        pNaluSliceEntries = new safe_VkVideoEncodeH265NaluSliceEXT[naluSliceEntryCount];
-        for (uint32_t i = 0; i < naluSliceEntryCount; ++i) {
-            pNaluSliceEntries[i].initialize(&in_struct->pNaluSliceEntries[i]);
+    if (naluSliceSegmentEntryCount && in_struct->pNaluSliceSegmentEntries) {
+        pNaluSliceSegmentEntries = new safe_VkVideoEncodeH265NaluSliceSegmentEXT[naluSliceSegmentEntryCount];
+        for (uint32_t i = 0; i < naluSliceSegmentEntryCount; ++i) {
+            pNaluSliceSegmentEntries[i].initialize(&in_struct->pNaluSliceSegmentEntries[i]);
         }
     }
     if (in_struct->pCurrentPictureInfo) {
@@ -29797,7 +29797,7 @@ safe_VkVideoEncodeH265VclFrameInfoEXT::safe_VkVideoEncodeH265VclFrameInfoEXT() :
     sType(VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_VCL_FRAME_INFO_EXT),
     pNext(nullptr),
     pReferenceFinalLists(nullptr),
-    pNaluSliceEntries(nullptr),
+    pNaluSliceSegmentEntries(nullptr),
     pCurrentPictureInfo(nullptr)
 {}
 
@@ -29805,16 +29805,16 @@ safe_VkVideoEncodeH265VclFrameInfoEXT::safe_VkVideoEncodeH265VclFrameInfoEXT(con
 {
     sType = copy_src.sType;
     pReferenceFinalLists = nullptr;
-    naluSliceEntryCount = copy_src.naluSliceEntryCount;
-    pNaluSliceEntries = nullptr;
+    naluSliceSegmentEntryCount = copy_src.naluSliceSegmentEntryCount;
+    pNaluSliceSegmentEntries = nullptr;
     pCurrentPictureInfo = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
     if (copy_src.pReferenceFinalLists)
         pReferenceFinalLists = new safe_VkVideoEncodeH265ReferenceListsEXT(*copy_src.pReferenceFinalLists);
-    if (naluSliceEntryCount && copy_src.pNaluSliceEntries) {
-        pNaluSliceEntries = new safe_VkVideoEncodeH265NaluSliceEXT[naluSliceEntryCount];
-        for (uint32_t i = 0; i < naluSliceEntryCount; ++i) {
-            pNaluSliceEntries[i].initialize(&copy_src.pNaluSliceEntries[i]);
+    if (naluSliceSegmentEntryCount && copy_src.pNaluSliceSegmentEntries) {
+        pNaluSliceSegmentEntries = new safe_VkVideoEncodeH265NaluSliceSegmentEXT[naluSliceSegmentEntryCount];
+        for (uint32_t i = 0; i < naluSliceSegmentEntryCount; ++i) {
+            pNaluSliceSegmentEntries[i].initialize(&copy_src.pNaluSliceSegmentEntries[i]);
         }
     }
     if (copy_src.pCurrentPictureInfo) {
@@ -29828,8 +29828,8 @@ safe_VkVideoEncodeH265VclFrameInfoEXT& safe_VkVideoEncodeH265VclFrameInfoEXT::op
 
     if (pReferenceFinalLists)
         delete pReferenceFinalLists;
-    if (pNaluSliceEntries)
-        delete[] pNaluSliceEntries;
+    if (pNaluSliceSegmentEntries)
+        delete[] pNaluSliceSegmentEntries;
     if (pCurrentPictureInfo)
         delete pCurrentPictureInfo;
     if (pNext)
@@ -29837,16 +29837,16 @@ safe_VkVideoEncodeH265VclFrameInfoEXT& safe_VkVideoEncodeH265VclFrameInfoEXT::op
 
     sType = copy_src.sType;
     pReferenceFinalLists = nullptr;
-    naluSliceEntryCount = copy_src.naluSliceEntryCount;
-    pNaluSliceEntries = nullptr;
+    naluSliceSegmentEntryCount = copy_src.naluSliceSegmentEntryCount;
+    pNaluSliceSegmentEntries = nullptr;
     pCurrentPictureInfo = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
     if (copy_src.pReferenceFinalLists)
         pReferenceFinalLists = new safe_VkVideoEncodeH265ReferenceListsEXT(*copy_src.pReferenceFinalLists);
-    if (naluSliceEntryCount && copy_src.pNaluSliceEntries) {
-        pNaluSliceEntries = new safe_VkVideoEncodeH265NaluSliceEXT[naluSliceEntryCount];
-        for (uint32_t i = 0; i < naluSliceEntryCount; ++i) {
-            pNaluSliceEntries[i].initialize(&copy_src.pNaluSliceEntries[i]);
+    if (naluSliceSegmentEntryCount && copy_src.pNaluSliceSegmentEntries) {
+        pNaluSliceSegmentEntries = new safe_VkVideoEncodeH265NaluSliceSegmentEXT[naluSliceSegmentEntryCount];
+        for (uint32_t i = 0; i < naluSliceSegmentEntryCount; ++i) {
+            pNaluSliceSegmentEntries[i].initialize(&copy_src.pNaluSliceSegmentEntries[i]);
         }
     }
     if (copy_src.pCurrentPictureInfo) {
@@ -29860,8 +29860,8 @@ safe_VkVideoEncodeH265VclFrameInfoEXT::~safe_VkVideoEncodeH265VclFrameInfoEXT()
 {
     if (pReferenceFinalLists)
         delete pReferenceFinalLists;
-    if (pNaluSliceEntries)
-        delete[] pNaluSliceEntries;
+    if (pNaluSliceSegmentEntries)
+        delete[] pNaluSliceSegmentEntries;
     if (pCurrentPictureInfo)
         delete pCurrentPictureInfo;
     if (pNext)
@@ -29872,16 +29872,16 @@ void safe_VkVideoEncodeH265VclFrameInfoEXT::initialize(const VkVideoEncodeH265Vc
 {
     sType = in_struct->sType;
     pReferenceFinalLists = nullptr;
-    naluSliceEntryCount = in_struct->naluSliceEntryCount;
-    pNaluSliceEntries = nullptr;
+    naluSliceSegmentEntryCount = in_struct->naluSliceSegmentEntryCount;
+    pNaluSliceSegmentEntries = nullptr;
     pCurrentPictureInfo = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
     if (in_struct->pReferenceFinalLists)
         pReferenceFinalLists = new safe_VkVideoEncodeH265ReferenceListsEXT(in_struct->pReferenceFinalLists);
-    if (naluSliceEntryCount && in_struct->pNaluSliceEntries) {
-        pNaluSliceEntries = new safe_VkVideoEncodeH265NaluSliceEXT[naluSliceEntryCount];
-        for (uint32_t i = 0; i < naluSliceEntryCount; ++i) {
-            pNaluSliceEntries[i].initialize(&in_struct->pNaluSliceEntries[i]);
+    if (naluSliceSegmentEntryCount && in_struct->pNaluSliceSegmentEntries) {
+        pNaluSliceSegmentEntries = new safe_VkVideoEncodeH265NaluSliceSegmentEXT[naluSliceSegmentEntryCount];
+        for (uint32_t i = 0; i < naluSliceSegmentEntryCount; ++i) {
+            pNaluSliceSegmentEntries[i].initialize(&in_struct->pNaluSliceSegmentEntries[i]);
         }
     }
     if (in_struct->pCurrentPictureInfo) {
@@ -29893,16 +29893,16 @@ void safe_VkVideoEncodeH265VclFrameInfoEXT::initialize(const safe_VkVideoEncodeH
 {
     sType = copy_src->sType;
     pReferenceFinalLists = nullptr;
-    naluSliceEntryCount = copy_src->naluSliceEntryCount;
-    pNaluSliceEntries = nullptr;
+    naluSliceSegmentEntryCount = copy_src->naluSliceSegmentEntryCount;
+    pNaluSliceSegmentEntries = nullptr;
     pCurrentPictureInfo = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
     if (copy_src->pReferenceFinalLists)
         pReferenceFinalLists = new safe_VkVideoEncodeH265ReferenceListsEXT(*copy_src->pReferenceFinalLists);
-    if (naluSliceEntryCount && copy_src->pNaluSliceEntries) {
-        pNaluSliceEntries = new safe_VkVideoEncodeH265NaluSliceEXT[naluSliceEntryCount];
-        for (uint32_t i = 0; i < naluSliceEntryCount; ++i) {
-            pNaluSliceEntries[i].initialize(&copy_src->pNaluSliceEntries[i]);
+    if (naluSliceSegmentEntryCount && copy_src->pNaluSliceSegmentEntries) {
+        pNaluSliceSegmentEntries = new safe_VkVideoEncodeH265NaluSliceSegmentEXT[naluSliceSegmentEntryCount];
+        for (uint32_t i = 0; i < naluSliceSegmentEntryCount; ++i) {
+            pNaluSliceSegmentEntries[i].initialize(&copy_src->pNaluSliceSegmentEntries[i]);
         }
     }
     if (copy_src->pCurrentPictureInfo) {
@@ -46289,8 +46289,12 @@ safe_VkImageFormatConstraintsInfoFUCHSIA::safe_VkImageFormatConstraintsInfoFUCHS
     pColorSpaces(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
-    if (in_struct->pColorSpaces)
-        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA(in_struct->pColorSpaces);
+    if (colorSpaceCount && in_struct->pColorSpaces) {
+        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA[colorSpaceCount];
+        for (uint32_t i = 0; i < colorSpaceCount; ++i) {
+            pColorSpaces[i].initialize(&in_struct->pColorSpaces[i]);
+        }
+    }
 }
 
 safe_VkImageFormatConstraintsInfoFUCHSIA::safe_VkImageFormatConstraintsInfoFUCHSIA() :
@@ -46309,8 +46313,12 @@ safe_VkImageFormatConstraintsInfoFUCHSIA::safe_VkImageFormatConstraintsInfoFUCHS
     colorSpaceCount = copy_src.colorSpaceCount;
     pColorSpaces = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
-    if (copy_src.pColorSpaces)
-        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA(*copy_src.pColorSpaces);
+    if (colorSpaceCount && copy_src.pColorSpaces) {
+        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA[colorSpaceCount];
+        for (uint32_t i = 0; i < colorSpaceCount; ++i) {
+            pColorSpaces[i].initialize(&copy_src.pColorSpaces[i]);
+        }
+    }
 }
 
 safe_VkImageFormatConstraintsInfoFUCHSIA& safe_VkImageFormatConstraintsInfoFUCHSIA::operator=(const safe_VkImageFormatConstraintsInfoFUCHSIA& copy_src)
@@ -46318,7 +46326,7 @@ safe_VkImageFormatConstraintsInfoFUCHSIA& safe_VkImageFormatConstraintsInfoFUCHS
     if (&copy_src == this) return *this;
 
     if (pColorSpaces)
-        delete pColorSpaces;
+        delete[] pColorSpaces;
     if (pNext)
         FreePnextChain(pNext);
 
@@ -46330,8 +46338,12 @@ safe_VkImageFormatConstraintsInfoFUCHSIA& safe_VkImageFormatConstraintsInfoFUCHS
     colorSpaceCount = copy_src.colorSpaceCount;
     pColorSpaces = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
-    if (copy_src.pColorSpaces)
-        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA(*copy_src.pColorSpaces);
+    if (colorSpaceCount && copy_src.pColorSpaces) {
+        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA[colorSpaceCount];
+        for (uint32_t i = 0; i < colorSpaceCount; ++i) {
+            pColorSpaces[i].initialize(&copy_src.pColorSpaces[i]);
+        }
+    }
 
     return *this;
 }
@@ -46339,7 +46351,7 @@ safe_VkImageFormatConstraintsInfoFUCHSIA& safe_VkImageFormatConstraintsInfoFUCHS
 safe_VkImageFormatConstraintsInfoFUCHSIA::~safe_VkImageFormatConstraintsInfoFUCHSIA()
 {
     if (pColorSpaces)
-        delete pColorSpaces;
+        delete[] pColorSpaces;
     if (pNext)
         FreePnextChain(pNext);
 }
@@ -46354,8 +46366,12 @@ void safe_VkImageFormatConstraintsInfoFUCHSIA::initialize(const VkImageFormatCon
     colorSpaceCount = in_struct->colorSpaceCount;
     pColorSpaces = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
-    if (in_struct->pColorSpaces)
-        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA(in_struct->pColorSpaces);
+    if (colorSpaceCount && in_struct->pColorSpaces) {
+        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA[colorSpaceCount];
+        for (uint32_t i = 0; i < colorSpaceCount; ++i) {
+            pColorSpaces[i].initialize(&in_struct->pColorSpaces[i]);
+        }
+    }
 }
 
 void safe_VkImageFormatConstraintsInfoFUCHSIA::initialize(const safe_VkImageFormatConstraintsInfoFUCHSIA* copy_src)
@@ -46368,8 +46384,12 @@ void safe_VkImageFormatConstraintsInfoFUCHSIA::initialize(const safe_VkImageForm
     colorSpaceCount = copy_src->colorSpaceCount;
     pColorSpaces = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
-    if (copy_src->pColorSpaces)
-        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA(*copy_src->pColorSpaces);
+    if (colorSpaceCount && copy_src->pColorSpaces) {
+        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA[colorSpaceCount];
+        for (uint32_t i = 0; i < colorSpaceCount; ++i) {
+            pColorSpaces[i].initialize(&copy_src->pColorSpaces[i]);
+        }
+    }
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
 
