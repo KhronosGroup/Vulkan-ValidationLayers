@@ -15,6 +15,9 @@ supported within RenderDoc in a way that allows for per-invocation inspection of
 This article describes how to instrument your GLSL or HLSL shaders with Debug Printf and how to
 inspect and debug with them in RenderDoc, using vkconfig, or with environment variables.
 
+Several Debug Printf settings can be set by configuring the Validation Layer. These
+settings are described in [khronos_validation_layer.html](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#-user-content-layer-details).
+
 ## Using Debug Printf in GLSL Shaders
 
 To use Debug Printf in GLSL shaders, you need to enable the GL_EXT_debug_printf extension.
