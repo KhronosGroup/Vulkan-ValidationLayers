@@ -896,8 +896,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if (current_vtx_bfr_binding_info.size() < (vertex_binding + 1)) {
                 skip |= LogError(pCB->commandBuffer(), vuid.vertex_binding,
                                  "%s: %s expects that this Command Buffer's vertex binding Index %u should be set via "
-                                 "vkCmdBindVertexBuffers. This is because VkVertexInputBindingDescription struct at "
-                                 "index " PRINTF_SIZE_T_SPECIFIER " of pVertexBindingDescriptions has a binding value of %u.",
+                                 "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[" PRINTF_SIZE_T_SPECIFIER
+                                 "].binding value is %u.",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(), vertex_binding, i,
                                  vertex_binding);
             } else if ((current_vtx_bfr_binding_info[vertex_binding].buffer_state == nullptr) &&
@@ -905,8 +905,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 skip |= LogError(pCB->commandBuffer(), vuid.vertex_binding_null,
                                  "%s: Vertex binding %d must not be VK_NULL_HANDLE %s expects that this Command Buffer's vertex "
                                  "binding Index %u should be set via "
-                                 "vkCmdBindVertexBuffers. This is because VkVertexInputBindingDescription struct at "
-                                 "index " PRINTF_SIZE_T_SPECIFIER " of pVertexBindingDescriptions has a binding value of %u.",
+                                 "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[" PRINTF_SIZE_T_SPECIFIER
+                                 "].binding value is %u.",
                                  caller, vertex_binding, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
                                  vertex_binding, i, vertex_binding);
             }
@@ -915,15 +915,15 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         // Verify vertex attribute address alignment
         for (size_t i = 0; i < pPipeline->vertex_attribute_descriptions_.size(); i++) {
             const auto &attribute_description = pPipeline->vertex_attribute_descriptions_[i];
-            const auto vertex_binding = attribute_description.binding;
-            const auto attribute_offset = attribute_description.offset;
+            const uint32_t vertex_binding = attribute_description.binding;
+            const uint32_t attribute_offset = attribute_description.offset;
 
             const auto &vertex_binding_map_it = pPipeline->vertex_binding_to_index_map_.find(vertex_binding);
             if ((vertex_binding_map_it != pPipeline->vertex_binding_to_index_map_.cend()) &&
                 (vertex_binding < current_vtx_bfr_binding_info.size()) &&
                 ((current_vtx_bfr_binding_info[vertex_binding].buffer_state) ||
                  enabled_features.robustness2_features.nullDescriptor)) {
-                auto vertex_buffer_stride = pPipeline->vertex_binding_descriptions_[vertex_binding_map_it->second].stride;
+                uint32_t vertex_buffer_stride = pPipeline->vertex_binding_descriptions_[vertex_binding_map_it->second].stride;
                 if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
                     vertex_buffer_stride = static_cast<uint32_t>(current_vtx_bfr_binding_info[vertex_binding].stride);
                     uint32_t attribute_binding_extent =
@@ -936,31 +936,32 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                          vertex_binding, vertex_buffer_stride, api_call, i, attribute_binding_extent);
                     }
                 }
-                const auto vertex_buffer_offset = current_vtx_bfr_binding_info[vertex_binding].offset;
+                const VkDeviceSize vertex_buffer_offset = current_vtx_bfr_binding_info[vertex_binding].offset;
 
                 // Use 1 as vertex/instance index to use buffer stride as well
-                const auto attrib_address = vertex_buffer_offset + vertex_buffer_stride + attribute_offset;
+                const VkDeviceSize attrib_address = vertex_buffer_offset + vertex_buffer_stride + attribute_offset;
 
-                VkDeviceSize vtx_attrib_req_alignment = pPipeline->vertex_attribute_alignments_[i];
+                const VkDeviceSize vtx_attrib_req_alignment = pPipeline->vertex_attribute_alignments_[i];
 
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
                     LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer_state->buffer());
                     objlist.add(state.pipeline_state->pipeline());
-                    skip |= LogError(
-                        objlist, vuid.vertex_binding_attribute,
-                        "%s: Invalid attribAddress alignment for vertex attribute " PRINTF_SIZE_T_SPECIFIER
-                        ", %s,from of %s and vertex %s.",
-                        caller, i, string_VkFormat(attribute_description.format),
-                        report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
-                        report_data->FormatHandle(current_vtx_bfr_binding_info[vertex_binding].buffer_state->buffer()).c_str());
+                    skip |= LogError(objlist, vuid.vertex_binding_attribute,
+                                     "%s: Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (%" PRIu64
+                                     ") is not aligned in pVertexAttributeDescriptions[" PRINTF_SIZE_T_SPECIFIER
+                                     "] (binding=%u location=%u) where attribAddress = vertex buffer offset (%" PRIu64
+                                     ") + binding stride (%u) + attribute offset (%u).",
+                                     caller, string_VkFormat(attribute_description.format), vtx_attrib_req_alignment,
+                                     attrib_address, i, vertex_binding, attribute_description.location, vertex_buffer_offset,
+                                     vertex_buffer_stride, attribute_offset);
                 }
             } else {
                 LogObjectList objlist(pCB->commandBuffer());
                 objlist.add(state.pipeline_state->pipeline());
                 skip |= LogError(objlist, vuid.vertex_binding_attribute,
-                                 "%s: binding #%" PRIu32
-                                 " in pVertexAttributeDescriptions of %s is invalid in vkCmdBindVertexBuffers of %s.",
-                                 caller, vertex_binding, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
+                                 "%s: binding #%" PRIu32 " in pVertexAttributeDescriptions[" PRINTF_SIZE_T_SPECIFIER
+                                 "] of %s is an invalid value for command buffer %s.",
+                                 caller, vertex_binding, i, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
                                  report_data->FormatHandle(pCB->commandBuffer()).c_str());
             }
         }
@@ -4041,8 +4042,8 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
         if ((protected_submit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)) == 0) {
             skip |= LogError(queue, "VUID-vkQueueSubmit2-queue-06447",
                              "%s: pSubmits[%u] contains a protected submission to %s which was not created with "
-                             "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT", func_name, 
-                             submit_idx, report_data->FormatHandle(queue).c_str());
+                             "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT",
+                             func_name, submit_idx, report_data->FormatHandle(queue).c_str());
         }
 
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
@@ -4061,8 +4062,8 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
                     objlist.add(queue);
                     skip |= LogError(objlist, "VUID-VkSubmitInfo2-flags-03886",
                                      "%s: command buffer %s is unprotected while queue %s pSubmits[%u] has "
-                                     "VK_SUBMIT_PROTECTED_BIT_KHR set", func_name, 
-                                     report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
+                                     "VK_SUBMIT_PROTECTED_BIT_KHR set",
+                                     func_name, report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
                                      report_data->FormatHandle(queue).c_str(), submit_idx);
                 }
                 if ((cb_state->unprotected == false) && (protected_submit == false)) {
@@ -6816,11 +6817,12 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 first_sample_count_attachment = (j == 0u) ? static_cast<uint32_t>(image_view->samples) : first_sample_count_attachment;
 
                 if (first_sample_count_attachment != image_view->samples) {
-                    skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06070",
-                                     "%s(): Color attachment ref %u has sample count %s, whereas first color "
-                                     "attachment ref has "
-                                     "sample count %u.", func_name, 
-                                     j, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
+                    skip |=
+                        LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06070",
+                                 "%s(): Color attachment ref %u has sample count %s, whereas first color "
+                                 "attachment ref has "
+                                 "sample count %u.",
+                                 func_name, j, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
                 }
             }
         }
@@ -6923,11 +6925,10 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 IMAGE_STATE *image_state = image_view_state->image_state.get();
                 if (!(image_state->createInfo.extent.width >=
                       pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width)) {
-                    skip |=
-                        LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06079",
-                                 "%s(): width of the pColorAttachments[%u].imageView: %u must be greater than"
-                                 "renderArea.offset.x +  renderArea.extent.width", func_name, 
-                                 j, image_state->createInfo.extent.width);
+                    skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06079",
+                                     "%s(): width of the pColorAttachments[%u].imageView: %u must be greater than"
+                                     "renderArea.offset.x +  renderArea.extent.width",
+                                     func_name, j, image_state->createInfo.extent.width);
                 }
                 if (!(image_state->createInfo.extent.height >=
                       pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height)) {
