@@ -809,7 +809,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         dynamic_rendering_color_sample     = "VUID-vkCmdDrawMeshTasksIndirectNV-colorAttachmentCount-06185";
         dynamic_rendering_depth_sample     = "VUID-vkCmdDrawMeshTasksIndirectNV-pDepthAttachment-06186";
         dynamic_rendering_stencil_sample   = "VUID-vkCmdDrawMeshTasksIndirectNV-pStencilAttachment-06187";
-        dynamic_rendering_multi_sample     = "VUID-vkCmdDrawMeshTasksIndirectNV--colorAttachmentCount-06188";
+        dynamic_rendering_multi_sample     = "VUID-vkCmdDrawMeshTasksIndirectNV-colorAttachmentCount-06188";
         dynamic_rendering_06189            = "VUID-vkCmdDrawMeshTasksIndirectNV-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawMeshTasksIndirectNV-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-06198";
@@ -881,7 +881,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         dynamic_rendering_color_sample     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-colorAttachmentCount-06185";
         dynamic_rendering_depth_sample     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pDepthAttachment-06186";
         dynamic_rendering_stencil_sample   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pStencilAttachment-06187";
-        dynamic_rendering_multi_sample     = "VUID-vkCmdDrawMeshTasksIndirectCountNV--colorAttachmentCount-06188";
+        dynamic_rendering_multi_sample     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-colorAttachmentCount-06188";
         dynamic_rendering_06189            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-06198";
@@ -960,7 +960,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         dynamic_rendering_color_sample     = "VUID-vkCmdDrawIndirectByteCountEXT-colorAttachmentCount-06185";
         dynamic_rendering_depth_sample     = "VUID-vkCmdDrawIndirectByteCountEXT-pDepthAttachment-06186";
         dynamic_rendering_stencil_sample   = "VUID-vkCmdDrawIndirectByteCountEXT-pStencilAttachment-06187";
-        dynamic_rendering_multi_sample     = "VUID-vkCmdDrawIndirectByteCountEXT--colorAttachmentCount-06188";
+        dynamic_rendering_multi_sample     = "VUID-vkCmdDrawIndirectByteCountEXT-colorAttachmentCount-06188";
         dynamic_rendering_06189            = "VUID-vkCmdDrawIndirectByteCountEXT-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawIndirectByteCountEXT-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawIndirectByteCountEXT-renderPass-06198";

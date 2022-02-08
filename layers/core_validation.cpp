@@ -6841,7 +6841,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                     auto image_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[j].imageView);
                     if (!(image_view_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT)) {
                         skip |= LogError(
-                            commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06107",
+                            commandBuffer, "VUID-VkRenderingInfo-imageView-06107",
                             "vkCmdBeginRenderingKHR(): color image must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
                     }
                 }
@@ -6851,7 +6851,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 auto depth_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pDepthAttachment->imageView);
                 if (!(depth_view_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT)) {
                     skip |=
-                        LogError(commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06107",
+                        LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06107",
                                  "vkCmdBeginRenderingKHR(): depth image must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
                 }
             }
@@ -6860,7 +6860,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 auto stencil_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pStencilAttachment->imageView);
                 if (!(stencil_view_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT)) {
                     skip |=
-                        LogError(commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06107",
+                        LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06107",
                                  "vkCmdBeginRenderingKHR(): stencil image must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
                 }
             }
@@ -6868,7 +6868,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
         if (UniqueImageViews(pRenderingInfo, fragment_density_map_attachment_info->imageView) == false) {
             skip |= LogError(
-                commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06116",
+                commandBuffer, "VUID-VkRenderingInfo-imageView-06116",
                 "vkCmdBeginRenderingKHR(): imageView or resolveImageView member of pDepthAttachment, pStencilAttachment, or any"
                 "element of pColorAttachments must not equal VkRenderingFragmentDensityMapAttachmentInfoEXT->imageView");
         }
@@ -6878,7 +6878,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
             if ((pRenderingInfo->viewMask == 0) &&
                 (fragment_density_map_view_state->create_info.subresourceRange.layerCount != 1)) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06109",
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06109",
                                  "vkCmdBeginRenderingKHR(): imageView of VkRenderingFragmentDensityMapAttachmentInfoEXT must "
                                  "have a laycount ("
                                  "%" PRIu32 ") equal to 1 when viewMask is equal to 0",
@@ -6888,7 +6888,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             if ((pRenderingInfo->viewMask != 0) && (fragment_density_map_view_state->create_info.subresourceRange.layerCount <
                                                     MostSignificantBit(pRenderingInfo->viewMask))) {
                 skip |=
-                    LogError(commandBuffer, "VUID-VkRenderingInfoKHR-imageView-06108",
+                    LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06108",
                              "vkCmdBeginRenderingKHR(): imageView of VkRenderingFragmentDensityMapAttachmentInfoEXT must "
                              "have a laycount ("
                              "%" PRIu32 ") greater than or equal to the most significant bit in viewMask (%" PRIu32 ")",
@@ -7280,7 +7280,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
         auto image_view_state = Get<IMAGE_VIEW_STATE>(pAttachment->imageView);
 
         if (pAttachment->imageLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfoKHR-imageView-06145",
+            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06145",
                              "vkCmdBeginRenderingKHR(): ImageLayout must not be VK_IMAGE_LAYOUT_PRESENT_SRC_KHR");
         }
 
@@ -7321,14 +7321,14 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
         auto resolve_view_state = Get<IMAGE_VIEW_STATE>(pAttachment->resolveImageView);
         if (resolve_view_state && (pAttachment->resolveMode != VK_RESOLVE_MODE_NONE) &&
             (resolve_view_state->samples != VK_SAMPLE_COUNT_1_BIT)) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfoKHR-imageView-06133",
+            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06133",
                              "resolveImageView sample count must have a VK_SAMPLE_COUNT_1_BIT for Resolve Mode %s",
                              string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
         }
 
         if (pAttachment->resolveMode != VK_RESOLVE_MODE_NONE) {
             if (pAttachment->resolveImageLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfoKHR-imageView-06146",
+                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06146",
                                  "vlCmdBeginRenderingKHR(): resolveImageLayout must not be VK_IMAGE_LAYOUT_PRESENT_SRC_KHR");
             }
 
@@ -7348,7 +7348,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
             }
 
             if (resolve_view_state && (image_view_state->create_info.format != resolve_view_state->create_info.format)) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfoKHR-imageView-06134",
+                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06134",
                                  "resolveImageView format (%u) and ImageView format (%u) must have the same VkFormat",
                                  resolve_view_state->create_info.format, image_view_state->create_info.format);
             }
