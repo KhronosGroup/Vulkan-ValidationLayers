@@ -1753,10 +1753,6 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == member.type), None)
                     if member_index is not None and self.NeedSafeStruct(self.structMembers[member_index]) == True:
                         m_type = 'safe_%s' % member.type
-                if member.name == 'sType':
-                    if item.name in self.structTypes:
-                        struct_type = self.structTypes[item.name]
-                        default_init_list += '\n    %s(%s),' % (member.name, struct_type.value)
                 if member.ispointer and 'safe_' not in m_type and self.TypeContainsObjectHandle(member.type, False) == False:
                     # Ptr types w/o a safe_struct, for non-null case need to allocate new ptr and copy data in
                     if m_type in ['void', 'char']:
@@ -1861,6 +1857,11 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     except:
                         init_list += '\n    %s(in_struct->%s),' % (member.name, member.name)
                         init_func_txt += '    %s = in_struct->%s;\n' % (member.name, member.name)
+                    if (self.structOrUnion[item.name] != 'union'):
+                        if member.name == 'sType' and item.name in self.structTypes:
+                            default_init_list += f'\n    {member.name}({self.structTypes[item.name].value}),'
+                        else:
+                            default_init_list += f'\n    {member.name}(),'
             if '' != init_list:
                 init_list = init_list[:-1] # hack off final comma
 
