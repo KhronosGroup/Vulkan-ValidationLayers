@@ -10,8 +10,15 @@
 GPU-Assisted Validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation` layer.
 This document covers the design of the layer portion of the implementation.
 
-GPU-Assisted Validation layer settings can be set by configuring the Validation Layer. These settings are
-described in [khronos_validation_layer.html](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#-user-content-layer-details).
+## Configuring GPU-Assisted Validation
+
+For an overview of how to configure layers, refer to the [Layers Overview and Configuration](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html) document.
+
+The GPU-Assisted Validation settings are managed by configuring the Validation Layer. These
+settings are described in the
+[VK_LAYER_KHRONOS_validation](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details) document.
+
+GPU-Assisted Validation settings can also be managed using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK.
 
 
 ## Basic Operation
