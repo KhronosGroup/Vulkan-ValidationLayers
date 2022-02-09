@@ -32,6 +32,16 @@ The `VK_LAYER_KHRONOS_validation` layer supports the following validation covera
 
 * *Debug Printf functionality* and *GPU-Assisted validation* cannot be run at the same time.
 
+## Configuring the Validation Layer
+
+For an overview of how to configure layers, refer to the [Layers Overview and Configuration](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html) document.
+
+The Validation Layer settings are documented in detail in the
+[VK_LAYER_KHRONOS_validation](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details) document.
+
+The Validation Layer can also be enabled and configured using vkconfig. See the [vkconfig](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) documentation for more information.
+
+
 ## Layer Controls
 Layer behavior is controlled through either a layer settings file or an extension.
 The layer settings file allows a user to control various layer features and behaviors by providing easily modifiable settings.
