@@ -103,7 +103,7 @@ A `vk_layer_settings.txt` file is included in the Vulkan SDK, containing the def
 
 The settings and values available for each layer are listed in the documentation for each supported layer.
 
-## Layer Enviroment Variables
+## Layer Environment Variables
 
 Some settings from the settings file can also be set using environment variables. The settings that can be set using environment variables are 
 listed in the documentation for each supported layer.  If an environment variable is set, its value takes precedence over the value in the settings file.
