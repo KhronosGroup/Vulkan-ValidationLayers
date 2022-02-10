@@ -359,12 +359,14 @@ SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE 
                 has_specialization_constants = true;
                 break;
 
-                // Have a result that can be a pointer
+                // Have a result that can be a pointer (virtual or phyiscal)
             case spv::OpVariable:
             case spv::OpAccessChain:
             case spv::OpInBoundsAccessChain:
             case spv::OpFunctionParameter:
             case spv::OpImageTexelPointer:
+            case spv::OpBitcast:
+            case spv::OpConvertUToPtr:
                 def_index[insn.word(2)] = insn.offset();
                 break;
 
