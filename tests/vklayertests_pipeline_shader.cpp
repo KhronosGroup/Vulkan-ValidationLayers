@@ -14242,6 +14242,12 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
     VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &pd_props2);
 
+    // seen sometimes when using devsim and will crash
+    if (transform_feedback_props.maxTransformFeedbackStreams == 0) {
+        printf("%s maxTransformFeedbackStreams is zero, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
     {
         std::stringstream vsSource;
         vsSource << R"asm(

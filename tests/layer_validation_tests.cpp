@@ -793,6 +793,19 @@ bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramewor
     if (!timeline_semaphore_features.timelineSemaphore) {
         return false;
     }
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(renderFramework->instance(),
+                                                                       "vkGetPhysicalDeviceProperties2KHR");
+    VkPhysicalDeviceTimelineSemaphoreProperties timeline_semaphore_props =
+        LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreProperties>();
+    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&timeline_semaphore_props);
+    vkGetPhysicalDeviceProperties2KHR(renderFramework->gpu(), &pd_props2);
+    if (timeline_semaphore_props.maxTimelineSemaphoreValueDifference == 0) {
+        // If using MockICD and devsim the value might be zero'ed and cause false errors
+        return false;
+    }
+
     renderFramework->InitState(nullptr, &features2);
     return true;
 }

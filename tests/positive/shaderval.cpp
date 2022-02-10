@@ -2226,6 +2226,12 @@ TEST_F(VkPositiveLayerTest, SpecializationWordBoundryOffset) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    // need real device to produce output to check
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
     // glslang currenlty turned the GLSL to
     //      %19 = OpSpecConstantOp %uint UConvert %a
     // which causes issue (to be fixed outside scope of this test)

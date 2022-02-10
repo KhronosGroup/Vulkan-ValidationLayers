@@ -691,6 +691,11 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     if (!AddSwapchainDeviceExtension()) return;
 
     ASSERT_NO_FATAL_FAILURE(InitState());
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        // will throw a std::bad_alloc sometimes
+        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
     ASSERT_TRUE(InitSwapchain());
     uint32_t image_count;
     ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
@@ -855,6 +860,11 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     if (!AddSwapchainDeviceExtension()) return;
 
     ASSERT_NO_FATAL_FAILURE(InitState());
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        // will throw a std::bad_alloc sometimes
+        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
     ASSERT_TRUE(InitSwapchain());
     uint32_t image_count;
     ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
