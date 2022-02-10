@@ -6926,13 +6926,13 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
         for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
             if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
                 auto image_view = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[j].imageView);
-                first_sample_count_attachment =
-                    (j == 0u) ? static_cast<uint32_t>(image_view->samples) : first_sample_count_attachment;
-
+                first_sample_count_attachment = (first_sample_count_attachment == VK_ATTACHMENT_UNUSED)
+                                                    ? static_cast<uint32_t>(image_view->samples)
+                                                    : first_sample_count_attachment;
                 if (first_sample_count_attachment != image_view->samples) {
                     skip |=
                         LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06070",
-                                 "%s(): Color attachment ref %u has sample count %s, whereas first color "
+                                 "%s(): Color attachment ref %u has sample count %s, whereas first used color "
                                  "attachment ref has sample count %u.",
                                  func_name, j, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
                 }
