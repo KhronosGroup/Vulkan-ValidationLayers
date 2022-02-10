@@ -5865,6 +5865,14 @@ TEST_F(VkLayerTest, MultiDrawFeatures) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    auto multi_draw_props = LvlInitStruct<VkPhysicalDeviceMultiDrawPropertiesEXT>();
+    auto pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&multi_draw_props);
+    vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
+    if (multi_draw_props.maxMultiDrawCount == 0) {
+        // If using MockICD and devsim the value might be zero'ed and cause false errors
+        return;
+    }
+
     auto vkCmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT");
     auto vkCmdDrawMultiIndexedEXT =
         (PFN_vkCmdDrawMultiIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiIndexedEXT");
