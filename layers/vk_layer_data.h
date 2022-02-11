@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017, 2019-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2017, 2019-2021 Valve Corporation
- * Copyright (c) 2015-2017, 2019-2021 LunarG, Inc.
+/* Copyright (c) 2015-2017, 2019-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2017, 2019-2022 Valve Corporation
+ * Copyright (c) 2015-2017, 2019-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,6 +165,8 @@ class small_vector {
         size_ = other.size_;
         other.size_ = 0;
     }
+
+    ~small_vector() { clear(); }
 
     bool operator==(const small_vector &rhs) const {
         if (size_ != rhs.size_) return false;
