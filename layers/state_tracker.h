@@ -38,6 +38,7 @@
 #include "vk_typemap_helper.h"
 #include "vk_layer_data.h"
 #include "android_ndk_types.h"
+#include "range_vector.h"
 #include <atomic>
 #include <functional>
 #include <memory>
@@ -382,6 +383,26 @@ class ValidationStateTracker : public ValidationObject {
         return std::move(found_it->second);
     };
 
+    std::shared_ptr<BUFFER_STATE> GetBufferByAddress(VkDeviceAddress address) {
+        ReadLockGuard guard(buffer_address_lock_);
+        auto found_it = buffer_address_map_.find(address);
+        if (found_it == buffer_address_map_.end()) {
+            return nullptr;
+        }
+        // NOTE: for the address map found_it is the actual map entry rather than a copy so we cannot std::move
+        return found_it->second;
+    }
+
+    std::shared_ptr<const BUFFER_STATE> GetBufferByAddress(VkDeviceAddress address) const {
+        ReadLockGuard guard(buffer_address_lock_);
+        auto found_it = buffer_address_map_.find(address);
+        if (found_it == buffer_address_map_.end()) {
+            return nullptr;
+        }
+        // NOTE: for the address map found_it is the actual map entry rather than a copy so we cannot std::move
+        return found_it->second;
+    }
+
     using CommandBufferResetCallback = std::function<void(VkCommandBuffer)>;
     template <typename Fn>
     void SetCommandBufferResetCallback(Fn&& fn) {
@@ -538,6 +559,8 @@ class ValidationStateTracker : public ValidationObject {
                                                       const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                       const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
                                                       VkResult result) override;
+    void RecordDeviceAccelerationStructureBuildInfo(CMD_BUFFER_STATE& cb_state,
+                                                    const VkAccelerationStructureBuildGeometryInfoKHR& info);
     void PostCallRecordCmdBuildAccelerationStructuresKHR(
         VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
         const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) override;
@@ -1264,8 +1287,9 @@ class ValidationStateTracker : public ValidationObject {
     };
     std::vector<DeviceQueueInfo> device_queue_info_list;
     // If vkGetBufferDeviceAddress is called, keep track of buffer <-> address mapping.
-    // TODO is it sufficient to track a pointer, or do we need a std::shared_ptr<BUFFER_STATE>?
-    vl_concurrent_unordered_map<VkDeviceAddress, BUFFER_STATE*> buffer_address_map_;
+    sparse_container::range_map<VkDeviceAddress, std::shared_ptr<BUFFER_STATE>> buffer_address_map_;
+    mutable ReadWriteLock buffer_address_lock_;
+
     vl_concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2KHR> ahb_ext_formats_map;
 
   private:

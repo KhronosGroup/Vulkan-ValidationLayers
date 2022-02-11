@@ -335,9 +335,10 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
     if (pCreateInfo) {
         const auto *opaque_capture_address = LvlFindInChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
         if (opaque_capture_address && (opaque_capture_address->opaqueCaptureAddress != 0)) {
+            WriteLockGuard guard(buffer_address_lock_);
             // address is used for GPU-AV and ray tracing buffer validation
             buffer_state->deviceAddress = opaque_capture_address->opaqueCaptureAddress;
-            buffer_address_map_.insert(opaque_capture_address->opaqueCaptureAddress, buffer_state.get());
+            buffer_address_map_.insert({buffer_state->DeviceAddressRange(), buffer_state});
         }
     }
     Add(std::move(buffer_state));
@@ -433,6 +434,11 @@ void ValidationStateTracker::PreCallRecordDestroyImageView(VkDevice device, VkIm
 }
 
 void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
+    auto buffer_state = Get<BUFFER_STATE>(buffer);
+    if (buffer_state) {
+        WriteLockGuard guard(buffer_address_lock_);
+        buffer_address_map_.erase_range(buffer_state->DeviceAddressRange());
+    }
     Destroy<BUFFER_STATE>(buffer);
 }
 
@@ -2422,6 +2428,74 @@ void ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(
     }
 }
 
+// helper method for device side acceleration structure builds
+void ValidationStateTracker::RecordDeviceAccelerationStructureBuildInfo(CMD_BUFFER_STATE &cb_state,
+                                                                        const VkAccelerationStructureBuildGeometryInfoKHR &info) {
+    auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(info.dstAccelerationStructure);
+    if (dst_as_state) {
+        dst_as_state->Build(&info);
+    }
+    if (disabled[command_buffer_state]) {
+        return;
+    }
+    if (dst_as_state) {
+        cb_state.AddChild(dst_as_state);
+    }
+    auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(info.srcAccelerationStructure);
+    if (src_as_state) {
+        cb_state.AddChild(src_as_state);
+    }
+    auto scratch_buffer = GetBufferByAddress(info.scratchData.deviceAddress);
+    if (scratch_buffer) {
+        cb_state.AddChild(scratch_buffer);
+    }
+
+    for (uint32_t i = 0; i < info.geometryCount; i++) {
+        // only one of pGeometries and ppGeometries can be non-null
+        const auto &geom = info.pGeometries ? info.pGeometries[i] : *info.ppGeometries[i];
+        switch (geom.geometryType) {
+            case VK_GEOMETRY_TYPE_TRIANGLES_KHR: {
+                auto vertex_buffer = GetBufferByAddress(geom.geometry.triangles.vertexData.deviceAddress);
+                if (vertex_buffer) {
+                    cb_state.AddChild(vertex_buffer);
+                }
+                auto index_buffer = GetBufferByAddress(geom.geometry.triangles.indexData.deviceAddress);
+                if (index_buffer) {
+                    cb_state.AddChild(index_buffer);
+                }
+                auto transform_buffer = GetBufferByAddress(geom.geometry.triangles.transformData.deviceAddress);
+                if (transform_buffer) {
+                    cb_state.AddChild(transform_buffer);
+                }
+                const auto *motion_data = LvlFindInChain<VkAccelerationStructureGeometryMotionTrianglesDataNV>(info.pNext);
+                if (motion_data) {
+                    auto motion_buffer = GetBufferByAddress(motion_data->vertexData.deviceAddress);
+                    if (motion_buffer) {
+                        cb_state.AddChild(motion_buffer);
+                    }
+                }
+            } break;
+            case VK_GEOMETRY_TYPE_AABBS_KHR: {
+                auto data_buffer = GetBufferByAddress(geom.geometry.aabbs.data.deviceAddress);
+                if (data_buffer) {
+                    cb_state.AddChild(data_buffer);
+                }
+            } break;
+            case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
+                // NOTE: if arrayOfPointers is true, we don't track the pointers in the array. That would
+                // require that data buffer be mapped to the CPU so that we could walk through it. We can't
+                // easily ensure that's true.
+                auto data_buffer = GetBufferByAddress(geom.geometry.instances.data.deviceAddress);
+                if (data_buffer) {
+                    cb_state.AddChild(data_buffer);
+                }
+            } break;
+            default:
+                break;
+        }
+    }
+}
+
 void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos) {
@@ -2430,20 +2504,8 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresKHR(
         return;
     }
     cb_state->RecordCmd(CMD_BUILDACCELERATIONSTRUCTURESKHR);
-    for (uint32_t i = 0; i < infoCount; ++i) {
-        auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].dstAccelerationStructure);
-        if (dst_as_state != nullptr) {
-            dst_as_state->Build(&pInfos[i]);
-            if (!disabled[command_buffer_state]) {
-                cb_state->AddChild(dst_as_state);
-            }
-        }
-        if (!disabled[command_buffer_state]) {
-            auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].srcAccelerationStructure);
-            if (src_as_state != nullptr) {
-                cb_state->AddChild(src_as_state);
-            }
-        }
+    for (uint32_t i = 0; i < infoCount; i++) {
+        RecordDeviceAccelerationStructureBuildInfo(*cb_state, pInfos[i]);
     }
     cb_state->hasBuildAccelerationStructureCmd = true;
 }
@@ -2457,23 +2519,18 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresIndirec
         return;
     }
     cb_state->RecordCmd(CMD_BUILDACCELERATIONSTRUCTURESINDIRECTKHR);
-    for (uint32_t i = 0; i < infoCount; ++i) {
-        auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].dstAccelerationStructure);
-        if (dst_as_state != nullptr) {
-            dst_as_state->Build(&pInfos[i]);
-            if (!disabled[command_buffer_state]) {
-                cb_state->AddChild(dst_as_state);
-            }
-        }
+    for (uint32_t i = 0; i < infoCount; i++) {
+        RecordDeviceAccelerationStructureBuildInfo(*cb_state, pInfos[i]);
         if (!disabled[command_buffer_state]) {
-            auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].srcAccelerationStructure);
-            if (src_as_state != nullptr) {
-                cb_state->AddChild(src_as_state);
+            auto indirect_buffer = GetBufferByAddress(pIndirectDeviceAddresses[i]);
+            if (indirect_buffer) {
+                cb_state->AddChild(indirect_buffer);
             }
         }
     }
     cb_state->hasBuildAccelerationStructureCmd = true;
 }
+
 void ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
     VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV *pInfo, VkMemoryRequirements2 *pMemoryRequirements) {
     auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(pInfo->accelerationStructure);
@@ -4218,9 +4275,9 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureToMemoryK
         if (!disabled[command_buffer_state]) {
             cb_state->AddChild(src_as_state);
         }
-        auto iter = buffer_address_map_.find(pInfo->dst.deviceAddress);
-        if (iter != buffer_address_map_.end()) {
-            cb_state->AddChild(iter->second);
+        auto dst_buffer = GetBufferByAddress(pInfo->dst.deviceAddress);
+        if (dst_buffer) {
+            cb_state->AddChild(dst_buffer);
         }
     }
 }
@@ -4231,9 +4288,9 @@ void ValidationStateTracker::PostCallRecordCmdCopyMemoryToAccelerationStructureK
     if (cb_state) {
         cb_state->RecordCmd(CMD_COPYMEMORYTOACCELERATIONSTRUCTUREKHR);
         if (!disabled[command_buffer_state]) {
-            auto iter = buffer_address_map_.find(pInfo->src.deviceAddress);
-            if (iter != buffer_address_map_.end()) {
-                cb_state->AddChild(iter->second);
+            auto buffer_state = GetBufferByAddress(pInfo->src.deviceAddress);
+            if (buffer_state) {
+                cb_state->AddChild(buffer_state);
             }
             auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
             cb_state->AddChild(dst_as_state);
@@ -4520,9 +4577,10 @@ void ValidationStateTracker::PreCallRecordCmdSetVertexInputEXT(
 void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAddressInfo *pInfo, VkDeviceAddress address) {
     auto buffer_state = Get<BUFFER_STATE>(pInfo->buffer);
     if (buffer_state && address != 0) {
+        WriteLockGuard guard(buffer_address_lock_);
         // address is used for GPU-AV and ray tracing buffer validation
         buffer_state->deviceAddress = address;
-        buffer_address_map_.insert(address, buffer_state.get());
+        buffer_address_map_.insert({buffer_state->DeviceAddressRange(), buffer_state});
     }
 }
 
