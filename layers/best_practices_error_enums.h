@@ -118,6 +118,8 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_SuboptimalSwapchainImageC
     "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count";
 static const char DECORATE_UNUSED *kVUID_BestPractices_Swapchain_InvalidCount = "UNASSIGNED-BestPractices-SwapchainInvalidCount";
 static const char DECORATE_UNUSED *kVUID_BestPractices_DepthBiasNoAttachment = "UNASSIGNED-BestPractices-DepthBiasNoAttachment";
+static const char DECORATE_UNUSED *kVUID_BestPractices_SpirvDeprecated_WorkgroupSize =
+    "UNASSIGNED-BestPractices-SpirvDeprecated_WorkgroupSize";
 
 // Arm-specific best practice
 static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =

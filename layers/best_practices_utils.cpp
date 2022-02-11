@@ -1143,11 +1143,25 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 		}
 	}
 
-    if (VendorCheckEnabled(kBPVendorArm)) {
-        for (size_t i = 0; i < createInfoCount; i++) {
-            skip |= ValidateCreateComputePipelineArm(pCreateInfos[i]);
+        for (uint32_t i = 0; i < createInfoCount; i++) {
+            const VkComputePipelineCreateInfo& createInfo = pCreateInfos[i];
+            if (VendorCheckEnabled(kBPVendorArm)) {
+                skip |= ValidateCreateComputePipelineArm(createInfo);
+            }
+
+            if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
+                auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
+                for (const auto& builtin : module_state->static_data_.builtin_decoration_list) {
+                    if (builtin.builtin == spv::BuiltInWorkgroupSize) {
+                        skip |= LogWarning(device, kVUID_BestPractices_SpirvDeprecated_WorkgroupSize,
+                                           "vkCreateComputePipelines(): pCreateInfos[ %" PRIu32
+                                           "] is using the Workgroup built-in which SPIR-V 1.6 deprecated. The VK_KHR_maintenance4 "
+                                           "extension exposes a new LocalSizeId execution mode that should be used instead.",
+                                           i);
+                    }
+                }
+            }
         }
-    }
 
     return skip;
 }
