@@ -33,6 +33,10 @@ ASSERT_NO_FATAL_FAILURE(Init());
 
 ASSERT_NO_FATAL_FAILURE(InitFramework());
 ASSERT_NO_FATAL_FAILURE(InitState());
+
+// For Best Practices tests
+ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+ASSERT_NO_FATAL_FAILURE(InitState());
 ```
 
 to set it up. This will create the `VkInstance` and `VkDevice` for you.
