@@ -8325,11 +8325,12 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
 
     auto buffer_check = [this, info_index, func_name](uint32_t gi, const VkDeviceOrHostAddressConstKHR address,
                                                       const char *field) -> bool {
-        const auto itr = buffer_address_map_.find(address.deviceAddress);
-        if (itr != buffer_address_map_.end() &&
-            !(itr->second->createInfo.usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR)) {
+        // being inside the lambda confuses the compiler about our constness
+        const auto buffer_state = const_cast<const CoreChecks *>(this)->GetBufferByAddress(address.deviceAddress);
+        if (buffer_state &&
+            !(buffer_state->createInfo.usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR)) {
             LogObjectList objlist(device);
-            objlist.add(itr->second->Handle());
+            objlist.add(buffer_state->Handle());
             return LogError(objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-geometry-03673",
                             "%s(): The buffer associated with pInfos[%" PRIu32 "].pGeometries[%" PRIu32
                             "].%s was not created with VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR.",
@@ -8373,12 +8374,19 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
         }
     }
 
-    const auto itr = buffer_address_map_.find(info.scratchData.deviceAddress);
-    if (itr != buffer_address_map_.end() && !(itr->second->createInfo.usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
-        skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
-                         "vkBuildAccelerationStructuresKHR(): The buffer associated with pInfos[%" PRIu32
-                         "].scratchData.deviceAddress was not created with VK_BUFFER_USAGE_STORAGE_BUFFER_BIT bit.",
-                         info_index);
+    const auto buffer_state = GetBufferByAddress(info.scratchData.deviceAddress);
+    if (!buffer_state) {
+        skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802",
+                "vkBuildAccelerationStructuresKHR(): The buffer associated with pInfos[%" PRIu32
+                "].scratchData.deviceAddress %" PRIx64 " is not a valid device address.",
+                info_index, info.scratchData.deviceAddress);
+    } else {
+        if (!(buffer_state->createInfo.usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
+            skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
+                    "vkBuildAccelerationStructuresKHR(): The buffer associated with pInfos[%" PRIu32
+                    "].scratchData.deviceAddress was not created with VK_BUFFER_USAGE_STORAGE_BUFFER_BIT bit.",
+                    info_index);
+        }
     }
 
     return skip;

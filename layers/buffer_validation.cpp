@@ -6192,14 +6192,6 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
     return ValidateIdleBuffer(buffer);
 }
 
-void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
-    auto buffer_state = Get<BUFFER_STATE>(buffer);
-    if (buffer_state) {
-        buffer_address_map_.erase(buffer_state->deviceAddress);
-    }
-    StateTracker::PreCallRecordDestroyBuffer(device, buffer, pAllocator);
-}
-
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
                                                   const VkAllocationCallbacks *pAllocator) const {
     auto buffer_view_state = Get<BUFFER_VIEW_STATE>(bufferView);
