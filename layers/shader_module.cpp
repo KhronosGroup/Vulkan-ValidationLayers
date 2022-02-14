@@ -356,7 +356,8 @@ SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE 
             } break;
 
             // Execution Mode
-            case spv::OpExecutionMode: {
+            case spv::OpExecutionMode:
+            case spv::OpExecutionModeId: {
                 execution_mode_inst[insn.word(1)].push_back(insn);
             } break;
 
@@ -625,24 +626,43 @@ spirv_inst_iter SHADER_MODULE_STATE::FindEntrypoint(char const *name, VkShaderSt
 // Because the following is legal, need the entry point
 //    OpEntryPoint GLCompute %main "name_a"
 //    OpEntryPoint GLCompute %main "name_b"
+// Assumes shader module contains no spec constants used to set the local size values
 bool SHADER_MODULE_STATE::FindLocalSize(const spirv_inst_iter &entrypoint, uint32_t &local_size_x, uint32_t &local_size_y,
                                         uint32_t &local_size_z) const {
-    auto entrypoint_id = entrypoint.word(2);
-    auto it = static_data_.execution_mode_inst.find(entrypoint_id);
-    if (it != static_data_.execution_mode_inst.end()) {
-        for (auto insn : it->second) {
-            // Future Note: For now, Vulkan doesn't have a valid mode that can makes use of OpExecutionModeId
-            // In the future if something like LocalSizeId is supported, the <id> will need to be checked also
-            assert(insn.opcode() == spv::OpExecutionMode);
-            if (insn.word(2) == spv::ExecutionModeLocalSize) {
-                local_size_x = insn.word(3);
-                local_size_y = insn.word(4);
-                local_size_z = insn.word(5);
+    // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
+    // execution mode."
+    for (const auto &builtin : static_data_.builtin_decoration_list) {
+        if (builtin.builtin == spv::BuiltInWorkgroupSize) {
+            const uint32_t workgroup_size_id = at(builtin.offset).word(1);
+            auto composite_def = get_def(workgroup_size_id);
+            if (composite_def.opcode() == spv::OpConstantComposite) {
+                // VUID-WorkgroupSize-WorkgroupSize-04427 makes sure this is a OpTypeVector of int32
+                local_size_x = GetConstantValue(get_def(composite_def.word(3)));
+                local_size_y = GetConstantValue(get_def(composite_def.word(4)));
+                local_size_z = GetConstantValue(get_def(composite_def.word(5)));
                 return true;
             }
         }
     }
-    return false;
+
+    auto entrypoint_id = entrypoint.word(2);
+    auto it = static_data_.execution_mode_inst.find(entrypoint_id);
+    if (it != static_data_.execution_mode_inst.end()) {
+        for (auto insn : it->second) {
+            if (insn.opcode() == spv::OpExecutionMode && insn.word(2) == spv::ExecutionModeLocalSize) {
+                local_size_x = insn.word(3);
+                local_size_y = insn.word(4);
+                local_size_z = insn.word(5);
+                return true;
+            } else if (insn.opcode() == spv::OpExecutionModeId && insn.word(2) == spv::ExecutionModeLocalSizeId) {
+                local_size_x = GetConstantValueById(insn.word(3));
+                local_size_y = GetConstantValueById(insn.word(4));
+                local_size_z = GetConstantValueById(insn.word(5));
+                return true;
+            }
+        }
+    }
+    return false;  // not found
 }
 
 // If the instruction at id is a constant or copy of a constant, returns a valid iterator pointing to that instruction.
@@ -1789,47 +1809,6 @@ uint32_t SHADER_MODULE_STATE::GetNumComponentsInBaseType(const spirv_inst_iter &
         return GetNumComponentsInBaseType(type);
     }
     return 0;
-}
-
-std::array<uint32_t, 3> SHADER_MODULE_STATE::GetWorkgroupSize(
-    VkPipelineShaderStageCreateInfo const *pStage, const std::unordered_map<uint32_t, std::vector<uint32_t>>& id_value_map) const {
-    std::array<uint32_t, 3> work_group_size = {1, 1, 1};
-
-    uint32_t work_group_size_id = std::numeric_limits<uint32_t>::max();
-
-    for (const auto &builtin : static_data_.builtin_decoration_list) {
-        if (builtin.builtin == spv::BuiltInWorkgroupSize) {
-            work_group_size_id = at(builtin.offset).word(1);
-            break;
-        }
-    }
-    for (auto insn : *this) {
-        uint32_t opcode = insn.opcode();
-        if (opcode == spv::OpSpecConstantComposite) { // WorkGroupSize must be a composite
-            uint32_t result_id = insn.word(2);
-            if (result_id == work_group_size_id) {
-                uint32_t result_type_id = insn.word(1);
-                auto result_type = get_def(result_type_id);
-                if (result_type.opcode() == spv::OpTypeVector) {
-                    uint32_t component_count = result_type.word(3);
-                    for (uint32_t i = 0; i < component_count; ++i) {
-                        auto constituent = get_def(insn.word(3 + i));
-                        for (const auto &sc : static_data_.spec_const_map) {
-                            if (sc.second == constituent.word(2)) {
-                                const auto iter = id_value_map.find(sc.first);
-                                if (iter != id_value_map.cend()) {
-                                    work_group_size[i] = *iter->second.begin();
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return work_group_size;
 }
 
 uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const spirv_inst_iter &iter) const {

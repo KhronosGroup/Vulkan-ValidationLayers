@@ -64,6 +64,8 @@ struct spirv_inst_iter {
 
     bool operator!=(spirv_inst_iter const &other) const { return it != other.it; }
 
+    bool operator!=(std::vector<uint32_t>::const_iterator other) const { return it != other; }
+
     spirv_inst_iter operator++(int) {  // x++
         spirv_inst_iter ii = *this;
         it += len();
@@ -383,8 +385,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         layer_data::unordered_set<uint32_t> const &accessible_ids) const;
 
     uint32_t GetNumComponentsInBaseType(const spirv_inst_iter &iter) const;
-    std::array<uint32_t, 3> GetWorkgroupSize(VkPipelineShaderStageCreateInfo const *pStage,
-                                             const std::unordered_map<uint32_t, std::vector<uint32_t>>& id_value_map) const;
     uint32_t GetTypeBitsSize(const spirv_inst_iter &iter) const;
     uint32_t GetTypeBytesSize(const spirv_inst_iter &iter) const;
     uint32_t GetBaseType(const spirv_inst_iter &iter) const;

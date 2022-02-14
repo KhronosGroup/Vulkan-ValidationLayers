@@ -328,6 +328,248 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryAtLimit) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizePrecedenceOverLocalSize) {
+    // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
+    // execution mode."
+    TEST_DESCRIPTION("Make sure work WorkgroupSize decoration is used over LocalSize");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+    uint32_t y_size_limit = m_device->props.limits.maxComputeWorkGroupSize[1];
+    uint32_t z_size_limit = m_device->props.limits.maxComputeWorkGroupSize[2];
+
+    std::stringstream spv_source;
+    spv_source << R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize )";
+    spv_source << std::to_string(x_size_limit + 1) << " " << std::to_string(y_size_limit + 1) << " "
+               << std::to_string(z_size_limit + 1);
+    spv_source << R"(
+               OpSource GLSL 450
+               OpName %main "main"
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+     %v3uint = OpTypeVector %uint 3
+%gl_WorkGroupSize = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+}
+
+TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeSpecConstantUnder) {
+    TEST_DESCRIPTION("Make sure spec constants get applied to to be under maxComputeWorkGroupSize");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+
+    std::stringstream spv_source;
+    spv_source << R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpDecorate %7 SpecId 0
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+          %7 = OpSpecConstant %uint )";
+    spv_source << std::to_string(x_size_limit + 1);
+    spv_source << R"(
+     %uint_1 = OpConstant %uint 1
+     %v3uint = OpTypeVector %uint 3
+%gl_WorkGroupSize = OpSpecConstantComposite %v3uint %7 %uint_1 %uint_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    uint32_t data = 1;
+
+    VkSpecializationMapEntry entry;
+    entry.constantID = 0;
+    entry.offset = 0;
+    entry.size = sizeof(uint32_t);
+
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
+                                         &specialization_info));
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+}
+
+TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeLocalSizeId) {
+    TEST_DESCRIPTION("Validate LocalSizeId doesn't triggers maxComputeWorkGroupSize limit");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        printf("%s test requires Vulkan 1.3+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
+
+    std::stringstream spv_source;
+    spv_source << R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionModeId %main LocalSizeId %uint_2 %uint_1 %uint_1
+               OpSource GLSL 450
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_2 = OpConstant %uint 2
+     %uint_1 = OpConstant %uint 1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM));
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+}
+
+TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeLocalSizeIdSpecConstant) {
+    TEST_DESCRIPTION("Validate LocalSizeId doesn't triggers maxComputeWorkGroupSize limit with spec constants");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        printf("%s test requires Vulkan 1.3+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
+
+    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+
+    // layout(local_size_x_id = 18, local_size_z_id = 19) in;
+    // layout(local_size_x = 32) in;
+    std::stringstream spv_source;
+    spv_source << R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionModeId %main LocalSizeId %spec_x %uint_1 %spec_z
+               OpSource GLSL 450
+               OpDecorate %spec_x SpecId 18
+               OpDecorate %spec_z SpecId 19
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %spec_x = OpSpecConstant %uint 32
+     %uint_1 = OpConstant %uint 1
+     %spec_z = OpSpecConstant %uint 1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    uint32_t data = x_size_limit - 1;
+
+    VkSpecializationMapEntry entry;
+    entry.constantID = 18;
+    entry.offset = 0;
+    entry.size = sizeof(uint32_t);
+
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM,
+                                         &specialization_info));
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+}
+
+TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizePrecedenceOverLocalSizeId) {
+    // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
+    // execution mode."
+    TEST_DESCRIPTION("Make sure work WorkgroupSize decoration is used over LocalSizeId");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        printf("%s test requires Vulkan 1.3+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
+
+    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+
+    std::stringstream spv_source;
+    spv_source << R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionModeId %main LocalSizeId %spec_x %uint_1 %uint_1
+               OpSource GLSL 450
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+               OpDecorate %spec_x SpecId 18
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %spec_x = OpSpecConstant %uint )";
+    spv_source << std::to_string(x_size_limit + 1);
+    spv_source << R"(
+     %uint_1 = OpConstant %uint 1
+     %v3uint = OpTypeVector %uint 3
+%gl_WorkGroupSize = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM));
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+}
+
 TEST_F(VkPositiveLayerTest, ShaderNonSemanticInfo) {
     // This is a positive test, no errors expected
     // Verifies the ability to use non-semantic extended instruction sets when the extension is enabled
