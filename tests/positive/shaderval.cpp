@@ -1545,6 +1545,88 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat2) {
     }
 }
 
+TEST_F(VkPositiveLayerTest, ShaderAtomicFromPhysicalPointer) {
+    TEST_DESCRIPTION("Make sure atomic validation handles if from a OpConvertUToPtr (physical pointer)");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Test requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!features12.bufferDeviceAddress) {
+        printf("%s VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required. Skipping.", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    const std::string spv_source = R"(
+               OpCapability Int64
+               OpCapability PhysicalStorageBufferAddresses
+               OpCapability Shader
+               OpCapability RuntimeDescriptorArray
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpExtension "SPV_EXT_descriptor_indexing"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpMemberDecorate %tex_ref 0 Offset 0
+               OpMemberDecorate %tex_ref 1 Offset 4
+               OpDecorate %_runtimearr_tex_ref ArrayStride 8
+               OpMemberDecorate %outbuftype 0 Offset 0
+               OpDecorate %outbuftype BufferBlock
+               OpDecorate %outbuf DescriptorSet 0
+               OpDecorate %outbuf Binding 0
+               OpMemberDecorate %__rd_feedbackStruct 0 Offset 0
+               OpDecorate %__rd_feedbackStruct Block
+       %void = OpTypeVoid
+      %voidf = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %bool = OpTypeBool
+       %uint = OpTypeInt 32 0
+    %tex_ref = OpTypeStruct %uint %uint
+%_runtimearr_tex_ref = OpTypeRuntimeArray %tex_ref
+ %outbuftype = OpTypeStruct %_runtimearr_tex_ref
+%_runtimearr_outbuftype = OpTypeRuntimeArray %outbuftype
+%_ptr_Uniform__runtimearr_outbuftype = OpTypePointer Uniform %_runtimearr_outbuftype
+     %outbuf = OpVariable %_ptr_Uniform__runtimearr_outbuftype Uniform
+      %int_0 = OpConstant %int 0
+     %uint_0 = OpConstant %uint 0
+%_ptr_Uniform_uint = OpTypePointer Uniform %uint
+     %v3uint = OpTypeVector %uint 3
+      %ulong = OpTypeInt 64 0
+  %ulong_2 = OpConstant %ulong 2
+  %ulong_1 = OpConstant %ulong 1
+%__rd_feedbackStruct = OpTypeStruct %uint
+%__feedbackOffset_set0_bind0 = OpConstant %ulong 0
+%__rd_feedbackAddress = OpConstant %ulong 260636672
+%_ptr_PhysicalStorageBuffer_uint = OpTypePointer PhysicalStorageBuffer %uint
+%uint_4294967295 = OpConstant %uint 4294967295
+     %uint_4 = OpConstant %uint 4
+   %uint_0_0 = OpConstant %uint 0
+       %main = OpFunction %void None %voidf
+         %60 = OpLabel
+         %63 = OpAccessChain %_ptr_Uniform_uint %outbuf %int_0 %int_0 %int_0 %int_0
+         %65 = OpExtInst %ulong %1 UMin %ulong_1 %ulong_2
+         %66 = OpIAdd %ulong %__rd_feedbackAddress %__feedbackOffset_set0_bind0
+         %67 = OpShiftLeftLogical %ulong %65 %uint_4
+         %68 = OpIAdd %ulong %66 %67
+         %69 = OpConvertUToPtr %_ptr_PhysicalStorageBuffer_uint %68
+         %70 = OpAtomicUMax %uint %69 %uint_4 %uint_0_0 %uint_4294967295
+               OpStore %63 %uint_0
+               OpReturn
+               OpFunctionEnd
+        )";
+    m_errorMonitor->ExpectSuccess();
+    VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, ValidateComputeShaderSharedMemory) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize");
 

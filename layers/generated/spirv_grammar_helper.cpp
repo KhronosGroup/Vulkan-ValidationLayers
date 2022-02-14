@@ -606,6 +606,18 @@ bool OpcodeHasResult(uint32_t opcode) {
     return has_result;
 }
 
+// Helper to get the word position of the result operand.
+// Will either be 1 or 2 if it has a result.
+// Will be 0 if there is no result.
+uint32_t OpcodeResultWord(uint32_t opcode) {
+    uint32_t position = 0;
+    if (OpcodeHasResult(opcode)) {
+        position = 1;
+        position += OpcodeHasType(opcode) ? 1 : 0;
+    }
+    return position;
+}
+
 // Return operand position of Memory Scope <ID> or zero if there is none
 uint32_t OpcodeMemoryScopePosition(uint32_t opcode) {
     uint32_t position = 0;

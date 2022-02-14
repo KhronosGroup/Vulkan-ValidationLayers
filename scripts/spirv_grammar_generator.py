@@ -365,6 +365,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         if self.headerFile:
             output += 'bool OpcodeHasType(uint32_t opcode);\n'
             output += 'bool OpcodeHasResult(uint32_t opcode);\n'
+            output += 'uint32_t OpcodeResultWord(uint32_t opcode);\n'
             output += '\n'
             output += 'uint32_t OpcodeMemoryScopePosition(uint32_t opcode);\n'
             output += 'uint32_t OpcodeExecutionScopePosition(uint32_t opcode);\n'
@@ -388,6 +389,18 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             output += '        has_result = format_info->second.has_result;\n'
             output += '    }\n'
             output += '    return has_result;\n'
+            output += '}\n\n'
+
+            output += '// Helper to get the word position of the result operand.\n'
+            output += '// Will either be 1 or 2 if it has a result.\n'
+            output += '// Will be 0 if there is no result.\n'
+            output += 'uint32_t OpcodeResultWord(uint32_t opcode) {\n'
+            output += '    uint32_t position = 0;\n'
+            output += '    if (OpcodeHasResult(opcode)) {\n'
+            output += '        position = 1;\n'
+            output += '        position += OpcodeHasType(opcode) ? 1 : 0;\n'
+            output += '    }\n'
+            output += '    return position;\n'
             output += '}\n\n'
 
             output += '// Return operand position of Memory Scope <ID> or zero if there is none\n'
