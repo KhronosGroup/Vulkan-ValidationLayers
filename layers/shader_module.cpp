@@ -312,70 +312,19 @@ layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const
 
 SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE &module_state) {
     for (auto insn : module_state) {
+        const uint32_t result_word = OpcodeResultWord(insn.opcode());
+        if (result_word != 0) {
+            def_index[insn.word(result_word)] = insn.offset();
+        }
+
         switch (insn.opcode()) {
-            // Types
-            case spv::OpTypeVoid:
-            case spv::OpTypeBool:
-            case spv::OpTypeInt:
-            case spv::OpTypeFloat:
-            case spv::OpTypeVector:
-            case spv::OpTypeMatrix:
-            case spv::OpTypeImage:
-            case spv::OpTypeSampler:
-            case spv::OpTypeSampledImage:
-            case spv::OpTypeArray:
-            case spv::OpTypeRuntimeArray:
-            case spv::OpTypeStruct:
-            case spv::OpTypeOpaque:
-            case spv::OpTypePointer:
-            case spv::OpTypeFunction:
-            case spv::OpTypeEvent:
-            case spv::OpTypeDeviceEvent:
-            case spv::OpTypeReserveId:
-            case spv::OpTypeQueue:
-            case spv::OpTypePipe:
-            case spv::OpTypeAccelerationStructureNV:
-            case spv::OpTypeCooperativeMatrixNV:
-                def_index[insn.word(1)] = insn.offset();
-                break;
-
-                // Fixed constants
-            case spv::OpConstantTrue:
-            case spv::OpConstantFalse:
-            case spv::OpConstant:
-            case spv::OpConstantComposite:
-            case spv::OpConstantSampler:
-            case spv::OpConstantNull:
-                def_index[insn.word(2)] = insn.offset();
-                break;
-
                 // Specialization constants
             case spv::OpSpecConstantTrue:
             case spv::OpSpecConstantFalse:
             case spv::OpSpecConstant:
             case spv::OpSpecConstantComposite:
             case spv::OpSpecConstantOp:
-                def_index[insn.word(2)] = insn.offset();
                 has_specialization_constants = true;
-                break;
-
-                // Have a result that can be a pointer
-            case spv::OpVariable:
-            case spv::OpAccessChain:
-            case spv::OpInBoundsAccessChain:
-            case spv::OpFunctionParameter:
-            case spv::OpImageTexelPointer:
-                def_index[insn.word(2)] = insn.offset();
-                break;
-
-                // Will need to extract loads for SAMPLED_IMAGE and SAMPLER
-            case spv::OpSampledImage:
-                def_index[insn.word(2)] = insn.offset();
-                break;
-
-                // Functions
-            case spv::OpFunction:
-                def_index[insn.word(2)] = insn.offset();
                 break;
 
                 // Decorations
@@ -406,20 +355,9 @@ SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE 
                 }
             } break;
 
-            // Copy operations
-            case spv::OpCopyLogical:
-            case spv::OpCopyObject: {
-                def_index[insn.word(2)] = insn.offset();
-                break;
-            }
-
             // Execution Mode
             case spv::OpExecutionMode: {
                 execution_mode_inst[insn.word(1)].push_back(insn);
-            } break;
-
-            case spv::OpLoad: {
-                def_index[insn.word(2)] = insn.offset();
             } break;
 
             default:
@@ -430,7 +368,6 @@ SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE 
                         access = module_state.get_def(insn.word(1));
                     } else {
                         access = module_state.get_def(insn.word(3));
-                        def_index[insn.word(2)] = insn.offset();
                     }
 
                     atomic_instruction atomic;
