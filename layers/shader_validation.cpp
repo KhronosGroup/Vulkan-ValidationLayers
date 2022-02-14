@@ -752,24 +752,6 @@ bool CoreChecks::ValidateMemoryScope(SHADER_MODULE_STATE const *module_state, co
     return skip;
 }
 
-bool CoreChecks::ValidateWorkgroupSize(SHADER_MODULE_STATE const *module_state, VkPipelineShaderStageCreateInfo const *pStage,
-                                       const std::unordered_map<uint32_t, std::vector<uint32_t>> &id_value_map) const {
-    bool skip = false;
-
-    std::array<uint32_t, 3> work_group_size = module_state->GetWorkgroupSize(pStage, id_value_map);
-
-    for (uint32_t i = 0; i < 3; ++i) {
-        if (work_group_size[i] > phys_dev_props.limits.maxComputeWorkGroupSize[i]) {
-            const char member = 'x' + static_cast<int8_t>(i);
-            skip |= LogError(device, kVUID_Core_Shader_MaxComputeWorkGroupSize,
-                             "Specialization constant is being used to specialize WorkGroupSize.%c, but value (%" PRIu32
-                             ") is greater than VkPhysicalDeviceLimits::maxComputeWorkGroupSize[%" PRIu32 "] = %" PRIu32 ".",
-                             member, work_group_size[i], i, phys_dev_props.limits.maxComputeWorkGroupSize[i]);
-        }
-    }
-    return skip;
-}
-
 bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const *module_state,
                                                       VkPipelineShaderStageCreateInfo const *pStage, const PIPELINE_STATE *pipeline,
                                                       spirv_inst_iter entrypoint) const {
@@ -822,6 +804,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                 break;
             }
             case spv::OpExecutionMode:
+            case spv::OpExecutionModeId:
                 if (insn.word(1) == entrypoint.word(2)) {
                     switch (insn.word(2)) {
                         default:
@@ -2375,7 +2358,8 @@ bool CoreChecks::ValidateTransformFeedback(SHADER_MODULE_STATE const *module_sta
                     phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
             }
         }
-        if (opcode == spv::OpExecutionMode && insn.word(2) == spv::ExecutionModeOutputPoints) {
+        if ((opcode == spv::OpExecutionMode || opcode == spv::OpExecutionModeId) &&
+            insn.word(2) == spv::ExecutionModeOutputPoints) {
             output_points = true;
         }
     }
@@ -2536,6 +2520,12 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     const auto *pStage = stage_state.create_info;
     const auto *module_state = stage_state.module_state.get();
     const auto &entrypoint = stage_state.entrypoint;
+
+    // to prevent const_cast on pipeline object, just store here as not needed outside function anyway
+    uint32_t local_size_x = 0;
+    uint32_t local_size_y = 0;
+    uint32_t local_size_z = 0;
+
     // Check the module
     if (!module_state->has_valid_spirv) {
         skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-parameter",
@@ -2544,68 +2534,13 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
                          string_VkShaderStageFlagBits(stage_state.stage_flag));
     }
 
-    // If specialization-constant values are given and specialization-constant instructions are present in the shader, the
-    // specializations should be applied and validated.
-    if (pStage->pSpecializationInfo != nullptr && pStage->pSpecializationInfo->mapEntryCount > 0 &&
-        pStage->pSpecializationInfo->pMapEntries != nullptr && module_state->HasSpecConstants()) {
-        // Gather the specialization-constant values.
-        auto const &specialization_info = pStage->pSpecializationInfo;
-        auto const &specialization_data = reinterpret_cast<uint8_t const *>(specialization_info->pData);
-        std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;  // note: this must be std:: to work with spvtools
-        id_value_map.reserve(specialization_info->mapEntryCount);
-        for (auto i = 0u; i < specialization_info->mapEntryCount; ++i) {
-            auto const &map_entry = specialization_info->pMapEntries[i];
-            const auto itr = module_state->GetSpecConstMap().find(map_entry.constantID);
-            // "If a constantID value is not a specialization constant ID used in the shader, that map entry does not affect the
-            // behavior of the pipeline."
-            if (itr != module_state->GetSpecConstMap().cend()) {
-                // Make sure map_entry.size matches the spec constant's size
-                uint32_t spec_const_size = decoration_set::kInvalidValue;
-                const auto def_ins = module_state->get_def(itr->second);
-                const auto type_ins = module_state->get_def(def_ins.word(1));
-                // Specialization constants can only be of type bool, scalar integer, or scalar floating point
-                switch (type_ins.opcode()) {
-                    case spv::OpTypeBool:
-                        // "If the specialization constant is of type boolean, size must be the byte size of VkBool32"
-                        spec_const_size = sizeof(VkBool32);
-                        break;
-                    case spv::OpTypeInt:
-                    case spv::OpTypeFloat:
-                        spec_const_size = type_ins.word(2) / 8;
-                        break;
-                    default:
-                        // spirv-val should catch if SpecId is not used on a OpSpecConstantTrue/OpSpecConstantFalse/OpSpecConstant
-                        // and OpSpecConstant is validated to be a OpTypeInt or OpTypeFloat
-                        break;
-                }
-
-                if (map_entry.size != spec_const_size) {
-                    skip |=
-                        LogError(device, "VUID-VkSpecializationMapEntry-constantID-00776",
-                                 "Specialization constant (ID = %" PRIu32 ", entry = %" PRIu32
-                                 ") has invalid size %zu in shader module %s. Expected size is %" PRIu32 " from shader definition.",
-                                 map_entry.constantID, i, map_entry.size,
-                                 report_data->FormatHandle(module_state->vk_shader_module()).c_str(), spec_const_size);
-                }
-            }
-
-            if ((map_entry.offset + map_entry.size) <= specialization_info->dataSize) {
-                // Allocate enough room for ceil(map_entry.size / 4) to store entries
-                std::vector<uint32_t> entry_data((map_entry.size + 4 - 1) / 4, 0);
-                uint8_t *out_p = reinterpret_cast<uint8_t *>(entry_data.data());
-                const uint8_t *const start_in_p = specialization_data + map_entry.offset;
-                const uint8_t *const end_in_p = start_in_p + map_entry.size;
-
-                std::copy(start_in_p, end_in_p, out_p);
-                id_value_map.emplace(map_entry.constantID, std::move(entry_data));
-            }
-        }
-
+    // If specialization-constant instructions are present in the shader, the specializations should be applied.
+    if (module_state->HasSpecConstants()) {
         // both spirv-opt and spirv-val will use the same flags
         spvtools::ValidatorOptions options;
         AdjustValidatorOptions(device_extensions, enabled_features, options);
 
-        // Apply the specialization-constant values and revalidate the shader module.
+        // setup the call back if the optimizer fails
         spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
         spvtools::MessageConsumer consumer = [&skip, &module_state, &stage_state, this](
@@ -2617,13 +2552,88 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
                              string_VkShaderStageFlagBits(stage_state.stage_flag), message);
         };
         optimizer.SetMessageConsumer(consumer);
-        optimizer.RegisterPass(spvtools::CreateSetSpecConstantDefaultValuePass(id_value_map));
+
+        // The app might be using the default spec constant values, but if they pass values at runtime to the pipeline then need to
+        // use those values to apply to the spec constants
+        if (pStage->pSpecializationInfo != nullptr && pStage->pSpecializationInfo->mapEntryCount > 0 &&
+            pStage->pSpecializationInfo->pMapEntries != nullptr) {
+            // Gather the specialization-constant values.
+            auto const &specialization_info = pStage->pSpecializationInfo;
+            auto const &specialization_data = reinterpret_cast<uint8_t const *>(specialization_info->pData);
+            std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;  // note: this must be std:: to work with spvtools
+            id_value_map.reserve(specialization_info->mapEntryCount);
+            for (auto i = 0u; i < specialization_info->mapEntryCount; ++i) {
+                auto const &map_entry = specialization_info->pMapEntries[i];
+                const auto itr = module_state->GetSpecConstMap().find(map_entry.constantID);
+                // "If a constantID value is not a specialization constant ID used in the shader, that map entry does not affect the
+                // behavior of the pipeline."
+                if (itr != module_state->GetSpecConstMap().cend()) {
+                    // Make sure map_entry.size matches the spec constant's size
+                    uint32_t spec_const_size = decoration_set::kInvalidValue;
+                    const auto def_ins = module_state->get_def(itr->second);
+                    const auto type_ins = module_state->get_def(def_ins.word(1));
+                    // Specialization constants can only be of type bool, scalar integer, or scalar floating point
+                    switch (type_ins.opcode()) {
+                        case spv::OpTypeBool:
+                            // "If the specialization constant is of type boolean, size must be the byte size of VkBool32"
+                            spec_const_size = sizeof(VkBool32);
+                            break;
+                        case spv::OpTypeInt:
+                        case spv::OpTypeFloat:
+                            spec_const_size = type_ins.word(2) / 8;
+                            break;
+                        default:
+                            // spirv-val should catch if SpecId is not used on a
+                            // OpSpecConstantTrue/OpSpecConstantFalse/OpSpecConstant and OpSpecConstant is validated to be a
+                            // OpTypeInt or OpTypeFloat
+                            break;
+                    }
+
+                    if (map_entry.size != spec_const_size) {
+                        skip |= LogError(device, "VUID-VkSpecializationMapEntry-constantID-00776",
+                                         "Specialization constant (ID = %" PRIu32 ", entry = %" PRIu32
+                                         ") has invalid size %zu in shader module %s. Expected size is %" PRIu32
+                                         " from shader definition.",
+                                         map_entry.constantID, i, map_entry.size,
+                                         report_data->FormatHandle(module_state->vk_shader_module()).c_str(), spec_const_size);
+                    }
+                }
+
+                if ((map_entry.offset + map_entry.size) <= specialization_info->dataSize) {
+                    // Allocate enough room for ceil(map_entry.size / 4) to store entries
+                    std::vector<uint32_t> entry_data((map_entry.size + 4 - 1) / 4, 0);
+                    uint8_t *out_p = reinterpret_cast<uint8_t *>(entry_data.data());
+                    const uint8_t *const start_in_p = specialization_data + map_entry.offset;
+                    const uint8_t *const end_in_p = start_in_p + map_entry.size;
+
+                    std::copy(start_in_p, end_in_p, out_p);
+                    id_value_map.emplace(map_entry.constantID, std::move(entry_data));
+                }
+            }
+
+            // This pass takes the runtime spec const values and applies it into the SPIR-V
+            // will turn a spec constant like
+            //     OpSpecConstant %uint 1
+            // to a use the value passed in instead (for example if the value is 32) so now it looks like
+            //     OpSpecConstant %uint 32
+            optimizer.RegisterPass(spvtools::CreateSetSpecConstantDefaultValuePass(id_value_map));
+        }
+
+        // This pass will turn OpSpecConstant into a OpConstant (also OpSpecConstantTrue/OpSpecConstantFalse)
         optimizer.RegisterPass(spvtools::CreateFreezeSpecConstantValuePass());
+        // Using the new frozen OpConstant all OpSpecConstantComposite can be resolved turning them into OpConstantComposite
+        // This is need incase a shdaer looks like:
+        //
+        //     layout(constant_id = 0) const uint x = 64;
+        //     shared uint arr[x > 64 ? 64 : x];
+        //
+        // this will generate branch/switch statements that we want to leverage spirv-opt to apply to make parsing easier
+        optimizer.RegisterPass(spvtools::CreateFoldSpecConstantOpAndCompositePass());
+
+        // Apply the specialization-constant values and revalidate the shader module is valid.
         std::vector<uint32_t> specialized_spirv;
         auto const optimized =
             optimizer.Run(module_state->words.data(), module_state->words.size(), &specialized_spirv, options, false);
-        assert(optimized == true);
-
         if (optimized) {
             spv_context ctx = spvContextCreate(spirv_environment);
             spv_const_binary_t binary{specialized_spirv.data(), specialized_spirv.size()};
@@ -2636,11 +2646,71 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
                                  string_VkShaderStageFlagBits(stage_state.stage_flag));
             }
 
+            // The new optimized SPIR-V will NOT match the SHADER_MODULE_STATE object parsing, so all additional logical will need
+            // to be done without any helper functions. This an issue due to each pipeline being able to reuse the same shader
+            // module but with different spec constant values.
+            //
+            // According to https://github.com/KhronosGroup/Vulkan-Docs/issues/1671 anything labeled as "static use" (such as if an
+            // input is used or not) don't have to be checked post spec constants freezing since the device compiler is not
+            // guaranteed to run things such as dead-code elimination. The following checks are things that don't follow under
+            // "static use" rules and need to be validated still.
+            spirv_inst_iter specialized_it =
+                spirv_inst_iter(specialized_spirv.begin(), specialized_spirv.begin() + 5);  // point to first instruction
+            layer_data::unordered_map<uint32_t, uint32_t> constant_def_value;
+
+            uint32_t workgroup_size_id = 0;  // result id can't be zero
+            uint32_t local_size_id_x = 0;
+            uint32_t local_size_id_y = 0;
+            uint32_t local_size_id_z = 0;
+
+            // make single interation through new shader
+            while (specialized_it != specialized_spirv.end()) {
+                const uint32_t opcode = specialized_it.opcode();
+
+                // build a quick access look up for constant values
+                if (opcode == spv::OpConstant) {
+                    constant_def_value[specialized_it.word(2)] = specialized_it.word(3);
+                }
+
+                if (opcode == spv::OpExecutionModeId && specialized_it.word(2) == spv::ExecutionModeLocalSizeId) {
+                    local_size_id_x = specialized_it.word(3);
+                    local_size_id_y = specialized_it.word(4);
+                    local_size_id_z = specialized_it.word(5);
+                }
+
+                if (opcode == spv::OpDecorate && specialized_it.word(2) == spv::DecorationBuiltIn) {
+                    // Validate applied WorkgroupSize is still below maxComputeWorkGroupSize limit
+                    if (specialized_it.word(3) == spv::BuiltInWorkgroupSize) {
+                        // Will be a OpConstantComposite and always have the OpDecorate section
+                        workgroup_size_id = specialized_it.word(1);
+                    }
+                }
+
+                if (opcode == spv::OpConstantComposite && workgroup_size_id == specialized_it.word(2)) {
+                    // VUID-WorkgroupSize-WorkgroupSize-04427 makes sure this is a OpTypeVector of int32 so this can be assuemd
+                    local_size_x = constant_def_value.find(specialized_it.word(3))->second;
+                    local_size_y = constant_def_value.find(specialized_it.word(4))->second;
+                    local_size_z = constant_def_value.find(specialized_it.word(5))->second;
+                }
+                ++specialized_it;
+            }
+
+            // if after no WorkgroupSize is found, then can apply any possible LocalSizeId due to precedence order
+            if (local_size_x == 0 && local_size_id_x != 0) {
+                local_size_x = constant_def_value.find(local_size_id_x)->second;
+                local_size_y = constant_def_value.find(local_size_id_y)->second;
+                local_size_z = constant_def_value.find(local_size_id_z)->second;
+            }
+
             spvDiagnosticDestroy(diag);
             spvContextDestroy(ctx);
+        } else {
+            // Should never get here, but better then asserting
+            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-04145",
+                             "%s module (stage %s) attempted to apply specialization constants with spirv-opt but failed.",
+                             report_data->FormatHandle(module_state->vk_shader_module()).c_str(),
+                             string_VkShaderStageFlagBits(stage_state.stage_flag));
         }
-
-        skip |= ValidateWorkgroupSize(module_state, pStage, id_value_map);
     }
 
     // Check the entrypoint
@@ -2795,7 +2865,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         }
     }
     if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT) {
-        skip |= ValidateComputeWorkGroupSizes(module_state, entrypoint, stage_state);
+        skip |= ValidateComputeWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z);
     }
 
     return skip;
@@ -3275,80 +3345,83 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
 }
 
 bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *module_state, const spirv_inst_iter &entrypoint,
-                                               const PipelineStageState &stage_state) const {
+                                               const PipelineStageState &stage_state, uint32_t local_size_x, uint32_t local_size_y,
+                                               uint32_t local_size_z) const {
     bool skip = false;
-    uint32_t local_size_x = 0;
-    uint32_t local_size_y = 0;
-    uint32_t local_size_z = 0;
-    if (module_state->FindLocalSize(entrypoint, local_size_x, local_size_y, local_size_z)) {
-        if (local_size_x > phys_dev_props.limits.maxComputeWorkGroupSize[0]) {
-            skip |= LogError(module_state->vk_shader_module(), "VUID-RuntimeSpirv-x-06429",
-                             "%s local_size_x (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[0] (%" PRIu32 ").",
-                             report_data->FormatHandle(module_state->vk_shader_module()).c_str(), local_size_x,
-                             phys_dev_props.limits.maxComputeWorkGroupSize[0]);
+    // If spec constants were used then the local size are already found if possible
+    if (local_size_x == 0) {
+        if (!module_state->FindLocalSize(entrypoint, local_size_x, local_size_y, local_size_z)) {
+            return skip;  // no local size found
         }
-        if (local_size_y > phys_dev_props.limits.maxComputeWorkGroupSize[1]) {
-            skip |= LogError(module_state->vk_shader_module(), "VUID-RuntimeSpirv-y-06430",
-                             "%s local_size_y (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[1] (%" PRIu32 ").",
-                             report_data->FormatHandle(module_state->vk_shader_module()).c_str(), local_size_x,
-                             phys_dev_props.limits.maxComputeWorkGroupSize[1]);
-        }
-        if (local_size_z > phys_dev_props.limits.maxComputeWorkGroupSize[2]) {
-            skip |= LogError(module_state->vk_shader_module(), "VUID-RuntimeSpirv-z-06431",
-                             "%s local_size_z (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[2] (%" PRIu32 ").",
-                             report_data->FormatHandle(module_state->vk_shader_module()).c_str(), local_size_x,
-                             phys_dev_props.limits.maxComputeWorkGroupSize[2]);
-        }
+    }
 
-        uint32_t limit = phys_dev_props.limits.maxComputeWorkGroupInvocations;
-        uint64_t invocations = local_size_x * local_size_y;
-        // Prevent overflow.
-        bool fail = false;
+    if (local_size_x > phys_dev_props.limits.maxComputeWorkGroupSize[0]) {
+        skip |= LogError(module_state->vk_shader_module(), "VUID-RuntimeSpirv-x-06429",
+                         "%s local_size_x (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[0] (%" PRIu32 ").",
+                         report_data->FormatHandle(module_state->vk_shader_module()).c_str(), local_size_x,
+                         phys_dev_props.limits.maxComputeWorkGroupSize[0]);
+    }
+    if (local_size_y > phys_dev_props.limits.maxComputeWorkGroupSize[1]) {
+        skip |= LogError(module_state->vk_shader_module(), "VUID-RuntimeSpirv-y-06430",
+                         "%s local_size_y (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[1] (%" PRIu32 ").",
+                         report_data->FormatHandle(module_state->vk_shader_module()).c_str(), local_size_x,
+                         phys_dev_props.limits.maxComputeWorkGroupSize[1]);
+    }
+    if (local_size_z > phys_dev_props.limits.maxComputeWorkGroupSize[2]) {
+        skip |= LogError(module_state->vk_shader_module(), "VUID-RuntimeSpirv-z-06431",
+                         "%s local_size_z (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[2] (%" PRIu32 ").",
+                         report_data->FormatHandle(module_state->vk_shader_module()).c_str(), local_size_x,
+                         phys_dev_props.limits.maxComputeWorkGroupSize[2]);
+    }
+
+    uint32_t limit = phys_dev_props.limits.maxComputeWorkGroupInvocations;
+    uint64_t invocations = local_size_x * local_size_y;
+    // Prevent overflow.
+    bool fail = false;
+    if (invocations > UINT32_MAX || invocations > limit) {
+        fail = true;
+    }
+    if (!fail) {
+        invocations *= local_size_z;
         if (invocations > UINT32_MAX || invocations > limit) {
             fail = true;
         }
-        if (!fail) {
-            invocations *= local_size_z;
-            if (invocations > UINT32_MAX || invocations > limit) {
-                fail = true;
-            }
-        }
-        if (fail) {
-            skip |= LogError(module_state->vk_shader_module(), "VUID-RuntimeSpirv-x-06432",
-                             "%s local_size (%" PRIu32 ", %" PRIu32 ", %" PRIu32
-                             ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
-                             report_data->FormatHandle(module_state->vk_shader_module()).c_str(), local_size_x, local_size_y,
-                             local_size_z, limit);
-        }
+    }
+    if (fail) {
+        skip |= LogError(module_state->vk_shader_module(), "VUID-RuntimeSpirv-x-06432",
+                         "%s local_size (%" PRIu32 ", %" PRIu32 ", %" PRIu32
+                         ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
+                         report_data->FormatHandle(module_state->vk_shader_module()).c_str(), local_size_x, local_size_y,
+                         local_size_z, limit);
+    }
 
-        const auto subgroup_flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT |
-                                    VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
-        if ((stage_state.create_info->flags & subgroup_flags) == subgroup_flags) {
-            if (SafeModulo(local_size_x, phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize) != 0) {
+    const auto subgroup_flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT |
+                                VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
+    if ((stage_state.create_info->flags & subgroup_flags) == subgroup_flags) {
+        if (SafeModulo(local_size_x, phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize) != 0) {
+            skip |= LogError(
+                module_state->vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-flags-02758",
+                "%s flags contain VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT and "
+                "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT bits, but local workgroup size in the X "
+                "dimension (%" PRIu32
+                ") is not a multiple of VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::maxSubgroupSize (%" PRIu32 ").",
+                report_data->FormatHandle(module_state->vk_shader_module()).c_str(), local_size_x,
+                phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize);
+        }
+    } else if ((stage_state.create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) &&
+               (stage_state.create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) == 0) {
+        const auto *required_subgroup_size_features =
+            LvlFindInChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(stage_state.create_info->pNext);
+        if (!required_subgroup_size_features) {
+            if (SafeModulo(local_size_x, phys_dev_props_core11.subgroupSize) != 0) {
                 skip |= LogError(
-                    module_state->vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-flags-02758",
-                    "%s flags contain VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT and "
-                    "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT bits, but local workgroup size in the X "
-                    "dimension (%" PRIu32
-                    ") is not a multiple of VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::maxSubgroupSize (%" PRIu32 ").",
+                    module_state->vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-flags-02759",
+                    "%s flags contain VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT bit, and not the"
+                    "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT bit, but local workgroup size in the "
+                    "X dimension (%" PRIu32 ") is not a multiple of VkPhysicalDeviceVulkan11Properties::subgroupSize (%" PRIu32
+                    ").",
                     report_data->FormatHandle(module_state->vk_shader_module()).c_str(), local_size_x,
-                    phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize);
-            }
-        } else if ((stage_state.create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) &&
-            (stage_state.create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) == 0) {
-            const auto *required_subgroup_size_features =
-                LvlFindInChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(stage_state.create_info->pNext);
-            if (!required_subgroup_size_features) {
-                if (SafeModulo(local_size_x, phys_dev_props_core11.subgroupSize) != 0) {
-                    skip |= LogError(
-                        module_state->vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-flags-02759",
-                        "%s flags contain VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT bit, and not the"
-                        "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT bit, but local workgroup size in the "
-                        "X dimension (%" PRIu32 ") is not a multiple of VkPhysicalDeviceVulkan11Properties::subgroupSize (%" PRIu32
-                        ").",
-                        report_data->FormatHandle(module_state->vk_shader_module()).c_str(), local_size_x,
-                        phys_dev_props_core11.subgroupSize);
-                }
+                    phys_dev_props_core11.subgroupSize);
             }
         }
     }

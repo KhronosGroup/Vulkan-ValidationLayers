@@ -13757,19 +13757,17 @@ TEST_F(VkLayerTest, SpecializationInvalidSizeMismatch) {
     }
 }
 
-TEST_F(VkLayerTest, ValidateComputeShaderLocalSize) {
-    TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize");
+TEST_F(VkLayerTest, ComputeWorkGroupSizeSpecConstant) {
+    TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeWorkGroupSize");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    const VkPhysicalDeviceLimits limits = m_device->phy().properties().limits;
 
     // Make sure compute pipeline has a compute shader stage set
-    char const *csSource = R"glsl(
+    const std::string cs_source = R"glsl(
         #version 450
-
         layout(local_size_x_id = 3, local_size_y_id = 4) in;
-
-        void main(){
-        }
+        void main(){}
     )glsl";
 
     VkSpecializationMapEntry entries[2];
@@ -13781,8 +13779,8 @@ TEST_F(VkLayerTest, ValidateComputeShaderLocalSize) {
     entries[1].size = sizeof(uint32_t);
 
     uint32_t data[2] = {
-        m_device->phy().properties().limits.maxComputeWorkGroupSize[0],
-        m_device->phy().properties().limits.maxComputeWorkGroupSize[1] + 1,  // Invalid
+        1,
+        limits.maxComputeWorkGroupSize[1] + 1,  // Invalid
     };
 
     VkSpecializationInfo specialization_info = {};
@@ -13791,14 +13789,254 @@ TEST_F(VkLayerTest, ValidateComputeShaderLocalSize) {
     specialization_info.dataSize = sizeof(uint32_t) * 2;
     specialization_info.pData = data;
 
-    CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.cs_.reset(
-        new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info));
-    pipe.InitState();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-MaxComputeWorkGroupSize");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+                                         &specialization_info));
+    };
+    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-x-06432");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-y-06430");
+
+    data[0] = limits.maxComputeWorkGroupSize[0] + 1;  // Invalid
+    data[1] = 1;
+    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-x-06432");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-x-06429");
+
+    data[0] = limits.maxComputeWorkGroupSize[0];
+    data[1] = limits.maxComputeWorkGroupSize[1];
+    if ((data[0] + data[1]) > limits.maxComputeWorkGroupInvocations) {
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-x-06432");
+    }
+}
+
+TEST_F(VkLayerTest, ComputeWorkGroupSizeConstantDefault) {
+    TEST_DESCRIPTION("Make sure constant are applied for maxComputeWorkGroupSize using WorkgroupSize");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+
+    std::stringstream spv_source;
+    spv_source << R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+      %limit = OpConstant %uint )";
+    spv_source << std::to_string(x_size_limit + 1);
+    spv_source << R"(
+     %uint_1 = OpConstant %uint 1
+     %v3uint = OpTypeVector %uint 3
+%gl_WorkGroupSize = OpConstantComposite %v3uint %limit %uint_1 %uint_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+    };
+    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-x-06432");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-x-06429");
+}
+
+TEST_F(VkLayerTest, ComputeWorkGroupSizeSpecConstantDefault) {
+    TEST_DESCRIPTION("Make sure spec constant are applied for maxComputeWorkGroupSize using WorkgroupSize");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+
+    std::stringstream spv_source;
+    spv_source << R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpDecorate %limit SpecId 0
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+      %limit = OpSpecConstant %uint )";
+    spv_source << std::to_string(x_size_limit + 1);
+    spv_source << R"(
+     %uint_1 = OpConstant %uint 1
+     %v3uint = OpTypeVector %uint 3
+%gl_WorkGroupSize = OpSpecConstantComposite %v3uint %limit %uint_1 %uint_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+    };
+    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-x-06432");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-x-06429");
+}
+
+TEST_F(VkLayerTest, ComputeWorkGroupSizeLocalSizeId) {
+    TEST_DESCRIPTION("Validate LocalSizeId also triggers maxComputeWorkGroupSize limit");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        printf("%s test requires Vulkan 1.3+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
+
+    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+
+    std::stringstream spv_source;
+    spv_source << R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionModeId %main LocalSizeId %limit %uint_1 %uint_1
+               OpSource GLSL 450
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+    %limit = OpConstant %uint )";
+    spv_source << std::to_string(x_size_limit + 1);
+    spv_source << R"(
+     %uint_1 = OpConstant %uint 1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM));
+    };
+    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-x-06432");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-x-06429");
+}
+
+TEST_F(VkLayerTest, ComputeWorkGroupSizeLocalSizeIdSpecConstantDefault) {
+    TEST_DESCRIPTION("Validate LocalSizeId also triggers maxComputeWorkGroupSize limit with spec constants default");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        printf("%s test requires Vulkan 1.3+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
+
+    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+
+    // layout(local_size_x_id = 18, local_size_z_id = 19) in;
+    // layout(local_size_x = 32) in;
+    std::stringstream spv_source;
+    spv_source << R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionModeId %main LocalSizeId %spec_x %uint_1 %spec_z
+               OpSource GLSL 450
+               OpDecorate %spec_x SpecId 18
+               OpDecorate %spec_z SpecId 19
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+      %spec_x = OpSpecConstant %uint )";
+    spv_source << std::to_string(x_size_limit + 1);
+    spv_source << R"(
+     %uint_1 = OpConstant %uint 1
+     %spec_z = OpSpecConstant %uint 1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM));
+    };
+    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-x-06432");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-x-06429");
+}
+
+TEST_F(VkLayerTest, ComputeWorkGroupSizeLocalSizeIdSpecConstantSet) {
+    TEST_DESCRIPTION("Validate LocalSizeId also triggers maxComputeWorkGroupSize limit with spec constants");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        printf("%s test requires Vulkan 1.3+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
+
+    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+
+    // layout(local_size_x_id = 18, local_size_z_id = 19) in;
+    // layout(local_size_x = 32) in;
+    std::stringstream spv_source;
+    spv_source << R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionModeId %main LocalSizeId %spec_x %uint_1 %spec_z
+               OpSource GLSL 450
+               OpDecorate %spec_x SpecId 18
+               OpDecorate %spec_z SpecId 19
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %spec_x = OpSpecConstant %uint 32
+     %uint_1 = OpConstant %uint 1
+     %spec_z = OpSpecConstant %uint 1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    uint32_t data = x_size_limit + 1;
+
+    VkSpecializationMapEntry entry;
+    entry.constantID = 18;
+    entry.offset = 0;
+    entry.size = sizeof(uint32_t);
+
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM,
+                                         &specialization_info));
+    };
+    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-x-06432");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-x-06429");
 }
 
 TEST_F(VkLayerTest, UsingRasterizationStateStreamExtWithoutEnabled) {
