@@ -37,7 +37,7 @@
       "cmake_options": [
         "-DSPIRV-Headers_SOURCE_DIR={repo_dir}/../SPIRV-Headers"
       ],
-      "commit": "45dd184c790d6bfc78a5a74a10c37e888b1823fa"
+      "commit": "471428a04f9b4561801eb90f29d69bc484ef5473"
     },
     {
       "name": "robin-hood-hashing",

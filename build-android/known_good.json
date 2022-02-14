@@ -28,7 +28,7 @@
       "name" : "SPIRV-Tools",
       "url" : "https://github.com/KhronosGroup/SPIRV-Tools.git",
       "sub_dir" : "shaderc/third_party/spirv-tools",
-      "commit" : "45dd184c790d6bfc78a5a74a10c37e888b1823fa"
+      "commit" : "471428a04f9b4561801eb90f29d69bc484ef5473"
     },
     {
       "name" : "SPIRV-Headers",
