@@ -53,6 +53,7 @@
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <string>
 #include <valarray>
@@ -3240,11 +3241,21 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     // Allocate shader validation cache
     if (!disabled[shader_validation_caching] && !disabled[shader_validation] && !core_checks->core_validation_cache) {
         std::string validation_cache_path;
-        auto tmp_path = GetEnvironment("TMPDIR");
+        auto tmp_path = GetEnvironment("XDG_CACHE_HOME");
+        if (!tmp_path.size()) {
+            auto cachepath = GetEnvironment("HOME") + "/.cache";
+            struct stat info;
+            if (stat(cachepath.c_str(), &info) == 0) {
+                if ((info.st_mode & S_IFMT) == S_IFDIR) {
+                    tmp_path = cachepath;
+                }
+            }
+        }
+        if (!tmp_path.size()) tmp_path = GetEnvironment("TMPDIR");
         if (!tmp_path.size()) tmp_path = GetEnvironment("TMP");
         if (!tmp_path.size()) tmp_path = GetEnvironment("TEMP");
-        if (!tmp_path.size()) tmp_path = "//tmp";
-        core_checks->validation_cache_path = tmp_path + "//shader_validation_cache";
+        if (!tmp_path.size()) tmp_path = "/tmp";
+        core_checks->validation_cache_path = tmp_path + "/shader_validation_cache";
 #if defined(__linux__) || defined(__FreeBSD__)
         core_checks->validation_cache_path += "-" + std::to_string(getuid());
 #endif
