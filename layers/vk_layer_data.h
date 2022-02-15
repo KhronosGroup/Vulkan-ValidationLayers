@@ -824,5 +824,41 @@ class optional {
     Store store_;
     bool init_;
 };
+
+// Partial implementation of std::span for C++11
+template <typename T>
+class span {
+  public:
+    using pointer = T *;
+    using iterator = pointer;
+
+    span() = default;
+    span(pointer start, size_t n) : data(start), count(n) {}
+    template <typename Iterator>
+    span(Iterator start, Iterator end) : data(&(*start)), count(end - start) {}
+    template <typename Container>
+    span(const Container &c) : data(c.data()), count(c.size()) {}
+
+    iterator begin() { return data; }
+    const iterator begin() const { return data; }
+
+    iterator end() { return data + count; }
+    const iterator end() const { return data + count; }
+
+    T &operator[](int i) { return data[i]; }
+    const T &operator[](int i) const { return data[i]; }
+
+    T &front() { return *data; }
+    const T &front() const { return *data; }
+
+    T &back() { return *(data + (count - 1)); }
+    const T &back() const { return *(data + (count - 1)); }
+
+    size_t size() const { return count; }
+
+  private:
+    pointer data = {};
+    size_t count = 0;
+};
 }  // namespace layer_data
 #endif  // LAYER_DATA_H
