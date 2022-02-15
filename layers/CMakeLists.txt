@@ -173,6 +173,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     image_state.cpp
     pipeline_state.h
     pipeline_state.cpp
+    pipeline_layout_state.cpp
     queue_state.h
     queue_state.cpp
     query_state.h
