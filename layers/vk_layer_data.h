@@ -831,6 +831,7 @@ class span {
   public:
     using pointer = T *;
     using iterator = pointer;
+    using const_iterator = T const *;
 
     span() = default;
     span(pointer start, size_t n) : data(start), count(n) {}
@@ -840,10 +841,10 @@ class span {
     span(const Container &c) : data(c.data()), count(c.size()) {}
 
     iterator begin() { return data; }
-    const iterator begin() const { return data; }
+    const_iterator begin() const { return data; }
 
     iterator end() { return data + count; }
-    const iterator end() const { return data + count; }
+    const_iterator end() const { return data + count; }
 
     T &operator[](int i) { return data[i]; }
     const T &operator[](int i) const { return data[i]; }

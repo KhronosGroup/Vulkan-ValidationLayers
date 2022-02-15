@@ -1,8 +1,21 @@
 #pragma once
 
 #include "pipeline_layout_state.h"
+#include "vk_safe_struct.h"
 
 // Graphics pipeline sub-state as defined by VK_KHR_graphics_pipeline_library
+//
+class RENDER_PASS_STATE;
+struct SHADER_MODULE_STATE;
+
+template <typename CreateInfoType>
+static inline VkGraphicsPipelineLibraryFlagsEXT GetGraphicsLibType(const CreateInfoType &create_info) {
+    const auto lib_ci = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+    if (lib_ci) {
+        return lib_ci->flags;
+    }
+    return static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
+}
 
 struct VertexInputState {
     VertexInputState() = default;
@@ -22,6 +35,9 @@ struct VertexInputState {
 
     using VertexAttrAlignmentVector = std::vector<VkDeviceSize>;
     VertexAttrAlignmentVector vertex_attribute_alignments;
+
+    std::shared_ptr<VertexInputState> FromCreateInfo(const ValidationStateTracker &state,
+                                                     const safe_VkGraphicsPipelineCreateInfo &create_info);
 };
 
 struct PreRasterState {
@@ -58,8 +74,6 @@ std::unique_ptr<const safe_VkPipelineDepthStencilStateCreateInfo> ToSafeDepthSte
     const VkPipelineDepthStencilStateCreateInfo &cbs);
 std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(const safe_VkPipelineShaderStageCreateInfo &cbs);
 std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(const VkPipelineShaderStageCreateInfo &cbs);
-void SetFragmentShaderInfo(const ValidationStateTracker &state_data, const VkGraphicsPipelineCreateInfo &create_info);
-void SetFragmentShaderInfo(const ValidationStateTracker &state_data, const safe_VkGraphicsPipelineCreateInfo &create_info);
 
 struct FragmentShaderState {
     FragmentShaderState() = default;
@@ -74,7 +88,7 @@ struct FragmentShaderState {
         if (create_info.pDepthStencilState) {
             ds_state = ToSafeDepthStencilState(*create_info.pDepthStencilState);
         }
-        SetFragmentShaderInfo(*this, dev_data, create_info);
+        FragmentShaderState::SetFragmentShaderInfo(*this, dev_data, create_info);
     }
 
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
@@ -86,7 +100,26 @@ struct FragmentShaderState {
 
     std::shared_ptr<const SHADER_MODULE_STATE> fragment_shader;
     std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> fragment_shader_ci;
+
+  private:
+    static void SetFragmentShaderInfo(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
+                                      const VkGraphicsPipelineCreateInfo &create_info);
+    static void SetFragmentShaderInfo(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
+                                      const safe_VkGraphicsPipelineCreateInfo &create_info);
 };
+
+template <typename CreateInfo>
+static bool IsSampleLocationEnabled(const CreateInfo &create_info) {
+    bool result = false;
+    if (create_info.pMultisampleState) {
+        const auto *sample_location_state =
+            LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(create_info.pMultisampleState->pNext);
+        if (sample_location_state != nullptr) {
+            result = (sample_location_state->sampleLocationsEnable != 0);
+        }
+    }
+    return result;
+}
 
 struct FragmentOutputState {
     using AttachmentVector = std::vector<VkPipelineColorBlendAttachmentState>;

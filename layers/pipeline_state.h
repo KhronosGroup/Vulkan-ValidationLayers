@@ -112,6 +112,11 @@ struct PipelineStageState {
     PipelineStageState(const VkPipelineShaderStageCreateInfo *stage, std::shared_ptr<const SHADER_MODULE_STATE> &module_state);
 };
 
+template <typename SubStateType, VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
+inline std::shared_ptr<SubStateType> GetSubState(const PIPELINE_STATE &) {
+    return {};
+}
+
 class PIPELINE_STATE : public BASE_NODE {
   public:
     union CreateInfo {
@@ -197,6 +202,14 @@ class PIPELINE_STATE : public BASE_NODE {
     const uint32_t active_shaders = 0;
     const VkPrimitiveTopology topology_at_rasterizer;
 
+    VkGraphicsPipelineLibraryFlagsEXT graphics_lib_type = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
+    // State split up based on library types
+    const std::shared_ptr<VertexInputState> vertex_input_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT
+    const std::shared_ptr<PreRasterState> pre_raster_state;      // VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT
+    const std::shared_ptr<FragmentShaderState> fragment_shader_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT
+    const std::shared_ptr<FragmentOutputState>
+        fragment_output_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT
+
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const RENDER_PASS_STATE> &&rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
 
@@ -243,7 +256,57 @@ class PIPELINE_STATE : public BASE_NODE {
                 return 0;
         }
     }
+
+    bool IsGraphicsLibrary() const { return graphics_lib_type != static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0); }
+
+    template <typename SubStateType, VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
+    static inline std::shared_ptr<SubStateType> GetLibSubState(const ValidationStateTracker &state,
+                                                               const VkPipelineLibraryCreateInfoKHR &link_info) {
+        for (uint32_t i = 0; i < link_info.libraryCount; ++i) {
+            const auto lib_state = state.Get<PIPELINE_STATE>(link_info.pLibraries[i]);
+            if (lib_state && ((lib_state->graphics_lib_type & type_flag) != 0)) {
+                return GetSubState<SubStateType, type_flag>(*lib_state);
+            }
+        }
+        return {};
+    }
+
+  private:
+    static std::shared_ptr<VertexInputState> CreateVertexInputState(const ValidationStateTracker &state,
+                                                                    const safe_VkGraphicsPipelineCreateInfo &create_info);
+    static std::shared_ptr<PreRasterState> CreatePreRasterState(const ValidationStateTracker &state,
+                                                                const safe_VkGraphicsPipelineCreateInfo &create_info);
+    static std::shared_ptr<FragmentShaderState> CreateFragmentShaderState(
+        const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
+        const safe_VkGraphicsPipelineCreateInfo &safe_create_info);
+    static std::shared_ptr<FragmentOutputState> CreateFragmentOutputState(
+        const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
+        const safe_VkGraphicsPipelineCreateInfo &safe_create_info);
 };
+
+template <>
+inline std::shared_ptr<VertexInputState> GetSubState<VertexInputState, VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>(
+    const PIPELINE_STATE &pipe_state) {
+    return pipe_state.vertex_input_state;
+}
+
+template <>
+inline std::shared_ptr<PreRasterState> GetSubState<PreRasterState, VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(
+    const PIPELINE_STATE &pipe_state) {
+    return pipe_state.pre_raster_state;
+}
+
+template <>
+inline std::shared_ptr<FragmentShaderState> GetSubState<FragmentShaderState, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(
+    const PIPELINE_STATE &pipe_state) {
+    return pipe_state.fragment_shader_state;
+}
+
+template <>
+inline std::shared_ptr<FragmentOutputState>
+GetSubState<FragmentOutputState, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>(const PIPELINE_STATE &pipe_state) {
+    return pipe_state.fragment_output_state;
+}
 
 // Track last states that are bound per pipeline bind point (Gfx & Compute)
 struct LAST_BOUND_STATE {
