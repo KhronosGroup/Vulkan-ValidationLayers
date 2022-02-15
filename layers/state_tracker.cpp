@@ -4244,6 +4244,23 @@ void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuff
     cb_state->hasTraceRaysCmd = true;
 }
 
+std::shared_ptr<SHADER_MODULE_STATE> ValidationStateTracker::CreateShaderModuleState(const VkShaderModuleCreateInfo &create_info,
+                                                                                     uint32_t unique_shader_id) const {
+    spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
+    bool is_spirv = (create_info.pCode[0] == spv::MagicNumber);
+    return is_spirv ? std::make_shared<SHADER_MODULE_STATE>(create_info, spirv_environment, unique_shader_id)
+                    : std::make_shared<SHADER_MODULE_STATE>();
+}
+
+std::shared_ptr<SHADER_MODULE_STATE> ValidationStateTracker::CreateShaderModuleState(const VkShaderModuleCreateInfo &create_info,
+                                                                                     uint32_t unique_shader_id,
+                                                                                     VkShaderModule handle) const {
+    spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
+    bool is_spirv = (create_info.pCode[0] == spv::MagicNumber);
+    return is_spirv ? std::make_shared<SHADER_MODULE_STATE>(create_info, handle, spirv_environment, unique_shader_id)
+                    : std::make_shared<SHADER_MODULE_STATE>();
+}
+
 void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkShaderModule *pShaderModule, VkResult result,
@@ -4251,12 +4268,7 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
     if (VK_SUCCESS != result) return;
     create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
 
-    spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
-    bool is_spirv = (pCreateInfo->pCode[0] == spv::MagicNumber);
-    auto new_shader_module = is_spirv ? std::make_shared<SHADER_MODULE_STATE>(pCreateInfo, *pShaderModule, spirv_environment,
-                                                                              csm_state->unique_shader_id)
-                                      : std::make_shared<SHADER_MODULE_STATE>();
-    Add(std::move(new_shader_module));
+    Add(CreateShaderModuleState(*pCreateInfo, csm_state->unique_shader_id, *pShaderModule));
 }
 
 void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
