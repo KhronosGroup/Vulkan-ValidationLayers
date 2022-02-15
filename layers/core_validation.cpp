@@ -8584,7 +8584,7 @@ bool CoreChecks::PreCallValidateDestroyAccelerationStructureNV(VkDevice device, 
     bool skip = false;
     if (as_state) {
         skip |= ValidateObjectNotInUse(as_state.get(), "vkDestroyAccelerationStructureNV",
-                                       "VUID-vkDestroyAccelerationStructureKHR-accelerationStructure-02442");
+                                       "VUID-vkDestroyAccelerationStructureNV-accelerationStructure-03752");
     }
     return skip;
 }

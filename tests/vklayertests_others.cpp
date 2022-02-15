@@ -6560,6 +6560,73 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructureNV) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureNV) {
+    TEST_DESCRIPTION("Validate acceleration structure building tracks the objects used.");
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+        return;
+    }
+
+    auto vkCmdBuildAccelerationStructureNV = reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
+    assert(vkCmdBuildAccelerationStructureNV != nullptr);
+    auto vkDestroyAccelerationStructureNV = reinterpret_cast<PFN_vkDestroyAccelerationStructureNV>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkDestroyAccelerationStructureNV"));
+    assert(vkCmdBuildAccelerationStructureNV != nullptr);
+
+    auto vbo = layer_data::make_unique<VkBufferObj>();
+    auto ibo = layer_data::make_unique<VkBufferObj>();
+    VkGeometryNV geometry;
+    GetSimpleGeometryForAccelerationStructureTests(*m_device, vbo.get(), ibo.get(), &geometry);
+
+    VkAccelerationStructureCreateInfoNV bot_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
+    bot_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
+    bot_level_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
+    bot_level_as_create_info.info.instanceCount = 0;
+    bot_level_as_create_info.info.geometryCount = 1;
+    bot_level_as_create_info.info.pGeometries = &geometry;
+
+    auto bot_level_as = layer_data::make_unique<VkAccelerationStructureObj>(*m_device, bot_level_as_create_info);
+
+    auto bot_level_as_scratch = layer_data::make_unique<VkBufferObj>();
+    bot_level_as->create_scratch_buffer(*m_device, bot_level_as_scratch.get());
+
+    m_commandBuffer->begin();
+    vkCmdBuildAccelerationStructureNV(m_commandBuffer->handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
+                                      bot_level_as->handle(), VK_NULL_HANDLE, bot_level_as_scratch->handle(), 0);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-00922");
+    vk::DestroyBuffer(m_device->handle(), ibo->handle(), nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-00922");
+    vk::DestroyBuffer(m_device->handle(), vbo->handle(), nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-00922");
+    vk::DestroyBuffer(m_device->handle(), bot_level_as_scratch->handle(), nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyAccelerationStructureNV-accelerationStructure-03752");
+    vkDestroyAccelerationStructureNV(m_device->handle(), bot_level_as->handle(), nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    ibo.reset();
+    vbo.reset();
+    bot_level_as_scratch.reset();
+    bot_level_as.reset();
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkLayerTest, ValidateGetAccelerationStructureHandleNV) {
     TEST_DESCRIPTION("Validate acceleration structure handle querying.");
     if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
