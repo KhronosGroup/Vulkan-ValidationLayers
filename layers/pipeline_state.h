@@ -197,6 +197,13 @@ class PIPELINE_STATE : public BASE_NODE {
     const uint32_t active_shaders = 0;
     const VkPrimitiveTopology topology_at_rasterizer;
 
+    // State split up based on library types
+    const std::shared_ptr<VertexInputState> vertex_input_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT
+    const std::shared_ptr<PreRasterState> pre_raster_state;      // VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT
+    const std::shared_ptr<FragmentShaderState> fragment_shader_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT
+    const std::shared_ptr<FragmentOutputState>
+        fragment_output_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT
+
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const RENDER_PASS_STATE> &&rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
 
@@ -243,6 +250,18 @@ class PIPELINE_STATE : public BASE_NODE {
                 return 0;
         }
     }
+
+  private:
+    static std::shared_ptr<VertexInputState> CreateVertexInputState(const ValidationStateTracker &state,
+                                                                    const safe_VkGraphicsPipelineCreateInfo &create_info);
+    static std::shared_ptr<PreRasterState> CreatePreRasterState(const ValidationStateTracker &state,
+                                                                const safe_VkGraphicsPipelineCreateInfo &create_info);
+    static std::shared_ptr<FragmentShaderState> CreateFragmentShaderState(
+        const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
+        const safe_VkGraphicsPipelineCreateInfo &safe_create_info);
+    static std::shared_ptr<FragmentOutputState> CreateFragmentOutputState(
+        const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
+        const safe_VkGraphicsPipelineCreateInfo &safe_create_info);
 };
 
 // Track last states that are bound per pipeline bind point (Gfx & Compute)

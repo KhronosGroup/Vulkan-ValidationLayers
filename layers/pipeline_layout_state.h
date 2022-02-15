@@ -5,6 +5,7 @@
 #include "base_node.h"
 #include "hash_util.h"
 #include "hash_vk_types.h"
+#include "state_tracker.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace cvdescriptorset {

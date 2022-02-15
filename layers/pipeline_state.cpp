@@ -110,18 +110,6 @@ static bool IsBlendConstantsEnabled(const PIPELINE_STATE::AttachmentVector &atta
     return result;
 }
 
-static bool IsSampleLocationEnabled(const safe_VkGraphicsPipelineCreateInfo &create_info) {
-    bool result = false;
-    if (create_info.pMultisampleState) {
-        const auto *sample_location_state =
-            LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(create_info.pMultisampleState->pNext);
-        if (sample_location_state != nullptr) {
-            result = (sample_location_state->sampleLocationsEnable != 0);
-        }
-    }
-    return result;
-}
-
 static bool HasWriteableDescriptor(const std::vector<PipelineStageState::DescriptorUse> &descriptor_uses) {
     return std::any_of(descriptor_uses.begin(), descriptor_uses.end(),
                        [](const PipelineStageState::DescriptorUse &use) { return use.second.is_writable; });
