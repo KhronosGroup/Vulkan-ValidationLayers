@@ -44,6 +44,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/cmd_buffer_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/image_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/pipeline_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/pipeline_layout_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/pipeline_sub_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/queue_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/render_pass_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_validation.cpp

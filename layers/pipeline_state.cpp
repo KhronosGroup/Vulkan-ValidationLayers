@@ -110,18 +110,6 @@ static bool IsBlendConstantsEnabled(const PIPELINE_STATE::AttachmentVector &atta
     return result;
 }
 
-static bool IsSampleLocationEnabled(const safe_VkGraphicsPipelineCreateInfo &create_info) {
-    bool result = false;
-    if (create_info.pMultisampleState) {
-        const auto *sample_location_state =
-            LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(create_info.pMultisampleState->pNext);
-        if (sample_location_state != nullptr) {
-            result = (sample_location_state->sampleLocationsEnable != 0);
-        }
-    }
-    return result;
-}
-
 static bool HasWriteableDescriptor(const std::vector<PipelineStageState::DescriptorUse> &descriptor_uses) {
     return std::any_of(descriptor_uses.begin(), descriptor_uses.end(),
                        [](const PipelineStageState::DescriptorUse &use) { return use.second.is_writable; });
@@ -259,6 +247,107 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE::StageSt
         }
     }
     return result;
+}
+
+// static
+std::shared_ptr<VertexInputState> PIPELINE_STATE::CreateVertexInputState(const ValidationStateTracker &state,
+                                                                         const safe_VkGraphicsPipelineCreateInfo &create_info) {
+    const auto lib_type = GetGraphicsLibType(create_info);
+    if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT) {  // Vertex input graphics library
+        return std::make_shared<VertexInputState>(create_info);
+    }
+
+    const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
+    if (link_info) {
+        auto ss = GetLibSubState<VertexInputState, VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>(state, *link_info);
+        if (ss) {
+            return ss;
+        }
+    }
+
+    if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
+        return std::make_shared<VertexInputState>(create_info);
+    }
+
+    // We shouldn't get here...
+    return {};
+}
+
+// static
+std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const ValidationStateTracker &state,
+                                                                     const safe_VkGraphicsPipelineCreateInfo &create_info) {
+    const auto lib_type = GetGraphicsLibType(create_info);
+    if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {  // Pre-raster graphics library
+        return std::make_shared<PreRasterState>(state, create_info);
+    }
+
+    const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
+    if (link_info) {
+        auto ss = GetLibSubState<PreRasterState, VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(state, *link_info);
+        if (ss) {
+            return ss;
+        }
+    }
+
+    if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
+        return std::make_shared<PreRasterState>(state, create_info);
+    }
+
+    // We shouldn't get here...
+    return {};
+}
+
+// static
+std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
+    const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
+    const safe_VkGraphicsPipelineCreateInfo &safe_create_info) {
+    const auto lib_type = GetGraphicsLibType(create_info);
+    if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {  // Fragment shader graphics library
+        return std::make_shared<FragmentShaderState>(state, create_info);
+    }
+
+    const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
+    if (link_info) {
+        auto ss = GetLibSubState<FragmentShaderState, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(state, *link_info);
+        if (ss) {
+            return ss;
+        }
+    }
+
+    if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
+        return std::make_shared<FragmentShaderState>(state, safe_create_info);
+    }
+
+    // We shouldn't get here...
+    return {};
+}
+
+// static
+// Pointers that should be ignored have been set to null in safe_create_info, but if this is a graphics library we need the "raw"
+// create_info.
+std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
+    const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
+    const safe_VkGraphicsPipelineCreateInfo &safe_create_info) {
+    const auto lib_type = GetGraphicsLibType(create_info);
+    if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {  // Fragment output graphics library
+        return std::make_shared<FragmentOutputState>(state, create_info);
+    }
+
+    const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
+    if (link_info) {
+        auto ss =
+            GetLibSubState<FragmentOutputState, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>(state, *link_info);
+        if (ss) {
+            return ss;
+        }
+    }
+
+    if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
+        return std::make_shared<FragmentOutputState>(state, safe_create_info);
+    }
+
+    // We shouldn't get here...
+    return {};
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
