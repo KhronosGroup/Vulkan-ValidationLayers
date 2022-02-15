@@ -130,7 +130,8 @@ bool BestPractices::ValidateDeprecatedExtensions(const char* api_name, const cha
     if (dep_info_it != deprecated_extensions.end()) {
         auto dep_info = dep_info_it->second;
         if (((dep_info.target.compare("VK_VERSION_1_1") == 0) && (version >= VK_API_VERSION_1_1)) ||
-            ((dep_info.target.compare("VK_VERSION_1_2") == 0) && (version >= VK_API_VERSION_1_2))) {
+            ((dep_info.target.compare("VK_VERSION_1_2") == 0) && (version >= VK_API_VERSION_1_2)) ||
+            ((dep_info.target.compare("VK_VERSION_1_3") == 0) && (version >= VK_API_VERSION_1_3))) {
             skip |=
                 LogWarning(instance, vuid, "%s(): Attempting to enable deprecated extension %s, but this extension has been %s %s.",
                            api_name, extension_name, DepReasonToString(dep_info.reason), (dep_info.target).c_str());
