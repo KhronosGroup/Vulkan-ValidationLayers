@@ -278,10 +278,19 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     SHADER_MODULE_STATE(const SpirvContainer &spirv)
         : SHADER_MODULE_STATE(spirv.data(), spirv.size() * sizeof(typename SpirvContainer::value_type)) {}
 
-    SHADER_MODULE_STATE(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule, spv_target_env env,
+    SHADER_MODULE_STATE(VkShaderModuleCreateInfo const &create_info, spv_target_env env, uint32_t unique_shader_id)
+        : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule),
+          words(create_info.pCode, create_info.pCode + create_info.codeSize / sizeof(uint32_t)),
+          static_data_(*this),
+          has_valid_spirv(true),
+          gpu_validation_shader_id(unique_shader_id) {
+        PreprocessShaderBinary(env);
+    }
+
+    SHADER_MODULE_STATE(VkShaderModuleCreateInfo const &create_info, VkShaderModule shaderModule, spv_target_env env,
                         uint32_t unique_shader_id)
         : BASE_NODE(shaderModule, kVulkanObjectTypeShaderModule),
-          words(pCreateInfo->pCode, pCreateInfo->pCode + pCreateInfo->codeSize / sizeof(uint32_t)),
+          words(create_info.pCode, create_info.pCode + create_info.codeSize / sizeof(uint32_t)),
           static_data_(*this),
           has_valid_spirv(true),
           gpu_validation_shader_id(unique_shader_id) {
