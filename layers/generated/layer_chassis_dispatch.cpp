@@ -297,6 +297,14 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
             if (pCreateInfos[idx0].renderPass) {
                 local_pCreateInfos[idx0].renderPass = layer_data->Unwrap(pCreateInfos[idx0].renderPass);
             }
+
+            auto* link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(local_pCreateInfos[idx0].pNext);
+            if (link_info) {
+                auto* unwrapped_libs = const_cast<VkPipeline*>(link_info->pLibraries);
+                for (uint32_t idx1 = 0; idx1 < link_info->libraryCount; ++idx1) {
+                    unwrapped_libs[idx1] = layer_data->Unwrap(link_info->pLibraries[idx1]);
+                }
+            }
         }
     }
     if (pipelineCache) {
