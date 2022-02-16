@@ -310,6 +310,14 @@ layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const
     return result;
 }
 
+layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology() const {
+    if (static_data_.entry_points.size() > 0) {
+        const auto entrypoint = static_data_.entry_points.cbegin()->second;
+        return GetTopology(get_def(entrypoint.offset));
+    }
+    return {};
+}
+
 SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE &module_state) {
     for (auto insn : module_state) {
         const uint32_t result_word = OpcodeResultWord(insn.opcode());

@@ -348,6 +348,10 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     layer_data::unordered_set<uint32_t> MarkAccessibleIds(spirv_inst_iter entrypoint) const;
     layer_data::optional<VkPrimitiveTopology> GetTopology(const spirv_inst_iter &entrypoint) const;
+    // TODO (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450)
+    // Since we currently don't support multiple entry points, this is a helper to return the topology
+    // for the "first" (and for our purposes _only_) entrypoint.
+    layer_data::optional<VkPrimitiveTopology> GetTopology() const;
 
     const EntryPoint *FindEntrypointStruct(char const *name, VkShaderStageFlagBits stageBits) const;
     spirv_inst_iter FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;

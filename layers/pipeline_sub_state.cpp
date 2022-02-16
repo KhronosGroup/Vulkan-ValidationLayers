@@ -207,3 +207,28 @@ bool FragmentOutputState::IsBlendConstantsEnabled(const AttachmentVector &attach
     }
     return result;
 }
+
+// static
+bool FragmentOutputState::GetDualSourceBlending(const safe_VkPipelineColorBlendStateCreateInfo *color_blend_state) {
+    if (!color_blend_state) {
+        return false;
+    }
+    const std::array<VkBlendFactor, 4> dual_modes = {
+        VK_BLEND_FACTOR_SRC1_COLOR,
+        VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR,
+        VK_BLEND_FACTOR_SRC1_ALPHA,
+        VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA,
+    };
+    for (uint32_t i = 0; i < color_blend_state->attachmentCount; ++i) {
+        const auto &attachment = color_blend_state->pAttachments[i];
+        if (attachment.blendEnable) {
+            if (std::find(dual_modes.begin(), dual_modes.end(), attachment.srcColorBlendFactor) != dual_modes.end() ||
+                std::find(dual_modes.begin(), dual_modes.end(), attachment.dstColorBlendFactor) != dual_modes.end() ||
+                std::find(dual_modes.begin(), dual_modes.end(), attachment.srcAlphaBlendFactor) != dual_modes.end() ||
+                std::find(dual_modes.begin(), dual_modes.end(), attachment.dstAlphaBlendFactor) != dual_modes.end()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}

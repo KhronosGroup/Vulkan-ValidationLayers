@@ -154,6 +154,7 @@ struct FragmentOutputState {
         if (create_info.pColorBlendState) {
             if (create_info.pColorBlendState) {
                 color_blend_state = ToSafeColorBlendState(*create_info.pColorBlendState);
+                dual_source_blending = GetDualSourceBlending(color_blend_state.get());
             }
             const auto &cbci = *create_info.pColorBlendState;
             if (cbci.attachmentCount) {
@@ -173,6 +174,7 @@ struct FragmentOutputState {
     }
 
     static bool IsBlendConstantsEnabled(const AttachmentVector &attachments);
+    static bool GetDualSourceBlending(const safe_VkPipelineColorBlendStateCreateInfo *color_blend_state);
 
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     uint32_t subpass = 0;
@@ -184,4 +186,5 @@ struct FragmentOutputState {
 
     bool blend_constants_enabled = false;  // Blend constants enabled for any attachments
     bool sample_location_enabled = false;
+    bool dual_source_blending = false;
 };

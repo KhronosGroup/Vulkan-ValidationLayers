@@ -150,7 +150,9 @@ struct CreatePipelineTraits {};
 template <>
 struct CreatePipelineTraits<VkGraphicsPipelineCreateInfo> {
     using SafeType = safe_VkGraphicsPipelineCreateInfo;
-    static const SafeType &GetPipelineCI(const PIPELINE_STATE *pipeline_state) { return pipeline_state->create_info.graphics; }
+    static const SafeType &GetPipelineCI(const PIPELINE_STATE *pipeline_state) {
+        return pipeline_state->GetUnifiedCreateInfo().graphics;
+    }
     static uint32_t GetStageCount(const VkGraphicsPipelineCreateInfo &createInfo) { return createInfo.stageCount; }
     static VkShaderModule GetShaderModule(const VkGraphicsPipelineCreateInfo &createInfo, uint32_t stage) {
         return createInfo.pStages[stage].module;
@@ -163,7 +165,9 @@ struct CreatePipelineTraits<VkGraphicsPipelineCreateInfo> {
 template <>
 struct CreatePipelineTraits<VkComputePipelineCreateInfo> {
     using SafeType = safe_VkComputePipelineCreateInfo;
-    static const SafeType &GetPipelineCI(const PIPELINE_STATE *pipeline_state) { return pipeline_state->create_info.compute; }
+    static const SafeType &GetPipelineCI(const PIPELINE_STATE *pipeline_state) {
+        return pipeline_state->GetUnifiedCreateInfo().compute;
+    }
     static uint32_t GetStageCount(const VkComputePipelineCreateInfo &createInfo) { return 1; }
     static VkShaderModule GetShaderModule(const VkComputePipelineCreateInfo &createInfo, uint32_t stage) {
         return createInfo.stage.module;
@@ -177,7 +181,9 @@ struct CreatePipelineTraits<VkComputePipelineCreateInfo> {
 template <>
 struct CreatePipelineTraits<VkRayTracingPipelineCreateInfoNV> {
     using SafeType = safe_VkRayTracingPipelineCreateInfoCommon;
-    static const SafeType &GetPipelineCI(const PIPELINE_STATE *pipeline_state) { return pipeline_state->create_info.raytracing; }
+    static const SafeType &GetPipelineCI(const PIPELINE_STATE *pipeline_state) {
+        return pipeline_state->GetUnifiedCreateInfo().raytracing;
+    }
     static uint32_t GetStageCount(const VkRayTracingPipelineCreateInfoNV &createInfo) { return createInfo.stageCount; }
     static VkShaderModule GetShaderModule(const VkRayTracingPipelineCreateInfoNV &createInfo, uint32_t stage) {
         return createInfo.pStages[stage].module;
@@ -190,7 +196,9 @@ struct CreatePipelineTraits<VkRayTracingPipelineCreateInfoNV> {
 template <>
 struct CreatePipelineTraits<VkRayTracingPipelineCreateInfoKHR> {
     using SafeType = safe_VkRayTracingPipelineCreateInfoCommon;
-    static const SafeType &GetPipelineCI(const PIPELINE_STATE *pipeline_state) { return pipeline_state->create_info.raytracing; }
+    static const SafeType &GetPipelineCI(const PIPELINE_STATE *pipeline_state) {
+        return pipeline_state->GetUnifiedCreateInfo().raytracing;
+    }
     static uint32_t GetStageCount(const VkRayTracingPipelineCreateInfoKHR &createInfo) { return createInfo.stageCount; }
     static VkShaderModule GetShaderModule(const VkRayTracingPipelineCreateInfoKHR &createInfo, uint32_t stage) {
         return createInfo.pStages[stage].module;
@@ -226,7 +234,7 @@ void UtilPreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreat
         }
         // If the app requests all available sets, the pipeline layout was not modified at pipeline layout creation and the already
         // instrumented shaders need to be replaced with uninstrumented shaders
-        if (pipe_state[pipeline]->pipeline_layout->set_layouts.size() >= object_ptr->adjusted_max_desc_sets) {
+        if (pipe_state[pipeline]->PipelineLayoutState()->set_layouts.size() >= object_ptr->adjusted_max_desc_sets) {
             replace_shaders = true;
         }
 
@@ -270,16 +278,8 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
         auto pipeline_state = object_ptr->template Get<PIPELINE_STATE>(pPipelines[pipeline]);
         if (!pipeline_state) continue;
 
-        uint32_t stageCount = 0;
-        if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-            stageCount = pipeline_state->create_info.graphics.stageCount;
-        } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-            stageCount = 1;
-        } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-            stageCount = pipeline_state->create_info.raytracing.stageCount;
-        } else {
-            assert(false);
-        }
+        const uint32_t stageCount = static_cast<uint32_t>(pipeline_state->stage_state.size());
+        assert(stageCount > 0);
 
         for (uint32_t stage = 0; stage < stageCount; ++stage) {
             if (pipeline_state->active_slots.find(object_ptr->desc_set_bind_index) != pipeline_state->active_slots.end()) {
@@ -289,14 +289,15 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
 
             std::shared_ptr<const SHADER_MODULE_STATE> module_state;
             if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                module_state =
-                    object_ptr->template Get<SHADER_MODULE_STATE>(pipeline_state->create_info.graphics.pStages[stage].module);
+                module_state = object_ptr->template Get<SHADER_MODULE_STATE>(
+                    pipeline_state->GetUnifiedCreateInfo().graphics.pStages[stage].module);
             } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
                 assert(stage == 0);
-                module_state = object_ptr->template Get<SHADER_MODULE_STATE>(pipeline_state->create_info.compute.stage.module);
-            } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
                 module_state =
-                    object_ptr->template Get<SHADER_MODULE_STATE>(pipeline_state->create_info.raytracing.pStages[stage].module);
+                    object_ptr->template Get<SHADER_MODULE_STATE>(pipeline_state->GetUnifiedCreateInfo().compute.stage.module);
+            } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+                module_state = object_ptr->template Get<SHADER_MODULE_STATE>(
+                    pipeline_state->GetUnifiedCreateInfo().raytracing.pStages[stage].module);
             } else {
                 assert(false);
             }
@@ -313,12 +314,12 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
             // out with a non-instrumented shader.  The non-instrumented shader (found in pCreateInfo) was destroyed above.
             VkShaderModule shader_module = VK_NULL_HANDLE;
             if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                shader_module = pipeline_state->create_info.graphics.pStages[stage].module;
+                shader_module = pipeline_state->GetUnifiedCreateInfo().graphics.pStages[stage].module;
             } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
                 assert(stage == 0);
-                shader_module = pipeline_state->create_info.compute.stage.module;
+                shader_module = pipeline_state->GetUnifiedCreateInfo().compute.stage.module;
             } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-                shader_module = pipeline_state->create_info.raytracing.pStages[stage].module;
+                shader_module = pipeline_state->GetUnifiedCreateInfo().raytracing.pStages[stage].module;
             } else {
                 assert(false);
             }
