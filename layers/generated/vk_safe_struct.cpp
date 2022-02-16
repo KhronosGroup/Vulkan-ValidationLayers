@@ -32,6 +32,7 @@
 
 
 #include "vk_safe_struct.h"
+#include "vk_typemap_helper.h"
 
 #include <string.h>
 #include <cassert>
@@ -3959,6 +3960,7 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
     basePipelineIndex(in_struct->basePipelineIndex)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext);
     if (stageCount && in_struct->pStages) {
         pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
         for (uint32_t i = 0; i < stageCount; ++i) {
@@ -3989,7 +3991,7 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
                 is_dynamic_has_rasterization = true;
     }
     bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;
-    if (in_struct->pViewportState && has_rasterization) {
+    if (in_struct->pViewportState && (has_rasterization || is_graphics_library)) {
         bool is_dynamic_viewports = false;
         bool is_dynamic_scissors = false;
         if (in_struct->pDynamicState && in_struct->pDynamicState->pDynamicStates) {
@@ -4007,17 +4009,17 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
         pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(in_struct->pRasterizationState);
     else
         pRasterizationState = NULL;
-    if (in_struct->pMultisampleState && has_rasterization)
+    if (in_struct->pMultisampleState && (has_rasterization || is_graphics_library))
         pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(in_struct->pMultisampleState);
     else
         pMultisampleState = NULL; // original pMultisampleState pointer ignored
     // needs a tracked subpass state uses_depthstencil_attachment
-    if (in_struct->pDepthStencilState && has_rasterization && uses_depthstencil_attachment)
+    if (in_struct->pDepthStencilState && ((has_rasterization && uses_depthstencil_attachment) || is_graphics_library))
         pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(in_struct->pDepthStencilState);
     else
         pDepthStencilState = NULL; // original pDepthStencilState pointer ignored
     // needs a tracked subpass state usesColorAttachment
-    if (in_struct->pColorBlendState && has_rasterization && uses_color_attachment)
+    if (in_struct->pColorBlendState && ((has_rasterization && uses_color_attachment) || is_graphics_library))
         pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(in_struct->pColorBlendState);
     else
         pColorBlendState = NULL; // original pColorBlendState pointer ignored
@@ -4299,6 +4301,7 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreat
     basePipelineHandle = in_struct->basePipelineHandle;
     basePipelineIndex = in_struct->basePipelineIndex;
     pNext = SafePnextCopy(in_struct->pNext);
+    bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext);
     if (stageCount && in_struct->pStages) {
         pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
         for (uint32_t i = 0; i < stageCount; ++i) {
@@ -4329,7 +4332,7 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreat
                 is_dynamic_has_rasterization = true;
     }
     bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;
-    if (in_struct->pViewportState && has_rasterization) {
+    if (in_struct->pViewportState && (has_rasterization || is_graphics_library)) {
         bool is_dynamic_viewports = false;
         bool is_dynamic_scissors = false;
         if (in_struct->pDynamicState && in_struct->pDynamicState->pDynamicStates) {
@@ -4347,17 +4350,17 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreat
         pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(in_struct->pRasterizationState);
     else
         pRasterizationState = NULL;
-    if (in_struct->pMultisampleState && has_rasterization)
+    if (in_struct->pMultisampleState && (has_rasterization || is_graphics_library))
         pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(in_struct->pMultisampleState);
     else
         pMultisampleState = NULL; // original pMultisampleState pointer ignored
     // needs a tracked subpass state uses_depthstencil_attachment
-    if (in_struct->pDepthStencilState && has_rasterization && uses_depthstencil_attachment)
+    if (in_struct->pDepthStencilState && ((has_rasterization && uses_depthstencil_attachment) || is_graphics_library))
         pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(in_struct->pDepthStencilState);
     else
         pDepthStencilState = NULL; // original pDepthStencilState pointer ignored
     // needs a tracked subpass state usesColorAttachment
-    if (in_struct->pColorBlendState && has_rasterization && uses_color_attachment)
+    if (in_struct->pColorBlendState && ((has_rasterization && uses_color_attachment) || is_graphics_library))
         pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(in_struct->pColorBlendState);
     else
         pColorBlendState = NULL; // original pColorBlendState pointer ignored
