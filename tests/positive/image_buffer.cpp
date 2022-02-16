@@ -66,9 +66,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneGetImageSubresourceLayout) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkImageCreateInfo ci = {};
-    ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    ci.pNext = NULL;
+    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
@@ -269,8 +267,7 @@ TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
     VkDeviceSize buff_size = 256;
     buffer->init_no_mem(*DeviceObj(), VkBufferObj::create_info(buff_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
 
-    VkImageCreateInfo image_create_info = {};
-    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;  // mandatory format
     image_create_info.extent.width = 64;                  // at least 4096x4096 is supported
@@ -289,8 +286,7 @@ TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
     const auto image_memory_requirements = image.memory_requirements();
 
     vk_testing::DeviceMemory mem;
-    VkMemoryAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = (std::max)(buffer_memory_requirements.size, image_memory_requirements.size);
     bool has_memtype =
         m_device->phy().set_memory_type(buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits,
@@ -422,9 +418,7 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
     VkMemoryRequirements mem_reqs;
     mem_reqs.memoryTypeBits = 0xFFFFFFFF;
     const VkDeviceSize atom_size = m_device->props.limits.nonCoherentAtomSize;
-    VkMemoryAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_info.pNext = NULL;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.memoryTypeIndex = 0;
 
     static const VkDeviceSize allocation_size = 32 * atom_size;
@@ -456,8 +450,7 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
     m_errorMonitor->ExpectSuccess();
     err = vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
     ASSERT_VK_SUCCESS(err);
-    VkMappedMemoryRange mmr = {};
-    mmr.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    VkMappedMemoryRange mmr = LvlInitStruct<VkMappedMemoryRange>();
     mmr.memory = mem;
     mmr.offset = 0;
     mmr.size = VK_WHOLE_SIZE;
@@ -472,7 +465,6 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
     m_errorMonitor->ExpectSuccess();
     err = vk::MapMemory(m_device->device(), mem, 5 * atom_size, VK_WHOLE_SIZE, 0, (void **)&pData);
     ASSERT_VK_SUCCESS(err);
-    mmr.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
     mmr.memory = mem;
     mmr.offset = 6 * atom_size;
     mmr.size = VK_WHOLE_SIZE;
@@ -488,7 +480,6 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
     m_errorMonitor->ExpectSuccess();
     err = vk::MapMemory(m_device->device(), mem, 3 * atom_size, 9 * atom_size, 0, (void **)&pData);
     ASSERT_VK_SUCCESS(err);
-    mmr.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
     mmr.memory = mem;
     mmr.offset = 4 * atom_size;
     mmr.size = 2 * atom_size;
@@ -503,7 +494,6 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
     m_errorMonitor->ExpectSuccess();
     err = vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
     ASSERT_VK_SUCCESS(err);
-    mmr.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
     mmr.memory = mem;
     mmr.offset = allocation_size - (4 * atom_size);
     mmr.size = VK_WHOLE_SIZE;
@@ -559,8 +549,7 @@ TEST_F(VkPositiveLayerTest, ValidUsage) {
     image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
     VkImageView imageView;
-    VkImageViewCreateInfo ivci = {};
-    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -593,9 +582,7 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     VkImage image;
-    VkImageCreateInfo image_create_info = {};
-    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_create_info.pNext = NULL;
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.extent.width = 64;
@@ -613,9 +600,7 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
     VkMemoryRequirements memory_reqs;
     VkDeviceMemory memory_one, memory_two;
     bool pass;
-    VkMemoryAllocateInfo memory_info = {};
-    memory_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memory_info.pNext = NULL;
+    VkMemoryAllocateInfo memory_info = LvlInitStruct<VkMemoryAllocateInfo>();
     memory_info.allocationSize = 0;
     memory_info.memoryTypeIndex = 0;
     vk::GetImageMemoryRequirements(m_device->device(), image, &memory_reqs);
@@ -658,8 +643,7 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
     opaqueBindInfo.pBinds = binds;
 
     VkFence fence = VK_NULL_HANDLE;
-    VkBindSparseInfo bindSparseInfo = {};
-    bindSparseInfo.sType = VK_STRUCTURE_TYPE_BIND_SPARSE_INFO;
+    VkBindSparseInfo bindSparseInfo = LvlInitStruct<VkBindSparseInfo>();
     bindSparseInfo.imageOpaqueBindCount = 1;
     bindSparseInfo.pImageOpaqueBinds = &opaqueBindInfo;
 
@@ -690,9 +674,7 @@ TEST_F(VkPositiveLayerTest, BindSparseFreeMemory) {
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     VkImage image;
-    VkImageCreateInfo image_create_info = {};
-    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_create_info.pNext = NULL;
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.extent.width = 512;
@@ -710,9 +692,7 @@ TEST_F(VkPositiveLayerTest, BindSparseFreeMemory) {
     VkMemoryRequirements memory_reqs;
     VkDeviceMemory memory;
 
-    VkMemoryAllocateInfo memory_info = {};
-    memory_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memory_info.pNext = NULL;
+    VkMemoryAllocateInfo memory_info = LvlInitStruct<VkMemoryAllocateInfo>();
     memory_info.allocationSize = 0;
     memory_info.memoryTypeIndex = 0;
     vk::GetImageMemoryRequirements(m_device->device(), image, &memory_reqs);
@@ -736,8 +716,7 @@ TEST_F(VkPositiveLayerTest, BindSparseFreeMemory) {
     opaqueBindInfo.pBinds = &bind;
 
     VkFence fence = VK_NULL_HANDLE;
-    VkBindSparseInfo bindSparseInfo = {};
-    bindSparseInfo.sType = VK_STRUCTURE_TYPE_BIND_SPARSE_INFO;
+    VkBindSparseInfo bindSparseInfo = LvlInitStruct<VkBindSparseInfo>();
     bindSparseInfo.imageOpaqueBindCount = 1;
     bindSparseInfo.pImageOpaqueBinds = &opaqueBindInfo;
 
@@ -774,8 +753,7 @@ TEST_F(VkPositiveLayerTest, BindSparseFreeMemory) {
     vk::CmdClearColorImage(m_commandBuffer->handle(), image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info{};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.signalSemaphoreCount = 0;
@@ -806,9 +784,7 @@ TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
 
     // Create a sparse image
     VkImage image;
-    VkImageCreateInfo image_create_info = {};
-    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_create_info.pNext = NULL;
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.extent.width = 64;
@@ -846,8 +822,7 @@ TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
     } else {
         // Allocate memory for the metadata
         VkDeviceMemory metadata_memory = VK_NULL_HANDLE;
-        VkMemoryAllocateInfo metadata_memory_info = {};
-        metadata_memory_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        VkMemoryAllocateInfo metadata_memory_info = LvlInitStruct<VkMemoryAllocateInfo>();
         metadata_memory_info.allocationSize = metadata_reqs->imageMipTailSize;
         m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &metadata_memory_info, 0);
         err = vk::AllocateMemory(m_device->device(), &metadata_memory_info, NULL, &metadata_memory);
@@ -866,8 +841,7 @@ TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
         opaque_bind_info.bindCount = 1;
         opaque_bind_info.pBinds = &sparse_bind;
 
-        VkBindSparseInfo bind_info = {};
-        bind_info.sType = VK_STRUCTURE_TYPE_BIND_SPARSE_INFO;
+        VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
         bind_info.imageOpaqueBindCount = 1;
         bind_info.pImageOpaqueBinds = &opaque_bind_info;
 
@@ -896,9 +870,7 @@ TEST_F(VkPositiveLayerTest, BarrierLayoutToImageUsage) {
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkImageMemoryBarrier img_barrier = {};
-    img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    img_barrier.pNext = NULL;
+    VkImageMemoryBarrier img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     img_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
     img_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1413,9 +1385,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageCopyBufferToImage) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkImageCreateInfo ci = {};
-    ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    ci.pNext = NULL;
+    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR;  // All planes of equal extent
@@ -1513,9 +1483,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
         return;
     }
 
-    VkImageCreateInfo ci = {};
-    ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    ci.pNext = NULL;
+    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR;  // All planes of equal extent
@@ -1549,8 +1517,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     for (uint32_t type = 0; type < phys_mem_props.memoryTypeCount; type++) {
         if ((mem_reqs.memoryTypeBits & (1 << type)) &&
             ((phys_mem_props.memoryTypes[type].propertyFlags & mem_props) == mem_props)) {
-            VkMemoryAllocateInfo alloc_info = {};
-            alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
             alloc_info.allocationSize = mem_reqs.size;
             alloc_info.memoryTypeIndex = type;
             ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &mem_obj));
@@ -1608,7 +1575,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 
         VkDeviceMemory p0_mem, p1_mem, p2_mem;
         mem_props = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        VkMemoryAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+        VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
 
         // Plane 0
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -1638,8 +1605,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
         // Set up 3-plane binding
         VkBindImageMemoryInfo bind_info[3];
         for (int plane = 0; plane < 3; plane++) {
-            bind_info[plane].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
-            bind_info[plane].pNext = nullptr;
+            bind_info[plane] = LvlInitStruct<VkBindImageMemoryInfo>();
             bind_info[plane].image = image;
             bind_info[plane].memoryOffset = 0;
         }
@@ -1685,8 +1651,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     // Test to verify that views of multiplanar images have layouts tracked correctly
     // by changing the image's layout then using a view of that image
     VkImageView view;
-    VkImageViewCreateInfo ivci = {};
-    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
     ivci.image = mpimage.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR;
@@ -1722,8 +1687,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 
     m_errorMonitor->ExpectSuccess();
     m_commandBuffer->begin();
-    VkImageMemoryBarrier img_barrier = {};
-    img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    VkImageMemoryBarrier img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     img_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     img_barrier.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -1751,8 +1715,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -2050,8 +2013,7 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
                                                                        {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
-    VkDeviceGroupDeviceCreateInfo create_device_pnext = {};
-    create_device_pnext.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+    VkDeviceGroupDeviceCreateInfo create_device_pnext = LvlInitStruct<VkDeviceGroupDeviceCreateInfo>();
     create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
     create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext));
@@ -2222,8 +2184,7 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
 
-    VkImageMemoryBarrier img_barrier = {};
-    img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    VkImageMemoryBarrier img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     img_barrier.srcAccessMask = 0;
     img_barrier.dstAccessMask = 0;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -2239,9 +2200,7 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &img_barrier);
     m_commandBuffer->end();
-    VkSubmitInfo submit_info;
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.pNext = NULL;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 0;
     submit_info.pWaitSemaphores = NULL;
     submit_info.pWaitDstStageMask = NULL;
@@ -2350,12 +2309,11 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
         return;
     }
 
-    VkPhysicalDeviceImagelessFramebufferFeaturesKHR physicalDeviceImagelessFramebufferFeatures = {};
-    physicalDeviceImagelessFramebufferFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES_KHR;
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR physicalDeviceImagelessFramebufferFeatures =
+        LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
     physicalDeviceImagelessFramebufferFeatures.imagelessFramebuffer = VK_TRUE;
-    VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
-    physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    physicalDeviceFeatures2.pNext = &physicalDeviceImagelessFramebufferFeatures;
+    VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 =
+        LvlInitStruct<VkPhysicalDeviceFeatures2>(&physicalDeviceImagelessFramebufferFeatures);
 
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
@@ -2367,8 +2325,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
                                                                        {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
-    VkDeviceGroupDeviceCreateInfo create_device_pnext = {};
-    create_device_pnext.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+    VkDeviceGroupDeviceCreateInfo create_device_pnext = LvlInitStruct<VkDeviceGroupDeviceCreateInfo>();
     create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
     create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
     create_device_pnext.pNext = &physicalDeviceFeatures2;
@@ -2441,8 +2398,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
     uint32_t current_buffer;
     VkSemaphore image_acquired;
-    VkSemaphoreCreateInfo semaphore_create_info = {};
-    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &image_acquired);
     vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, image_acquired, VK_NULL_HANDLE, &current_buffer);
 
@@ -2456,8 +2412,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
                                                                           1,
                                                                           1,
                                                                           &attachmentFormat};
-    VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo = {};
-    framebufferAttachmentsCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO_KHR;
+    VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo = LvlInitStruct<VkFramebufferAttachmentsCreateInfoKHR>();
     framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 1;
     framebufferAttachmentsCreateInfo.pAttachmentImageInfos = &framebufferAttachmentImageInfo;
     VkFramebufferCreateInfo framebufferCreateInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
@@ -2492,8 +2447,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     fence.init(*m_device, VkFenceObj::create_info());
     m_commandBuffer->QueueCommandBuffer(fence);
 
-    VkPresentInfoKHR present = {};
-    present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    VkPresentInfoKHR present = LvlInitStruct<VkPresentInfoKHR>();
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &current_buffer;
     present.swapchainCount = 1;

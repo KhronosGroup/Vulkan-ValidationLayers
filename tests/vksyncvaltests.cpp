@@ -1320,7 +1320,7 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
 
     // Enable VK_KHR_draw_indirect_count for KHR variants
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    VkPhysicalDeviceVulkan12Features features12 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, nullptr};
+    VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
         if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
@@ -1948,8 +1948,7 @@ TEST_F(VkSyncValTest, SyncCmdQuery) {
     }
 
     vk_testing::QueryPool query_pool;
-    VkQueryPoolCreateInfo query_pool_create_info{};
-    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     query_pool.init(*m_device, query_pool_create_info);
@@ -2847,9 +2846,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
     constexpr uint32_t kWidth = 32, kHeight = 32;
     constexpr uint32_t kNumImages = 4;
 
-    VkImageCreateInfo src_img_info = {};
-    src_img_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    src_img_info.pNext = NULL;
+    VkImageCreateInfo src_img_info = LvlInitStruct<VkImageCreateInfo>();
     src_img_info.flags = 0;
     src_img_info.imageType = VK_IMAGE_TYPE_2D;
     src_img_info.format = kFormat;
@@ -2864,9 +2861,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
     src_img_info.pQueueFamilyIndices = nullptr;
     src_img_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VkImageCreateInfo dst_img_info = {};
-    dst_img_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    dst_img_info.pNext = nullptr;
+    VkImageCreateInfo dst_img_info = LvlInitStruct<VkImageCreateInfo>();
     dst_img_info.flags = 0;
     dst_img_info.imageType = VK_IMAGE_TYPE_2D;
     dst_img_info.format = kFormat;
@@ -2911,7 +2906,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
 
         color_refs[i] = {i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
-        img_barriers[i].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        img_barriers[i] = LvlInitStruct<VkImageMemoryBarrier>();
         img_barriers[i].srcAccessMask = 0;
         img_barriers[i].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         img_barriers[i].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -2944,9 +2939,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         subpasses[i].pPreserveAttachments = preserve_subpass[i - 1].data();
     }
 
-    VkRenderPassCreateInfo renderpass_info = {};
-    renderpass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderpass_info.pNext = nullptr;
+    VkRenderPassCreateInfo renderpass_info = LvlInitStruct<VkRenderPassCreateInfo>();
     renderpass_info.flags = 0;
     renderpass_info.attachmentCount = attachment_descriptions.size();
     renderpass_info.pAttachments = attachment_descriptions.data();
@@ -2955,9 +2948,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
     renderpass_info.dependencyCount = 0;
     renderpass_info.pDependencies = nullptr;
 
-    VkFramebufferCreateInfo fbci = {};
-    fbci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    fbci.pNext = nullptr;
+    VkFramebufferCreateInfo fbci = LvlInitStruct<VkFramebufferCreateInfo>();
     fbci.flags = 0;
     fbci.attachmentCount = attachments.size();
     fbci.pAttachments = attachments.data();
@@ -3561,7 +3552,7 @@ TEST_F(VkSyncValTest, SyncEventsCommandHazards) {
 TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     TEST_DESCRIPTION("Using CmdWaitEvents2KHR when synchronization2 is not enabled");
     SetTargetApiVersion(VK_API_VERSION_1_3);
- 
+
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -3722,7 +3713,8 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     m_errorMonitor->ExpectSuccess();
 
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags = {};
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags =
+        LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
     constexpr size_t kNumDescriptors = 6;
 
     std::array<VkDescriptorBindingFlagsEXT, kNumDescriptors> ds_binding_flags;
@@ -3730,8 +3722,6 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
         elem = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
     }
 
-    layout_createinfo_binding_flags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-    layout_createinfo_binding_flags.pNext = NULL;
     layout_createinfo_binding_flags.bindingCount = ds_binding_flags.size();
     layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags.data();
 
@@ -3896,8 +3886,7 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
     pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
-    VkCommandBufferBeginInfo begin_info = {};
-    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     m_commandBuffer->begin(&begin_info);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);

@@ -1596,8 +1596,7 @@ TEST_F(VkLayerTest, InvalidFragmentDensityMapLayerCount) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    VkAttachmentDescription2 attach_desc = {};
-    attach_desc.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
+    VkAttachmentDescription2 attach_desc = LvlInitStruct<VkAttachmentDescription2>();
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1608,17 +1607,14 @@ TEST_F(VkLayerTest, InvalidFragmentDensityMapLayerCount) {
                                                           nullptr, ref};
 
     // Create a renderPass with viewMask 0
-    VkSubpassDescription2 subpass = {};
-    subpass.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
+    VkSubpassDescription2 subpass = LvlInitStruct<VkSubpassDescription2>();
     subpass.viewMask = 0;
 
-    VkRenderPassCreateInfo2 rpci = {};
-    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
+    VkRenderPassCreateInfo2 rpci = LvlInitStruct<VkRenderPassCreateInfo2>(&rpfdmi);
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
-    rpci.pNext = &rpfdmi;
 
     VkRenderPass rp;
 
@@ -1632,9 +1628,7 @@ TEST_F(VkLayerTest, InvalidFragmentDensityMapLayerCount) {
                                                VK_IMAGE_TILING_OPTIMAL, 0));
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    VkFramebufferCreateInfo fb_info = {};
-    fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    fb_info.pNext = NULL;
+    VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
     fb_info.renderPass = rp;
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &imageView;
@@ -3527,8 +3521,7 @@ TEST_F(VkLayerTest, AllocDescriptorFromEmptyPool) {
     // Try to allocate 2 sets when pool only has 1 set
     VkDescriptorSet descriptor_sets[2];
     VkDescriptorSetLayout set_layouts[2] = {ds_layout_samp.handle(), ds_layout_samp.handle()};
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
     alloc_info.descriptorSetCount = 2;
     alloc_info.descriptorPool = ds_pool;
     alloc_info.pSetLayouts = set_layouts;
@@ -3592,8 +3585,7 @@ TEST_F(VkLayerTest, FreeDescriptorFromOneShotPool) {
     const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
 
     VkDescriptorSet descriptorSet;
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
     alloc_info.descriptorSetCount = 1;
     alloc_info.descriptorPool = ds_pool;
     alloc_info.pSetLayouts = &ds_layout.handle();
@@ -4220,8 +4212,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetImageSamplerDestroyed) {
     const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
 
     VkDescriptorSet descriptorSet;
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
     alloc_info.descriptorSetCount = 1;
     alloc_info.descriptorPool = ds_pool;
     alloc_info.pSetLayouts = &ds_layout.handle();
@@ -5358,8 +5349,7 @@ TEST_F(VkLayerTest, DescriptorSetCompatibility) {
 
     static const uint32_t NUM_SETS = 4;
     VkDescriptorSet descriptorSet[NUM_SETS] = {};
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
     alloc_info.descriptorPool = ds_pool;
     alloc_info.descriptorSetCount = ds_vk_layouts.size();
     alloc_info.pSetLayouts = ds_vk_layouts.data();
@@ -6281,9 +6271,7 @@ TEST_F(VkLayerTest, CopyDescriptorUpdateErrors) {
     descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
     descriptor_set.UpdateDescriptorSets();
     // Now perform a copy update that fails due to type mismatch
-    VkCopyDescriptorSet copy_ds_update;
-    memset(&copy_ds_update, 0, sizeof(VkCopyDescriptorSet));
-    copy_ds_update.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+    VkCopyDescriptorSet copy_ds_update = LvlInitStruct<VkCopyDescriptorSet>();
     copy_ds_update.srcSet = descriptor_set.set_;
     copy_ds_update.srcBinding = 1;  // Copy from SAMPLER binding
     copy_ds_update.dstSet = descriptor_set.set_;
@@ -6294,8 +6282,7 @@ TEST_F(VkLayerTest, CopyDescriptorUpdateErrors) {
     m_errorMonitor->VerifyFound();
     // Now perform a copy update that fails due to binding out of bounds
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " does not have copy update src binding of 3.");
-    memset(&copy_ds_update, 0, sizeof(VkCopyDescriptorSet));
-    copy_ds_update.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+    copy_ds_update = LvlInitStruct<VkCopyDescriptorSet>();
     copy_ds_update.srcSet = descriptor_set.set_;
     copy_ds_update.srcBinding = 3;  // ERROR : Invalid binding for matching layout
     copy_ds_update.dstSet = descriptor_set.set_;
@@ -6310,8 +6297,7 @@ TEST_F(VkLayerTest, CopyDescriptorUpdateErrors) {
                                          " binding#1 with offset index of 1 plus update array offset of 0 and update of 5 "
                                          "descriptors oversteps total number of descriptors in set: 2.");
 
-    memset(&copy_ds_update, 0, sizeof(VkCopyDescriptorSet));
-    copy_ds_update.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+    copy_ds_update = LvlInitStruct<VkCopyDescriptorSet>();
     copy_ds_update.srcSet = descriptor_set.set_;
     copy_ds_update.srcBinding = 1;
     copy_ds_update.dstSet = descriptor_set.set_;
@@ -6452,8 +6438,7 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassFragmentDensityMap
     ref.attachment = 0;
     ref.layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
 
-    VkRenderPassFragmentDensityMapCreateInfoEXT rpfdmi = {};
-    rpfdmi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT;
+    VkRenderPassFragmentDensityMapCreateInfoEXT rpfdmi = LvlInitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>();
     rpfdmi.fragmentDensityMapAttachment = ref;
 
     VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpfdmi);
@@ -6587,8 +6572,7 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
     subpass.pColorAttachments = &color_att;
 
     uint32_t viewMasks[] = {0x3u};
-    VkRenderPassMultiviewCreateInfo rpmvci = {};
-    rpmvci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
+    VkRenderPassMultiviewCreateInfo rpmvci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>();
     rpmvci.subpassCount = 1;
     rpmvci.pViewMasks = viewMasks;
 
@@ -6905,8 +6889,7 @@ TEST_F(VkLayerTest, UpdateDestroyDescriptorSetLayout) {
     write_descriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     write_descriptor.pBufferInfo = &info;
 
-    VkCopyDescriptorSet copy_descriptor = {};
-    copy_descriptor.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+    VkCopyDescriptorSet copy_descriptor = LvlInitStruct<VkCopyDescriptorSet>();
     copy_descriptor.srcSet = VK_NULL_HANDLE;  // must update
     copy_descriptor.srcBinding = 0;
     copy_descriptor.dstSet = VK_NULL_HANDLE;  // must update
@@ -7014,8 +6997,7 @@ TEST_F(VkLayerTest, FramebufferIncompatible) {
     err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
     ASSERT_VK_SUCCESS(err);
 
-    VkCommandBufferAllocateInfo cbai = {};
-    cbai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    VkCommandBufferAllocateInfo cbai = LvlInitStruct<VkCommandBufferAllocateInfo>();
     cbai.commandPool = m_commandPool->handle();
     cbai.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     cbai.commandBufferCount = 1;
@@ -7032,7 +7014,7 @@ TEST_F(VkLayerTest, FramebufferIncompatible) {
     vk::BeginCommandBuffer(sec_cb, &cbbi);
     vk::EndCommandBuffer(sec_cb);
 
-    VkCommandBufferBeginInfo cbbi2 = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, nullptr};
+    VkCommandBufferBeginInfo cbbi2 = LvlInitStruct<VkCommandBufferBeginInfo>();
     vk::BeginCommandBuffer(m_commandBuffer->handle(), &cbbi2);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
@@ -8005,9 +7987,7 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
 
     uint64_t badhandle = 0xcadecade;
     VkDescriptorUpdateTemplateEntry entries = {0, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, sizeof(VkBuffer)};
-    VkDescriptorUpdateTemplateCreateInfo create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO;
-    create_info.pNext = nullptr;
+    VkDescriptorUpdateTemplateCreateInfo create_info = LvlInitStruct<VkDescriptorUpdateTemplateCreateInfo>();
     create_info.flags = 0;
     create_info.descriptorUpdateEntryCount = 1;
     create_info.pDescriptorUpdateEntries = &entries;
@@ -8248,8 +8228,7 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
 
     VkDescriptorSet descriptor_sets[2];
     VkDescriptorSetLayout set_layouts[2] = {ds_layout, ds_layout};
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
     alloc_info.descriptorSetCount = 2;
     alloc_info.descriptorPool = ds_pool;
     alloc_info.pSetLayouts = set_layouts;
@@ -8265,8 +8244,7 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
 
     uint32_t dummyData[8] = {};
-    VkWriteDescriptorSetInlineUniformBlockEXT write_inline_uniform = {};
-    write_inline_uniform.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT;
+    VkWriteDescriptorSetInlineUniformBlockEXT write_inline_uniform = LvlInitStruct<VkWriteDescriptorSetInlineUniformBlockEXT>();
     write_inline_uniform.dataSize = 3;
     write_inline_uniform.pData = &dummyData[0];
     descriptor_write.pNext = &write_inline_uniform;
@@ -8293,8 +8271,7 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     m_errorMonitor->VerifyNotFound();
 
     // Test invalid VkCopyDescriptorSet parameters (array element and size must be multiple of 4)
-    VkCopyDescriptorSet copy_ds_update = {};
-    copy_ds_update.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+    VkCopyDescriptorSet copy_ds_update = LvlInitStruct<VkCopyDescriptorSet>();
     copy_ds_update.srcSet = descriptor_sets[0];
     copy_ds_update.srcBinding = 0;
     copy_ds_update.srcArrayElement = 0;
@@ -10458,8 +10435,7 @@ TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&inlineUniformProps);
     vk::GetPhysicalDeviceProperties2(gpu(), &prop2);
 
-    VkPhysicalDeviceInlineUniformBlockFeaturesEXT extEnable = {};
-    extEnable.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES_EXT;
+    VkPhysicalDeviceInlineUniformBlockFeaturesEXT extEnable = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>();
     extEnable.inlineUniformBlock = VK_TRUE;
     extEnable.descriptorBindingInlineUniformBlockUpdateAfterBind = VK_FALSE;
 
@@ -10501,8 +10477,8 @@ TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
 
     vk_testing::DescriptorPool descPool;
     {
-        VkDescriptorPoolInlineUniformBlockCreateInfoEXT descPoolInlineInfo = {};
-        descPoolInlineInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_INLINE_UNIFORM_BLOCK_CREATE_INFO_EXT;
+        VkDescriptorPoolInlineUniformBlockCreateInfoEXT descPoolInlineInfo =
+            LvlInitStruct<VkDescriptorPoolInlineUniformBlockCreateInfoEXT>();
         descPoolInlineInfo.maxInlineUniformBlockBindings = 2;
 
         VkDescriptorPoolSize poolSize[2];
@@ -10522,8 +10498,7 @@ TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
 
     VkDescriptorSet descSetHandle = VK_NULL_HANDLE;
     {
-        VkDescriptorSetAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        VkDescriptorSetAllocateInfo allocInfo = LvlInitStruct<VkDescriptorSetAllocateInfo>();
         allocInfo.pSetLayouts = &descLayout.handle();
         allocInfo.descriptorSetCount = 1;
         allocInfo.descriptorPool = descPool.handle();
@@ -10537,18 +10512,16 @@ TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
     }
     vk_testing::DescriptorSet descSet(*m_device, &descPool, descSetHandle);
 
-    VkWriteDescriptorSetInlineUniformBlockEXT writeInlineUbDesc{};
-    writeInlineUbDesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT;
+    VkWriteDescriptorSetInlineUniformBlockEXT writeInlineUbDesc = LvlInitStruct<VkWriteDescriptorSetInlineUniformBlockEXT>();
     writeInlineUbDesc.dataSize = sizeof(inline_data);
     writeInlineUbDesc.pData = inline_data;
 
-    VkWriteDescriptorSet writeDesc = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet writeDesc = LvlInitStruct<VkWriteDescriptorSet>(&writeInlineUbDesc);
     writeDesc.descriptorCount = sizeof(inline_data);
     writeDesc.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
     writeDesc.dstBinding = 0;
     writeDesc.dstArrayElement = 0;
     writeDesc.dstSet = descSet.handle();
-    writeDesc.pNext = &writeInlineUbDesc;
 
     m_errorMonitor->Reset();
     m_errorMonitor->ExpectSuccess();
@@ -11089,12 +11062,10 @@ TEST_F(VkLayerTest, InvalidDeviceGroupRenderAreaDynamicRendering) {
     device_group_render_pass_begin_info.deviceRenderAreaCount = 1;
     device_group_render_pass_begin_info.pDeviceRenderAreas = &renderArea;
 
-    VkRenderingAttachmentInfoKHR color_attachment = {};
-    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>(&device_group_render_pass_begin_info);
-    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
     begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
@@ -11196,8 +11167,8 @@ TEST_F(VkLayerTest, EndRenderingWithIncorrectlyStartedRenderpassInstance) {
 
     VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
 
-    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = {};
-    inheritance_rendering_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info =
+        LvlInitStruct<VkCommandBufferInheritanceRenderingInfoKHR>();
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
 
@@ -11257,13 +11228,11 @@ TEST_F(VkLayerTest, EndRenderpassWithBeginRenderingRenderpassInstance) {
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    VkRenderingAttachmentInfoKHR color_attachment = {};
-    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = imageView;
 
-    VkRenderingInfoKHR begin_rendering_info = {};
-    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
 

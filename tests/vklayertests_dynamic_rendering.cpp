@@ -366,12 +366,10 @@ TEST_F(VkLayerTest, DynamicRenderingWithMismatchingViewMask) {
 
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
 
-    VkRenderingAttachmentInfoKHR color_attachment = {};
-    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfoKHR begin_rendering_info = {};
-    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.viewMask = 2;
@@ -524,19 +522,15 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachments) {
     VkImageView depthStencilImageView =
         depthStencilImage.targetView(depthStencilFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-    VkRenderingAttachmentInfoKHR color_attachment = {};
-    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = colorImageView;
 
-    VkRenderingAttachmentInfoKHR depth_stencil_attachment = {};
-    depth_stencil_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    VkRenderingAttachmentInfoKHR depth_stencil_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_stencil_attachment.imageView = depthStencilImageView;
 
-    VkRenderingInfoKHR begin_rendering_info = {};
-    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
-
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     m_commandBuffer->begin();
 
     // Mismatching color attachment count
@@ -711,19 +705,15 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachmentSamples) {
     VkImageView depthStencilImageView =
         depthStencilImage.targetView(depthStencilFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-    VkRenderingAttachmentInfoKHR color_attachment = {};
-    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = colorImageView;
 
-    VkRenderingAttachmentInfoKHR depth_stencil_attachment = {};
-    depth_stencil_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    VkRenderingAttachmentInfoKHR depth_stencil_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_stencil_attachment.imageView = depthStencilImageView;
 
-    VkRenderingInfoKHR begin_rendering_info = {};
-    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
-
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     m_commandBuffer->begin();
 
     // Mismatching color samples
@@ -903,19 +893,15 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingMixedAttachmentSamples) {
     VkImageView depthStencilImageView =
         depthStencilImage.targetView(depthStencilFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-    VkRenderingAttachmentInfoKHR color_attachment = {};
-    color_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = colorImageView;
 
-    VkRenderingAttachmentInfoKHR depth_stencil_attachment = {};
-    depth_stencil_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    VkRenderingAttachmentInfoKHR depth_stencil_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_stencil_attachment.imageView = depthStencilImageView;
 
-    VkRenderingInfoKHR begin_rendering_info = {};
-    begin_rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
-
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     m_commandBuffer->begin();
 
     // Mismatching color samples

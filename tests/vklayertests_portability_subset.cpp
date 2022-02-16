@@ -87,7 +87,7 @@ TEST_F(VkPortabilitySubsetTest, PortabilityCreateEvent) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateEvent-events-04468");
-    VkEventCreateInfo eci = {VK_STRUCTURE_TYPE_EVENT_CREATE_INFO, nullptr, 0};
+    VkEventCreateInfo eci = LvlInitStruct<VkEventCreateInfo>();
     VkEvent event;
     vk::CreateEvent(m_device->device(), &eci, nullptr, &event);
     m_errorMonitor->VerifyFound();

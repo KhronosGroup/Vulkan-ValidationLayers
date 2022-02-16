@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (c) 2015-2021 Google, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2022 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ TEST_F(VkPositiveLayerTest, ToolingExtension) {
 
     std::vector<VkPhysicalDeviceToolPropertiesEXT> tool_properties(tool_count);
     for (uint32_t i = 0; i < tool_count; i++) {
-        tool_properties[i].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT;
+        tool_properties[i] = LvlInitStruct<VkPhysicalDeviceToolPropertiesEXT>();
     }
 
     bool found_validation_layer = false;

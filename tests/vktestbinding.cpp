@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,9 +222,7 @@ QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProper
 
     for (uint32_t i = 0; i < (uint32_t)queue_props.size(); ++i) {
         if (queue_props[i].queueCount > 0) {
-            VkDeviceQueueCreateInfo qi = {};
-            qi.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            qi.pNext = NULL;
+            VkDeviceQueueCreateInfo qi = LvlInitStruct<VkDeviceQueueCreateInfo>();
             qi.queueFamilyIndex = i;
             qi.queueCount = queue_props[i].queueCount;
             queue_priorities_.emplace_back(qi.queueCount, 0.0f);
@@ -261,9 +259,7 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
 
     enabled_extensions_ = extensions;
 
-    VkDeviceCreateInfo dev_info = {};
-    dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    dev_info.pNext = create_device_pnext;
+    VkDeviceCreateInfo dev_info = LvlInitStruct<VkDeviceCreateInfo>(create_device_pnext);
     dev_info.queueCreateInfoCount = create_queue_infos.size();
     dev_info.pQueueCreateInfos = create_queue_infos.data();
     dev_info.enabledLayerCount = 0;
@@ -393,9 +389,7 @@ void Device::update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &wri
 
 VkResult Queue::submit(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success) {
     const std::vector<VkCommandBuffer> cmd_handles = MakeVkHandles<VkCommandBuffer>(cmds);
-    VkSubmitInfo submit_info;
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.pNext = NULL;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 0;
     submit_info.pWaitSemaphores = NULL;
     submit_info.pWaitDstStageMask = NULL;
@@ -634,8 +628,8 @@ VkMemoryRequirements2 AccelerationStructure::memory_requirements() const {
                                                                                   "vkGetAccelerationStructureMemoryRequirementsNV");
     assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
     VkMemoryRequirements2 memoryRequirements = {};
-    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = {};
-    memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo =
+        LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
     memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
     memoryRequirementsInfo.accelerationStructure = handle();
     vkGetAccelerationStructureMemoryRequirementsNV(device(), &memoryRequirementsInfo, &memoryRequirements);
@@ -648,8 +642,8 @@ VkMemoryRequirements2 AccelerationStructure::build_scratch_memory_requirements()
                                                                                   "vkGetAccelerationStructureMemoryRequirementsNV");
     assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
 
-    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = {};
-    memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo =
+        LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
     memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
     memoryRequirementsInfo.accelerationStructure = handle();
 
@@ -675,8 +669,7 @@ void AccelerationStructure::init(const Device &dev, const VkAccelerationStructur
             (PFN_vkBindAccelerationStructureMemoryNV)vk::GetDeviceProcAddr(dev.handle(), "vkBindAccelerationStructureMemoryNV");
         assert(vkBindAccelerationStructureMemoryNV != nullptr);
 
-        VkBindAccelerationStructureMemoryInfoNV bind_info = {};
-        bind_info.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
+        VkBindAccelerationStructureMemoryInfoNV bind_info = LvlInitStruct<VkBindAccelerationStructureMemoryInfoNV>();
         bind_info.accelerationStructure = handle();
         bind_info.memory = memory_.handle();
         EXPECT(vkBindAccelerationStructureMemoryNV(dev.handle(), 1, &bind_info) == VK_SUCCESS);
@@ -741,9 +734,7 @@ NON_DISPATCHABLE_HANDLE_DTOR(Pipeline, vk::DestroyPipeline)
 
 void Pipeline::init(const Device &dev, const VkGraphicsPipelineCreateInfo &info) {
     VkPipelineCache cache;
-    VkPipelineCacheCreateInfo ci;
-    memset((void *)&ci, 0, sizeof(VkPipelineCacheCreateInfo));
-    ci.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    VkPipelineCacheCreateInfo ci = LvlInitStruct<VkPipelineCacheCreateInfo>();
     VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
     if (err == VK_SUCCESS) {
         NON_DISPATCHABLE_HANDLE_INIT(vk::CreateGraphicsPipelines, dev, cache, 1, &info);
@@ -754,9 +745,7 @@ void Pipeline::init(const Device &dev, const VkGraphicsPipelineCreateInfo &info)
 VkResult Pipeline::init_try(const Device &dev, const VkGraphicsPipelineCreateInfo &info) {
     VkPipeline pipe;
     VkPipelineCache cache;
-    VkPipelineCacheCreateInfo ci;
-    memset((void *)&ci, 0, sizeof(VkPipelineCacheCreateInfo));
-    ci.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    VkPipelineCacheCreateInfo ci = LvlInitStruct<VkPipelineCacheCreateInfo>();
     VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
     EXPECT(err == VK_SUCCESS);
     if (err == VK_SUCCESS) {
@@ -772,9 +761,7 @@ VkResult Pipeline::init_try(const Device &dev, const VkGraphicsPipelineCreateInf
 
 void Pipeline::init(const Device &dev, const VkComputePipelineCreateInfo &info) {
     VkPipelineCache cache;
-    VkPipelineCacheCreateInfo ci;
-    memset((void *)&ci, 0, sizeof(VkPipelineCacheCreateInfo));
-    ci.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    VkPipelineCacheCreateInfo ci = LvlInitStruct<VkPipelineCacheCreateInfo>();
     VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
     if (err == VK_SUCCESS) {
         NON_DISPATCHABLE_HANDLE_INIT(vk::CreateComputePipelines, dev, cache, 1, &info);
@@ -821,8 +808,7 @@ std::vector<DescriptorSet *> DescriptorPool::alloc_sets(const Device &dev,
     std::vector<VkDescriptorSet> set_handles;
     set_handles.resize(layout_handles.size());
 
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
     alloc_info.descriptorSetCount = layout_handles.size();
     alloc_info.descriptorPool = handle();
     alloc_info.pSetLayouts = layout_handles.data();
@@ -886,13 +872,10 @@ void CommandBuffer::init(const Device &dev, const VkCommandBufferAllocateInfo &i
 void CommandBuffer::begin(const VkCommandBufferBeginInfo *info) { EXPECT(vk::BeginCommandBuffer(handle(), info) == VK_SUCCESS); }
 
 void CommandBuffer::begin() {
-    VkCommandBufferBeginInfo info = {};
-    VkCommandBufferInheritanceInfo hinfo = {};
+    VkCommandBufferBeginInfo info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferInheritanceInfo hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
     info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     info.pInheritanceInfo = &hinfo;
-    hinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-    hinfo.pNext = NULL;
     hinfo.renderPass = VK_NULL_HANDLE;
     hinfo.subpass = 0;
     hinfo.framebuffer = VK_NULL_HANDLE;

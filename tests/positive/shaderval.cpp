@@ -2505,14 +2505,11 @@ TEST_F(VkPositiveLayerTest, WriteDescriptorSetAccelerationStructureNVNullDescrip
 
     VkAccelerationStructureNV top_level_as = VK_NULL_HANDLE;
 
-    VkWriteDescriptorSetAccelerationStructureNV acc = {};
-    acc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
+    VkWriteDescriptorSetAccelerationStructureNV acc = LvlInitStruct<VkWriteDescriptorSetAccelerationStructureNV>();
     acc.accelerationStructureCount = 1;
     acc.pAccelerationStructures = &top_level_as;
 
-    VkWriteDescriptorSet descriptor_write = {};
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write.pNext = &acc;
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>(&acc);
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
