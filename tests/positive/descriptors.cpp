@@ -62,7 +62,7 @@ TEST_F(VkPositiveLayerTest, CopyNonupdatedDescriptors) {
     VkCopyDescriptorSet copy_ds_update[copy_size];
     memset(copy_ds_update, 0, sizeof(copy_ds_update));
     for (i = 0; i < copy_size; i++) {
-        copy_ds_update[i].sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+        copy_ds_update[i] = LvlInitStruct<VkCopyDescriptorSet>();
         copy_ds_update[i].srcSet = src_descriptor_set.set_;
         copy_ds_update[i].srcBinding = i;
         copy_ds_update[i].dstSet = dst_descriptor_set.set_;
@@ -86,9 +86,7 @@ TEST_F(VkPositiveLayerTest, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
     ds_type_count.descriptorCount = 1;
 
-    VkDescriptorPoolCreateInfo ds_pool_ci = {};
-    ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    ds_pool_ci.pNext = NULL;
+    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
@@ -109,8 +107,7 @@ TEST_F(VkPositiveLayerTest, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     {
         const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
 
-        VkDescriptorSetAllocateInfo alloc_info = {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
         alloc_info.descriptorSetCount = 1;
         alloc_info.descriptorPool = ds_pool_one;
         alloc_info.pSetLayouts = &ds_layout.handle();
@@ -161,9 +158,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         image_info.imageView = view;
         image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        VkWriteDescriptorSet descriptor_write;
-        memset(&descriptor_write, 0, sizeof(descriptor_write));
-        descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
         descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -189,8 +184,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         m_errorMonitor->ExpectSuccess();
 
         uint32_t queue_family_index = 0;
-        VkBufferCreateInfo buffer_create_info = {};
-        buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
         buffer_create_info.size = 1024;
         buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         buffer_create_info.queueFamilyIndexCount = 1;
@@ -208,9 +202,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         buffer_info.offset = 0;
         buffer_info.range = 1024;
 
-        VkWriteDescriptorSet descriptor_write;
-        memset(&descriptor_write, 0, sizeof(descriptor_write));
-        descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
         descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -236,8 +228,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         m_errorMonitor->ExpectSuccess();
 
         uint32_t queue_family_index = 0;
-        VkBufferCreateInfo buffer_create_info = {};
-        buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
         buffer_create_info.size = 1024;
         buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
         buffer_create_info.queueFamilyIndexCount = 1;
@@ -246,8 +237,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         VkBufferObj buffer;
         buffer.init(*m_device, buffer_create_info);
 
-        VkBufferViewCreateInfo buff_view_ci = {};
-        buff_view_ci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
+        VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
         buff_view_ci.buffer = buffer.handle();
         buff_view_ci.format = format_texel_case;
         buff_view_ci.range = VK_WHOLE_SIZE;
@@ -259,9 +249,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
                                                {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                            });
 
-        VkWriteDescriptorSet descriptor_write;
-        memset(&descriptor_write, 0, sizeof(descriptor_write));
-        descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
         descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -336,8 +324,7 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
                                      });
 
     // Create a buffer to be used for update
-    VkBufferCreateInfo buff_ci = {};
-    buff_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buff_ci = LvlInitStruct<VkBufferCreateInfo>();
     buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buff_ci.size = 256;
     buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -345,9 +332,7 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
     err = vk::CreateBuffer(m_device->device(), &buff_ci, NULL, &buffer);
     ASSERT_VK_SUCCESS(err);
     // Have to bind memory to buffer before descriptor update
-    VkMemoryAllocateInfo mem_alloc = {};
-    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    mem_alloc.pNext = NULL;
+    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
     mem_alloc.allocationSize = 512;  // one allocation for both buffers
     mem_alloc.memoryTypeIndex = 0;
 
@@ -375,8 +360,7 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
     buff_info.buffer = buffer;
     buff_info.offset = 0;
     buff_info.range = VK_WHOLE_SIZE;
-    VkWriteDescriptorSet descriptor_write = {};
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstBinding = 2;
     descriptor_write.descriptorCount = 1;
     descriptor_write.pTexelBufferView = nullptr;
@@ -448,8 +432,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     buff_info.buffer = vbo.handle();
     buff_info.offset = 0;
     buff_info.range = sizeof(vbo_data);
-    VkWriteDescriptorSet descriptor_write = {};
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstBinding = 2;
     descriptor_write.descriptorCount = 1;
     descriptor_write.pTexelBufferView = nullptr;
@@ -610,15 +593,14 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
     m_errorMonitor->ExpectSuccess();
 
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags = {};
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags =
+        LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
     ds_binding_flags[0] = 0;
     // No Error
     ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
     // Uncomment for Error
     // ds_binding_flags[1] = 0;
 
-    layout_createinfo_binding_flags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-    layout_createinfo_binding_flags.pNext = NULL;
     layout_createinfo_binding_flags.bindingCount = 2;
     layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags;
 
@@ -631,8 +613,7 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
                                        0, &layout_createinfo_binding_flags, 0);
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
     uint32_t qfi = 0;
-    VkBufferCreateInfo buffer_create_info = {};
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 32;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
@@ -646,7 +627,7 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
     buffer_info[0].offset = 0;
     buffer_info[0].range = sizeof(uint32_t);
 
-    VkBufferCreateInfo index_buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    VkBufferCreateInfo index_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     index_buffer_create_info.size = sizeof(uint32_t);
     index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     VkBufferObj index_buffer;
@@ -654,7 +635,7 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
 
     // Only update binding 0
     VkWriteDescriptorSet descriptor_writes[2] = {};
-    descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_writes[0].dstSet = descriptor_set.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
@@ -679,8 +660,7 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
     pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
-    VkCommandBufferBeginInfo begin_info = {};
-    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     m_commandBuffer->begin(&begin_info);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -857,8 +837,7 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     // Create two buffers to update the descriptors with
     // The first will be 2k and used for bindings 0 & 1, the second is 1k for binding 2
     uint32_t qfi = 0;
-    VkBufferCreateInfo buffCI = {};
-    buffCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buffCI = LvlInitStruct<VkBufferCreateInfo>();
     buffCI.size = 2048;
     buffCI.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffCI.queueFamilyIndexCount = 1;
@@ -882,9 +861,7 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     buff_info[2].offset = 0;
     buff_info[2].range = 512;
 
-    VkWriteDescriptorSet descriptor_write;
-    memset(&descriptor_write, 0, sizeof(descriptor_write));
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = BINDING_COUNT;

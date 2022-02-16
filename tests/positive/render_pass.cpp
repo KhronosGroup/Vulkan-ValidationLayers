@@ -170,8 +170,7 @@ TEST_F(VkPositiveLayerTest, RenderPassCreateAttachmentLayoutWithLoadOpThenReadOn
     attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    VkRenderPassCreateInfo rpci = {};
-    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
     rpci.subpassCount = 2;
@@ -346,8 +345,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     subpass.pPreserveAttachments = NULL;
 
     VkRenderPass rp;
-    VkRenderPassCreateInfo rp_info = {};
-    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &att;
     rp_info.subpassCount = 1;
@@ -356,9 +354,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     ASSERT_VK_SUCCESS(result);
 
     VkImageView *depthView = m_depthStencil->BindInfo();
-    VkFramebufferCreateInfo fb_info = {};
-    fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    fb_info.pNext = NULL;
+    VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
     fb_info.renderPass = rp;
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = depthView;
@@ -369,12 +365,10 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     result = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
     ASSERT_VK_SUCCESS(result);
 
-    VkRenderPassBeginInfo rpbinfo = {};
+    VkRenderPassBeginInfo rpbinfo = LvlInitStruct<VkRenderPassBeginInfo>();
     rpbinfo.clearValueCount = 1;
     rpbinfo.pClearValues = &clear;
-    rpbinfo.pNext = NULL;
     rpbinfo.renderPass = rp;
-    rpbinfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     rpbinfo.renderArea.extent.width = 100;
     rpbinfo.renderArea.extent.height = 100;
     rpbinfo.renderArea.offset.x = 0;
@@ -428,9 +422,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &cregion);
     cmdbuf.end();
 
-    VkSubmitInfo submit_info;
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.pNext = NULL;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 0;
     submit_info.pWaitSemaphores = NULL;
     submit_info.pWaitDstStageMask = NULL;
@@ -593,8 +585,7 @@ TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
     subpass.preserveAttachmentCount = 0;
     subpass.pPreserveAttachments = NULL;
 
-    VkRenderPassCreateInfo rp_info = {};
-    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &att;
     rp_info.subpassCount = 1;
@@ -632,8 +623,7 @@ TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -688,12 +678,11 @@ TEST_F(VkPositiveLayerTest, ImagelessFramebufferNonZeroBaseMip) {
     subpass_desc.colorAttachmentCount = 1;
     subpass_desc.pColorAttachments = &attachment_ref;
 
-    VkRenderPassCreateInfo rp_ci = {};
+    VkRenderPassCreateInfo rp_ci = LvlInitStruct<VkRenderPassCreateInfo>();
     rp_ci.subpassCount = 1;
     rp_ci.pSubpasses = &subpass_desc;
     rp_ci.attachmentCount = 1;
     rp_ci.pAttachments = &attachment_desc;
-    rp_ci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     vk_testing::RenderPass rp(*m_device, rp_ci);
 
     auto fb_attachment_image_info = LvlInitStruct<VkFramebufferAttachmentImageInfoKHR>();
@@ -779,8 +768,7 @@ TEST_F(VkPositiveLayerTest, RenderPassValidStages) {
     VkSubpassDependency dependency = {};
     // to be filled later by tests
 
-    VkRenderPassCreateInfo rpci = {};
-    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
     rpci.subpassCount = 2;
     rpci.pSubpasses = sci;
     rpci.dependencyCount = 1;

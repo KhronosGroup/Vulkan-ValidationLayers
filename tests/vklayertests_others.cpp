@@ -1848,12 +1848,11 @@ TEST_F(VkLayerTest, Features12Features13AndpNext) {
     VkPhysicalDeviceVulkan13Features features13 = {};
     VkPhysicalDeviceDynamicRenderingFeatures dyn_rendering_features = {};
     if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
-        dyn_rendering_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+        dyn_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
         dyn_rendering_features.dynamicRendering = true;
         dyn_rendering_features.pNext = &eight_bit;
-        features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+        features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>(&dyn_rendering_features);
         features13.dynamicRendering = true;
-        features13.pNext = &dyn_rendering_features;
         features12.pNext = &features13;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-06532");
     }

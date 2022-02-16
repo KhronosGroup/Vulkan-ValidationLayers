@@ -536,8 +536,7 @@ class VkImageObj : public vk_testing::Image {
                            uint32_t levelCount = VK_REMAINING_MIP_LEVELS, uint32_t baseArrayLayer = 0,
                            uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS, VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D) {
         if (!m_targetView.initialized()) {
-            VkImageViewCreateInfo createView = {};
-            createView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            VkImageViewCreateInfo createView = LvlInitStruct<VkImageViewCreateInfo>();
             createView.image = handle();
             createView.viewType = type;
             createView.format = format;

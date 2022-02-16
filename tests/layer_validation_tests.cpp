@@ -108,17 +108,14 @@ bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevi
         (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(inst,
                                                                                 "vkGetPhysicalDeviceImageFormatProperties2KHR");
     if (NULL != p_GetPDIFP2KHR) {
-        VkPhysicalDeviceImageFormatInfo2KHR fmt_info{};
-        fmt_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2_KHR;
-        fmt_info.pNext = nullptr;
+        VkPhysicalDeviceImageFormatInfo2KHR fmt_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2KHR>();
         fmt_info.format = info.format;
         fmt_info.type = info.imageType;
         fmt_info.tiling = info.tiling;
         fmt_info.usage = info.usage;
         fmt_info.flags = info.flags;
 
-        VkImageFormatProperties2KHR fmt_props = {};
-        fmt_props.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2_KHR;
+        VkImageFormatProperties2KHR fmt_props = LvlInitStruct<VkImageFormatProperties2KHR>();
         err = p_GetPDIFP2KHR(phy, &fmt_info, &fmt_props);
         if (VK_SUCCESS != err) {
             return false;
@@ -207,9 +204,7 @@ extern "C" void *UpdateDescriptor(void *arg) {
     buffer_info.offset = 0;
     buffer_info.range = 1;
 
-    VkWriteDescriptorSet descriptor_write;
-    memset(&descriptor_write, 0, sizeof(descriptor_write));
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = data->descriptorSet;
     descriptor_write.dstBinding = data->binding;
     descriptor_write.descriptorCount = 1;
@@ -551,25 +546,17 @@ VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling, V
 
 void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
                             VkDeviceMemory *mp_image_mem, VkImageAspectFlagBits plane) {
-    VkImagePlaneMemoryRequirementsInfo image_plane_req = {};
-    image_plane_req.sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO;
-    image_plane_req.pNext = nullptr;
+    VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
     image_plane_req.planeAspect = plane;
 
-    VkImageMemoryRequirementsInfo2 mem_req_info2 = {};
-    mem_req_info2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2;
-    mem_req_info2.pNext = (void *)&image_plane_req;
+    VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
     mem_req_info2.image = mp_image;
 
-    VkMemoryRequirements2 mp_image_mem_reqs2 = {};
-    mp_image_mem_reqs2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
-    mp_image_mem_reqs2.pNext = nullptr;
+    VkMemoryRequirements2 mp_image_mem_reqs2 = LvlInitStruct<VkMemoryRequirements2>();
 
     fp(device->device(), &mem_req_info2, &mp_image_mem_reqs2);
 
-    VkMemoryAllocateInfo mp_image_alloc_info;
-    mp_image_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    mp_image_alloc_info.pNext = nullptr;
+    VkMemoryAllocateInfo mp_image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     mp_image_alloc_info.allocationSize = mp_image_mem_reqs2.memoryRequirements.size;
     ASSERT_TRUE(device->phy().set_memory_type(mp_image_mem_reqs2.memoryRequirements.memoryTypeBits, &mp_image_alloc_info, 0));
     ASSERT_VK_SUCCESS(vk::AllocateMemory(device->device(), &mp_image_alloc_info, NULL, mp_image_mem));
@@ -712,9 +699,7 @@ void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreate
 }
 
 VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
-    VkSamplerCreateInfo sampler_create_info = {};
-    sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler_create_info.pNext = nullptr;
+    VkSamplerCreateInfo sampler_create_info = LvlInitStruct<VkSamplerCreateInfo>();
     sampler_create_info.magFilter = VK_FILTER_NEAREST;
     sampler_create_info.minFilter = VK_FILTER_NEAREST;
     sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
@@ -735,8 +720,7 @@ VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
 }
 
 VkImageViewCreateInfo SafeSaneImageViewCreateInfo(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask) {
-    VkImageViewCreateInfo image_view_create_info = {};
-    image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    VkImageViewCreateInfo image_view_create_info = LvlInitStruct<VkImageViewCreateInfo>();
     image_view_create_info.image = image;
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = format;
@@ -844,21 +828,19 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     switch (failCase) {
         case BsoFailLineWidth: {
             pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_LINE_WIDTH);
-            VkPipelineInputAssemblyStateCreateInfo ia_state = {};
-            ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+            VkPipelineInputAssemblyStateCreateInfo ia_state = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
             ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
             pipelineobj.SetInputAssembly(&ia_state);
             break;
         }
         case BsoFailLineStipple: {
             pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_LINE_STIPPLE_EXT);
-            VkPipelineInputAssemblyStateCreateInfo ia_state = {};
-            ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+            VkPipelineInputAssemblyStateCreateInfo ia_state = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
             ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
             pipelineobj.SetInputAssembly(&ia_state);
 
-            VkPipelineRasterizationLineStateCreateInfoEXT line_state = {};
-            line_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT;
+            VkPipelineRasterizationLineStateCreateInfoEXT line_state =
+                LvlInitStruct<VkPipelineRasterizationLineStateCreateInfoEXT>();
             line_state.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
             line_state.stippledLineEnable = VK_TRUE;
             line_state.lineStippleFactor = 0;
@@ -868,8 +850,7 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
         }
         case BsoFailDepthBias: {
             pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS);
-            VkPipelineRasterizationStateCreateInfo rs_state = {};
-            rs_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+            VkPipelineRasterizationStateCreateInfo rs_state = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
             rs_state.depthBiasEnable = VK_TRUE;
             rs_state.lineWidth = 1.0f;
             pipelineobj.SetRasterization(&rs_state);
@@ -921,8 +902,7 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
             // Create an index buffer for these tests.
             // There is no need to populate it because we should bail before trying to draw.
             uint32_t const indices[] = {0};
-            VkBufferCreateInfo buffer_info = {};
-            buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>();
             buffer_info.size = 1024;
             buffer_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
             buffer_info.queueFamilyIndexCount = 1;
@@ -1011,9 +991,7 @@ void VkLayerTest::GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPi
     stencil.depthFailOp = VK_STENCIL_OP_KEEP;
     stencil.compareOp = VK_COMPARE_OP_NEVER;
 
-    VkPipelineDepthStencilStateCreateInfo ds_ci = {};
-    ds_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    ds_ci.pNext = NULL;
+    VkPipelineDepthStencilStateCreateInfo ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_ci.depthTestEnable = VK_FALSE;
     ds_ci.depthWriteEnable = VK_TRUE;
     ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
@@ -1233,8 +1211,7 @@ bool VkBufferTest::GetTestConditionValid(VkDeviceObj *aVulkanDevice, eTestEnFlag
     VkDeviceSize offset_limit = 0;
     if (eInvalidMemoryOffset == aTestFlag) {
         VkBuffer vulkanBuffer;
-        VkBufferCreateInfo buffer_create_info = {};
-        buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
         buffer_create_info.size = 32;
         buffer_create_info.usage = aBufferUsage;
 
@@ -1261,8 +1238,7 @@ VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBuffe
       InvalidDeleteEn(false),
       VulkanDevice(aVulkanDevice->device()) {
     if (eBindNullBuffer == aTestFlag || eBindFakeBuffer == aTestFlag) {
-        VkMemoryAllocateInfo memory_allocate_info = {};
-        memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>();
         memory_allocate_info.allocationSize = 1;   // fake size -- shouldn't matter for the test
         memory_allocate_info.memoryTypeIndex = 0;  // fake type -- shouldn't matter for the test
         vk::AllocateMemory(VulkanDevice, &memory_allocate_info, nullptr, &VulkanMemory);
@@ -1271,8 +1247,7 @@ VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBuffe
 
         vk::BindBufferMemory(VulkanDevice, VulkanBuffer, VulkanMemory, 0);
     } else {
-        VkBufferCreateInfo buffer_create_info = {};
-        buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
         buffer_create_info.size = 32;
         buffer_create_info.usage = aBufferUsage;
 
@@ -1283,8 +1258,7 @@ VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBuffe
         VkMemoryRequirements memory_requirements;
         vk::GetBufferMemoryRequirements(VulkanDevice, VulkanBuffer, &memory_requirements);
 
-        VkMemoryAllocateInfo memory_allocate_info = {};
-        memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>();
         memory_allocate_info.allocationSize = memory_requirements.size + eOffsetAlignment;
         bool pass = aVulkanDevice->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_allocate_info,
                                                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -1372,9 +1346,7 @@ VkRenderPass VkArmBestPracticesLayerTest::CreateRenderPass(VkFormat format, VkAt
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &attachment_reference;
 
-    VkRenderPassCreateInfo rpinf = {
-        VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-    };
+    VkRenderPassCreateInfo rpinf = LvlInitStruct<VkRenderPassCreateInfo>();
     rpinf.attachmentCount = 1;
     rpinf.pAttachments = &attachment;
     rpinf.subpassCount = 1;
@@ -1391,7 +1363,7 @@ VkFramebuffer VkArmBestPracticesLayerTest::CreateFramebuffer(const uint32_t widt
                                                              VkRenderPass renderpass) {
     VkFramebuffer framebuffer{VK_NULL_HANDLE};
 
-    VkFramebufferCreateInfo framebuffer_create_info = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+    VkFramebufferCreateInfo framebuffer_create_info = LvlInitStruct<VkFramebufferCreateInfo>();
     framebuffer_create_info.renderPass = renderpass;
     framebuffer_create_info.attachmentCount = 1;
     framebuffer_create_info.pAttachments = &image_view;
@@ -1407,7 +1379,7 @@ VkFramebuffer VkArmBestPracticesLayerTest::CreateFramebuffer(const uint32_t widt
 VkSampler VkArmBestPracticesLayerTest::CreateDefaultSampler() {
     VkSampler sampler{VK_NULL_HANDLE};
 
-    VkSamplerCreateInfo sampler_create_info = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+    VkSamplerCreateInfo sampler_create_info = LvlInitStruct<VkSamplerCreateInfo>();
     sampler_create_info.magFilter = VK_FILTER_NEAREST;
     sampler_create_info.minFilter = VK_FILTER_NEAREST;
     sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
@@ -1566,9 +1538,7 @@ void OneOffDescriptorSet::WriteDescriptorBufferInfo(int binding, VkBuffer buffer
         buffer_infos.emplace_back(buffer_info);
     }
 
-    VkWriteDescriptorSet descriptor_write;
-    memset(&descriptor_write, 0, sizeof(descriptor_write));
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = set_;
     descriptor_write.dstBinding = binding;
     descriptor_write.dstArrayElement = arrayElement;
@@ -1589,9 +1559,7 @@ void OneOffDescriptorSet::WriteDescriptorBufferView(int binding, VkBufferView bu
         buffer_views.emplace_back(buffer_view);
     }
 
-    VkWriteDescriptorSet descriptor_write;
-    memset(&descriptor_write, 0, sizeof(descriptor_write));
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = set_;
     descriptor_write.dstBinding = binding;
     descriptor_write.dstArrayElement = arrayElement;
@@ -1618,9 +1586,7 @@ void OneOffDescriptorSet::WriteDescriptorImageInfo(int binding, VkImageView imag
         image_infos.emplace_back(image_info);
     }
 
-    VkWriteDescriptorSet descriptor_write;
-    memset(&descriptor_write, 0, sizeof(descriptor_write));
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = set_;
     descriptor_write.dstBinding = binding;
     descriptor_write.dstArrayElement = arrayElement;
@@ -1650,15 +1616,14 @@ void CreatePipelineHelper::InitDescriptorSetInfo() {
 }
 
 void CreatePipelineHelper::InitInputAndVertexInfo() {
-    vi_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vi_ci_ = LvlInitStruct<VkPipelineVertexInputStateCreateInfo>();
 
-    ia_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    ia_ci_ = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
     ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 }
 
 void CreatePipelineHelper::InitMultisampleInfo() {
-    pipe_ms_state_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    pipe_ms_state_ci_.pNext = nullptr;
+    pipe_ms_state_ci_ = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
     pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     pipe_ms_state_ci_.sampleShadingEnable = VK_FALSE;
     pipe_ms_state_ci_.minSampleShading = 1.0;
@@ -1666,7 +1631,7 @@ void CreatePipelineHelper::InitMultisampleInfo() {
 }
 
 void CreatePipelineHelper::InitPipelineLayoutInfo() {
-    pipeline_layout_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_ci_ = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci_.setLayoutCount = 1;     // Not really changeable because InitState() sets exactly one pSetLayout
     pipeline_layout_ci_.pSetLayouts = nullptr;  // must bound after it is created
 }
@@ -1675,8 +1640,7 @@ void CreatePipelineHelper::InitViewportInfo() {
     viewport_ = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
     scissor_ = {{0, 0}, {64, 64}};
 
-    vp_state_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    vp_state_ci_.pNext = nullptr;
+    vp_state_ci_ = LvlInitStruct<VkPipelineViewportStateCreateInfo>();
     vp_state_ci_.viewportCount = 1;
     vp_state_ci_.pViewports = &viewport_;  // ignored if dynamic
     vp_state_ci_.scissorCount = 1;
@@ -1696,8 +1660,7 @@ void CreatePipelineHelper::InitShaderInfo() {
 }
 
 void CreatePipelineHelper::InitRasterizationInfo() {
-    rs_state_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rs_state_ci_.pNext = &line_state_ci_;
+    rs_state_ci_ = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>(&line_state_ci_);
     rs_state_ci_.flags = 0;
     rs_state_ci_.depthClampEnable = VK_FALSE;
     rs_state_ci_.rasterizerDiscardEnable = VK_FALSE;
@@ -1709,8 +1672,7 @@ void CreatePipelineHelper::InitRasterizationInfo() {
 }
 
 void CreatePipelineHelper::InitLineRasterizationInfo() {
-    line_state_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT;
-    line_state_ci_.pNext = nullptr;
+    line_state_ci_ = LvlInitStruct<VkPipelineRasterizationLineStateCreateInfoEXT>();
     line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT;
     line_state_ci_.stippledLineEnable = VK_FALSE;
     line_state_ci_.lineStippleFactor = 0;
@@ -1718,7 +1680,7 @@ void CreatePipelineHelper::InitLineRasterizationInfo() {
 }
 
 void CreatePipelineHelper::InitBlendStateInfo() {
-    cb_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    cb_ci_ = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
     cb_ci_.logicOpEnable = VK_FALSE;
     cb_ci_.logicOp = VK_LOGIC_OP_COPY;  // ignored if enable is VK_FALSE above
     cb_ci_.attachmentCount = layer_test_.RenderPassInfo().subpassCount;
@@ -1741,8 +1703,7 @@ void CreatePipelineHelper::InitGraphicsPipelineInfo() {
     //    VkPipelineRasterizationStateCreateInfo
     //    VkPipelineMultisampleStateCreateInfo
     //    VkPipelineColorBlendStateCreateInfo
-    gp_ci_.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    gp_ci_.pNext = nullptr;
+    gp_ci_ = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
     gp_ci_.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
     gp_ci_.pVertexInputState = &vi_ci_;
     gp_ci_.pInputAssemblyState = &ia_ci_;
@@ -1757,8 +1718,7 @@ void CreatePipelineHelper::InitGraphicsPipelineInfo() {
 }
 
 void CreatePipelineHelper::InitPipelineCacheInfo() {
-    pc_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-    pc_ci_.pNext = nullptr;
+    pc_ci_ = LvlInitStruct<VkPipelineCacheCreateInfo>();
     pc_ci_.flags = 0;
     pc_ci_.initialDataSize = 0;
     pc_ci_.pInitialData = nullptr;
@@ -1839,7 +1799,7 @@ void CreateComputePipelineHelper::InitDescriptorSetInfo() {
 }
 
 void CreateComputePipelineHelper::InitPipelineLayoutInfo() {
-    pipeline_layout_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_ci_ = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci_.setLayoutCount = 1;     // Not really changeable because InitState() sets exactly one pSetLayout
     pipeline_layout_ci_.pSetLayouts = nullptr;  // must bound after it is created
 }
@@ -1850,14 +1810,12 @@ void CreateComputePipelineHelper::InitShaderInfo() {
 }
 
 void CreateComputePipelineHelper::InitComputePipelineInfo() {
-    cp_ci_.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    cp_ci_.pNext = nullptr;
+    cp_ci_ = LvlInitStruct<VkComputePipelineCreateInfo>();
     cp_ci_.flags = 0;
 }
 
 void CreateComputePipelineHelper::InitPipelineCacheInfo() {
-    pc_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-    pc_ci_.pNext = nullptr;
+    pc_ci_ = LvlInitStruct<VkPipelineCacheCreateInfo>();
     pc_ci_.flags = 0;
     pc_ci_.initialDataSize = 0;
     pc_ci_.pInitialData = nullptr;
@@ -1939,8 +1897,7 @@ bool CreateNVRayTracingPipelineHelper::InitDeviceExtensions(VkLayerTest &test, s
 
 void CreateNVRayTracingPipelineHelper::InitShaderGroups() {
     {
-        VkRayTracingShaderGroupCreateInfoNV group = {};
-        group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        VkRayTracingShaderGroupCreateInfoNV group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group.generalShader = 0;
         group.closestHitShader = VK_SHADER_UNUSED_NV;
@@ -1949,8 +1906,7 @@ void CreateNVRayTracingPipelineHelper::InitShaderGroups() {
         groups_.push_back(group);
     }
     {
-        VkRayTracingShaderGroupCreateInfoNV group = {};
-        group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        VkRayTracingShaderGroupCreateInfoNV group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group.generalShader = VK_SHADER_UNUSED_NV;
         group.closestHitShader = 1;
@@ -1959,8 +1915,7 @@ void CreateNVRayTracingPipelineHelper::InitShaderGroups() {
         groups_.push_back(group);
     }
     {
-        VkRayTracingShaderGroupCreateInfoNV group = {};
-        group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        VkRayTracingShaderGroupCreateInfoNV group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group.generalShader = 2;
         group.closestHitShader = VK_SHADER_UNUSED_NV;
@@ -1972,8 +1927,7 @@ void CreateNVRayTracingPipelineHelper::InitShaderGroups() {
 
 void CreateNVRayTracingPipelineHelper::InitShaderGroupsKHR() {
     {
-        VkRayTracingShaderGroupCreateInfoKHR group = {};
-        group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        VkRayTracingShaderGroupCreateInfoKHR group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group.generalShader = 0;
         group.closestHitShader = VK_SHADER_UNUSED_KHR;
@@ -1982,8 +1936,7 @@ void CreateNVRayTracingPipelineHelper::InitShaderGroupsKHR() {
         groups_KHR_.push_back(group);
     }
     {
-        VkRayTracingShaderGroupCreateInfoKHR group = {};
-        group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        VkRayTracingShaderGroupCreateInfoKHR group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         group.generalShader = VK_SHADER_UNUSED_KHR;
         group.closestHitShader = 1;
@@ -1992,8 +1945,7 @@ void CreateNVRayTracingPipelineHelper::InitShaderGroupsKHR() {
         groups_KHR_.push_back(group);
     }
     {
-        VkRayTracingShaderGroupCreateInfoKHR group = {};
-        group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        VkRayTracingShaderGroupCreateInfoKHR group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
         group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group.generalShader = 2;
         group.closestHitShader = VK_SHADER_UNUSED_KHR;
@@ -2017,7 +1969,7 @@ void CreateNVRayTracingPipelineHelper::InitDescriptorSetInfoKHR() {
 }
 
 void CreateNVRayTracingPipelineHelper::InitPipelineLayoutInfo() {
-    pipeline_layout_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_ci_ = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci_.setLayoutCount = 1;     // Not really changeable because InitState() sets exactly one pSetLayout
     pipeline_layout_ci_.pSetLayouts = nullptr;  // must bound after it is created
 }
@@ -2127,7 +2079,7 @@ void CreateNVRayTracingPipelineHelper::InitShaderInfo() {  // DONE
 }
 
 void CreateNVRayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
-    rp_ci_.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+    rp_ci_ = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
     rp_ci_.maxRecursionDepth = 0;
     rp_ci_.stageCount = shader_stages_.size();
     rp_ci_.pStages = shader_stages_.data();
@@ -2136,7 +2088,7 @@ void CreateNVRayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
 }
 
 void CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo() {
-    rp_ci_KHR_.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+    rp_ci_KHR_ = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
     rp_ci_KHR_.maxPipelineRayRecursionDepth = 0;
     rp_ci_KHR_.stageCount = shader_stages_.size();
     rp_ci_KHR_.pStages = shader_stages_.data();
@@ -2145,8 +2097,7 @@ void CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo() {
 }
 
 void CreateNVRayTracingPipelineHelper::InitPipelineCacheInfo() {
-    pc_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-    pc_ci_.pNext = nullptr;
+    pc_ci_ = LvlInitStruct<VkPipelineCacheCreateInfo>();
     pc_ci_.flags = 0;
     pc_ci_.initialDataSize = 0;
     pc_ci_.pInitialData = nullptr;
@@ -2636,15 +2587,13 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     geometry.geometry.aabbs.stride = static_cast<VkDeviceSize>(sizeof(AABB));
     geometry.flags = 0;
 
-    VkAccelerationStructureInfoNV bot_level_as_info = {};
-    bot_level_as_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
+    VkAccelerationStructureInfoNV bot_level_as_info = LvlInitStruct<VkAccelerationStructureInfoNV>();
     bot_level_as_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
     bot_level_as_info.instanceCount = 0;
     bot_level_as_info.geometryCount = 1;
     bot_level_as_info.pGeometries = &geometry;
 
-    VkAccelerationStructureCreateInfoNV bot_level_as_create_info = {};
-    bot_level_as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
+    VkAccelerationStructureCreateInfoNV bot_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
     bot_level_as_create_info.info = bot_level_as_info;
 
     VkAccelerationStructureObj bot_level_as(*m_device, bot_level_as_create_info);
@@ -2676,14 +2625,12 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)instances.data(), static_cast<std::size_t>(instance_buffer_size));
     instance_buffer.memory().unmap();
 
-    VkAccelerationStructureInfoNV top_level_as_info = {};
-    top_level_as_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
+    VkAccelerationStructureInfoNV top_level_as_info = LvlInitStruct<VkAccelerationStructureInfoNV>();
     top_level_as_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
     top_level_as_info.instanceCount = 1;
     top_level_as_info.geometryCount = 0;
 
-    VkAccelerationStructureCreateInfoNV top_level_as_create_info = {};
-    top_level_as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
+    VkAccelerationStructureCreateInfoNV top_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
     top_level_as_create_info.info = top_level_as_info;
 
     VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
@@ -2699,8 +2646,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     ray_tracing_command_buffer.BuildAccelerationStructure(&bot_level_as, scratch_buffer.handle());
 
     // Barrier to prevent using scratch buffer for top level build before bottom level build finishes
-    VkMemoryBarrier memory_barrier = {};
-    memory_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    VkMemoryBarrier memory_barrier = LvlInitStruct<VkMemoryBarrier>();
     memory_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
     memory_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
     ray_tracing_command_buffer.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
@@ -2712,8 +2658,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
 
     ray_tracing_command_buffer.end();
 
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &ray_tracing_command_buffer.handle();
     vk::QueueSubmit(ray_tracing_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -2750,8 +2695,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         ds_binding_flags[1] = 0;
         ds_binding_flags[2] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
 
-        layout_createinfo_binding_flags[0].sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-        layout_createinfo_binding_flags[0].pNext = NULL;
+        layout_createinfo_binding_flags[0] = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
         layout_createinfo_binding_flags[0].bindingCount = 3;
         layout_createinfo_binding_flags[0].pBindingFlags = ds_binding_flags;
         layout_create_flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
@@ -2768,7 +2712,8 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
                            },
                            layout_create_flags, layout_pnext, pool_create_flags);
 
-    VkDescriptorSetVariableDescriptorCountAllocateInfoEXT variable_count = {};
+    VkDescriptorSetVariableDescriptorCountAllocateInfoEXT variable_count =
+        LvlInitStruct<VkDescriptorSetVariableDescriptorCountAllocateInfoEXT>();
     uint32_t desc_counts;
     if (descriptor_indexing) {
         layout_create_flags = 0;
@@ -2776,7 +2721,6 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         ds_binding_flags[2] =
             VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
         desc_counts = 6;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 6
-        variable_count.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
         variable_count.descriptorSetCount = 1;
         variable_count.pDescriptorCounts = &desc_counts;
         allocate_pnext = &variable_count;
@@ -2791,8 +2735,8 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
                                     layout_create_flags, layout_pnext, pool_create_flags, allocate_pnext);
 
     VkAccelerationStructureNV top_level_as_handle = top_level_as.handle();
-    VkWriteDescriptorSetAccelerationStructureNV write_descript_set_as = {};
-    write_descript_set_as.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
+    VkWriteDescriptorSetAccelerationStructureNV write_descript_set_as =
+        LvlInitStruct<VkWriteDescriptorSetAccelerationStructureNV>();
     write_descript_set_as.accelerationStructureCount = 1;
     write_descript_set_as.pAccelerationStructures = &top_level_as_handle;
 
@@ -2809,21 +2753,20 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     }
 
     VkWriteDescriptorSet descriptor_writes[3] = {};
-    descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>(&write_descript_set_as);
     descriptor_writes[0].dstSet = ds.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
-    descriptor_writes[0].pNext = &write_descript_set_as;
 
-    descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[1] = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_writes[1].dstSet = ds.set_;
     descriptor_writes[1].dstBinding = 1;
     descriptor_writes[1].descriptorCount = 1;
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_writes[1].pBufferInfo = &descriptor_buffer_info;
 
-    descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[2] = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_writes[2].dstSet = ds.set_;
     descriptor_writes[2].dstBinding = 2;
     if (descriptor_indexing) {
@@ -3225,67 +3168,66 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         VkShaderObj call_shader(this, test.call_shader_source, VK_SHADER_STAGE_CALLABLE_BIT_NV);
 
         VkPipelineShaderStageCreateInfo stage_create_infos[6] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_create_infos[0].module = rgen_shader.handle();
         stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[1].stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
         stage_create_infos[1].module = ahit_shader.handle();
         stage_create_infos[1].pName = "main";
 
-        stage_create_infos[2].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[2] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[2].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
         stage_create_infos[2].module = chit_shader.handle();
         stage_create_infos[2].pName = "main";
 
-        stage_create_infos[3].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[3] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[3].stage = VK_SHADER_STAGE_MISS_BIT_NV;
         stage_create_infos[3].module = miss_shader.handle();
         stage_create_infos[3].pName = "main";
 
-        stage_create_infos[4].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[4] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[4].stage = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
         stage_create_infos[4].module = intr_shader.handle();
         stage_create_infos[4].pName = "main";
 
-        stage_create_infos[5].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[5] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         stage_create_infos[5].stage = VK_SHADER_STAGE_CALLABLE_BIT_NV;
         stage_create_infos[5].module = call_shader.handle();
         stage_create_infos[5].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[4] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[0].generalShader = 0;  // rgen
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[1].generalShader = 3;  // miss
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[2].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[2] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[2].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV;
         group_create_infos[2].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[2].closestHitShader = 2;
         group_create_infos[2].anyHitShader = 1;
         group_create_infos[2].intersectionShader = 4;
 
-        group_create_infos[3].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[3] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
         group_create_infos[3].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[3].generalShader = 5;  // call
         group_create_infos[3].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[3].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[3].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
         pipeline_ci.stageCount = 6;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 4;

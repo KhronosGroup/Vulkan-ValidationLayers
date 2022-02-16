@@ -347,7 +347,7 @@ class ViewportInheritanceTestData {
 
     // Begin recording the primary command buffer.
     VkResult BeginPrimaryCommandBuffer(VkCommandBuffer cmd) const {
-        VkCommandBufferBeginInfo info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, nullptr};
+        VkCommandBufferBeginInfo info = LvlInitStruct<VkCommandBufferBeginInfo>();
         return vk::BeginCommandBuffer(cmd, &info);
     }
 

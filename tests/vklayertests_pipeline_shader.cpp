@@ -1566,7 +1566,7 @@ TEST_F(VkLayerTest, InvalidPipeline) {
 
     // Enable VK_KHR_draw_indirect_count for KHR variants
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    VkPhysicalDeviceVulkan12Features features12 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, nullptr};
+    VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
         if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
@@ -2142,8 +2142,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatReadForFormat) {
         image_info.imageView = image.targetView(format);
         image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-        VkWriteDescriptorSet descriptor_write = {};
-        descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
         descriptor_write.dstSet = ds.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -2155,8 +2154,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatReadForFormat) {
         m_commandBuffer->begin();
 
         {
-            VkImageMemoryBarrier img_barrier = {};
-            img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            VkImageMemoryBarrier img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
             img_barrier.srcAccessMask = VK_ACCESS_HOST_READ_BIT;
             img_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
             img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -2311,8 +2309,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWriteForFormat) {
         image_info.imageView = image.targetView(format);
         image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-        VkWriteDescriptorSet descriptor_write = {};
-        descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
         descriptor_write.dstSet = ds.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -2324,8 +2321,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWriteForFormat) {
         m_commandBuffer->begin();
 
         {
-            VkImageMemoryBarrier img_barrier = {};
-            img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            VkImageMemoryBarrier img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
             img_barrier.srcAccessMask = VK_ACCESS_HOST_READ_BIT;
             img_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
             img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;

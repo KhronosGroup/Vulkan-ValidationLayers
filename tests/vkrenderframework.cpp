@@ -802,8 +802,7 @@ bool VkRenderFramework::InitSurface(float width, float height, VkSurfaceKHR &sur
     HWND window = CreateWindowEx(0, class_name, 0, 0, 0, 0, (int)m_width, (int)m_height, NULL, NULL, window_instance, NULL);
     ShowWindow(window, SW_HIDE);
 
-    VkWin32SurfaceCreateInfoKHR surface_create_info = {};
-    surface_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    VkWin32SurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkWin32SurfaceCreateInfoKHR>();
     surface_create_info.hinstance = window_instance;
     surface_create_info.hwnd = window;
     VkResult err = vk::CreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
@@ -811,8 +810,7 @@ bool VkRenderFramework::InitSurface(float width, float height, VkSurfaceKHR &sur
 #endif
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
-    VkAndroidSurfaceCreateInfoKHR surface_create_info = {};
-    surface_create_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
+    VkAndroidSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkAndroidSurfaceCreateInfoKHR>();
     surface_create_info.window = VkTestFramework::window;
     VkResult err = vk::CreateAndroidSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
     if (err != VK_SUCCESS) return false;
@@ -825,8 +823,7 @@ bool VkRenderFramework::InitSurface(float width, float height, VkSurfaceKHR &sur
         int s = DefaultScreen(m_surface_dpy);
         m_surface_window = XCreateSimpleWindow(m_surface_dpy, RootWindow(m_surface_dpy, s), 0, 0, (int)m_width, (int)m_height, 1,
                                                BlackPixel(m_surface_dpy, s), WhitePixel(m_surface_dpy, s));
-        VkXlibSurfaceCreateInfoKHR surface_create_info = {};
-        surface_create_info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+        VkXlibSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkXlibSurfaceCreateInfoKHR>();
         surface_create_info.dpy = m_surface_dpy;
         surface_create_info.window = m_surface_window;
         VkResult err = vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
@@ -840,8 +837,7 @@ bool VkRenderFramework::InitSurface(float width, float height, VkSurfaceKHR &sur
         m_surface_xcb_conn = xcb_connect(NULL, NULL);
         if (m_surface_xcb_conn) {
             xcb_window_t window = xcb_generate_id(m_surface_xcb_conn);
-            VkXcbSurfaceCreateInfoKHR surface_create_info = {};
-            surface_create_info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+            VkXcbSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkXcbSurfaceCreateInfoKHR>();
             surface_create_info.connection = m_surface_xcb_conn;
             surface_create_info.window = window;
             VkResult err = vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
@@ -915,9 +911,7 @@ bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags i
     }
     InitSwapchainInfo();
 
-    VkSwapchainCreateInfoKHR swapchain_create_info = {};
-    swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchain_create_info.pNext = 0;
+    VkSwapchainCreateInfoKHR swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
     swapchain_create_info.surface = surface;
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
@@ -1079,7 +1073,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
     subpass.pPreserveAttachments = NULL;
 
     VkRenderPassCreateInfo &rp_info = m_renderPass_info;
-    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
     rp_info.attachmentCount = attachments.size();
     rp_info.pAttachments = attachments.data();
     rp_info.subpassCount = m_renderPass_subpasses.size();
@@ -1129,8 +1123,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
     // Create Framebuffer and RenderPass with color attachments and any
     // depth/stencil attachment
     VkFramebufferCreateInfo &fb_info = m_framebuffer_info;
-    fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    fb_info.pNext = NULL;
+    fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
     fb_info.renderPass = m_renderPass;
     fb_info.attachmentCount = bindings.size();
     fb_info.pAttachments = bindings.data();
@@ -1233,9 +1226,7 @@ VkQueueObj *VkDeviceObj::GetDefaultComputeQueue() {
 VkDescriptorSetLayoutObj::VkDescriptorSetLayoutObj(const VkDeviceObj *device,
                                                    const vector<VkDescriptorSetLayoutBinding> &descriptor_set_bindings,
                                                    VkDescriptorSetLayoutCreateFlags flags, void *pNext) {
-    VkDescriptorSetLayoutCreateInfo dsl_ci = {};
-    dsl_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    dsl_ci.pNext = pNext;
+    VkDescriptorSetLayoutCreateInfo dsl_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(pNext);
     dsl_ci.flags = flags;
     dsl_ci.bindingCount = static_cast<uint32_t>(descriptor_set_bindings.size());
     dsl_ci.pBindings = descriptor_set_bindings.data();
@@ -1326,8 +1317,7 @@ void VkDescriptorSetObj::CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer
             poolSize.type = it->first;
             sizes.push_back(poolSize);
         }
-        VkDescriptorPoolCreateInfo pool = {};
-        pool.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        VkDescriptorPoolCreateInfo pool = LvlInitStruct<VkDescriptorPoolCreateInfo>();
         pool.poolSizeCount = sizes.size();
         pool.maxSets = 1;
         pool.pPoolSizes = sizes.data();
@@ -1335,8 +1325,7 @@ void VkDescriptorSetObj::CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer
     }
 
     // create VkDescriptorSetLayout
-    VkDescriptorSetLayoutCreateInfo layout = {};
-    layout.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    VkDescriptorSetLayoutCreateInfo layout = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
     layout.bindingCount = m_layout_bindings.size();
     layout.pBindings = m_layout_bindings.data();
 
@@ -1345,8 +1334,7 @@ void VkDescriptorSetObj::CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer
     layouts.push_back(&m_layout);
 
     // create VkPipelineLayout
-    VkPipelineLayoutCreateInfo pipeline_layout = {};
-    pipeline_layout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    VkPipelineLayoutCreateInfo pipeline_layout = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout.setLayoutCount = layouts.size();
     pipeline_layout.pSetLayouts = NULL;
 
@@ -1378,7 +1366,7 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, const VkFormat format) {
     subpass.pColorAttachments = &attach;
     subpass.colorAttachmentCount = 1;
 
-    VkRenderPassCreateInfo rpci = {};
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
@@ -1390,7 +1378,6 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, const VkFormat format) {
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     rpci.pAttachments = &attach_desc;
-    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 
     init(*dev, rpci);
 }
@@ -1406,7 +1393,7 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, VkFormat format, bool depthSt
         VkSubpassDescription subpass = {};
         subpass.pDepthStencilAttachment = &attach;
 
-        VkRenderPassCreateInfo rpci = {};
+        VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
         rpci.subpassCount = 1;
         rpci.pSubpasses = &subpass;
         rpci.attachmentCount = 1;
@@ -1418,7 +1405,6 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, VkFormat format, bool depthSt
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         rpci.pAttachments = &attach_desc;
-        rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 
         init(*dev, rpci);
     }
@@ -1903,9 +1889,7 @@ VkTextureObj::VkTextureObj(VkDeviceObj *device, uint32_t *colors) : VkImageObj(d
 
     if (colors == NULL) colors = tex_colors;
 
-    VkImageViewCreateInfo view = {};
-    view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    view.pNext = NULL;
+    VkImageViewCreateInfo view = LvlInitStruct<VkImageViewCreateInfo>();
     view.image = VK_NULL_HANDLE;
     view.viewType = VK_IMAGE_VIEW_TYPE_2D;
     view.format = tex_format;
@@ -1942,9 +1926,7 @@ VkTextureObj::VkTextureObj(VkDeviceObj *device, uint32_t *colors) : VkImageObj(d
 VkSamplerObj::VkSamplerObj(VkDeviceObj *device) {
     m_device = device;
 
-    VkSamplerCreateInfo samplerCreateInfo;
-    memset(&samplerCreateInfo, 0, sizeof(samplerCreateInfo));
-    samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    VkSamplerCreateInfo samplerCreateInfo = LvlInitStruct<VkSamplerCreateInfo>();
     samplerCreateInfo.magFilter = VK_FILTER_NEAREST;
     samplerCreateInfo.minFilter = VK_FILTER_NEAREST;
     samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
@@ -2029,8 +2011,7 @@ bool VkShaderObj::InitFromGLSL(const char *shader_code, bool debug, const spv_ta
     std::vector<uint32_t> spv;
     m_framework.GLSLtoSPV(&m_device.props.limits, m_stage_info.stage, shader_code, spv, debug, env);
 
-    VkShaderModuleCreateInfo moduleCreateInfo = {};
-    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    VkShaderModuleCreateInfo moduleCreateInfo = LvlInitStruct<VkShaderModuleCreateInfo>();
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
@@ -2050,8 +2031,7 @@ VkResult VkShaderObj::InitFromGLSLTry(const char *shader_code, bool debug, const
     VkPhysicalDeviceLimits limits = (custom_device) ? custom_device->props.limits : m_device.props.limits;
     m_framework.GLSLtoSPV(&limits, m_stage_info.stage, shader_code, spv, debug, env);
 
-    VkShaderModuleCreateInfo moduleCreateInfo = {};
-    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    VkShaderModuleCreateInfo moduleCreateInfo = LvlInitStruct<VkShaderModuleCreateInfo>();
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
@@ -2064,8 +2044,7 @@ bool VkShaderObj::InitFromASM(const std::string &spv_source, const spv_target_en
     vector<uint32_t> spv;
     m_framework.ASMtoSPV(env, 0, spv_source.data(), spv);
 
-    VkShaderModuleCreateInfo moduleCreateInfo = {};
-    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    VkShaderModuleCreateInfo moduleCreateInfo = LvlInitStruct<VkShaderModuleCreateInfo>();
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
@@ -2078,8 +2057,7 @@ VkResult VkShaderObj::InitFromASMTry(const std::string &spv_source, const spv_ta
     vector<uint32_t> spv;
     m_framework.ASMtoSPV(spv_env, 0, spv_source.data(), spv);
 
-    VkShaderModuleCreateInfo moduleCreateInfo = {};
-    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    VkShaderModuleCreateInfo moduleCreateInfo = LvlInitStruct<VkShaderModuleCreateInfo>();
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
@@ -2114,8 +2092,7 @@ std::unique_ptr<VkShaderObj> VkShaderObj::CreateFromASM(VkRenderFramework &frame
 
 VkPipelineLayoutObj::VkPipelineLayoutObj(VkDeviceObj *device, const vector<const VkDescriptorSetLayoutObj *> &descriptor_layouts,
                                          const vector<VkPushConstantRange> &push_constant_ranges) {
-    VkPipelineLayoutCreateInfo pl_ci = {};
-    pl_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    VkPipelineLayoutCreateInfo pl_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pl_ci.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
     pl_ci.pPushConstantRanges = push_constant_ranges.data();
 
@@ -2129,32 +2106,28 @@ void VkPipelineLayoutObj::Reset() { *this = VkPipelineLayoutObj(); }
 VkPipelineObj::VkPipelineObj(VkDeviceObj *device) {
     m_device = device;
 
-    m_vi_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    m_vi_state.pNext = nullptr;
+    m_vi_state = LvlInitStruct<VkPipelineVertexInputStateCreateInfo>();
     m_vi_state.flags = 0;
     m_vi_state.vertexBindingDescriptionCount = 0;
     m_vi_state.pVertexBindingDescriptions = nullptr;
     m_vi_state.vertexAttributeDescriptionCount = 0;
     m_vi_state.pVertexAttributeDescriptions = nullptr;
 
-    m_ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    m_ia_state.pNext = nullptr;
+    m_ia_state = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
     m_ia_state.flags = 0;
     m_ia_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     m_ia_state.primitiveRestartEnable = VK_FALSE;
 
     m_te_state = nullptr;
 
-    m_vp_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    m_vp_state.pNext = VK_NULL_HANDLE;
+    m_vp_state = LvlInitStruct<VkPipelineViewportStateCreateInfo>();
     m_vp_state.flags = 0;
     m_vp_state.viewportCount = 1;
     m_vp_state.scissorCount = 1;
     m_vp_state.pViewports = nullptr;
     m_vp_state.pScissors = nullptr;
 
-    m_rs_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    m_rs_state.pNext = &m_line_state;
+    m_rs_state = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>(&m_line_state);
     m_rs_state.flags = 0;
     m_rs_state.depthClampEnable = VK_FALSE;
     m_rs_state.rasterizerDiscardEnable = VK_FALSE;
@@ -2167,15 +2140,13 @@ VkPipelineObj::VkPipelineObj(VkDeviceObj *device) {
     m_rs_state.depthBiasSlopeFactor = 0.0f;
     m_rs_state.lineWidth = 1.0f;
 
-    m_line_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT;
-    m_line_state.pNext = nullptr;
+    m_line_state = LvlInitStruct<VkPipelineRasterizationLineStateCreateInfoEXT>();
     m_line_state.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT;
     m_line_state.stippledLineEnable = VK_FALSE;
     m_line_state.lineStippleFactor = 0;
     m_line_state.lineStipplePattern = 0;
 
-    m_ms_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    m_ms_state.pNext = nullptr;
+    m_ms_state = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
     m_ms_state.flags = 0;
     m_ms_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     m_ms_state.sampleShadingEnable = VK_FALSE;
@@ -2187,7 +2158,7 @@ VkPipelineObj::VkPipelineObj(VkDeviceObj *device) {
     m_ds_state = nullptr;
 
     memset(&m_cb_state, 0, sizeof(m_cb_state));
-    m_cb_state.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    m_cb_state = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
     m_cb_state.blendConstants[0] = 1.0f;
     m_cb_state.blendConstants[1] = 1.0f;
     m_cb_state.blendConstants[2] = 1.0f;
@@ -2262,10 +2233,7 @@ void VkPipelineObj::InitGraphicsPipelineCreateInfo(VkGraphicsPipelineCreateInfo 
     gp_ci->stageCount = m_shaderStages.size();
     gp_ci->pStages = m_shaderStages.size() ? m_shaderStages.data() : nullptr;
 
-    m_vi_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     gp_ci->pVertexInputState = &m_vi_state;
-
-    m_ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     gp_ci->pInputAssemblyState = &m_ia_state;
 
     gp_ci->sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -2291,7 +2259,7 @@ void VkPipelineObj::InitGraphicsPipelineCreateInfo(VkGraphicsPipelineCreateInfo 
 
     memset(&m_pd_state, 0, sizeof(m_pd_state));
     if (m_dynamic_state_enables.size() > 0) {
-        m_pd_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        m_pd_state = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
         m_pd_state.dynamicStateCount = m_dynamic_state_enables.size();
         m_pd_state.pDynamicStates = m_dynamic_state_enables.data();
         gp_ci->pDynamicState = &m_pd_state;
@@ -2536,7 +2504,7 @@ VkFormat VkDepthStencilObj::Format() const { return this->m_depth_stencil_fmt; }
 
 void VkDepthStencilObj::Init(VkDeviceObj *device, int32_t width, int32_t height, VkFormat format, VkImageUsageFlags usage,
                              VkImageAspectFlags aspect) {
-    VkImageViewCreateInfo view_info = {};
+    VkImageViewCreateInfo view_info = LvlInitStruct<VkImageViewCreateInfo>();
 
     m_device = device;
     m_initialized = true;
@@ -2555,8 +2523,6 @@ void VkDepthStencilObj::Init(VkDeviceObj *device, int32_t width, int32_t height,
     }
     SetLayout(aspect, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    view_info.pNext = NULL;
     view_info.image = VK_NULL_HANDLE;
     view_info.subresourceRange.aspectMask = aspect;
     view_info.subresourceRange.baseMipLevel = 0;
