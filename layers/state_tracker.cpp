@@ -2367,10 +2367,9 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
 
     auto pipe_state = Get<PIPELINE_STATE>(pipeline);
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
-        const auto &create_info = pipe_state->create_info.graphics;
-        bool rasterization_enabled = VK_FALSE == create_info.pRasterizationState->rasterizerDiscardEnable;
-        const auto *viewport_state = create_info.pViewportState;
-        const auto *dynamic_state = create_info.pDynamicState;
+        bool rasterization_enabled = VK_FALSE == pipe_state->RasterizationState()->rasterizerDiscardEnable;
+        const auto *viewport_state = pipe_state->ViewportState();
+        const auto *dynamic_state = pipe_state->DynamicState();
         cb_state->status &= ~cb_state->static_status;
         cb_state->static_status = MakeStaticStateMask(dynamic_state ? dynamic_state->ptr() : nullptr);
         cb_state->status |= cb_state->static_status;
@@ -4661,10 +4660,10 @@ void ValidationStateTracker::PreCallRecordCmdSetVertexInputEXT(
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
     if (pipeline_state) {
-        if (pipeline_state->create_info.graphics.pDynamicState) {
-            for (uint32_t i = 0; i < pipeline_state->create_info.graphics.pDynamicState->dynamicStateCount; ++i) {
-                if (pipeline_state->create_info.graphics.pDynamicState->pDynamicStates[i] ==
-                    VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT) {
+        const auto *dynamic_state = pipeline_state->DynamicState();
+        if (dynamic_state) {
+            for (uint32_t i = 0; i < dynamic_state->dynamicStateCount; ++i) {
+                if (dynamic_state->pDynamicStates[i] == VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT) {
                     status_flags |= CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET;
                     break;
                 }

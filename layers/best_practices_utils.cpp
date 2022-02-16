@@ -1511,8 +1511,8 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
             render_pass_state.nextDrawTouchesAttachments = pipeline_state->access_framebuffer_attachments;
             render_pass_state.drawTouchAttachments = true;
 
-            const auto* blend_state = pipeline_state->create_info.graphics.pColorBlendState;
-            const auto* stencil_state = pipeline_state->create_info.graphics.pDepthStencilState;
+            const auto* blend_state = pipeline_state->ColorBlendState();
+            const auto* stencil_state = pipeline_state->DepthStencilState();
 
             if (blend_state) {
                 // assume the pipeline is depth-only unless any of the attachments have color writes enabled
@@ -1996,7 +1996,7 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* 
         const auto& current_vtx_bfr_binding_info = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings;
 
         // Verify vertex binding
-        if (pipeline_state->vertex_binding_descriptions_.size() <= 0) {
+        if (pipeline_state->vertex_input_state && pipeline_state->vertex_input_state->binding_descriptions.size() <= 0) {
             if ((!current_vtx_bfr_binding_info.empty()) && (!cb_state->vertex_buffer_used)) {
                 skip |= LogPerformanceWarning(cb_state->commandBuffer(), kVUID_BestPractices_DrawState_VtxIndexOutOfBounds,
                                               "Vertex buffers are bound to %s but no vertex buffers are attached to %s.",
@@ -2007,15 +2007,16 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* 
 
         const auto* pipe = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
         if (pipe) {
-            const auto* rp_state = pipe->rp_state.get();
+            const auto& rp_state = pipe->RenderPassState();
             if (rp_state) {
                 for (uint32_t i = 0; i < rp_state->createInfo.subpassCount; ++i) {
                     const auto& subpass = rp_state->createInfo.pSubpasses[i];
-                    const auto& create_info = pipe->create_info.graphics;
+                    const auto* ds_state = pipe->DepthStencilState();
                     const uint32_t depth_stencil_attachment =
-                        GetSubpassDepthStencilAttachmentIndex(create_info.pDepthStencilState, subpass.pDepthStencilAttachment);
-                    if ((depth_stencil_attachment == VK_ATTACHMENT_UNUSED) && create_info.pRasterizationState &&
-                        create_info.pRasterizationState->depthBiasEnable == VK_TRUE) {
+                        GetSubpassDepthStencilAttachmentIndex(ds_state, subpass.pDepthStencilAttachment);
+                    const auto* raster_state = pipe->RasterizationState();
+                    if ((depth_stencil_attachment == VK_ATTACHMENT_UNUSED) && raster_state &&
+                        raster_state->depthBiasEnable == VK_TRUE) {
                         skip |= LogWarning(cb_state->commandBuffer(), kVUID_BestPractices_DepthBiasNoAttachment,
                                            "%s: depthBiasEnable == VK_TRUE without a depth-stencil attachment.", caller);
                     }
@@ -2118,8 +2119,9 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
     const auto& pipeline_binding_iter = cmd_state.lastBound[lv_bind_point];
     const auto* pipeline_state = pipeline_binding_iter.pipeline_state;
 
-    if (pipeline_state != nullptr && pipeline_state->create_info.graphics.pInputAssemblyState != nullptr) {
-        primitive_restart_enable = pipeline_state->create_info.graphics.pInputAssemblyState->primitiveRestartEnable == VK_TRUE;
+    const auto* ia_state = pipeline_state ? pipeline_state->InputAssemblyState() : nullptr;
+    if (ia_state) {
+        primitive_restart_enable = ia_state->primitiveRestartEnable == VK_TRUE;
     }
 
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB
