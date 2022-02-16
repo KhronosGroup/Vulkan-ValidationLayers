@@ -810,3 +810,201 @@ TEST_F(VkPositiveLayerTest, RenderPassValidStages) {
     dependency.dstStageMask = VK_PIPELINE_STAGE_HOST_BIT;
     PositiveTestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported);
 }
+
+TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
+    TEST_DESCRIPTION("Ensure that the validation message contains the correct miplevel");
+
+    m_errorMonitor->ExpectSuccess();
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // Create RenderPass.
+
+    VkAttachmentDescription attachments[2] = {
+        {
+            0,
+            VK_FORMAT_R8G8B8A8_UNORM,
+            VK_SAMPLE_COUNT_1_BIT,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_STORE,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_GENERAL,
+        },
+        {0, VK_FORMAT_D32_SFLOAT, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL}};
+
+    VkAttachmentReference att_refs[2] = {
+        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL},
+    };
+
+    VkSubpassDescription subpass = {0,      VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_refs[0], nullptr, &att_refs[1], 0,
+                                    nullptr};
+
+    VkSubpassDependency dep = {0,
+                               0,
+                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                               VK_ACCESS_SHADER_READ_BIT,
+                               VK_DEPENDENCY_BY_REGION_BIT};
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, attachments, 1, &subpass, 1, &dep};
+
+    VkResult err;
+    VkRenderPass rp;
+    err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
+    ASSERT_VK_SUCCESS(err);
+
+    // Create Framebuffer.
+
+    VkImageObj colorImage(m_device);
+    colorImage.Init(32, 32, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(colorImage.initialized());
+
+    VkImageObj depthImage(m_device);
+    depthImage.Init(32, 32, 2, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                    VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(depthImage.initialized());
+
+    VkImageView baseViews[] = {
+        colorImage.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, /*baseMipLevel*/ 0, /*levelCount*/ 1),
+        depthImage.targetView(VK_FORMAT_D32_SFLOAT, VK_IMAGE_ASPECT_DEPTH_BIT, /*baseMipLevel*/ 0, /*levelCount*/ 1),
+    };
+
+    VkImageViewCreateInfo vinfo = {};
+    vinfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    vinfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    vinfo.components.r = VK_COMPONENT_SWIZZLE_R;
+    vinfo.components.g = VK_COMPONENT_SWIZZLE_G;
+    vinfo.components.b = VK_COMPONENT_SWIZZLE_B;
+    vinfo.components.a = VK_COMPONENT_SWIZZLE_A;
+    vinfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
+
+    vinfo.image = colorImage.handle();
+    vinfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+    vinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    vk_testing::ImageView fullView0;
+    fullView0.init(*m_device, vinfo);
+
+    vinfo.image = depthImage.handle();
+    vinfo.format = VK_FORMAT_D32_SFLOAT;
+    vinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+    vk_testing::ImageView fullView1;
+    fullView1.init(*m_device, vinfo);
+
+    VkImageView fullViews[] = {fullView0.handle(), fullView1.handle()};
+
+    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 2, baseViews, 32, 32, 1};
+
+    VkFramebuffer fb;
+    err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
+    ASSERT_VK_SUCCESS(err);
+
+    // Create shader modules
+
+    char const fsSource[] = R"glsl(
+        #version 450
+        layout(location=0) out vec4 x;
+        layout(set=0, binding=2) uniform sampler2D depth;
+        void main() {
+           x = texture(depth, vec2(0));
+        }
+    )glsl";
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    // Create descriptor set and friends.
+
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    VkSampler sampler = VK_NULL_HANDLE;
+    err = vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    ASSERT_VK_SUCCESS(err);
+
+    OneOffDescriptorSet::Bindings binding_defs = {{2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    const VkDescriptorSetLayoutObj pipeline_dsl(m_device, binding_defs);
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&pipeline_dsl});
+    OneOffDescriptorSet descriptor_set(m_device, binding_defs);
+
+    VkDescriptorImageInfo image_info = {
+        sampler,
+        fullViews[1],
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+    };
+
+    VkWriteDescriptorSet descriptor_writes[1] = {};
+    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[0].dstSet = descriptor_set.set_;
+    descriptor_writes[0].dstBinding = 2;
+    descriptor_writes[0].descriptorCount = 1;
+    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_writes[0].pImageInfo = &image_info;
+
+    // Create Pipeline.
+
+    VkPipelineDepthStencilStateCreateInfo ds_ci = {};
+    ds_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    ds_ci.depthTestEnable = VK_TRUE;
+    ds_ci.depthCompareOp = VK_COMPARE_OP_LESS;
+
+    m_viewports.push_back(VkViewport{0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f});
+    m_scissors.push_back(VkRect2D{{0, 0}, {64, 64}});
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.SetViewport(m_viewports);
+    pipe.SetScissor(m_scissors);
+    pipe.AddDefaultColorAttachment();
+    pipe.SetDepthStencil(&ds_ci);
+
+    pipe.CreateVKPipeline(pipeline_layout.handle(), rp);
+
+    // Start pushing commands.
+
+    VkRenderPassBeginInfo rpbi = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp, fb, {{0, 0}, {32, 32}}, 0, nullptr};
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+
+    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, nullptr);
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, NULL);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+
+    // At this point the first miplevel should be in GENERAL due to the "finalLayout" in the render pass.
+    // Note that these image barriers attempt to transition *all* miplevels, even though only 1 miplevel has transitioned.
+
+    colorImage.Layout(VK_IMAGE_LAYOUT_GENERAL);
+
+    colorImage.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL,
+                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+    m_errorMonitor->VerifyNotFound();
+
+    depthImage.Layout(VK_IMAGE_LAYOUT_GENERAL);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "cannot transition the layout of aspect=2 level=1 layer=0");
+
+    depthImage.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL,
+                                  VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+
+    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
+    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
+    vk::DestroySampler(m_device->device(), sampler, nullptr);
+}
