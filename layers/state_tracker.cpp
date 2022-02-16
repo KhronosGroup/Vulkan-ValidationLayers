@@ -334,7 +334,7 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
 
     if (pCreateInfo) {
         const auto *opaque_capture_address = LvlFindInChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
-        if (opaque_capture_address) {
+        if (opaque_capture_address && (opaque_capture_address->opaqueCaptureAddress != 0)) {
             // address is used for GPU-AV and ray tracing buffer validation
             buffer_state->deviceAddress = opaque_capture_address->opaqueCaptureAddress;
             buffer_address_map_.insert(opaque_capture_address->opaqueCaptureAddress, buffer_state.get());
@@ -4472,7 +4472,7 @@ void ValidationStateTracker::PreCallRecordCmdSetVertexInputEXT(
 
 void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAddressInfo *pInfo, VkDeviceAddress address) {
     auto buffer_state = Get<BUFFER_STATE>(pInfo->buffer);
-    if (buffer_state) {
+    if (buffer_state && address != 0) {
         // address is used for GPU-AV and ray tracing buffer validation
         buffer_state->deviceAddress = address;
         buffer_address_map_.insert(address, buffer_state.get());
