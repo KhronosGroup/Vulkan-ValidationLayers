@@ -59,6 +59,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features;
     VkPhysicalDeviceFragmentDensityMapFeaturesEXT fragment_density_map_features;
     VkPhysicalDeviceFragmentDensityMap2FeaturesEXT fragment_density_map2_features;
+    VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM fragment_density_map_offset_features;
     VkPhysicalDeviceASTCDecodeFeaturesEXT astc_decode_features;
     VkPhysicalDeviceCustomBorderColorFeaturesEXT custom_border_color_features;
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features;

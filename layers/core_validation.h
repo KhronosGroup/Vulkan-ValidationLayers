@@ -316,7 +316,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE* pCB, char const* cmd_name, const char* error_code) const;
 
     void RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents);
-    bool ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer, CMD_TYPE cmd_type) const;
+    bool ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer, CMD_TYPE cmd_type,
+                                  const VkSubpassEndInfo* pSubpassEndInfo) const;
     void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);
     bool ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo* pCreateInfo) const;
     bool MatchUsage(uint32_t count, const VkAttachmentReference2* attachments, const VkFramebufferCreateInfo* fbci,

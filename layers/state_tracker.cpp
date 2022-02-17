@@ -996,6 +996,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
             state_tracker->enabled_features.fragment_density_map2_features = *fragment_density_map_features2;
         }
 
+        const auto *fragment_density_map_offset_features =
+            LvlFindInChain<VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM>(pCreateInfo->pNext);
+        if (fragment_density_map_offset_features) {
+            state_tracker->enabled_features.fragment_density_map_offset_features = *fragment_density_map_offset_features;
+        }
+
         const auto *astc_decode_features = LvlFindInChain<VkPhysicalDeviceASTCDecodeFeaturesEXT>(pCreateInfo->pNext);
         if (astc_decode_features) {
             state_tracker->enabled_features.astc_decode_features = *astc_decode_features;
@@ -1338,6 +1344,8 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_texel_buffer_alignment, &phys_dev_props->texel_buffer_alignment_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_fragment_density_map, &phys_dev_props->fragment_density_map_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_fragment_density_map2, &phys_dev_props->fragment_density_map2_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_qcom_fragment_density_map_offset,
+                                   &phys_dev_props->fragment_density_map_offset_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_performance_query, &phys_dev_props->performance_query_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_sample_locations, &phys_dev_props->sample_locations_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_custom_border_color, &phys_dev_props->custom_border_color_props);
