@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2021 Valve Corporation
-# Copyright (c) 2014-2021 LunarG, Inc.
+# Copyright (c) 2014-2022 Valve Corporation
+# Copyright (c) 2014-2022 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -149,11 +149,11 @@ if (NOT MSVC)
     target_compile_options(vk_layer_validation_tests PRIVATE "-Wno-sign-compare")
 endif()
 
+target_include_directories(vk_layer_validation_tests PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
 # Specify target_link_libraries
 target_link_libraries(vk_layer_validation_tests
                       PRIVATE VkLayer_utils
                               ${GLSLANG_LIBRARIES}
-			      SPIRV-Headers::SPIRV-Headers
 			      SPIRV-Tools-static SPIRV-Tools-opt
 			      GTest::gtest GTest::gtest_main)
 
