@@ -95,6 +95,7 @@ set(COMMON_CPP
     positive/shaderval.cpp
     positive/sync.cpp
     positive/tooling.cpp
+    positive/graphics_library.cpp
     vksyncvaltests.cpp
     vkrenderframework.cpp
     vktestbinding.cpp

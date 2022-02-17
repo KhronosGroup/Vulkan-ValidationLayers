@@ -2091,8 +2091,10 @@ std::unique_ptr<VkShaderObj> VkShaderObj::CreateFromASM(VkRenderFramework &frame
 }
 
 VkPipelineLayoutObj::VkPipelineLayoutObj(VkDeviceObj *device, const vector<const VkDescriptorSetLayoutObj *> &descriptor_layouts,
-                                         const vector<VkPushConstantRange> &push_constant_ranges) {
+                                         const vector<VkPushConstantRange> &push_constant_ranges,
+                                         VkPipelineLayoutCreateFlags flags) {
     VkPipelineLayoutCreateInfo pl_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    pl_ci.flags = flags;
     pl_ci.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
     pl_ci.pPushConstantRanges = push_constant_ranges.data();
 

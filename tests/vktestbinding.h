@@ -661,6 +661,12 @@ class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
 
 class Pipeline : public internal::NonDispHandle<VkPipeline> {
   public:
+    Pipeline() = default;
+    Pipeline(const Device &dev, const VkGraphicsPipelineCreateInfo &info) { init(dev, info); }
+    Pipeline(const Device &dev, const VkGraphicsPipelineCreateInfo &info, const VkPipeline basePipeline) {
+        init(dev, info, basePipeline);
+    }
+    Pipeline(const Device &dev, const VkComputePipelineCreateInfo &info) { init(dev, info); }
     ~Pipeline() NOEXCEPT;
 
     // vkCreateGraphicsPipeline()

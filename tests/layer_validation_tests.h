@@ -468,6 +468,7 @@ struct CreatePipelineHelper {
     std::unique_ptr<VkShaderObj> vs_;
     std::unique_ptr<VkShaderObj> fs_;
     VkLayerTest &layer_test_;
+    layer_data::optional<VkGraphicsPipelineLibraryCreateInfoEXT> gpl_info;
     CreatePipelineHelper(VkLayerTest &test, uint32_t color_attachments_count = 1u);
     ~CreatePipelineHelper();
 
@@ -492,6 +493,22 @@ struct CreatePipelineHelper {
     void InitState();
     void LateBindPipelineInfo();
     VkResult CreateGraphicsPipeline(bool implicit_destroy = true, bool do_late_bind = true);
+
+    void InitVertexInputLibInfo(void *p_next = nullptr);
+
+    template <typename StageContainer>
+    void InitPreRasterLibInfoFromContainer(const StageContainer &stages, void *p_next = nullptr) {
+        InitPreRasterLibInfo(static_cast<uint32_t>(stages.size()), stages.data(), p_next);
+    }
+    void InitPreRasterLibInfo(uint32_t count, const VkPipelineShaderStageCreateInfo *info, void *p_next = nullptr);
+
+    template <typename StageContainer>
+    void InitFragmentLibInfoFromContainer(const StageContainer &stages, void *p_next = nullptr) {
+        InitFragmentLibInfo(static_cast<uint32_t>(stages.size()), stages.data(), p_next);
+    }
+    void InitFragmentLibInfo(uint32_t count, const VkPipelineShaderStageCreateInfo *info, void *p_next = nullptr);
+
+    void InitFragmentOutputLibInfo(void *p_next = nullptr);
 
     // Helper function to create a simple test case (positive or negative)
     //
