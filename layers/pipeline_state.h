@@ -191,9 +191,11 @@ class PIPELINE_STATE : public BASE_NODE {
     const uint32_t active_shaders = 0;
     const VkPrimitiveTopology topology_at_rasterizer;
 
+    // Executable or legacy pipeline
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const RENDER_PASS_STATE> &&rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
 
+    // Compute pipeline
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
 
@@ -202,6 +204,9 @@ class PIPELINE_STATE : public BASE_NODE {
 
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
                    std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
+
+    // Executable pipeline with all state defined within linked pipeline libraries
+    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo);
 
     VkPipeline pipeline() const { return handle_.Cast<VkPipeline>(); }
 
@@ -345,7 +350,17 @@ class PIPELINE_STATE : public BASE_NODE {
         return nullptr;
     }
 
-    uint32_t Subpass() const { return create_info.graphics.subpass; }
+    uint32_t Subpass() const {
+        // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?
+        if (pre_raster_state) {
+            return pre_raster_state->subpass;
+        } else if (fragment_shader_state) {
+            return fragment_shader_state->subpass;
+        } else if (fragment_output_state) {
+            return fragment_output_state->subpass;
+        }
+        return create_info.graphics.subpass;
+    }
 
     const FragmentOutputState::AttachmentVector &Attachments() const {
         if (fragment_output_state) {
@@ -498,7 +513,7 @@ struct LAST_BOUND_STATE {
 };
 
 static inline bool CompatForSet(uint32_t set, const LAST_BOUND_STATE &a, const std::vector<PipelineLayoutCompatId> &b) {
-    bool result = (set < a.per_set.size()) && (set < b.size()) && (a.per_set[set].compat_id_for_set == b[set]);
+    bool result = (set < a.per_set.size()) && (set < b.size()) && (*(a.per_set[set].compat_id_for_set) == *b[set]);
     return result;
 }
 

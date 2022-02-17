@@ -2069,8 +2069,6 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
         } else if (enabled_features.core13.dynamicRendering) {
             auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
             render_pass = std::make_shared<RENDER_PASS_STATE>(dynamic_rendering);
-        } else {
-            skip = true;
         }
         cgpl_state->pipe_state.push_back(
             CreateGraphicsPipelineState(&create_info, std::move(render_pass), std::move(layout_state)));
@@ -2367,7 +2365,8 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
 
     auto pipe_state = Get<PIPELINE_STATE>(pipeline);
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
-        bool rasterization_enabled = VK_FALSE == pipe_state->RasterizationState()->rasterizerDiscardEnable;
+        const auto *raster_state = pipe_state->RasterizationState();
+        bool rasterization_enabled = raster_state && !raster_state->rasterizerDiscardEnable;
         const auto *viewport_state = pipe_state->ViewportState();
         const auto *dynamic_state = pipe_state->DynamicState();
         cb_state->status &= ~cb_state->static_status;

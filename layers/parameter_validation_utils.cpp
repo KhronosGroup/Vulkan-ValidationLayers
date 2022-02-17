@@ -2768,7 +2768,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
                 }
 
-                if (pCreateInfos[i].pMultisampleState == nullptr) {
+                const auto graphics_lib_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pCreateInfos[i].pNext);
+                const bool is_frag_out_graphics_lib =
+                    graphics_lib_info &&
+                    ((graphics_lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) != 0);
+                if (is_frag_out_graphics_lib && (pCreateInfos[i].pMultisampleState == nullptr)) {
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00751",
                                      "vkCreateGraphicsPipelines: if pCreateInfos[%" PRIu32
                                      "].pRasterizationState->rasterizerDiscardEnable "
@@ -2782,69 +2786,76 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     const char *valid_struct_names =
                         "VkPipelineCoverageModulationStateCreateInfoNV, VkPipelineCoverageToColorStateCreateInfoNV, "
                         "VkPipelineSampleLocationsStateCreateInfoEXT";
-                    skip |= validate_struct_pnext(
-                        "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pMultisampleState->pNext", ParameterName::IndexVector{i}),
-                        valid_struct_names, pCreateInfos[i].pMultisampleState->pNext, 4, valid_next_stypes,
-                        GeneratedVulkanHeaderVersion, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext",
-                        "VUID-VkPipelineMultisampleStateCreateInfo-sType-unique");
 
-                    skip |= validate_reserved_flags(
-                        "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pMultisampleState->flags", ParameterName::IndexVector{i}),
-                        pCreateInfos[i].pMultisampleState->flags, "VUID-VkPipelineMultisampleStateCreateInfo-flags-zerobitmask");
+                    // It is possible for pCreateInfos[i].pMultisampleState to be null when creating a graphics library
+                    if (pCreateInfos[i].pMultisampleState) {
+                        skip |= validate_struct_pnext(
+                            "vkCreateGraphicsPipelines",
+                            ParameterName("pCreateInfos[%i].pMultisampleState->pNext", ParameterName::IndexVector{i}),
+                            valid_struct_names, pCreateInfos[i].pMultisampleState->pNext, 4, valid_next_stypes,
+                            GeneratedVulkanHeaderVersion, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext",
+                            "VUID-VkPipelineMultisampleStateCreateInfo-sType-unique");
 
-                    skip |= validate_bool32(
-                        "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pMultisampleState->sampleShadingEnable", ParameterName::IndexVector{i}),
-                        pCreateInfos[i].pMultisampleState->sampleShadingEnable);
+                        skip |= validate_reserved_flags(
+                            "vkCreateGraphicsPipelines",
+                            ParameterName("pCreateInfos[%i].pMultisampleState->flags", ParameterName::IndexVector{i}),
+                            pCreateInfos[i].pMultisampleState->flags,
+                            "VUID-VkPipelineMultisampleStateCreateInfo-flags-zerobitmask");
 
-                    skip |= validate_array(
-                        "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples", ParameterName::IndexVector{i}),
-                        ParameterName("pCreateInfos[%i].pMultisampleState->pSampleMask", ParameterName::IndexVector{i}),
-                        pCreateInfos[i].pMultisampleState->rasterizationSamples, &pCreateInfos[i].pMultisampleState->pSampleMask,
-                        true, false, kVUIDUndefined, kVUIDUndefined);
+                        skip |= validate_bool32(
+                            "vkCreateGraphicsPipelines",
+                            ParameterName("pCreateInfos[%i].pMultisampleState->sampleShadingEnable", ParameterName::IndexVector{i}),
+                            pCreateInfos[i].pMultisampleState->sampleShadingEnable);
 
-                    skip |= validate_flags(
-                        "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples", ParameterName::IndexVector{i}),
-                        "VkSampleCountFlagBits", AllVkSampleCountFlagBits, pCreateInfos[i].pMultisampleState->rasterizationSamples,
-                        kRequiredSingleBit, "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-parameter");
+                        skip |= validate_array(
+                            "vkCreateGraphicsPipelines",
+                            ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples",
+                                          ParameterName::IndexVector{i}),
+                            ParameterName("pCreateInfos[%i].pMultisampleState->pSampleMask", ParameterName::IndexVector{i}),
+                            pCreateInfos[i].pMultisampleState->rasterizationSamples,
+                            &pCreateInfos[i].pMultisampleState->pSampleMask, true, false, kVUIDUndefined, kVUIDUndefined);
 
-                    skip |= validate_bool32(
-                        "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pMultisampleState->alphaToCoverageEnable", ParameterName::IndexVector{i}),
-                        pCreateInfos[i].pMultisampleState->alphaToCoverageEnable);
+                        skip |= validate_flags("vkCreateGraphicsPipelines",
+                                               ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples",
+                                                             ParameterName::IndexVector{i}),
+                                               "VkSampleCountFlagBits", AllVkSampleCountFlagBits,
+                                               pCreateInfos[i].pMultisampleState->rasterizationSamples, kRequiredSingleBit,
+                                               "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-parameter");
 
-                    skip |= validate_bool32(
-                        "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pMultisampleState->alphaToOneEnable", ParameterName::IndexVector{i}),
-                        pCreateInfos[i].pMultisampleState->alphaToOneEnable);
+                        skip |= validate_bool32("vkCreateGraphicsPipelines",
+                                                ParameterName("pCreateInfos[%i].pMultisampleState->alphaToCoverageEnable",
+                                                              ParameterName::IndexVector{i}),
+                                                pCreateInfos[i].pMultisampleState->alphaToCoverageEnable);
 
-                    if (pCreateInfos[i].pMultisampleState->sType != VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO) {
-                        skip |= LogError(device, "VUID-VkPipelineMultisampleStateCreateInfo-sType-sType",
-                                         "vkCreateGraphicsPipelines: parameter pCreateInfos[%" PRIu32
-                                         "].pMultisampleState->sType must be "
-                                         "VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO",
-                                         i);
-                    }
-                    if (pCreateInfos[i].pMultisampleState->sampleShadingEnable == VK_TRUE) {
-                        if (!physical_device_features.sampleRateShading) {
-                            skip |= LogError(device, "VUID-VkPipelineMultisampleStateCreateInfo-sampleShadingEnable-00784",
-                                             "vkCreateGraphicsPipelines(): parameter "
-                                             "pCreateInfos[%" PRIu32 "].pMultisampleState->sampleShadingEnable.",
+                        skip |= validate_bool32(
+                            "vkCreateGraphicsPipelines",
+                            ParameterName("pCreateInfos[%i].pMultisampleState->alphaToOneEnable", ParameterName::IndexVector{i}),
+                            pCreateInfos[i].pMultisampleState->alphaToOneEnable);
+
+                        if (pCreateInfos[i].pMultisampleState->sType != VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO) {
+                            skip |= LogError(device, "VUID-VkPipelineMultisampleStateCreateInfo-sType-sType",
+                                             "vkCreateGraphicsPipelines: parameter pCreateInfos[%" PRIu32
+                                             "].pMultisampleState->sType must be "
+                                             "VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO",
                                              i);
                         }
-                        // TODO Add documentation issue about when minSampleShading must be in range and when it is ignored
-                        // For now a "least noise" test *only* when sampleShadingEnable is VK_TRUE.
-                        if (!in_inclusive_range(pCreateInfos[i].pMultisampleState->minSampleShading, 0.F, 1.0F)) {
-                            skip |= LogError(device,
+                        if (pCreateInfos[i].pMultisampleState->sampleShadingEnable == VK_TRUE) {
+                            if (!physical_device_features.sampleRateShading) {
+                                skip |= LogError(device, "VUID-VkPipelineMultisampleStateCreateInfo-sampleShadingEnable-00784",
+                                                 "vkCreateGraphicsPipelines(): parameter "
+                                                 "pCreateInfos[%" PRIu32 "].pMultisampleState->sampleShadingEnable.",
+                                                 i);
+                            }
+                            // TODO Add documentation issue about when minSampleShading must be in range and when it is ignored
+                            // For now a "least noise" test *only* when sampleShadingEnable is VK_TRUE.
+                            if (!in_inclusive_range(pCreateInfos[i].pMultisampleState->minSampleShading, 0.F, 1.0F)) {
+                                skip |= LogError(device,
 
-                                             "VUID-VkPipelineMultisampleStateCreateInfo-minSampleShading-00786",
-                                             "vkCreateGraphicsPipelines(): parameter pCreateInfos[%" PRIu32
-                                             "].pMultisampleState->minSampleShading.",
-                                             i);
+                                                 "VUID-VkPipelineMultisampleStateCreateInfo-minSampleShading-00786",
+                                                 "vkCreateGraphicsPipelines(): parameter pCreateInfos[%" PRIu32
+                                                 "].pMultisampleState->minSampleShading.",
+                                                 i);
+                            }
                         }
                     }
 
@@ -3418,7 +3429,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  "VK_PIPELINE_CREATE_DISPATCH_BASE.",
                                  i, flags);
             }
-            if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
+            if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library) &&
+                (flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03371",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "]->flags (0x%x) must not include "

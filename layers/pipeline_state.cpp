@@ -342,8 +342,23 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       max_active_slot(GetMaxActiveSlot(active_slots)),
       active_shaders(GetActiveShaders(stage_state)),
       topology_at_rasterizer(GetTopologyAtRasterizer(stage_state, create_info.graphics.pInputAssemblyState)),
-      rp_state(rpstate),
-      merged_graphics_layout(layout) {}
+      rp_state(rpstate) {
+    const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(PNext());
+    if (link_info) {
+        const auto &exe_layout_state = state_data->Get<PIPELINE_LAYOUT_STATE>(create_info.graphics.layout);
+        const auto *exe_layout = exe_layout_state.get();
+        const auto *pre_raster_layout =
+            (pre_raster_state && pre_raster_state->pipeline_layout) ? pre_raster_state->pipeline_layout.get() : nullptr;
+        const auto *fragment_shader_layout = (fragment_shader_state && fragment_shader_state->pipeline_layout)
+                                                 ? fragment_shader_state->pipeline_layout.get()
+                                                 : nullptr;
+        std::array<decltype(exe_layout), 3> layouts;
+        layouts[0] = pre_raster_layout;
+        layouts[1] = fragment_shader_layout;
+        layouts[2] = exe_layout;
+        merged_graphics_layout = std::make_shared<PIPELINE_LAYOUT_STATE>(layouts);
+    }
+}
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)

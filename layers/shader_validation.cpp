@@ -290,7 +290,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *m
 
     // Don't check any color attachments if rasterization is disabled
     const auto raster_state = pipeline->RasterizationState();
-    if (!raster_state->rasterizerDiscardEnable) {
+    if (raster_state && !raster_state->rasterizerDiscardEnable) {
         for (const auto &location_it : location_map) {
             const auto reference = location_it.second.reference;
             if (reference != nullptr && reference->attachment == VK_ATTACHMENT_UNUSED) {
@@ -2777,7 +2777,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     skip |= ValidateSpecializations(pStage);
     skip |= ValidateDecorations(module_state);
     const auto *raster_state = pipeline->RasterizationState();
-    if (check_point_size && !raster_state->rasterizerDiscardEnable) {
+    if (check_point_size && raster_state && !raster_state->rasterizerDiscardEnable) {
         skip |= ValidatePointListShaderState(pipeline, module_state, entrypoint, pStage->stage);
     }
     skip |= ValidateBuiltinLimits(module_state, entrypoint);
