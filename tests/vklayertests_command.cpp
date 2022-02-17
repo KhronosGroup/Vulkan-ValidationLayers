@@ -6725,7 +6725,31 @@ TEST_F(VkLayerTest, MeshShaderNV) {
 
 TEST_F(VkLayerTest, MeshShaderDisabledNV) {
     TEST_DESCRIPTION("Test VK_NV_mesh_shader VUs with NV_mesh_shader disabled.");
-    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME)) {
+        printf("%s %s not supported\n", kSkipPrefix, VK_NV_MESH_SHADER_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s not supported\n", kSkipPrefix, VK_NV_MESH_SHADER_EXTENSION_NAME);
+        return;
+    }
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (mesh_shader_features.meshShader != VK_TRUE) {
+        printf("%s Mesh shader feature not supported\n", kSkipPrefix);
+        return;
+    }
+
+    mesh_shader_features.meshShader = VK_FALSE;
+    mesh_shader_features.taskShader = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkEvent event;
@@ -6803,22 +6827,51 @@ TEST_F(VkLayerTest, MeshShaderDisabledNV) {
     vk::QueueWaitIdle(m_device->m_queue);
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkPipelineShaderStageCreateInfo meshStage = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
-    meshStage = vs.GetStageCreateInfo();
-    meshStage.stage = VK_SHADER_STAGE_MESH_BIT_NV;
-    VkPipelineShaderStageCreateInfo taskStage = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
-    taskStage = vs.GetStageCreateInfo();
-    taskStage.stage = VK_SHADER_STAGE_TASK_BIT_NV;
+
+    static const char task_src[] = R"glsl(
+        #version 450
+
+        #extension GL_NV_mesh_shader : require
+
+        layout(local_size_x = 32) in;
+
+        taskNV out Task {
+          uint baseID;
+        } OUT;
+
+        void main() {
+            OUT.baseID = 1;
+        }
+    )glsl";
+
+    static const char mesh_src[] = R"glsl(
+        #version 450
+
+        #extension GL_NV_mesh_shader : require
+
+        layout(local_size_x = 1) in;
+        layout(max_vertices = 3) out;
+        layout(max_primitives = 1) out;
+        layout(triangles) out;
+
+        taskNV in Task {
+          uint baseID;
+        } IN;
+
+        void main() {
+        }
+    )glsl";
+
+    VkShaderObj task_shader(this, task_src, VK_SHADER_STAGE_TASK_BIT_NV);
+    VkShaderObj mesh_shader(this, mesh_src, VK_SHADER_STAGE_MESH_BIT_NV);
 
     // mesh and task shaders not supported
     const auto break_vp = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {meshStage, taskStage, vs.GetStageCreateInfo()};
+        helper.shader_stages_ = {task_shader.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(
-        *this, break_vp, kErrorBit,
-        vector<std::string>({"VUID-VkPipelineShaderStageCreateInfo-pName-00707", "VUID-VkPipelineShaderStageCreateInfo-pName-00707",
-                             "VUID-VkPipelineShaderStageCreateInfo-stage-02091",
-                             "VUID-VkPipelineShaderStageCreateInfo-stage-02092"}));
+    CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
+                                      vector<std::string>({"VUID-VkPipelineShaderStageCreateInfo-stage-02091",
+                                                           "VUID-VkPipelineShaderStageCreateInfo-stage-02092"}));
 
     vk::DestroyEvent(m_device->device(), event, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);

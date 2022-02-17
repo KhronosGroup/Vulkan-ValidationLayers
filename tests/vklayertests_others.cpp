@@ -12043,7 +12043,8 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
     }
 
     // VUID-VkVertexInputAttributeDescription2EXT-offset-06230
-    {
+    if (m_device->props.limits.maxVertexInputAttributeOffset <
+        std::numeric_limits<decltype(m_device->props.limits.maxVertexInputAttributeOffset)>::max()) {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
         VkVertexInputAttributeDescription2EXT attribute = {

@@ -240,10 +240,10 @@ std::shared_ptr<VertexInputState> PIPELINE_STATE::CreateVertexInputState(const V
         if (ss) {
             return ss;
         }
-    }
-
-    if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-        return std::make_shared<VertexInputState>(create_info);
+    } else {
+        if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
+            return std::make_shared<VertexInputState>(create_info);
+        }
     }
 
     // We shouldn't get here...
@@ -264,10 +264,10 @@ std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const Valid
         if (ss) {
             return ss;
         }
-    }
-
-    if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-        return std::make_shared<PreRasterState>(state, create_info);
+    } else {
+        if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
+            return std::make_shared<PreRasterState>(state, create_info);
+        }
     }
 
     // We shouldn't get here...
@@ -289,10 +289,10 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
         if (ss) {
             return ss;
         }
-    }
-
-    if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-        return std::make_shared<FragmentShaderState>(state, safe_create_info);
+    } else {
+        if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
+            return std::make_shared<FragmentShaderState>(state, safe_create_info);
+        }
     }
 
     // We shouldn't get here...
@@ -316,10 +316,10 @@ std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
         if (ss) {
             return ss;
         }
-    }
-
-    if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-        return std::make_shared<FragmentOutputState>(state, safe_create_info);
+    } else {
+        if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
+            return std::make_shared<FragmentOutputState>(state, safe_create_info);
+        }
     }
 
     // We shouldn't get here...
@@ -357,6 +357,15 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
         layouts[1] = fragment_shader_layout;
         layouts[2] = exe_layout;
         merged_graphics_layout = std::make_shared<PIPELINE_LAYOUT_STATE>(layouts);
+
+        // TODO Could store the graphics_lib_type in the sub-state rather than searching for it again here.
+        //      Or, could store a pointer back to the owning PIPELINE_STATE.
+        for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
+            const auto &state = state_data->Get<PIPELINE_STATE>(link_info->pLibraries[i]);
+            if (state) {
+                graphics_lib_type |= state->graphics_lib_type;
+            }
+        }
     }
 }
 
@@ -387,20 +396,6 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
-    : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
-      create_info(pCreateInfo),
-      stage_state(GetStageStates(*state_data, *this)),
-      active_slots(GetActiveSlots(stage_state)),
-      active_shaders(GetActiveShaders(stage_state)),
-      topology_at_rasterizer{},
-      merged_graphics_layout(std::move(layout)) {
-    assert(0 == (active_shaders &
-                 ~(VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
-                   VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)));
-}
-
-PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),

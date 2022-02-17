@@ -2087,7 +2087,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
             // If subpass uses a depth/stencil attachment, pDepthStencilState must be a pointer to a valid structure
             const bool has_ds_state =
-                !pPipeline->IsGraphicsLibrary() ||
+                (!pPipeline->IsGraphicsLibrary() && pPipeline->HasFullState()) ||
                 ((pPipeline->graphics_lib_type & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) != 0);
             if (has_ds_state) {
                 if (subpass_desc && subpass_desc->pDepthStencilAttachment &&
