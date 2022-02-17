@@ -949,6 +949,9 @@ void CMD_BUFFER_STATE::UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPo
     if (VK_NULL_HANDLE != state.pipeline_layout) {
         for (const auto &set_binding_pair : pipe->active_slots) {
             uint32_t set_index = set_binding_pair.first;
+            if (set_index >= state.per_set.size()) {
+                continue;
+            }
             // Pull the set node
             auto &descriptor_set = state.per_set[set_index].bound_descriptor_set;
 
