@@ -90,6 +90,7 @@ class RENDER_PASS_STATE : public BASE_NODE {
     };
     const bool use_dynamic_rendering;
     const bool use_dynamic_rendering_inherited;
+    const bool has_multiview_enabled;
     const safe_VkRenderingInfo dynamic_rendering_begin_rendering_info;
     const safe_VkPipelineRenderingCreateInfo dynamic_rendering_pipeline_create_info;
     const safe_VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info;

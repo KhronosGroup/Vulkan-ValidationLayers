@@ -234,12 +234,21 @@ static void InitRenderPassState(RENDER_PASS_STATE *render_pass) {
         attachment_tracker.Update(subpass_index, subpass.pResolveAttachments, subpass.colorAttachmentCount, false);
         attachment_tracker.Update(subpass_index, subpass.pDepthStencilAttachment, 1, false);
         attachment_tracker.Update(subpass_index, subpass.pInputAttachments, subpass.inputAttachmentCount, true);
+
+        // From the spec
+        // If the VkSubpassDescription2::viewMask member of any element of pSubpasses is not zero, multiview functionality is
+        // considered to be enabled for this render pass.
+        (*const_cast<bool *>(&render_pass->has_multiview_enabled)) |= (subpass.viewMask != 0);
     }
     attachment_tracker.FinalTransitions();
 }
 
 RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo2 const *pCreateInfo)
-    : BASE_NODE(rp, kVulkanObjectTypeRenderPass), use_dynamic_rendering(false), use_dynamic_rendering_inherited(false), createInfo(pCreateInfo) {
+    : BASE_NODE(rp, kVulkanObjectTypeRenderPass),
+      use_dynamic_rendering(false),
+      use_dynamic_rendering_inherited(false),
+      has_multiview_enabled(false),
+      createInfo(pCreateInfo) {
     InitRenderPassState(this);
 }
 
@@ -250,7 +259,11 @@ static safe_VkRenderPassCreateInfo2 ConvertCreateInfo(const VkRenderPassCreateIn
 }
 
 RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo const *pCreateInfo)
-    : BASE_NODE(rp, kVulkanObjectTypeRenderPass), use_dynamic_rendering(false), use_dynamic_rendering_inherited(false), createInfo(ConvertCreateInfo(*pCreateInfo)) {
+    : BASE_NODE(rp, kVulkanObjectTypeRenderPass),
+      use_dynamic_rendering(false),
+      use_dynamic_rendering_inherited(false),
+      has_multiview_enabled(false),
+      createInfo(ConvertCreateInfo(*pCreateInfo)) {
     InitRenderPassState(this);
 }
 
@@ -268,6 +281,7 @@ RENDER_PASS_STATE::RENDER_PASS_STATE(VkPipelineRenderingCreateInfo const *pPipel
     : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
+      has_multiview_enabled(false),
       dynamic_rendering_pipeline_create_info(pPipelineRenderingCreateInfo ? pPipelineRenderingCreateInfo
                                                                           : &VkPipelineRenderingCreateInfo_default) {}
 
@@ -302,13 +316,15 @@ RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderingInfo const *pRenderingInfo)
     : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
+      has_multiview_enabled(false),
       dynamic_rendering_begin_rendering_info(pRenderingInfo) {}
 
-RENDER_PASS_STATE::RENDER_PASS_STATE(VkCommandBufferInheritanceRenderingInfo const* pInheritanceRenderingInfo)
+RENDER_PASS_STATE::RENDER_PASS_STATE(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo)
     : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
-    use_dynamic_rendering(false),
-    use_dynamic_rendering_inherited(true),
-    inheritance_rendering_info(pInheritanceRenderingInfo) {}
+      use_dynamic_rendering(false),
+      use_dynamic_rendering_inherited(true),
+      has_multiview_enabled(false),
+      inheritance_rendering_info(pInheritanceRenderingInfo) {}
 
 FRAMEBUFFER_STATE::FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo,
                                      std::shared_ptr<RENDER_PASS_STATE> &&rpstate,
