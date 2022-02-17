@@ -85,6 +85,11 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
     const std::vector<PipelineLayoutCompatId> compat_for_set;
 
     PIPELINE_LAYOUT_STATE(ValidationStateTracker *dev_data, VkPipelineLayout l, const VkPipelineLayoutCreateInfo *pCreateInfo);
+    // Merge 2 or more non-overlapping layouts
+    PIPELINE_LAYOUT_STATE(const layer_data::span<const PIPELINE_LAYOUT_STATE *const> &layouts);
+    template <typename Container>
+    PIPELINE_LAYOUT_STATE(const Container &layouts)
+        : PIPELINE_LAYOUT_STATE(layer_data::span<const PIPELINE_LAYOUT_STATE *const>{layouts}) {}
 
     VkPipelineLayout layout() const { return handle_.Cast<VkPipelineLayout>(); }
 
