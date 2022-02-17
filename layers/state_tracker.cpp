@@ -2397,27 +2397,7 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevic
                                                                          VkAccelerationStructureNV *pAccelerationStructure,
                                                                          VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto as_state = std::make_shared<ACCELERATION_STRUCTURE_STATE>(*pAccelerationStructure, pCreateInfo);
-
-    // Query the requirements in case the application doesn't (to avoid bind/validation time query)
-    auto as_memory_requirements_info = LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
-    as_memory_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-    as_memory_requirements_info.accelerationStructure = as_state->acceleration_structure();
-    DispatchGetAccelerationStructureMemoryRequirementsNV(device, &as_memory_requirements_info, &as_state->memory_requirements);
-
-    auto scratch_memory_req_info = LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
-    scratch_memory_req_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
-    scratch_memory_req_info.accelerationStructure = as_state->acceleration_structure();
-    DispatchGetAccelerationStructureMemoryRequirementsNV(device, &scratch_memory_req_info,
-                                                         &as_state->build_scratch_memory_requirements);
-
-    auto update_memory_req_info = LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
-    update_memory_req_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV;
-    update_memory_req_info.accelerationStructure = as_state->acceleration_structure();
-    DispatchGetAccelerationStructureMemoryRequirementsNV(device, &update_memory_req_info,
-                                                         &as_state->update_scratch_memory_requirements);
-    as_state->allocator = pAllocator;
-    Add(std::move(as_state));
+    Add(std::make_shared<ACCELERATION_STRUCTURE_STATE>(device, *pAccelerationStructure, pCreateInfo));
 }
 
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
@@ -2426,9 +2406,8 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevi
                                                                           VkAccelerationStructureKHR *pAccelerationStructure,
                                                                           VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto as_state = std::make_shared<ACCELERATION_STRUCTURE_STATE_KHR>(*pAccelerationStructure, pCreateInfo);
-    as_state->allocator = pAllocator;
-    Add(std::move(as_state));
+    auto buffer_state = Get<BUFFER_STATE>(pCreateInfo->buffer);
+    Add(std::make_shared<ACCELERATION_STRUCTURE_STATE_KHR>(*pAccelerationStructure, pCreateInfo, std::move(buffer_state)));
 }
 
 void ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(
@@ -2500,13 +2479,10 @@ void ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequire
     auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(pInfo->accelerationStructure);
     if (as_state != nullptr) {
         if (pInfo->type == VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV) {
-            as_state->memory_requirements = *pMemoryRequirements;
             as_state->memory_requirements_checked = true;
         } else if (pInfo->type == VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV) {
-            as_state->build_scratch_memory_requirements = *pMemoryRequirements;
             as_state->build_scratch_memory_requirements_checked = true;
         } else if (pInfo->type == VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV) {
-            as_state->update_scratch_memory_requirements = *pMemoryRequirements;
             as_state->update_scratch_memory_requirements_checked = true;
         }
     }

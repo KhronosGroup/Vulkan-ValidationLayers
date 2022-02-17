@@ -213,7 +213,7 @@ bool CoreChecks::ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION
 // Check to see if memory was bound to this acceleration structure
 bool CoreChecks::ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE_KHR *as_state,
                                                               const char *api_name, const char *error_code) const {
-    return VerifyBoundMemoryIsValid(as_state->MemState(), as_state->acceleration_structure(), as_state->Handle(), api_name,
+    return VerifyBoundMemoryIsValid(as_state->buffer_state->MemState(), as_state->acceleration_structure(), as_state->Handle(), api_name,
                                     error_code);
 }
 
@@ -8188,33 +8188,32 @@ bool CoreChecks::ValidateBindAccelerationStructureMemory(VkDevice device,
     if (mem_info) {
         skip |= ValidateInsertAccelerationStructureMemoryRange(info.accelerationStructure, mem_info.get(), info.memoryOffset,
                                                                "vkBindAccelerationStructureMemoryNV()");
-        skip |= ValidateMemoryTypes(mem_info.get(), as_state->memory_requirements.memoryRequirements.memoryTypeBits,
+        skip |= ValidateMemoryTypes(mem_info.get(), as_state->memory_requirements.memoryTypeBits,
                                     "vkBindAccelerationStructureMemoryNV()",
                                     "VUID-VkBindAccelerationStructureMemoryInfoNV-memory-03622");
     }
 
     // Validate memory requirements alignment
-    if (SafeModulo(info.memoryOffset, as_state->memory_requirements.memoryRequirements.alignment) != 0) {
+    if (SafeModulo(info.memoryOffset, as_state->memory_requirements.alignment) != 0) {
         skip |= LogError(info.accelerationStructure, "VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-03623",
                          "vkBindAccelerationStructureMemoryNV(): memoryOffset  0x%" PRIxLEAST64
                          " must be an integer multiple of the alignment 0x%" PRIxLEAST64
                          " member of the VkMemoryRequirements structure returned from "
                          "a call to vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure and type of "
                          "VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV",
-                         info.memoryOffset, as_state->memory_requirements.memoryRequirements.alignment);
+                         info.memoryOffset, as_state->memory_requirements.alignment);
     }
 
     if (mem_info) {
         // Validate memory requirements size
-        if (as_state->memory_requirements.memoryRequirements.size > (mem_info->alloc_info.allocationSize - info.memoryOffset)) {
+        if (as_state->memory_requirements.size > (mem_info->alloc_info.allocationSize - info.memoryOffset)) {
             skip |= LogError(info.accelerationStructure, "VUID-VkBindAccelerationStructureMemoryInfoNV-size-03624",
                              "vkBindAccelerationStructureMemoryNV(): The size 0x%" PRIxLEAST64
                              " member of the VkMemoryRequirements structure returned from a call to "
                              "vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure and type of "
                              "VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV must be less than or equal to the size "
                              "of memory minus memoryOffset 0x%" PRIxLEAST64 ".",
-                             as_state->memory_requirements.memoryRequirements.size,
-                             mem_info->alloc_info.allocationSize - info.memoryOffset);
+                             as_state->memory_requirements.size, mem_info->alloc_info.allocationSize - info.memoryOffset);
         }
     }
 
@@ -8559,8 +8558,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
             // Use requirements fetched at create time
         }
         if (scratch_buffer_state != nullptr && dst_as_state != nullptr &&
-            dst_as_state->update_scratch_memory_requirements.memoryRequirements.size >
-                (scratch_buffer_state->createInfo.size - scratchOffset)) {
+            dst_as_state->update_scratch_memory_requirements.size > (scratch_buffer_state->createInfo.size - scratchOffset)) {
             skip |= LogError(commandBuffer, "VUID-vkCmdBuildAccelerationStructureNV-update-02492",
                              "vkCmdBuildAccelerationStructureNV(): If update is VK_TRUE, The size member of the "
                              "VkMemoryRequirements structure returned from a call to "
@@ -8579,8 +8577,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
             // Use requirements fetched at create time
         }
         if (scratch_buffer_state != nullptr && dst_as_state != nullptr &&
-            dst_as_state->build_scratch_memory_requirements.memoryRequirements.size >
-                (scratch_buffer_state->createInfo.size - scratchOffset)) {
+            dst_as_state->build_scratch_memory_requirements.size > (scratch_buffer_state->createInfo.size - scratchOffset)) {
             skip |= LogError(commandBuffer, "VUID-vkCmdBuildAccelerationStructureNV-update-02491",
                              "vkCmdBuildAccelerationStructureNV(): If update is VK_FALSE, The size member of the "
                              "VkMemoryRequirements structure returned from a call to "
