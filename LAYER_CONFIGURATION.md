@@ -99,8 +99,6 @@ The settings file consists of comment lines and settings lines.  Comment lines b
 
    `<`*`LayerName`*`>.<`*`setting_name`*`> = <`*`setting_value`*`>`
 
-A `vk_layer_settings.txt` file is included in the Vulkan SDK, containing the default settings for all the layers in the SDK.
-
 The settings and values available for each layer are listed in the documentation for each supported layer.
 
 ## Layer Environment Variables
