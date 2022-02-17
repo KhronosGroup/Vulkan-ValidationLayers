@@ -244,6 +244,7 @@ class PIPELINE_STATE : public BASE_NODE {
     }
 
     bool IsGraphicsLibrary() const { return graphics_lib_type != static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0); }
+    bool HasFullState() const { return vertex_input_state && pre_raster_state && fragment_shader_state && fragment_output_state; }
 
     template <VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
     struct SubStateTraits {};
