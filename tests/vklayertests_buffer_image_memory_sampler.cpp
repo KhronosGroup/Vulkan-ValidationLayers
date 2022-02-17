@@ -9496,9 +9496,11 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
 
     // Check for VK_KHR_get_physical_device_properties2
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     const bool push_fragment_density_support = CanEnableDeviceExtension(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    const bool push_fragment_density_offset_support = CanEnableDeviceExtension(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
 
@@ -9630,13 +9632,19 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02252");
             }
-            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-02559");
+
+            if (!push_fragment_density_offset_support) {
+                CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06514");
+            }
 
             image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
             if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02253");
             }
-            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-02560");
+
+            if (!push_fragment_density_offset_support) {
+                CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06515");
+            }
         }
     }
 }
