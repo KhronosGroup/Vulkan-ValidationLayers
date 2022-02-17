@@ -10212,8 +10212,6 @@ bool StatelessValidation::PreCallValidateGetDeviceImageMemoryRequirements(
 
             skip |= validate_ranged_enum("vkGetDeviceImageMemoryRequirements", "pInfo->pCreateInfo->initialLayout", "VkImageLayout", AllVkImageLayoutEnums, pInfo->pCreateInfo->initialLayout, "VUID-VkImageCreateInfo-initialLayout-parameter");
         }
-
-        skip |= validate_flags("vkGetDeviceImageMemoryRequirements", "pInfo->planeAspect", "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pInfo->planeAspect, kRequiredSingleBit, "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter", "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter");
     }
     skip |= validate_struct_type("vkGetDeviceImageMemoryRequirements", "pMemoryRequirements", "VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2", pMemoryRequirements, VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, true, "VUID-vkGetDeviceImageMemoryRequirements-pMemoryRequirements-parameter", "VUID-VkMemoryRequirements2-sType-sType");
     if (pMemoryRequirements != NULL)
@@ -10222,6 +10220,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageMemoryRequirements(
 
         skip |= validate_struct_pnext("vkGetDeviceImageMemoryRequirements", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique", false, false);
     }
+    if (!skip) skip |= manual_PreCallValidateGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
     return skip;
 }
 
@@ -10262,8 +10261,6 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSparseMemoryRequirements(
 
             skip |= validate_ranged_enum("vkGetDeviceImageSparseMemoryRequirements", "pInfo->pCreateInfo->initialLayout", "VkImageLayout", AllVkImageLayoutEnums, pInfo->pCreateInfo->initialLayout, "VUID-VkImageCreateInfo-initialLayout-parameter");
         }
-
-        skip |= validate_flags("vkGetDeviceImageSparseMemoryRequirements", "pInfo->planeAspect", "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pInfo->planeAspect, kRequiredSingleBit, "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter", "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter");
     }
     skip |= validate_struct_type_array("vkGetDeviceImageSparseMemoryRequirements", "pSparseMemoryRequirementCount", "pSparseMemoryRequirements", "VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2", pSparseMemoryRequirementCount, pSparseMemoryRequirements, VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2, true, false, false, "VUID-VkSparseImageMemoryRequirements2-sType-sType", "VUID-vkGetDeviceImageSparseMemoryRequirements-pSparseMemoryRequirements-parameter", kVUIDUndefined);
     if (pSparseMemoryRequirements != NULL)
@@ -10273,6 +10270,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSparseMemoryRequirements(
             skip |= validate_struct_pnext("vkGetDeviceImageSparseMemoryRequirements", ParameterName("pSparseMemoryRequirements[%i].pNext", ParameterName::IndexVector{ pSparseMemoryRequirementIndex }), NULL, pSparseMemoryRequirements[pSparseMemoryRequirementIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSparseImageMemoryRequirements2-pNext-pNext", kVUIDUndefined, false, false);
         }
     }
+    if (!skip) skip |= manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
     return skip;
 }
 
@@ -14228,8 +14226,6 @@ bool StatelessValidation::PreCallValidateGetDeviceImageMemoryRequirementsKHR(
 
             skip |= validate_ranged_enum("vkGetDeviceImageMemoryRequirementsKHR", "pInfo->pCreateInfo->initialLayout", "VkImageLayout", AllVkImageLayoutEnums, pInfo->pCreateInfo->initialLayout, "VUID-VkImageCreateInfo-initialLayout-parameter");
         }
-
-        skip |= validate_flags("vkGetDeviceImageMemoryRequirementsKHR", "pInfo->planeAspect", "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pInfo->planeAspect, kRequiredSingleBit, "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter", "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter");
     }
     skip |= validate_struct_type("vkGetDeviceImageMemoryRequirementsKHR", "pMemoryRequirements", "VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2", pMemoryRequirements, VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, true, "VUID-vkGetDeviceImageMemoryRequirements-pMemoryRequirements-parameter", "VUID-VkMemoryRequirements2-sType-sType");
     if (pMemoryRequirements != NULL)
@@ -14238,6 +14234,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageMemoryRequirementsKHR(
 
         skip |= validate_struct_pnext("vkGetDeviceImageMemoryRequirementsKHR", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique", false, false);
     }
+    if (!skip) skip |= manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
     return skip;
 }
 
@@ -14279,8 +14276,6 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSparseMemoryRequirementsK
 
             skip |= validate_ranged_enum("vkGetDeviceImageSparseMemoryRequirementsKHR", "pInfo->pCreateInfo->initialLayout", "VkImageLayout", AllVkImageLayoutEnums, pInfo->pCreateInfo->initialLayout, "VUID-VkImageCreateInfo-initialLayout-parameter");
         }
-
-        skip |= validate_flags("vkGetDeviceImageSparseMemoryRequirementsKHR", "pInfo->planeAspect", "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pInfo->planeAspect, kRequiredSingleBit, "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter", "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter");
     }
     skip |= validate_struct_type_array("vkGetDeviceImageSparseMemoryRequirementsKHR", "pSparseMemoryRequirementCount", "pSparseMemoryRequirements", "VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2", pSparseMemoryRequirementCount, pSparseMemoryRequirements, VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2, true, false, false, "VUID-VkSparseImageMemoryRequirements2-sType-sType", "VUID-vkGetDeviceImageSparseMemoryRequirements-pSparseMemoryRequirements-parameter", kVUIDUndefined);
     if (pSparseMemoryRequirements != NULL)
@@ -14290,6 +14285,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSparseMemoryRequirementsK
             skip |= validate_struct_pnext("vkGetDeviceImageSparseMemoryRequirementsKHR", ParameterName("pSparseMemoryRequirements[%i].pNext", ParameterName::IndexVector{ pSparseMemoryRequirementIndex }), NULL, pSparseMemoryRequirements[pSparseMemoryRequirementIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSparseImageMemoryRequirements2-pNext-pNext", kVUIDUndefined, false, false);
         }
     }
+    if (!skip) skip |= manual_PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
     return skip;
 }
 
