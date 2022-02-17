@@ -1748,14 +1748,13 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             "vkCreateImage(): images using sparse memory cannot have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set");
     }
 
-    if (IsExtEnabled(device_extensions.vk_ext_fragment_density_map) ||
-        IsExtEnabled(device_extensions.vk_ext_fragment_density_map2)) {
+    if (!enabled_features.fragment_density_map_offset_features.fragmentDensityMapOffset) {
         uint32_t ceiling_width = static_cast<uint32_t>(ceil(
             static_cast<float>(device_limits->maxFramebufferWidth) /
             std::max(static_cast<float>(phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width), 1.0f)));
         if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.width > ceiling_width)) {
             skip |=
-                LogError(device, "VUID-VkImageCreateInfo-usage-02559",
+                LogError(device, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06514",
                          "vkCreateImage(): Image usage flags include a fragment density map bit and image width (%u) exceeds the "
                          "ceiling of device "
                          "maxFramebufferWidth (%u) / minFragmentDensityTexelSize.width (%u). The ceiling value: %u",
@@ -1768,7 +1767,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             std::max(static_cast<float>(phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height), 1.0f)));
         if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.height > ceiling_height)) {
             skip |=
-                LogError(device, "VUID-VkImageCreateInfo-usage-02560",
+                LogError(device, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06515",
                          "vkCreateImage(): Image usage flags include a fragment density map bit and image height (%u) exceeds the "
                          "ceiling of device "
                          "maxFramebufferHeight (%u) / minFragmentDensityTexelSize.height (%u). The ceiling value: %u",
