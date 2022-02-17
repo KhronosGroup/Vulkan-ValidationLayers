@@ -2885,6 +2885,382 @@ TEST_F(VkLayerTest, RenderPassEndBeforeFinalSubpass) {
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
+TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
+    TEST_DESCRIPTION("Ensure RenderPass end meets the requirements for VK_QCOM_fragment_density_map_offset");
+
+    // enable extension
+    AddRequiredExtensions(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix,
+               VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    m_errorMonitor->ExpectSuccess();
+
+    PFN_vkCmdEndRenderPass2KHR vkCmdEndRenderPass2KHR = nullptr;
+    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
+
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+
+    if (rp2Supported) {
+        vkCmdEndRenderPass2KHR =
+            reinterpret_cast<PFN_vkCmdEndRenderPass2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndRenderPass2KHR"));
+        vkCreateRenderPass2KHR =
+            reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR"));
+    }
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    if (ds_format == VK_FORMAT_UNDEFINED) {
+        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    std::vector<VkAttachmentDescription2> attachments = {
+        // FDM attachments
+        {VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2, nullptr, 0, VK_FORMAT_R8G8_UNORM, VK_SAMPLE_COUNT_1_BIT,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+         VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT},
+        // input attachments
+        {VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2, nullptr, 0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+         VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
+        // color attachments
+        {VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2, nullptr, 0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+         VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2, nullptr, 0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+         VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        // depth attachment
+        {VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2, nullptr, 0, ds_format, VK_SAMPLE_COUNT_4_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+         VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL},
+        // resolve attachment
+        {VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2, nullptr, 0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+         VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        // preserve attachments
+        {VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2, nullptr, 0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+         VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+
+    std::vector<VkAttachmentReference2> fdm = {
+        {VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, nullptr, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT},
+    };
+
+    std::vector<VkAttachmentReference2> input = {
+        {VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, nullptr, 1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT},
+    };
+
+    std::vector<VkAttachmentReference2> color = {
+        {VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, nullptr, 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT},
+        {VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, nullptr, 3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT},
+    };
+    VkAttachmentReference2 depth = {VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, nullptr, 4,
+                                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT};
+    std::vector<VkAttachmentReference2> resolve = {
+        {VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, nullptr, 5, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT},
+        {VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, nullptr, VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0},
+    };
+    std::vector<uint32_t> preserve = {6};
+
+    VkSubpassDescription2 subpass = {VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2,
+                                     nullptr,
+                                     0,
+                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                     0,
+                                     (uint32_t)input.size(),
+                                     input.data(),
+                                     (uint32_t)color.size(),
+                                     color.data(),
+                                     resolve.data(),
+                                     &depth,
+                                     (uint32_t)preserve.size(),
+                                     preserve.data()};
+
+    // Create a renderPass with a single color attachment for fragment density map
+    auto fragment_density_map_create_info = LvlInitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>();
+    fragment_density_map_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT;
+    fragment_density_map_create_info.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo2 rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2,
+                                    &fragment_density_map_create_info,
+                                    0,
+                                    (uint32_t)attachments.size(),
+                                    attachments.data(),
+                                    1,
+                                    &subpass,
+                                    0,
+                                    nullptr,
+                                    0,
+                                    nullptr};
+
+    // Create rp2[0] without Multiview (zero viewMask), rp2[1] with Multiview
+    VkRenderPass rp2[2];
+    VkResult err = vkCreateRenderPass2KHR(m_device->device(), &rpci, nullptr, &rp2[0]);
+    ASSERT_VK_SUCCESS(err);
+
+    subpass.viewMask = 0x3u;
+    err = vkCreateRenderPass2KHR(m_device->device(), &rpci, nullptr, &rp2[1]);
+    ASSERT_VK_SUCCESS(err);
+
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8_UNORM;
+    image_create_info.extent.width = 16;
+    image_create_info.extent.height = 16;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 3;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+    image_create_info.flags = 0;
+
+    VkImageObj fdm_image(m_device);
+    fdm_image.init(&image_create_info);
+    ASSERT_TRUE(fdm_image.initialized());
+
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
+
+    VkImageObj input_image(m_device);
+    input_image.init(&image_create_info);
+    ASSERT_TRUE(input_image.initialized());
+
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkImageObj color_image1(m_device);
+    color_image1.init(&image_create_info);
+    ASSERT_TRUE(color_image1.initialized());
+
+    VkImageObj color_image2(m_device);
+    color_image2.init(&image_create_info);
+    ASSERT_TRUE(color_image2.initialized());
+
+    image_create_info.format = ds_format;
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    VkImageObj depth_image(m_device);
+    depth_image.init(&image_create_info);
+    ASSERT_TRUE(depth_image.initialized());
+
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkImageObj resolve_image(m_device);
+    resolve_image.init(&image_create_info);
+    ASSERT_TRUE(resolve_image.initialized());
+
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
+    VkImageObj preserve_image(m_device);
+    preserve_image.init(&image_create_info);
+    ASSERT_TRUE(preserve_image.initialized());
+
+    // Create view attachment
+    VkImageView iv[7];
+    vk_testing::ImageView iv0;
+    auto ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ivci.image = fdm_image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    ivci.format = VK_FORMAT_R8G8_UNORM;
+    ivci.flags = 0;
+    ivci.subresourceRange.layerCount = 3;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    iv0.init(*m_device, ivci);
+    ASSERT_TRUE(iv0.initialized());
+    iv[0] = iv0.handle();
+
+    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.image = input_image.handle();
+    vk_testing::ImageView iv1;
+    iv1.init(*m_device, ivci);
+    ASSERT_TRUE(iv1.initialized());
+    iv[1] = iv1.handle();
+
+    ivci.image = color_image1.handle();
+    vk_testing::ImageView iv2;
+    iv2.init(*m_device, ivci);
+    ASSERT_TRUE(iv2.initialized());
+    iv[2] = iv2.handle();
+
+    ivci.image = color_image2.handle();
+    vk_testing::ImageView iv3;
+    iv3.init(*m_device, ivci);
+    ASSERT_TRUE(iv3.initialized());
+    iv[3] = iv3.handle();
+
+    ivci.format = ds_format;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    ivci.image = depth_image.handle();
+    vk_testing::ImageView iv4;
+    iv4.init(*m_device, ivci);
+    ASSERT_TRUE(iv4.initialized());
+    iv[4] = iv4.handle();
+
+    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.image = resolve_image.handle();
+    vk_testing::ImageView iv5;
+    iv5.init(*m_device, ivci);
+    ASSERT_TRUE(iv5.initialized());
+    iv[5] = iv5.handle();
+
+    ivci.image = preserve_image.handle();
+    vk_testing::ImageView iv6;
+    iv6.init(*m_device, ivci);
+    ASSERT_TRUE(iv6.initialized());
+    iv[6] = iv6.handle();
+    ASSERT_VK_SUCCESS(err);
+
+    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fbci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    fbci.pNext = nullptr;
+    fbci.flags = 0;
+    fbci.width = 16;
+    fbci.height = 16;
+    fbci.layers = 1;
+    fbci.renderPass = rp2[0];
+    fbci.attachmentCount = 7;
+    fbci.pAttachments = iv;
+
+    vk_testing::Framebuffer fb1(*m_device, fbci);
+
+    fbci.renderPass = rp2[1];
+    vk_testing::Framebuffer fb2(*m_device, fbci);
+    m_errorMonitor->VerifyNotFound();
+
+    // define renderpass begin info
+    VkRenderPassBeginInfo rpbi1 = {
+        VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp2[0], fb1.handle(), {{0, 0}, {16, 16}}, 0, nullptr};
+    VkRenderPassBeginInfo rpbi2 = {
+        VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp2[1], fb2.handle(), {{0, 0}, {16, 16}}, 0, nullptr};
+
+    if (rp2Supported) {
+        auto offsetting = LvlInitStruct<VkSubpassFragmentDensityMapOffsetEndInfoQCOM>();
+        auto subpassEndInfo = LvlInitStruct<VkSubpassEndInfoKHR>();
+        VkOffset2D m_vOffsets[2];
+        subpassEndInfo.sType = VK_STRUCTURE_TYPE_SUBPASS_END_INFO;
+        subpassEndInfo.pNext = &offsetting;
+        offsetting.sType = VK_STRUCTURE_TYPE_SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM;
+        offsetting.pFragmentDensityOffsets = m_vOffsets;
+        offsetting.fragmentDensityOffsetCount = 2;
+
+        PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+            (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+        ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+        VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM fdm_offset_properties =
+            LvlInitStruct<VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM>();
+        VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&fdm_offset_properties);
+        vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+        m_vOffsets[0].x = 1;
+        m_vOffsets[0].y = 1;
+
+        m_vOffsets[1].x = 1;
+        m_vOffsets[1].y = 1;
+
+        m_commandBuffer->reset();
+        m_commandBuffer->begin();
+
+        // begin renderpass that uses rbpi1 renderpass begin info
+        vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi1, VK_SUBPASS_CONTENTS_INLINE);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityMapOffsets-06503");
+
+        if (fdm_offset_properties.fragmentDensityOffsetGranularity.width > 1) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-x-06512");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-x-06512");
+        }
+
+        if (fdm_offset_properties.fragmentDensityOffsetGranularity.height > 1) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-y-06513");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-y-06513");
+        }
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(
+            kErrorBit, "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityMapAttachment-06504");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pInputAttachments-06506");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pColorAttachments-06507");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pColorAttachments-06507");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pDepthStencilAttachment-06505");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pResolveAttachments-06508");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pPreserveAttachments-06509");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06511");
+        vkCmdEndRenderPass2KHR(m_commandBuffer->handle(), &subpassEndInfo);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->reset();
+        m_commandBuffer->begin();
+
+        // begin renderpass that uses rbpi2 renderpass begin info
+        vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi2, VK_SUBPASS_CONTENTS_INLINE);
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-x-06512");
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-x-06512");
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-y-06513");
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-y-06513");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-06502");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityMapOffsets-06503");
+        m_errorMonitor->SetDesiredFailureMsg(
+            kErrorBit, "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityMapAttachment-06504");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pInputAttachments-06506");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pColorAttachments-06507");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pColorAttachments-06507");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pDepthStencilAttachment-06505");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pResolveAttachments-06508");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pPreserveAttachments-06509");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06510");
+        vkCmdEndRenderPass2KHR(m_commandBuffer->handle(), &subpassEndInfo);
+        m_errorMonitor->VerifyFound();
+    }
+
+    vk::DestroyRenderPass(m_device->device(), rp2[0], nullptr);
+    vk::DestroyRenderPass(m_device->device(), rp2[1], nullptr);
+}
+
 TEST_F(VkLayerTest, RenderPassDestroyWhileInUse) {
     TEST_DESCRIPTION("Delete in-use renderPass.");
 
