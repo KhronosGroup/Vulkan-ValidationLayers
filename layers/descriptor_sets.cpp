@@ -1715,7 +1715,7 @@ bool CoreChecks::ValidateAccelerationDescriptor(const char *caller, const DrawDi
                                 report_data->FormatHandle(acc).c_str());
             }
         } else {
-            for (const auto &item: acc_node->GetBoundMemory()) {
+            for (const auto &item: acc_node->buffer_state->GetBoundMemory()) {
                 auto &mem_binding = item.second;
                 if (mem_binding.mem_state->Destroyed()) {
                     auto set = descriptor_set->GetSet();

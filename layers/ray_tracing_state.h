@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,28 +27,19 @@
  */
 #pragma once
 #include "device_memory_state.h"
+#include "buffer_state.h"
+#include "layer_chassis_dispatch.h"
 
 class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
   public:
-    safe_VkAccelerationStructureCreateInfoNV create_infoNV = {};
-    safe_VkAccelerationStructureInfoNV build_info;
-    bool memory_requirements_checked = false;
-    VkMemoryRequirements2 memory_requirements;
-    bool build_scratch_memory_requirements_checked = false;
-    VkMemoryRequirements2 build_scratch_memory_requirements;
-    bool update_scratch_memory_requirements_checked = false;
-    VkMemoryRequirements2 update_scratch_memory_requirements;
-    bool built = false;
-    uint64_t opaque_handle = 0;
-    const VkAllocationCallbacks *allocator = NULL;
-    ACCELERATION_STRUCTURE_STATE(VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
+    ACCELERATION_STRUCTURE_STATE(VkDevice device, VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
         : BINDABLE(as, kVulkanObjectTypeAccelerationStructureNV, false, false, 0),
           create_infoNV(ci),
-          memory_requirements{},
-          build_scratch_memory_requirements_checked{},
-          build_scratch_memory_requirements{},
-          update_scratch_memory_requirements_checked{},
-          update_scratch_memory_requirements{} {}
+          memory_requirements(GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV)),
+          build_scratch_memory_requirements(
+              GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV)),
+          update_scratch_memory_requirements(
+              GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV)) {}
     ACCELERATION_STRUCTURE_STATE(const ACCELERATION_STRUCTURE_STATE &rh_obj) = delete;
 
     VkAccelerationStructureNV acceleration_structure() const { return handle_.Cast<VkAccelerationStructureNV>(); }
@@ -57,37 +48,68 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
         built = true;
         build_info.initialize(pInfo);
     };
-};
 
-class ACCELERATION_STRUCTURE_STATE_KHR : public BINDABLE {
-  public:
-    safe_VkAccelerationStructureCreateInfoKHR create_infoKHR = {};
-    safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr;
+    const safe_VkAccelerationStructureCreateInfoNV create_infoNV = {};
+    safe_VkAccelerationStructureInfoNV build_info;
     bool memory_requirements_checked = false;
-    VkMemoryRequirements2 memory_requirements;
+    const VkMemoryRequirements memory_requirements;
     bool build_scratch_memory_requirements_checked = false;
-    VkMemoryRequirements2 build_scratch_memory_requirements;
+    const VkMemoryRequirements build_scratch_memory_requirements;
     bool update_scratch_memory_requirements_checked = false;
-    VkMemoryRequirements2 update_scratch_memory_requirements;
+    const VkMemoryRequirements update_scratch_memory_requirements;
     bool built = false;
     uint64_t opaque_handle = 0;
-    const VkAllocationCallbacks *allocator = NULL;
-    ACCELERATION_STRUCTURE_STATE_KHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci)
-        : BINDABLE(as, kVulkanObjectTypeAccelerationStructureKHR, false, false, 0),
-          create_infoKHR(ci),
-          memory_requirements{},
-          build_scratch_memory_requirements_checked{},
-          build_scratch_memory_requirements{},
-          update_scratch_memory_requirements_checked{},
-          update_scratch_memory_requirements{} {}
+
+  private:
+    static VkMemoryRequirements GetMemReqs(VkDevice device, VkAccelerationStructureNV as,
+                                           VkAccelerationStructureMemoryRequirementsTypeNV mem_type) {
+        auto req_info = LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
+        req_info.type = mem_type;
+        req_info.accelerationStructure = as;
+        auto requirements = LvlInitStruct<VkMemoryRequirements2>();
+        DispatchGetAccelerationStructureMemoryRequirementsNV(device, &req_info, &requirements);
+        return requirements.memoryRequirements;
+    }
+};
+
+class ACCELERATION_STRUCTURE_STATE_KHR : public BASE_NODE {
+  public:
+    ACCELERATION_STRUCTURE_STATE_KHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
+                                     std::shared_ptr<BUFFER_STATE> &&buf_state)
+        : BASE_NODE(as, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state) {}
     ACCELERATION_STRUCTURE_STATE_KHR(const ACCELERATION_STRUCTURE_STATE_KHR &rh_obj) = delete;
 
     VkAccelerationStructureKHR acceleration_structure() const { return handle_.Cast<VkAccelerationStructureKHR>(); }
+
+    void LinkChildNodes() override {
+        // Connect child node(s), which cannot safely be done in the constructor.
+        buffer_state->AddParent(this);
+    }
+
+    void Destroy() override {
+        if (buffer_state) {
+            buffer_state->RemoveParent(this);
+            buffer_state = nullptr;
+        }
+        BASE_NODE::Destroy();
+    }
+
+    virtual ~ACCELERATION_STRUCTURE_STATE_KHR() {
+        if (!Destroyed()) {
+            Destroy();
+        }
+    }
 
     void Build(const VkAccelerationStructureBuildGeometryInfoKHR *pInfo) {
         built = true;
         build_info_khr.initialize(pInfo);
     };
+
+    const safe_VkAccelerationStructureCreateInfoKHR create_infoKHR = {};
+    safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr;
+    bool built = false;
+    uint64_t opaque_handle = 0;
+    std::shared_ptr<BUFFER_STATE> buffer_state;
 };
 
 // Safe struct that spans NV and KHR VkRayTracingPipelineCreateInfo structures.
