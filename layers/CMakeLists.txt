@@ -309,12 +309,7 @@ if(BUILD_LAYERS)
     if (USE_ROBIN_HOOD_HASHING)
         target_include_directories(VkLayer_khronos_validation PRIVATE ${ROBIN_HOOD_HASHING_INCLUDE_DIR})
     endif()
-    if (SPIRV_HEADERS_INCLUDE_DIR STREQUAL "")
-        target_link_libraries(VkLayer_khronos_validation PRIVATE SPIRV-Headers::SPIRV-Headers)
-    else()
-        target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
-    endif()
-
+    target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
     target_link_libraries(VkLayer_khronos_validation PRIVATE SPIRV-Tools-static SPIRV-Tools-opt)
 
 
