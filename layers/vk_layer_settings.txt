@@ -1,162 +1,102 @@
-################################################################################
+# The settings in this file can be used to configure the behavior of
+# layers in this repository.
 #
-#  This file contains per-layer settings that configure layer behavior at
-#  execution time. Comments in this file are denoted with the "#" char.
-#  Settings lines are of the form:
-#      "<LayerIdentifier>.<SettingName> = <SettingValue>"
-#
-#  <LayerIdentifier> is typically the official layer name, minus the VK_LAYER
-#  prefix and all lower-camel-case -- i.e., for VK_LAYER_KHRONOS_validation,
-#  the layer identifier is 'khronos_validation'.
-#
-################################################################################
-################################################################################
-# Validation Layer Common Settings:
-# =================================
-#
-#   DEBUG_ACTION:
-#   =============
-#   <LayerIdentifier>.debug_action : This is a comma-delited list of options
-#    indicating what actions are to be taken when a layer wants to report
-#    information.
-#    Possible settings values are defined in the vk_layer.h header file.
-#    These settings are:
-#    VK_DBG_LAYER_ACTION_IGNORE - Take no action -- has no effect if specified with
-#       other options.
-#    VK_DBG_LAYER_ACTION_LOG_MSG - Log a txt message to stdout or to a log filename
-#       specified via the <LayerIdentifier>.log_filename setting (see below).
-#    VK_DBG_LAYER_ACTION_CALLBACK - Call user defined callback function(s) that
-#       have been registered via the VK_EXT_debug_report extension. Since
-#       app must register callback, this is a NOOP for the settings file.
-#    VK_DBG_LAYER_ACTION_DEBUG_OUTPUT [Windows only] - Log a txt message using the
-#       Windows OutputDebugString function -- messages will show up in the
-#       Visual Studio output window, for instance.
-#    VK_DBG_LAYER_ACTION_BREAK - Trigger a breakpoint if a debugger is in use.
-#
-#   REPORT_FLAGS:
-#   =============
-#   <LayerIdentifier>.report_flags : This is a comma-delineated list of options
-#    telling the layer what types of messages it should report back.
-#    Options are:
-#    info - Report informational messages.
-#    warn - Report warnings from using the API in a manner which may lead to
-#           undefined behavior or to warn the user of common trouble spots.
-#           A warning does NOT necessarily signify illegal application behavior.
-#    perf - Report using the API in a way that may cause suboptimal performance.
-#    error - Report errors in API usage.
-#    debug - For layer development. Report messages for debugging layer
-#            behavior.
-#
-#   MESSAGE_ID_FILTER:
-#   ==================
-#   <LayerIdentifier>.message_id_filter: This is a comma-delineated list of VUIDs
-#    or VUID identifers which are to be IGNORED by the layers. These can be in
-#    any combination of the normal VUID string form,
-#        "VUID-vkCmdPipelineBarrier-image-02635",
-#    or the hexadecimal or decimal representation of the VUID id returned from
-#    a validation message, for example:
-#        0xdf3391a2 or 3744698786.
-#
-#   DUPLICATE_MESSAGE_LIMIT:
-#   =======================
-#   <LayerIdentifier>.duplicate_message_limit: This is an unsigned integer
-#    which signifies the limit for the number of times any validation
-#    message can be output by the layers. Any non-zero value will be respected,
-#    and the default is no limit.
-#
-#   LOG_FILENAME:
-#   =============
-#   <LayerIdentifier>.log_filename : output filename. Can be relative to
-#      location of vk_layer_settings.txt file, or an absolute path. If no
-#      filename is specified or if filename has invalid path, then stdout
-#      is used by default.
-#
-#   DISABLES:
-#   =========
-#   <LayerIdentifier>.disables : comma separated list of feature/flag/disable enums
-#      These can include VkValidationFeatureDisableEXT flags defined in the Vulkan
-#      specification, or ValidationCheckDisables enums defined in chassis.h.
-#      Effects of setting these flags are described in the specification (or the
-#      source code in the case of the ValidationCheckDisables). The most useful
-#      flags are briefly described here:
-#      VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT - disables handle wrapping.
-#          Disable this feature if you are running into crashes when authoring new extensions
-#          or developing new Vulkan objects/structures
-#      VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT - disables thread checks. It may
-#          help with performance to run with thread-checking disabled most of the time,
-#          enabling it occasionally for a quick sanity check, or when debugging difficult
-#          application behaviors.
-#      VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT - disables the main, heavy-duty
-#          validation checks. This may be valuable early in the development cycle to
-#          reduce validation output while correcting paramter/object usage errors.
-#      VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT - disables stateless parameter
-#          checks. This may not always be necessary late in a development cycle.
-#      VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT - disables object tracking.
-#          This may not always be necessary late in a development cycle.
-#
-#   ENABLES:
-#   ========
-#   <LayerIdentifier>.enables : comma separated list of feature enable enums
-#      These can include VkValidationFeatureEnableEXT flags defined in the Vulkan
-#      specification, where their effects are described.  The most useful
-#      flags are briefly described here:
-#      VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT - enables intrusive GPU-assisted
-#      shader validation in khronos validation layers
-#      VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT - enables best practices warning
-#      validation
-#      VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT - enables processing of
-#      debug printf instructions in shaders and sending debug strings to the debug callback
-#      VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT - enables checks to
-#      identify resource access conflicts due to missing or incorrect synchronization
-#
-#   CUSTOM_STYPE_LIST:
-#   ==================
-#   <LayerIdentifier>.custom_stype_list: This is a comma-delimited list of uin32_t
-#    value-pairs describing custom structure types. Unrecognized structures encountered
-#    in wrapped pNext chains are typically removed. Specifying the sType value and size
-#    in bytes in this list will allow the layers to properly preserve the containing
-#    pNext chain. Multiple structs can be specified.  For instance, in the following
-#    example, two custom structs are declared, the first in decimal and the second in
-#    hexadecimal:
-#        khronos_validation.custom_stype_list=1100297000,32,0x478b1428,0x20
+# Note that this file is not regulary updated, so not all possible layer
+# settings may be listed, and some layer settings may even be obsolete.
 
-# VK_LAYER_KHRONOS_validation Settings
+# VK_LAYER_KHRONOS_validation
 
+# Debug Action
+# =====================
+# <LayerIdentifier>.debug_action
+# Specifies what action is to be taken when a layer reports information
 khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
-khronos_validation.report_flags = error,warn,perf
+
+# Log Filename
+# =====================
+# <LayerIdentifier>.log_filename
+# Specifies the output filename
 khronos_validation.log_filename = stdout
 
-# Example entry showing how to filter specific VUIDs from layer output
-#khronos_validation.message_id_filter = 3744698786,0xdf3391a2,"VUID-vkCmdPipelineBarrier-image-02635"
+# Message Severity
+# =====================
+# <LayerIdentifier>.report_flags
+# Comma-delineated list of options specifying the types of messages to be
+# reported
+khronos_validation.report_flags = error,warn,perf
 
-# Example entry showing how to declare custom non-Vulkan structure types
-#khronos_validation.custom_stype_list=1100297000,32,0x478b1428,0x20
+# Limit Duplicated Messages
+# =====================
+# <LayerIdentifier>.enable_message_limit
+# Enable limiting of duplicate messages.
+khronos_validation.enable_message_limit = true
 
-# Example entry showing how to limit the number of repeated validation messages
-#khronos_validation.duplicate_message_limit = 25
+# Max Duplicated Messages
+# =====================
+# <LayerIdentifier>.duplicate_message_limit
+# Maximum number of times any single validation message should be reported.
+khronos_validation.duplicate_message_limit = 10
 
-# Example entry showing how to disable threading checks and validation at DestroyPipeline time
-#khronos_validation.disables = VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE
+# Mute Message VUIDs
+# =====================
+# <LayerIdentifier>.message_id_filter
+# List of VUIDs and VUID identifers which are to be IGNORED by the validation
+# layer
+khronos_validation.message_id_filter = 
 
-# Example entry showing how to Enable GPU-Assisted Validation
-#khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT
-# Example entry showing how to disable buffer out of bounds checking
-#khronos_validation.gpuav_buffer_oob = false
-# Example entry showing how to disable descriptor indexing access checking
-#khronos_validation.gpuav_descriptor_indexing = false
+# Disables
+# =====================
+# <LayerIdentifier>.disables
+# Specify areas of validation to be disabled
+khronos_validation.disables = VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT
 
-# Example entry showing how to Enable Best Practices Validation
-#khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT
+# Enables
+# =====================
+# <LayerIdentifier>.enables
+# Setting an option here will enable specialized areas of validation
+khronos_validation.enables = 
 
-# Example entry showing how to enable Debug Printf messages
-#khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
-# Example showing how to set the size in bytes of the buffer used by debug printf (default 1024 bytes)
-#khronos_validation.printf_buffer_size = 1024
-# Example of how to set the verbosity of debug printf messages (default not verbose)
-#khronos_validation.printf_verbose = false
-# Example of how to redirect debug printf messages from the debug callback to stdout
+# Redirect Printf messages to stdout
+# =====================
+# <LayerIdentifier>.printf_to_stdout
+# Enable redirection of Debug Printf messages from the debug callback to stdout
 #khronos_validation.printf_to_stdout = true
 
-# Example of how to enable fine grained locking
-#khronos_validation.fine_grained_locking = true
-################################################################################
+# Printf verbose
+# =====================
+# <LayerIdentifier>.printf_verbose
+# Set the verbosity of debug printf messages
+#khronos_validation.printf_verbose = false
+
+# Printf buffer size
+# =====================
+# <LayerIdentifier>.printf_buffer_size
+# Set the size in bytes of the buffer used by debug printf
+#khronos_validation.printf_buffer_size = 1024
+
+# Check descriptor indexing accesses
+# =====================
+# <LayerIdentifier>.gpuav_descriptor_indexing
+# Enable descriptor indexing access checking
+#khronos_validation.gpuav_descriptor_indexing = true
+
+# Check Out of Bounds 
+# =====================
+# <LayerIdentifier>.gpuav_buffer_oob
+# Enable buffer out of bounds checking
+#khronos_validation.gpuav_buffer_oob = true
+
+# Check Draw Indirect Count Buffers and firstInstance values
+# =====================
+# <LayerIdentifier>.validate_draw_indirect
+# Enable draw indirect checking
+#khronos_validation.validate_draw_indirect = true
+
+# Fine Grained Locking
+# =====================
+# <LayerIdentifier>.fine_grained_locking
+# Enable fine grained locking for Core Validation, which should improve
+# performance in multithreaded applications. This is an experimental feature
+# which may cause stability problems or incorrect errors to be reported.
+khronos_validation.fine_grained_locking = false
+
