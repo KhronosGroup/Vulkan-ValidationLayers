@@ -8286,3 +8286,39 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentM
     return skip;
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+// VkDeviceImageMemoryRequirements::planeAspect should have been listed as optional to account for VK_IMAGE_ASPECT_NONE
+bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(
+    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, VkMemoryRequirements2 *pMemoryRequirements) const {
+    return validate_flags("vkGetDeviceImageMemoryRequirementsKHR", "pInfo->planeAspect", "VkImageAspectFlagBits",
+                          AllVkImageAspectFlagBits, pInfo->planeAspect, kOptionalSingleBit,
+                          "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter",
+                          "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter");
+}
+
+bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device,
+                                                                                 const VkDeviceImageMemoryRequirements *pInfo,
+                                                                                 VkMemoryRequirements2 *pMemoryRequirements) const {
+    return validate_flags("vkGetDeviceImageMemoryRequirements", "pInfo->planeAspect", "VkImageAspectFlagBits",
+                          AllVkImageAspectFlagBits, pInfo->planeAspect, kOptionalSingleBit,
+                          "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter",
+                          "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter");
+}
+
+bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
+    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) const {
+    return validate_flags("vkGetDeviceImageSparseMemoryRequirementsKHR", "pInfo->planeAspect", "VkImageAspectFlagBits",
+                          AllVkImageAspectFlagBits, pInfo->planeAspect, kOptionalSingleBit,
+                          "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter",
+                          "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter");
+}
+
+bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
+    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) const {
+    return validate_flags("vkGetDeviceImageSparseMemoryRequirements", "pInfo->planeAspect", "VkImageAspectFlagBits",
+                          AllVkImageAspectFlagBits, pInfo->planeAspect, kOptionalSingleBit,
+                          "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter",
+                          "VUID-VkDeviceImageMemoryRequirements-planeAspect-parameter");
+}

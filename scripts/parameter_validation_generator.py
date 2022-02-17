@@ -275,6 +275,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkGetPhysicalDeviceSurfaceCapabilities2KHR',
             'vkGetPhysicalDeviceSurfaceFormats2KHR',
             'vkGetPhysicalDeviceSurfacePresentModes2EXT',
+            'vkGetDeviceImageMemoryRequirementsKHR',
+            'vkGetDeviceImageMemoryRequirements',
+            'vkGetDeviceImageSparseMemoryRequirementsKHR',
+            'vkGetDeviceImageSparseMemoryRequirements',
             ]
 
         # Commands to ignore
@@ -290,7 +294,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             ]
 
         # Structure fields to ignore
-        self.structMemberBlacklist = { 'VkWriteDescriptorSet' : ['dstSet'], 'VkAccelerationStructureGeometryKHR' :['geometry'] }
+        self.structMemberBlacklist = { 'VkWriteDescriptorSet' : ['dstSet'], 'VkAccelerationStructureGeometryKHR' :['geometry'], 'VkDeviceImageMemoryRequirements' :['planeAspect'] }
         # Validation conditions for some special case struct members that are conditionally validated
         self.structMemberValidationConditions = { 'VkPipelineColorBlendStateCreateInfo' : { 'logicOp' : '{}logicOpEnable == VK_TRUE' } }
         # Header version
