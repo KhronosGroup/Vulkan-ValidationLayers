@@ -646,9 +646,16 @@ void CMD_BUFFER_STATE::BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBegi
     activeSubpass = 0;
     activeSubpassContents = contents;
 
-    // Connect this RP to cmdBuffer
-    if (!dev_data->disabled[command_buffer_state] && activeRenderPass) {
-        AddChild(activeRenderPass);
+    if (activeRenderPass) {
+        // Connect this RP to cmdBuffer
+        if (!dev_data->disabled[command_buffer_state]) {
+            AddChild(activeRenderPass);
+        }
+
+        // Spec states that after BeginRenderPass all resources should be rebound
+        if (activeRenderPass->has_multiview_enabled) {
+            UnbindResources();
+        }
     }
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
@@ -684,12 +691,19 @@ void CMD_BUFFER_STATE::NextSubpass(CMD_TYPE cmd_type, VkSubpassContents contents
     activeSubpassContents = contents;
 
     // Update cb_state->active_subpasses
-    if (activeRenderPass && activeFramebuffer) {
-        active_subpasses = nullptr;
-        active_subpasses = std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
+    if (activeRenderPass) {
+        if (activeFramebuffer) {
+            active_subpasses = nullptr;
+            active_subpasses = std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
 
-        const auto &subpass = activeRenderPass->createInfo.pSubpasses[activeSubpass];
-        UpdateSubpassAttachments(subpass, *active_subpasses);
+            const auto &subpass = activeRenderPass->createInfo.pSubpasses[activeSubpass];
+            UpdateSubpassAttachments(subpass, *active_subpasses);
+        }
+
+        // Spec states that after NextSubpass all resources should be rebound
+        if (activeRenderPass->has_multiview_enabled) {
+            UnbindResources();
+        }
     }
 }
 
@@ -1343,4 +1357,23 @@ void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass) {
             query_pool_state->SetQueryState(query_state_pair.first.query, query_state_pair.first.perf_pass, QUERYSTATE_AVAILABLE);
         }
     }
+}
+
+void CMD_BUFFER_STATE::UnbindResources() {
+    // Pipeline and descriptor sets
+    lastBound[BindPoint_Graphics].Reset();
+
+    // Vertex and index buffers
+    index_buffer_binding.reset();
+    vertex_buffer_used = false;
+    current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
+
+    // Push constants
+    push_constant_data.clear();
+    push_constant_data_ranges.reset();
+    push_constant_data_update.clear();
+    push_constant_pipeline_layout_set = VK_NULL_HANDLE;
+
+    // Dynamic state
+    dynamic_status = CBSTATUS_NONE;
 }
