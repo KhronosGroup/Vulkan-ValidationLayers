@@ -305,6 +305,18 @@ class VkRenderFramework : public VkTestFramework {
     // After instance and physical device creation (e.g., after InitFramework), returns true if all required extensions are
     // available, false otherwise
     bool AreRequestedExtensionsEnabled() const;
+    template <typename Container>
+    bool AreRequestedExtensionsEnabled(Container &ret) const {
+        ret.clear();
+        for (const auto &ext : m_requested_extensions) {
+            // `ext` may refer to an instance or device extension
+            if (!CanEnableDeviceExtension(ext) && !CanEnableInstanceExtension(ext)) {
+                ret.emplace_back(ext);
+            }
+        }
+        return ret.empty();
+    }
+
 
     // Add ext_name, the names of all instance extensions required by ext_name, and return true if ext_name is supported. If the
     // extension is not supported, no extension names are added for instance creation. `ext_name` can refer to a device or instance
@@ -322,6 +334,15 @@ class VkRenderFramework : public VkTestFramework {
     // InitFramework has been called.
     // `dev_ext_name` msut be an instance extension name; false is returned for all instance extension names.
     bool CanEnableDeviceExtension(const std::string &dev_ext_name) const;
+
+    template <typename GLSLContainer>
+    std::vector<uint32_t> GLSLToSPV(VkShaderStageFlagBits stage, const GLSLContainer &code, const char *entry_point = "main",
+                                    const VkSpecializationInfo *spec_info = nullptr, const spv_target_env env = SPV_ENV_VULKAN_1_0,
+                                    bool debug = false) {
+        std::vector<uint32_t> spv;
+        GLSLtoSPV(&m_device->props.limits, stage, code, spv, debug, env);
+        return spv;
+    }
 
   protected:
     VkRenderFramework();
@@ -745,7 +766,8 @@ class VkPipelineLayoutObj : public vk_testing::PipelineLayout {
   public:
     VkPipelineLayoutObj() = default;
     VkPipelineLayoutObj(VkDeviceObj *device, const std::vector<const VkDescriptorSetLayoutObj *> &descriptor_layouts = {},
-                        const std::vector<VkPushConstantRange> &push_constant_ranges = {});
+                        const std::vector<VkPushConstantRange> &push_constant_ranges = {},
+                        VkPipelineLayoutCreateFlags flags = static_cast<VkPipelineLayoutCreateFlags>(0));
 
     // Move constructor and move assignment operator for Visual Studio 2013
     VkPipelineLayoutObj(VkPipelineLayoutObj &&src) NOEXCEPT : PipelineLayout(std::move(src)) {}

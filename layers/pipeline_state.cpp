@@ -372,6 +372,20 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
     assert(active_shaders == VK_SHADER_STAGE_COMPUTE_BIT);
 }
 
+PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
+                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
+    : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
+      create_info(pCreateInfo),
+      stage_state(GetStageStates(*state_data, *this)),
+      active_slots(GetActiveSlots(stage_state)),
+      active_shaders(GetActiveShaders(stage_state)),
+      topology_at_rasterizer{},
+      merged_graphics_layout(std::move(layout)) {
+    assert(0 == (active_shaders &
+                 ~(VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
+                   VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)));
+}
+
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),

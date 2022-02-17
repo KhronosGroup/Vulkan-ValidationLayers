@@ -1744,6 +1744,111 @@ void CreatePipelineHelper::InitInfo() {
     InitPipelineCacheInfo();
 }
 
+void CreatePipelineHelper::InitVertexInputLibInfo(void *p_next) {
+    InitDescriptorSetInfo();
+    InitInputAndVertexInfo();
+    InitMultisampleInfo();
+    InitPipelineLayoutInfo();
+    InitViewportInfo();
+    InitDynamicStateInfo();
+    InitRasterizationInfo();
+    InitLineRasterizationInfo();
+    InitBlendStateInfo();
+
+    gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
+    gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT;
+
+    gp_ci_ = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&gpl_info);
+    gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    gp_ci_.pVertexInputState = &vi_ci_;
+    gp_ci_.pInputAssemblyState = &ia_ci_;
+
+    InitPipelineCacheInfo();
+}
+
+void CreatePipelineHelper::InitPreRasterLibInfo(uint32_t count, const VkPipelineShaderStageCreateInfo *info, void *p_next) {
+    InitDescriptorSetInfo();
+    InitInputAndVertexInfo();
+    InitMultisampleInfo();
+    InitPipelineLayoutInfo();
+    InitViewportInfo();
+    InitDynamicStateInfo();
+    InitRasterizationInfo();
+    InitLineRasterizationInfo();
+    InitBlendStateInfo();
+
+    gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
+    gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT;
+
+    gp_ci_ = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&gpl_info);
+    gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    gp_ci_.pViewportState = &vp_state_ci_;
+    gp_ci_.pRasterizationState = &rs_state_ci_;
+    gp_ci_.renderPass = layer_test_.renderPass();
+    gp_ci_.subpass = 0;
+    gp_ci_.stageCount = count;
+    gp_ci_.pStages = info;
+
+    InitPipelineCacheInfo();
+}
+
+void CreatePipelineHelper::InitFragmentLibInfo(uint32_t count, const VkPipelineShaderStageCreateInfo *info, void *p_next) {
+    InitDescriptorSetInfo();
+    InitInputAndVertexInfo();
+    InitMultisampleInfo();
+    InitPipelineLayoutInfo();
+    InitViewportInfo();
+    InitDynamicStateInfo();
+    InitRasterizationInfo();
+    InitLineRasterizationInfo();
+    InitBlendStateInfo();
+
+    gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
+    gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+
+    gp_ci_ = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&gpl_info);
+    gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    //  gp_ci_.pTessellationState = nullptr; // TODO
+    gp_ci_.pViewportState = &vp_state_ci_;
+    gp_ci_.pRasterizationState = &rs_state_ci_;
+
+    // TODO renderPass _can_ be null
+    gp_ci_.renderPass = layer_test_.renderPass();
+    gp_ci_.subpass = 0;
+
+    // TODO if renderPass is null, MS info is not needed
+    gp_ci_.pMultisampleState = &pipe_ms_state_ci_;
+
+    gp_ci_.stageCount = count;
+    gp_ci_.pStages = info;
+
+    InitPipelineCacheInfo();
+}
+
+void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
+    InitDescriptorSetInfo();
+    InitInputAndVertexInfo();
+    InitMultisampleInfo();
+    InitPipelineLayoutInfo();
+    InitViewportInfo();
+    InitDynamicStateInfo();
+    InitRasterizationInfo();
+    InitLineRasterizationInfo();
+    InitBlendStateInfo();
+
+    gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
+    gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
+
+    gp_ci_ = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&gpl_info);
+    gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
+    gp_ci_.pColorBlendState = &cb_ci_;
+    gp_ci_.pMultisampleState = &pipe_ms_state_ci_;
+    gp_ci_.renderPass = layer_test_.renderPass();
+    gp_ci_.subpass = 0;
+
+    InitPipelineCacheInfo();
+}
+
 void CreatePipelineHelper::InitState() {
     VkResult err;
     descriptor_set_.reset(new OneOffDescriptorSet(layer_test_.DeviceObj(), dsl_bindings_));
@@ -1752,7 +1857,8 @@ void CreatePipelineHelper::InitState() {
     const std::vector<VkPushConstantRange> push_ranges(
         pipeline_layout_ci_.pPushConstantRanges,
         pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
-    pipeline_layout_ = VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges);
+    pipeline_layout_ =
+        VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
 
     err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
     ASSERT_VK_SUCCESS(err);
@@ -1761,8 +1867,10 @@ void CreatePipelineHelper::InitState() {
 void CreatePipelineHelper::LateBindPipelineInfo() {
     // By value or dynamically located items must be late bound
     gp_ci_.layout = pipeline_layout_.handle();
-    gp_ci_.stageCount = shader_stages_.size();
-    gp_ci_.pStages = shader_stages_.data();
+    if (gp_ci_.stageCount == 0) {
+        gp_ci_.stageCount = shader_stages_.size();
+        gp_ci_.pStages = shader_stages_.data();
+    }
     if ((gp_ci_.pTessellationState == nullptr) && IsValidVkStruct(tess_ci_)) {
         gp_ci_.pTessellationState = &tess_ci_;
     }
