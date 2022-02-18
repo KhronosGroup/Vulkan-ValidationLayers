@@ -5905,6 +5905,27 @@ struct safe_VkVideoEncodeInfoKHR {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+struct safe_VkVideoEncodeCapabilitiesKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkVideoEncodeCapabilityFlagsKHR flags;
+    VkVideoEncodeRateControlModeFlagsKHR rateControlModes;
+    uint8_t rateControlLayerCount;
+    uint8_t qualityLevelCount;
+    VkExtent2D inputImageDataFillAlignment;
+    safe_VkVideoEncodeCapabilitiesKHR(const VkVideoEncodeCapabilitiesKHR* in_struct);
+    safe_VkVideoEncodeCapabilitiesKHR(const safe_VkVideoEncodeCapabilitiesKHR& copy_src);
+    safe_VkVideoEncodeCapabilitiesKHR& operator=(const safe_VkVideoEncodeCapabilitiesKHR& copy_src);
+    safe_VkVideoEncodeCapabilitiesKHR();
+    ~safe_VkVideoEncodeCapabilitiesKHR();
+    void initialize(const VkVideoEncodeCapabilitiesKHR* in_struct);
+    void initialize(const safe_VkVideoEncodeCapabilitiesKHR* copy_src);
+    VkVideoEncodeCapabilitiesKHR *ptr() { return reinterpret_cast<VkVideoEncodeCapabilitiesKHR *>(this); }
+    VkVideoEncodeCapabilitiesKHR const *ptr() const { return reinterpret_cast<VkVideoEncodeCapabilitiesKHR const *>(this); }
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 struct safe_VkVideoEncodeRateControlLayerInfoKHR {
     VkStructureType sType;
     const void* pNext;
@@ -6294,13 +6315,14 @@ struct safe_VkVideoEncodeH264CapabilitiesEXT {
     VkVideoEncodeH264CapabilityFlagsEXT flags;
     VkVideoEncodeH264InputModeFlagsEXT inputModeFlags;
     VkVideoEncodeH264OutputModeFlagsEXT outputModeFlags;
-    VkExtent2D minPictureSizeInMbs;
-    VkExtent2D maxPictureSizeInMbs;
-    VkExtent2D inputImageDataAlignment;
-    uint8_t maxNumL0ReferenceForP;
-    uint8_t maxNumL0ReferenceForB;
-    uint8_t maxNumL1Reference;
-    uint8_t qualityLevelCount;
+    uint8_t maxPPictureL0ReferenceCount;
+    uint8_t maxBPictureL0ReferenceCount;
+    uint8_t maxL1ReferenceCount;
+    VkBool32 motionVectorsOverPicBoundariesFlag;
+    uint32_t maxBytesPerPicDenom;
+    uint32_t maxBitsPerMbDenom;
+    uint32_t log2MaxMvLengthHorizontal;
+    uint32_t log2MaxMvLengthVertical;
     VkExtensionProperties stdExtensionVersion;
     safe_VkVideoEncodeH264CapabilitiesEXT(const VkVideoEncodeH264CapabilitiesEXT* in_struct);
     safe_VkVideoEncodeH264CapabilitiesEXT(const safe_VkVideoEncodeH264CapabilitiesEXT& copy_src);
@@ -6377,7 +6399,7 @@ struct safe_VkVideoEncodeH264DpbSlotInfoEXT {
     VkStructureType sType;
     const void* pNext;
     int8_t slotIndex;
-    const StdVideoEncodeH264PictureInfo* pStdPictureInfo;
+    const StdVideoEncodeH264ReferenceInfo* pStdReferenceInfo;
     safe_VkVideoEncodeH264DpbSlotInfoEXT(const VkVideoEncodeH264DpbSlotInfoEXT* in_struct);
     safe_VkVideoEncodeH264DpbSlotInfoEXT(const safe_VkVideoEncodeH264DpbSlotInfoEXT& copy_src);
     safe_VkVideoEncodeH264DpbSlotInfoEXT& operator=(const safe_VkVideoEncodeH264DpbSlotInfoEXT& copy_src);
@@ -6391,15 +6413,33 @@ struct safe_VkVideoEncodeH264DpbSlotInfoEXT {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+struct safe_VkVideoEncodeH264ReferenceListsEXT {
+    VkStructureType sType;
+    const void* pNext;
+    uint8_t referenceList0EntryCount;
+    safe_VkVideoEncodeH264DpbSlotInfoEXT* pReferenceList0Entries;
+    uint8_t referenceList1EntryCount;
+    safe_VkVideoEncodeH264DpbSlotInfoEXT* pReferenceList1Entries;
+    const StdVideoEncodeH264RefMemMgmtCtrlOperations* pMemMgmtCtrlOperations;
+    safe_VkVideoEncodeH264ReferenceListsEXT(const VkVideoEncodeH264ReferenceListsEXT* in_struct);
+    safe_VkVideoEncodeH264ReferenceListsEXT(const safe_VkVideoEncodeH264ReferenceListsEXT& copy_src);
+    safe_VkVideoEncodeH264ReferenceListsEXT& operator=(const safe_VkVideoEncodeH264ReferenceListsEXT& copy_src);
+    safe_VkVideoEncodeH264ReferenceListsEXT();
+    ~safe_VkVideoEncodeH264ReferenceListsEXT();
+    void initialize(const VkVideoEncodeH264ReferenceListsEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH264ReferenceListsEXT* copy_src);
+    VkVideoEncodeH264ReferenceListsEXT *ptr() { return reinterpret_cast<VkVideoEncodeH264ReferenceListsEXT *>(this); }
+    VkVideoEncodeH264ReferenceListsEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH264ReferenceListsEXT const *>(this); }
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 struct safe_VkVideoEncodeH264NaluSliceEXT {
     VkStructureType sType;
     const void* pNext;
-    const StdVideoEncodeH264SliceHeader* pSliceHeaderStd;
     uint32_t mbCount;
-    uint8_t refFinalList0EntryCount;
-    safe_VkVideoEncodeH264DpbSlotInfoEXT* pRefFinalList0Entries;
-    uint8_t refFinalList1EntryCount;
-    safe_VkVideoEncodeH264DpbSlotInfoEXT* pRefFinalList1Entries;
+    safe_VkVideoEncodeH264ReferenceListsEXT* pReferenceFinalLists;
+    const StdVideoEncodeH264SliceHeader* pSliceHeaderStd;
     safe_VkVideoEncodeH264NaluSliceEXT(const VkVideoEncodeH264NaluSliceEXT* in_struct);
     safe_VkVideoEncodeH264NaluSliceEXT(const safe_VkVideoEncodeH264NaluSliceEXT& copy_src);
     safe_VkVideoEncodeH264NaluSliceEXT& operator=(const safe_VkVideoEncodeH264NaluSliceEXT& copy_src);
@@ -6416,13 +6456,10 @@ struct safe_VkVideoEncodeH264NaluSliceEXT {
 struct safe_VkVideoEncodeH264VclFrameInfoEXT {
     VkStructureType sType;
     const void* pNext;
-    uint8_t refDefaultFinalList0EntryCount;
-    safe_VkVideoEncodeH264DpbSlotInfoEXT* pRefDefaultFinalList0Entries;
-    uint8_t refDefaultFinalList1EntryCount;
-    safe_VkVideoEncodeH264DpbSlotInfoEXT* pRefDefaultFinalList1Entries;
+    safe_VkVideoEncodeH264ReferenceListsEXT* pReferenceFinalLists;
     uint32_t naluSliceEntryCount;
     safe_VkVideoEncodeH264NaluSliceEXT* pNaluSliceEntries;
-    safe_VkVideoEncodeH264DpbSlotInfoEXT* pCurrentPictureInfo;
+    const StdVideoEncodeH264PictureInfo* pCurrentPictureInfo;
     safe_VkVideoEncodeH264VclFrameInfoEXT(const VkVideoEncodeH264VclFrameInfoEXT* in_struct);
     safe_VkVideoEncodeH264VclFrameInfoEXT(const safe_VkVideoEncodeH264VclFrameInfoEXT& copy_src);
     safe_VkVideoEncodeH264VclFrameInfoEXT& operator=(const safe_VkVideoEncodeH264VclFrameInfoEXT& copy_src);
@@ -6526,12 +6563,22 @@ struct safe_VkVideoEncodeH265CapabilitiesEXT {
     VkVideoEncodeH265InputModeFlagsEXT inputModeFlags;
     VkVideoEncodeH265OutputModeFlagsEXT outputModeFlags;
     VkVideoEncodeH265CtbSizeFlagsEXT ctbSizes;
-    VkExtent2D inputImageDataAlignment;
-    uint8_t maxNumL0ReferenceForP;
-    uint8_t maxNumL0ReferenceForB;
-    uint8_t maxNumL1Reference;
-    uint8_t maxNumSubLayers;
-    uint8_t qualityLevelCount;
+    VkVideoEncodeH265TransformBlockSizeFlagsEXT transformBlockSizes;
+    uint8_t maxPPictureL0ReferenceCount;
+    uint8_t maxBPictureL0ReferenceCount;
+    uint8_t maxL1ReferenceCount;
+    uint8_t maxSubLayersCount;
+    uint8_t minLog2MinLumaCodingBlockSizeMinus3;
+    uint8_t maxLog2MinLumaCodingBlockSizeMinus3;
+    uint8_t minLog2MinLumaTransformBlockSizeMinus2;
+    uint8_t maxLog2MinLumaTransformBlockSizeMinus2;
+    uint8_t minMaxTransformHierarchyDepthInter;
+    uint8_t maxMaxTransformHierarchyDepthInter;
+    uint8_t minMaxTransformHierarchyDepthIntra;
+    uint8_t maxMaxTransformHierarchyDepthIntra;
+    uint8_t maxDiffCuQpDeltaDepth;
+    uint8_t minMaxNumMergeCand;
+    uint8_t maxMaxNumMergeCand;
     VkExtensionProperties stdExtensionVersion;
     safe_VkVideoEncodeH265CapabilitiesEXT(const VkVideoEncodeH265CapabilitiesEXT* in_struct);
     safe_VkVideoEncodeH265CapabilitiesEXT(const safe_VkVideoEncodeH265CapabilitiesEXT& copy_src);
