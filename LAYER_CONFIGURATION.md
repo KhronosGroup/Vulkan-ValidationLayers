@@ -21,7 +21,7 @@ Vulkan validation and utility layers give Vulkan application developers the abil
 
 Developers can configure layers through a graphical user interface. *[Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html)* allows full user control of Vulkan layers, including enabling or disabling specific layers, controlling layer order, changing layer settings, etc.
 
-## Enabling Vulkan Layers using `VkCreateInfo()`
+## Enabling Vulkan Layers using `VkCreateInstance()`
 Applications may programmatically activate layers via the `vkCreateInstance()` entry point. This
 is done by setting `enabledLayerCount` and `ppEnabledLayerNames` in the `VkInstanceCreateInfo`
 structure.
@@ -30,7 +30,7 @@ structure.
 
 ### Windows
 Layers can be activated by using the `VK_INSTANCE_LAYERS` environment variable.
-The variable should include a semi-colon separated list of layer names to activate.
+The variable should include a semicolon-separated list of layer names to activate.
 Note that order is relevant, with the initial layer being the closest to the application, and the final layer being closest to the driver.
 
 For example:
@@ -55,7 +55,7 @@ These commands will run vkcube, enabling the api_dump and validation layers that
 
 ### Linux and macOS
 Layers can be activated by using the `VK_INSTANCE_LAYERS` environment variable.
-The variable should include a colon separated list of layer names to activate.
+The variable should include a colon-separated list of layer names to activate.
 Note that order is relevant, with the initial layer being the closest to the application, and the final layer being closest to the driver.
 
 For example:
