@@ -2573,3 +2573,31 @@ TEST_F(VkPositiveLayerTest, ValidExtendedUsageWithDifferentFormatViews) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, PlaneAspectNone) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        printf("%s This test requires Vulkan 1.3+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    m_errorMonitor->ExpectSuccess();
+    auto image_createinfo = LvlInitStruct<VkImageCreateInfo>();
+    image_createinfo.imageType = VK_IMAGE_TYPE_2D;
+    image_createinfo.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
+    image_createinfo.extent = {128, 128, 1};
+    image_createinfo.mipLevels = 1;
+    image_createinfo.arrayLayers = 1;
+    image_createinfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_createinfo.tiling = VK_IMAGE_TILING_LINEAR;
+    image_createinfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_createinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_createinfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    auto image_mem_reqs = LvlInitStruct<VkDeviceImageMemoryRequirements>();
+    image_mem_reqs.pCreateInfo = &image_createinfo;
+    image_mem_reqs.planeAspect = VK_IMAGE_ASPECT_NONE;
+    auto  mem_reqs_2 = LvlInitStruct<VkMemoryRequirements2>();
+    vk::GetDeviceImageMemoryRequirements(device(), &image_mem_reqs, &mem_reqs_2);
+    m_errorMonitor->VerifyNotFound();
+}
