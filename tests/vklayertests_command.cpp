@@ -680,22 +680,6 @@ TEST_F(VkLayerTest, NoBeginCommandBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SecondaryCommandBufferNullRenderpass) {
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    VkCommandBufferObj cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-
-    // Force the failure by not setting the Renderpass and Framebuffer fields
-    VkCommandBufferInheritanceInfo cmd_buf_hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
-    VkCommandBufferBeginInfo cmd_buf_info = LvlInitStruct<VkCommandBufferBeginInfo>();
-    cmd_buf_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-    cmd_buf_info.pInheritanceInfo = &cmd_buf_hinfo;
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-06002");
-    vk::BeginCommandBuffer(cb.handle(), &cmd_buf_info);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(VkLayerTest, SecondaryCommandBufferRerecordedExplicitReset) {
     ASSERT_NO_FATAL_FAILURE(Init());
 

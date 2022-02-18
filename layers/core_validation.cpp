@@ -1604,15 +1604,60 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         subpass_desc = &pPipeline->rp_state->createInfo.pSubpasses[create_info.subpass];
         if (create_info.subpass >= pPipeline->rp_state->createInfo.subpassCount) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06046",
-                             "Invalid Pipeline CreateInfo[%" PRIu32
+                             "vkCreateGraphicsPipelines() Invalid Pipeline CreateInfo[%" PRIu32
                              "] State: Subpass index %u is out of range for this renderpass (0..%u).",
                              pipelineIndex, create_info.subpass, pPipeline->rp_state->createInfo.subpassCount - 1);
             subpass_desc = nullptr;
         }
     }
 
+    if (create_info.pDepthStencilState != NULL) {
+        if ((((create_info.pDepthStencilState->flags &
+               VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM) != 0) ||
+             ((create_info.pDepthStencilState->flags &
+               VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM) != 0)) &&
+            (create_info.renderPass == VK_NULL_HANDLE)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06483",
+                             "vkCreateGraphicsPipelines(): pPipelines[%" PRIu32
+                             "].pDepthStencilState[%s] contains "
+                             "VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM or"
+                             " VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM, "
+                             "renderpass must"
+                             "not be VK_NULL_HANDLE.",
+                             pipelineIndex,
+                             string_VkPipelineDepthStencilStateCreateFlags(create_info.pDepthStencilState->flags).c_str());
+        }
+    }
+
     if (create_info.pColorBlendState != NULL) {
         const safe_VkPipelineColorBlendStateCreateInfo *color_blend_state = create_info.pColorBlendState;
+
+        if (((create_info.pColorBlendState->flags &
+              VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM) != 0) &&
+            (create_info.renderPass == VK_NULL_HANDLE)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06482",
+                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                             "]: created with"
+                             "VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM,"
+                             "renderpass must not be VK_NULL_HANDLE.",
+                              pipelineIndex);
+        }
+
+        // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
+        auto attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(create_info.pNext);
+        const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
+        if (rendering_struct && attachment_sample_count_info &&
+            (attachment_sample_count_info->colorAttachmentCount != rendering_struct->colorAttachmentCount)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06063",
+                             "vkCreateGraphicsPipelines() Pipeline %" PRIu32
+                             " interface VkAttachmentSampleCountInfo->attachmentCount %" PRIu32
+                             " and "
+                             "VkPipelineRenderingCreateInfoKHR->colorAttachmentCount %" PRIu32 " must be equal",
+                             pipelineIndex,
+                             attachment_sample_count_info->colorAttachmentCount,
+                             rendering_struct->colorAttachmentCount);
+        }
+
         if (subpass_desc && color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06042",
                              "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
@@ -2685,8 +2730,8 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
         if ((pPipeline->create_info.graphics.pColorBlendState != nullptr) &&
             (rendering_struct->colorAttachmentCount != pPipeline->create_info.graphics.pColorBlendState->attachmentCount)) {
-            skip |= LogError(device, "vkCreateGraphicsPipelines(): VUID-VkGraphicsPipelineCreateInfo-renderPass-06060",
-                "Pipeline %" PRIu32 " interface pColorBlendState->attachmentCount %" PRIu32 " and "
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06060",
+                "vkCreateGraphicsPipelines() Pipeline %" PRIu32 " interface pColorBlendState->attachmentCount %" PRIu32 " and "
                 "VkPipelineRenderingCreateInfoKHR->colorAttachmentCount %" PRIu32 " must be equal",
                 pipelineIndex, rendering_struct->colorAttachmentCount, pPipeline->create_info.graphics.pColorBlendState->attachmentCount);
         }
@@ -5756,7 +5801,12 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
 
     for (uint32_t i = 0; i < count; i++) {
         if (pCreateInfos[i].renderPass == VK_NULL_HANDLE) {
-            if (!enabled_features.core13.dynamicRendering) {
+            if ((api_version < VK_API_VERSION_1_3) && (!enabled_features.core13.dynamicRendering) &&
+                (pCreateInfos[i].renderPass == VK_NULL_HANDLE)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06051",
+                                 "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32 "]: renderpass must not be VK_NULL_HANDLE.", i);
+                return true;
+            } else if (!enabled_features.core13.dynamicRendering) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06052",
                                  "vkCreateGraphicsPipeline: pCreateInfos[%" PRIu32
                                  "].renderPass is VK_NULL_HANDLE but dynamicRendering is not enabled.",
@@ -7486,7 +7536,9 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
         } else {
             auto p_inherited_rendering_info = LvlFindInChain<VkCommandBufferInheritanceRenderingInfoKHR>(info->pNext);
 
-            if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
+            if ((pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) &&
+                ((api_version >= VK_API_VERSION_1_3) || enabled_features.core13.dynamicRendering))
+            {
                 auto framebuffer = Get<FRAMEBUFFER_STATE>(info->framebuffer);
                 if (framebuffer) {
                     if (framebuffer->createInfo.renderPass != info->renderPass) {
@@ -7544,13 +7596,12 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                             string_VkSampleCountFlagBits(p_inherited_rendering_info->rasterizationSamples));
                 }
 
-                const VkFormatFeatureFlags2KHR valid_color_format = VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR;
                 for (uint32_t i = 0; i < p_inherited_rendering_info->colorAttachmentCount; ++i) {
                     if (p_inherited_rendering_info->pColorAttachmentFormats != nullptr) {
                         const VkFormat attachment_format = p_inherited_rendering_info->pColorAttachmentFormats[i];
                         if (attachment_format != VK_FORMAT_UNDEFINED) {
                             const VkFormatFeatureFlags2KHR potential_format_features = GetPotentialFormatFeatures(attachment_format);
-                            if ((potential_format_features & valid_color_format) == 0) {
+                            if ((potential_format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR) == 0) {
                                 skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006",
                                     "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfo->pColorAttachmentFormats[%u] (%s) must be a format with potential format features that include VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
                                     i, string_VkFormat(attachment_format));
@@ -7627,15 +7678,24 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 }
             }
 
-            if (info->renderPass != VK_NULL_HANDLE) {
-                auto render_pass = Get<RENDER_PASS_STATE>(info->renderPass);
-                if (render_pass) {
-                    if (info->subpass >= render_pass->createInfo.subpassCount) {
-                        skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-00054",
-                                         "vkBeginCommandBuffer(): Secondary %s must have a subpass index (%d) that is "
-                                         "less than the number of subpasses (%d).",
-                                         report_data->FormatHandle(commandBuffer).c_str(), info->subpass,
-                                         render_pass->createInfo.subpassCount);
+            // Check for dynamic rendering feature enabled or 1.3
+            if ((api_version < VK_API_VERSION_1_3) && (!enabled_features.core13.dynamicRendering)) {
+                if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
+                    if (info->renderPass != VK_NULL_HANDLE) {
+                        auto render_pass = Get<RENDER_PASS_STATE>(info->renderPass);
+                        if (render_pass) {
+                            if (info->subpass >= render_pass->createInfo.subpassCount) {
+                                skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-00054",
+                                                 "vkBeginCommandBuffer(): Secondary %s must have a subpass index (%d) that is "
+                                                 "less than the number of subpasses (%d).",
+                                                 report_data->FormatHandle(commandBuffer).c_str(), info->subpass,
+                                                 render_pass->createInfo.subpassCount);
+                            }
+                        }
+                    } else {
+                        skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-00053",
+                                         "vkBeginCommandBuffer(): Flags contains VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, "
+                                         "the renderpass member of pInheritanceInfo must be a valid VkRenderPass.");
                     }
                 }
             }
