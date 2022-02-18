@@ -2925,6 +2925,17 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_INFO_KHR> {
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+// Map type VkVideoEncodeCapabilitiesKHR to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR
+template <> struct LvlTypeMap<VkVideoEncodeCapabilitiesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR> {
+    typedef VkVideoEncodeCapabilitiesKHR Type;
+};
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeRateControlLayerInfoKHR to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_LAYER_INFO_KHR
 template <> struct LvlTypeMap<VkVideoEncodeRateControlLayerInfoKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_LAYER_INFO_KHR;
@@ -3178,6 +3189,17 @@ template <> struct LvlTypeMap<VkVideoEncodeH264DpbSlotInfoEXT> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT> {
     typedef VkVideoEncodeH264DpbSlotInfoEXT Type;
+};
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+// Map type VkVideoEncodeH264ReferenceListsEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_REFERENCE_LISTS_EXT
+template <> struct LvlTypeMap<VkVideoEncodeH264ReferenceListsEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_REFERENCE_LISTS_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_REFERENCE_LISTS_EXT> {
+    typedef VkVideoEncodeH264ReferenceListsEXT Type;
 };
 
 #endif // VK_ENABLE_BETA_EXTENSIONS

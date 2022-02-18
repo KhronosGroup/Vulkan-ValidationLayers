@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 205;
+const uint32_t GeneratedVulkanHeaderVersion = 206;
 
 const VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_NONE|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR|VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV|VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV|VK_ACCESS_NONE_KHR;
 const VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -114,9 +114,6 @@ const VkVideoEncodeRateControlModeFlagsKHR AllVkVideoEncodeRateControlModeFlagBi
 #endif
 const VkDebugReportFlagsEXT AllVkDebugReportFlagBitsEXT = VK_DEBUG_REPORT_INFORMATION_BIT_EXT|VK_DEBUG_REPORT_WARNING_BIT_EXT|VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT|VK_DEBUG_REPORT_ERROR_BIT_EXT|VK_DEBUG_REPORT_DEBUG_BIT_EXT;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-const VkVideoEncodeH264CapabilityFlagsEXT AllVkVideoEncodeH264CapabilityFlagBitsEXT = VK_VIDEO_ENCODE_H264_CAPABILITY_CABAC_BIT_EXT|VK_VIDEO_ENCODE_H264_CAPABILITY_CAVLC_BIT_EXT|VK_VIDEO_ENCODE_H264_CAPABILITY_WEIGHTED_BI_PRED_IMPLICIT_BIT_EXT|VK_VIDEO_ENCODE_H264_CAPABILITY_TRANSFORM_8X8_BIT_EXT|VK_VIDEO_ENCODE_H264_CAPABILITY_CHROMA_QP_OFFSET_BIT_EXT|VK_VIDEO_ENCODE_H264_CAPABILITY_SECOND_CHROMA_QP_OFFSET_BIT_EXT|VK_VIDEO_ENCODE_H264_CAPABILITY_DEBLOCKING_FILTER_DISABLED_BIT_EXT|VK_VIDEO_ENCODE_H264_CAPABILITY_DEBLOCKING_FILTER_ENABLED_BIT_EXT|VK_VIDEO_ENCODE_H264_CAPABILITY_DEBLOCKING_FILTER_PARTIAL_BIT_EXT|VK_VIDEO_ENCODE_H264_CAPABILITY_MULTIPLE_SLICE_PER_FRAME_BIT_EXT|VK_VIDEO_ENCODE_H264_CAPABILITY_EVENLY_DISTRIBUTED_SLICE_SIZE_BIT_EXT;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 const VkVideoEncodeH264CreateFlagsEXT AllVkVideoEncodeH264CreateFlagBitsEXT = VK_VIDEO_ENCODE_H264_CREATE_DEFAULT_EXT|VK_VIDEO_ENCODE_H264_CREATE_RESERVED_0_BIT_EXT;
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
@@ -129,7 +126,7 @@ const VkVideoEncodeH264OutputModeFlagsEXT AllVkVideoEncodeH264OutputModeFlagBits
 const VkVideoEncodeH264RateControlStructureFlagsEXT AllVkVideoEncodeH264RateControlStructureFlagBitsEXT = VK_VIDEO_ENCODE_H264_RATE_CONTROL_STRUCTURE_UNKNOWN_EXT|VK_VIDEO_ENCODE_H264_RATE_CONTROL_STRUCTURE_FLAT_BIT_EXT|VK_VIDEO_ENCODE_H264_RATE_CONTROL_STRUCTURE_DYADIC_BIT_EXT;
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-const VkVideoEncodeH265CtbSizeFlagsEXT AllVkVideoEncodeH265CtbSizeFlagBitsEXT = VK_VIDEO_ENCODE_H265_CTB_SIZE_8_BIT_EXT|VK_VIDEO_ENCODE_H265_CTB_SIZE_16_BIT_EXT|VK_VIDEO_ENCODE_H265_CTB_SIZE_32_BIT_EXT|VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_EXT;
+const VkVideoEncodeH265CtbSizeFlagsEXT AllVkVideoEncodeH265CtbSizeFlagBitsEXT = VK_VIDEO_ENCODE_H265_CTB_SIZE_16_BIT_EXT|VK_VIDEO_ENCODE_H265_CTB_SIZE_32_BIT_EXT|VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_EXT;
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 const VkVideoEncodeH265InputModeFlagsEXT AllVkVideoEncodeH265InputModeFlagBitsEXT = VK_VIDEO_ENCODE_H265_INPUT_MODE_FRAME_BIT_EXT|VK_VIDEO_ENCODE_H265_INPUT_MODE_SLICE_SEGMENT_BIT_EXT|VK_VIDEO_ENCODE_H265_INPUT_MODE_NON_VCL_BIT_EXT;
@@ -139,6 +136,9 @@ const VkVideoEncodeH265OutputModeFlagsEXT AllVkVideoEncodeH265OutputModeFlagBits
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 const VkVideoEncodeH265RateControlStructureFlagsEXT AllVkVideoEncodeH265RateControlStructureFlagBitsEXT = VK_VIDEO_ENCODE_H265_RATE_CONTROL_STRUCTURE_UNKNOWN_EXT|VK_VIDEO_ENCODE_H265_RATE_CONTROL_STRUCTURE_FLAT_BIT_EXT|VK_VIDEO_ENCODE_H265_RATE_CONTROL_STRUCTURE_DYADIC_BIT_EXT;
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+const VkVideoEncodeH265TransformBlockSizeFlagsEXT AllVkVideoEncodeH265TransformBlockSizeFlagBitsEXT = VK_VIDEO_ENCODE_H265_TRANSFORM_BLOCK_SIZE_4_BIT_EXT|VK_VIDEO_ENCODE_H265_TRANSFORM_BLOCK_SIZE_8_BIT_EXT|VK_VIDEO_ENCODE_H265_TRANSFORM_BLOCK_SIZE_16_BIT_EXT|VK_VIDEO_ENCODE_H265_TRANSFORM_BLOCK_SIZE_32_BIT_EXT;
 #endif
 const VkExternalMemoryHandleTypeFlagsNV AllVkExternalMemoryHandleTypeFlagBitsNV = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV|VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT_NV|VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_IMAGE_BIT_NV|VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_IMAGE_KMT_BIT_NV;
 const VkConditionalRenderingFlagsEXT AllVkConditionalRenderingFlagBitsEXT = VK_CONDITIONAL_RENDERING_INVERTED_BIT_EXT;
@@ -2350,68 +2350,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                 }
             }
 
-            if (is_const_param) {
-                VkPhysicalDeviceShaderIntegerDotProductProperties *structure = (VkPhysicalDeviceShaderIntegerDotProductProperties *) header;
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct8BitUnsignedAccelerated", structure->integerDotProduct8BitUnsignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct8BitSignedAccelerated", structure->integerDotProduct8BitSignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct8BitMixedSignednessAccelerated", structure->integerDotProduct8BitMixedSignednessAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct4x8BitPackedUnsignedAccelerated", structure->integerDotProduct4x8BitPackedUnsignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct4x8BitPackedSignedAccelerated", structure->integerDotProduct4x8BitPackedSignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct4x8BitPackedMixedSignednessAccelerated", structure->integerDotProduct4x8BitPackedMixedSignednessAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct16BitUnsignedAccelerated", structure->integerDotProduct16BitUnsignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct16BitSignedAccelerated", structure->integerDotProduct16BitSignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct16BitMixedSignednessAccelerated", structure->integerDotProduct16BitMixedSignednessAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct32BitUnsignedAccelerated", structure->integerDotProduct32BitUnsignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct32BitSignedAccelerated", structure->integerDotProduct32BitSignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct32BitMixedSignednessAccelerated", structure->integerDotProduct32BitMixedSignednessAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct64BitUnsignedAccelerated", structure->integerDotProduct64BitUnsignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct64BitSignedAccelerated", structure->integerDotProduct64BitSignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProduct64BitMixedSignednessAccelerated", structure->integerDotProduct64BitMixedSignednessAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating8BitUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating8BitUnsignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating8BitSignedAccelerated", structure->integerDotProductAccumulatingSaturating8BitSignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated", structure->integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating16BitUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating16BitUnsignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating16BitSignedAccelerated", structure->integerDotProductAccumulatingSaturating16BitSignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating32BitUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating32BitUnsignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating32BitSignedAccelerated", structure->integerDotProductAccumulatingSaturating32BitSignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating64BitUnsignedAccelerated", structure->integerDotProductAccumulatingSaturating64BitUnsignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating64BitSignedAccelerated", structure->integerDotProductAccumulatingSaturating64BitSignedAccelerated);
-
-                skip |= validate_bool32("VkPhysicalDeviceShaderIntegerDotProductProperties", "integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated", structure->integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated);
-            }
         } break;
 
         // Validation code for VkPhysicalDeviceTexelBufferAlignmentProperties structure members
@@ -2877,6 +2815,17 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             }
         } break;
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        // Validation code for VkVideoEncodeCapabilitiesKHR structure members
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR: { // Covers VUID-VkVideoEncodeCapabilitiesKHR-sType-sType
+            if (is_const_param) {
+                VkVideoEncodeCapabilitiesKHR *structure = (VkVideoEncodeCapabilitiesKHR *) header;
+                skip |= validate_flags("VkVideoEncodeCapabilitiesKHR", "rateControlModes", "VkVideoEncodeRateControlModeFlagBitsKHR", AllVkVideoEncodeRateControlModeFlagBitsKHR, structure->rateControlModes, kRequiredFlags, "VUID-VkVideoEncodeCapabilitiesKHR-rateControlModes-parameter", "VUID-VkVideoEncodeCapabilitiesKHR-rateControlModes-requiredbitmask");
+
+            }
+        } break;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
         // No Validation code for VkVideoEncodeRateControlLayerInfoKHR structure members  -- Covers VUID-VkVideoEncodeRateControlLayerInfoKHR-sType-sType
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
@@ -2983,11 +2932,11 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_CAPABILITIES_EXT: { // Covers VUID-VkVideoEncodeH264CapabilitiesEXT-sType-sType
             if (is_const_param) {
                 VkVideoEncodeH264CapabilitiesEXT *structure = (VkVideoEncodeH264CapabilitiesEXT *) header;
-                skip |= validate_flags("VkVideoEncodeH264CapabilitiesEXT", "flags", "VkVideoEncodeH264CapabilityFlagBitsEXT", AllVkVideoEncodeH264CapabilityFlagBitsEXT, structure->flags, kRequiredFlags, "VUID-VkVideoEncodeH264CapabilitiesEXT-flags-parameter", "VUID-VkVideoEncodeH264CapabilitiesEXT-flags-requiredbitmask");
-
                 skip |= validate_flags("VkVideoEncodeH264CapabilitiesEXT", "inputModeFlags", "VkVideoEncodeH264InputModeFlagBitsEXT", AllVkVideoEncodeH264InputModeFlagBitsEXT, structure->inputModeFlags, kRequiredFlags, "VUID-VkVideoEncodeH264CapabilitiesEXT-inputModeFlags-parameter", "VUID-VkVideoEncodeH264CapabilitiesEXT-inputModeFlags-requiredbitmask");
 
                 skip |= validate_flags("VkVideoEncodeH264CapabilitiesEXT", "outputModeFlags", "VkVideoEncodeH264OutputModeFlagBitsEXT", AllVkVideoEncodeH264OutputModeFlagBitsEXT, structure->outputModeFlags, kRequiredFlags, "VUID-VkVideoEncodeH264CapabilitiesEXT-outputModeFlags-parameter", "VUID-VkVideoEncodeH264CapabilitiesEXT-outputModeFlags-requiredbitmask");
+
+                skip |= validate_bool32("VkVideoEncodeH264CapabilitiesEXT", "motionVectorsOverPicBoundariesFlag", structure->motionVectorsOverPicBoundariesFlag);
 
             }
         } break;
@@ -3043,24 +2992,31 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_VCL_FRAME_INFO_EXT: { // Covers VUID-VkVideoEncodeH264VclFrameInfoEXT-sType-sType
             if (is_const_param) {
                 VkVideoEncodeH264VclFrameInfoEXT *structure = (VkVideoEncodeH264VclFrameInfoEXT *) header;
-                skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", "refDefaultFinalList0EntryCount", "pRefDefaultFinalList0Entries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->refDefaultFinalList0EntryCount, structure->pRefDefaultFinalList0Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264VclFrameInfoEXT-pRefDefaultFinalList0Entries-parameter", "VUID-VkVideoEncodeH264VclFrameInfoEXT-refDefaultFinalList0EntryCount-arraylength");
+                skip |= validate_struct_type("VkVideoEncodeH264VclFrameInfoEXT", "pReferenceFinalLists", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_REFERENCE_LISTS_EXT", structure->pReferenceFinalLists, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_REFERENCE_LISTS_EXT, false, "VUID-VkVideoEncodeH264VclFrameInfoEXT-pReferenceFinalLists-parameter", "VUID-VkVideoEncodeH264ReferenceListsEXT-sType-sType");
 
-                if (structure->pRefDefaultFinalList0Entries != NULL)
+                if (structure->pReferenceFinalLists != NULL)
                 {
-                    for (uint32_t refDefaultFinalList0EntryIndex = 0; refDefaultFinalList0EntryIndex < structure->refDefaultFinalList0EntryCount; ++refDefaultFinalList0EntryIndex)
-                    {
-                        skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pRefDefaultFinalList0Entries[%i].pStdPictureInfo", ParameterName::IndexVector{ refDefaultFinalList0EntryIndex }), structure->pRefDefaultFinalList0Entries[refDefaultFinalList0EntryIndex].pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
-                    }
-                }
+                    skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", "pReferenceFinalLists->referenceList0EntryCount", "pReferenceFinalLists->pReferenceList0Entries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pReferenceFinalLists->referenceList0EntryCount, structure->pReferenceFinalLists->pReferenceList0Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, false, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264ReferenceListsEXT-pReferenceList0Entries-parameter", kVUIDUndefined);
 
-                skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", "refDefaultFinalList1EntryCount", "pRefDefaultFinalList1Entries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->refDefaultFinalList1EntryCount, structure->pRefDefaultFinalList1Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264VclFrameInfoEXT-pRefDefaultFinalList1Entries-parameter", "VUID-VkVideoEncodeH264VclFrameInfoEXT-refDefaultFinalList1EntryCount-arraylength");
-
-                if (structure->pRefDefaultFinalList1Entries != NULL)
-                {
-                    for (uint32_t refDefaultFinalList1EntryIndex = 0; refDefaultFinalList1EntryIndex < structure->refDefaultFinalList1EntryCount; ++refDefaultFinalList1EntryIndex)
+                    if (structure->pReferenceFinalLists->pReferenceList0Entries != NULL)
                     {
-                        skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pRefDefaultFinalList1Entries[%i].pStdPictureInfo", ParameterName::IndexVector{ refDefaultFinalList1EntryIndex }), structure->pRefDefaultFinalList1Entries[refDefaultFinalList1EntryIndex].pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
+                        for (uint32_t referenceList0EntryIndex = 0; referenceList0EntryIndex < structure->pReferenceFinalLists->referenceList0EntryCount; ++referenceList0EntryIndex)
+                        {
+                            skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pReferenceFinalLists->pReferenceList0Entries[%i].pStdReferenceInfo", ParameterName::IndexVector{ referenceList0EntryIndex }), structure->pReferenceFinalLists->pReferenceList0Entries[referenceList0EntryIndex].pStdReferenceInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+                        }
                     }
+
+                    skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", "pReferenceFinalLists->referenceList1EntryCount", "pReferenceFinalLists->pReferenceList1Entries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pReferenceFinalLists->referenceList1EntryCount, structure->pReferenceFinalLists->pReferenceList1Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, false, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264ReferenceListsEXT-pReferenceList1Entries-parameter", kVUIDUndefined);
+
+                    if (structure->pReferenceFinalLists->pReferenceList1Entries != NULL)
+                    {
+                        for (uint32_t referenceList1EntryIndex = 0; referenceList1EntryIndex < structure->pReferenceFinalLists->referenceList1EntryCount; ++referenceList1EntryIndex)
+                        {
+                            skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pReferenceFinalLists->pReferenceList1Entries[%i].pStdReferenceInfo", ParameterName::IndexVector{ referenceList1EntryIndex }), structure->pReferenceFinalLists->pReferenceList1Entries[referenceList1EntryIndex].pStdReferenceInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+                        }
+                    }
+
+                    skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", "pReferenceFinalLists->pMemMgmtCtrlOperations", structure->pReferenceFinalLists->pMemMgmtCtrlOperations, "VUID-VkVideoEncodeH264ReferenceListsEXT-pMemMgmtCtrlOperations-parameter");
                 }
 
                 skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", "naluSliceEntryCount", "pNaluSliceEntries", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_NALU_SLICE_EXT", structure->naluSliceEntryCount, structure->pNaluSliceEntries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_NALU_SLICE_EXT, true, true, "VUID-VkVideoEncodeH264NaluSliceEXT-sType-sType", "VUID-VkVideoEncodeH264VclFrameInfoEXT-pNaluSliceEntries-parameter", "VUID-VkVideoEncodeH264VclFrameInfoEXT-naluSliceEntryCount-arraylength");
@@ -3069,36 +3025,38 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                 {
                     for (uint32_t naluSliceEntryIndex = 0; naluSliceEntryIndex < structure->naluSliceEntryCount; ++naluSliceEntryIndex)
                     {
+                        skip |= validate_struct_type("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_REFERENCE_LISTS_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_REFERENCE_LISTS_EXT, false, "VUID-VkVideoEncodeH264NaluSliceEXT-pReferenceFinalLists-parameter", "VUID-VkVideoEncodeH264ReferenceListsEXT-sType-sType");
+
+                        if (structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists != NULL)
+                        {
+                            skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->referenceList0EntryCount", ParameterName::IndexVector{ naluSliceEntryIndex }), ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceList0Entries", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->referenceList0EntryCount, structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList0Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, false, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264ReferenceListsEXT-pReferenceList0Entries-parameter", kVUIDUndefined);
+
+                            if (structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList0Entries != NULL)
+                            {
+                                for (uint32_t referenceList0EntryIndex = 0; referenceList0EntryIndex < structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->referenceList0EntryCount; ++referenceList0EntryIndex)
+                                {
+                                    skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceList0Entries[%i].pStdReferenceInfo", ParameterName::IndexVector{ naluSliceEntryIndex, referenceList0EntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList0Entries[referenceList0EntryIndex].pStdReferenceInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+                                }
+                            }
+
+                            skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->referenceList1EntryCount", ParameterName::IndexVector{ naluSliceEntryIndex }), ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceList1Entries", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->referenceList1EntryCount, structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList1Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, false, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264ReferenceListsEXT-pReferenceList1Entries-parameter", kVUIDUndefined);
+
+                            if (structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList1Entries != NULL)
+                            {
+                                for (uint32_t referenceList1EntryIndex = 0; referenceList1EntryIndex < structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->referenceList1EntryCount; ++referenceList1EntryIndex)
+                                {
+                                    skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pReferenceList1Entries[%i].pStdReferenceInfo", ParameterName::IndexVector{ naluSliceEntryIndex, referenceList1EntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pReferenceList1Entries[referenceList1EntryIndex].pStdReferenceInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdReferenceInfo-parameter");
+                                }
+                            }
+
+                            skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pReferenceFinalLists->pMemMgmtCtrlOperations", ParameterName::IndexVector{ naluSliceEntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pReferenceFinalLists->pMemMgmtCtrlOperations, "VUID-VkVideoEncodeH264ReferenceListsEXT-pMemMgmtCtrlOperations-parameter");
+                        }
+
                         skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pSliceHeaderStd", ParameterName::IndexVector{ naluSliceEntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pSliceHeaderStd, "VUID-VkVideoEncodeH264NaluSliceEXT-pSliceHeaderStd-parameter");
-
-                        skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].refFinalList0EntryCount", ParameterName::IndexVector{ naluSliceEntryIndex }), ParameterName("pNaluSliceEntries[%i].pRefFinalList0Entries", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].refFinalList0EntryCount, structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList0Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264NaluSliceEXT-pRefFinalList0Entries-parameter", "VUID-VkVideoEncodeH264NaluSliceEXT-refFinalList0EntryCount-arraylength");
-
-                        if (structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList0Entries != NULL)
-                        {
-                            for (uint32_t refFinalList0EntryIndex = 0; refFinalList0EntryIndex < structure->pNaluSliceEntries[naluSliceEntryIndex].refFinalList0EntryCount; ++refFinalList0EntryIndex)
-                            {
-                                skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pRefFinalList0Entries[%i].pStdPictureInfo", ParameterName::IndexVector{ naluSliceEntryIndex, refFinalList0EntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList0Entries[refFinalList0EntryIndex].pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
-                            }
-                        }
-
-                        skip |= validate_struct_type_array("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].refFinalList1EntryCount", ParameterName::IndexVector{ naluSliceEntryIndex }), ParameterName("pNaluSliceEntries[%i].pRefFinalList1Entries", ParameterName::IndexVector{ naluSliceEntryIndex }), "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pNaluSliceEntries[naluSliceEntryIndex].refFinalList1EntryCount, structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList1Entries, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, true, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType", "VUID-VkVideoEncodeH264NaluSliceEXT-pRefFinalList1Entries-parameter", "VUID-VkVideoEncodeH264NaluSliceEXT-refFinalList1EntryCount-arraylength");
-
-                        if (structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList1Entries != NULL)
-                        {
-                            for (uint32_t refFinalList1EntryIndex = 0; refFinalList1EntryIndex < structure->pNaluSliceEntries[naluSliceEntryIndex].refFinalList1EntryCount; ++refFinalList1EntryIndex)
-                            {
-                                skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", ParameterName("pNaluSliceEntries[%i].pRefFinalList1Entries[%i].pStdPictureInfo", ParameterName::IndexVector{ naluSliceEntryIndex, refFinalList1EntryIndex }), structure->pNaluSliceEntries[naluSliceEntryIndex].pRefFinalList1Entries[refFinalList1EntryIndex].pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
-                            }
-                        }
                     }
                 }
 
-                skip |= validate_struct_type("VkVideoEncodeH264VclFrameInfoEXT", "pCurrentPictureInfo", "VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT", structure->pCurrentPictureInfo, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT, true, "VUID-VkVideoEncodeH264VclFrameInfoEXT-pCurrentPictureInfo-parameter", "VUID-VkVideoEncodeH264DpbSlotInfoEXT-sType-sType");
-
-                if (structure->pCurrentPictureInfo != NULL)
-                {
-                    skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", "pCurrentPictureInfo->pStdPictureInfo", structure->pCurrentPictureInfo->pStdPictureInfo, "VUID-VkVideoEncodeH264DpbSlotInfoEXT-pStdPictureInfo-parameter");
-                }
+                skip |= validate_required_pointer("VkVideoEncodeH264VclFrameInfoEXT", "pCurrentPictureInfo", structure->pCurrentPictureInfo, "VUID-VkVideoEncodeH264VclFrameInfoEXT-pCurrentPictureInfo-parameter");
             }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -3149,13 +3107,13 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_CAPABILITIES_EXT: { // Covers VUID-VkVideoEncodeH265CapabilitiesEXT-sType-sType
             if (is_const_param) {
                 VkVideoEncodeH265CapabilitiesEXT *structure = (VkVideoEncodeH265CapabilitiesEXT *) header;
-                skip |= validate_reserved_flags("VkVideoEncodeH265CapabilitiesEXT", "flags", structure->flags, "VUID-VkVideoEncodeH265CapabilitiesEXT-flags-zerobitmask");
-
                 skip |= validate_flags("VkVideoEncodeH265CapabilitiesEXT", "inputModeFlags", "VkVideoEncodeH265InputModeFlagBitsEXT", AllVkVideoEncodeH265InputModeFlagBitsEXT, structure->inputModeFlags, kRequiredFlags, "VUID-VkVideoEncodeH265CapabilitiesEXT-inputModeFlags-parameter", "VUID-VkVideoEncodeH265CapabilitiesEXT-inputModeFlags-requiredbitmask");
 
                 skip |= validate_flags("VkVideoEncodeH265CapabilitiesEXT", "outputModeFlags", "VkVideoEncodeH265OutputModeFlagBitsEXT", AllVkVideoEncodeH265OutputModeFlagBitsEXT, structure->outputModeFlags, kRequiredFlags, "VUID-VkVideoEncodeH265CapabilitiesEXT-outputModeFlags-parameter", "VUID-VkVideoEncodeH265CapabilitiesEXT-outputModeFlags-requiredbitmask");
 
                 skip |= validate_flags("VkVideoEncodeH265CapabilitiesEXT", "ctbSizes", "VkVideoEncodeH265CtbSizeFlagBitsEXT", AllVkVideoEncodeH265CtbSizeFlagBitsEXT, structure->ctbSizes, kRequiredFlags, "VUID-VkVideoEncodeH265CapabilitiesEXT-ctbSizes-parameter", "VUID-VkVideoEncodeH265CapabilitiesEXT-ctbSizes-requiredbitmask");
+
+                skip |= validate_flags("VkVideoEncodeH265CapabilitiesEXT", "transformBlockSizes", "VkVideoEncodeH265TransformBlockSizeFlagBitsEXT", AllVkVideoEncodeH265TransformBlockSizeFlagBitsEXT, structure->transformBlockSizes, kRequiredFlags, "VUID-VkVideoEncodeH265CapabilitiesEXT-transformBlockSizes-parameter", "VUID-VkVideoEncodeH265CapabilitiesEXT-transformBlockSizes-requiredbitmask");
 
             }
         } break;
@@ -11105,9 +11063,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(
     skip |= validate_struct_type("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pCapabilities", "VK_STRUCTURE_TYPE_VIDEO_CAPABILITIES_KHR", pCapabilities, VK_STRUCTURE_TYPE_VIDEO_CAPABILITIES_KHR, true, "VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pCapabilities-parameter", "VUID-VkVideoCapabilitiesKHR-sType-sType");
     if (pCapabilities != NULL)
     {
-        const VkStructureType allowed_structs_VkVideoCapabilitiesKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_CAPABILITIES_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_CAPABILITIES_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_CAPABILITIES_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_CAPABILITIES_EXT };
+        const VkStructureType allowed_structs_VkVideoCapabilitiesKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_CAPABILITIES_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_CAPABILITIES_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR };
 
-        skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pCapabilities->pNext", "VkVideoDecodeH264CapabilitiesEXT, VkVideoDecodeH265CapabilitiesEXT, VkVideoEncodeH264CapabilitiesEXT, VkVideoEncodeH265CapabilitiesEXT", pCapabilities->pNext, ARRAY_SIZE(allowed_structs_VkVideoCapabilitiesKHR), allowed_structs_VkVideoCapabilitiesKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoCapabilitiesKHR-pNext-pNext", "VUID-VkVideoCapabilitiesKHR-sType-unique", true, false);
+        skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoCapabilitiesKHR", "pCapabilities->pNext", "VkVideoDecodeH264CapabilitiesEXT, VkVideoDecodeH265CapabilitiesEXT, VkVideoEncodeCapabilitiesKHR", pCapabilities->pNext, ARRAY_SIZE(allowed_structs_VkVideoCapabilitiesKHR), allowed_structs_VkVideoCapabilitiesKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoCapabilitiesKHR-pNext-pNext", "VUID-VkVideoCapabilitiesKHR-sType-unique", true, false);
     }
     return skip;
 }
