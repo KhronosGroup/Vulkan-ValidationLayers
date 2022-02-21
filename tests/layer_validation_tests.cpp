@@ -2420,7 +2420,7 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isK
 }
 
 void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, VkBufferObj *vbo, VkBufferObj *ibo,
-                                                    VkGeometryNV *geometry) {
+                                                    VkGeometryNV *geometry, VkDeviceSize offset) {
     vbo->init(device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
               VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
     ibo->init(device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -2430,11 +2430,11 @@ void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, V
     const std::vector<uint32_t> indicies = {0, 1, 2};
 
     uint8_t *mapped_vbo_buffer_data = (uint8_t *)vbo->memory().map();
-    std::memcpy(mapped_vbo_buffer_data, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());
+    std::memcpy(mapped_vbo_buffer_data + offset, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());
     vbo->memory().unmap();
 
     uint8_t *mapped_ibo_buffer_data = (uint8_t *)ibo->memory().map();
-    std::memcpy(mapped_ibo_buffer_data, (uint8_t *)indicies.data(), sizeof(uint32_t) * indicies.size());
+    std::memcpy(mapped_ibo_buffer_data + offset, (uint8_t *)indicies.data(), sizeof(uint32_t) * indicies.size());
     ibo->memory().unmap();
 
     *geometry = {};
