@@ -9910,6 +9910,137 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     delete[] pGeometry;
 }
 
+TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureKHR) {
+    TEST_DESCRIPTION("Validate acceleration structure building tracks the objects used.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    accel_features.accelerationStructureIndirectBuild = VK_TRUE;
+    accel_features.accelerationStructureHostCommands = VK_TRUE;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&accel_features);
+    if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
+                                        false, false, &features2)) {
+        return;
+    }
+
+    auto vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(
+        vk::GetDeviceProcAddr(device(), "vkCmdBuildAccelerationStructuresKHR"));
+    assert(vkCmdBuildAccelerationStructuresKHR != nullptr);
+
+    auto vkGetBufferDeviceAddressKHR =
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
+
+    auto vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
+        vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureKHR"));
+    assert(vkDestroyAccelerationStructureKHR);
+
+    auto vbo = layer_data::make_unique<VkBufferObj>();
+    auto ibo = layer_data::make_unique<VkBufferObj>();
+    VkGeometryNV geometryNV;
+    const VkDeviceSize kBufferOffset = 256;
+    GetSimpleGeometryForAccelerationStructureTests(*m_device, vbo.get(), ibo.get(), &geometryNV, kBufferOffset);
+
+    VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
+    VkBufferObj buffer;
+    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+    as_create_info.buffer = buffer.handle();
+    as_create_info.createFlags = 0;
+    as_create_info.offset = 0;
+    as_create_info.size = 0;
+    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    as_create_info.deviceAddress = 0;
+    auto bot_level_as = layer_data::make_unique<VkAccelerationStructurekhrObj>(*m_device, as_create_info);
+
+    auto address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
+    address_info.buffer = geometryNV.geometry.triangles.vertexData;
+    VkDeviceAddress vertexAddress = vkGetBufferDeviceAddressKHR(m_device->handle(), &address_info);
+
+    address_info.buffer = geometryNV.geometry.triangles.indexData;
+    VkDeviceAddress indexAddress = vkGetBufferDeviceAddressKHR(m_device->handle(), &address_info);
+
+    auto valid_geometry_triangles = LvlInitStruct<VkAccelerationStructureGeometryKHR>();
+    valid_geometry_triangles.geometryType = geometryNV.geometryType;
+    valid_geometry_triangles.geometry.triangles = LvlInitStruct<VkAccelerationStructureGeometryTrianglesDataKHR>();
+    valid_geometry_triangles.geometry.triangles.vertexFormat = geometryNV.geometry.triangles.vertexFormat;
+    valid_geometry_triangles.geometry.triangles.vertexData.deviceAddress = vertexAddress + kBufferOffset;
+    valid_geometry_triangles.geometry.triangles.vertexStride = 8;
+    valid_geometry_triangles.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+    valid_geometry_triangles.geometry.triangles.indexData.deviceAddress = indexAddress + kBufferOffset;
+    valid_geometry_triangles.geometry.triangles.transformData.deviceAddress = 0;
+    valid_geometry_triangles.geometry.triangles.maxVertex = 1;
+    valid_geometry_triangles.flags = 0;
+
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    auto acc_struct_properties = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&acc_struct_properties);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    auto bot_level_as_scratch = layer_data::make_unique<VkBufferObj>();
+    VkBufferCreateInfo create_info = LvlInitStruct<VkBufferCreateInfo>();
+    create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    create_info.size = std::max<VkDeviceSize>(acc_struct_properties.minAccelerationStructureScratchOffsetAlignment, kBufferOffset) * 2;
+    bot_level_as->create_scratch_buffer(*m_device, bot_level_as_scratch.get(), &create_info);
+
+    address_info.buffer = bot_level_as_scratch->handle();
+    VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &address_info);
+
+    auto build_info = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
+    build_info.flags = 0;
+    build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    build_info.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    build_info.srcAccelerationStructure = VK_NULL_HANDLE;
+    build_info.dstAccelerationStructure = bot_level_as->handle();
+    build_info.geometryCount = 1;
+    build_info.pGeometries = &valid_geometry_triangles;
+    build_info.ppGeometries = NULL;
+    build_info.scratchData.deviceAddress = device_address + kBufferOffset;
+
+    VkAccelerationStructureBuildRangeInfoKHR build_range_info{};
+    build_range_info.firstVertex = 0;
+    build_range_info.primitiveCount = 1;
+    build_range_info.primitiveOffset = 3;
+    build_range_info.transformOffset = 0;
+
+    VkAccelerationStructureBuildRangeInfoKHR *range_infos[1];
+    range_infos[0] = &build_range_info;
+
+    m_commandBuffer->begin();
+    vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info, range_infos);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-00922");
+    vk::DestroyBuffer(m_device->handle(), ibo->handle(), nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-00922");
+    vk::DestroyBuffer(m_device->handle(), vbo->handle(), nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-00922");
+    vk::DestroyBuffer(m_device->handle(), bot_level_as_scratch->handle(), nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyAccelerationStructureKHR-accelerationStructure-02442");
+    vkDestroyAccelerationStructureKHR(m_device->handle(), bot_level_as->handle(), nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    ibo.reset();
+    vbo.reset();
+    bot_level_as_scratch.reset();
+    bot_level_as.reset();
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     TEST_DESCRIPTION("Validate import memory handleType for buffers and images");
 
