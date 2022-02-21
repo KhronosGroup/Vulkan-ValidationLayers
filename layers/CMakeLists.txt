@@ -270,12 +270,6 @@ if(INSTRUMENT_OPTICK)
 endif()
 
 if(BUILD_LAYERS)
-    if (NOT TARGET SPIRV-Tools)
-        find_package(SPIRV-Tools REQUIRED CONFIG)
-    endif()
-    if (NOT TARGET SPIRV-Tools-opt)
-        find_package(SPIRV-Tools-opt REQUIRED CONFIG)
-    endif()
     AddVkLayer(khronos_validation "${KHRONOS_LAYER_COMPILE_DEFINITIONS}"
         ${CHASSIS_LIBRARY_FILES}
         ${CORE_VALIDATION_LIBRARY_FILES}
@@ -310,7 +304,7 @@ if(BUILD_LAYERS)
         target_include_directories(VkLayer_khronos_validation PRIVATE ${ROBIN_HOOD_HASHING_INCLUDE_DIR})
     endif()
     target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
-    target_link_libraries(VkLayer_khronos_validation PRIVATE SPIRV-Tools-static SPIRV-Tools-opt)
+    target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_TARGET} SPIRV-Tools-opt)
 
 
     # The output file needs Unix "/" separators or Windows "\" separators On top of that, Windows separators actually need to be doubled
