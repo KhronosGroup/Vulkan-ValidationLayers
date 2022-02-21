@@ -746,6 +746,7 @@ class optional {
     optional(optional &&other) : init_(false) { *this = std::move(other); }
 
     ~optional() { DeInit(); }
+    void reset() { DeInit(); }
 
     template <typename... Args>
     T &emplace(const Args &...args) {

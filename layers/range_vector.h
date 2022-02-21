@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2021 The Khronos Group Inc.
- * Copyright (c) 2019-2021 Valve Corporation
- * Copyright (c) 2019-2021 LunarG, Inc.
- * Copyright (C) 2019-2021 Google Inc.
+/* Copyright (c) 2019-2022 The Khronos Group Inc.
+ * Copyright (c) 2019-2022 Valve Corporation
+ * Copyright (c) 2019-2022 LunarG, Inc.
+ * Copyright (C) 2019-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,6 +112,7 @@ struct range {
         return range();  // Empty default range on non-intersection
     }
 
+    index_type size() const { return end - begin; }
     range() : begin(), end() {}
     range(const index_type &begin_, const index_type &end_) : begin(begin_), end(end_) {}
     range(const range &other) : begin(other.begin), end(other.end) {}
