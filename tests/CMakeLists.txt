@@ -66,9 +66,6 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-find_package(SPIRV-Tools REQUIRED CONFIG)
-find_package(SPIRV-Tools-opt REQUIRED CONFIG)
-
 set(LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
 
 set(COMMON_CPP
@@ -154,7 +151,7 @@ target_include_directories(vk_layer_validation_tests PRIVATE ${SPIRV_HEADERS_INC
 target_link_libraries(vk_layer_validation_tests
                       PRIVATE VkLayer_utils
                               ${GLSLANG_LIBRARIES}
-			      SPIRV-Tools-static SPIRV-Tools-opt
+			      ${SPIRV_TOOLS_TARGET} SPIRV-Tools-opt
 			      GTest::gtest GTest::gtest_main)
 
 if(NOT WIN32)

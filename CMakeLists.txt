@@ -274,6 +274,25 @@ if(BUILD_LAYERS OR BUILD_TESTS)
         endif()
 	set(SPIRV_HEADERS_INCLUDE_DIR "${SPIRV_HEADERS_INSTALL_DIR}/include")
     endif()
+    if (NOT TARGET SPIRV-Tools)
+        find_package(SPIRV-Tools REQUIRED CONFIG)
+	# See https://github.com/KhronosGroup/SPIRV-Tools/issues/3909 for background on this.
+	# The targets available from SPIRV-Tools change depending on how SPIRV_TOOLS_BUILD_STATIC is set.
+	# Try to handle all possible combinations so that we work with externally built packages.
+	if (TARGET SPIRV-Tools)
+	    set(SPIRV_TOOLS_TARGET "SPIRV-Tools")
+	elseif(TARGET SPIRV-Tools-static)
+	    set(SPIRV_TOOLS_TARGET "SPIRV-Tools-static")
+	elseif(TARGET SPIRV-Tools-shared)
+	    set(SPIRV_TOOLS_TARGET "SPIRV-Tools-shared")
+	else()
+	    message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
+	endif()
+    endif()
+    # Thankfully SPIRV-Tools-opt has only one target name.
+    if (NOT TARGET SPIRV-Tools-opt)
+        find_package(SPIRV-Tools-opt REQUIRED CONFIG)
+    endif()
 endif()
 
 if(BUILD_TESTS)
