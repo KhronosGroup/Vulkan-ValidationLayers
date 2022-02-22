@@ -32,7 +32,6 @@
 
 class AccessContext;
 class CommandBufferAccessContext;
-using CommandBufferAccessContextShared = std::shared_ptr<CommandBufferAccessContext>;
 class CommandExecutionContext;
 class ResourceAccessState;
 struct ResourceFirstAccess;
@@ -208,11 +207,10 @@ struct SyncEventState {
     IgnoreReason IsIgnoredByWait(CMD_TYPE cmd, VkPipelineStageFlags2KHR srcStageMask) const;
     bool HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineStageFlags2KHR exec_scope) const;
 };
-using SyncEventStateShared = std::shared_ptr<SyncEventState>;
-using SyncEventStateConstShared = std::shared_ptr<const SyncEventState>;
+
 class SyncEventsContext {
   public:
-    using Map = layer_data::unordered_map<const EVENT_STATE *, SyncEventStateShared>;
+    using Map = layer_data::unordered_map<const EVENT_STATE *, std::shared_ptr<SyncEventState>>;
     using iterator = Map::iterator;
     using const_iterator = Map::const_iterator;
 
@@ -222,7 +220,7 @@ class SyncEventsContext {
             if (!event_state.get()) return nullptr;
 
             const auto *event_plain_ptr = event_state.get();
-            auto sync_state = SyncEventStateShared(new SyncEventState(event_state));
+            auto sync_state = std::shared_ptr<SyncEventState>(new SyncEventState(event_state));
             auto insert_pair = map_.emplace(event_plain_ptr, sync_state);
             return insert_pair.first->second.get();
         }
@@ -1012,10 +1010,6 @@ class CommandExecutionContext {
         assert(sync_state_);
         return *sync_state_;
     }
-    SyncValidator &GetSyncState() {
-        assert(sync_state_);
-        return *sync_state_;
-    }
     virtual ResourceUsageTag GetTagLimit() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
     virtual std::string FormatUsage(ResourceUsageTag tag) const = 0;
@@ -1171,47 +1165,18 @@ class CommandBufferAccessContext : public CommandExecutionContext {
 
 class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
   public:
-    SyncValidator() { container_type = LayerObjectTypeSyncValidation; }
     using StateTracker = ValidationStateTracker;
+    SyncValidator() { container_type = LayerObjectTypeSyncValidation; }
 
-    layer_data::unordered_map<VkCommandBuffer, CommandBufferAccessContextShared> cb_access_state;
+    layer_data::unordered_map<VkCommandBuffer, std::shared_ptr<CommandBufferAccessContext>> cb_access_state;
 
-    CommandBufferAccessContextShared GetAccessContextImpl(VkCommandBuffer command_buffer, bool do_insert) {
-        auto found_it = cb_access_state.find(command_buffer);
-        if (found_it == cb_access_state.end()) {
-            if (!do_insert) return CommandBufferAccessContextShared();
-            // If we don't have one, make it.
-            auto cb_state = Get<CMD_BUFFER_STATE>(command_buffer);
-            assert(cb_state.get());
-            auto queue_flags = cb_state->GetQueueFlags();
-            std::shared_ptr<CommandBufferAccessContext> context(new CommandBufferAccessContext(*this, cb_state, queue_flags));
-            auto insert_pair = cb_access_state.emplace(command_buffer, std::move(context));
-            found_it = insert_pair.first;
-        }
-        return found_it->second;
-    }
+    std::shared_ptr<CommandBufferAccessContext> AccessContextFactory(VkCommandBuffer command_buffer);
 
-    CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer) {
-        return GetAccessContextImpl(command_buffer, true).get();  // true -> do_insert on not found
-    }
-    CommandBufferAccessContext *GetAccessContextNoInsert(VkCommandBuffer command_buffer) {
-        return GetAccessContextImpl(command_buffer, false).get();  // false -> don't do_insert on not found
-    }
-
-    CommandBufferAccessContextShared GetAccessContextShared(VkCommandBuffer command_buffer) {
-        return GetAccessContextImpl(command_buffer, true);  // true -> do_insert on not found
-    }
-    CommandBufferAccessContextShared GetAccessContextSharedNoInsert(VkCommandBuffer command_buffer) {
-        return GetAccessContextImpl(command_buffer, false);  // false -> don't do_insert on not found
-    }
-
-    const CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer) const {
-        const auto found_it = cb_access_state.find(command_buffer);
-        if (found_it == cb_access_state.end()) {
-            return nullptr;
-        }
-        return found_it->second.get();
-    }
+    CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer);
+    CommandBufferAccessContext *GetAccessContextNoInsert(VkCommandBuffer command_buffer);
+    const CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer) const;
+    std::shared_ptr<CommandBufferAccessContext> GetAccessContextShared(VkCommandBuffer command_buffer);
+    std::shared_ptr<const CommandBufferAccessContext> GetAccessContextShared(VkCommandBuffer command_buffer) const;
 
     void ResetCommandBufferCallback(VkCommandBuffer command_buffer);
     void FreeCommandBufferCallback(VkCommandBuffer command_buffer);
