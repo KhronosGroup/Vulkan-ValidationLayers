@@ -998,8 +998,9 @@ class RenderPassAccessContext {
 // TODO: determine where to draw the design split for tag tracking (is there anything command to Queues and CB's)
 class CommandExecutionContext {
   public:
+    using AccessLog = std::vector<ResourceUsageRecord>;
     CommandExecutionContext() : sync_state_(nullptr) {}
-    CommandExecutionContext(SyncValidator *sync_validator) : sync_state_(sync_validator) {}
+    CommandExecutionContext(const SyncValidator *sync_validator) : sync_state_(sync_validator) {}
     virtual ~CommandExecutionContext() = default;
     virtual AccessContext *GetCurrentAccessContext() = 0;
     virtual SyncEventsContext *GetCurrentEventsContext() = 0;
@@ -1010,14 +1011,19 @@ class CommandExecutionContext {
         assert(sync_state_);
         return *sync_state_;
     }
+
+    void ResolveRecordedContext(const AccessContext &recorded_context, ResourceUsageTag offset);
+
+    ResourceUsageRange ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context);
     virtual ResourceUsageTag GetTagLimit() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
     virtual std::string FormatUsage(ResourceUsageTag tag) const = 0;
     virtual std::string FormatUsage(const ResourceFirstAccess &access) const = 0;
     virtual std::string FormatUsage(const HazardResult &hazard) const = 0;
+    virtual void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) = 0;
 
   protected:
-    SyncValidator *sync_state_;
+    const SyncValidator *sync_state_;
 };
 
 class CommandBufferAccessContext : public CommandExecutionContext {
@@ -1031,7 +1037,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         SyncOpEntry(const SyncOpEntry &other) = default;
     };
 
-    CommandBufferAccessContext(SyncValidator *sync_validator = nullptr)
+    CommandBufferAccessContext(const SyncValidator *sync_validator = nullptr)
         : CommandExecutionContext(sync_validator),
           cb_state_(),
           queue_flags_(),
@@ -1105,9 +1111,6 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     bool ValidateFirstUse(CommandExecutionContext *proxy_context, const char *func_name, uint32_t index) const;
     void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context, CMD_TYPE cmd);
 
-    void ResolveRecordedContext(const AccessContext &recorded_context, ResourceUsageTag offset);
-    ResourceUsageRange ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context);
-
     const CMD_BUFFER_STATE *GetCommandBufferState() const { return cb_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
 
@@ -1124,6 +1127,8 @@ class CommandBufferAccessContext : public CommandExecutionContext {
                                     ResourceUsageRecord::SubcommandType subcommand = ResourceUsageRecord::SubcommandType::kNone);
     ResourceUsageTag NextIndexedCommandTag(CMD_TYPE command, uint32_t index);
 
+    std::shared_ptr<const CMD_BUFFER_STATE> GetCBStateShared() const { return cb_state_; }
+
     const CMD_BUFFER_STATE &GetCBState() const {
         assert(cb_state_);
         return *(cb_state_.get());
@@ -1139,6 +1144,8 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         SyncOpPointer sync_op(std::make_shared<T>(std::forward<Args>(args)...));
         RecordSyncOp(std::move(sync_op));  // Call the non-template version
     }
+    const AccessLog &GetAccessLog() const { return access_log_; }
+    void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) override;
 
   private:
     // As this is passing around a shared pointer to record, move to avoid needless atomics.
@@ -1147,7 +1154,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     VkQueueFlags queue_flags_;
     bool destroyed_;
 
-    std::vector<ResourceUsageRecord> access_log_;
+    AccessLog access_log_;
     layer_data::unordered_set<std::shared_ptr<const CMD_BUFFER_STATE>> cbs_referenced_;
     uint32_t command_number_;
     uint32_t subcommand_number_;
