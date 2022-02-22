@@ -2336,7 +2336,7 @@ void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBuffer
     ResolveRecordedContext(*recorded_context, tag_range.begin);
 }
 
-void CommandBufferAccessContext::ResolveRecordedContext(const AccessContext &recorded_context, ResourceUsageTag offset) {
+void CommandExecutionContext::ResolveRecordedContext(const AccessContext &recorded_context, ResourceUsageTag offset) {
     auto tag_offset = [offset](ResourceAccessState *access) { access->OffsetTag(offset); };
 
     auto *access_context = GetCurrentAccessContext();
@@ -2346,13 +2346,17 @@ void CommandBufferAccessContext::ResolveRecordedContext(const AccessContext &rec
     }
 }
 
-ResourceUsageRange CommandBufferAccessContext::ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context) {
+ResourceUsageRange CommandExecutionContext::ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context) {
     // The execution references ensure lifespan for the referenced child CB's...
     ResourceUsageRange tag_range(GetTagLimit(), 0);
-    cbs_referenced_.emplace(recorded_context.cb_state_);
-    access_log_.insert(access_log_.end(), recorded_context.access_log_.cbegin(), recorded_context.access_log_.end());
-    tag_range.end = access_log_.size();
+    InsertRecordedAccessLogEntries(recorded_context);
+    tag_range.end = GetTagLimit();
     return tag_range;
+}
+
+void CommandBufferAccessContext::InsertRecordedAccessLogEntries(const CommandBufferAccessContext &recorded_context) {
+    cbs_referenced_.emplace(recorded_context.GetCBStateShared());
+    access_log_.insert(access_log_.end(), recorded_context.access_log_.cbegin(), recorded_context.access_log_.end());
 }
 
 ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand) {
