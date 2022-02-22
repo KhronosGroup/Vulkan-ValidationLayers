@@ -26,6 +26,42 @@
 #include "synchronization_validation.h"
 #include "sync_utils.h"
 
+// Utilities to DRY up Get... calls
+template <typename Map, typename Key = typename Map::key_type, typename RetVal = layer_data::optional<typename Map::mapped_type>>
+RetVal GetMappedOptional(const Map &map, const Key &key) {
+    RetVal ret_val;
+    auto it = map.find(key);
+    if (it != map.cend()) {
+        ret_val.emplace(it->second);
+    }
+    return ret_val;
+}
+template <typename Map, typename Fn>
+typename Map::mapped_type GetMapped(const Map &map, const typename Map::key_type &key, Fn &&default_factory) {
+    auto value = GetMappedOptional(map, key);
+    return (value) ? *value : default_factory();
+}
+
+template <typename Map, typename Fn>
+typename Map::mapped_type GetMappedInsert(Map &map, const typename Map::key_type &key, Fn &&default_factory) {
+    auto value = GetMappedOptional(map, key);
+    if (value) {
+        return *value;
+    }
+    auto insert_it = map.emplace(std::make_pair(key, default_factory()));
+    assert(insert_it.second);
+
+    return insert_it.first->second;
+}
+
+template <typename Map, typename Key = typename Map::key_type, typename Mapped = typename Map::mapped_type,
+          typename Value = typename Mapped::element_type>
+Value *GetMappedPlainFromShared(const Map &map, const Key &key) {
+    auto value = GetMappedOptional<Map, Key>(map, key);
+    if (value) return value->get();
+    return nullptr;
+}
+
 static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.Binding(); }
 
 static bool SimpleBinding(const IMAGE_STATE &image_state) {
@@ -3430,6 +3466,35 @@ void ResourceAccessState::ReadState::Set(VkPipelineStageFlags2KHR stage_, const 
     barriers = barriers_;
     tag = tag_;
     pending_dep_chain = 0;  // If this is a new read, we aren't applying a barrier set.
+}
+
+std::shared_ptr<CommandBufferAccessContext> SyncValidator::AccessContextFactory(VkCommandBuffer command_buffer) {
+    // If we don't have one, make it.
+    auto cb_state = Get<CMD_BUFFER_STATE>(command_buffer);
+    assert(cb_state.get());
+    auto queue_flags = cb_state->GetQueueFlags();
+    return std::make_shared<CommandBufferAccessContext>(*this, cb_state, queue_flags);
+}
+
+inline std::shared_ptr<CommandBufferAccessContext> SyncValidator::GetAccessContextShared(VkCommandBuffer command_buffer) {
+    return GetMappedInsert(cb_access_state, command_buffer,
+                           [this, command_buffer]() { return AccessContextFactory(command_buffer); });
+}
+
+std::shared_ptr<const CommandBufferAccessContext> SyncValidator::GetAccessContextShared(VkCommandBuffer command_buffer) const {
+    return GetMapped(cb_access_state, command_buffer, []() { return std::shared_ptr<CommandBufferAccessContext>(); });
+}
+
+const CommandBufferAccessContext *SyncValidator::GetAccessContext(VkCommandBuffer command_buffer) const {
+    return GetMappedPlainFromShared(cb_access_state, command_buffer);
+}
+
+CommandBufferAccessContext *SyncValidator::GetAccessContext(VkCommandBuffer command_buffer) {
+    return GetAccessContextShared(command_buffer).get();
+}
+
+CommandBufferAccessContext *SyncValidator::GetAccessContextNoInsert(VkCommandBuffer command_buffer) {
+    return GetMappedPlainFromShared(cb_access_state, command_buffer);
 }
 
 void SyncValidator::ResetCommandBufferCallback(VkCommandBuffer command_buffer) {
