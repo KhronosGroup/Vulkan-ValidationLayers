@@ -2521,7 +2521,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
     cb_state->RecordCmd(CMD_BUILDACCELERATIONSTRUCTURENV);
 
     auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE>(dst);
-    if (dst_as_state != nullptr) {
+    if (dst_as_state) {
         dst_as_state->Build(pInfo);
         if (!disabled[command_buffer_state]) {
             cb_state->AddChild(dst_as_state);
@@ -2529,9 +2529,40 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
     }
     if (!disabled[command_buffer_state]) {
         auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE>(src);
-        if (src_as_state != nullptr) {
+        if (src_as_state) {
             cb_state->AddChild(src_as_state);
         }
+	auto instance_buffer = Get<BUFFER_STATE>(instanceData);
+        if (instance_buffer) {
+            cb_state->AddChild(instance_buffer);
+        }
+	auto scratch_buffer = Get<BUFFER_STATE>(scratch);
+        if (scratch_buffer) {
+            cb_state->AddChild(scratch_buffer);
+        }
+
+	for (uint32_t i = 0; i < pInfo->geometryCount; i++) {
+	   const auto& geom = pInfo->pGeometries[i];
+
+	   auto vertex_buffer = Get<BUFFER_STATE>(geom.geometry.triangles.vertexData);
+	   if (vertex_buffer) {
+              cb_state->AddChild(vertex_buffer);
+	   }
+	   auto index_buffer = Get<BUFFER_STATE>(geom.geometry.triangles.indexData);
+	   if (index_buffer) {
+              cb_state->AddChild(index_buffer);
+	   }
+	   auto transform_buffer = Get<BUFFER_STATE>(geom.geometry.triangles.transformData);
+	   if (transform_buffer) {
+              cb_state->AddChild(transform_buffer);
+	   }
+
+	   auto aabb_buffer = Get<BUFFER_STATE>(geom.geometry.aabbs.aabbData);
+	   if (aabb_buffer) {
+              cb_state->AddChild(aabb_buffer);
+	   }
+	}
+
     }
     cb_state->hasBuildAccelerationStructureCmd = true;
 }
