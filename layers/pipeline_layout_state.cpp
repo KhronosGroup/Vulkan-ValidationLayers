@@ -148,12 +148,16 @@ static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(const layer_data::sp
     // TODO is this done correctly?
     set_layouts.reserve(num_layouts);
     for (size_t i = 0; i < num_layouts; ++i) {
-        for (const auto &layout : layouts) {
-            if (layout && (layout->set_layouts.size() >= i) && (layout->set_layouts[i]->GetBindingCount() > 0)) {
-                set_layouts.emplace_back(layout->set_layouts[i]);
-                break;
+        const PIPELINE_LAYOUT_STATE *used_layout = nullptr;
+        for (const auto *layout : layouts) {
+            if (layout) {
+                used_layout = layout;
+                if ((layout->set_layouts.size() > i) && (layout->set_layouts[i]->GetBindingCount() > 0)) {
+                    break;
+                }
             }
         }
+        set_layouts.emplace_back(used_layout->set_layouts[i]);
     }
     return set_layouts;
 }
