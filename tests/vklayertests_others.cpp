@@ -9712,8 +9712,7 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     valid_geometry_triangles.geometry.triangles.transformData.deviceAddress = 0;
     valid_geometry_triangles.geometry.triangles.maxVertex = 1;
     valid_geometry_triangles.flags = 0;
-    VkAccelerationStructureGeometryKHR *pGeometry = new VkAccelerationStructureGeometryKHR[1];
-    pGeometry[0] = valid_geometry_triangles;
+    VkAccelerationStructureGeometryKHR *pGeometry = &valid_geometry_triangles;
 
     VkAccelerationStructureBuildGeometryInfoKHR build_info_khr = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
@@ -9744,11 +9743,12 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     build_info_ppGeometries_khr.pGeometries = NULL;
     build_info_ppGeometries_khr.ppGeometries = &pGeometry;
 
-    VkAccelerationStructureBuildRangeInfoKHR *pBuildRangeInfos = new VkAccelerationStructureBuildRangeInfoKHR[1];
-    pBuildRangeInfos[0].firstVertex = 0;
-    pBuildRangeInfos[0].primitiveCount = 1;
-    pBuildRangeInfos[0].primitiveOffset = 3;
-    pBuildRangeInfos[0].transformOffset = 0;
+    VkAccelerationStructureBuildRangeInfoKHR build_range_info;
+    build_range_info.firstVertex = 0;
+    build_range_info.primitiveCount = 1;
+    build_range_info.primitiveOffset = 3;
+    build_range_info.transformOffset = 0;
+    VkAccelerationStructureBuildRangeInfoKHR *pBuildRangeInfos = &build_range_info;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-commandBuffer-recording");
     vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &pBuildRangeInfos);
@@ -9906,8 +9906,13 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
         vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &pBuildRangeInfos);
         m_errorMonitor->VerifyFound();
     }
-
-    delete[] pGeometry;
+    // Scratch data buffer is 0
+    {
+        build_info_khr.scratchData.deviceAddress = 0;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802");
+        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &pBuildRangeInfos);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureKHR) {
