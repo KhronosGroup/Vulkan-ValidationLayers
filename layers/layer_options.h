@@ -70,6 +70,7 @@ static const layer_data::unordered_map<std::string, ValidationCheckDisables> Val
 static const layer_data::unordered_map<std::string, ValidationCheckEnables> ValidationEnableLookup = {
     {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM},
     {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD},
+    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG},
     {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL},
 };
 
@@ -95,6 +96,7 @@ static const std::vector<std::string> EnableFlagNameHelper = {
     "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT",                     // best_practices,
     "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",                         // vendor_specific_arm,
     "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD",                         // vendor_specific_amd,
+    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG",                         // vendor_specific_img,
     "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
     "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION"              // sync_validation,
 };
