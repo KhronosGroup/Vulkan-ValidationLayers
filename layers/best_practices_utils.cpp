@@ -37,10 +37,9 @@ struct VendorSpecificInfo {
     std::string name;
 };
 
-const std::map<BPVendorFlagBits, VendorSpecificInfo> kVendorInfo = {
-    {kBPVendorArm, {vendor_specific_arm, "Arm"}},
-    {kBPVendorAMD, {vendor_specific_amd, "AMD"}},
-};
+const std::map<BPVendorFlagBits, VendorSpecificInfo> kVendorInfo = {{kBPVendorArm, {vendor_specific_arm, "Arm"}},
+                                                                    {kBPVendorAMD, {vendor_specific_amd, "AMD"}},
+                                                                    {kBPVendorIMG, {vendor_specific_img, "IMG"}}};
 
 const SpecialUseVUIDs kSpecialUseInstanceVUIDs {
     kVUID_BestPractices_CreateInstance_SpecialUseExtension_CADSupport,

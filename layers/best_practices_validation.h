@@ -102,8 +102,7 @@ struct DeprecationData {
     std::string target;
 };
 
-struct SpecialUseVUIDs
-{
+struct SpecialUseVUIDs {
     const char* cadsupport;
     const char* d3demulation;
     const char* devtools;
@@ -114,6 +113,7 @@ struct SpecialUseVUIDs
 typedef enum {
     kBPVendorArm = 0x00000001,
     kBPVendorAMD = 0x00000002,
+    kBPVendorIMG = 0x00000004,
 } BPVendorFlagBits;
 typedef VkFlags BPVendorFlags;
 

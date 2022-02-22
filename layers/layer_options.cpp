@@ -84,9 +84,13 @@ void SetValidationEnable(CHECK_ENABLED &enable_data, const ValidationCheckEnable
         case VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD:
             enable_data[vendor_specific_amd] = true;
             break;
+        case VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG:
+            enable_data[vendor_specific_img] = true;
+            break;
         case VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL:
             enable_data[vendor_specific_arm] = true;
             enable_data[vendor_specific_amd] = true;
+            enable_data[vendor_specific_img] = true;
             break;
         default:
             assert(true);
