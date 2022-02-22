@@ -4178,6 +4178,38 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureKHR(VkCom
     }
 }
 
+void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(
+    VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    if (cb_state) {
+        cb_state->RecordCmd(CMD_COPYACCELERATIONSTRUCTURETOMEMORYKHR);
+        auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
+        if (!disabled[command_buffer_state]) {
+            cb_state->AddChild(src_as_state);
+        }
+        auto iter = buffer_address_map_.find(pInfo->dst.deviceAddress);
+        if (iter != buffer_address_map_.end()) {
+            cb_state->AddChild(iter->second);
+        }
+    }
+}
+
+void ValidationStateTracker::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(
+    VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    if (cb_state) {
+        cb_state->RecordCmd(CMD_COPYMEMORYTOACCELERATIONSTRUCTUREKHR);
+        if (!disabled[command_buffer_state]) {
+            auto iter = buffer_address_map_.find(pInfo->src.deviceAddress);
+            if (iter != buffer_address_map_.end()) {
+                cb_state->AddChild(iter->second);
+            }
+            auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
+            cb_state->AddChild(dst_as_state);
+        }
+    }
+}
+
 void ValidationStateTracker::PreCallRecordCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETCULLMODEEXT, CBSTATUS_CULL_MODE_SET);
