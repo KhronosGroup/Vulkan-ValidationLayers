@@ -1715,7 +1715,7 @@ void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* functi
     }
 }
 
-void BestPractices::ValidateImageInQueueArm(const char* function_name, const bp_state::Image& image,
+void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const bp_state::Image& image,
                                             IMAGE_SUBRESOURCE_USAGE_BP last_usage, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                             uint32_t array_layer, uint32_t mip_level) {
     // Swapchain images are implicitly read so clear after store is expected.
@@ -1723,20 +1723,19 @@ void BestPractices::ValidateImageInQueueArm(const char* function_name, const bp_
         !image.IsSwapchainImage()) {
         LogPerformanceWarning(
             device, kVUID_BestPractices_RenderPass_RedundantStore,
-            "%s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+            "%s: %s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
             "image was used, it was written to with STORE_OP_STORE. "
             "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
             "architectures.",
-            function_name, VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
+            function_name, VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED) {
         LogPerformanceWarning(
             device, kVUID_BestPractices_RenderPass_RedundantClear,
-            "%s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+            "%s: %s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
             "image was used, it was written to with vkCmdClear*Image(). "
             "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
-            "tile-based architectures."
-            "architectures.",
-            function_name, VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
+            "tile-based architectures.",
+            function_name, VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE &&
                (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE || last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED ||
                 last_usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE || last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE)) {
@@ -1783,17 +1782,18 @@ void BestPractices::ValidateImageInQueueArm(const char* function_name, const bp_
 
         LogPerformanceWarning(
             device, vuid,
-            "%s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
+            "%s: %s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
             "time image was used, it was written to with %s. %s",
-            function_name, VendorSpecificTag(kBPVendorArm), array_layer, mip_level, last_cmd, suggestion);
+            function_name, VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level, last_cmd,
+            suggestion);
     }
 }
 
 void BestPractices::ValidateImageInQueue(const char* function_name, bp_state::Image& state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                          uint32_t array_layer, uint32_t mip_level) {
     auto last_usage = state.UpdateUsage(array_layer, mip_level, usage);
-    if (VendorCheckEnabled(kBPVendorArm)) {
-        ValidateImageInQueueArm(function_name, state, last_usage, usage, array_layer, mip_level);
+    if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
+        ValidateImageInQueueArmImg(function_name, state, last_usage, usage, array_layer, mip_level);
     }
 }
 
