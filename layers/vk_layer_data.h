@@ -864,5 +864,17 @@ class span {
     pointer data_ = {};
     size_t count_ = 0;
 };
+
+//
+// Allow type inference that using the constructor doesn't allow in C++11
+template <typename T>
+span<T> make_span(T *begin, size_t count) {
+    return span<T>(begin, count);
+}
+template <typename T>
+span<T> make_span(T *begin, T *end) {
+    return make_span<T>(begin, end);
+}
+
 }  // namespace layer_data
 #endif  // LAYER_DATA_H
