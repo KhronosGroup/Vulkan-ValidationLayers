@@ -2980,7 +2980,6 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
 
     // Create a renderPass with a single color attachment for fragment density map
     auto fragment_density_map_create_info = LvlInitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>();
-    fragment_density_map_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT;
     fragment_density_map_create_info.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkRenderPassCreateInfo2 rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2,
@@ -3005,8 +3004,6 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
     ASSERT_VK_SUCCESS(err);
 
     auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
-    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_create_info.pNext = NULL;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8_UNORM;
     image_create_info.extent.width = 16;
@@ -3065,7 +3062,6 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
     VkImageView iv[7];
     vk_testing::ImageView iv0;
     auto ivci = LvlInitStruct<VkImageViewCreateInfo>();
-    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     ivci.image = fdm_image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     ivci.format = VK_FORMAT_R8G8_UNORM;
@@ -3122,8 +3118,6 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
     ASSERT_VK_SUCCESS(err);
 
     auto fbci = LvlInitStruct<VkFramebufferCreateInfo>();
-    fbci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    fbci.pNext = nullptr;
     fbci.flags = 0;
     fbci.width = 16;
     fbci.height = 16;
@@ -3146,11 +3140,8 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
 
     if (rp2Supported) {
         auto offsetting = LvlInitStruct<VkSubpassFragmentDensityMapOffsetEndInfoQCOM>();
-        auto subpassEndInfo = LvlInitStruct<VkSubpassEndInfoKHR>();
+        auto subpassEndInfo = LvlInitStruct<VkSubpassEndInfoKHR>(&offsetting);
         VkOffset2D m_vOffsets[2];
-        subpassEndInfo.sType = VK_STRUCTURE_TYPE_SUBPASS_END_INFO;
-        subpassEndInfo.pNext = &offsetting;
-        offsetting.sType = VK_STRUCTURE_TYPE_SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM;
         offsetting.pFragmentDensityOffsets = m_vOffsets;
         offsetting.fragmentDensityOffsetCount = 2;
 
