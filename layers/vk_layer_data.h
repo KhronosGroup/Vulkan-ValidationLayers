@@ -746,7 +746,7 @@ class optional {
     optional(optional &&other) : init_(false) { *this = std::move(other); }
 
     ~optional() { DeInit(); }
-
+    void reset() { DeInit(); }
     template <typename... Args>
     T &emplace(const Args &...args) {
         init_ = true;
@@ -824,5 +824,49 @@ class optional {
     Store store_;
     bool init_;
 };
+
+// Helper for thread local Validate -> Record phase data
+// Define T unique to each entrypoint which will persist data
+// Use only in with singleton (leaf) validation objects
+struct TlsGuardPersist {};
+template <typename T>
+class TlsGuard {
+  public:
+    // For use on inital references -- Validate phase
+    template <typename... Args>
+    TlsGuard(bool *skip, Args &&...args) : skip_(skip), persist_(false) {
+        assert(!payload_);
+        payload_.emplace(std::forward<Args>(args)...);
+    }
+    // For use on non-terminal persistent references (PreRecord phase IFF PostRecord is also present.
+    TlsGuard(const TlsGuardPersist &) : skip_(nullptr), persist_(true) { assert(payload_); }
+    // For use on terminal persistent references
+    TlsGuard() : skip_(nullptr), persist_(false) { assert(payload_); }
+    ~TlsGuard() {
+        assert(payload_);
+        if (!persist_ && (!skip_ || *skip_)) payload_.reset();
+    }
+
+    T &operator*() & {
+        assert(payload_);
+        return *payload_;
+    }
+    const T &operator*() const & {
+        assert(payload_);
+        return *payload_;
+    }
+    T &&operator*() && {
+        assert(payload_);
+        return std::move(*payload_);
+    }
+
+  private:
+    thread_local static optional<T> payload_;
+    bool *skip_;
+    bool persist_;
+};
+template <typename T>
+thread_local optional<T> TlsGuard<T>::payload_;
+
 }  // namespace layer_data
 #endif  // LAYER_DATA_H

@@ -6470,9 +6470,23 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer comman
     }
 }
 
+struct ExecuteCommandsPersistentState {
+    int command_buffer_count = 0;
+};
+
+template <>
+thread_local layer_data::optional<ExecuteCommandsPersistentState> layer_data::TlsGuard<ExecuteCommandsPersistentState>::payload_ =
+    layer_data::optional<ExecuteCommandsPersistentState>();
+
 bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                       const VkCommandBuffer *pCommandBuffers) const {
     bool skip = StateTracker::PreCallValidateCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+
+    // If skip is true, persistent state will be freed by destructor
+    layer_data::TlsGuard<ExecuteCommandsPersistentState> guard(&skip);
+    // Load something call specific
+    (*guard).command_buffer_count = commandBufferCount;
+
     const char *func_name = "vkCmdExecuteCommands";
     const auto *cb_context = GetAccessContext(commandBuffer);
     assert(cb_context);
@@ -6503,6 +6517,9 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                     const VkCommandBuffer *pCommandBuffers) {
     StateTracker::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+    layer_data::TlsGuard<ExecuteCommandsPersistentState> guard;
+    // Check that the state did infact persist...
+    assert((*guard).command_buffer_count == commandBufferCount);
     auto *cb_context = GetAccessContext(commandBuffer);
     assert(cb_context);
     cb_context->NextCommandTag(CMD_EXECUTECOMMANDS);
