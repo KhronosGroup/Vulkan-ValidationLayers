@@ -311,15 +311,6 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
                            "same format and VK_IMAGE_CREATE_EXTENDED_USAGE_BIT will not have any effect.");
     }
 
-    if (VendorCheckEnabled(kBPVendorArm)) {
-        if (pCreateInfo->samples > kMaxEfficientSamplesArm) {
-            skip |= LogPerformanceWarning(
-                device, kVUID_BestPractices_CreateImage_TooLargeSampleCount,
-                "%s vkCreateImage(): Trying to create an image with %u samples. "
-                "The hardware revision may not have full throughput for framebuffers with more than %u samples.",
-                VendorSpecificTag(kBPVendorArm), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesArm);
-        }
-
     if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
         if (pCreateInfo->samples > VK_SAMPLE_COUNT_1_BIT && !(pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
             skip |= LogPerformanceWarning(
@@ -330,6 +321,23 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
                 "TRANSIENT_ATTACHMENT allows tiled GPUs to not back the multisampled image with physical memory.",
                 VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG));
         }
+    }
+
+    if (VendorCheckEnabled(kBPVendorArm) && pCreateInfo->samples > kMaxEfficientSamplesArm) {
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_CreateImage_TooLargeSampleCount,
+            "%s vkCreateImage(): Trying to create an image with %u samples. "
+            "The hardware revision may not have full throughput for framebuffers with more than %u samples.",
+            VendorSpecificTag(kBPVendorArm), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesArm);
+    }
+
+    if (VendorCheckEnabled(kBPVendorIMG) && pCreateInfo->samples > kMaxEfficientSamplesImg) {
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_CreateImage_TooLargeSampleCount,
+            "%s vkCreateImage(): Trying to create an image with %u samples. "
+            "The device may not have full support for true multisampling for images with more than %u samples. "
+            "XT devices support up to 8 samples, XE up to 4 samples.",
+            VendorSpecificTag(kBPVendorIMG), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesImg);
     }
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
