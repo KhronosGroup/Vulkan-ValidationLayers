@@ -1648,17 +1648,17 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
             }
 
             // Using LOAD_OP_LOAD is expensive on tiled GPUs, so flag it as a potential improvement
-            if (attachment_needs_readback && VendorCheckEnabled(kBPVendorArm)) {
-                skip |= LogPerformanceWarning(
-                    device, kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback,
-                    "%s Attachment #%u in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
-                    "Submitting this renderpass will cause the driver to inject a readback of the attachment "
+            if (attachment_needs_readback && (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG))) {
+                skip |=
+                    LogPerformanceWarning(device, kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback,
+                                          "%s %s Attachment #%u in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
+                                          "Submitting this renderpass will cause the driver to inject a readback of the attachment "
                                           "which will copy in total %u pixels (renderArea = "
-                    "{ %" PRId32 ", %" PRId32 ", %" PRIu32", %" PRIu32 " }) to the tile buffer.",
-                    VendorSpecificTag(kBPVendorArm), att,
-                    pRenderPassBegin->renderArea.extent.width * pRenderPassBegin->renderArea.extent.height,
-                    pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.offset.y,
-                    pRenderPassBegin->renderArea.extent.width, pRenderPassBegin->renderArea.extent.height);
+                                          "{ %" PRId32 ", %" PRId32 ", %" PRIu32 ", %" PRIu32 " }) to the tile buffer.",
+                                          VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), att,
+                                          pRenderPassBegin->renderArea.extent.width * pRenderPassBegin->renderArea.extent.height,
+                                          pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.offset.y,
+                                          pRenderPassBegin->renderArea.extent.width, pRenderPassBegin->renderArea.extent.height);
             }
         }
     }
