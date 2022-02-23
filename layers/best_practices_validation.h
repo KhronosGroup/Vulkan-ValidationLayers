@@ -90,6 +90,9 @@ static const uint32_t kThreadGroupDispatchCountAlignmentArm = 4;
 // Maximum number of threads which can efficiently be part of a compute workgroup when using thread group barriers.
 static const uint32_t kMaxEfficientWorkGroupThreadCountArm = 64;
 
+// Maximum sample count on PowerVR before showing a warning
+static const VkSampleCountFlagBits kMaxEfficientSamplesImg = VK_SAMPLE_COUNT_4_BIT;
+
 
 enum ExtDeprecationReason {
     kExtPromoted,
