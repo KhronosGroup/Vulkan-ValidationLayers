@@ -6056,7 +6056,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
             std::stringstream msg;
             msg << "pCreateInfos[%" << i << "].pStages[%" << stage_index << "]";
             ValidatePipelineShaderStageCreateInfo("vkCreateRayTracingPipelinesKHR", msg.str().c_str(),
-                                                   &pCreateInfos[i].pStages[i]);
+                                                  &pCreateInfos[i].pStages[stage_index]);
         }
         if (!raytracing_features || (raytracing_features && raytracing_features->rayTraversalPrimitiveCulling == VK_FALSE)) {
             if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) {
