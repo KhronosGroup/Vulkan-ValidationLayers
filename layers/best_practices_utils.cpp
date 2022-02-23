@@ -327,14 +327,15 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
                 VendorSpecificTag(kBPVendorArm), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesArm);
         }
 
+    if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
         if (pCreateInfo->samples > VK_SAMPLE_COUNT_1_BIT && !(pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
             skip |= LogPerformanceWarning(
                 device, kVUID_BestPractices_CreateImage_NonTransientMSImage,
-                "%s vkCreateImage(): Trying to create a multisampled image, but createInfo.usage did not have "
+                "%s %s vkCreateImage(): Trying to create a multisampled image, but createInfo.usage did not have "
                 "VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. Multisampled images may be resolved on-chip, "
                 "and do not need to be backed by physical storage. "
                 "TRANSIENT_ATTACHMENT allows tiled GPUs to not back the multisampled image with physical memory.",
-                VendorSpecificTag(kBPVendorArm));
+                VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG));
         }
     }
 
