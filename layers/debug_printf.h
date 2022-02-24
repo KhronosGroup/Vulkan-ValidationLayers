@@ -77,6 +77,8 @@ class CMD_BUFFER_STATE_PRINTF : public CMD_BUFFER_STATE {
     void Reset() final;
 };
 
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, CMD_BUFFER_STATE_PRINTF, CMD_BUFFER_STATE);
+
 class DebugPrintf : public ValidationStateTracker {
     VkPhysicalDeviceFeatures supported_features;
 
@@ -260,12 +262,6 @@ class DebugPrintf : public ValidationStateTracker {
                                     VkResult result) override;
     void AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point);
 
-    std::shared_ptr<CMD_BUFFER_STATE_PRINTF> GetCBState(VkCommandBuffer commandBuffer) {
-        return std::static_pointer_cast<CMD_BUFFER_STATE_PRINTF>(Get<CMD_BUFFER_STATE>(commandBuffer));
-    }
-    std::shared_ptr<const CMD_BUFFER_STATE_PRINTF> GetCBState(VkCommandBuffer commandBuffer) const {
-        return std::static_pointer_cast<const CMD_BUFFER_STATE_PRINTF>(Get<CMD_BUFFER_STATE>(commandBuffer));
-    }
     std::shared_ptr<SHADER_MODULE_STATE> GetShaderModuleState(VkShaderModule shader_module) {
         return Get<SHADER_MODULE_STATE>(shader_module);
     }

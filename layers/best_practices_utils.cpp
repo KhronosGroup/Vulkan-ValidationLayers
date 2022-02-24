@@ -243,7 +243,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
         skip |= ValidateSpecialUseExtensions("CreateDevice", pCreateInfo->ppEnabledExtensionNames[i], kSpecialUseDeviceVUIDs);
     }
 
-    const auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    const auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if ((bp_pd_state->vkGetPhysicalDeviceFeaturesState == UNCALLED) && (pCreateInfo->pEnabledFeatures != NULL)) {
         skip |= LogWarning(device, kVUID_BestPractices_CreateDevice_PDFeaturesNotCalled,
                            "vkCreateDevice() called before getting physical device features from vkGetPhysicalDeviceFeatures().");
@@ -1551,7 +1551,7 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
         // check for depth/blend state tracking
         auto gp_cis = graphicsPipelineCIs.find(pipeline);
         if (gp_cis != graphicsPipelineCIs.end()) {
-            auto cb_node = GetCBState(commandBuffer);
+            auto cb_node = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
             assert(cb_node);
             auto& render_pass_state = cb_node->render_pass_state;
 
@@ -1854,19 +1854,19 @@ void BestPractices::AddDeferredQueueOperations(CMD_BUFFER_STATE_BP* cb) {
 
 void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
     ValidationStateTracker::PreCallRecordCmdEndRenderPass(commandBuffer);
-    auto cb_node = GetCBState(commandBuffer);
+    auto cb_node = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     AddDeferredQueueOperations(cb_node.get());
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassInfo) {
     ValidationStateTracker::PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassInfo);
-    auto cb_node = GetCBState(commandBuffer);
+    auto cb_node = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     AddDeferredQueueOperations(cb_node.get());
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassInfo) {
     ValidationStateTracker::PreCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassInfo);
-    auto cb_node = GetCBState(commandBuffer);
+    auto cb_node = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     AddDeferredQueueOperations(cb_node.get());
 }
 
@@ -1897,7 +1897,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
         return;
     }
 
-    auto cb = GetCBState(commandBuffer);
+    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
 
     auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     if (rp_state) {
@@ -1994,7 +1994,7 @@ bool BestPractices::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBu
 void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                              const VkRenderPassBeginInfo* pRenderPassBegin) {
     // Reset the renderpass state
-    auto cb = GetCBState(commandBuffer);
+    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     cb->hasDrawCmd = false;
     assert(cb);
     auto& render_pass_state = cb->render_pass_state;
@@ -2040,7 +2040,7 @@ void BestPractices::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer command
 // Generic function to handle validation for all CmdDraw* type functions
 bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* caller) const {
     bool skip = false;
-    const auto cb_state = GetCBState(cmd_buffer);
+    const auto cb_state = Get<CMD_BUFFER_STATE_BP>(cmd_buffer);
     if (cb_state) {
         const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
         const auto* pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
@@ -2078,7 +2078,7 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* 
 }
 
 void BestPractices::RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller) {
-    auto cb_node = GetCBState(cmd_buffer);
+    auto cb_node = Get<CMD_BUFFER_STATE_BP>(cmd_buffer);
     assert(cb_node);
     auto& render_pass_state = cb_node->render_pass_state;
     if (VendorCheckEnabled(kBPVendorArm)) {
@@ -2132,7 +2132,7 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
 
     // Check if we reached the limit for small indexed draw calls.
     // Note that we cannot update the draw call count here, so we do it in PreCallRecordCmdDrawIndexed.
-    const auto cmd_state = GetCBState(commandBuffer);
+    const auto cmd_state = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices &&
         (cmd_state->small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1) &&
         VendorCheckEnabled(kBPVendorArm)) {
@@ -2155,7 +2155,7 @@ bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32
     bool skip = false;
 
     // check for sparse/underutilised index buffer, and post-transform cache thrashing
-    const auto cmd_state = GetCBState(commandBuffer);
+    const auto cmd_state = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     if (cmd_state == nullptr) return skip;
 
     const auto* ib_state = cmd_state->index_buffer_binding.buffer_state.get();
@@ -2315,9 +2315,9 @@ bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32
 bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                       const VkCommandBuffer* pCommandBuffers) const {
     bool skip = false;
-    const auto primary = GetCBState(commandBuffer);
+    const auto primary = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     for (uint32_t i = 0; i < commandBufferCount; i++) {
-        const auto secondary_cb = GetCBState(pCommandBuffers[i]);
+        const auto secondary_cb = Get<CMD_BUFFER_STATE_BP>(pCommandBuffers[i]);
         if (secondary_cb == nullptr) {
             continue;
         }
@@ -2342,11 +2342,11 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
 void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                     const VkCommandBuffer* pCommandBuffers) {
-    auto primary = GetCBState(commandBuffer);
+    auto primary = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     auto& primary_state = primary->render_pass_state;
 
     for (uint32_t i = 0; i < commandBufferCount; i++) {
-        auto secondary_cb = GetCBState(pCommandBuffers[i]);
+        auto secondary_cb = Get<CMD_BUFFER_STATE_BP>(pCommandBuffers[i]);
         if (secondary_cb == nullptr) {
             continue;
         }
@@ -2371,7 +2371,7 @@ void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
         primary_state.numDrawCallsDepthEqualCompare += secondary.numDrawCallsDepthEqualCompare;
         primary_state.numDrawCallsDepthOnly += secondary.numDrawCallsDepthOnly;
 
-        auto second_state = GetCBState(pCommandBuffers[i]);
+        auto second_state = Get<CMD_BUFFER_STATE_BP>(pCommandBuffers[i]);
         if (second_state->hasDrawCmd) {
             primary->hasDrawCmd = true;
         }
@@ -2427,7 +2427,7 @@ void BestPractices::RecordAttachmentClearAttachments(CMD_BUFFER_STATE_BP* cmd_st
 void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                                                      uint32_t attachmentCount, const VkClearAttachment* pClearAttachments,
                                                      uint32_t rectCount, const VkClearRect* pRects) {
-    auto cmd_state = GetCBState(commandBuffer);
+    auto cmd_state = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     RENDER_PASS_STATE* rp_state = cmd_state->activeRenderPass.get();
     FRAMEBUFFER_STATE* fb_state = cmd_state->activeFramebuffer.get();
     RenderPassState& tracking_state = cmd_state->render_pass_state;
@@ -2477,7 +2477,7 @@ void BestPractices::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u
     ValidationStateTracker::PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset,
                                                         firstInstance);
 
-    auto cmd_state = GetCBState(commandBuffer);
+    auto cmd_state = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices) {
         cmd_state->small_indexed_draw_call_count++;
     }
@@ -2547,7 +2547,7 @@ void BestPractices::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer command
 }
 
 void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer, const char* function_name) {
-    auto cb_state = GetCBState(commandBuffer);
+    auto cb_state = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
 
     if (cb_state) {
         for (auto descriptor_set : cb_state->validated_descriptor_sets) {
@@ -2650,7 +2650,7 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
 
 bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) const {
     bool skip = false;
-    const auto cmd = GetCBState(commandBuffer);
+    const auto cmd = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
 
     if (cmd == nullptr) return skip;
     auto &render_pass_state = cmd->render_pass_state;
@@ -2744,7 +2744,7 @@ void BestPractices::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuff
 bool BestPractices::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice,
                                                                             const char* api_name) const {
     bool skip = false;
-    const auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    const auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
 
     if (bp_pd_state) {
         if (bp_pd_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState == UNCALLED) {
@@ -2791,7 +2791,7 @@ bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwap
                                                          VkImage* pSwapchainImages) const {
     bool skip = false;
 
-    auto swapchain_state = std::static_pointer_cast<const SWAPCHAIN_STATE_BP>(Get<SWAPCHAIN_NODE>(swapchain));
+    auto swapchain_state = Get<SWAPCHAIN_STATE_BP>(swapchain);
 
     if (swapchain_state && pSwapchainImages) {
         // Compare the preliminary value of *pSwapchainImageCount with the value this time:
@@ -2867,7 +2867,7 @@ bool BestPractices::PreCallValidateBindAccelerationStructureMemoryNV(
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                           uint32_t* pQueueFamilyPropertyCount,
                                                                           VkQueueFamilyProperties* pQueueFamilyProperties) const {
-    const auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    const auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState,
@@ -2879,7 +2879,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhys
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                            uint32_t* pQueueFamilyPropertyCount,
                                                                            VkQueueFamilyProperties2* pQueueFamilyProperties) const {
-    const auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    const auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2State,
@@ -2890,7 +2890,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhy
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(
     VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount, VkQueueFamilyProperties2* pQueueFamilyProperties) const {
-    const auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    const auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2KHRState,
@@ -2903,7 +2903,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysical
                                                                       uint32_t* pSurfaceFormatCount,
                                                                       VkSurfaceFormatKHR* pSurfaceFormats) const {
     if (!pSurfaceFormats) return false;
-    const auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    const auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     const auto& call_state = bp_pd_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
     bool skip = false;
     if (call_state == UNCALLED) {
@@ -3119,7 +3119,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                                                        const VkClearAttachment* pAttachments, uint32_t rectCount,
                                                        const VkClearRect* pRects) const {
     bool skip = false;
-    const auto cb_node = GetCBState(commandBuffer);
+    const auto cb_node = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     if (!cb_node) return skip;
 
     if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
@@ -3249,7 +3249,7 @@ bool BestPractices::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
 void BestPractices::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                  VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                  const VkImageResolve* pRegions) {
-    auto cb = GetCBState(commandBuffer);
+    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
     auto* src = GetImageUsageState(srcImage);
     auto* dst = GetImageUsageState(dstImage);
@@ -3262,7 +3262,7 @@ void BestPractices::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
 
 void BestPractices::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                                      const VkResolveImageInfo2KHR* pResolveImageInfo) {
-    auto cb = GetCBState(commandBuffer);
+    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
     auto* src = GetImageUsageState(pResolveImageInfo->srcImage);
     auto* dst = GetImageUsageState(pResolveImageInfo->dstImage);
@@ -3276,7 +3276,7 @@ void BestPractices::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuff
 
 void BestPractices::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer,
                                                      const VkResolveImageInfo2* pResolveImageInfo) {
-    auto cb = GetCBState(commandBuffer);
+    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     auto& funcs = cb->queue_submit_functions;
     auto* src = GetImageUsageState(pResolveImageInfo->srcImage);
     auto* dst = GetImageUsageState(pResolveImageInfo->dstImage);
@@ -3293,7 +3293,7 @@ void BestPractices::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer,
 void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                     const VkClearColorValue* pColor, uint32_t rangeCount,
                                                     const VkImageSubresourceRange* pRanges) {
-    auto cb = GetCBState(commandBuffer);
+    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
     auto* dst = GetImageUsageState(image);
 
@@ -3305,7 +3305,7 @@ void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
 void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                            const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                            const VkImageSubresourceRange* pRanges) {
-    auto cb = GetCBState(commandBuffer);
+    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
     auto* dst = GetImageUsageState(image);
 
@@ -3317,7 +3317,7 @@ void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
 void BestPractices::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                               const VkImageCopy* pRegions) {
-    auto cb = GetCBState(commandBuffer);
+    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
     auto* src = GetImageUsageState(srcImage);
     auto* dst = GetImageUsageState(dstImage);
@@ -3331,7 +3331,7 @@ void BestPractices::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
 void BestPractices::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                       VkImageLayout dstImageLayout, uint32_t regionCount,
                                                       const VkBufferImageCopy* pRegions) {
-    auto cb = GetCBState(commandBuffer);
+    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
     auto* dst = GetImageUsageState(dstImage);
 
@@ -3342,7 +3342,7 @@ void BestPractices::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuf
 
 void BestPractices::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                       VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions) {
-    auto cb = GetCBState(commandBuffer);
+    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
     auto* src = GetImageUsageState(srcImage);
 
@@ -3354,7 +3354,7 @@ void BestPractices::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuf
 void BestPractices::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                               const VkImageBlit* pRegions, VkFilter filter) {
-    auto cb = GetCBState(commandBuffer);
+    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
     auto* src = GetImageUsageState(srcImage);
     auto* dst = GetImageUsageState(dstImage);
@@ -3714,7 +3714,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysi
                                                                          VkQueueFamilyProperties* pQueueFamilyProperties) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
                                                                                  pQueueFamilyProperties);
-    auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_state) {
         CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState,
                                                                    nullptr == pQueueFamilyProperties);
@@ -3726,7 +3726,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhys
                                                                           VkQueueFamilyProperties2* pQueueFamilyProperties) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                                   pQueueFamilyProperties);
-    auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_state) {
         CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2State,
                                                                    nullptr == pQueueFamilyProperties);
@@ -3738,7 +3738,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkP
                                                                              VkQueueFamilyProperties2* pQueueFamilyProperties) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
                                                                                      pQueueFamilyProperties);
-    auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_state) {
         CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2KHRState,
                                                                    nullptr == pQueueFamilyProperties);
@@ -3747,7 +3747,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkP
 
 void BestPractices::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceFeatures(physicalDevice, pFeatures);
-    auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
     }
@@ -3756,7 +3756,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice phy
 void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
                                                              VkPhysicalDeviceFeatures2* pFeatures) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures);
-    auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
     }
@@ -3765,7 +3765,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice ph
 void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice,
                                                                 VkPhysicalDeviceFeatures2* pFeatures) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);
-    auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
     }
@@ -3775,7 +3775,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(
                                                                                 VkSurfaceKHR surface,
                                                                                 VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
                                                                                 VkResult result) {
-    auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
     }
@@ -3784,7 +3784,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
     VkSurfaceCapabilities2KHR* pSurfaceCapabilities, VkResult result) {
-    auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
     }
@@ -3794,7 +3794,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT
                                                                                  VkSurfaceKHR surface,
                                                                                  VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
                                                                                  VkResult result) {
-    auto bp_pd_state = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
     }
@@ -3803,7 +3803,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
                                                                                 VkSurfaceKHR surface, uint32_t* pPresentModeCount,
                                                                                 VkPresentModeKHR* pPresentModes, VkResult result) {
-    auto bp_pd_data = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_data = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_data) {
         auto& call_state = bp_pd_data->vkGetPhysicalDeviceSurfacePresentModesKHRState;
 
@@ -3823,7 +3823,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                            uint32_t* pSurfaceFormatCount,
                                                                            VkSurfaceFormatKHR* pSurfaceFormats, VkResult result) {
-    auto bp_pd_data = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_data = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_data) {
         auto& call_state = bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState;
 
@@ -3845,7 +3845,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPh
                                                                             const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                             uint32_t* pSurfaceFormatCount,
                                                                             VkSurfaceFormat2KHR* pSurfaceFormats, VkResult result) {
-    auto bp_pd_data = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_data = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_data) {
         if (*pSurfaceFormatCount) {
             if (bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState < QUERY_COUNT) {
@@ -3865,7 +3865,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesK
                                                                                    uint32_t* pPropertyCount,
                                                                                    VkDisplayPlanePropertiesKHR* pProperties,
                                                                                    VkResult result) {
-    auto bp_pd_data = GetPhysicalDeviceState(physicalDevice);
+    auto bp_pd_data = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
     if (bp_pd_data) {
         if (*pPropertyCount) {
             if (bp_pd_data->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState < QUERY_COUNT) {
@@ -3883,7 +3883,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesK
 void BestPractices::ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                               uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages,
                                                               VkResult result) {
-    auto swapchain_state = std::static_pointer_cast<SWAPCHAIN_STATE_BP>(Get<SWAPCHAIN_NODE>(swapchain));
+    auto swapchain_state = Get<SWAPCHAIN_STATE_BP>(swapchain);
     if (swapchain_state && (pSwapchainImages || *pSwapchainImageCount)) {
         if (swapchain_state->vkGetSwapchainImagesKHRState < QUERY_DETAILS) {
             swapchain_state->vkGetSwapchainImagesKHRState = QUERY_DETAILS;
@@ -3907,7 +3907,7 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
     for (uint32_t submit = 0; submit < submitCount; submit++) {
         const auto& submit_info = pSubmits[submit];
         for (uint32_t cb_index = 0; cb_index < submit_info.commandBufferCount; cb_index++) {
-            auto cb = GetCBState(submit_info.pCommandBuffers[cb_index]);
+            auto cb = Get<CMD_BUFFER_STATE_BP>(submit_info.pCommandBuffers[cb_index]);
             for (auto &func : cb->queue_submit_functions) {
                 func(*this, *queue_state, *cb);
             }
