@@ -1714,7 +1714,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationRestoresSt
 
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     InitGpuAssistedFramework(false);
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
@@ -1726,6 +1726,12 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
         printf("%s VK_KHR_draw_indirect_count extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
+
+    VkPhysicalDeviceVulkan13Features features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
+        features13.dynamicRendering = true;
+    }
+
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
         (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT =
@@ -1740,7 +1746,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     props.limits.maxDrawIndirectCount = 1;
     fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, features13.dynamicRendering ? (void *)&features13 : nullptr, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto vkCmdDrawIndirectCountKHR =
@@ -1800,6 +1807,31 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     err = vk::QueueWaitIdle(m_device->m_queue);
     ASSERT_VK_SUCCESS(err);
     m_errorMonitor->VerifyFound();
+
+    if (features13.dynamicRendering) {
+        VkPipelineObj dr_pipe(m_device);
+        dr_pipe.AddShader(&vs);
+        dr_pipe.AddDefaultColorAttachment();
+        err = dr_pipe.CreateVKPipeline(pipeline_layout, VK_NULL_HANDLE);
+        ASSERT_VK_SUCCESS(err);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-02717");
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+
+        vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 2,
+                                  sizeof(VkDrawIndirectCommand));
+
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+        m_commandBuffer->QueueCommandBuffer();
+        err = vk::QueueWaitIdle(m_device->m_queue);
+        ASSERT_VK_SUCCESS(err);
+        m_errorMonitor->VerifyFound();
+    }
 
     vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
 }
