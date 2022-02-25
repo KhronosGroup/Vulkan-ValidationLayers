@@ -111,6 +111,7 @@ struct GpuAssistedPreDrawValidationState {
     VkShaderModule validation_shader_module = VK_NULL_HANDLE;
     VkDescriptorSetLayout validation_ds_layout = VK_NULL_HANDLE;
     VkPipelineLayout validation_pipeline_layout = VK_NULL_HANDLE;
+    VkPipeline dyn_rendering_pipeline = VK_NULL_HANDLE;
     layer_data::unordered_map <VkRenderPass, VkPipeline> renderpass_to_pipeline;
 };
 
