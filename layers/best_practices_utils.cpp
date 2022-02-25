@@ -39,7 +39,8 @@ struct VendorSpecificInfo {
 
 const std::map<BPVendorFlagBits, VendorSpecificInfo> kVendorInfo = {{kBPVendorArm, {vendor_specific_arm, "Arm"}},
                                                                     {kBPVendorAMD, {vendor_specific_amd, "AMD"}},
-                                                                    {kBPVendorIMG, {vendor_specific_img, "IMG"}}};
+                                                                    {kBPVendorIMG, {vendor_specific_img, "IMG"}},
+                                                                    {kBPVendorNVIDIA, {vendor_specific_nvidia, "NVIDIA"}}};
 
 const SpecialUseVUIDs kSpecialUseInstanceVUIDs {
     kVUID_BestPractices_CreateInstance_SpecialUseExtension_CADSupport,

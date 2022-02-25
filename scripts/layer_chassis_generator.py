@@ -305,6 +305,7 @@ typedef enum ValidationCheckEnables {
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM,
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD,
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG,
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA,
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
     VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT,
 } ValidationCheckEnables;
@@ -339,6 +340,7 @@ typedef enum EnableFlags {
     vendor_specific_arm,
     vendor_specific_amd,
     vendor_specific_img,
+    vendor_specific_nvidia,
     debug_printf,
     sync_validation,
     sync_validation_queue_submit,
