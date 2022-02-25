@@ -1967,10 +1967,19 @@ void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBloc
 
         pre_draw_validation_state.globals_created = true;
     }
+
+    VkPipeline pipeline = VK_NULL_HANDLE;
     VkRenderPass render_pass = state.pipeline_state->rp_state->renderPass();
-    assert(render_pass != VK_NULL_HANDLE);
-    auto pipeline = pre_draw_validation_state.renderpass_to_pipeline.find(render_pass);
-    if (pipeline == pre_draw_validation_state.renderpass_to_pipeline.end()) {
+    if (render_pass != VK_NULL_HANDLE) {
+        auto pipeentry = pre_draw_validation_state.renderpass_to_pipeline.find(render_pass);
+        if (pipeentry != pre_draw_validation_state.renderpass_to_pipeline.end()) {
+            pipeline = pipeentry->second;
+        }
+    } else {
+        // Dynamic Rendering
+        pipeline = pre_draw_validation_state.dyn_rendering_pipeline;
+    }
+    if (pipeline == VK_NULL_HANDLE) {
         auto pipeline_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         pipeline_stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
         pipeline_stage_ci.module = pre_draw_validation_state.validation_shader_module;
@@ -2002,9 +2011,12 @@ void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBloc
         }
 
         *pPipeline = new_pipeline;
-        pre_draw_validation_state.renderpass_to_pipeline[render_pass] = new_pipeline;
+        if (render_pass != VK_NULL_HANDLE)
+            pre_draw_validation_state.renderpass_to_pipeline[render_pass] = new_pipeline;
+        else
+            pre_draw_validation_state.dyn_rendering_pipeline = new_pipeline;
     } else {
-        *pPipeline = pipeline->second;
+        *pPipeline = pipeline;
     }
 
     result = desc_set_manager->GetDescriptorSet(&resources.desc_pool, pre_draw_validation_state.validation_ds_layout,
