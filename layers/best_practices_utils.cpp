@@ -58,14 +58,30 @@ const SpecialUseVUIDs kSpecialUseDeviceVUIDs {
     kVUID_BestPractices_CreateDevice_SpecialUseExtension_GLEmulation,
 };
 
+ReadLockGuard BestPractices::ReadLock() {
+    if (fine_grained_locking) {
+        return ReadLockGuard(validation_object_mutex, std::defer_lock);
+    } else {
+        return ReadLockGuard(validation_object_mutex);
+    }
+}
+
+WriteLockGuard BestPractices::WriteLock() {
+    if (fine_grained_locking) {
+        return WriteLockGuard(validation_object_mutex, std::defer_lock);
+    } else {
+        return WriteLockGuard(validation_object_mutex);
+    }
+}
+
 std::shared_ptr<CMD_BUFFER_STATE> BestPractices::CreateCmdBufferState(VkCommandBuffer cb,
                                                                       const VkCommandBufferAllocateInfo* pCreateInfo,
                                                                       const COMMAND_POOL_STATE* pool) {
-    return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<CMD_BUFFER_STATE_BP>(this, cb, pCreateInfo, pool));
+    return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<bp_state::CommandBuffer>(this, cb, pCreateInfo, pool));
 }
 
-CMD_BUFFER_STATE_BP::CMD_BUFFER_STATE_BP(BestPractices* bp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
-                                         const COMMAND_POOL_STATE* pool)
+bp_state::CommandBuffer::CommandBuffer(BestPractices* bp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
+                                       const COMMAND_POOL_STATE* pool)
     : CMD_BUFFER_STATE(bp, cb, pCreateInfo, pool) {}
 
 bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {
@@ -243,7 +259,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
         skip |= ValidateSpecialUseExtensions("CreateDevice", pCreateInfo->ppEnabledExtensionNames[i], kSpecialUseDeviceVUIDs);
     }
 
-    const auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if ((bp_pd_state->vkGetPhysicalDeviceFeaturesState == UNCALLED) && (pCreateInfo->pEnabledFeatures != NULL)) {
         skip |= LogWarning(device, kVUID_BestPractices_CreateDevice_PDFeaturesNotCalled,
                            "vkCreateDevice() called before getting physical device features from vkGetPhysicalDeviceFeatures().");
@@ -356,46 +372,6 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
     }
 
     return skip;
-}
-
-void BestPractices::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
-    ValidationStateTracker::PreCallRecordDestroyImage(device, image, pAllocator);
-    ReleaseImageUsageState(image);
-}
-
-void BestPractices::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator) {
-    if (VK_NULL_HANDLE != swapchain) {
-        auto chain = Get<SWAPCHAIN_NODE>(swapchain);
-        for (auto& image : chain->images) {
-            if (image.image_state) {
-                ReleaseImageUsageState(image.image_state->image());
-            }
-        }
-    }
-    ValidationStateTracker::PreCallRecordDestroySwapchainKHR(device, swapchain, pAllocator);
-}
-
-IMAGE_STATE_BP* BestPractices::GetImageUsageState(VkImage vk_image) {
-    auto itr = imageUsageMap.find(vk_image);
-    if (itr != imageUsageMap.end()) {
-        return &itr->second;
-    } else {
-        auto& state = imageUsageMap[vk_image];
-        auto image = Get<IMAGE_STATE>(vk_image);
-        state.image = image.get();
-        state.usages.resize(image->createInfo.arrayLayers);
-        for (auto& mips : state.usages) {
-            mips.resize(image->createInfo.mipLevels, IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED);
-        }
-        return &state;
-    }
-}
-
-void BestPractices::ReleaseImageUsageState(VkImage image) {
-    auto itr = imageUsageMap.find(image);
-    if (itr != imageUsageMap.end()) {
-        imageUsageMap.erase(itr);
-    }
 }
 
 bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
@@ -599,11 +575,10 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
     skip |= ValidationStateTracker::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, ads_state_data);
 
     if (!skip) {
-        const auto& pool_handle = pAllocateInfo->descriptorPool;
-        auto iter = descriptor_pool_freed_count.find(pool_handle);
+        const auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool);
         // if the number of freed sets > 0, it implies they could be recycled instead if desirable
         // this warning is specific to Arm
-        if (VendorCheckEnabled(kBPVendorArm) && iter != descriptor_pool_freed_count.end() && iter->second > 0) {
+        if (VendorCheckEnabled(kBPVendorArm) && pool_state && (pool_state->freed_count > 0)) {
             skip |= LogPerformanceWarning(
                 device, kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse,
                 "%s Descriptor set memory was allocated via vkAllocateDescriptorSets() for sets which were previously freed in the "
@@ -618,16 +593,15 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
 void BestPractices::ManualPostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                                VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state) {
     if (result == VK_SUCCESS) {
-        // find the free count for the pool we allocated into
-        auto iter = descriptor_pool_freed_count.find(pAllocateInfo->descriptorPool);
-        if (iter != descriptor_pool_freed_count.end()) {
+        auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool);
+        if (pool_state) {
             // we record successful allocations by subtracting the allocation count from the last recorded free count
             const auto alloc_count = pAllocateInfo->descriptorSetCount;
             // clamp the unsigned subtraction to the range [0, last_free_count]
-            if (iter->second > alloc_count) {
-                iter->second -= alloc_count;
+            if (pool_state->freed_count > alloc_count) {
+                pool_state->freed_count -= alloc_count;
             } else {
-                iter->second = 0;
+                pool_state->freed_count = 0;
             }
         }
     }
@@ -637,12 +611,10 @@ void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescript
                                                      const VkDescriptorSet* pDescriptorSets, VkResult result) {
     ValidationStateTracker::PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets, result);
     if (result == VK_SUCCESS) {
+        auto pool_state = Get<bp_state::DescriptorPool>(descriptorPool);
         // we want to track frees because we're interested in suggesting re-use
-        auto iter = descriptor_pool_freed_count.find(descriptorPool);
-        if (iter == descriptor_pool_freed_count.end()) {
-            descriptor_pool_freed_count.emplace(descriptorPool, descriptorSetCount);
-        } else {
-            iter->second += descriptorSetCount;
+        if (pool_state) {
+            pool_state->freed_count += descriptorSetCount;
         }
     }
 }
@@ -651,7 +623,7 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
                                                   const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) const {
     bool skip = false;
 
-    if (num_mem_objects + 1 > kMemoryObjectWarningLimit) {
+    if ((Count<DEVICE_MEMORY_STATE>() + 1) > kMemoryObjectWarningLimit) {
         skip |= LogPerformanceWarning(device, kVUID_BestPractices_AllocateMemory_TooManyObjects,
                                       "Performance Warning: This app has > %" PRIu32 " memory objects.", kMemoryObjectWarningLimit);
     }
@@ -681,7 +653,6 @@ void BestPractices::ManualPostCallRecordAllocateMemory(VkDevice device, const Vk
         ValidateReturnCodes("vkAllocateMemory", result, error_codes, success_codes);
         return;
     }
-    num_mem_objects++;
 }
 
 void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& error_codes,
@@ -723,13 +694,6 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
     }
 
     return skip;
-}
-
-void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
-    ValidationStateTracker::PreCallRecordFreeMemory(device, memory, pAllocator);
-    if (memory != VK_NULL_HANDLE) {
-        num_mem_objects--;
-    }
 }
 
 bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const char* api_name) const {
@@ -952,7 +916,7 @@ void BestPractices::ManualPostCallRecordCreateComputePipelines(VkDevice device, 
                                                          const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                          VkResult result, void* pipe_state) {
     // AMD best practice
-    pipeline_cache = pipelineCache;
+    pipeline_cache_ = pipelineCache;
 }
 
 bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
@@ -1009,13 +973,14 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         skip |= VendorCheckEnabled(kBPVendorArm) && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos);
     }
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        if (pipelineCache && pipeline_cache && pipelineCache != pipeline_cache) {
+        auto prev_pipeline = pipeline_cache_.load();
+        if (pipelineCache && prev_pipeline && pipelineCache != prev_pipeline) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_MultiplePipelineCaches,
                             "%s Performance Warning: A second pipeline cache is in use. Consider using only one pipeline cache to "
                             "improve cache hit rate", VendorSpecificTag(kBPVendorAMD));
         }
 
-        if (num_pso > kMaxRecommendedNumberOfPSOAMD) {
+        if (num_pso_ > kMaxRecommendedNumberOfPSOAMD) {
             skip |=
                 LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_TooManyPipelines,
                                           "%s Performance warning: Too many pipelines created, consider consolidation",
@@ -1039,98 +1004,67 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     return skip;
 }
 
-void BestPractices::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator)
-{
-    auto itr = graphicsPipelineCIs.find(pipeline);
-    if (itr != graphicsPipelineCIs.end()) {
-        graphicsPipelineCIs.erase(itr);
+static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(const safe_VkGraphicsPipelineCreateInfo& create_info,
+                                                                 std::shared_ptr<const RENDER_PASS_STATE>& rp) {
+    std::vector<bp_state::AttachmentInfo> result;
+    if (!rp) {
+        return result;
     }
-    ValidationStateTracker::PreCallRecordDestroyPipeline(device, pipeline, pAllocator);
+
+    const auto& subpass = rp->createInfo.pSubpasses[create_info.subpass];
+
+    // NOTE: see PIPELINE_LAYOUT and safe_VkGraphicsPipelineCreateInfo constructors. pColorBlendState and pDepthStencilState
+    // are only non-null if they are enabled.
+    if (create_info.pColorBlendState) {
+        // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
+        uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, create_info.pColorBlendState->attachmentCount);
+        for (uint32_t j = 0; j < num_color_attachments; j++) {
+            if (create_info.pColorBlendState->pAttachments[j].colorWriteMask != 0) {
+                uint32_t attachment = subpass.pColorAttachments[j].attachment;
+                if (attachment != VK_ATTACHMENT_UNUSED) {
+                    result.push_back({attachment, VK_IMAGE_ASPECT_COLOR_BIT});
+                }
+            }
+        }
+    }
+
+    if (create_info.pDepthStencilState &&
+        (create_info.pDepthStencilState->depthTestEnable || create_info.pDepthStencilState->depthBoundsTestEnable ||
+         create_info.pDepthStencilState->stencilTestEnable)) {
+        uint32_t attachment = subpass.pDepthStencilAttachment ? subpass.pDepthStencilAttachment->attachment : VK_ATTACHMENT_UNUSED;
+        if (attachment != VK_ATTACHMENT_UNUSED) {
+            VkImageAspectFlags aspects = 0;
+            if (create_info.pDepthStencilState->depthTestEnable || create_info.pDepthStencilState->depthBoundsTestEnable) {
+                aspects |= VK_IMAGE_ASPECT_DEPTH_BIT;
+            }
+            if (create_info.pDepthStencilState->stencilTestEnable) {
+                aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
+            }
+            result.push_back({attachment, aspects});
+        }
+    }
+    return result;
+}
+
+bp_state::Pipeline::Pipeline(const ValidationStateTracker* state_data, const VkGraphicsPipelineCreateInfo* pCreateInfo,
+                             std::shared_ptr<const RENDER_PASS_STATE>&& rpstate,
+                             std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout)
+    : PIPELINE_STATE(state_data, pCreateInfo, std::move(rpstate), std::move(layout)),
+      access_framebuffer_attachments(GetAttachmentAccess(create_info.graphics, rp_state)) {}
+
+std::shared_ptr<PIPELINE_STATE> BestPractices::CreateGraphicsPipelineState(
+    const VkGraphicsPipelineCreateInfo* pCreateInfo, std::shared_ptr<const RENDER_PASS_STATE>&& render_pass,
+    std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout) const {
+    return std::static_pointer_cast<PIPELINE_STATE>(
+        std::make_shared<bp_state::Pipeline>(this, pCreateInfo, std::move(render_pass), std::move(layout)));
 }
 
 void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                 VkResult result, void* cgpl_state_data) {
-    for (size_t i = 0; i < count; i++) {
-        const auto* cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state*>(cgpl_state_data);
-        const VkPipeline pipeline_handle = pPipelines[i];
-
-        // record depth stencil state and color blend states for depth pre-pass tracking purposes
-        GraphicsPipelineCIs& cis = graphicsPipelineCIs[pipeline_handle];
-
-        auto& create_info = cgpl_state->pCreateInfos[i];
-
-        if (create_info.renderPass == VK_NULL_HANDLE) {
-            // TODO: this is necessary to avoid crashing
-            LogWarning(device, kVUID_BestPractices_DynamicRendering_NotSupported,
-                       "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
-                       "].renderPass is VK_NULL_HANDLE, VK_KHR_dynamic_rendering is not supported.\n",
-                       static_cast<uint32_t>(i));
-            continue;
-        }
-
-        auto rp = Get<RENDER_PASS_STATE>(create_info.renderPass);
-
-        if (create_info.pColorBlendState) {
-            // pColorBlendState is ignored if the pipeline has rasterization disabled or if no color attachments are used
-            bool uses_color_attachments = false;
-            for (uint32_t j = 0; j < rp->createInfo.subpassCount; j++) {
-                uses_color_attachments |= rp->UsesColorAttachment(j);
-            }
-            if (uses_color_attachments && !create_info.pRasterizationState->rasterizerDiscardEnable) {
-                cis.colorBlendStateCI.emplace(create_info.pColorBlendState);
-            }
-        }
-
-        if (create_info.pDepthStencilState) {
-            // pDepthStencilState is ignored if the pipeline has rasterization disabled or if no depth/stencil attachment is used
-            bool uses_depth_stencil = false;
-            for (uint32_t j = 0; j < rp->createInfo.subpassCount; j++) {
-                uses_depth_stencil |= rp->UsesDepthStencilAttachment(j);
-            }
-            if (uses_depth_stencil && !create_info.pRasterizationState->rasterizerDiscardEnable) {
-                cis.depthStencilStateCI.emplace(create_info.pDepthStencilState);
-            }
-        }
-        // Record which frame buffer attachments we should consider to be accessed when a draw call is performed.
-        auto& subpass = rp->createInfo.pSubpasses[create_info.subpass];
-        cis.accessFramebufferAttachments.clear();
-
-        if (cis.colorBlendStateCI) {
-            // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
-            uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, cis.colorBlendStateCI->attachmentCount);
-            for (uint32_t j = 0; j < num_color_attachments; j++) {
-                if (cis.colorBlendStateCI->pAttachments[j].colorWriteMask != 0) {
-                    uint32_t attachment = subpass.pColorAttachments[j].attachment;
-                    if (attachment != VK_ATTACHMENT_UNUSED) {
-                        cis.accessFramebufferAttachments.push_back({ attachment, VK_IMAGE_ASPECT_COLOR_BIT });
-                    }
-                }
-            }
-        }
-
-        if (cis.depthStencilStateCI && (cis.depthStencilStateCI->depthTestEnable ||
-                                        cis.depthStencilStateCI->depthBoundsTestEnable ||
-                                        cis.depthStencilStateCI->stencilTestEnable)) {
-            uint32_t attachment = subpass.pDepthStencilAttachment ?
-                                  subpass.pDepthStencilAttachment->attachment :
-                                  VK_ATTACHMENT_UNUSED;
-            if (attachment != VK_ATTACHMENT_UNUSED) {
-                VkImageAspectFlags aspects = 0;
-                if (cis.depthStencilStateCI->depthTestEnable || cis.depthStencilStateCI->depthBoundsTestEnable) {
-                    aspects |= VK_IMAGE_ASPECT_DEPTH_BIT;
-                }
-                if (cis.depthStencilStateCI->stencilTestEnable) {
-                    aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
-                }
-                cis.accessFramebufferAttachments.push_back({ attachment, aspects });
-            }
-        }
-    }
-
     // AMD best practice
-    pipeline_cache = pipelineCache;
+    pipeline_cache_ = pipelineCache;
 }
 
 bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
@@ -1148,33 +1082,35 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
     }
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        if (pipelineCache && pipeline_cache && pipelineCache != pipeline_cache) {
-            skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_MultiplePipelines,
-                            "%s Performance Warning: A second pipeline cache is in use. Consider using only one pipeline cache to "
+        auto prev_pipeline = pipeline_cache_.load();
+        if (pipelineCache && prev_pipeline && pipelineCache != prev_pipeline) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreatePipelines_MultiplePipelines,
+                "%s Performance Warning: A second pipeline cache is in use. Consider using only one pipeline cache to "
                 "improve cache hit rate",
                 VendorSpecificTag(kBPVendorAMD));
-		}
-	}
+        }
+    }
 
-        for (uint32_t i = 0; i < createInfoCount; i++) {
-            const VkComputePipelineCreateInfo& createInfo = pCreateInfos[i];
-            if (VendorCheckEnabled(kBPVendorArm)) {
-                skip |= ValidateCreateComputePipelineArm(createInfo);
-            }
+    for (uint32_t i = 0; i < createInfoCount; i++) {
+        const VkComputePipelineCreateInfo& createInfo = pCreateInfos[i];
+        if (VendorCheckEnabled(kBPVendorArm)) {
+            skip |= ValidateCreateComputePipelineArm(createInfo);
+        }
 
-            if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
-                auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
-                for (const auto& builtin : module_state->static_data_.builtin_decoration_list) {
-                    if (builtin.builtin == spv::BuiltInWorkgroupSize) {
-                        skip |= LogWarning(device, kVUID_BestPractices_SpirvDeprecated_WorkgroupSize,
-                                           "vkCreateComputePipelines(): pCreateInfos[ %" PRIu32
-                                           "] is using the Workgroup built-in which SPIR-V 1.6 deprecated. The VK_KHR_maintenance4 "
-                                           "extension exposes a new LocalSizeId execution mode that should be used instead.",
-                                           i);
-                    }
+        if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
+            auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
+            for (const auto& builtin : module_state->static_data_.builtin_decoration_list) {
+                if (builtin.builtin == spv::BuiltInWorkgroupSize) {
+                    skip |= LogWarning(device, kVUID_BestPractices_SpirvDeprecated_WorkgroupSize,
+                                       "vkCreateComputePipelines(): pCreateInfos[ %" PRIu32
+                                       "] is using the Workgroup built-in which SPIR-V 1.6 deprecated. The VK_KHR_maintenance4 "
+                                       "extension exposes a new LocalSizeId execution mode that should be used instead.",
+                                       i);
                 }
             }
         }
+    }
 
     return skip;
 }
@@ -1300,9 +1236,9 @@ void BestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkP
 
     // AMD best practice
     // end-of-frame cleanup
-    num_queue_submissions = 0;
-    num_barriers_objects = 0;
-    pipelines_used_in_frame.clear();
+    num_queue_submissions_ = 0;
+    num_barriers_objects_ = 0;
+    ClearPipelinesUsedInFrame();
 }
 
 bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits,
@@ -1470,12 +1406,14 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
     skip |= CheckPipelineStageFlags("vkCmdPipelineBarrier", dstStageMask);
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        if (num_barriers_objects + imageMemoryBarrierCount + bufferMemoryBarrierCount > kMaxRecommendedBarriersSizeAMD) {
+        auto num = num_barriers_objects_.load();
+        if (num + imageMemoryBarrierCount + bufferMemoryBarrierCount > kMaxRecommendedBarriersSizeAMD) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_CmdBuffer_highBarrierCount,
-                        "%s Performance warning: In this frame, %" PRIu32 " barriers were already submitted. Barriers have a high cost and can "
-                        "stall the GPU. "
-                        "Consider consolidating and re-organizing the frame to use fewer barriers.",
-                        VendorSpecificTag(kBPVendorAMD), num_barriers_objects);
+                                          "%s Performance warning: In this frame, %" PRIu32
+                                          " barriers were already submitted. Barriers have a high cost and can "
+                                          "stall the GPU. "
+                                          "Consider consolidating and re-organizing the frame to use fewer barriers.",
+                                          VendorSpecificTag(kBPVendorAMD), num);
         }
 
         std::array<VkImageLayout, 3> read_layouts = {
@@ -1555,21 +1493,21 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
     StateTracker::PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
 
     // AMD best practice
-    pipelines_used_in_frame.emplace(pipeline);
+    PipelineUsedInFrame(pipeline);
 
     if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        auto pipeline_state = Get<bp_state::Pipeline>(pipeline);
         // check for depth/blend state tracking
-        auto gp_cis = graphicsPipelineCIs.find(pipeline);
-        if (gp_cis != graphicsPipelineCIs.end()) {
-            auto cb_node = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+        if (pipeline_state) {
+            auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
             assert(cb_node);
             auto& render_pass_state = cb_node->render_pass_state;
 
-            render_pass_state.nextDrawTouchesAttachments = gp_cis->second.accessFramebufferAttachments;
+            render_pass_state.nextDrawTouchesAttachments = pipeline_state->access_framebuffer_attachments;
             render_pass_state.drawTouchAttachments = true;
 
-            const auto& blend_state = gp_cis->second.colorBlendStateCI;
-            const auto& stencil_state = gp_cis->second.depthStencilStateCI;
+            const auto* blend_state = pipeline_state->create_info.graphics.pColorBlendState;
+            const auto* stencil_state = pipeline_state->create_info.graphics.pDepthStencilState;
 
             if (blend_state) {
                 // assume the pipeline is depth-only unless any of the attachments have color writes enabled
@@ -1718,24 +1656,21 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
 void BestPractices::QueueValidateImageView(QueueCallbacks &funcs, const char* function_name,
                                            IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage) {
     if (view) {
-        QueueValidateImage(funcs, function_name, GetImageUsageState(view->create_info.image), usage,
-                           view->normalized_subresource_range);
+        auto image_state = std::static_pointer_cast<bp_state::Image>(view->image_state);
+        QueueValidateImage(funcs, function_name, image_state, usage, view->normalized_subresource_range);
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* function_name,
-                                       IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
-                                       const VkImageSubresourceRange& subresource_range) {
-    IMAGE_STATE* image = state->image;
-
+void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const char* function_name, std::shared_ptr<bp_state::Image>& state,
+                                       IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceRange& subresource_range) {
     // If we're viewing a 3D slice, ignore base array layer.
     // The entire 3D subresource is accessed as one atomic unit.
-    const uint32_t base_array_layer = image->createInfo.imageType == VK_IMAGE_TYPE_3D ? 0 : subresource_range.baseArrayLayer;
+    const uint32_t base_array_layer = state->createInfo.imageType == VK_IMAGE_TYPE_3D ? 0 : subresource_range.baseArrayLayer;
 
-    const uint32_t max_layers = image->createInfo.arrayLayers - base_array_layer;
+    const uint32_t max_layers = state->createInfo.arrayLayers - base_array_layer;
     const uint32_t array_layers = std::min(subresource_range.layerCount, max_layers);
-    const uint32_t max_levels = image->createInfo.mipLevels - subresource_range.baseMipLevel;
-    const uint32_t mip_levels = std::min(image->createInfo.mipLevels, max_levels);
+    const uint32_t max_levels = state->createInfo.mipLevels - subresource_range.baseMipLevel;
+    const uint32_t mip_levels = std::min(state->createInfo.mipLevels, max_levels);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
         for (uint32_t level = 0; level < mip_levels; level++) {
@@ -1745,11 +1680,9 @@ void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* functi
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* function_name,
-                                       IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
-                                       const VkImageSubresourceLayers& subresource_layers) {
-    IMAGE_STATE* image = state->image;
-    const uint32_t max_layers = image->createInfo.arrayLayers - subresource_layers.baseArrayLayer;
+void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const char* function_name, std::shared_ptr<bp_state::Image>& state,
+                                       IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceLayers& subresource_layers) {
+    const uint32_t max_layers = state->createInfo.arrayLayers - subresource_layers.baseArrayLayer;
     const uint32_t array_layers = std::min(subresource_layers.layerCount, max_layers);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
@@ -1758,24 +1691,23 @@ void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* functi
 }
 
 void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* function_name,
-                                       IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+                                       std::shared_ptr<bp_state::Image> &state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                        uint32_t array_layer, uint32_t mip_level) {
     if (VendorCheckEnabled(kBPVendorArm)) {
         funcs.push_back([this, function_name, state, usage, array_layer, mip_level](
                             const ValidationStateTracker&, const QUEUE_STATE&, const CMD_BUFFER_STATE&) -> bool {
-            ValidateImageInQueue(function_name, state, usage, array_layer, mip_level);
+            ValidateImageInQueue(function_name, *state, usage, array_layer, mip_level);
             return false;
         });
     }
 }
 
-void BestPractices::ValidateImageInQueueArm(const char* function_name, IMAGE_STATE* image,
-                                            IMAGE_SUBRESOURCE_USAGE_BP last_usage,
-                                            IMAGE_SUBRESOURCE_USAGE_BP usage,
+void BestPractices::ValidateImageInQueueArm(const char* function_name, const bp_state::Image& image,
+                                            IMAGE_SUBRESOURCE_USAGE_BP last_usage, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                             uint32_t array_layer, uint32_t mip_level) {
     // Swapchain images are implicitly read so clear after store is expected.
     if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED &&
-        !image->IsSwapchainImage()) {
+        !image.IsSwapchainImage()) {
         LogPerformanceWarning(
             device, kVUID_BestPractices_RenderPass_RedundantStore,
             "%s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
@@ -1793,10 +1725,8 @@ void BestPractices::ValidateImageInQueueArm(const char* function_name, IMAGE_STA
             "architectures.",
             function_name, VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE &&
-               (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE ||
-                last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED ||
-                last_usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE ||
-                last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE)) {
+               (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE || last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED ||
+                last_usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE || last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE)) {
         const char *last_cmd = nullptr;
         const char *vuid = nullptr;
         const char *suggestion = nullptr;
@@ -1846,40 +1776,42 @@ void BestPractices::ValidateImageInQueueArm(const char* function_name, IMAGE_STA
     }
 }
 
-void BestPractices::ValidateImageInQueue(const char* function_name, IMAGE_STATE_BP* state,
-                                         IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer,
-                                         uint32_t mip_level) {
-    IMAGE_STATE* image = state->image;
-    IMAGE_SUBRESOURCE_USAGE_BP last_usage = state->usages[array_layer][mip_level];
-    state->usages[array_layer][mip_level] = usage;
+void BestPractices::ValidateImageInQueue(const char* function_name, bp_state::Image& state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+                                         uint32_t array_layer, uint32_t mip_level) {
+    auto last_usage = state.UpdateUsage(array_layer, mip_level, usage);
     if (VendorCheckEnabled(kBPVendorArm)) {
-        ValidateImageInQueueArm(function_name, image, last_usage, usage, array_layer, mip_level);
+        ValidateImageInQueueArm(function_name, state, last_usage, usage, array_layer, mip_level);
     }
 }
 
-void BestPractices::AddDeferredQueueOperations(CMD_BUFFER_STATE_BP* cb) {
-    cb->queue_submit_functions.insert(cb->queue_submit_functions.end(),
-                                      cb->queue_submit_functions_after_render_pass.begin(),
-                                      cb->queue_submit_functions_after_render_pass.end());
-    cb->queue_submit_functions_after_render_pass.clear();
+void BestPractices::AddDeferredQueueOperations(bp_state::CommandBuffer& cb) {
+    cb.queue_submit_functions.insert(cb.queue_submit_functions.end(), cb.queue_submit_functions_after_render_pass.begin(),
+                                     cb.queue_submit_functions_after_render_pass.end());
+    cb.queue_submit_functions_after_render_pass.clear();
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
     ValidationStateTracker::PreCallRecordCmdEndRenderPass(commandBuffer);
-    auto cb_node = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
-    AddDeferredQueueOperations(cb_node.get());
+    auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    if (cb_node) {
+        AddDeferredQueueOperations(*cb_node);
+    }
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassInfo) {
     ValidationStateTracker::PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassInfo);
-    auto cb_node = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
-    AddDeferredQueueOperations(cb_node.get());
+    auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    if (cb_node) {
+        AddDeferredQueueOperations(*cb_node);
+    }
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassInfo) {
     ValidationStateTracker::PreCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassInfo);
-    auto cb_node = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
-    AddDeferredQueueOperations(cb_node.get());
+    auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    if (cb_node) {
+        AddDeferredQueueOperations(*cb_node);
+    }
 }
 
 void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer,
@@ -1909,7 +1841,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
         return;
     }
 
-    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
 
     auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     if (rp_state) {
@@ -2006,7 +1938,7 @@ bool BestPractices::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBu
 void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                              const VkRenderPassBeginInfo* pRenderPassBegin) {
     // Reset the renderpass state
-    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     cb->hasDrawCmd = false;
     assert(cb);
     auto& render_pass_state = cb->render_pass_state;
@@ -2052,7 +1984,7 @@ void BestPractices::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer command
 // Generic function to handle validation for all CmdDraw* type functions
 bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* caller) const {
     bool skip = false;
-    const auto cb_state = Get<CMD_BUFFER_STATE_BP>(cmd_buffer);
+    const auto cb_state = GetRead<bp_state::CommandBuffer>(cmd_buffer);
     if (cb_state) {
         const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
         const auto* pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
@@ -2090,23 +2022,23 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* 
 }
 
 void BestPractices::RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller) {
-    auto cb_node = Get<CMD_BUFFER_STATE_BP>(cmd_buffer);
+    auto cb_node = GetWrite<bp_state::CommandBuffer>(cmd_buffer);
     assert(cb_node);
-    auto& render_pass_state = cb_node->render_pass_state;
     if (VendorCheckEnabled(kBPVendorArm)) {
-        RecordCmdDrawTypeArm(render_pass_state, draw_count, caller);
+        RecordCmdDrawTypeArm(*cb_node, draw_count, caller);
     }
 
-    if (render_pass_state.drawTouchAttachments) {
-        for (auto& touch : render_pass_state.nextDrawTouchesAttachments) {
-            RecordAttachmentAccess(render_pass_state, touch.framebufferAttachment, touch.aspects);
+    if (cb_node->render_pass_state.drawTouchAttachments) {
+        for (auto& touch : cb_node->render_pass_state.nextDrawTouchesAttachments) {
+            RecordAttachmentAccess(*cb_node, touch.framebufferAttachment, touch.aspects);
         }
         // No need to touch the same attachments over and over.
-        render_pass_state.drawTouchAttachments = false;
+        cb_node->render_pass_state.drawTouchAttachments = false;
     }
 }
 
-void BestPractices::RecordCmdDrawTypeArm(RenderPassState& render_pass_state, uint32_t draw_count, const char* caller) {
+void BestPractices::RecordCmdDrawTypeArm(bp_state::CommandBuffer& cb_node, uint32_t draw_count, const char* caller) {
+    auto& render_pass_state = cb_node.render_pass_state;
     if (draw_count >= kDepthPrePassMinDrawCountArm) {
         if (render_pass_state.depthOnly) render_pass_state.numDrawCallsDepthOnly++;
         if (render_pass_state.depthEqualComparison) render_pass_state.numDrawCallsDepthEqualCompare++;
@@ -2144,7 +2076,7 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
 
     // Check if we reached the limit for small indexed draw calls.
     // Note that we cannot update the draw call count here, so we do it in PreCallRecordCmdDrawIndexed.
-    const auto cmd_state = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices &&
         (cmd_state->small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1) &&
         VendorCheckEnabled(kBPVendorArm)) {
@@ -2156,31 +2088,29 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
     }
 
     if (VendorCheckEnabled(kBPVendorArm)) {
-        ValidateIndexBufferArm(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+        ValidateIndexBufferArm(*cmd_state, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
     return skip;
 }
 
-bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
+bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_state, uint32_t indexCount, uint32_t instanceCount,
                                            uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const {
     bool skip = false;
 
     // check for sparse/underutilised index buffer, and post-transform cache thrashing
-    const auto cmd_state = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
-    if (cmd_state == nullptr) return skip;
 
-    const auto* ib_state = cmd_state->index_buffer_binding.buffer_state.get();
-    if (ib_state == nullptr || cmd_state->index_buffer_binding.buffer_state->Destroyed()) return skip;
+    const auto* ib_state = cmd_state.index_buffer_binding.buffer_state.get();
+    if (ib_state == nullptr || cmd_state.index_buffer_binding.buffer_state->Destroyed()) return skip;
 
-    const VkIndexType ib_type = cmd_state->index_buffer_binding.index_type;
+    const VkIndexType ib_type = cmd_state.index_buffer_binding.index_type;
     const auto& ib_mem_state = *ib_state->MemState();
     const VkDeviceSize ib_mem_offset = ib_mem_state.mapped_range.offset;
     const void* ib_mem = ib_mem_state.p_driver_data;
     bool primitive_restart_enable = false;
 
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    const auto& pipeline_binding_iter = cmd_state->lastBound[lv_bind_point];
+    const auto& pipeline_binding_iter = cmd_state.lastBound[lv_bind_point];
     const auto* pipeline_state = pipeline_binding_iter.pipeline_state;
 
     if (pipeline_state != nullptr && pipeline_state->create_info.graphics.pInputAssemblyState != nullptr) {
@@ -2327,17 +2257,16 @@ bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32
 bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                       const VkCommandBuffer* pCommandBuffers) const {
     bool skip = false;
-    const auto primary = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    const auto primary = GetRead<bp_state::CommandBuffer>(commandBuffer);
     for (uint32_t i = 0; i < commandBufferCount; i++) {
-        const auto secondary_cb = Get<CMD_BUFFER_STATE_BP>(pCommandBuffers[i]);
+        const auto secondary_cb = GetRead<bp_state::CommandBuffer>(pCommandBuffers[i]);
         if (secondary_cb == nullptr) {
             continue;
         }
         const auto& secondary = secondary_cb->render_pass_state;
         for (auto& clear : secondary.earlyClearAttachments) {
-            if (ClearAttachmentsIsFullClear(primary.get(), uint32_t(clear.rects.size()), clear.rects.data())) {
-                skip |= ValidateClearAttachment(commandBuffer, primary.get(), clear.framebufferAttachment, clear.colorAttachment,
-                                                clear.aspects, true);
+            if (ClearAttachmentsIsFullClear(*primary, uint32_t(clear.rects.size()), clear.rects.data())) {
+                skip |= ValidateClearAttachment(*primary, clear.framebufferAttachment, clear.colorAttachment, clear.aspects, true);
             }
         }
     }
@@ -2354,50 +2283,48 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
 void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                     const VkCommandBuffer* pCommandBuffers) {
-    auto primary = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
-    auto& primary_state = primary->render_pass_state;
+    ValidationStateTracker::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+
+    auto primary = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    if (!primary) {
+        return;
+    }
 
     for (uint32_t i = 0; i < commandBufferCount; i++) {
-        auto secondary_cb = Get<CMD_BUFFER_STATE_BP>(pCommandBuffers[i]);
-        if (secondary_cb == nullptr) {
+        auto secondary = GetWrite<bp_state::CommandBuffer>(pCommandBuffers[i]);
+        if (!secondary) {
             continue;
         }
-        auto& secondary = secondary_cb->render_pass_state;
 
-        for (auto& early_clear : secondary.earlyClearAttachments) {
-            if (ClearAttachmentsIsFullClear(primary.get(), uint32_t(early_clear.rects.size()), early_clear.rects.data())) {
-                RecordAttachmentClearAttachments(primary.get(), primary_state, early_clear.framebufferAttachment,
-                                                 early_clear.colorAttachment, early_clear.aspects,
-                                                 uint32_t(early_clear.rects.size()), early_clear.rects.data());
+        for (auto& early_clear : secondary->render_pass_state.earlyClearAttachments) {
+            if (ClearAttachmentsIsFullClear(*primary, uint32_t(early_clear.rects.size()), early_clear.rects.data())) {
+                RecordAttachmentClearAttachments(*primary, early_clear.framebufferAttachment, early_clear.colorAttachment,
+                                                 early_clear.aspects, uint32_t(early_clear.rects.size()), early_clear.rects.data());
             } else {
-                RecordAttachmentAccess(primary_state, early_clear.framebufferAttachment,
-                                       early_clear.aspects);
+                RecordAttachmentAccess(*primary, early_clear.framebufferAttachment, early_clear.aspects);
             }
         }
 
-        for (auto& touch : secondary.touchesAttachments) {
-            RecordAttachmentAccess(primary_state, touch.framebufferAttachment,
-                                   touch.aspects);
+        for (auto& touch : secondary->render_pass_state.touchesAttachments) {
+            RecordAttachmentAccess(*primary, touch.framebufferAttachment, touch.aspects);
         }
 
-        primary_state.numDrawCallsDepthEqualCompare += secondary.numDrawCallsDepthEqualCompare;
-        primary_state.numDrawCallsDepthOnly += secondary.numDrawCallsDepthOnly;
+        primary->render_pass_state.numDrawCallsDepthEqualCompare += secondary->render_pass_state.numDrawCallsDepthEqualCompare;
+        primary->render_pass_state.numDrawCallsDepthOnly += secondary->render_pass_state.numDrawCallsDepthOnly;
 
-        auto second_state = Get<CMD_BUFFER_STATE_BP>(pCommandBuffers[i]);
-        if (second_state->hasDrawCmd) {
+        if (secondary->hasDrawCmd) {
             primary->hasDrawCmd = true;
         }
     }
 
-    ValidationStateTracker::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
 }
 
-void BestPractices::RecordAttachmentAccess(RenderPassState& state, uint32_t fb_attachment, VkImageAspectFlags aspects) {
+void BestPractices::RecordAttachmentAccess(bp_state::CommandBuffer& cb_state, uint32_t fb_attachment, VkImageAspectFlags aspects) {
+    auto& state = cb_state.render_pass_state;
     // Called when we have a partial clear attachment, or a normal draw call which accesses an attachment.
-    auto itr = std::find_if(state.touchesAttachments.begin(), state.touchesAttachments.end(),
-                            [&](const AttachmentInfo& info) {
-                                return info.framebufferAttachment == fb_attachment;
-                            });
+    auto itr =
+        std::find_if(state.touchesAttachments.begin(), state.touchesAttachments.end(),
+                     [fb_attachment](const bp_state::AttachmentInfo& info) { return info.framebufferAttachment == fb_attachment; });
 
     if (itr != state.touchesAttachments.end()) {
         itr->aspects |= aspects;
@@ -2406,15 +2333,15 @@ void BestPractices::RecordAttachmentAccess(RenderPassState& state, uint32_t fb_a
     }
 }
 
-void BestPractices::RecordAttachmentClearAttachments(CMD_BUFFER_STATE_BP* cmd_state, RenderPassState& state, uint32_t fb_attachment,
+void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBuffer& cmd_state, uint32_t fb_attachment,
                                                      uint32_t color_attachment, VkImageAspectFlags aspects, uint32_t rectCount,
                                                      const VkClearRect* pRects) {
+    auto& state = cmd_state.render_pass_state;
     // If we observe a full clear before any other access to a frame buffer attachment,
     // we have candidate for redundant clear attachments.
-    auto itr = std::find_if(state.touchesAttachments.begin(), state.touchesAttachments.end(),
-                            [&](const AttachmentInfo& info) {
-                                return info.framebufferAttachment == fb_attachment;
-                            });
+    auto itr =
+        std::find_if(state.touchesAttachments.begin(), state.touchesAttachments.end(),
+                     [fb_attachment](const bp_state::AttachmentInfo& info) { return info.framebufferAttachment == fb_attachment; });
 
     uint32_t new_aspects = aspects;
     if (itr != state.touchesAttachments.end()) {
@@ -2428,7 +2355,7 @@ void BestPractices::RecordAttachmentClearAttachments(CMD_BUFFER_STATE_BP* cmd_st
         return;
     }
 
-    if (cmd_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
+    if (cmd_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
         // The first command might be a clear, but might not be the first in the render pass, defer any checks until
         // CmdExecuteCommands.
         state.earlyClearAttachments.push_back({ fb_attachment, color_attachment, new_aspects,
@@ -2439,10 +2366,11 @@ void BestPractices::RecordAttachmentClearAttachments(CMD_BUFFER_STATE_BP* cmd_st
 void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                                                      uint32_t attachmentCount, const VkClearAttachment* pClearAttachments,
                                                      uint32_t rectCount, const VkClearRect* pRects) {
-    auto cmd_state = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
-    RENDER_PASS_STATE* rp_state = cmd_state->activeRenderPass.get();
-    FRAMEBUFFER_STATE* fb_state = cmd_state->activeFramebuffer.get();
-    RenderPassState& tracking_state = cmd_state->render_pass_state;
+    ValidationStateTracker::PreCallRecordCmdClearAttachments(commandBuffer, attachmentCount, pClearAttachments, rectCount, pRects);
+
+    auto cmd_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    auto* rp_state = cmd_state->activeRenderPass.get();
+    auto* fb_state = cmd_state->activeFramebuffer.get();
     bool is_secondary = cmd_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY;
 
     if (rectCount == 0 || !rp_state) {
@@ -2454,7 +2382,7 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
     }
 
     // If we have a rect which covers the entire frame buffer, we have a LOAD_OP_CLEAR-like command.
-    bool full_clear = ClearAttachmentsIsFullClear(cmd_state.get(), rectCount, pRects);
+    bool full_clear = ClearAttachmentsIsFullClear(*cmd_state, rectCount, pRects);
 
     if (!rp_state->use_dynamic_rendering && !rp_state->use_dynamic_rendering_inherited) {
         auto& subpass = rp_state->createInfo.pSubpasses[cmd_state->activeSubpass];
@@ -2473,17 +2401,14 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
 
             if (fb_attachment != VK_ATTACHMENT_UNUSED) {
                 if (full_clear) {
-                    RecordAttachmentClearAttachments(cmd_state.get(), tracking_state, fb_attachment, attachment.colorAttachment,
+                    RecordAttachmentClearAttachments(*cmd_state, fb_attachment, attachment.colorAttachment,
                                                      aspects, rectCount, pRects);
                 } else {
-                    RecordAttachmentAccess(tracking_state, fb_attachment, aspects);
+                    RecordAttachmentAccess(*cmd_state, fb_attachment, aspects);
                 }
             }
         }
     }
-
-    ValidationStateTracker::PreCallRecordCmdClearAttachments(commandBuffer, attachmentCount, pClearAttachments,
-                                                             rectCount, pRects);
 }
 
 void BestPractices::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
@@ -2491,12 +2416,12 @@ void BestPractices::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u
     ValidationStateTracker::PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset,
                                                         firstInstance);
 
-    auto cmd_state = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    auto cmd_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices) {
         cmd_state->small_indexed_draw_call_count++;
     }
 
-    ValidateBoundDescriptorSets(commandBuffer, "vkCmdDrawIndexed()");
+    ValidateBoundDescriptorSets(*cmd_state, "vkCmdDrawIndexed()");
 }
 
 void BestPractices::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
@@ -2560,52 +2485,47 @@ void BestPractices::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer command
     RecordCmdDrawType(commandBuffer, count, "vkCmdDrawIndexedIndirect()");
 }
 
-void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer, const char* function_name) {
-    auto cb_state = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBuffer& cb_state, const char* function_name) {
+    for (auto descriptor_set : cb_state.validated_descriptor_sets) {
+        const auto& layout = *descriptor_set->GetLayout();
 
-    if (cb_state) {
-        for (auto descriptor_set : cb_state->validated_descriptor_sets) {
-            const auto& layout = *descriptor_set->GetLayout();
+        for (uint32_t index = 0; index < descriptor_set->GetBindingCount(); ++index) {
+            // For bindless scenarios, we should not attempt to track descriptor set state.
+            // It is highly uncertain which resources are actually bound.
+            // Resources which are written to such a descriptor should be marked as indeterminate w.r.t. state.
+            VkDescriptorBindingFlags flags = layout.GetDescriptorBindingFlagsFromIndex(index);
+            if (flags & (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+                         VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT)) {
+                continue;
+            }
 
-            for (uint32_t index = 0; index < descriptor_set->GetBindingCount(); ++index) {
-                // For bindless scenarios, we should not attempt to track descriptor set state.
-                // It is highly uncertain which resources are actually bound.
-                // Resources which are written to such a descriptor should be marked as indeterminate w.r.t. state.
-                VkDescriptorBindingFlags flags = layout.GetDescriptorBindingFlagsFromIndex(index);
-                if (flags & (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
-                             VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-                             VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT)) {
-                    continue;
+            auto index_range = layout.GetGlobalIndexRangeFromIndex(index);
+            for (uint32_t i = index_range.start; i < index_range.end; ++i) {
+                VkImageView image_view{VK_NULL_HANDLE};
+
+                auto descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+                switch (descriptor->GetClass()) {
+                    case cvdescriptorset::DescriptorClass::Image: {
+                        if (const auto image_descriptor = static_cast<const cvdescriptorset::ImageDescriptor*>(descriptor)) {
+                            image_view = image_descriptor->GetImageView();
+                        }
+                        break;
+                    }
+                    case cvdescriptorset::DescriptorClass::ImageSampler: {
+                        if (const auto image_sampler_descriptor =
+                                static_cast<const cvdescriptorset::ImageSamplerDescriptor*>(descriptor)) {
+                            image_view = image_sampler_descriptor->GetImageView();
+                        }
+                        break;
+                    }
+                    default:
+                        break;
                 }
 
-                auto index_range = layout.GetGlobalIndexRangeFromIndex(index);
-                for (uint32_t i = index_range.start; i < index_range.end; ++i) {
-                    VkImageView image_view{VK_NULL_HANDLE};
-
-                    auto descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
-                    switch (descriptor->GetClass()) {
-                        case cvdescriptorset::DescriptorClass::Image: {
-                            if (const auto image_descriptor = static_cast<const cvdescriptorset::ImageDescriptor*>(descriptor)) {
-                                image_view = image_descriptor->GetImageView();
-                            }
-                            break;
-                        }
-                        case cvdescriptorset::DescriptorClass::ImageSampler: {
-                            if (const auto image_sampler_descriptor =
-                                    static_cast<const cvdescriptorset::ImageSamplerDescriptor*>(descriptor)) {
-                                image_view = image_sampler_descriptor->GetImageView();
-                            }
-                            break;
-                        }
-                        default:
-                            break;
-                    }
-
-                    if (image_view) {
-                        auto image_view_state = Get<IMAGE_VIEW_STATE>(image_view);
-                        QueueValidateImageView(cb_state->queue_submit_functions, function_name, image_view_state.get(),
-                                               IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS);
-                    }
+                if (image_view) {
+                    auto image_view_state = Get<IMAGE_VIEW_STATE>(image_view);
+                    QueueValidateImageView(cb_state.queue_submit_functions, function_name, image_view_state.get(),
+                                           IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS);
                 }
             }
         }
@@ -2614,17 +2534,20 @@ void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer, c
 
 void BestPractices::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                          uint32_t firstVertex, uint32_t firstInstance) {
-    ValidateBoundDescriptorSets(commandBuffer, "vkCmdDraw()");
+    const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    ValidateBoundDescriptorSets(*cb_node, "vkCmdDraw()");
 }
 
 void BestPractices::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  uint32_t drawCount, uint32_t stride) {
-    ValidateBoundDescriptorSets(commandBuffer, "vkCmdDrawIndirect()");
+    const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    ValidateBoundDescriptorSets(*cb_node, "vkCmdDrawIndirect()");
 }
 
 void BestPractices::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         uint32_t drawCount, uint32_t stride) {
-    ValidateBoundDescriptorSets(commandBuffer, "vkCmdDrawIndexedIndirect()");
+    const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    ValidateBoundDescriptorSets(*cb_node, "vkCmdDrawIndexedIndirect()");
 }
 
 bool BestPractices::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
@@ -2664,7 +2587,7 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
 
 bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) const {
     bool skip = false;
-    const auto cmd = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    const auto cmd = GetRead<bp_state::CommandBuffer>(commandBuffer);
 
     if (cmd == nullptr) return skip;
     auto &render_pass_state = cmd->render_pass_state;
@@ -2726,7 +2649,7 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
             }
 
             auto itr = std::find_if(render_pass_state.touchesAttachments.begin(), render_pass_state.touchesAttachments.end(),
-                                    [&](const AttachmentInfo& info) { return info.framebufferAttachment == i; });
+                                    [i](const bp_state::AttachmentInfo& info) { return info.framebufferAttachment == i; });
             uint32_t untouched_aspects = bandwidth_aspects;
             if (itr != render_pass_state.touchesAttachments.end()) {
                 untouched_aspects &= ~itr->aspects;
@@ -2748,17 +2671,19 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
 }
 
 void BestPractices::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
-    ValidateBoundDescriptorSets(commandBuffer, "vkCmdDispatch()");
+    const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    ValidateBoundDescriptorSets(*cb_node, "vkCmdDispatch()");
 }
 
 void BestPractices::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
-    ValidateBoundDescriptorSets(commandBuffer, "vkCmdDispatchIndirect()");
+    const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    ValidateBoundDescriptorSets(*cb_node, "vkCmdDispatchIndirect()");
 }
 
 bool BestPractices::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice,
                                                                             const char* api_name) const {
     bool skip = false;
-    const auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
 
     if (bp_pd_state) {
         if (bp_pd_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState == UNCALLED) {
@@ -2805,7 +2730,7 @@ bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwap
                                                          VkImage* pSwapchainImages) const {
     bool skip = false;
 
-    auto swapchain_state = Get<SWAPCHAIN_STATE_BP>(swapchain);
+    auto swapchain_state = Get<bp_state::Swapchain>(swapchain);
 
     if (swapchain_state && pSwapchainImages) {
         // Compare the preliminary value of *pSwapchainImageCount with the value this time:
@@ -2881,7 +2806,7 @@ bool BestPractices::PreCallValidateBindAccelerationStructureMemoryNV(
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                           uint32_t* pQueueFamilyPropertyCount,
                                                                           VkQueueFamilyProperties* pQueueFamilyProperties) const {
-    const auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState,
@@ -2893,7 +2818,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhys
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                            uint32_t* pQueueFamilyPropertyCount,
                                                                            VkQueueFamilyProperties2* pQueueFamilyProperties) const {
-    const auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2State,
@@ -2904,7 +2829,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhy
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(
     VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount, VkQueueFamilyProperties2* pQueueFamilyProperties) const {
-    const auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2KHRState,
@@ -2917,7 +2842,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysical
                                                                       uint32_t* pSurfaceFormatCount,
                                                                       VkSurfaceFormatKHR* pSurfaceFormats) const {
     if (!pSurfaceFormats) return false;
-    const auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     const auto& call_state = bp_pd_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
     bool skip = false;
     if (call_state == UNCALLED) {
@@ -3041,9 +2966,9 @@ void BestPractices::ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t 
     }
 }
 
-bool BestPractices::ClearAttachmentsIsFullClear(const CMD_BUFFER_STATE_BP* cmd, uint32_t rectCount,
+bool BestPractices::ClearAttachmentsIsFullClear(const bp_state::CommandBuffer& cmd, uint32_t rectCount,
                                                 const VkClearRect* pRects) const {
-    if (cmd->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
+    if (cmd.createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
         // We don't know the accurate render area in a secondary,
         // so assume we clear the entire frame buffer.
         // This is resolved in CmdExecuteCommands where we can check if the clear is a full clear.
@@ -3053,7 +2978,7 @@ bool BestPractices::ClearAttachmentsIsFullClear(const CMD_BUFFER_STATE_BP* cmd, 
     // If we have a rect which covers the entire frame buffer, we have a LOAD_OP_CLEAR-like command.
     for (uint32_t i = 0; i < rectCount; i++) {
         auto& rect = pRects[i];
-        auto& render_area = cmd->activeRenderPassBeginInfo.renderArea;
+        auto& render_area = cmd.activeRenderPassBeginInfo.renderArea;
         if (rect.rect.extent.width == render_area.extent.width && rect.rect.extent.height == render_area.extent.height) {
             return true;
         }
@@ -3062,21 +2987,20 @@ bool BestPractices::ClearAttachmentsIsFullClear(const CMD_BUFFER_STATE_BP* cmd, 
     return false;
 }
 
-bool BestPractices::ValidateClearAttachment(VkCommandBuffer commandBuffer, const CMD_BUFFER_STATE_BP* cmd, uint32_t fb_attachment,
-                                            uint32_t color_attachment, VkImageAspectFlags aspects, bool secondary) const {
-    const RENDER_PASS_STATE* rp = cmd->activeRenderPass.get();
+bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cmd, uint32_t fb_attachment, uint32_t color_attachment,
+                                            VkImageAspectFlags aspects, bool secondary) const {
+    const RENDER_PASS_STATE* rp = cmd.activeRenderPass.get();
     bool skip = false;
 
     if (!rp || fb_attachment == VK_ATTACHMENT_UNUSED) {
         return skip;
     }
 
-    const auto& rp_state = cmd->render_pass_state;
+    const auto& rp_state = cmd.render_pass_state;
 
-    auto attachment_itr = std::find_if(rp_state.touchesAttachments.begin(), rp_state.touchesAttachments.end(),
-                                       [&](const AttachmentInfo& info) {
-                                           return info.framebufferAttachment == fb_attachment;
-                                       });
+    auto attachment_itr =
+        std::find_if(rp_state.touchesAttachments.begin(), rp_state.touchesAttachments.end(),
+                     [fb_attachment](const bp_state::AttachmentInfo& info) { return info.framebufferAttachment == fb_attachment; });
 
     // Only report aspects which haven't been touched yet.
     VkImageAspectFlags new_aspects = aspects;
@@ -3085,12 +3009,12 @@ bool BestPractices::ValidateClearAttachment(VkCommandBuffer commandBuffer, const
     }
 
     // Warn if this is issued prior to Draw Cmd and clearing the entire attachment
-    if (!cmd->hasDrawCmd) {
+    if (!cmd.hasDrawCmd) {
         skip |= LogPerformanceWarning(
-            commandBuffer, kVUID_BestPractices_DrawState_ClearCmdBeforeDraw,
+            cmd.Handle(), kVUID_BestPractices_DrawState_ClearCmdBeforeDraw,
             "vkCmdClearAttachments() issued on %s prior to any Draw Cmds in current render pass. It is recommended you "
             "use RenderPass LOAD_OP_CLEAR on attachments instead.",
-            report_data->FormatHandle(commandBuffer).c_str());
+            report_data->FormatHandle(cmd.Handle()).c_str());
     }
 
     if ((new_aspects & VK_IMAGE_ASPECT_COLOR_BIT) &&
@@ -3100,30 +3024,27 @@ bool BestPractices::ValidateClearAttachment(VkCommandBuffer commandBuffer, const
             "%svkCmdClearAttachments() issued on %s for color attachment #%u in this subpass, "
             "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
             "it is more efficient.",
-            secondary ? "vkCmdExecuteCommands(): " : "",
-            report_data->FormatHandle(commandBuffer).c_str(), color_attachment);
+            secondary ? "vkCmdExecuteCommands(): " : "", report_data->FormatHandle(cmd.Handle()).c_str(), color_attachment);
     }
 
     if ((new_aspects & VK_IMAGE_ASPECT_DEPTH_BIT) &&
         rp->createInfo.pAttachments[fb_attachment].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
-        skip |= LogPerformanceWarning(
-            device, kVUID_BestPractices_ClearAttachments_ClearAfterLoad,
-            "%svkCmdClearAttachments() issued on %s for the depth attachment in this subpass, "
-            "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
-            "it is more efficient.",
-            secondary ? "vkCmdExecuteCommands(): " : "",
-            report_data->FormatHandle(commandBuffer).c_str());
+        skip |=
+            LogPerformanceWarning(device, kVUID_BestPractices_ClearAttachments_ClearAfterLoad,
+                                  "%svkCmdClearAttachments() issued on %s for the depth attachment in this subpass, "
+                                  "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
+                                  "it is more efficient.",
+                                  secondary ? "vkCmdExecuteCommands(): " : "", report_data->FormatHandle(cmd.Handle()).c_str());
     }
 
     if ((new_aspects & VK_IMAGE_ASPECT_STENCIL_BIT) &&
         rp->createInfo.pAttachments[fb_attachment].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
-        skip |= LogPerformanceWarning(
-            device, kVUID_BestPractices_ClearAttachments_ClearAfterLoad,
-            "%svkCmdClearAttachments() issued on %s for the stencil attachment in this subpass, "
-            "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
-            "it is more efficient.",
-            secondary ? "vkCmdExecuteCommands(): " : "",
-            report_data->FormatHandle(commandBuffer).c_str());
+        skip |=
+            LogPerformanceWarning(device, kVUID_BestPractices_ClearAttachments_ClearAfterLoad,
+                                  "%svkCmdClearAttachments() issued on %s for the stencil attachment in this subpass, "
+                                  "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
+                                  "it is more efficient.",
+                                  secondary ? "vkCmdExecuteCommands(): " : "", report_data->FormatHandle(cmd.Handle()).c_str());
     }
 
     return skip;
@@ -3133,7 +3054,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                                                        const VkClearAttachment* pAttachments, uint32_t rectCount,
                                                        const VkClearRect* pRects) const {
     bool skip = false;
-    const auto cb_node = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    const auto cb_node = GetRead<bp_state::CommandBuffer>(commandBuffer);
     if (!cb_node) return skip;
 
     if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
@@ -3142,7 +3063,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
     }
 
     // Only care about full clears, partial clears might have legitimate uses.
-    if (!ClearAttachmentsIsFullClear(cb_node.get(), rectCount, pRects)) {
+    if (!ClearAttachmentsIsFullClear(*cb_node, rectCount, pRects)) {
         return skip;
     }
 
@@ -3158,15 +3079,13 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
             if (attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
                 uint32_t color_attachment = attachment.colorAttachment;
                 uint32_t fb_attachment = subpass.pColorAttachments[color_attachment].attachment;
-                skip |= ValidateClearAttachment(commandBuffer, cb_node.get(), fb_attachment, color_attachment,
-                                                attachment.aspectMask, false);
+                skip |= ValidateClearAttachment(*cb_node, fb_attachment, color_attachment, attachment.aspectMask, false);
             }
 
             if (subpass.pDepthStencilAttachment &&
                 (attachment.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
                 uint32_t fb_attachment = subpass.pDepthStencilAttachment->attachment;
-                skip |= ValidateClearAttachment(commandBuffer, cb_node.get(), fb_attachment, VK_ATTACHMENT_UNUSED,
-                                                attachment.aspectMask, false);
+                skip |= ValidateClearAttachment(*cb_node, fb_attachment, VK_ATTACHMENT_UNUSED, attachment.aspectMask, false);
             }
         }
     }
@@ -3263,10 +3182,10 @@ bool BestPractices::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
 void BestPractices::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                  VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                  const VkImageResolve* pRegions) {
-    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
-    auto* src = GetImageUsageState(srcImage);
-    auto* dst = GetImageUsageState(dstImage);
+    auto src = Get<bp_state::Image>(srcImage);
+    auto dst = Get<bp_state::Image>(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
         QueueValidateImage(funcs, "vkCmdResolveImage()", src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ, pRegions[i].srcSubresource);
@@ -3276,10 +3195,10 @@ void BestPractices::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
 
 void BestPractices::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                                      const VkResolveImageInfo2KHR* pResolveImageInfo) {
-    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
-    auto* src = GetImageUsageState(pResolveImageInfo->srcImage);
-    auto* dst = GetImageUsageState(pResolveImageInfo->dstImage);
+    auto src = Get<bp_state::Image>(pResolveImageInfo->srcImage);
+    auto dst = Get<bp_state::Image>(pResolveImageInfo->dstImage);
     uint32_t regionCount = pResolveImageInfo->regionCount;
 
     for (uint32_t i = 0; i < regionCount; i++) {
@@ -3290,10 +3209,10 @@ void BestPractices::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuff
 
 void BestPractices::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer,
                                                      const VkResolveImageInfo2* pResolveImageInfo) {
-    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto& funcs = cb->queue_submit_functions;
-    auto* src = GetImageUsageState(pResolveImageInfo->srcImage);
-    auto* dst = GetImageUsageState(pResolveImageInfo->dstImage);
+    auto src = Get<bp_state::Image>(pResolveImageInfo->srcImage);
+    auto dst = Get<bp_state::Image>(pResolveImageInfo->dstImage);
     uint32_t regionCount = pResolveImageInfo->regionCount;
 
     for (uint32_t i = 0; i < regionCount; i++) {
@@ -3307,9 +3226,9 @@ void BestPractices::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer,
 void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                     const VkClearColorValue* pColor, uint32_t rangeCount,
                                                     const VkImageSubresourceRange* pRanges) {
-    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
-    auto* dst = GetImageUsageState(image);
+    auto dst = Get<bp_state::Image>(image);
 
     for (uint32_t i = 0; i < rangeCount; i++) {
         QueueValidateImage(funcs, "vkCmdClearColorImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
@@ -3319,9 +3238,9 @@ void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
 void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                            const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                            const VkImageSubresourceRange* pRanges) {
-    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
-    auto* dst = GetImageUsageState(image);
+    auto dst = Get<bp_state::Image>(image);
 
     for (uint32_t i = 0; i < rangeCount; i++) {
         QueueValidateImage(funcs, "vkCmdClearDepthStencilImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
@@ -3331,10 +3250,10 @@ void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
 void BestPractices::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                               const VkImageCopy* pRegions) {
-    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
-    auto* src = GetImageUsageState(srcImage);
-    auto* dst = GetImageUsageState(dstImage);
+    auto src = Get<bp_state::Image>(srcImage);
+    auto dst = Get<bp_state::Image>(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
         QueueValidateImage(funcs, "vkCmdCopyImage()", src, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ, pRegions[i].srcSubresource);
@@ -3345,9 +3264,9 @@ void BestPractices::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
 void BestPractices::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                       VkImageLayout dstImageLayout, uint32_t regionCount,
                                                       const VkBufferImageCopy* pRegions) {
-    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
-    auto* dst = GetImageUsageState(dstImage);
+    auto dst = Get<bp_state::Image>(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
         QueueValidateImage(funcs, "vkCmdCopyBufferToImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE, pRegions[i].imageSubresource);
@@ -3356,9 +3275,9 @@ void BestPractices::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuf
 
 void BestPractices::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                       VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions) {
-    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
-    auto* src = GetImageUsageState(srcImage);
+    auto src = Get<bp_state::Image>(srcImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
         QueueValidateImage(funcs, "vkCmdCopyImageToBuffer()", src, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ, pRegions[i].imageSubresource);
@@ -3368,10 +3287,10 @@ void BestPractices::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuf
 void BestPractices::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                               const VkImageBlit* pRegions, VkFilter filter) {
-    auto cb = Get<CMD_BUFFER_STATE_BP>(commandBuffer);
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
-    auto* src = GetImageUsageState(srcImage);
-    auto* dst = GetImageUsageState(dstImage);
+    auto src = Get<bp_state::Image>(srcImage);
+    auto dst = Get<bp_state::Image>(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
         QueueValidateImage(funcs, "vkCmdBlitImage()", src, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_READ, pRegions[i].srcSubresource);
@@ -3449,7 +3368,7 @@ void BestPractices::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipe
     ValidationStateTracker::PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                                  pPipelines);
     // AMD best practice
-    num_pso += createInfoCount;
+    num_pso_ += createInfoCount;
 }
 
 bool BestPractices::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
@@ -3518,6 +3437,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
                                                         VkPipelineLayout* pPipelineLayout) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD)) {
+        uint32_t descriptor_size = enabled_features.core.robustBufferAccess ? 4 : 2;
         // Descriptor sets cost 1 DWORD each.
         // Dynamic buffers cost 2 DWORDs each when robust buffer access is OFF.
         // Dynamic buffers cost 4 DWORDs each when robust buffer access is ON.
@@ -3525,7 +3445,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
         uint32_t pipeline_size = pCreateInfo->setLayoutCount;  // in DWORDS
         for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; i++) {
             auto descriptor_set_layout_state = Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
-            pipeline_size += descriptor_set_layout_state->GetDynamicDescriptorCount() * (robust_buffer_access ? 4 : 2);
+            pipeline_size += descriptor_set_layout_state->GetDynamicDescriptorCount() * descriptor_size;
         }
 
         for (uint32_t i = 0; i < pCreateInfo->pushConstantRangeCount; i++) {
@@ -3582,7 +3502,7 @@ bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer
     bool skip = false;
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        if (pipelines_used_in_frame.find(pipeline) != pipelines_used_in_frame.end()) {
+        if (IsPipelineUsedInFrame(pipeline)) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_Pipeline_SortAndBind,
                         "%s Performance warning: Pipeline %s was bound twice in the frame. Keep pipeline state changes to a minimum,"
                         "for example, by sorting draw calls by pipeline.",
@@ -3596,19 +3516,20 @@ bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer
 void BestPractices::ManualPostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits,
                                                     VkFence fence, VkResult result) {
     // AMD best practice
-    num_queue_submissions += submitCount;
+    num_queue_submissions_ += submitCount;
 }
 
 bool BestPractices::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) const {
     bool skip = false;
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        if (num_queue_submissions > kNumberOfSubmissionWarningLimitAMD) {
-            skip |= LogPerformanceWarning(
-                device, kVUID_BestPractices_Submission_ReduceNumberOfSubmissions,
-                "%s Performance warning: command buffers submitted %" PRId32 " times this frame. Submitting command buffers has a CPU "
-                "and GPU overhead. Submit fewer times to incur less overhead.",
-                VendorSpecificTag(kBPVendorAMD), num_queue_submissions);
+        auto num = num_queue_submissions_.load();
+        if (num > kNumberOfSubmissionWarningLimitAMD) {
+            skip |= LogPerformanceWarning(device, kVUID_BestPractices_Submission_ReduceNumberOfSubmissions,
+                                          "%s Performance warning: command buffers submitted %" PRId32
+                                          " times this frame. Submitting command buffers has a CPU "
+                                          "and GPU overhead. Submit fewer times to incur less overhead.",
+                                          VendorSpecificTag(kBPVendorAMD), num);
         }
     }
 
@@ -3622,33 +3543,14 @@ void BestPractices::PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuff
                                                      const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                                      uint32_t imageMemoryBarrierCount,
                                                      const VkImageMemoryBarrier* pImageMemoryBarriers) {
-    num_barriers_objects += memoryBarrierCount;
-    num_barriers_objects += imageMemoryBarrierCount;
-    num_barriers_objects += bufferMemoryBarrierCount;
-}
-
-void BestPractices::ManualPostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo,
-                                              const VkAllocationCallbacks* pAllocator, VkFence* pFence, VkResult result) {
-    // AMD best practice
-    if (result == VK_SUCCESS) {
-        num_fence_objects++;
-    }
-}
-
-void BestPractices::ManualPostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
-                                                  const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore,
-                                                  VkResult result) {
-    // AMD best practice
-    if (result == VK_SUCCESS) {
-        num_semaphore_objects++;
-    }
+    num_barriers_objects_ += (memoryBarrierCount + imageMemoryBarrierCount + bufferMemoryBarrierCount);
 }
 
 bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        if (num_semaphore_objects > kMaxRecommendedSemaphoreObjectsSizeAMD) {
+        if (Count<SEMAPHORE_STATE>() > kMaxRecommendedSemaphoreObjectsSizeAMD) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_SyncObjects_HighNumberOfSemaphores,
                             "%s Performance warning: High number of vkSemaphore objects created."
                             "Minimize the amount of queue synchronization that is used. "
@@ -3664,7 +3566,7 @@ bool BestPractices::PreCallValidateCreateFence(VkDevice device, const VkFenceCre
                                                const VkAllocationCallbacks* pAllocator, VkFence* pFence) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        if (num_fence_objects > kMaxRecommendedFenceObjectsSizeAMD) {
+        if (Count<FENCE_STATE>() > kMaxRecommendedFenceObjectsSizeAMD) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_SyncObjects_HighNumberOfFences,
                                           "%s Performance warning: High number of VkFence objects created."
                                           "Minimize the amount of CPU-GPU synchronization that is used. "
@@ -3728,7 +3630,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysi
                                                                          VkQueueFamilyProperties* pQueueFamilyProperties) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
                                                                                  pQueueFamilyProperties);
-    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state) {
         CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState,
                                                                    nullptr == pQueueFamilyProperties);
@@ -3740,7 +3642,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhys
                                                                           VkQueueFamilyProperties2* pQueueFamilyProperties) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                                   pQueueFamilyProperties);
-    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state) {
         CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2State,
                                                                    nullptr == pQueueFamilyProperties);
@@ -3752,7 +3654,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkP
                                                                              VkQueueFamilyProperties2* pQueueFamilyProperties) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
                                                                                      pQueueFamilyProperties);
-    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state) {
         CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2KHRState,
                                                                    nullptr == pQueueFamilyProperties);
@@ -3761,7 +3663,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkP
 
 void BestPractices::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceFeatures(physicalDevice, pFeatures);
-    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
     }
@@ -3770,7 +3672,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice phy
 void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
                                                              VkPhysicalDeviceFeatures2* pFeatures) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures);
-    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
     }
@@ -3779,7 +3681,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice ph
 void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice,
                                                                 VkPhysicalDeviceFeatures2* pFeatures) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);
-    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
     }
@@ -3789,7 +3691,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(
                                                                                 VkSurfaceKHR surface,
                                                                                 VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
                                                                                 VkResult result) {
-    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
     }
@@ -3798,7 +3700,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
     VkSurfaceCapabilities2KHR* pSurfaceCapabilities, VkResult result) {
-    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
     }
@@ -3808,7 +3710,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT
                                                                                  VkSurfaceKHR surface,
                                                                                  VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
                                                                                  VkResult result) {
-    auto bp_pd_state = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
     }
@@ -3817,7 +3719,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
                                                                                 VkSurfaceKHR surface, uint32_t* pPresentModeCount,
                                                                                 VkPresentModeKHR* pPresentModes, VkResult result) {
-    auto bp_pd_data = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_data) {
         auto& call_state = bp_pd_data->vkGetPhysicalDeviceSurfacePresentModesKHRState;
 
@@ -3837,7 +3739,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                            uint32_t* pSurfaceFormatCount,
                                                                            VkSurfaceFormatKHR* pSurfaceFormats, VkResult result) {
-    auto bp_pd_data = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_data) {
         auto& call_state = bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState;
 
@@ -3859,7 +3761,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPh
                                                                             const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                             uint32_t* pSurfaceFormatCount,
                                                                             VkSurfaceFormat2KHR* pSurfaceFormats, VkResult result) {
-    auto bp_pd_data = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_data) {
         if (*pSurfaceFormatCount) {
             if (bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState < QUERY_COUNT) {
@@ -3879,7 +3781,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesK
                                                                                    uint32_t* pPropertyCount,
                                                                                    VkDisplayPlanePropertiesKHR* pProperties,
                                                                                    VkResult result) {
-    auto bp_pd_data = Get<PHYSICAL_DEVICE_STATE_BP>(physicalDevice);
+    auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_data) {
         if (*pPropertyCount) {
             if (bp_pd_data->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState < QUERY_COUNT) {
@@ -3897,19 +3799,10 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesK
 void BestPractices::ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                               uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages,
                                                               VkResult result) {
-    auto swapchain_state = Get<SWAPCHAIN_STATE_BP>(swapchain);
+    auto swapchain_state = Get<bp_state::Swapchain>(swapchain);
     if (swapchain_state && (pSwapchainImages || *pSwapchainImageCount)) {
         if (swapchain_state->vkGetSwapchainImagesKHRState < QUERY_DETAILS) {
             swapchain_state->vkGetSwapchainImagesKHRState = QUERY_DETAILS;
-        }
-    }
-}
-
-void BestPractices::ManualPostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
-                                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result) {
-    if (VK_SUCCESS == result) {
-        if ((pCreateInfo->pEnabledFeatures != nullptr) && (pCreateInfo->pEnabledFeatures->robustBufferAccess == VK_TRUE)) {
-            robust_buffer_access = true;
         }
     }
 }
@@ -3921,7 +3814,7 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
     for (uint32_t submit = 0; submit < submitCount; submit++) {
         const auto& submit_info = pSubmits[submit];
         for (uint32_t cb_index = 0; cb_index < submit_info.commandBufferCount; cb_index++) {
-            auto cb = Get<CMD_BUFFER_STATE_BP>(submit_info.pCommandBuffers[cb_index]);
+            auto cb = GetWrite<bp_state::CommandBuffer>(submit_info.pCommandBuffers[cb_index]);
             for (auto &func : cb->queue_submit_functions) {
                 func(*this, *queue_state, *cb);
             }

@@ -39,11 +39,6 @@
 #include "cmd_buffer_state.h"
 #include "render_pass_state.h"
 
-extern template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const VkRayTracingPipelineCreateInfoKHR *,
-                                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&);
-extern template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const VkRayTracingPipelineCreateInfoNV *,
-                                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&);
-
 void ValidationStateTracker::InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
     if (add_obj) {
         instance_state = reinterpret_cast<ValidationStateTracker *>(GetValidationObject(inst_obj->object_dispatch, container_type));
@@ -203,6 +198,17 @@ VkFormatFeatureFlags2KHR GetImageFormatFeatures(VkPhysicalDevice physical_device
     return format_features;
 }
 
+std::shared_ptr<IMAGE_STATE> ValidationStateTracker::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
+                                                                      VkFormatFeatureFlags2KHR features) {
+    return std::make_shared<IMAGE_STATE>(this, img, pCreateInfo, features);
+}
+
+std::shared_ptr<IMAGE_STATE> ValidationStateTracker::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
+                                                                      VkSwapchainKHR swapchain, uint32_t swapchain_index,
+                                                                      VkFormatFeatureFlags2KHR features) {
+    return std::make_shared<IMAGE_STATE>(this, img, pCreateInfo, swapchain, swapchain_index, features);
+}
+
 void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
     if (VK_SUCCESS != result) return;
@@ -215,7 +221,7 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
                                                  IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier), device, *pImage,
                                                  pCreateInfo->format, pCreateInfo->tiling);
     }
-    Add(std::make_shared<IMAGE_STATE>(this, *pImage, pCreateInfo, format_features));
+    Add(CreateImageState(*pImage, pCreateInfo, format_features));
 }
 
 void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
@@ -2038,6 +2044,12 @@ void ValidationStateTracker::PostCallRecordCreateFence(VkDevice device, const Vk
     Add(std::make_shared<FENCE_STATE>(*pFence, pCreateInfo));
 }
 
+std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateGraphicsPipelineState(
+    const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<const RENDER_PASS_STATE> &&render_pass,
+    std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout) const {
+    return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(render_pass), std::move(layout));
+}
+
 bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                     const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -2048,20 +2060,20 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
     cgpl_state->pCreateInfos = pCreateInfos;  // GPU validation can alter this, so we have to set a default value for the Chassis
     cgpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
+        const auto &create_info = pCreateInfos[i];
+        auto layout_state = Get<PIPELINE_LAYOUT_STATE>(create_info.layout);
+        std::shared_ptr<const RENDER_PASS_STATE> render_pass;
+
         if (pCreateInfos[i].renderPass != VK_NULL_HANDLE) {
-            cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i],
-                                                                              Get<RENDER_PASS_STATE>(pCreateInfos[i].renderPass),
-                                                                              Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+            render_pass = Get<RENDER_PASS_STATE>(create_info.renderPass);
         } else if (enabled_features.core13.dynamicRendering) {
-            auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfo>(pCreateInfos[i].pNext);
-            cgpl_state->pipe_state.push_back(
-                std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], std::make_shared<RENDER_PASS_STATE>(dynamic_rendering),
-                                                 Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+            auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
+            render_pass = std::make_shared<RENDER_PASS_STATE>(dynamic_rendering);
         } else {
-            cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], nullptr,
-                                                                              Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
             skip = true;
         }
+        cgpl_state->pipe_state.push_back(
+            CreateGraphicsPipelineState(&create_info, std::move(render_pass), std::move(layout_state)));
     }
     return skip;
 }
@@ -2081,6 +2093,11 @@ void ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(VkDevice devi
     cgpl_state->pipe_state.clear();
 }
 
+std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateComputePipelineState(
+    const VkComputePipelineCreateInfo *pCreateInfo, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout) const {
+    return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(layout));
+}
+
 bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                    const VkComputePipelineCreateInfo *pCreateInfos,
                                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -2091,7 +2108,7 @@ bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice devi
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         ccpl_state->pipe_state.push_back(
-            std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+            CreateComputePipelineState(&pCreateInfos[i], Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -2112,6 +2129,11 @@ void ValidationStateTracker::PostCallRecordCreateComputePipelines(VkDevice devic
     ccpl_state->pipe_state.clear();
 }
 
+std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateRayTracingPipelineState(
+    const VkRayTracingPipelineCreateInfoNV *pCreateInfo, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout) const {
+    return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(layout));
+}
+
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
                                                                         uint32_t count,
                                                                         const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
@@ -2122,7 +2144,7 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(VkDevice
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         crtpl_state->pipe_state.push_back(
-            std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+            CreateRayTracingPipelineState(&pCreateInfos[i], Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -2141,6 +2163,11 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
     crtpl_state->pipe_state.clear();
 }
 
+std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateRayTracingPipelineState(
+    const VkRayTracingPipelineCreateInfoKHR *pCreateInfo, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout) const {
+    return std::make_shared<PIPELINE_STATE>(this, pCreateInfo, std::move(layout));
+}
+
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                                          VkPipelineCache pipelineCache, uint32_t count,
                                                                          const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
@@ -2151,7 +2178,7 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevic
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         crtpl_state->pipe_state.push_back(
-            std::make_shared<PIPELINE_STATE>(this, &pCreateInfos[i], Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
+            CreateRayTracingPipelineState(&pCreateInfos[i], Get<PIPELINE_LAYOUT_STATE>(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -2198,11 +2225,16 @@ void ValidationStateTracker::PostCallRecordCreatePipelineLayout(VkDevice device,
     Add(std::make_shared<PIPELINE_LAYOUT_STATE>(this, *pPipelineLayout, pCreateInfo));
 }
 
+std::shared_ptr<DESCRIPTOR_POOL_STATE> ValidationStateTracker::CreateDescriptorPoolState(
+    VkDescriptorPool pool, const VkDescriptorPoolCreateInfo *pCreateInfo) {
+    return std::make_shared<DESCRIPTOR_POOL_STATE>(this, pool, pCreateInfo);
+}
+
 void ValidationStateTracker::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator,
                                                                 VkDescriptorPool *pDescriptorPool, VkResult result) {
     if (VK_SUCCESS != result) return;
-    Add(std::make_shared<DESCRIPTOR_POOL_STATE>(this, *pDescriptorPool, pCreateInfo));
+    Add(CreateDescriptorPoolState(*pDescriptorPool, pCreateInfo));
 }
 
 void ValidationStateTracker::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
@@ -4224,8 +4256,8 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
                 physical_device, has_format_feature2, IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier), device,
                 pSwapchainImages[i], swapchain_state->image_create_info.format, swapchain_state->image_create_info.tiling);
 
-            auto image_state = std::make_shared<IMAGE_STATE>(this, pSwapchainImages[i], swapchain_state->image_create_info.ptr(),
-                                                             swapchain, i, format_features);
+            auto image_state =
+                CreateImageState(pSwapchainImages[i], swapchain_state->image_create_info.ptr(), swapchain, i, format_features);
             if (!swapchain_image.fake_base_address) {
                 auto size = image_state->fragment_encoder->TotalSize();
                 swapchain_image.fake_base_address = fake_memory.Alloc(size);

@@ -639,6 +639,9 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkEvent* pEvent, VkResult result) override;
     void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) override;
+
+    virtual std::shared_ptr<DESCRIPTOR_POOL_STATE> CreateDescriptorPoolState(VkDescriptorPool pool,
+                                                                             const VkDescriptorPoolCreateInfo* pCreateInfo);
     void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
                                             VkResult result) override;
@@ -650,6 +653,9 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags, VkResult result) override;
     void PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
                                         VkResult result) override;
+
+    virtual std::shared_ptr<PIPELINE_STATE> CreateComputePipelineState(const VkComputePipelineCreateInfo* pCreateInfo,
+                                                                       std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout) const;
     bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -685,6 +691,10 @@ class ValidationStateTracker : public ValidationObject {
                                          VkResult result) override;
     void PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
                                          const VkAllocationCallbacks* pAllocator) override;
+
+    virtual std::shared_ptr<PIPELINE_STATE> CreateGraphicsPipelineState(
+        const VkGraphicsPipelineCreateInfo* pCreateInfo, std::shared_ptr<const RENDER_PASS_STATE>&& render_pass,
+        std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout) const;
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -693,6 +703,12 @@ class ValidationStateTracker : public ValidationObject {
                                                const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
                                                void* cgpl_state) override;
+
+    virtual std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
+                                                          VkFormatFeatureFlags2KHR features);
+    virtual std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
+                                                          VkSwapchainKHR swapchain, uint32_t swapchain_index,
+                                                          VkFormatFeatureFlags2KHR features);
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkImage* pImage, VkResult result) override;
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator) override;
@@ -712,6 +728,9 @@ class ValidationStateTracker : public ValidationObject {
     void RecordResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
     void PostCallRecordResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) override;
     void PostCallRecordResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) override;
+
+    virtual std::shared_ptr<PIPELINE_STATE> CreateRayTracingPipelineState(
+        const VkRayTracingPipelineCreateInfoNV* pCreateInfo, std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout) const;
     bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -720,6 +739,8 @@ class ValidationStateTracker : public ValidationObject {
                                                    const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
                                                    void* pipe_state) override;
+    virtual std::shared_ptr<PIPELINE_STATE> CreateRayTracingPipelineState(
+        const VkRayTracingPipelineCreateInfoKHR* pCreateInfo, std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout) const;
     bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                      VkPipelineCache pipelineCache, uint32_t count,
                                                      const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,

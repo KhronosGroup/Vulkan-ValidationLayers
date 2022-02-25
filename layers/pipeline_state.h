@@ -254,8 +254,10 @@ class PIPELINE_STATE : public BASE_NODE {
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
 
-    template <typename CreateInfoStruct>
-    PIPELINE_STATE(const ValidationStateTracker *state_data, const CreateInfoStruct *pCreateInfo,
+    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
+                   std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
+
+    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
                    std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
 
     VkPipeline pipeline() const { return handle_.Cast<VkPipeline>(); }

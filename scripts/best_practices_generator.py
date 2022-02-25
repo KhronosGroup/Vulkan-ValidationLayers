@@ -119,12 +119,9 @@ class BestPracticesOutputGenerator(OutputGenerator):
             'vkGetPhysicalDeviceSurfaceFormats2KHR',
             'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',
             'vkGetSwapchainImagesKHR',
-            'vkCreateDevice',
             # AMD tracked
             'vkCreateComputePipelines',
             'vkCmdPipelineBarrier',
-            'vkCreateFence',
-            'vkCreateSemaphore',
             'vkQueueSubmit',
             ]
 

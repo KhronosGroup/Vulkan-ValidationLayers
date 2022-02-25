@@ -412,8 +412,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
     assert(active_shaders == VK_SHADER_STAGE_COMPUTE_BIT);
 }
 
-template <typename CreateInfoStruct>
-PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const CreateInfoStruct *pCreateInfo,
+PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
@@ -429,10 +428,21 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const C
                    VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)));
 }
 
-template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const VkRayTracingPipelineCreateInfoNV *,
-                                        std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&);
-template PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *, const VkRayTracingPipelineCreateInfoKHR *,
-                                        std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&);
+PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
+                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
+    : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
+      create_info(pCreateInfo),
+      pipeline_layout(std::move(layout)),
+      stage_state(GetStageStates(state_data, create_info.raytracing.pStages, create_info.raytracing.stageCount)),
+      active_slots(GetActiveSlots(stage_state)),
+      blend_constants_enabled(false),
+      sample_location_enabled(false),
+      active_shaders(GetActiveShaders(pCreateInfo->pStages, pCreateInfo->stageCount)),
+      topology_at_rasterizer{} {
+    assert(0 == (active_shaders &
+                 ~(VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
+                   VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)));
+}
 
 void LAST_BOUND_STATE::UnbindAndResetPushDescriptorSet(CMD_BUFFER_STATE *cb_state,
                                                        std::shared_ptr<cvdescriptorset::DescriptorSet> &&ds) {
