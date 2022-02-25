@@ -123,6 +123,7 @@ typedef enum {
     kBPVendorArm = 0x00000001,
     kBPVendorAMD = 0x00000002,
     kBPVendorIMG = 0x00000004,
+    kBPVendorNVIDIA = 0x00000008,
 } BPVendorFlagBits;
 typedef VkFlags BPVendorFlags;
 
