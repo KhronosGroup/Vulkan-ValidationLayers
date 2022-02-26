@@ -152,7 +152,8 @@ static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(const layer_data::sp
         for (const auto *layout : layouts) {
             if (layout) {
                 used_layout = layout;
-                if ((layout->set_layouts.size() > i) && (layout->set_layouts[i]->GetBindingCount() > 0)) {
+                if ((layout->set_layouts.size() > i) && (layout->set_layouts[i]) &&
+                    (layout->set_layouts[i]->GetBindingCount() > 0)) {
                     break;
                 }
             }
@@ -166,7 +167,9 @@ static std::vector<PipelineLayoutCompatId> GetCompatForSet(const PIPELINE_LAYOUT
                                                            const PushConstantRangesId &push_constant_ranges) {
     PipelineLayoutSetLayoutsDef set_layout_ids(set_layouts.size());
     for (size_t i = 0; i < set_layouts.size(); i++) {
-        set_layout_ids[i] = set_layouts[i]->GetLayoutId();
+        if (set_layouts[i]) {
+            set_layout_ids[i] = set_layouts[i]->GetLayoutId();
+        }
     }
     auto set_layouts_id = pipeline_layout_set_layouts_dict.look_up(set_layout_ids);
 
