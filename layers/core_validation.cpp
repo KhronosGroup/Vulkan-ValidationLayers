@@ -663,7 +663,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller = CommandTypeString(cmd_type);
 
-    if (pCB->activeRenderPass->use_dynamic_rendering) {
+    if (pCB->activeRenderPass && pCB->activeRenderPass->use_dynamic_rendering) {
         if (pPipeline->rp_state->renderPass() != VK_NULL_HANDLE) {
             skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_06198,
                 "%s: Currently bound pipeline %s must have been created with a VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
