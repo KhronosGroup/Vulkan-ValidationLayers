@@ -813,7 +813,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 parent_vuid = self.GetVuid(parent_name, 'commonparent')
 
         if obj_count is not None:
-            pre_call_code += '%sif (%s%s) {\n' % (indent, prefix, obj_name)
+            pre_call_code += '%sif ((%s > 0) && (%s%s)) {\n' % (indent, obj_count, prefix, obj_name)
             indent = self.incIndent(indent)
             pre_call_code += '%sfor (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
             indent = self.incIndent(indent)
