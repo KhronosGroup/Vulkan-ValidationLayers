@@ -692,8 +692,9 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                              pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask);
         }
 
-        if (rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount !=
-            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount) {
+        const auto color_attachment_count = rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount;
+        if (color_attachment_count &&
+            (color_attachment_count != pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount)) {
             skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_count,
                              "%s: Currently bound pipeline %s colorAttachmentCount ([%" PRIu32
                              ") must be equal to pBeginRendering->colorAttachmentCount ([%" PRIu32 ")",
