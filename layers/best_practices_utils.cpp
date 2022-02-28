@@ -2053,7 +2053,14 @@ void BestPractices::RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_
 
 void BestPractices::RecordCmdDrawTypeArm(bp_state::CommandBuffer& cb_node, uint32_t draw_count, const char* caller) {
     auto& render_pass_state = cb_node.render_pass_state;
-    if (draw_count >= kDepthPrePassMinDrawCountArm) {
+    // Each TBDR vendor requires a depth pre-pass draw call to have a minimum number of vertices/indices before it counts towards
+    // depth prepass warnings First find the lowest enabled draw count
+    uint32_t lowestEnabledMinDrawCount = 0;
+    lowestEnabledMinDrawCount = VendorCheckEnabled(kBPVendorArm) * kDepthPrePassMinDrawCountArm;
+    if (VendorCheckEnabled(kBPVendorIMG) && kDepthPrePassMinDrawCountIMG < lowestEnabledMinDrawCount)
+        lowestEnabledMinDrawCount = kDepthPrePassMinDrawCountIMG;
+
+    if (draw_count >= lowestEnabledMinDrawCount) {
         if (render_pass_state.depthOnly) render_pass_state.numDrawCallsDepthOnly++;
         if (render_pass_state.depthEqualComparison) render_pass_state.numDrawCallsDepthEqualCompare++;
     }
@@ -2607,16 +2614,24 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
     if (cmd == nullptr) return skip;
     auto &render_pass_state = cmd->render_pass_state;
 
+    // Does the number of draw calls classified as depth only surpass the vendor limit for a specified vendor
+    bool depth_only_arm = render_pass_state.numDrawCallsDepthEqualCompare >= kDepthPrePassNumDrawCallsArm &&
+                          render_pass_state.numDrawCallsDepthOnly >= kDepthPrePassNumDrawCallsArm;
+    bool depth_only_img = render_pass_state.numDrawCallsDepthEqualCompare >= kDepthPrePassNumDrawCallsIMG &&
+                          render_pass_state.numDrawCallsDepthOnly >= kDepthPrePassNumDrawCallsIMG;
+
+    // Only send the warning when the vendor is enabled and a depth prepass is detected
     bool uses_depth = (render_pass_state.depthAttachment || render_pass_state.colorAttachment) &&
-                      render_pass_state.numDrawCallsDepthEqualCompare >= kDepthPrePassNumDrawCallsArm &&
-                      render_pass_state.numDrawCallsDepthOnly >= kDepthPrePassNumDrawCallsArm;
+                      (depth_only_arm && VendorCheckEnabled(kBPVendorAMD) || depth_only_img && VendorCheckEnabled(kBPVendorIMG));
+
     if (uses_depth) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_EndRenderPass_DepthPrePassUsage,
-            "%s Depth pre-passes may be in use. In general, this is not recommended, as in Arm Mali GPUs since "
-            "Mali-T620, Forward Pixel Killing (FPK) can already perform automatic hidden surface removal; in which "
-            "case, using depth pre-passes for hidden surface removal may worsen performance.",
-            VendorSpecificTag(kBPVendorArm));
+            "%s %s Depth pre-passes may be in use. In general, this is not recommended in tile-based deferred "
+            "renderering architectures; such as those in Arm Mali or PowerVR GPUs. Since they can remove geometry "
+            "hidden by other opaque geometry. Mali has Forward Pixel Killing (FPK), PowerVR has Hiden Surface "
+            "Remover (HSR) in which case, using depth pre-passes for hidden surface removal may worsen performance.",
+            VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG));
     }
 
     RENDER_PASS_STATE* rp = cmd->activeRenderPass.get();

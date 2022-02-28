@@ -90,6 +90,12 @@ static const uint32_t kThreadGroupDispatchCountAlignmentArm = 4;
 // Maximum number of threads which can efficiently be part of a compute workgroup when using thread group barriers.
 static const uint32_t kMaxEfficientWorkGroupThreadCountArm = 64;
 
+// Minimum number of vertices/indices a draw needs to have before considering it in depth prepass warnings on PowerVR
+static const int kDepthPrePassMinDrawCountIMG = 300;
+
+// Minimum, number of draw calls matching the above criteria before triggerring a depth prepass warning on PowerVR
+static const int kDepthPrePassNumDrawCallsIMG = 10;
+
 // Maximum sample count on PowerVR before showing a warning
 static const VkSampleCountFlagBits kMaxEfficientSamplesImg = VK_SAMPLE_COUNT_4_BIT;
 
