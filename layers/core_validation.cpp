@@ -707,8 +707,9 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
                     auto view_state = Get<IMAGE_VIEW_STATE>(
                         pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView);
-                    if (view_state->create_info.format !=
-                        rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[i]) {
+                    if ((rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount > i) &&
+                        view_state->create_info.format !=
+                            rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[i]) {
                         skip |=
                             LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_formats,
                                      "%s: Color attachment ([%" PRIu32
