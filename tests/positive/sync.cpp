@@ -2010,3 +2010,87 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
     vk::DeviceWaitIdle(m_device->device());
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCBWithFenceAfter) {
+    TEST_DESCRIPTION("Reset query pool from a different command buffer and wait on fence after both are submitted");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    uint32_t queue_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
+    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+        printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkFenceCreateInfo fence_info = LvlInitStruct<VkFenceCreateInfo>();
+    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    vk_testing::Fence ts_fence;
+    ts_fence.init(*m_device, fence_info);
+    VkFence fence_handle = ts_fence.handle();
+
+    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_create_info.queryCount = 1;
+    vk_testing::QueryPool query_pool;
+    query_pool.init(*m_device, query_pool_create_info);
+
+    VkCommandBuffer command_buffer[2];
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    command_buffer_allocate_info.commandPool = m_commandPool->handle();
+    command_buffer_allocate_info.commandBufferCount = 2;
+    command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, command_buffer);
+
+    {
+        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+        vk::BeginCommandBuffer(command_buffer[0], &begin_info);
+        vk::CmdResetQueryPool(command_buffer[0], query_pool.handle(), 0, 1);
+        vk::EndCommandBuffer(command_buffer[0]);
+
+        vk::BeginCommandBuffer(command_buffer[1], &begin_info);
+        vk::CmdWriteTimestamp(command_buffer[1], VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, query_pool.handle(), 0);
+        vk::EndCommandBuffer(command_buffer[1]);
+    }
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+
+    // Begin by resetting the query pool.
+    {
+        submit_info.pCommandBuffers = &command_buffer[0];
+        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    }
+
+    // Write a timestamp, and add a fence to be signalled.
+    {
+        submit_info.pCommandBuffers = &command_buffer[1];
+        vk::ResetFences(m_device->device(), 1, &fence_handle);
+        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence_handle);
+    }
+
+    // Reset query pool again.
+    {
+        submit_info.pCommandBuffers = &command_buffer[0];
+        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    }
+
+    // Finally, write a second timestamp, but before that, wait for the fence.
+    {
+        submit_info.pCommandBuffers = &command_buffer[1];
+        vk::WaitForFences(m_device->device(), 1, &fence_handle, true, std::numeric_limits<uint64_t>::max());
+        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    }
+
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, command_buffer);
+
+    m_errorMonitor->VerifyNotFound();
+}
