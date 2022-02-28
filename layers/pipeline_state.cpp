@@ -227,11 +227,12 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE::StageSt
 }
 
 // static
-std::shared_ptr<VertexInputState> PIPELINE_STATE::CreateVertexInputState(const ValidationStateTracker &state,
+std::shared_ptr<VertexInputState> PIPELINE_STATE::CreateVertexInputState(const PIPELINE_STATE &p,
+                                                                         const ValidationStateTracker &state,
                                                                          const safe_VkGraphicsPipelineCreateInfo &create_info) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT) {  // Vertex input graphics library
-        return std::make_shared<VertexInputState>(create_info);
+        return std::make_shared<VertexInputState>(p, create_info);
     }
 
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
@@ -242,7 +243,7 @@ std::shared_ptr<VertexInputState> PIPELINE_STATE::CreateVertexInputState(const V
         }
     } else {
         if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-            return std::make_shared<VertexInputState>(create_info);
+            return std::make_shared<VertexInputState>(p, create_info);
         }
     }
 
@@ -251,11 +252,11 @@ std::shared_ptr<VertexInputState> PIPELINE_STATE::CreateVertexInputState(const V
 }
 
 // static
-std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const ValidationStateTracker &state,
+std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &state,
                                                                      const safe_VkGraphicsPipelineCreateInfo &create_info) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {  // Pre-raster graphics library
-        return std::make_shared<PreRasterState>(state, create_info);
+        return std::make_shared<PreRasterState>(p, state, create_info);
     }
 
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
@@ -266,7 +267,7 @@ std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const Valid
         }
     } else {
         if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-            return std::make_shared<PreRasterState>(state, create_info);
+            return std::make_shared<PreRasterState>(p, state, create_info);
         }
     }
 
@@ -276,11 +277,11 @@ std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const Valid
 
 // static
 std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
-    const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
+    const PIPELINE_STATE &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
     const safe_VkGraphicsPipelineCreateInfo &safe_create_info) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {  // Fragment shader graphics library
-        return std::make_shared<FragmentShaderState>(state, create_info);
+        return std::make_shared<FragmentShaderState>(p, state, create_info);
     }
 
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
@@ -291,7 +292,7 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
         }
     } else {
         if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-            return std::make_shared<FragmentShaderState>(state, safe_create_info);
+            return std::make_shared<FragmentShaderState>(p, state, safe_create_info);
         }
     }
 
@@ -303,11 +304,11 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
 // Pointers that should be ignored have been set to null in safe_create_info, but if this is a graphics library we need the "raw"
 // create_info.
 std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
-    const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
+    const PIPELINE_STATE &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
     const safe_VkGraphicsPipelineCreateInfo &safe_create_info) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {  // Fragment output graphics library
-        return std::make_shared<FragmentOutputState>(state, create_info);
+        return std::make_shared<FragmentOutputState>(p, state, create_info);
     }
 
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
@@ -318,7 +319,7 @@ std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
         }
     } else {
         if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-            return std::make_shared<FragmentOutputState>(state, safe_create_info);
+            return std::make_shared<FragmentOutputState>(p, state, safe_create_info);
         }
     }
 
@@ -332,10 +333,10 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo, rpstate),
       graphics_lib_type(GetGraphicsLibType(create_info.graphics)),
-      vertex_input_state(CreateVertexInputState(*state_data, create_info.graphics)),
-      pre_raster_state(CreatePreRasterState(*state_data, create_info.graphics)),
-      fragment_shader_state(CreateFragmentShaderState(*state_data, *pCreateInfo, create_info.graphics)),
-      fragment_output_state(CreateFragmentOutputState(*state_data, *pCreateInfo, create_info.graphics)),
+      vertex_input_state(CreateVertexInputState(*this, *state_data, create_info.graphics)),
+      pre_raster_state(CreatePreRasterState(*this, *state_data, create_info.graphics)),
+      fragment_shader_state(CreateFragmentShaderState(*this, *state_data, *pCreateInfo, create_info.graphics)),
+      fragment_output_state(CreateFragmentOutputState(*this, *state_data, *pCreateInfo, create_info.graphics)),
       stage_state(GetStageStates(*state_data, *this)),
       fragmentShader_writable_output_location_list(GetFSOutputLocations(stage_state)),
       active_slots(GetActiveSlots(stage_state)),

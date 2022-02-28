@@ -306,9 +306,13 @@ class PIPELINE_STATE : public BASE_NODE {
 
     const safe_VkPipelineMultisampleStateCreateInfo *MultisampleState() const {
         // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?
-        if (fragment_shader_state) {
+        if (fragment_shader_state && fragment_shader_state->ms_state &&
+            (fragment_shader_state->ms_state->rasterizationSamples >= VK_SAMPLE_COUNT_1_BIT) &&
+            (fragment_shader_state->ms_state->rasterizationSamples < VK_SAMPLE_COUNT_FLAG_BITS_MAX_ENUM)) {
             return fragment_shader_state->ms_state.get();
-        } else if (fragment_output_state) {
+        } else if (fragment_output_state && fragment_output_state->ms_state &&
+                   (fragment_output_state->ms_state->rasterizationSamples >= VK_SAMPLE_COUNT_1_BIT) &&
+                   (fragment_output_state->ms_state->rasterizationSamples < VK_SAMPLE_COUNT_FLAG_BITS_MAX_ENUM)) {
             return fragment_output_state->ms_state.get();
         }
         return nullptr;
@@ -418,15 +422,15 @@ class PIPELINE_STATE : public BASE_NODE {
     static StageStateVec GetStageStates(const ValidationStateTracker &state_data, const PIPELINE_STATE &pipe_state);
 
   protected:
-    static std::shared_ptr<VertexInputState> CreateVertexInputState(const ValidationStateTracker &state,
+    static std::shared_ptr<VertexInputState> CreateVertexInputState(const PIPELINE_STATE &p, const ValidationStateTracker &state,
                                                                     const safe_VkGraphicsPipelineCreateInfo &create_info);
-    static std::shared_ptr<PreRasterState> CreatePreRasterState(const ValidationStateTracker &state,
+    static std::shared_ptr<PreRasterState> CreatePreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &state,
                                                                 const safe_VkGraphicsPipelineCreateInfo &create_info);
     static std::shared_ptr<FragmentShaderState> CreateFragmentShaderState(
-        const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
+        const PIPELINE_STATE &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
         const safe_VkGraphicsPipelineCreateInfo &safe_create_info);
     static std::shared_ptr<FragmentOutputState> CreateFragmentOutputState(
-        const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
+        const PIPELINE_STATE &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
         const safe_VkGraphicsPipelineCreateInfo &safe_create_info);
 
     // Render pass state for dynamic rendering, etc.

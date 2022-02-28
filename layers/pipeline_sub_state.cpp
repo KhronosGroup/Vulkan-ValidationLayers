@@ -21,8 +21,8 @@
 
 #include "state_tracker.h"
 
-VertexInputState::VertexInputState(const safe_VkGraphicsPipelineCreateInfo &create_info)
-    : input_state(create_info.pVertexInputState), input_assembly_state(create_info.pInputAssemblyState) {
+VertexInputState::VertexInputState(const PIPELINE_STATE &p, const safe_VkGraphicsPipelineCreateInfo &create_info)
+    : parent(p), input_state(create_info.pVertexInputState), input_assembly_state(create_info.pInputAssemblyState) {
     if (create_info.pVertexInputState) {
         const auto *vici = create_info.pVertexInputState;
         if (vici->vertexBindingDescriptionCount) {
@@ -54,8 +54,9 @@ VertexInputState::VertexInputState(const safe_VkGraphicsPipelineCreateInfo &crea
     }
 }
 
-PreRasterState::PreRasterState(const ValidationStateTracker &dev_data, const safe_VkGraphicsPipelineCreateInfo &create_info)
-    : subpass(create_info.subpass) {
+PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
+                               const safe_VkGraphicsPipelineCreateInfo &create_info)
+    : parent(p), subpass(create_info.subpass) {
     pipeline_layout = dev_data.Get<PIPELINE_LAYOUT_STATE>(create_info.layout);
 
     viewport_state = create_info.pViewportState;
@@ -180,12 +181,16 @@ void FragmentShaderState::SetFragmentShaderInfo(FragmentShaderState &fs_state, c
     SetFragmentShaderInfoPrivate(fs_state, state_data, create_info);
 }
 
-FragmentShaderState::FragmentShaderState(const ValidationStateTracker &dev_data, VkRenderPass rp, uint32_t subp,
-                                         VkPipelineLayout layout)
-    : rp_state(dev_data.Get<RENDER_PASS_STATE>(rp)), subpass(subp), pipeline_layout(dev_data.Get<PIPELINE_LAYOUT_STATE>(layout)) {}
+FragmentShaderState::FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, VkRenderPass rp,
+                                         uint32_t subp, VkPipelineLayout layout)
+    : parent(p),
+      rp_state(dev_data.Get<RENDER_PASS_STATE>(rp)),
+      subpass(subp),
+      pipeline_layout(dev_data.Get<PIPELINE_LAYOUT_STATE>(layout)) {}
 
-FragmentOutputState::FragmentOutputState(const ValidationStateTracker &dev_data, VkRenderPass rp, uint32_t sp)
-    : rp_state(dev_data.Get<RENDER_PASS_STATE>(rp)), subpass(sp) {}
+FragmentOutputState::FragmentOutputState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, VkRenderPass rp,
+                                         uint32_t sp)
+    : parent(p), rp_state(dev_data.Get<RENDER_PASS_STATE>(rp)), subpass(sp) {}
 
 // static
 bool FragmentOutputState::IsBlendConstantsEnabled(const AttachmentVector &attachments) {

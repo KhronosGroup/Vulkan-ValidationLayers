@@ -37,8 +37,9 @@ static inline VkGraphicsPipelineLibraryFlagsEXT GetGraphicsLibType(const CreateI
 }
 
 struct VertexInputState {
-    VertexInputState() = default;
-    VertexInputState(const safe_VkGraphicsPipelineCreateInfo &create_info);
+    VertexInputState(const PIPELINE_STATE &p, const safe_VkGraphicsPipelineCreateInfo &create_info);
+
+    const PIPELINE_STATE &parent;
 
     safe_VkPipelineVertexInputStateCreateInfo *input_state = nullptr;
     safe_VkPipelineInputAssemblyStateCreateInfo *input_assembly_state = nullptr;
@@ -60,8 +61,10 @@ struct VertexInputState {
 };
 
 struct PreRasterState {
-    PreRasterState() = default;
-    PreRasterState(const ValidationStateTracker &dev_data, const safe_VkGraphicsPipelineCreateInfo &create_info);
+    PreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
+                   const safe_VkGraphicsPipelineCreateInfo &create_info);
+
+    const PIPELINE_STATE &parent;
 
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> pipeline_layout;
     safe_VkPipelineViewportStateCreateInfo *viewport_state = nullptr;
@@ -95,12 +98,12 @@ std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(cons
 std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(const VkPipelineShaderStageCreateInfo &cbs);
 
 struct FragmentShaderState {
-    FragmentShaderState() = default;
-    FragmentShaderState(const ValidationStateTracker &dev_data, VkRenderPass rp, uint32_t subpass, VkPipelineLayout layout);
+    FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, VkRenderPass rp, uint32_t subpass,
+                        VkPipelineLayout layout);
 
     template <typename CreateInfo>
-    FragmentShaderState(const ValidationStateTracker &dev_data, const CreateInfo &create_info)
-        : FragmentShaderState(dev_data, create_info.renderPass, create_info.subpass, create_info.layout) {
+    FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, const CreateInfo &create_info)
+        : FragmentShaderState(p, dev_data, create_info.renderPass, create_info.subpass, create_info.layout) {
         if (create_info.pMultisampleState) {
             ms_state = ToSafeMultisampleState(*create_info.pMultisampleState);
         }
@@ -109,6 +112,8 @@ struct FragmentShaderState {
         }
         FragmentShaderState::SetFragmentShaderInfo(*this, dev_data, create_info);
     }
+
+    const PIPELINE_STATE &parent;
 
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     uint32_t subpass = 0;
@@ -143,14 +148,13 @@ static bool IsSampleLocationEnabled(const CreateInfo &create_info) {
 struct FragmentOutputState {
     using AttachmentVector = std::vector<VkPipelineColorBlendAttachmentState>;
 
-    FragmentOutputState() = default;
-    FragmentOutputState(const ValidationStateTracker &dev_data, VkRenderPass rp, uint32_t sp);
+    FragmentOutputState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, VkRenderPass rp, uint32_t sp);
     // For a graphics library, a "non-safe" create info must be passed in in order for pColorBlendState and pMultisampleState to not
     // get stripped out. If this is a "normal" pipeline, then we want to keep the logic from safe_VkGraphicsPipelineCreateInfo that
     // strips out pointers that should be ignored.
     template <typename CreateInfo>
-    FragmentOutputState(const ValidationStateTracker &dev_data, const CreateInfo &create_info)
-        : FragmentOutputState(dev_data, create_info.renderPass, create_info.subpass) {
+    FragmentOutputState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, const CreateInfo &create_info)
+        : FragmentOutputState(p, dev_data, create_info.renderPass, create_info.subpass) {
         if (create_info.pColorBlendState) {
             if (create_info.pColorBlendState) {
                 color_blend_state = ToSafeColorBlendState(*create_info.pColorBlendState);
@@ -175,6 +179,8 @@ struct FragmentOutputState {
 
     static bool IsBlendConstantsEnabled(const AttachmentVector &attachments);
     static bool GetDualSourceBlending(const safe_VkPipelineColorBlendStateCreateInfo *color_blend_state);
+
+    const PIPELINE_STATE &parent;
 
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     uint32_t subpass = 0;
