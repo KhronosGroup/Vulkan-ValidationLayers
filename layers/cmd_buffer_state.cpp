@@ -537,6 +537,7 @@ void CMD_BUFFER_STATE::BeginQuery(const QueryObject &query_obj) {
         SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_RUNNING, localQueryToStateMap);
         return false;
     });
+    updatedQueries.insert(query_obj);
 }
 
 void CMD_BUFFER_STATE::EndQuery(const QueryObject &query_obj) {
@@ -545,6 +546,7 @@ void CMD_BUFFER_STATE::EndQuery(const QueryObject &query_obj) {
                                           VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
         return SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_ENDED, localQueryToStateMap);
     });
+    updatedQueries.insert(query_obj);
 }
 
 static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass, QueryState value,
@@ -560,6 +562,7 @@ void CMD_BUFFER_STATE::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, ui
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query = {queryPool, slot};
         activeQueries.erase(query);
+        updatedQueries.insert(query);
     }
     queryUpdates.emplace_back([queryPool, firstQuery, queryCount](const ValidationStateTracker *device_data, bool do_validate,
                                                                   VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
@@ -572,6 +575,7 @@ void CMD_BUFFER_STATE::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query = {queryPool, slot};
         resetQueries.insert(query);
+        updatedQueries.insert(query);
     }
 
     queryUpdates.emplace_back([queryPool, firstQuery, queryCount](const ValidationStateTracker *device_data, bool do_validate,
@@ -851,6 +855,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
         initial_device_mask = (1 << dev_data->physical_device_count) - 1;
     }
     performance_lock_acquired = dev_data->performance_lock_acquired;
+    updatedQueries.clear();
 }
 
 void CMD_BUFFER_STATE::End(VkResult result) {
@@ -1337,7 +1342,7 @@ void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
     }
 }
 
-void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass) {
+void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)>& is_query_updated_after) {
     // First perform decrement on general case bound objects
     for (auto event : writeEventsBeforeWait) {
         auto event_state = dev_data->Get<EVENT_STATE>(event);
@@ -1352,7 +1357,7 @@ void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass) {
     }
 
     for (const auto &query_state_pair : local_query_to_state_map) {
-        if (query_state_pair.second == QUERYSTATE_ENDED) {
+        if (query_state_pair.second == QUERYSTATE_ENDED && !is_query_updated_after(query_state_pair.first)) {
             auto query_pool_state = dev_data->Get<QUERY_POOL_STATE>(query_state_pair.first.pool);
             query_pool_state->SetQueryState(query_state_pair.first.query, query_state_pair.first.perf_pass, QUERYSTATE_AVAILABLE);
         }
