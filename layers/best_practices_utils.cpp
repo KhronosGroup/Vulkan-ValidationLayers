@@ -241,6 +241,20 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
                            inst_api_name.c_str(), dev_api_name.c_str());
     }
 
+    std::vector<std::string> extensions;
+    {
+        uint32_t property_count = 0;
+        if (DispatchEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &property_count, nullptr) == VK_SUCCESS) {
+            std::vector<VkExtensionProperties> property_list(property_count);
+            if (DispatchEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &property_count, property_list.data()) == VK_SUCCESS) {
+                extensions.reserve(property_list.size());
+                for (const VkExtensionProperties& properties : property_list) {
+                    extensions.push_back(properties.extensionName);
+                }
+            }
+        }
+    }
+
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         if (white_list(pCreateInfo->ppEnabledExtensionNames[i], kInstanceExtensionNames)) {
             skip |= LogWarning(instance, kVUID_BestPractices_CreateDevice_ExtensionMismatch,

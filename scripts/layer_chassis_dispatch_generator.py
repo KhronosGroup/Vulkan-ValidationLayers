@@ -967,6 +967,18 @@ VkResult DispatchGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, V
     return result;
 }
 
+VkResult DispatchEnumerateDeviceExtensionProperties(
+    VkPhysicalDevice                            physicalDevice,
+    const char*                                 pLayerName,
+    uint32_t*                                   pPropertyCount,
+    VkExtensionProperties*                      pProperties)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    VkResult result = layer_data->instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pPropertyCount, pProperties);
+
+    return result;
+}
+
 VkResult DispatchDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT *pTagInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DebugMarkerSetObjectTagEXT(device, pTagInfo);
