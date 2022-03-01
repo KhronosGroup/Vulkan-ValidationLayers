@@ -256,14 +256,17 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
     }
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-        if (white_list(pCreateInfo->ppEnabledExtensionNames[i], kInstanceExtensionNames)) {
+        const char *extension_name = pCreateInfo->ppEnabledExtensionNames[i];
+
+        if (white_list(extension_name, kInstanceExtensionNames)) {
             skip |= LogWarning(instance, kVUID_BestPractices_CreateDevice_ExtensionMismatch,
                                "vkCreateDevice(): Attempting to enable Instance Extension %s at CreateDevice time.",
-                               pCreateInfo->ppEnabledExtensionNames[i]);
+                               extension_name);
         }
-        skip |= ValidateDeprecatedExtensions("CreateDevice", pCreateInfo->ppEnabledExtensionNames[i], api_version,
+
+        skip |= ValidateDeprecatedExtensions("CreateDevice", extension_name, api_version,
                                              kVUID_BestPractices_CreateDevice_DeprecatedExtension);
-        skip |= ValidateSpecialUseExtensions("CreateDevice", pCreateInfo->ppEnabledExtensionNames[i], kSpecialUseDeviceVUIDs);
+        skip |= ValidateSpecialUseExtensions("CreateDevice", extension_name, kSpecialUseDeviceVUIDs);
     }
 
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
@@ -281,6 +284,16 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
             "buffers. Disable robustBufferAccess in release builds. Only leave it enabled if the application use-case "
             "requires the additional level of reliability due to the use of unverified user-supplied draw parameters.",
             VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorIMG));
+    }
+
+    const bool enabled_pageable_device_local_memory = IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory);
+    if (VendorCheckEnabled(kBPVendorNVIDIA) && !enabled_pageable_device_local_memory &&
+        std::find(extensions.begin(), extensions.end(), VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME) != extensions.end()) {
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_CreateDevice_PageableDeviceLocalMemory,
+            "%s vkCreateDevice() called without pageable device local memory. "
+            "Use pageableDeviceLocalMemory from VK_EXT_pageable_device_local_memory when it is available.",
+            VendorSpecificTag(kBPVendorNVIDIA));
     }
 
     return skip;
