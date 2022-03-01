@@ -2636,8 +2636,7 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
 
     RENDER_PASS_STATE* rp = cmd->activeRenderPass.get();
 
-    if (VendorCheckEnabled(kBPVendorArm) && rp) {
-
+    if ((VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) && rp) {
         // If we use an attachment on-tile, we should access it in some way. Otherwise,
         // it is redundant to have it be part of the render pass.
         // Only consider it redundant if it will actually consume bandwidth, i.e.
@@ -2688,11 +2687,12 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
             if (untouched_aspects) {
                 skip |= LogPerformanceWarning(
                     device, kVUID_BestPractices_EndRenderPass_RedundantAttachmentOnTile,
-                    "%s Render pass was ended, but attachment #%u (format: %u, untouched aspects 0x%x) "
+                    "%s %s Render pass was ended, but attachment #%u (format: %u, untouched aspects 0x%x) "
                     "was never accessed by a pipeline or clear command. "
-                    "On tile-based architectures, LOAD_OP_LOAD and STORE_OP_STORE consume bandwidth and should not be part of the render pass "
+                    "On tile-based architectures, LOAD_OP_LOAD and STORE_OP_STORE consume bandwidth and should not be part of the "
+                    "render pass "
                     "if the attachments are not intended to be accessed.",
-                    VendorSpecificTag(kBPVendorArm), i, attachment.format, untouched_aspects);
+                    VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), i, attachment.format, untouched_aspects);
             }
         }
     }
