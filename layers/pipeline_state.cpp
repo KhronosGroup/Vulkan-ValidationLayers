@@ -327,6 +327,23 @@ std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
     return {};
 }
 
+template <typename Substate>
+void AppendDynamicStateFromSubstate(const Substate &substate, std::vector<VkDynamicState> &dyn_states,
+                                    VkPipelineDynamicStateCreateFlags &flags) {
+    if (substate) {
+        const auto *dyn_state = substate->parent.DynamicState();
+        if (dyn_state) {
+            flags |= dyn_state->flags;
+            for (uint32_t i = 0; i < dyn_state->dynamicStateCount; ++i) {
+                const auto itr = std::find(dyn_states.cbegin(), dyn_states.cend(), dyn_state->pDynamicStates[i]);
+                if (itr == dyn_states.cend()) {
+                    dyn_states.emplace_back(dyn_state->pDynamicStates[i]);
+                }
+            }
+        }
+    }
+}
+
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                                std::shared_ptr<const RENDER_PASS_STATE> &&rpstate,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
@@ -346,6 +363,39 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       rp_state(rpstate) {
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(PNext());
     if (link_info) {
+        // accumulate dynamic state
+        // TODO is this correct?
+        auto *dyn_state_ci = const_cast<safe_VkPipelineDynamicStateCreateInfo *>(create_info.graphics.pDynamicState);
+        std::vector<VkDynamicState> dyn_states;
+        VkPipelineDynamicStateCreateFlags dyn_flags;
+        if (create_info.graphics.pDynamicState) {
+            std::copy(dyn_state_ci->pDynamicStates, dyn_state_ci->pDynamicStates + dyn_state_ci->dynamicStateCount,
+                      std::back_inserter(dyn_states));
+            dyn_flags = dyn_state_ci->flags;
+        }
+        AppendDynamicStateFromSubstate(vertex_input_state, dyn_states, dyn_flags);
+        AppendDynamicStateFromSubstate(pre_raster_state, dyn_states, dyn_flags);
+        AppendDynamicStateFromSubstate(fragment_shader_state, dyn_states, dyn_flags);
+        AppendDynamicStateFromSubstate(fragment_output_state, dyn_states, dyn_flags);
+        if (dyn_states.size() > 0) {
+            // We have dynamic state
+            if (!dyn_state_ci) {
+                // *All* dynamic state defined is coming from graphics libraries
+                // NOTE: heap allocation cleaned up in ~safe_VkGraphicsPipelineCreateInfo
+                dyn_state_ci = new safe_VkPipelineDynamicStateCreateInfo;
+            }
+
+            if (dyn_state_ci->dynamicStateCount < dyn_states.size()) {
+                // There is dynamic state defined in libraries that the is not included in this pipeline's create info
+                dyn_state_ci->flags = dyn_flags;
+                dyn_state_ci->dynamicStateCount = static_cast<uint32_t>(dyn_states.size());
+                // NOTE: heap allocation cleaned up in ~safe_VkPipelineDynamicStateCreateInfo
+                dyn_state_ci->pDynamicStates = new VkDynamicState[dyn_states.size()];
+                std::copy(&dyn_states.front(), &dyn_states.front() + dyn_states.size(),
+                          const_cast<VkDynamicState *>(dyn_state_ci->pDynamicStates));
+            }
+        }
+
         const auto &exe_layout_state = state_data->Get<PIPELINE_LAYOUT_STATE>(create_info.graphics.layout);
         const auto *exe_layout = exe_layout_state.get();
         const auto *pre_raster_layout =
