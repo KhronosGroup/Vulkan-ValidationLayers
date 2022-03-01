@@ -262,6 +262,10 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_DynamicRendering_NotSuppo
 static const char DECORATE_UNUSED *kVUID_BestPractices_Texture_Format_PVRTC_Outdated =
     "UNASSIGNED-BestPractices-Texture-Format-PVRTC-Outdated";
 
+// NVIDIA-specific best practices
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_PageableDeviceLocalMemory =
+    "UNASSIGNED-BestPractices-CreateDevice-PageableDeviceLocalMemory";
+
 // clang-format on
 
 #endif
