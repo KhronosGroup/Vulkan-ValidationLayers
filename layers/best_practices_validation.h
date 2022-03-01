@@ -69,6 +69,28 @@ static const float kDrawsPerPipelineRatioWarningLimitAMD = 5.f;
 // Check that command buffers are used with an appropriatly sized pool
 static const float kCmdBufferToCmdPoolRatioWarningLimitAMD = 0.1f;
 
+// How many small indexed drawcalls in a command buffer before a warning is thrown
+static const uint32_t kMaxSmallIndexedDrawcalls = 10;
+
+// How many indices make a small indexed drawcall
+static const int kSmallIndexedDrawcallIndices = 10;
+
+// Minimum number of vertices/indices to take into account when doing depth pre-pass checks for Arm Mali GPUs
+static const int kDepthPrePassMinDrawCountArm = 500;
+
+// Minimum, number of draw calls in order to trigger depth pre-pass warnings for Arm Mali GPUs
+static const int kDepthPrePassNumDrawCallsArm = 20;
+
+// Maximum sample count for full throughput on Mali GPUs
+static const VkSampleCountFlagBits kMaxEfficientSamplesArm = VK_SAMPLE_COUNT_4_BIT;
+
+// On Arm Mali architectures, it's generally best to align work group dimensions to 4.
+static const uint32_t kThreadGroupDispatchCountAlignmentArm = 4;
+
+// Maximum number of threads which can efficiently be part of a compute workgroup when using thread group barriers.
+static const uint32_t kMaxEfficientWorkGroupThreadCountArm = 64;
+
+
 enum ExtDeprecationReason {
     kExtPromoted,
     kExtObsoleted,
@@ -149,27 +171,6 @@ class SWAPCHAIN_STATE_BP : public SWAPCHAIN_NODE {
         : SWAPCHAIN_NODE(dev_data, pCreateInfo, swapchain) {}
     CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
 };
-
-// How many small indexed drawcalls in a command buffer before a warning is thrown
-static const uint32_t kMaxSmallIndexedDrawcalls = 10;
-
-// How many indices make a small indexed drawcall
-static const int kSmallIndexedDrawcallIndices = 10;
-
-// Minimum number of vertices/indices to take into account when doing depth pre-pass checks for Arm Mali GPUs
-static const int kDepthPrePassMinDrawCountArm = 500;
-
-// Minimum, number of draw calls in order to trigger depth pre-pass warnings for Arm Mali GPUs
-static const int kDepthPrePassNumDrawCallsArm = 20;
-
-// Maximum sample count for full throughput on Mali GPUs
-static const VkSampleCountFlagBits kMaxEfficientSamplesArm = VK_SAMPLE_COUNT_4_BIT;
-
-// On Arm Mali architectures, it's generally best to align work group dimensions to 4.
-static const uint32_t kThreadGroupDispatchCountAlignmentArm = 4;
-
-// Maximum number of threads which can efficiently be part of a compute workgroup when using thread group barriers.
-static const uint32_t kMaxEfficientWorkGroupThreadCountArm = 64;
 
 struct AttachmentInfo {
     uint32_t framebufferAttachment;
@@ -643,24 +644,6 @@ class BestPractices : public ValidationStateTracker {
 #include "best_practices.h"
 
   private:
-    uint32_t num_mem_objects = 0;
-
-    // AMD tracked
-    uint32_t num_fence_objects = 0;
-    uint32_t num_semaphore_objects = 0;
-    uint32_t num_barriers_objects = 0;
-    uint32_t num_pso = 0;
-    uint32_t num_queue_submissions = 0;
-    VkPipelineCache pipeline_cache = 0;
-    layer_data::unordered_set<VkPipeline> pipelines_used_in_frame;
-    bool robust_buffer_access = false;
-
-    // Check that vendor-specific checks are enabled for at least one of the vendors
-    bool VendorCheckEnabled(BPVendorFlags vendors) const;
-
-    // State for use in best practices:
-    layer_data::unordered_map<VkDescriptorPool, uint32_t> descriptor_pool_freed_count = {};
-
     struct CacheEntry {
         uint32_t value;
         uint32_t age;
@@ -686,8 +669,8 @@ class BestPractices : public ValidationStateTracker {
         std::vector<AttachmentInfo> accessFramebufferAttachments;
     };
 
-    // used to track CreateInfos for graphics pipelines
-    layer_data::unordered_map<VkPipeline, GraphicsPipelineCIs> graphicsPipelineCIs = {};
+    // Check that vendor-specific checks are enabled for at least one of the vendors
+    bool VendorCheckEnabled(BPVendorFlags vendors) const;
 
     void RecordCmdDrawTypeArm(RenderPassState& render_pass_state, uint32_t draw_count, const char* caller);
 
@@ -699,7 +682,6 @@ class BestPractices : public ValidationStateTracker {
 
     IMAGE_STATE_BP* GetImageUsageState(VkImage image);
     void ReleaseImageUsageState(VkImage image);
-    std::unordered_map<VkImage, IMAGE_STATE_BP> imageUsageMap;
 
     void AddDeferredQueueOperations(CMD_BUFFER_STATE_BP* cb);
 
@@ -716,5 +698,25 @@ class BestPractices : public ValidationStateTracker {
 
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;
+
+    uint32_t num_mem_objects = 0;
+
+    // AMD tracked
+    uint32_t num_fence_objects = 0;
+    uint32_t num_semaphore_objects = 0;
+    uint32_t num_barriers_objects = 0;
+    uint32_t num_pso = 0;
+    uint32_t num_queue_submissions = 0;
+    VkPipelineCache pipeline_cache = 0;
+    layer_data::unordered_set<VkPipeline> pipelines_used_in_frame;
+    bool robust_buffer_access = false;
+
+    // used to track CreateInfos for graphics pipelines
+    layer_data::unordered_map<VkPipeline, GraphicsPipelineCIs> graphicsPipelineCIs = {};
+
+    // State for use in best practices:
+    layer_data::unordered_map<VkDescriptorPool, uint32_t> descriptor_pool_freed_count = {};
+
+    std::unordered_map<VkImage, IMAGE_STATE_BP> imageUsageMap;
 };
 
