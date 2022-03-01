@@ -261,7 +261,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
         (pCreateInfo->pEnabledFeatures != nullptr) && (pCreateInfo->pEnabledFeatures->robustBufferAccess == VK_TRUE)) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_CreateDevice_RobustBufferAccess,
-            "%s %s %s vkCreateDevice() called with enabled robustBufferAccess. Use robustBufferAccess as a debugging tool during "
+            "%s %s %s: vkCreateDevice() called with enabled robustBufferAccess. Use robustBufferAccess as a debugging tool during "
             "development. Enabling it causes loss in performance for accesses to uniform buffers and shader storage "
             "buffers. Disable robustBufferAccess in release builds. Only leave it enabled if the application use-case "
             "requires the additional level of reliability due to the use of unverified user-supplied draw parameters.",
@@ -1651,7 +1651,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
             if (attachment_needs_readback && (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG))) {
                 skip |=
                     LogPerformanceWarning(device, kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback,
-                                          "%s %s Attachment #%u in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
+                                          "%s %s: Attachment #%u in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
                                           "Submitting this renderpass will cause the driver to inject a readback of the attachment "
                                           "which will copy in total %u pixels (renderArea = "
                                           "{ %" PRId32 ", %" PRId32 ", %" PRIu32 ", %" PRIu32 " }) to the tile buffer.",
@@ -1723,7 +1723,7 @@ void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const 
         !image.IsSwapchainImage()) {
         LogPerformanceWarning(
             device, kVUID_BestPractices_RenderPass_RedundantStore,
-            "%s: %s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+            "%s %s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
             "image was used, it was written to with STORE_OP_STORE. "
             "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
             "architectures.",
@@ -1731,7 +1731,7 @@ void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const 
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED) {
         LogPerformanceWarning(
             device, kVUID_BestPractices_RenderPass_RedundantClear,
-            "%s: %s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+            "%s %s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
             "image was used, it was written to with vkCmdClear*Image(). "
             "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
             "tile-based architectures.",
@@ -1782,7 +1782,7 @@ void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const 
 
         LogPerformanceWarning(
             device, vuid,
-            "%s: %s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
+            "%s %s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
             "time image was used, it was written to with %s. %s",
             function_name, VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level, last_cmd,
             suggestion);
@@ -2628,7 +2628,7 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
     if (uses_depth) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_EndRenderPass_DepthPrePassUsage,
-            "%s %s Depth pre-passes may be in use. In general, this is not recommended in tile-based deferred "
+            "%s %s: Depth pre-passes may be in use. In general, this is not recommended in tile-based deferred "
             "renderering architectures; such as those in Arm Mali or PowerVR GPUs. Since they can remove geometry "
             "hidden by other opaque geometry. Mali has Forward Pixel Killing (FPK), PowerVR has Hiden Surface "
             "Remover (HSR) in which case, using depth pre-passes for hidden surface removal may worsen performance.",
@@ -2688,11 +2688,10 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
             if (untouched_aspects) {
                 skip |= LogPerformanceWarning(
                     device, kVUID_BestPractices_EndRenderPass_RedundantAttachmentOnTile,
-                    "%s %s Render pass was ended, but attachment #%u (format: %u, untouched aspects 0x%x) "
+                    "%s %s: Render pass was ended, but attachment #%u (format: %u, untouched aspects 0x%x) "
                     "was never accessed by a pipeline or clear command. "
                     "On tile-based architectures, LOAD_OP_LOAD and STORE_OP_STORE consume bandwidth and should not be part of the "
-                    "render pass "
-                    "if the attachments are not intended to be accessed.",
+                    "render pass if the attachments are not intended to be accessed.",
                     VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), i, attachment.format, untouched_aspects);
             }
         }
