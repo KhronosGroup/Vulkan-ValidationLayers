@@ -832,7 +832,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
             if (image_state->layout_locked) {
                 // TODO: Add unique id for error when available
                 skip |= LogError(
-                    img_barrier.image, 0,
+                    img_barrier.image, "VUID-Undefined",
                     "%s Attempting to transition shared presentable %s"
                     " from layout %s to layout %s, but image has already been presented and cannot have its layout transitioned.",
                     loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
