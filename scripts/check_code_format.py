@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright (c) 2020-2021 Valve Corporation
-# Copyright (c) 2020-2021 LunarG, Inc.
+# Copyright (c) 2020-2022 Valve Corporation
+# Copyright (c) 2020-2022 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 # Author: Mike Schuchardt <mikes@lunarg.com>
 # Author: Nathaniel Cesario <nathaniel@lunarg.com>
 # Author: Karl Schultz <karl@lunarg.com>
+# Author: Tony Barbour <tony@lunarg.com>
 
 # Script to determine if source code in Pull Request is properly formatted.
 #
@@ -25,6 +26,7 @@
 #   -- clang-format errors in the PR source code
 #   -- out-of-date copyrights in PR source files
 #   -- improperly formatted commit messages (using the function above)
+#   -- assigning stype instead of using LvlInitStruct
 #
 # Notes:
 #    Exits with non 0 exit code if formatting is needed.
@@ -181,6 +183,38 @@ def VerifyCommitMessageFormat(target_refspec, target_files):
         CPrint('HELP_MSG', "Refer to this document for additional detail:")
         CPrint('HELP_MSG', "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/CONTRIBUTING.md#coding-conventions-and-formatting")
     return retval
+
+#
+#
+# Check for test code assigning sType instead of using LvlInitStruct in this PR/Branch
+def VerifyTypeAssign(target_refspec, target_files):
+    CPrint('', "\nChecking test code for sType assignment instead of using LvlInitStruct:")
+    retval = 0
+
+    test_files_list = [item for item in target_files if item.startswith('tests/')]
+    test_files = ' '.join([str(elem) for elem in test_files_list])
+    if not test_files:
+        return 0
+    test_diff = subprocess.Popen(('git', 'diff', '-U0', target_refspec, '--', test_files), stdout=subprocess.PIPE)
+    stdout, stderr = test_diff.communicate()
+    stdout = stdout.decode('utf-8')
+    stype_regex = re.compile('\.sType\s*=')
+    on_regex = re.compile('stype-check\s*on')
+    off_regex = re.compile('stype-check\s*off')
+    checking = True
+    for line in stdout.split('\n'):
+        if checking:
+            if off_regex.search(line, re.IGNORECASE):
+                checking = False
+            elif stype_regex.search(line):
+                CPrint('ERR_MSG', "Test assigning sType instead of using LvlInitStruct")
+                CPrint('ERR_MSG', "If this is a case where LvlInitStruct cannot be used, //stype-check off can be used to turn off sType checking")
+                CPrint('CONTENT', "     '" + line + "'\n")
+                retval = 1
+        else:
+            if on_regex.search(line, re.IGNORECASE):
+                checking = True
+    return retval
 #
 #
 # Entrypoint
@@ -237,8 +271,9 @@ def main():
     clang_format_failure = VerifyClangFormatSource(diff_range, target_files)
     copyright_failure = VerifyCopyrights(diff_range, target_files)
     commit_msg_failure = VerifyCommitMessageFormat(rdiff_range, target_files)
+    stype_assign_failure = VerifyTypeAssign(diff_range, target_files)
 
-    if clang_format_failure or copyright_failure or commit_msg_failure:
+    if clang_format_failure or copyright_failure or commit_msg_failure or stype_assign_failure:
         CPrint('ERR_MSG', "\nOne or more format checks failed.\n\n")
         exit(1)
     else:
