@@ -1750,11 +1750,13 @@ void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* functi
 void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* function_name,
                                        IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                        uint32_t array_layer, uint32_t mip_level) {
-    funcs.push_back([this, function_name, state, usage, array_layer, mip_level](const ValidationStateTracker&, const QUEUE_STATE&,
-                                                                                const CMD_BUFFER_STATE&) -> bool {
-        ValidateImageInQueue(function_name, state, usage, array_layer, mip_level);
-        return false;
-    });
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        funcs.push_back([this, function_name, state, usage, array_layer, mip_level](
+                            const ValidationStateTracker&, const QUEUE_STATE&, const CMD_BUFFER_STATE&) -> bool {
+            ValidateImageInQueue(function_name, state, usage, array_layer, mip_level);
+            return false;
+        });
+    }
 }
 
 void BestPractices::ValidateImageInQueueArm(const char* function_name, IMAGE_STATE* image,
