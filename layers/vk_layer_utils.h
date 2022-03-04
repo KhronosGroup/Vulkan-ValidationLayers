@@ -157,14 +157,22 @@ VK_LAYER_EXPORT VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo
 
 static inline bool IsPowerOfTwo(unsigned x) { return x && !(x & (x - 1)); }
 
-static inline uint32_t MostSignificantBit(uint32_t mask) {
-    uint32_t highest_view_bit = 0;
-    for (uint32_t k = 0; k < 32; ++k) {
+// Returns the 0-based index of the MSB, like the x86 bit scan reverse (bsr) instruction
+// Note: an input mask of 0 yields -1
+static inline int MostSignificantBit(uint32_t mask) {
+#if defined __GNUC__
+    return mask ? __builtin_clz(mask) ^ 31 : -1;
+#elif defined _MSC_VER
+    unsigned long bit_pos;
+    return _BitScanReverse(&bit_pos, mask) ? int(bit_pos) : -1;
+#else
+    for (int k = 31; k >= 0; --k) {
         if (((mask >> k) & 1) != 0) {
-            highest_view_bit = k;
+            return k;
         }
     }
-    return highest_view_bit;
+    return -1;
+#endif
 }
 
 static inline uint32_t SampleCountSize(VkSampleCountFlagBits sample_count) {

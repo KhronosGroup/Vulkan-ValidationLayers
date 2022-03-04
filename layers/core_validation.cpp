@@ -2824,7 +2824,8 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                          pipelineIndex, rendering_struct->viewMask);
         }
 
-        if (MostSignificantBit(rendering_struct->viewMask) >= phys_dev_props_core11.maxMultiviewViewCount) {
+        if (MostSignificantBit(rendering_struct->viewMask) >=
+            static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
             skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfo-viewMask-06067",
                              "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
                              "]: Most significant bit in "
@@ -6815,13 +6816,13 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
         (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
         auto view_state = Get<IMAGE_VIEW_STATE>(rendering_fragment_shading_rate_attachment_info->imageView);
         if (pRenderingInfo->viewMask != 0) {
-            uint32_t highest_view_bit = MostSignificantBit(pRenderingInfo->viewMask);
-            if (view_state->create_info.subresourceRange.layerCount != 1 &&
-                view_state->create_info.subresourceRange.layerCount < highest_view_bit) {
+            int highest_view_bit = MostSignificantBit(pRenderingInfo->viewMask);
+            int32_t layer_count = view_state->create_info.subresourceRange.layerCount;
+            if (layer_count != 1 && layer_count < highest_view_bit) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06124",
-                                 "%s(): imageView must have a layerCount (%u) that either equal to 1 or greater than or equal to "
-                                 "the index of the most significant bit in viewMask (%u).",
-                                 func_name, view_state->create_info.subresourceRange.layerCount, highest_view_bit);
+                                 "%s(): imageView must have a layerCount (%" PRIi32 ") that either is equal to 1 or greater than "
+                                 " or equal to the index of the most significant bit in viewMask (%d)",
+                                 func_name, layer_count, highest_view_bit);
             }
         }
 
@@ -7013,24 +7014,23 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
         if (fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
             auto fragment_density_map_view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
-
-            if ((pRenderingInfo->viewMask == 0) &&
-                (fragment_density_map_view_state->create_info.subresourceRange.layerCount != 1)) {
+            int32_t layer_count = fragment_density_map_view_state->create_info.subresourceRange.layerCount;
+            if ((pRenderingInfo->viewMask == 0) && (layer_count != 1)) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06109",
                                  "%s(): imageView of VkRenderingFragmentDensityMapAttachmentInfoEXT must "
                                  "have a laycount ("
-                                 "%" PRIu32 ") equal to 1 when viewMask is equal to 0.",
-                                 func_name, fragment_density_map_view_state->create_info.subresourceRange.layerCount);
+                                 "%" PRIi32 ") equal to 1 when viewMask is equal to 0",
+                                 func_name, layer_count);
             }
 
-            if ((pRenderingInfo->viewMask != 0) && (fragment_density_map_view_state->create_info.subresourceRange.layerCount <
-                                                    MostSignificantBit(pRenderingInfo->viewMask))) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06108",
-                                 "%s(): imageView of VkRenderingFragmentDensityMapAttachmentInfoEXT must "
-                                 "have a laycount ("
-                                 "%" PRIu32 ") greater than or equal to the most significant bit in viewMask (%" PRIu32 ").",
-                                 func_name, fragment_density_map_view_state->create_info.subresourceRange.layerCount,
-                                 pRenderingInfo->viewMask);
+            if ((pRenderingInfo->viewMask != 0) &&
+                (layer_count < MostSignificantBit(pRenderingInfo->viewMask))) {
+                skip |=
+                    LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06108",
+                             "%s(): imageView of VkRenderingFragmentDensityMapAttachmentInfoEXT must "
+                             "have a laycount ("
+                             "%" PRIi32 ") greater than or equal to the most significant bit in viewMask (%" PRIu32 ")",
+                             func_name, layer_count, pRenderingInfo->viewMask);
             }
         }
     }
@@ -7736,7 +7736,8 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                         p_inherited_rendering_info->viewMask);
                 }
 
-                if (MostSignificantBit(p_inherited_rendering_info->viewMask) >= phys_dev_props_core11.maxMultiviewViewCount) {
+                if (MostSignificantBit(p_inherited_rendering_info->viewMask) >=
+                    static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
                     skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-viewMask-06009",
                         "vkBeginCommandBuffer(): Most significant bit VkCommandBufferInheritanceRenderingInfoKHR->viewMask(%u) must be less maxMultiviewViewCount(%u)",
                         p_inherited_rendering_info->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
@@ -10831,7 +10832,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                         for (uint32_t j = 0; j < rpci->subpassCount; ++j) {
                             const VkSubpassDescription2 &subpass = rpci->pSubpasses[j];
 
-                            uint32_t highest_view_bit = MostSignificantBit(subpass.viewMask);
+                            int highest_view_bit = MostSignificantBit(subpass.viewMask);
 
                             for (uint32_t k = 0; k < rpci->pSubpasses[j].inputAttachmentCount; ++k) {
                                 if (subpass.pInputAttachments[k].attachment == i) {
@@ -10853,11 +10854,11 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             }
 
                             if (used_as_input_color_resolve_depth_stencil_attachment) {
-                                if (subresource_range.layerCount <= highest_view_bit) {
+                                if (static_cast<int32_t>(subresource_range.layerCount) <= highest_view_bit) {
                                     skip |= LogError(
                                         device, "VUID-VkFramebufferCreateInfo-renderPass-04536",
                                         "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
-                                        "less than or equal to the highest bit in the view mask (%u) of subpass %u.",
+                                        "less than or equal to the highest bit in the view mask (%i) of subpass %u.",
                                         i, subresource_range.layerCount, highest_view_bit, j);
                                 }
                             }
@@ -10892,14 +10893,14 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                                      i, subresource_range.baseMipLevel, j, mip_height,
                                                      fsr_attachment->shadingRateAttachmentTexelSize.height, pCreateInfo->height);
                                     }
-                                    if (highest_view_bit != 0) {
+                                    if (highest_view_bit >= 0) {
                                         fsr_non_zero_viewmasks = true;
                                     }
-                                    if (subresource_range.layerCount <= highest_view_bit) {
+                                    if (static_cast<int32_t>(subresource_range.layerCount) <= highest_view_bit) {
                                         skip |= LogError(
                                             device, "VUID-VkFramebufferCreateInfo-flags-04537",
                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
-                                            "less than or equal to the highest bit in the view mask (%u) of subpass %u.",
+                                            "less than or equal to the highest bit in the view mask (%i) of subpass %u.",
                                             i, subresource_range.layerCount, highest_view_bit, j);
                                     }
                                 }
@@ -10911,13 +10912,13 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 fdm_attachment = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci->pNext);
 
                                 if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
-                                    uint32_t layer_count = view_state->normalized_subresource_range.layerCount;
+                                    int32_t layer_count = view_state->normalized_subresource_range.layerCount;
                                     if (b_has_non_zero_view_masks && layer_count != 1 && layer_count <= highest_view_bit) {
                                         skip |= LogError(
                                             device, "VUID-VkFramebufferCreateInfo-renderPass-02746",
                                             "vkCreateFrameBuffer(): VkFramebufferCreateInfo attachment #%" PRIu32
-                                            " has a layer count (%" PRIu32
-                                            ") different than 1 or lower than the most significant bit in viewMask (%" PRIu32
+                                            " has a layer count (%" PRIi32
+                                            ") different than 1 or lower than the most significant bit in viewMask (%i"
                                             ") but renderPass (%s) was specified with non-zero view masks\n",
                                             i, layer_count, highest_view_bit,
                                             report_data->FormatHandle(pCreateInfo->renderPass).c_str());
@@ -11083,12 +11084,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                     for (uint32_t j = 0; j < rpci->subpassCount; ++j) {
                         const VkSubpassDescription2 &subpass = rpci->pSubpasses[j];
 
-                        uint32_t highest_view_bit = 0;
-                        for (int k = 0; k < 32; ++k) {
-                            if (((subpass.viewMask >> k) & 1) != 0) {
-                                highest_view_bit = k;
-                            }
-                        }
+                        int highest_view_bit = MostSignificantBit(subpass.viewMask);
 
                         for (uint32_t k = 0; k < rpci->pSubpasses[j].inputAttachmentCount; ++k) {
                             if (subpass.pInputAttachments[k].attachment == i) {
@@ -11133,14 +11129,14 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                                      i, j, aii.height, fsr_attachment->shadingRateAttachmentTexelSize.height,
                                                      pCreateInfo->height);
                                 }
-                                if (highest_view_bit != 0) {
+                                if (highest_view_bit >= 0) {
                                     fsr_non_zero_viewmasks = true;
                                 }
-                                if (aii.layerCount != 1 && aii.layerCount <= highest_view_bit) {
+                                if (aii.layerCount != 1 && static_cast<int32_t>(aii.layerCount) <= highest_view_bit) {
                                     skip |= LogError(
                                         device, kVUIDUndefined,
                                         "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
-                                        "less than or equal to the highest bit in the view mask (%u) of subpass %u.",
+                                        "less than or equal to the highest bit in the view mask (%i) of subpass %u.",
                                         i, aii.layerCount, highest_view_bit, j);
                                 }
                             }
@@ -11224,25 +11220,19 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             const VkSubpassDescriptionDepthStencilResolve *depth_stencil_resolve =
                                 LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(rpci->pSubpasses[i].pNext);
                             uint32_t view_bits = rpci->pSubpasses[i].viewMask;
-                            uint32_t highest_view_bit = 0;
-
-                            for (int j = 0; j < 32; ++j) {
-                                if (((view_bits >> j) & 1) != 0) {
-                                    highest_view_bit = j;
-                                }
-                            }
+                            int highest_view_bit = MostSignificantBit(view_bits);
 
                             for (uint32_t j = 0; j < rpci->pSubpasses[i].colorAttachmentCount; ++j) {
                                 attachment_index = rpci->pSubpasses[i].pColorAttachments[j].attachment;
                                 if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                                    uint32_t layer_count =
+                                    int32_t layer_count =
                                         framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
                                     if (layer_count <= highest_view_bit) {
                                         skip |= LogError(
                                             pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
-                                            "only specifies %u layers, but the view mask for subpass %u in renderPass (%s) "
-                                            "includes layer %u, with that attachment specified as a color attachment %u.",
+                                            "only specifies %" PRIi32 " layers, but the view mask for subpass %u in renderPass (%s) "
+                                            "includes layer %i, with that attachment specified as a color attachment %u.",
                                             attachment_index, layer_count, i,
                                             report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
                                     }
@@ -11250,14 +11240,14 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 if (rpci->pSubpasses[i].pResolveAttachments) {
                                     attachment_index = rpci->pSubpasses[i].pResolveAttachments[j].attachment;
                                     if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                                        uint32_t layer_count =
+                                        int32_t layer_count =
                                             framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
                                         if (layer_count <= highest_view_bit) {
                                             skip |= LogError(
                                                 pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
                                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
-                                                "only specifies %u layers, but the view mask for subpass %u in renderPass (%s) "
-                                                "includes layer %u, with that attachment specified as a resolve attachment %u.",
+                                                "only specifies %" PRIi32 " layers, but the view mask for subpass %u in renderPass (%s) "
+                                                "includes layer %i, with that attachment specified as a resolve attachment %u.",
                                                 attachment_index, layer_count, i,
                                                 report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
                                         }
@@ -11268,14 +11258,14 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             for (uint32_t j = 0; j < rpci->pSubpasses[i].inputAttachmentCount; ++j) {
                                 attachment_index = rpci->pSubpasses[i].pInputAttachments[j].attachment;
                                 if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                                    uint32_t layer_count =
+                                    int32_t layer_count =
                                         framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
                                     if (layer_count <= highest_view_bit) {
                                         skip |= LogError(
                                             pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
-                                            "only specifies %u layers, but the view mask for subpass %u in renderPass (%s) "
-                                            "includes layer %u, with that attachment specified as an input attachment %u.",
+                                            "only specifies %" PRIi32 " layers, but the view mask for subpass %u in renderPass (%s) "
+                                            "includes layer %i, with that attachment specified as an input attachment %u.",
                                             attachment_index, layer_count, i,
                                             report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
                                     }
@@ -11285,14 +11275,14 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             if (rpci->pSubpasses[i].pDepthStencilAttachment != nullptr) {
                                 attachment_index = rpci->pSubpasses[i].pDepthStencilAttachment->attachment;
                                 if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                                    uint32_t layer_count =
+                                    int32_t layer_count =
                                         framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
                                     if (layer_count <= highest_view_bit) {
                                         skip |= LogError(
                                             pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
-                                            "only specifies %u layers, but the view mask for subpass %u in renderPass (%s) "
-                                            "includes layer %u, with that attachment specified as a depth/stencil attachment.",
+                                            "only specifies %" PRIi32 " layers, but the view mask for subpass %u in renderPass (%s) "
+                                            "includes layer %i, with that attachment specified as a depth/stencil attachment.",
                                             attachment_index, layer_count, i,
                                             report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit);
                                     }
@@ -11303,14 +11293,14 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                     depth_stencil_resolve->pDepthStencilResolveAttachment != nullptr) {
                                     attachment_index = depth_stencil_resolve->pDepthStencilResolveAttachment->attachment;
                                     if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                                        uint32_t layer_count =
+                                        int32_t layer_count =
                                             framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
                                         if (layer_count <= highest_view_bit) {
                                             skip |= LogError(
                                                 pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
                                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
-                                                "only specifies %u layers, but the view mask for subpass %u in renderPass (%s) "
-                                                "includes layer %u, with that attachment specified as a depth/stencil resolve "
+                                                "only specifies %" PRIi32 " layers, but the view mask for subpass %u in renderPass (%s) "
+                                                "includes layer %i, with that attachment specified as a depth/stencil resolve "
                                                 "attachment.",
                                                 attachment_index, layer_count, i,
                                                 report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit);
