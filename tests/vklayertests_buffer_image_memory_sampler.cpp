@@ -8586,14 +8586,39 @@ TEST_F(VkLayerTest, CreateImageViewDifferentClass) {
 TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
     TEST_DESCRIPTION("Postive/negative tests of multiplane imageview format compatibility");
 
-    // Enable KHR multiplane req'd extensions
-    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequestedExtensionsEnabled()) {
-        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (features11.samplerYcbcrConversion != VK_TRUE) {
+        printf("samplerYcbcrConversion not supported, skipping test\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = {VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
+                                                            NULL,
+                                                            VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,
+                                                            VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY,
+                                                            VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
+                                                            {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                                             VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
+                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
+                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
+                                                            VK_FILTER_NEAREST,
+                                                            false};
+    VkSamplerYcbcrConversion conversion;
+    vk::CreateSamplerYcbcrConversion(m_device->device(), &ycbcr_create_info, nullptr, &conversion);
+
+    VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    ycbcr_info.conversion = conversion;
 
     VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
     ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
@@ -8618,7 +8643,7 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
         image_obj.init(&ci);
         ASSERT_TRUE(image_obj.initialized());
 
-        VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+        VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>(&ycbcr_info);
         ivci.image = image_obj.image();
         ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         ivci.format = VK_FORMAT_R8_SNORM;  // Compat is VK_FORMAT_R8_UNORM
@@ -8650,7 +8675,7 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
         image_obj.init(&ci);
         ASSERT_TRUE(image_obj.initialized());
 
-        VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+        VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>(&ycbcr_info);
         ivci.image = image_obj.image();
         ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         ivci.subresourceRange.layerCount = 1;
@@ -8678,6 +8703,7 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
         ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
         CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01586");
     }
+    vk::DestroySamplerYcbcrConversion(m_device->device(), conversion, nullptr);
 }
 
 TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
@@ -9953,42 +9979,22 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     TEST_DESCRIPTION(
         "Create sampler with ycbcr conversion and use with an image created without ycrcb conversion or immutable sampler");
 
-    // Enable KHR multiplane req'd extensions
-    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (!AreRequestedExtensionsEnabled()) {
-        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
         return;
     }
 
-    VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
-
-    // Enable Ycbcr Conversion Features
-    VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
-    ycbcr_features.samplerYcbcrConversion = VK_TRUE;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features));
-
-    PFN_vkCreateSamplerYcbcrConversionKHR vkCreateSamplerYcbcrConversionFunction = nullptr;
-    PFN_vkDestroySamplerYcbcrConversionKHR vkDestroySamplerYcbcrConversionFunction = nullptr;
-
-    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-        vkCreateSamplerYcbcrConversionFunction = vk::CreateSamplerYcbcrConversion;
-        vkDestroySamplerYcbcrConversionFunction = vk::DestroySamplerYcbcrConversion;
-    } else {
-        vkCreateSamplerYcbcrConversionFunction =
-            (PFN_vkCreateSamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
-        vkDestroySamplerYcbcrConversionFunction =
-            (PFN_vkDestroySamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkDestroySamplerYcbcrConversionKHR");
-    }
-
-    if (!vkCreateSamplerYcbcrConversionFunction || !vkDestroySamplerYcbcrConversionFunction) {
-        printf("%s Did not find required device extension %s; test skipped.\n", kSkipPrefix,
-               VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (features11.samplerYcbcrConversion != VK_TRUE) {
+        printf("samplerYcbcrConversion not supported, skipping test\n");
         return;
     }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -10027,9 +10033,9 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
                                                             VK_FILTER_NEAREST,
                                                             false};
     VkSamplerYcbcrConversion conversions[2];
-    vkCreateSamplerYcbcrConversionFunction(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[0]);
+    vk::CreateSamplerYcbcrConversion(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[0]);
     ycbcr_create_info.components.a = VK_COMPONENT_SWIZZLE_ZERO;  // Just anything different than above
-    vkCreateSamplerYcbcrConversionFunction(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[1]);
+    vk::CreateSamplerYcbcrConversion(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[1]);
 
     VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
     ycbcr_info.conversion = conversions[0];
@@ -10060,7 +10066,7 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
     m_errorMonitor->VerifyFound();
 
-    if (device_features.samplerAnisotropy == VK_TRUE) {
+    if (features2.features.samplerAnisotropy == VK_TRUE) {
         sci.unnormalizedCoordinates = VK_FALSE;
         sci.anisotropyEnable = VK_TRUE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
@@ -10128,8 +10134,8 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
-    vkDestroySamplerYcbcrConversionFunction(m_device->device(), conversions[0], nullptr);
-    vkDestroySamplerYcbcrConversionFunction(m_device->device(), conversions[1], nullptr);
+    vk::DestroySamplerYcbcrConversion(m_device->device(), conversions[0], nullptr);
+    vk::DestroySamplerYcbcrConversion(m_device->device(), conversions[1], nullptr);
     vk::DestroyImageView(m_device->device(), view, NULL);
     vk::DestroySampler(m_device->device(), samplers[0], nullptr);
     vk::DestroySampler(m_device->device(), samplers[1], nullptr);
@@ -10824,37 +10830,23 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
 
 TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     TEST_DESCRIPTION("Verify Invalid use of siwizzle components when dealing with YCbCr.");
-    m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ycbcr_features);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        printf("%s Error initializing extensions or retrieving features, skipping test\n", kSkipPrefix);
+
+    // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
         return;
     }
 
-    ycbcr_features.samplerYcbcrConversion = VK_TRUE;
-
+    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (features11.samplerYcbcrConversion != VK_TRUE) {
+        printf("samplerYcbcrConversion not supported, skipping test\n");
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    PFN_vkCreateSamplerYcbcrConversionKHR vkCreateSamplerYcbcrConversionFunction = nullptr;
-    PFN_vkDestroySamplerYcbcrConversionKHR vkDestroySamplerYcbcrConversionFunction = nullptr;
-    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-        vkCreateSamplerYcbcrConversionFunction = vk::CreateSamplerYcbcrConversion;
-        vkDestroySamplerYcbcrConversionFunction = vk::DestroySamplerYcbcrConversion;
-    } else {
-        vkCreateSamplerYcbcrConversionFunction =
-            (PFN_vkCreateSamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
-        vkDestroySamplerYcbcrConversionFunction =
-            (PFN_vkDestroySamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkDestroySamplerYcbcrConversionKHR");
-    }
-    if (!vkCreateSamplerYcbcrConversionFunction || !vkDestroySamplerYcbcrConversionFunction) {
-        printf("%s Did not find required device support for YcbcrSamplerConversion; test skipped.\n", kSkipPrefix);
-        return;
-    }
 
     const VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
 
@@ -10886,24 +10878,24 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     sycci.components = identity;
     sycci.components.g = VK_COMPONENT_SWIZZLE_A;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // test components.a
     sycci.components = identity;
     sycci.components.a = VK_COMPONENT_SWIZZLE_R;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02582");
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // make sure zero and one are allowed for components.a
     m_errorMonitor->ExpectSuccess();
     sycci.components.a = VK_COMPONENT_SWIZZLE_ONE;
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
-    vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+    vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
     sycci.components.a = VK_COMPONENT_SWIZZLE_ZERO;
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
-    vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+    vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
     m_errorMonitor->VerifyNotFound();
 
     // test components.r
@@ -10911,7 +10903,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     sycci.components.r = VK_COMPONENT_SWIZZLE_G;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02583");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // test components.b
@@ -10919,7 +10911,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     sycci.components.b = VK_COMPONENT_SWIZZLE_G;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02584");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // test components.r and components.b together
@@ -10927,7 +10919,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     sycci.components.r = VK_COMPONENT_SWIZZLE_B;
     sycci.components.b = VK_COMPONENT_SWIZZLE_B;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // make sure components.r and components.b can be swapped
@@ -10935,8 +10927,8 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     sycci.components = identity;
     sycci.components.r = VK_COMPONENT_SWIZZLE_B;
     sycci.components.b = VK_COMPONENT_SWIZZLE_R;
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
-    vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+    vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
     m_errorMonitor->VerifyNotFound();
 
     // Non RGB Identity model
@@ -10947,7 +10939,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
         sycci.components.g = VK_COMPONENT_SWIZZLE_ZERO;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
-        vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+        vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
         m_errorMonitor->VerifyFound();
 
         // Non RGB Identity can't have a explicit one swizzle
@@ -10955,7 +10947,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
         sycci.components.g = VK_COMPONENT_SWIZZLE_ONE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
-        vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+        vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
         m_errorMonitor->VerifyFound();
 
         // VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM has 3 component so RGBA conversion has implicit A as one
@@ -10963,7 +10955,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
         sycci.components.g = VK_COMPONENT_SWIZZLE_A;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
-        vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+        vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
         m_errorMonitor->VerifyFound();
     }
     sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;  // reset
@@ -10975,15 +10967,15 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
         sycci.components = identity;
         sycci.components.g = VK_COMPONENT_SWIZZLE_R;
         m_errorMonitor->ExpectSuccess();
-        vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
-        vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
+        vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+        vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
         m_errorMonitor->VerifyNotFound();
     }
 
     // Create a valid conversion with guaranteed support
     sycci.format = mp_format;
     sycci.components = identity;
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -11007,7 +10999,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &image_view);
     m_errorMonitor->VerifyFound();
 
-    vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
+    vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
 }
 
 TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
@@ -13922,8 +13914,21 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidFormat) {
 TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
     TEST_DESCRIPTION("Test creating Image with invalid VkImageSubresourceRange aspectMask.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (features11.samplerYcbcrConversion != VK_TRUE) {
+        printf("samplerYcbcrConversion not supported, skipping test\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
 
@@ -13947,7 +13952,24 @@ TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
     image.init(&image_create_info);
     ASSERT_TRUE(image.initialized());
 
-    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = {VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
+                                                            NULL,
+                                                            mp_format,
+                                                            VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY,
+                                                            VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
+                                                            {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                                             VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
+                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
+                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
+                                                            VK_FILTER_NEAREST,
+                                                            false};
+    VkSamplerYcbcrConversion conversion;
+    vk::CreateSamplerYcbcrConversion(m_device->device(), &ycbcr_create_info, nullptr, &conversion);
+
+    VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    ycbcr_info.conversion = conversion;
+
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>(&ycbcr_info);
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = mp_format;
@@ -13958,6 +13980,7 @@ TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT;
 
     CreateImageViewTest(*this, &ivci, "VUID-VkImageSubresourceRange-aspectMask-01670");
+    vk::DestroySamplerYcbcrConversion(m_device->device(), conversion, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidCreateImageQueueFamilies) {
