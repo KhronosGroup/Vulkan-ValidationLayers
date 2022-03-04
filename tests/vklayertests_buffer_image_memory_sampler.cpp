@@ -8603,17 +8603,17 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = {VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
-                                                            NULL,
-                                                            VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,
-                                                            VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY,
-                                                            VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
-                                                            {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                                                             VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
-                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
-                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
-                                                            VK_FILTER_NEAREST,
-                                                            false};
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    ycbcr_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                    VK_COMPONENT_SWIZZLE_IDENTITY};
+    ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
+    ycbcr_create_info.forceExplicitReconstruction = false;
+
     VkSamplerYcbcrConversion conversion;
     vk::CreateSamplerYcbcrConversion(m_device->device(), &ycbcr_create_info, nullptr, &conversion);
 
@@ -10021,17 +10021,16 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     }
 
     // Create Ycbcr conversion
-    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = {VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
-                                                            NULL,
-                                                            VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR,
-                                                            VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY,
-                                                            VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
-                                                            {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                                                             VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
-                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
-                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
-                                                            VK_FILTER_NEAREST,
-                                                            false};
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    ycbcr_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
+    ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                    VK_COMPONENT_SWIZZLE_IDENTITY};
+    ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
+    ycbcr_create_info.forceExplicitReconstruction = false;
     VkSamplerYcbcrConversion conversions[2];
     vk::CreateSamplerYcbcrConversion(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[0]);
     ycbcr_create_info.components.a = VK_COMPONENT_SWIZZLE_ZERO;  // Just anything different than above
@@ -10233,19 +10232,18 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
         return;
     }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled");
-    VkSamplerYcbcrConversionCreateInfo ycbcr_info = {VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
-                                                     NULL,
-                                                     VK_FORMAT_UNDEFINED,
-                                                     VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY,
-                                                     VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
-                                                     {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                                                      VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
-                                                     VK_CHROMA_LOCATION_COSITED_EVEN,
-                                                     VK_CHROMA_LOCATION_COSITED_EVEN,
-                                                     VK_FILTER_NEAREST,
-                                                     false};
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    ycbcr_create_info.format = VK_FORMAT_UNDEFINED;
+    ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                    VK_COMPONENT_SWIZZLE_IDENTITY};
+    ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
+    ycbcr_create_info.forceExplicitReconstruction = false;
     VkSamplerYcbcrConversion conversion;
-    vkCreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_info, nullptr, &conversion);
+    vkCreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
     m_errorMonitor->VerifyFound();
 }
 
@@ -11497,17 +11495,17 @@ TEST_F(VkLayerTest, InvalidSamplerFilterMinmax) {
     VkSampler sampler;
 
     // Create Ycbcr conversion
-    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = {VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
-                                                            NULL,
-                                                            VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
-                                                            VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY,
-                                                            VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
-                                                            {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                                                             VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
-                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
-                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
-                                                            VK_FILTER_NEAREST,
-                                                            false};
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    ycbcr_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                    VK_COMPONENT_SWIZZLE_IDENTITY};
+    ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
+    ycbcr_create_info.forceExplicitReconstruction = false;
+
     VkSamplerYcbcrConversion conversion;
     vkCreateSamplerYcbcrConversionFunction(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
 
@@ -12949,6 +12947,43 @@ TEST_F(VkLayerTest, CreateImageViewIncompatibleDepthFormat) {
     CreateImageViewTest(*this, &imgViewInfo, error_vuid);
 }
 
+TEST_F(VkLayerTest, CreateImageViewMissingYcbcrConversion) {
+    TEST_DESCRIPTION("Do not use VkSamplerYcbcrConversionInfo when required for an image view.");
+
+    // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (features11.samplerYcbcrConversion != VK_TRUE) {
+        printf("samplerYcbcrConversion not supported, skipping test\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkImageObj image(m_device);
+    image.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageViewCreateInfo view_info = LvlInitStruct<VkImageViewCreateInfo>();
+    view_info.flags = 0;
+    view_info.image = image.handle();
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    view_info.subresourceRange.layerCount = 1;
+    view_info.subresourceRange.baseMipLevel = 0;
+    view_info.subresourceRange.levelCount = 1;
+    view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    CreateImageViewTest(*this, &view_info, "VUID-VkImageViewCreateInfo-format-06415");
+}
+
 TEST_F(VkLayerTest, InvalidShadingRateUsage) {
     TEST_DESCRIPTION("Specify invalid usage of the fragment shading rate image view usage.");
     VkPhysicalDeviceImagelessFramebufferFeatures if_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeatures>();
@@ -13952,17 +13987,17 @@ TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
     image.init(&image_create_info);
     ASSERT_TRUE(image.initialized());
 
-    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = {VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
-                                                            NULL,
-                                                            mp_format,
-                                                            VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY,
-                                                            VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
-                                                            {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                                                             VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
-                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
-                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
-                                                            VK_FILTER_NEAREST,
-                                                            false};
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    ycbcr_create_info.format = mp_format;
+    ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                    VK_COMPONENT_SWIZZLE_IDENTITY};
+    ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
+    ycbcr_create_info.forceExplicitReconstruction = false;
+
     VkSamplerYcbcrConversion conversion;
     vk::CreateSamplerYcbcrConversion(m_device->device(), &ycbcr_create_info, nullptr, &conversion);
 
