@@ -133,7 +133,7 @@ TEST_F(VkPositiveLayerTest, Sync2OwnershipTranfersImage) {
     }
 
     uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (no_gfx == UINT32_MAX) {
+    if (no_gfx == std::numeric_limits<uint32_t>::max()) {
         printf("%s Required queue families not present (non-graphics capable required).\n", kSkipPrefix);
         return;
     }
@@ -188,7 +188,7 @@ TEST_F(VkPositiveLayerTest, Sync2OwnershipTranfersBuffer) {
     }
 
     uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (no_gfx == UINT32_MAX) {
+    if (no_gfx == std::numeric_limits<uint32_t>::max()) {
         printf("%s Required queue families not present (non-graphics capable required).\n", kSkipPrefix);
         return;
     }
@@ -401,7 +401,7 @@ TEST_F(VkPositiveLayerTest, FenceCreateSignaledWaitHandling) {
 
     // Wait on both fences, with signaled first.
     VkFence fences[] = {f1, f2};
-    vk::WaitForFences(m_device->device(), 2, fences, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 2, fences, VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     // Should have both retired!
     vk::DestroyFence(m_device->device(), f1, nullptr);
@@ -464,7 +464,7 @@ TEST_F(VkPositiveLayerTest, TwoFencesThreeFrames) {
             // Submit cmd buffer and wait for fence
             err = vk::QueueSubmit(queue, 1, &submit_info, fences[obj]);
             ASSERT_VK_SUCCESS(err);
-            err = vk::WaitForFences(m_device->device(), 1, &fences[obj], VK_TRUE, UINT64_MAX);
+            err = vk::WaitForFences(m_device->device(), 1, &fences[obj], VK_TRUE, std::numeric_limits<uint64_t>::max());
             ASSERT_VK_SUCCESS(err);
             err = vk::ResetFences(m_device->device(), 1, &fences[obj]);
             ASSERT_VK_SUCCESS(err);
@@ -754,8 +754,8 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence);
     }
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
@@ -920,7 +920,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence);
     }
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
@@ -1049,7 +1049,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAn
         ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence));
     }
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
@@ -1139,7 +1139,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence);
     }
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
@@ -1227,7 +1227,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
 
     vk::QueueSubmit(m_device->m_queue, 0, NULL, fence);
 
-    VkResult err = vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    VkResult err = vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
     ASSERT_VK_SUCCESS(err);
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
@@ -1313,7 +1313,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueOneFence) {
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence);
     }
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
@@ -1406,7 +1406,7 @@ TEST_F(VkPositiveLayerTest, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) 
         vk::QueueSubmit(m_device->m_queue, 2, &submit_info[0], fence);
     }
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
@@ -1456,7 +1456,7 @@ TEST_F(VkPositiveLayerTest, LongSemaphoreChain) {
     err = vk::QueueSubmit(m_device->m_queue, 1, &si, fence);
     ASSERT_VK_SUCCESS(err);
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     for (auto semaphore : semaphores) vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 

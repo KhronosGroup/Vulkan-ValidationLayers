@@ -5982,7 +5982,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     // Create command pool with incompatible queueflags
     const std::vector<VkQueueFamilyProperties> queue_props = m_device->queue_props;
     uint32_t queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT, false);
-    if (queue_family_index == UINT32_MAX) {
+    if (queue_family_index == std::numeric_limits<uint32_t>::max()) {
         printf("%s No non-graphics queue supporting compute found; skipped.\n", kSkipPrefix);
         return;  // NOTE: this exits the test function!
     }
@@ -6381,7 +6381,7 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
     // Create command pool with incompatible queueflags
     const std::vector<VkQueueFamilyProperties> queue_props = m_device->queue_props;
     uint32_t queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT, false);
-    if (queue_family_index == UINT32_MAX) {
+    if (queue_family_index == std::numeric_limits<uint32_t>::max()) {
         printf("%s No non-graphics queue supporting compute found; skipped.\n", kSkipPrefix);
         return;  // NOTE: this exits the test function!
     }
@@ -9579,7 +9579,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
         VkImageFormatProperties img_limits;
         ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
-        if (img_limits.maxArrayLayers != UINT32_MAX) {
+        if (img_limits.maxArrayLayers != std::numeric_limits<uint32_t>::max()) {
             image_ci.arrayLayers = img_limits.maxArrayLayers + 1;
             CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-arrayLayers-02256");
         } else {
@@ -9622,7 +9622,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
         VkImageFormatProperties img_limits;
         ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
-        if (dev_limits.maxFramebufferWidth != UINT32_MAX) {
+        if (dev_limits.maxFramebufferWidth != std::numeric_limits<uint32_t>::max()) {
             image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
             if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02252");
@@ -9632,7 +9632,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             printf("%s VkPhysicalDeviceLimits::maxFramebufferWidth is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
         }
 
-        if (dev_limits.maxFramebufferHeight != UINT32_MAX) {
+        if (dev_limits.maxFramebufferHeight != std::numeric_limits<uint32_t>::max()) {
             image_ci.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;  // try different one too
             image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
             if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
@@ -10600,7 +10600,7 @@ TEST_F(VkLayerTest, ImageStencilCreate) {
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
 
-    if (dev_limits.maxFramebufferWidth != UINT32_MAX) {
+    if (dev_limits.maxFramebufferWidth != std::numeric_limits<uint32_t>::max()) {
         // depth-stencil format image with VkImageStencilUsageCreateInfo with
         // VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set cannot have image width exceeding device maximum
         image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
@@ -10611,7 +10611,7 @@ TEST_F(VkLayerTest, ImageStencilCreate) {
         printf("%s VkPhysicalDeviceLimits::maxFramebufferWidth is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
     }
 
-    if (dev_limits.maxFramebufferHeight != UINT32_MAX) {
+    if (dev_limits.maxFramebufferHeight != std::numeric_limits<uint32_t>::max()) {
         // depth-stencil format image with VkImageStencilUsageCreateInfo with
         // VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set cannot have image height exceeding device maximum
         image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
@@ -13738,7 +13738,7 @@ TEST_F(VkLayerTest, FillBufferCmdPoolUnsupported) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     uint32_t transfer = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
-    if (transfer == UINT32_MAX) {
+    if (transfer == std::numeric_limits<uint32_t>::max()) {
         printf("%s Required queue families not present (non-graphics non-compute capable required).\n", kSkipPrefix);
         return;
     }

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2021 Valve Corporation
- * Copyright (c) 2019-2021 LunarG, Inc.
+ * Copyright (c) 2019-2022 Valve Corporation
+ * Copyright (c) 2019-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -238,15 +238,15 @@ ExecScopes GetGlobalStageMasks(const VkDependencyInfoKHR &dep_info) {
 // to print masks as strings and this makes the output less confusing
 // for people not using synchronization2.
 std::string StringPipelineStageFlags(VkPipelineStageFlags2KHR mask) {
-    if (mask <= UINT32_MAX) {
-        return string_VkPipelineStageFlags(mask & UINT32_MAX);
+    if (mask <= std::numeric_limits<uint32_t>::max()) {
+        return string_VkPipelineStageFlags(mask & std::numeric_limits<uint32_t>::max());
     }
     return string_VkPipelineStageFlags2KHR(mask);
 }
 
 std::string StringAccessFlags(VkAccessFlags2KHR mask) {
-    if (mask <= UINT32_MAX) {
-        return string_VkAccessFlags(mask & UINT32_MAX);
+    if (mask <= std::numeric_limits<uint32_t>::max()) {
+        return string_VkAccessFlags(mask & std::numeric_limits<uint32_t>::max());
     }
     return string_VkAccessFlags2KHR(mask);
 }

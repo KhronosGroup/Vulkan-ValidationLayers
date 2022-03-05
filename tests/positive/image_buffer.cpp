@@ -109,7 +109,7 @@ TEST_F(VkPositiveLayerTest, OwnershipTranfersImage) {
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (no_gfx == UINT32_MAX) {
+    if (no_gfx == std::numeric_limits<uint32_t>::max()) {
         printf("%s Required queue families not present (non-graphics capable required).\n", kSkipPrefix);
         return;
     }
@@ -151,7 +151,7 @@ TEST_F(VkPositiveLayerTest, OwnershipTranfersBuffer) {
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (no_gfx == UINT32_MAX) {
+    if (no_gfx == std::numeric_limits<uint32_t>::max()) {
         printf("%s Required queue families not present (non-graphics capable required).\n", kSkipPrefix);
         return;
     }
@@ -2138,7 +2138,8 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     VkFence fence;
     VkResult ret = vk::CreateFence(m_device->device(), &fenceci, nullptr, &fence);
     ASSERT_VK_SUCCESS(ret);
-    ret = vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence, &image_index);
+    ret = vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, fence,
+                                  &image_index);
     ASSERT_VK_SUCCESS(ret);
     VkAttachmentDescription attach[] = {
         {0, VK_FORMAT_B8G8R8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -2208,12 +2209,12 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = NULL;
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
     vk::ResetFences(m_device->device(), 1, &fence);
     m_errorMonitor->ExpectSuccess();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence);
     m_errorMonitor->VerifyNotFound();
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     free(swapchainImages);
     vk::DestroyFramebuffer(m_device->device(), fb1, NULL);
@@ -2400,7 +2401,8 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     VkSemaphore image_acquired;
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &image_acquired);
-    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, image_acquired, VK_NULL_HANDLE, &current_buffer);
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), image_acquired, VK_NULL_HANDLE,
+                            &current_buffer);
 
     VkImageView imageView = image.targetView(attachmentFormat);
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO_KHR,

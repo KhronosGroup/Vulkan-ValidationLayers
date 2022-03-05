@@ -3304,12 +3304,12 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *module
         uint64_t invocations = local_size_x * local_size_y;
         // Prevent overflow.
         bool fail = false;
-        if (invocations > UINT32_MAX || invocations > limit) {
+        if (invocations > std::numeric_limits<uint32_t>::max() || invocations > limit) {
             fail = true;
         }
         if (!fail) {
             invocations *= local_size_z;
-            if (invocations > UINT32_MAX || invocations > limit) {
+            if (invocations > std::numeric_limits<uint32_t>::max() || invocations > limit) {
                 fail = true;
             }
         }

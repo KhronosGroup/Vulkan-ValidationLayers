@@ -232,7 +232,7 @@ class QUEUE_STATE : public BASE_NODE {
 
     uint64_t Submit(CB_SUBMISSION &&submission);
 
-    void Retire(uint64_t until_seq = UINT64_MAX);
+    void Retire(uint64_t until_seq = std::numeric_limits<uint64_t>::max());
 
     const uint32_t queueFamilyIndex;
     const VkDeviceQueueCreateFlags flags;

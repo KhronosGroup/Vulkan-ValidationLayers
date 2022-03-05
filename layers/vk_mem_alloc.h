@@ -3437,7 +3437,7 @@ If providing your own implementation, you need to implement a subset of std::ato
             className& operator=(const className&) = delete;
 #endif
 
-static const uint32_t VMA_FRAME_INDEX_LOST = UINT32_MAX;
+static const uint32_t VMA_FRAME_INDEX_LOST = std::numeric_limits<uint32_t>::max();
 
 // Decimal 2139416166, float NaN, little-endian binary 66 E6 84 7F.
 static const uint32_t VMA_CORRUPTION_DETECTION_MAGIC_VALUE = 0x7F84E666;
@@ -4280,7 +4280,7 @@ T* VmaPoolAllocator<T>::Alloc()
     {
         ItemBlock& block = m_ItemBlocks[i];
         // This block has some free items: Use first one.
-        if(block.FirstFreeIndex != UINT32_MAX)
+        if(block.FirstFreeIndex != std::numeric_limits<uint32_t>::max())
         {
             Item* const pItem = &block.pItems[block.FirstFreeIndex];
             block.FirstFreeIndex = pItem->NextFreeIndex;
@@ -4330,7 +4330,7 @@ typename VmaPoolAllocator<T>::ItemBlock& VmaPoolAllocator<T>::CreateNewBlock()
     // Setup singly-linked list of all free items in this block.
     for(uint32_t i = 0; i < m_ItemsPerBlock - 1; ++i)
         newBlock.pItems[i].NextFreeIndex = i + 1;
-    newBlock.pItems[m_ItemsPerBlock - 1].NextFreeIndex = UINT32_MAX;
+    newBlock.pItems[m_ItemsPerBlock - 1].NextFreeIndex = std::numeric_limits<uint32_t>::max();
     return m_ItemBlocks.back();
 }
 
@@ -5067,7 +5067,7 @@ public:
         outInfo.usedBytes = m_Size;
         outInfo.unusedBytes = 0;
         outInfo.allocationSizeMin = outInfo.allocationSizeMax = m_Size;
-        outInfo.unusedRangeSizeMin = UINT64_MAX;
+        outInfo.unusedRangeSizeMin = std::numeric_limits<uint64_t>::max();
         outInfo.unusedRangeSizeMax = 0;
     }
 
@@ -7258,7 +7258,7 @@ uint32_t VmaAllocation_T::GetMemoryTypeIndex() const
         return m_DedicatedAllocation.m_MemoryTypeIndex;
     default:
         VMA_ASSERT(0);
-        return UINT32_MAX;
+        return std::numeric_limits<uint32_t>::max();
     }
 }
 
@@ -7776,9 +7776,9 @@ void VmaBlockMetadata_Generic::CalcAllocationStatInfo(VmaStatInfo& outInfo) cons
     outInfo.unusedBytes = m_SumFreeSize;
     outInfo.usedBytes = GetSize() - outInfo.unusedBytes;
 
-    outInfo.allocationSizeMin = UINT64_MAX;
+    outInfo.allocationSizeMin = std::numeric_limits<uint64_t>::max();
     outInfo.allocationSizeMax = 0;
-    outInfo.unusedRangeSizeMin = UINT64_MAX;
+    outInfo.unusedRangeSizeMin = std::numeric_limits<uint64_t>::max();
     outInfo.unusedRangeSizeMax = 0;
 
     for(VmaSuballocationList::const_iterator suballocItem = m_Suballocations.cbegin();
@@ -8977,9 +8977,9 @@ void VmaBlockMetadata_Linear::CalcAllocationStatInfo(VmaStatInfo& outInfo) const
     outInfo.allocationCount = (uint32_t)GetAllocationCount();
     outInfo.unusedRangeCount = 0;
     outInfo.usedBytes = 0;
-    outInfo.allocationSizeMin = UINT64_MAX;
+    outInfo.allocationSizeMin = std::numeric_limits<uint64_t>::max();
     outInfo.allocationSizeMax = 0;
-    outInfo.unusedRangeSizeMin = UINT64_MAX;
+    outInfo.unusedRangeSizeMin = std::numeric_limits<uint64_t>::max();
     outInfo.unusedRangeSizeMax = 0;
 
     VkDeviceSize lastOffset = 0;
@@ -10528,7 +10528,7 @@ void VmaBlockMetadata_Buddy::CalcAllocationStatInfo(VmaStatInfo& outInfo) const
     outInfo.usedBytes = outInfo.unusedBytes = 0;
 
     outInfo.allocationSizeMax = outInfo.unusedRangeSizeMax = 0;
-    outInfo.allocationSizeMin = outInfo.unusedRangeSizeMin = UINT64_MAX;
+    outInfo.allocationSizeMin = outInfo.unusedRangeSizeMin = std::numeric_limits<uint64_t>::max();
     outInfo.allocationSizeAvg = outInfo.unusedRangeSizeAvg = 0; // Unused.
 
     CalcAllocationStatInfoNode(outInfo, m_Root, LevelToNodeSize(0));
@@ -10990,7 +10990,7 @@ void VmaBlockMetadata_Buddy::PrintDetailedMapNode(class VmaJsonWriter& json, con
 
 VmaDeviceMemoryBlock::VmaDeviceMemoryBlock(VmaAllocator hAllocator) :
     m_pMetadata(VMA_NULL),
-    m_MemoryTypeIndex(UINT32_MAX),
+    m_MemoryTypeIndex(std::numeric_limits<uint32_t>::max()),
     m_Id(0),
     m_hMemory(VK_NULL_HANDLE),
     m_MapCount(0),
@@ -11210,8 +11210,8 @@ VkResult VmaDeviceMemoryBlock::BindImageMemory(
 static void InitStatInfo(VmaStatInfo& outInfo)
 {
     memset(&outInfo, 0, sizeof(outInfo));
-    outInfo.allocationSizeMin = UINT64_MAX;
-    outInfo.unusedRangeSizeMin = UINT64_MAX;
+    outInfo.allocationSizeMin = std::numeric_limits<uint64_t>::max();
+    outInfo.unusedRangeSizeMin = std::numeric_limits<uint64_t>::max();
 }
 
 // Adds statistics srcInfo into inoutInfo, like: inoutInfo += srcInfo.
@@ -13426,8 +13426,8 @@ VmaRecorder::VmaRecorder() :
     m_UseMutex(true),
     m_Flags(0),
     m_File(VMA_NULL),
-    m_Freq(INT64_MAX),
-    m_StartCounter(INT64_MAX)
+    m_Freq(std::numeric_limits<int64_t>::max()),
+    m_StartCounter(std::numeric_limits<int64_t>::max())
 {
 }
 
@@ -14632,7 +14632,7 @@ VkResult VmaAllocator_T::AllocateMemory(
     {
         // Bit mask of memory Vulkan types acceptable for this allocation.
         uint32_t memoryTypeBits = vkMemReq.memoryTypeBits;
-        uint32_t memTypeIndex = UINT32_MAX;
+        uint32_t memTypeIndex = std::numeric_limits<uint32_t>::max();
         VkResult res = vmaFindMemoryTypeIndex(this, memoryTypeBits, &createInfo, &memTypeIndex);
         if(res == VK_SUCCESS)
         {
@@ -14894,7 +14894,7 @@ void VmaAllocator_T::GetAllocationInfo(VmaAllocation hAllocation, VmaAllocationI
         {
             if(localLastUseFrameIndex == VMA_FRAME_INDEX_LOST)
             {
-                pAllocationInfo->memoryType = UINT32_MAX;
+                pAllocationInfo->memoryType = std::numeric_limits<uint32_t>::max();
                 pAllocationInfo->deviceMemory = VK_NULL_HANDLE;
                 pAllocationInfo->offset = 0;
                 pAllocationInfo->size = hAllocation->GetSize();
@@ -15750,8 +15750,8 @@ VkResult vmaFindMemoryTypeIndex(
         break;
     }
 
-    *pMemoryTypeIndex = UINT32_MAX;
-    uint32_t minCost = UINT32_MAX;
+    *pMemoryTypeIndex = std::numeric_limits<uint32_t>::max();
+    uint32_t minCost = std::numeric_limits<uint32_t>::max();
     for(uint32_t memTypeIndex = 0, memTypeBit = 1;
         memTypeIndex < allocator->GetMemoryTypeCount();
         ++memTypeIndex, memTypeBit <<= 1)
@@ -15779,7 +15779,7 @@ VkResult vmaFindMemoryTypeIndex(
             }
         }
     }
-    return (*pMemoryTypeIndex != UINT32_MAX) ? VK_SUCCESS : VK_ERROR_FEATURE_NOT_PRESENT;
+    return (*pMemoryTypeIndex != std::numeric_limits<uint32_t>::max()) ? VK_SUCCESS : VK_ERROR_FEATURE_NOT_PRESENT;
 }
 
 VkResult vmaFindMemoryTypeIndexForBufferInfo(
@@ -16417,7 +16417,7 @@ VkResult vmaDefragment(
     }
     else
     {
-        info2.maxCpuAllocationsToMove = UINT32_MAX;
+        info2.maxCpuAllocationsToMove = std::numeric_limits<uint32_t>::max();
         info2.maxCpuBytesToMove = VK_WHOLE_SIZE;
     }
     // info2.flags, maxGpuAllocationsToMove, maxGpuBytesToMove, commandBuffer deliberately left zero.

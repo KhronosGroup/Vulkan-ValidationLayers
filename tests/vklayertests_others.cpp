@@ -5700,7 +5700,7 @@ TEST_F(VkLayerTest, ValidateStride) {
         m_errorMonitor->VerifyFound();
 
         auto draw_count = m_device->phy().properties().limits.maxDrawIndirectCount;
-        if (draw_count != UINT32_MAX) {
+        if (draw_count != std::numeric_limits<uint32_t>::max()) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-02719");
             vk::CmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), 0, draw_count + 1, 2);
             m_errorMonitor->VerifyFound();
@@ -7960,7 +7960,7 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
-    if (timelineproperties.maxTimelineSemaphoreValueDifference < UINT64_MAX) {
+    if (timelineproperties.maxTimelineSemaphoreValueDifference < std::numeric_limits<uint64_t>::max()) {
         semaphore_type_create_info.initialValue = 0;
 
         ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
@@ -7972,7 +7972,7 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
         vk::QueueSubmit(m_device->m_queue, 1, submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
-        if (signalValue < UINT64_MAX) {
+        if (signalValue < std::numeric_limits<uint64_t>::max()) {
             waitValue = signalValue + 1;
             signalValue = 1;
 
@@ -8402,7 +8402,7 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
     ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
-    if (timelineproperties.maxTimelineSemaphoreValueDifference < UINT64_MAX) {
+    if (timelineproperties.maxTimelineSemaphoreValueDifference < std::numeric_limits<uint64_t>::max()) {
         VkSemaphore sem;
 
         semaphore_type_create_info.initialValue = 0;
@@ -8532,7 +8532,7 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
     ASSERT_VK_SUCCESS(vk::SignalSemaphore(m_device->device(), &semaphore_signal_info));
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
-    if (timelineproperties.maxTimelineSemaphoreValueDifference < UINT64_MAX) {
+    if (timelineproperties.maxTimelineSemaphoreValueDifference < std::numeric_limits<uint64_t>::max()) {
         // Regression test for value difference validations ran against binary semaphores
         {
             VkSemaphore timeline_sem;
@@ -9852,7 +9852,7 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     // Invalid VetexStride and Indexdata
     {
         VkAccelerationStructureGeometryKHR invalid_geometry_triangles = valid_geometry_triangles;
-        invalid_geometry_triangles.geometry.triangles.vertexStride = UINT32_MAX + 1ull;
+        invalid_geometry_triangles.geometry.triangles.vertexStride = std::numeric_limits<uint32_t>::max() + 1ull;
         VkAccelerationStructureBuildGeometryInfoKHR invalid_build_info_khr = build_info_khr;
         invalid_build_info_khr.pGeometries = &invalid_geometry_triangles;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03819");
@@ -11325,7 +11325,7 @@ TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
 
     // the indexes in pWaitSemaphores and pWaitSemaphoreValues should match
     VkSemaphore reversed[2] = {semaphore[1], semaphore[0]};
-    uint64_t reversed_values[2] = {UINT64_MAX /* ignored */, 20};
+    uint64_t reversed_values[2] = {std::numeric_limits<uint64_t>::max() /* ignored */, 20};
     VkPipelineStageFlags wait_stages[2] = {VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = nullptr;
@@ -12576,7 +12576,7 @@ TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (no_gfx == UINT32_MAX) {
+    if (no_gfx == std::numeric_limits<uint32_t>::max()) {
         printf("%s Required queue families not present (non-graphics capable required).\n", kSkipPrefix);
         return;
     }

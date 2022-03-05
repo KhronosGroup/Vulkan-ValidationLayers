@@ -14764,7 +14764,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     // since its a non-disjoint image, finding VkImage in map is a duplicate
                     auto it = resources_bound.find(image_state->image());
                     if (it == resources_bound.end()) {
-                        std::array<uint32_t, 3> bound_index = {i, UINT32_MAX, UINT32_MAX};
+                        std::array<uint32_t, 3> bound_index = {i, std::numeric_limits<uint32_t>::max(),
+                                                               std::numeric_limits<uint32_t>::max()};
                         resources_bound.emplace(image_state->image(), bound_index);
                     } else {
                         skip |= LogError(
@@ -14830,11 +14831,13 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                 auto it = resources_bound.find(image_state->image());
                 if (it == resources_bound.end()) {
-                    std::array<uint32_t, 3> bound_index = {UINT32_MAX, UINT32_MAX, UINT32_MAX};
+                    std::array<uint32_t, 3> bound_index = {std::numeric_limits<uint32_t>::max(),
+                                                           std::numeric_limits<uint32_t>::max(),
+                                                           std::numeric_limits<uint32_t>::max()};
                     bound_index[plane] = i;
                     resources_bound.emplace(image_state->image(), bound_index);
                 } else {
-                    if (it->second[plane] == UINT32_MAX) {
+                    if (it->second[plane] == std::numeric_limits<uint32_t>::max()) {
                         it->second[plane] = i;
                     } else {
                         skip |= LogError(bind_info.image, "VUID-vkBindImageMemory2-pBindInfos-04006",
@@ -15086,7 +15089,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
         if (image_state->disjoint == true) {
             uint32_t total_planes = FormatPlaneCount(image_state->createInfo.format);
             for (uint32_t i = 0; i < total_planes; i++) {
-                if (resource.second[i] == UINT32_MAX) {
+                if (resource.second[i] == std::numeric_limits<uint32_t>::max()) {
                     skip |= LogError(resource.first, "VUID-vkBindImageMemory2-pBindInfos-02858",
                                      "%s: Plane %u of the disjoint image was not bound. All %d planes need to bound individually "
                                      "in separate pBindInfos in a single call.",
@@ -16285,7 +16288,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const AcquireVersion 
         auto caps = swapchain_data->surface->GetCapabilities(physical_device);
         const auto min_image_count = caps.minImageCount;
         const bool too_many_already_acquired = acquired_images > swapchain_image_count - min_image_count;
-        if (timeout == UINT64_MAX && too_many_already_acquired) {
+        if (timeout == std::numeric_limits<uint64_t>::max() && too_many_already_acquired) {
             const char *vuid = version == ACQUIRE_VERSION_2 ? "VUID-vkAcquireNextImage2KHR-swapchain-01803"
                                                             : "VUID-vkAcquireNextImageKHR-swapchain-01802";
             const uint32_t acquirable = swapchain_image_count - min_image_count + 1;

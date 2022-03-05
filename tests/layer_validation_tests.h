@@ -736,7 +736,7 @@ class BarrierQueueFamilyBase {
         DOUBLE_COMMAND_BUFFER,
     };
 
-    static const uint32_t kInvalidQueueFamily = UINT32_MAX;
+    static const uint32_t kInvalidQueueFamily = std::numeric_limits<uint32_t>::max();
     Context *context_;
     VkImageObj image_;
     VkBufferObj buffer_;
@@ -833,7 +833,7 @@ bool FindFormatWithoutSamples(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci)
 bool FindUnsupportedImage(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci);
 
 VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
-                                   VkFormatFeatureFlags undesired_features = UINT32_MAX);
+                                   VkFormatFeatureFlags undesired_features = std::numeric_limits<uint32_t>::max());
 
 void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout);
 

@@ -840,7 +840,8 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     }
 
     // Devices that report UINT32_MAX for any of these limits can't run this test
-    if (UINT32_MAX == std::max({max_uniform_buffers, max_storage_buffers, max_sampled_images, max_storage_images, max_samplers})) {
+    if (std::numeric_limits<uint32_t>::max() ==
+        std::max({max_uniform_buffers, max_storage_buffers, max_sampled_images, max_storage_images, max_samplers})) {
         printf("%s Physical device limits report as 2^32-1. Skipping test.\n", kSkipPrefix);
         return;
     }
@@ -1174,7 +1175,8 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     }
 
     // Devices that report UINT32_MAX for any of these limits can't run this test
-    if (UINT32_MAX == std::max({sum_dyn_uniform_buffers, sum_uniform_buffers, sum_dyn_storage_buffers, sum_storage_buffers,
+    if (std::numeric_limits<uint32_t>::max() ==
+        std::max({sum_dyn_uniform_buffers, sum_uniform_buffers, sum_dyn_storage_buffers, sum_storage_buffers,
                                 sum_sampled_images, sum_storage_images, sum_samplers, sum_input_attachments})) {
         printf("%s Physical device limits report as 2^32-1. Skipping test.\n", kSkipPrefix);
         return;
@@ -1687,7 +1689,7 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     uint32_t x_count_limit = m_device->props.limits.maxComputeWorkGroupCount[0];
     uint32_t y_count_limit = m_device->props.limits.maxComputeWorkGroupCount[1];
     uint32_t z_count_limit = m_device->props.limits.maxComputeWorkGroupCount[2];
-    if (std::max({x_count_limit, y_count_limit, z_count_limit}) == UINT32_MAX) {
+    if (std::max({x_count_limit, y_count_limit, z_count_limit}) == std::numeric_limits<uint32_t>::max()) {
         printf("%s device maxComputeWorkGroupCount limit reports UINT32_MAX, test not possible, skipping.\n", kSkipPrefix);
         return;
     }
@@ -3163,7 +3165,7 @@ TEST_F(VkLayerTest, VertexAttributeDivisorExtension) {
         }
     };
 
-    if (UINT32_MAX != pdvad_props.maxVertexAttribDivisor) {  // Can't test overflow if maxVAD is UINT32_MAX
+    if (std::numeric_limits<uint32_t>::max() != pdvad_props.maxVertexAttribDivisor) {  // Can't test overflow if maxVAD is UINT32_MAX
         test_cases.push_back(
             {   0,
                 pdvad_props.maxVertexAttribDivisor + 1,
@@ -9711,7 +9713,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 TEST_F(VkLayerTest, PipelineStageConditionalRenderingWithWrongQueue) {
     TEST_DESCRIPTION("Run CmdPipelineBarrier with VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT and wrong VkQueueFlagBits");
     ASSERT_NO_FATAL_FAILURE(Init());
-    uint32_t only_transfer_queueFamilyIndex = UINT32_MAX;
+    uint32_t only_transfer_queueFamilyIndex = std::numeric_limits<uint32_t>::max();
 
     const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
     ASSERT_TRUE(q_props.size() > 0);
@@ -9724,7 +9726,7 @@ TEST_F(VkLayerTest, PipelineStageConditionalRenderingWithWrongQueue) {
         }
     }
 
-    if (only_transfer_queueFamilyIndex == UINT32_MAX) {
+    if (only_transfer_queueFamilyIndex == std::numeric_limits<uint32_t>::max()) {
         printf("%s Only VK_QUEUE_TRANSFER_BIT Queue is not supported.\n", kSkipPrefix);
         return;
     }

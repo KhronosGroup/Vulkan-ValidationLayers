@@ -6267,7 +6267,7 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
         descriptor_write.dstSet = descriptor_set.set_;
 
         // Exceed range limit
-        if (test_case.max_range != UINT32_MAX) {
+        if (test_case.max_range != std::numeric_limits<uint32_t>::max()) {
             buff_info.range = test_case.max_range + 1;
             buff_info.offset = 0;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.max_range_vu);

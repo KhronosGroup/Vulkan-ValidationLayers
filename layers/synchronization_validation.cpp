@@ -537,7 +537,7 @@ ResourceAccessRange GetBufferRange(VkDeviceSize offset, VkDeviceSize buf_whole_s
                                    VkDeviceSize stride) {
     VkDeviceSize range_start = offset + first_index * stride;
     VkDeviceSize range_size = 0;
-    if (count == UINT32_MAX) {
+    if (count == std::numeric_limits<uint32_t>::max()) {
         range_size = buf_whole_size - range_start;
     } else {
         range_size = count * stride;
@@ -2138,7 +2138,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, ui
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
     //       We will detect more accurate range in the future.
-    skip |= ValidateDrawVertex(UINT32_MAX, 0, func_name);
+    skip |= ValidateDrawVertex(std::numeric_limits<uint32_t>::max(), 0, func_name);
     return skip;
 }
 
@@ -2153,7 +2153,7 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
     //       We will detect more accurate range in the future.
-    RecordDrawVertex(UINT32_MAX, 0, tag);
+    RecordDrawVertex(std::numeric_limits<uint32_t>::max(), 0, tag);
 }
 
 bool CommandBufferAccessContext::ValidateDrawSubpassAttachment(const char *func_name) const {
@@ -4540,7 +4540,7 @@ bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
     // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertex(UINT32_MAX, 0, "vkCmdDrawIndirect");
+    skip |= cb_access_context->ValidateDrawVertex(std::numeric_limits<uint32_t>::max(), 0, "vkCmdDrawIndirect");
     return skip;
 }
 
@@ -4561,7 +4561,7 @@ void SyncValidator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, 
     // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will record the vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertex(UINT32_MAX, 0, tag);
+    cb_access_context->RecordDrawVertex(std::numeric_limits<uint32_t>::max(), 0, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -4584,7 +4584,7 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
     // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the index and vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertexIndex(UINT32_MAX, 0, "vkCmdDrawIndexedIndirect");
+    skip |= cb_access_context->ValidateDrawVertexIndex(std::numeric_limits<uint32_t>::max(), 0, "vkCmdDrawIndexedIndirect");
     return skip;
 }
 
@@ -4604,7 +4604,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandB
     // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will record the index and vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertexIndex(UINT32_MAX, 0, tag);
+    cb_access_context->RecordDrawVertexIndex(std::numeric_limits<uint32_t>::max(), 0, tag);
 }
 
 bool SyncValidator::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -4628,7 +4628,7 @@ bool SyncValidator::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, 
     // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertex(UINT32_MAX, 0, function);
+    skip |= cb_access_context->ValidateDrawVertex(std::numeric_limits<uint32_t>::max(), 0, function);
     return skip;
 }
 
@@ -4656,7 +4656,7 @@ void SyncValidator::RecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, Vk
     // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will record the vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertex(UINT32_MAX, 0, tag);
+    cb_access_context->RecordDrawVertex(std::numeric_limits<uint32_t>::max(), 0, tag);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -4720,7 +4720,7 @@ bool SyncValidator::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandB
     // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the index and vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertexIndex(UINT32_MAX, 0, function);
+    skip |= cb_access_context->ValidateDrawVertexIndex(std::numeric_limits<uint32_t>::max(), 0, function);
     return skip;
 }
 
@@ -4748,7 +4748,7 @@ void SyncValidator::RecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuf
     // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will update the index and vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertexIndex(UINT32_MAX, 0, tag);
+    cb_access_context->RecordDrawVertexIndex(std::numeric_limits<uint32_t>::max(), 0, tag);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,

@@ -120,7 +120,7 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
 
     bind_info.memory = mem;
     bind_swapchain_info.swapchain = m_swapchain;
-    bind_swapchain_info.imageIndex = UINT32_MAX;
+    bind_swapchain_info.imageIndex = std::numeric_limits<uint32_t>::max();
 
     if (mem) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01631");
@@ -505,7 +505,8 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoSync) {
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImageKHR-semaphore-01780");
         uint32_t dummy;
-        vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, VK_NULL_HANDLE, &dummy);
+        vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, VK_NULL_HANDLE,
+                                &dummy);
         m_errorMonitor->VerifyFound();
     }
 
@@ -553,7 +554,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoSync2KHR) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAcquireNextImageInfoKHR-semaphore-01782");
         VkAcquireNextImageInfoKHR acquire_info = LvlInitStruct<VkAcquireNextImageInfoKHR>();
         acquire_info.swapchain = m_swapchain;
-        acquire_info.timeout = UINT64_MAX;
+        acquire_info.timeout = std::numeric_limits<uint64_t>::max();
         acquire_info.semaphore = VK_NULL_HANDLE;
         acquire_info.fence = VK_NULL_HANDLE;
         acquire_info.deviceMask = 0x1;
@@ -603,7 +604,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImageKHR-semaphore-03265");
     uint32_t image_i;
-    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &image_i);
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), semaphore, VK_NULL_HANDLE, &image_i);
     m_errorMonitor->VerifyFound();
 
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
@@ -670,7 +671,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore2KHR) {
 
     VkAcquireNextImageInfoKHR acquire_info = LvlInitStruct<VkAcquireNextImageInfoKHR>();
     acquire_info.swapchain = m_swapchain;
-    acquire_info.timeout = UINT64_MAX;
+    acquire_info.timeout = std::numeric_limits<uint64_t>::max();
     acquire_info.semaphore = semaphore;
     acquire_info.deviceMask = 0x1;
 
@@ -707,7 +708,8 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     for (uint32_t i = 0; i < acquirable_count; ++i) {
         fences[i].init(*m_device, VkFenceObj::create_info());
         uint32_t image_i;
-        const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fences[i].handle(), &image_i);
+        const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE,
+                                                 fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
     VkFenceObj error_fence;
@@ -715,11 +717,13 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImageKHR-swapchain-01802");
     uint32_t image_i;
-    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, error_fence.handle(), &image_i);
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, error_fence.handle(),
+                            &image_i);
     m_errorMonitor->VerifyFound();
 
     // Cleanup
-    vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE,
+                      std::numeric_limits<uint64_t>::max());
     DestroySwapchain();
 }
 
@@ -876,7 +880,8 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     for (uint32_t i = 0; i < acquirable_count; ++i) {
         fences[i].init(*m_device, VkFenceObj::create_info());
         uint32_t image_i;
-        const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fences[i].handle(), &image_i);
+        const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE,
+                                                 fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
     VkFenceObj error_fence;
@@ -885,7 +890,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImage2KHR-swapchain-01803");
     VkAcquireNextImageInfoKHR acquire_info = LvlInitStruct<VkAcquireNextImageInfoKHR>();
     acquire_info.swapchain = m_swapchain;
-    acquire_info.timeout = UINT64_MAX;
+    acquire_info.timeout = std::numeric_limits<uint64_t>::max();
     acquire_info.fence = error_fence.handle();
     acquire_info.deviceMask = 0x1;
 
@@ -894,7 +899,8 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     m_errorMonitor->VerifyFound();
 
     // Cleanup
-    vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE,
+                      std::numeric_limits<uint64_t>::max());
     DestroySwapchain();
 }
 
@@ -1885,7 +1891,8 @@ TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
     VkSemaphore image_acquired;
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &image_acquired);
-    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, image_acquired, VK_NULL_HANDLE, &current_buffer);
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), image_acquired, VK_NULL_HANDLE,
+                            &current_buffer);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -1965,9 +1972,11 @@ TEST_F(VkLayerTest, PresentIdWait) {
     fence_handles[0] = fence.handle();
     fence_handles[1] = fence2.handle();
 
-    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence_handles[0], &image_indices[0]);
-    vk::AcquireNextImageKHR(device(), swapchain2, UINT64_MAX, VK_NULL_HANDLE, fence_handles[1], &image_indices[1]);
-    vk::WaitForFences(device(), 2, fence_handles, true, UINT64_MAX);
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, fence_handles[0],
+                            &image_indices[0]);
+    vk::AcquireNextImageKHR(device(), swapchain2, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, fence_handles[1],
+                            &image_indices[1]);
+    vk::WaitForFences(device(), 2, fence_handles, true, std::numeric_limits<uint64_t>::max());
     SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_indices[0]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images2[image_indices[1]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
@@ -1986,9 +1995,11 @@ TEST_F(VkLayerTest, PresentIdWait) {
     vk::QueuePresentKHR(m_device->m_queue, &present);
 
     vk::ResetFences(device(), 2, fence_handles);
-    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence_handles[0], &image_indices[0]);
-    vk::AcquireNextImageKHR(device(), swapchain2, UINT64_MAX, VK_NULL_HANDLE, fence_handles[1], &image_indices[1]);
-    vk::WaitForFences(device(), 2, fence_handles, true, UINT64_MAX);
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, fence_handles[0],
+                            &image_indices[0]);
+    vk::AcquireNextImageKHR(device(), swapchain2, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, fence_handles[1],
+                            &image_indices[1]);
+    vk::WaitForFences(device(), 2, fence_handles, true, std::numeric_limits<uint64_t>::max());
     SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_indices[0]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images2[image_indices[1]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
@@ -2016,7 +2027,7 @@ TEST_F(VkLayerTest, PresentIdWait) {
     InitSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain3, swapchain2);
     present_id.swapchainCount = 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWaitForPresentKHR-swapchain-04997");
-    vkWaitForPresentKHR(device(), swapchain2, 5, UINT64_MAX);
+    vkWaitForPresentKHR(device(), swapchain2, 5, std::numeric_limits<uint64_t>::max());
     m_errorMonitor->VerifyFound();
 
     DestroySwapchain();
@@ -2060,8 +2071,9 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
     uint32_t image_index;
     VkFenceObj fence;
     fence.init(*m_device, VkFenceObj::create_info());
-    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence.handle(), &image_index);
-    vk::WaitForFences(device(), 1, &fence.handle(), true, UINT64_MAX);
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, fence.handle(),
+                            &image_index);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, std::numeric_limits<uint64_t>::max());
 
     SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_index], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
@@ -2080,7 +2092,7 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWaitForPresentKHR-presentWait-06234");
-    vkWaitForPresentKHR(device(), m_swapchain, 1, UINT64_MAX);
+    vkWaitForPresentKHR(device(), m_swapchain, 1, std::numeric_limits<uint64_t>::max());
     m_errorMonitor->VerifyFound();
 
     DestroySwapchain();

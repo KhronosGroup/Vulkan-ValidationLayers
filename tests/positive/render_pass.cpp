@@ -388,7 +388,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     VkImageObj destImage(m_device);
     destImage.Init(100, 100, 1, depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                    VK_IMAGE_TILING_OPTIMAL, 0);
-    fence.wait(UINT64_MAX);
+    fence.wait(std::numeric_limits<uint64_t>::max());
     VkCommandBufferObj cmdbuf(m_device, m_commandPool);
     cmdbuf.begin();
 

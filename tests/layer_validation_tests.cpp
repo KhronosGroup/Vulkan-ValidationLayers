@@ -534,7 +534,7 @@ VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling, V
                                                                  : format_props.optimalTilingFeatures & core_filter;
 
         const auto valid_features = features & core_filter;
-        if (undesired_features == UINT32_MAX) {
+        if (undesired_features == std::numeric_limits<uint32_t>::max()) {
             if (!valid_features) return format;
         } else {
             if (valid_features && !(valid_features & undesired_features)) return format;
@@ -2533,7 +2533,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
 
     // If supported, run on the compute only queue.
     uint32_t compute_only_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-    if (compute_only_queue_family_index != UINT32_MAX) {
+    if (compute_only_queue_family_index != std::numeric_limits<uint32_t>::max()) {
         const auto &compute_only_queues = m_device->queue_family_queues(compute_only_queue_family_index);
         if (!compute_only_queues.empty()) {
             ray_tracing_queue = compute_only_queues[0]->handle();

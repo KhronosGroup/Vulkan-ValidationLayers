@@ -6063,9 +6063,9 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(const BUFFER_STATE *src_buffer_stat
 
     VkDeviceSize src_buffer_size = src_buffer_state->createInfo.size;
     VkDeviceSize dst_buffer_size = dst_buffer_state->createInfo.size;
-    VkDeviceSize src_min = UINT64_MAX;
+    VkDeviceSize src_min = std::numeric_limits<uint64_t>::max();
     VkDeviceSize src_max = 0;
-    VkDeviceSize dst_min = UINT64_MAX;
+    VkDeviceSize dst_min = std::numeric_limits<uint64_t>::max();
     VkDeviceSize dst_max = 0;
 
     for (uint32_t i = 0; i < regionCount; i++) {
