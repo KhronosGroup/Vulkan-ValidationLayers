@@ -2720,10 +2720,12 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
     const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
     if (rendering_struct) {
-        if ((pPipeline->active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) &&
+        const bool has_rasterization =
+            create_info.pRasterizationState && (create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE);
+        if (has_rasterization &&
             ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
              (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) &&
-             (create_info.pDepthStencilState == nullptr)) {
+            (create_info.pDepthStencilState == nullptr)) {
             skip |= LogError(
                 device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06053",
                 "vkCreateGraphicsPipelines(): Pipeline %" PRIu32
@@ -2732,11 +2734,10 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                 string_VkFormat(rendering_struct->stencilAttachmentFormat));
         }
 
-        if ((pPipeline->active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) &&
-            (rendering_struct->colorAttachmentCount != 0) &&
-            (create_info.pColorBlendState == nullptr)) {
+        if (has_rasterization && (rendering_struct->colorAttachmentCount != 0) && (create_info.pColorBlendState == nullptr)) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06054",
-                             "vkCreateGraphicsPipelines(): Pipeline %" PRIu32 " has VkPipelineRenderingCreateInfoKHR::colorAttachmentCount (%" PRIu32
+                             "vkCreateGraphicsPipelines(): Pipeline %" PRIu32
+                             " has VkPipelineRenderingCreateInfoKHR::colorAttachmentCount (%" PRIu32
                              ") and an invalid pColorBlendState structure",
                              pipelineIndex, rendering_struct->colorAttachmentCount);
         }
