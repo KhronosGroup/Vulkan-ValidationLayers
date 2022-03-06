@@ -219,7 +219,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(SHADER_MODUL
     for (uint32_t location = 0; location < location_map.size(); ++location) {
          const auto output = location_map[location].output;
 
-        if (!output && pipeline->attachments[location].colorWriteMask != 0) {
+        if (!output && location < pipeline->attachments.size() && pipeline->attachments[location].colorWriteMask != 0) {
             skip |= LogWarning(
                 module_state->vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
                 "Attachment %" PRIu32 " not written by fragment shader; undefined values will be written to attachment", location);
@@ -298,7 +298,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *m
             const auto attachment = location_it.second.attachment;
             const auto output = location_it.second.output;
             if (attachment && !output) {
-                if (pipeline->attachments[location].colorWriteMask != 0) {
+                if (location < pipeline->attachments.size() && pipeline->attachments[location].colorWriteMask != 0) {
                     skip |= LogWarning(module_state->vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
                                        "Attachment %" PRIu32
                                        " not written by fragment shader; undefined values will be written to attachment",
