@@ -318,3 +318,75 @@ TEST_F(VkPositiveLayerTest, TestBeginQueryInDynamicRendering) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, DynamicRenderingPipeWithDiscard) {
+    TEST_DESCRIPTION("Create dynamic rendering pipeline with rasterizer discard.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        return;
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    m_errorMonitor->ExpectSuccess();
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineRasterizationStateCreateInfo rs_ci = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
+    rs_ci.rasterizerDiscardEnable = VK_TRUE;
+    rs_ci.lineWidth = 1.0f;
+
+    VkPipelineDepthStencilStateCreateInfo ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    ds_ci.depthTestEnable = VK_TRUE;
+    ds_ci.depthWriteEnable = VK_TRUE;
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+    pipe.SetDepthStencil(&ds_ci);
+    pipe.SetRasterization(&rs_ci);
+
+    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
+    const VkPipelineLayoutObj pl(m_device, {&dsl});
+
+    auto create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+    pipe.InitGraphicsPipelineCreateInfo(&create_info);
+    create_info.layout = pl.handle();
+    create_info.renderPass = VK_NULL_HANDLE;
+
+    VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
+    pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_D16_UNORM;  // D16_UNORM has guaranteed support
+    pipeline_rendering_info.pNext = create_info.pNext;
+    create_info.pNext = &pipeline_rendering_info;
+
+    const VkRenderPass render_pass = VK_NULL_HANDLE;
+    pipe.CreateVKPipeline(pl.handle(), render_pass, &create_info);
+
+    m_errorMonitor->VerifyNotFound();
+}
