@@ -15850,3 +15850,50 @@ TEST_F(VkLayerTest, InvalidPipelineRenderingViewMaskParameter) {
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TestMismatchedRenderPassAndPipelineAttachments) {
+    TEST_DESCRIPTION("Test creating a pipeline with no attachments with a render pass with attachments.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06042");
+
+    char const *vsSource = R"glsl(
+                #version 450
+
+                void main() {
+                }
+            )glsl";
+
+    char const *fsSource = R"glsl(
+                #version 450
+
+                void main() {
+                }
+            )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    m_viewports.push_back(viewport);
+    pipe.SetViewport(m_viewports);
+    VkRect2D rect = {};
+    m_scissors.push_back(rect);
+    pipe.SetScissor(m_scissors);
+
+    VkDescriptorSetLayoutBinding layout_binding = {};
+    layout_binding.binding = 1;
+    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    layout_binding.descriptorCount = 1;
+    layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    layout_binding.pImmutableSamplers = nullptr;
+    const VkDescriptorSetLayoutObj descriptor_set_layout(m_device, {layout_binding});
+
+    const VkPipelineLayoutObj pipeline_layout(DeviceObj(), {&descriptor_set_layout});
+    pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
+    m_errorMonitor->VerifyFound();
+}
