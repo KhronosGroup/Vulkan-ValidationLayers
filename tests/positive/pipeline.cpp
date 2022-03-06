@@ -4450,7 +4450,7 @@ TEST_F(VkPositiveLayerTest, PhysicalStorageBuffer) {
         if (DeviceExtensionSupported(gpu(), nullptr, ext)) {
             m_device_extension_names.push_back(ext);
         } else {
-            printf("%s %s extension not supported. Skipping.", kSkipPrefix, ext);
+            printf("%s %s extension not supported. Skipping.\n", kSkipPrefix, ext);
             return;
         }
     }
@@ -4460,7 +4460,7 @@ TEST_F(VkPositiveLayerTest, PhysicalStorageBuffer) {
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
     if (VK_TRUE != features12.bufferDeviceAddress) {
-        printf("%s VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required. Skipping.", kSkipPrefix);
+        printf("%s VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required. Skipping.\n", kSkipPrefix);
         return;
     }
 

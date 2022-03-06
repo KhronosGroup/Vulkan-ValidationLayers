@@ -390,7 +390,7 @@ TEST_F(VkPositiveLayerTest, ModifyPnext) {
         m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME);
     } else {
-        printf("%s test requires %s", kSkipPrefix, VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME);
+        printf("%s test requires %s\n", kSkipPrefix, VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME);
     }
 
     auto shading = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV>();

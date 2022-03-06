@@ -2200,7 +2200,7 @@ TEST_F(VkLayerTest, TestSurfaceSupportByPhysicalDevice) {
         }
     }
     if (supported) {
-        printf("%s Physical device supports present, skipping", kSkipPrefix);
+        printf("%s Physical device supports present, skipping\n", kSkipPrefix);
         return;
     }
 

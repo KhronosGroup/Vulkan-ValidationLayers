@@ -1558,7 +1558,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFromPhysicalPointer) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (!features12.bufferDeviceAddress) {
-        printf("%s VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required. Skipping.", kSkipPrefix);
+        printf("%s VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required. Skipping.\n", kSkipPrefix);
         return;
     }
 
