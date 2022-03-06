@@ -8514,7 +8514,7 @@ TEST_F(VkLayerTest, CreateImageViewDifferentClass) {
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
 
     if (!(m_device->format_properties(VK_FORMAT_R8_UINT).optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
-        printf("%s Device does not support R8_UINT as color attachment; skipped", kSkipPrefix);
+        printf("%s Device does not support R8_UINT as color attachment; skipped\n", kSkipPrefix);
         return;
     }
 
@@ -12883,7 +12883,7 @@ TEST_F(VkLayerTest, CreateImageViewIncompatibleDepthFormat) {
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     if (!AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s %s not supported", kSkipPrefix, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        printf("%s %s not supported\n", kSkipPrefix, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
         return;
     }
 

@@ -240,7 +240,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
     static const uint64_t data_value = 0x70AD;
     err = pfn_vkSetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, data_slot, data_value);
     if (err != VK_SUCCESS) {
-        printf("%s Failed to set private data. VkResult = %d", kSkipPrefix, err);
+        printf("%s Failed to set private data. VkResult = %d\n", kSkipPrefix, err);
     }
     m_errorMonitor->ExpectSuccess();
     uint64_t data;
@@ -718,7 +718,7 @@ TEST_F(VkLayerTest, SpecLinks) {
 
     if (!((m_device->format_properties(VK_FORMAT_R8_UINT).optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) &&
           (ycbcr_support ^ maintenance2_support))) {
-        printf("%s Device does not support format and extensions required, skipping test case", kSkipPrefix);
+        printf("%s Device does not support format and extensions required, skipping test case\n", kSkipPrefix);
         return;
     }
 
@@ -4996,7 +4996,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
 
     // Need to make sure format has sample bit needed for image usage
     if ((ahb_fmt_props_Ycbcr.formatFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) == 0) {
-        printf("%s VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT feature bit not supported for format %" PRIu64 ".", kSkipPrefix,
+        printf("%s VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT feature bit not supported for format %" PRIu64 ".\n", kSkipPrefix,
                ahb_fmt_props_Ycbcr.externalFormat);
         return;
     }
