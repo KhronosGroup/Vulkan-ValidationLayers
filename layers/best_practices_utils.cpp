@@ -2449,26 +2449,28 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
     // If we have a rect which covers the entire frame buffer, we have a LOAD_OP_CLEAR-like command.
     bool full_clear = ClearAttachmentsIsFullClear(cmd_state.get(), rectCount, pRects);
 
-    auto& subpass = rp_state->createInfo.pSubpasses[cmd_state->activeSubpass];
-    for (uint32_t i = 0; i < attachmentCount; i++) {
-        auto& attachment = pClearAttachments[i];
-        uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
-        VkImageAspectFlags aspects = attachment.aspectMask;
+    if (!rp_state->use_dynamic_rendering && !rp_state->use_dynamic_rendering_inherited) {
+        auto& subpass = rp_state->createInfo.pSubpasses[cmd_state->activeSubpass];
+        for (uint32_t i = 0; i < attachmentCount; i++) {
+            auto& attachment = pClearAttachments[i];
+            uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
+            VkImageAspectFlags aspects = attachment.aspectMask;
 
-        if (aspects & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-            if (subpass.pDepthStencilAttachment) {
-                fb_attachment = subpass.pDepthStencilAttachment->attachment;
+            if (aspects & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+                if (subpass.pDepthStencilAttachment) {
+                    fb_attachment = subpass.pDepthStencilAttachment->attachment;
+                }
+            } else if (aspects & VK_IMAGE_ASPECT_COLOR_BIT) {
+                fb_attachment = subpass.pColorAttachments[attachment.colorAttachment].attachment;
             }
-        } else if (aspects & VK_IMAGE_ASPECT_COLOR_BIT) {
-            fb_attachment = subpass.pColorAttachments[attachment.colorAttachment].attachment;
-        }
 
-        if (fb_attachment != VK_ATTACHMENT_UNUSED) {
-            if (full_clear) {
-                RecordAttachmentClearAttachments(cmd_state.get(), tracking_state, fb_attachment, attachment.colorAttachment,
-                                                 aspects, rectCount, pRects);
-            } else {
-                RecordAttachmentAccess(tracking_state, fb_attachment, aspects);
+            if (fb_attachment != VK_ATTACHMENT_UNUSED) {
+                if (full_clear) {
+                    RecordAttachmentClearAttachments(cmd_state.get(), tracking_state, fb_attachment, attachment.colorAttachment,
+                                                     aspects, rectCount, pRects);
+                } else {
+                    RecordAttachmentAccess(tracking_state, fb_attachment, aspects);
+                }
             }
         }
     }
