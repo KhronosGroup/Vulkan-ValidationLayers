@@ -203,6 +203,24 @@ bool CoreChecks::ValidateMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state,
     return result;
 }
 
+// Check to see if host-visible memory was bound to this buffer
+bool CoreChecks::ValidateHostVisibleMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state, const char *api_name,
+                                                          const char *error_code) const {
+    bool result = false;
+    result |= ValidateMemoryIsBoundToBuffer(buffer_state, api_name, error_code);
+    if (!result) {
+        const auto mem_state = buffer_state->MemState();
+        if (mem_state) {
+            if ((phys_dev_mem_props.memoryTypes[mem_state->alloc_info.memoryTypeIndex].propertyFlags &
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
+                result |= LogError(buffer_state->buffer(), error_code, "%s: %s used with memory that is not host visible.",
+                                   api_name, report_data->FormatHandle(buffer_state->Handle()).c_str());
+            }
+        }
+    }
+    return result;
+}
+
 // Check to see if memory was bound to this acceleration structure
 bool CoreChecks::ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE *as_state, const char *api_name,
                                                               const char *error_code) const {
@@ -17688,14 +17706,38 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer 
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     skip |= ValidateCmd(cb_state.get(), CMD_COPYACCELERATIONSTRUCTUREKHR);
-    skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCmdCopyAccelerationStructureKHR");
+    if (pInfo) {
+        skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCmdCopyAccelerationStructureKHR");
+        auto src_accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
+        if (src_accel_state) {
+            skip |= ValidateMemoryIsBoundToBuffer(src_accel_state->buffer_state.get(), "vkCmdCopyAccelerationStructureKHR",
+                                                  "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03737");
+        }
+        auto dst_accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
+        if (dst_accel_state) {
+            skip |= ValidateMemoryIsBoundToBuffer(dst_accel_state->buffer_state.get(), "vkCmdCopyAccelerationStructureKHR",
+                                                  "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03738");
+        }
+    }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                              const VkCopyAccelerationStructureInfoKHR *pInfo) const {
     bool skip = false;
-    skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCopyAccelerationStructureKHR");
+    if (pInfo) {
+        skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCopyAccelerationStructureKHR");
+        auto src_accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
+        if (src_accel_state) {
+            skip |= ValidateHostVisibleMemoryIsBoundToBuffer(src_accel_state->buffer_state.get(), "vkCopyAccelerationStructureKHR",
+                                                             "VUID-vkCopyAccelerationStructureKHR-buffer-03727");
+        }
+        auto dst_accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
+        if (dst_accel_state) {
+            skip |= ValidateHostVisibleMemoryIsBoundToBuffer(dst_accel_state->buffer_state.get(), "vkCopyAccelerationStructureKHR",
+                                                             "VUID-vkCopyAccelerationStructureKHR-buffer-03728");
+        }
+    }
     return skip;
 }
 bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
