@@ -13432,6 +13432,58 @@ TEST_F(VkLayerTest, CmdCopyUnboundAccelerationStructure) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, TestCmdCopyMemoryToAccelerationStructureKHR) {
+    TEST_DESCRIPTION("Validate CmdCopyMemoryToAccelerationStructureKHR with dst buffer not bound to memory");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
+                                        false, true)) {
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
+        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    assert(vkGetBufferDeviceAddressKHR != nullptr);
+    PFN_vkCmdCopyMemoryToAccelerationStructureKHR vkCmdCopyMemoryToAccelerationStructureKHR =
+        (PFN_vkCmdCopyMemoryToAccelerationStructureKHR)vk::GetInstanceProcAddr(instance(),
+                                                                               "vkCmdCopyMemoryToAccelerationStructureKHR");
+    assert(vkCmdCopyMemoryToAccelerationStructureKHR != nullptr);
+    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
+    assert(vkCreateAccelerationStructureKHR != nullptr);
+
+    VkBufferObj src_buffer;
+    src_buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = 1024;
+    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+    VkBufferObj dst_buffer;
+    dst_buffer.init_no_mem(*m_device, buffer_ci);
+
+    VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
+    as_create_info.buffer = dst_buffer.handle();
+    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    VkAccelerationStructureKHR as;
+    vkCreateAccelerationStructureKHR(m_device->handle(), &as_create_info, nullptr, &as);
+
+    VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, src_buffer.handle()};
+    VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
+
+    VkCopyMemoryToAccelerationStructureInfoKHR copy_info = LvlInitStruct<VkCopyMemoryToAccelerationStructureInfoKHR>();
+    copy_info.src.deviceAddress = device_address;
+    copy_info.dst = as;
+    copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-buffer-03745");
+    m_commandBuffer->begin();
+    vkCmdCopyMemoryToAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenCurrentRenderPassAndDescriptorSets) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
 
