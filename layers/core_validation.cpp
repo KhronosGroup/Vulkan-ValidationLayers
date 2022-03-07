@@ -17768,6 +17768,12 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
     assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(cb_state.get(), CMD_COPYMEMORYTOACCELERATIONSTRUCTUREKHR);
+
+    auto accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
+    if (accel_state) {
+        skip |= ValidateMemoryIsBoundToBuffer(accel_state->buffer_state.get(), "vkCmdCopyAccelerationStructureToMemoryKHR",
+                                              "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-buffer-03745");
+    }
     return skip;
 }
 
