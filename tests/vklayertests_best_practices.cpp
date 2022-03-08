@@ -1257,3 +1257,23 @@ TEST_F(VkBestPracticesLayerTest, WorkgroupSizeDeprecated) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kWarningBit,
                                              "UNASSIGNED-BestPractices-SpirvDeprecated_WorkgroupSize");
 }
+
+TEST_F(VkBestPracticesLayerTest, CreatePipelineWithoutRenderPass) {
+    TEST_DESCRIPTION("Test creating a graphics pipeline with no render pass");
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_errorMonitor->VerifyNotFound();
+}
