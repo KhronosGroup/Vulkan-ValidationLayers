@@ -9392,7 +9392,10 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
 bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, const CMD_BUFFER_STATE *cb_state,
                                                     const VkDependencyInfoKHR *dep_info) const {
     bool skip = false;
-    const auto& rp_state = cb_state->activeRenderPass;
+    const auto &rp_state = cb_state->activeRenderPass;
+    if (rp_state->use_dynamic_rendering || rp_state->use_dynamic_rendering_inherited) {
+        return skip;
+    }
     RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier2-pDependencies-02285",
                              cb_state->activeSubpass, rp_state->renderPass(), enabled_features,
                              rp_state->self_dependencies[cb_state->activeSubpass], rp_state->createInfo.pDependencies);
