@@ -57,7 +57,7 @@ class UtilDescriptorSetManager {
 namespace gpu_utils_state {
 class Queue : public QUEUE_STATE {
   public:
-    Queue(GpuAssistedBase &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags);
+    Queue(GpuAssistedBase &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties);
     virtual ~Queue();
     void SubmitBarrier();
 
@@ -194,8 +194,8 @@ class GpuAssistedBase : public ValidationStateTracker {
         }
     }
 
-    std::shared_ptr<QUEUE_STATE> CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags) override {
-        return std::static_pointer_cast<QUEUE_STATE>(std::make_shared<gpu_utils_state::Queue>(*this, q, index, flags));
+    std::shared_ptr<QUEUE_STATE> CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties) override {
+        return std::static_pointer_cast<QUEUE_STATE>(std::make_shared<gpu_utils_state::Queue>(*this, q, index, flags, queueFamilyProperties));
     }
 
     template <typename CreateInfo, typename SafeCreateInfo>

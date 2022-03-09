@@ -3092,6 +3092,16 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
         }
     }
 
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        auto queue_state = Get<QUEUE_STATE>(queue);
+        if (queue_state && queue_state->queueFamilyProperties.queueFlags != (VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT)) {
+            skip |= LogPerformanceWarning(queue, kVUID_BestPractices_QueueBindSparse_NotAsync,
+                                          "vkQueueBindSparse() issued on queue %s. All binds should happen on an asynchronous copy "
+                                          "queue to hide the OS scheduling and submit costs.",
+                                          report_data->FormatHandle(queue).c_str());
+        }
+    }
+
     return skip;
 }
 

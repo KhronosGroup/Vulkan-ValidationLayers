@@ -251,8 +251,11 @@ struct CB_SUBMISSION {
 
 class QUEUE_STATE : public BASE_NODE {
   public:
-    QUEUE_STATE(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags)
-        : BASE_NODE(q, kVulkanObjectTypeQueue), queueFamilyIndex(index), flags(flags), seq_(0) {}
+    QUEUE_STATE(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties)
+        : BASE_NODE(q, kVulkanObjectTypeQueue),
+          queueFamilyIndex(index),
+          flags(flags),
+          queueFamilyProperties(queueFamilyProperties) {}
 
     VkQueue Queue() const { return handle_.Cast<VkQueue>(); }
 
@@ -264,6 +267,7 @@ class QUEUE_STATE : public BASE_NODE {
 
     const uint32_t queueFamilyIndex;
     const VkDeviceQueueCreateFlags flags;
+    const VkQueueFamilyProperties queueFamilyProperties;
 
   private:
     layer_data::optional<CB_SUBMISSION> NextSubmission(uint64_t until_seq);
@@ -271,6 +275,6 @@ class QUEUE_STATE : public BASE_NODE {
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
     std::deque<CB_SUBMISSION> submissions_;
-    uint64_t seq_;
+    uint64_t seq_ = 0;
     mutable ReadWriteLock lock_;
 };

@@ -613,8 +613,8 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     device_state->CreateDevice(pCreateInfo);
 }
 
-std::shared_ptr<QUEUE_STATE> ValidationStateTracker::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags) {
-    return std::make_shared<QUEUE_STATE>(q, index, flags);
+std::shared_ptr<QUEUE_STATE> ValidationStateTracker::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties) {
+    return std::make_shared<QUEUE_STATE>(q, index, flags, queueFamilyProperties);
 }
 
 void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
@@ -1468,6 +1468,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
 
     // Store queue family data
     if (pCreateInfo->pQueueCreateInfos != nullptr) {
+        uint32_t num_queue_families = 0;
+        instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
+        std::vector<VkQueueFamilyProperties> queue_family_properties_list(num_queue_families);
+        instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, queue_family_properties_list.data());
+
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
             const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
             queue_family_index_set.insert(queue_create_info.queueFamilyIndex);
@@ -1488,7 +1493,8 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
                     DispatchGetDeviceQueue(device, queue_info.queue_family_index, i, &queue);
                 }
                 assert(queue != VK_NULL_HANDLE);
-                Add(CreateQueue(queue, queue_info.queue_family_index, queue_info.flags));
+                Add(CreateQueue(queue, queue_info.queue_family_index, queue_info.flags,
+                                queue_family_properties_list[queue_info.queue_family_index]));
             }
         }
     }
@@ -1853,7 +1859,12 @@ void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFen
 
 void ValidationStateTracker::RecordGetDeviceQueueState(uint32_t queue_family_index, VkDeviceQueueCreateFlags flags, VkQueue queue) {
     if (Get<QUEUE_STATE>(queue) == nullptr) {
-        Add(CreateQueue(queue, queue_family_index, flags));
+        uint32_t num_queue_families = 0;
+        instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
+        std::vector<VkQueueFamilyProperties> queue_family_properties_list(num_queue_families);
+        instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, queue_family_properties_list.data());
+
+        Add(CreateQueue(queue, queue_family_index, flags, queue_family_properties_list[queue_family_index]));
     }
 }
 

@@ -362,8 +362,8 @@ void GpuAssistedBase::PreCallRecordDestroyDevice(VkDevice device, const VkAlloca
     desc_set_manager.reset();
 }
 
-gpu_utils_state::Queue::Queue(GpuAssistedBase &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags)
-    : QUEUE_STATE(q, index, flags), state_(state) {}
+gpu_utils_state::Queue::Queue(GpuAssistedBase &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties)
+    : QUEUE_STATE(q, index, flags, queueFamilyProperties), state_(state) {}
 
 gpu_utils_state::Queue::~Queue() {
     if (barrier_command_buffer_) {
