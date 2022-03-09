@@ -11452,6 +11452,9 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
                     attachments[j].overlapping.emplace_back(i);
                     continue;
                 }
+                if (i >= framebuffer->attachments_view_state.size() || j >= framebuffer->attachments_view_state.size()) {
+                    continue;
+                }
                 auto *view_state_i = framebuffer->attachments_view_state[i].get();
                 auto *view_state_j = framebuffer->attachments_view_state[j].get();
                 if (!view_state_i || !view_state_j) {

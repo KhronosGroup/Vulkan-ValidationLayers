@@ -511,7 +511,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
 
     if (attachments != nullptr) {
         const auto *const_p_cb = static_cast<const CMD_BUFFER_STATE *>(pCB);
-        for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
+        for (uint32_t i = 0; i < render_pass_info->attachmentCount && i < framebuffer_info.attachmentCount; ++i) {
             auto image_view = attachments[i];
             auto view_state = Get<IMAGE_VIEW_STATE>(image_view);
 
