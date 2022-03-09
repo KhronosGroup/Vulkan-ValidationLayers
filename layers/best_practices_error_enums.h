@@ -267,6 +267,8 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_PageableDevi
     "UNASSIGNED-BestPractices-CreateDevice-PageableDeviceLocalMemory";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateImage_TilingLinear =
     "UNASSIGNED-BestPractices-CreateImage-TilingLinear";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateImage_Depth32Format =
+    "UNASSIGNED-BestPractices-CreateImage-Depth32Format";
 
 // clang-format on
 
