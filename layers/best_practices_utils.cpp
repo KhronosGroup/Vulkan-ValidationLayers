@@ -414,6 +414,18 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
         }
     }
 
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        std::stringstream image_hex;
+        image_hex << "0x" << std::hex << HandleToUint64(pImage);
+
+        if (pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR) {
+            skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreateImage_TilingLinear,
+                                          "%s Performance warning: image (%s) is created with tiling VK_IMAGE_TILING_LINEAR. "
+                                          "Use VK_IMAGE_TILING_OPTIMAL instead.",
+                VendorSpecificTag(kBPVendorNVIDIA), image_hex.str().c_str());
+        }
+    }
+
     return skip;
 }
 

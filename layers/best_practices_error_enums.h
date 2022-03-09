@@ -265,6 +265,8 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_Texture_Format_PVRTC_Outd
 // NVIDIA-specific best practices
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_PageableDeviceLocalMemory =
     "UNASSIGNED-BestPractices-CreateDevice-PageableDeviceLocalMemory";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateImage_TilingLinear =
+    "UNASSIGNED-BestPractices-CreateImage-TilingLinear";
 
 // clang-format on
 
