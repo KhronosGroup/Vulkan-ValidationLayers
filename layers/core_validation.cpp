@@ -6842,7 +6842,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                              func_name, string_VkImageLayout(rendering_fragment_shading_rate_attachment_info->imageLayout));
         }
 
-        auto image_state = Get<IMAGE_STATE>(view_state->create_info.image);
+        const auto& image_state = Get<IMAGE_STATE>(view_state->create_info.image);
         if (!(image_state->createInfo.usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
             skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06148",
                              "%s(): VkRenderingFragmentShadingRateAttachmentInfoKHR view image usage flags (%s) must be created with VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
