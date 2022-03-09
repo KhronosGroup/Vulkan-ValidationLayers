@@ -2464,6 +2464,45 @@ void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
 
 }
 
+bool BestPractices::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
+                                                                   const VkAccelerationStructureInfoNV* pInfo,
+                                                                   VkBuffer instanceData, VkDeviceSize instanceOffset,
+                                                                   VkBool32 update, VkAccelerationStructureNV dst,
+                                                                   VkAccelerationStructureNV src, VkBuffer scratch,
+                                                                   VkDeviceSize scratchOffset) const {
+    return ValidateBuildAccelerationStructure(commandBuffer);
+}
+
+bool BestPractices::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkDeviceAddress* pIndirectDeviceAddresses, const uint32_t* pIndirectStrides,
+    const uint32_t* const* ppMaxPrimitiveCounts) const {
+    return ValidateBuildAccelerationStructure(commandBuffer);
+}
+
+bool BestPractices::PreCallValidateCmdBuildAccelerationStructuresKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) const {
+    return ValidateBuildAccelerationStructure(commandBuffer);
+}
+
+bool BestPractices::ValidateBuildAccelerationStructure(VkCommandBuffer commandBuffer) const {
+    bool skip = false;
+    auto cb_node = GetRead<bp_state::CommandBuffer>(commandBuffer);
+    assert(cb_node);
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        if ((cb_node->GetQueueFlags() & VK_QUEUE_GRAPHICS_BIT) != 0) {
+            skip |= LogPerformanceWarning(commandBuffer, kVUID_BestPractices_AccelerationStructure_NotAsync,
+                                          "%s Performance warning: Prefer building acceleration structures on an asynchronous "
+                                          "compute queue, instead of using the universal graphics queue.",
+                                          VendorSpecificTag(kBPVendorNVIDIA));
+        }
+    }
+
+    return skip;
+}
+
 void BestPractices::RecordAttachmentAccess(bp_state::CommandBuffer& cb_state, uint32_t fb_attachment, VkImageAspectFlags aspects) {
     auto& state = cb_state.render_pass_state;
     // Called when we have a partial clear attachment, or a normal draw call which accesses an attachment.

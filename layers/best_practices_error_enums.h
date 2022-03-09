@@ -271,6 +271,8 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreateImage_Depth32Format
     "UNASSIGNED-BestPractices-CreateImage-Depth32Format";
 static const char DECORATE_UNUSED *kVUID_BestPractices_QueueBindSparse_NotAsync =
     "UNASSIGNED-BestPractices-QueueBindSparse-NotAsync";
+static const char DECORATE_UNUSED *kVUID_BestPractices_AccelerationStructure_NotAsync =
+    "UNASSIGNED-BestPractices-AccelerationStructure-NotAsync";
 
 // clang-format on
 
