@@ -458,7 +458,7 @@ struct CreatePipelineHelper {
     VkPipelineDynamicStateCreateInfo dyn_state_ci_ = {};
     VkPipelineRasterizationStateCreateInfo rs_state_ci_ = {};
     VkPipelineRasterizationLineStateCreateInfoEXT line_state_ci_ = {};
-    VkPipelineColorBlendAttachmentState cb_attachments_ = {};
+    std::vector<VkPipelineColorBlendAttachmentState> cb_attachments_ = {};
     VkPipelineColorBlendStateCreateInfo cb_ci_ = {};
     VkPipelineDepthStencilStateCreateInfo ds_ci_ = {};
     VkGraphicsPipelineCreateInfo gp_ci_ = {};
@@ -468,7 +468,7 @@ struct CreatePipelineHelper {
     std::unique_ptr<VkShaderObj> vs_;
     std::unique_ptr<VkShaderObj> fs_;
     VkLayerTest &layer_test_;
-    CreatePipelineHelper(VkLayerTest &test);
+    CreatePipelineHelper(VkLayerTest &test, uint32_t color_attachments_count = 1u);
     ~CreatePipelineHelper();
 
     void InitDescriptorSetInfo();

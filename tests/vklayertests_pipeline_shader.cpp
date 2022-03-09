@@ -359,7 +359,7 @@ TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
     att_state1.blendEnable = VK_TRUE;
 
     auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.cb_attachments_ = att_state1;
+        helper.cb_attachments_[0] = att_state1;
         helper.gp_ci_.pColorBlendState = nullptr;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
@@ -4292,7 +4292,7 @@ TEST_F(VkLayerTest, ColorBlendUnsupportedDualSourceBlend) {
 
     VkPipelineColorBlendAttachmentState cb_attachments = {};
 
-    const auto set_dsb_src_color_enable = [&](CreatePipelineHelper &helper) { helper.cb_attachments_ = cb_attachments; };
+    const auto set_dsb_src_color_enable = [&](CreatePipelineHelper &helper) { helper.cb_attachments_[0] = cb_attachments; };
 
     cb_attachments.blendEnable = VK_TRUE;
     cb_attachments.srcColorBlendFactor = VK_BLEND_FACTOR_SRC1_COLOR;  // bad!
@@ -5488,7 +5488,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotWritten) {
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.cb_attachments_.colorWriteMask = 1;
+        helper.cb_attachments_[0].colorWriteMask = 1;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "Attachment 0 not written by fragment shader");
 }

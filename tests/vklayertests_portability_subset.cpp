@@ -509,7 +509,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
-    pipe.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
+    pipe.cb_attachments_[0].srcColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.InitState();
 
@@ -518,20 +518,20 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    pipe.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+    pipe.cb_attachments_[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    pipe.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-    pipe.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
+    pipe.cb_attachments_[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    pipe.cb_attachments_[0].dstColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    pipe.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+    pipe.cb_attachments_[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455");
     pipe.CreateGraphicsPipeline();

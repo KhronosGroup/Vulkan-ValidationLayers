@@ -801,13 +801,13 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     CreatePipelineHelper pipe_masked(*this);
     pipe_masked.InitInfo();
     pipe_masked.InitState();
-    pipe_masked.cb_attachments_.colorWriteMask = 0;
+    pipe_masked.cb_attachments_[0].colorWriteMask = 0;
     pipe_masked.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_writes(*this);
     pipe_writes.InitInfo();
     pipe_writes.InitState();
-    pipe_writes.cb_attachments_.colorWriteMask = 0xf;
+    pipe_writes.cb_attachments_[0].colorWriteMask = 0xf;
     pipe_writes.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
