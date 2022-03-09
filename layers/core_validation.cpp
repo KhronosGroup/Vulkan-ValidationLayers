@@ -7436,7 +7436,8 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
                              "%s(): ImageLayout must not be VK_IMAGE_LAYOUT_PRESENT_SRC_KHR", func_name);
         }
 
-        if ((!FormatIsSINT(image_view_state->create_info.format) && !FormatIsUINT(image_view_state->create_info.format)) &&
+        if ((!FormatIsSINT(image_view_state->create_info.format) && !FormatIsUINT(image_view_state->create_info.format) &&
+             FormatIsColor(image_view_state->create_info.format)) &&
             !(pAttachment->resolveMode == VK_RESOLVE_MODE_NONE || pAttachment->resolveMode == VK_RESOLVE_MODE_AVERAGE_BIT)) {
             skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06129",
                              "%s(): Current resolve mode (%s) must be VK_RESOLVE_MODE_NONE or "
@@ -7452,6 +7453,14 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
                              "VK_RESOLVE_MODE_SAMPLE_ZERO_BIT for integar formats (%s)",
                              func_name, string_VkResolveModeFlags(pAttachment->resolveMode).c_str(),
                              string_VkFormat(image_view_state->create_info.format));
+        }
+
+        if ((!IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve) && (api_version < VK_API_VERSION_1_2)) &&
+           (FormatIsDepthOrStencil(image_view_state->create_info.format) && (pAttachment->resolveMode != VK_RESOLVE_MODE_NONE))) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06131",
+                             "vkCmdBeginRenderingKHR(): Current resolve mode (%s) must be VK_RESOLVE_MODE_NONE for depth/stencil format"
+                             "when vk_khr_depth_stencil_resolve/1.2 not enabled",
+                             string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
         }
 
         if (pAttachment->imageLayout == VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
