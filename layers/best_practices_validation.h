@@ -681,11 +681,25 @@ class BestPractices : public ValidationStateTracker {
     void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                          const VkCommandBuffer* pCommandBuffers) override;
 
+    bool PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
+                                                        VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
+                                                        VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
+                                                        VkBuffer scratch, VkDeviceSize scratchOffset) const override;
+    bool PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                                  const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                                  const VkDeviceAddress* pIndirectDeviceAddresses,
+                                                                  const uint32_t* pIndirectStrides,
+                                                                  const uint32_t* const* ppMaxPrimitiveCounts) const override;
+    bool PreCallValidateCmdBuildAccelerationStructuresKHR(
+        VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+        const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) const override;
+
 // Include code-generated functions
 #include "best_practices.h"
   protected:
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;
+
     std::shared_ptr<SWAPCHAIN_NODE> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
                                                          VkSwapchainKHR swapchain) final {
         return std::static_pointer_cast<SWAPCHAIN_NODE>(std::make_shared<bp_state::Swapchain>(this, create_info, swapchain));
@@ -786,6 +800,8 @@ class BestPractices : public ValidationStateTracker {
 
     bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) const;
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin);
+
+    bool ValidateBuildAccelerationStructure(VkCommandBuffer commandBuffer) const;
 
     void PipelineUsedInFrame(VkPipeline pipeline) {
         WriteLockGuard guard(pipeline_lock_);
