@@ -424,6 +424,14 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
                                           "Use VK_IMAGE_TILING_OPTIMAL instead.",
                 VendorSpecificTag(kBPVendorNVIDIA), image_hex.str().c_str());
         }
+
+        if (pCreateInfo->format == VK_FORMAT_D32_SFLOAT || pCreateInfo->format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreateImage_Depth32Format,
+                "%s Performance warning: image (%s) is created with a 32-bit depth format. Use VK_FORMAT_D24_UNORM_S8_UINT or "
+                "VK_FORMAT_D16_UNORM instead, unless the extra precision is needed.",
+                VendorSpecificTag(kBPVendorNVIDIA), image_hex.str().c_str());
+        }
     }
 
     return skip;
