@@ -1603,7 +1603,8 @@ void OneOffDescriptorSet::UpdateDescriptorSets() {
     vk::UpdateDescriptorSets(device_->handle(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
 }
 
-CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test) : layer_test_(test) {}
+CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_attachments_count)
+    : cb_attachments_(color_attachments_count), layer_test_(test) {}
 
 CreatePipelineHelper::~CreatePipelineHelper() {
     VkDevice device = layer_test_.device();
@@ -1683,9 +1684,9 @@ void CreatePipelineHelper::InitBlendStateInfo() {
     cb_ci_ = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
     cb_ci_.logicOpEnable = VK_FALSE;
     cb_ci_.logicOp = VK_LOGIC_OP_COPY;  // ignored if enable is VK_FALSE above
-    cb_ci_.attachmentCount = layer_test_.RenderPassInfo().subpassCount;
+    cb_ci_.attachmentCount = cb_attachments_.size();
     ASSERT_TRUE(IsValidVkStruct(layer_test_.RenderPassInfo()));
-    cb_ci_.pAttachments = &cb_attachments_;
+    cb_ci_.pAttachments = cb_attachments_.data();
     for (int i = 0; i < 4; i++) {
         cb_ci_.blendConstants[0] = 1.0F;
     }

@@ -7741,17 +7741,12 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    CreatePipelineHelper g_pipe(*this);
+    CreatePipelineHelper g_pipe(*this, 2u);
     g_pipe.InitInfo();
     g_pipe.gp_ci_.renderPass = render_pass;
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                             {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-    std::array<VkPipelineColorBlendAttachmentState, 2> color_blend_attachments;
-    color_blend_attachments[0] = g_pipe.cb_attachments_;
-    color_blend_attachments[1] = g_pipe.cb_attachments_;
-    g_pipe.cb_ci_.attachmentCount = color_blend_attachments.size();
-    g_pipe.cb_ci_.pAttachments = color_blend_attachments.data();
     g_pipe.InitState();
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
 
@@ -9360,7 +9355,7 @@ TEST_F(VkLayerTest, DrawBlendEnabledFormatFeatures) {
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.InitState();
-    pipe.cb_attachments_.blendEnable = VK_TRUE;
+    pipe.cb_attachments_[0].blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
