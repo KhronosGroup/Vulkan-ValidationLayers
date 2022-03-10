@@ -240,12 +240,12 @@ static bool IsSampleLocationEnabled(const safe_VkGraphicsPipelineCreateInfo &cre
 
 static bool HasWriteableDescriptor(const std::vector<PipelineStageState::DescriptorUse> &descriptor_uses) {
     return std::any_of(descriptor_uses.begin(), descriptor_uses.end(),
-                       [](const PipelineStageState::DescriptorUse &use) { return use.second.is_atomic_operation; });
+                       [](const PipelineStageState::DescriptorUse &use) { return use.second.is_writable; });
 }
 
 static bool HasAtomicDescriptor(const std::vector<PipelineStageState::DescriptorUse> &descriptor_uses) {
     return std::any_of(descriptor_uses.begin(), descriptor_uses.end(),
-                       [](const PipelineStageState::DescriptorUse &use) { return use.second.is_writable; });
+                       [](const PipelineStageState::DescriptorUse &use) { return use.second.is_atomic_operation; });
 }
 
 static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, spirv_inst_iter entrypoint,
