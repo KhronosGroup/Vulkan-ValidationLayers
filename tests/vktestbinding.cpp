@@ -32,11 +32,15 @@
 
 namespace {
 
-#define NON_DISPATCHABLE_HANDLE_INIT(create_func, dev, ...)                              \
-    do {                                                                                 \
-        handle_type handle;                                                              \
-        if (EXPECT(create_func(dev.handle(), __VA_ARGS__, NULL, &handle) == VK_SUCCESS)) \
-            NonDispHandle::init(dev.handle(), handle);                                   \
+#define NON_DISPATCHABLE_HANDLE_INIT(create_func, dev, ...)                                 \
+    do {                                                                                    \
+        handle_type handle;                                                                 \
+        auto result = create_func(dev.handle(), __VA_ARGS__, NULL, &handle);                \
+        if (EXPECT((result == VK_SUCCESS) || (result == VK_ERROR_VALIDATION_FAILED_EXT))) { \
+            if (result == VK_SUCCESS) {                                                     \
+                NonDispHandle::init(dev.handle(), handle);                                  \
+            }                                                                               \
+        }                                                                                   \
     } while (0)
 
 #define NON_DISPATCHABLE_HANDLE_DTOR(cls, destroy_func)            \

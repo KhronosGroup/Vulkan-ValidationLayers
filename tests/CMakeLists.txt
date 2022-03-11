@@ -84,6 +84,7 @@ set(COMMON_CPP
     vklayertests_portability_subset.cpp
     vklayertests_viewport_inheritance.cpp
     vklayertests_wsi.cpp
+    vklayertests_graphics_library.cpp
     positive/command.cpp
     positive/descriptors.cpp
     positive/dynamic_rendering.cpp

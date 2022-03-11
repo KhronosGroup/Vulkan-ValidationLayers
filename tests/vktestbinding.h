@@ -46,7 +46,8 @@ template <class Dst, class Src>
 std::vector<Dst> MakeVkHandles(const std::vector<Src *> &v) {
     std::vector<Dst> handles;
     handles.reserve(v.size());
-    std::transform(v.begin(), v.end(), std::back_inserter(handles), [](const Src *o) { return o->handle(); });
+    std::transform(v.begin(), v.end(), std::back_inserter(handles),
+                   [](const Src *o) { return (o) ? o->handle() : VK_NULL_HANDLE; });
     return handles;
 }
 
@@ -690,6 +691,9 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
 class PipelineLayout : public internal::NonDispHandle<VkPipelineLayout> {
   public:
     PipelineLayout() NOEXCEPT : NonDispHandle() {}
+    PipelineLayout(const Device &dev, VkPipelineLayoutCreateInfo &info, const std::vector<const DescriptorSetLayout *> &layouts) {
+        init(dev, info, layouts);
+    }
     ~PipelineLayout() NOEXCEPT;
 
     // Move constructor for Visual Studio 2013
@@ -716,6 +720,7 @@ class Sampler : public internal::NonDispHandle<VkSampler> {
 class DescriptorSetLayout : public internal::NonDispHandle<VkDescriptorSetLayout> {
   public:
     DescriptorSetLayout() NOEXCEPT : NonDispHandle(){};
+    DescriptorSetLayout(const Device &dev, const VkDescriptorSetLayoutCreateInfo &info) { init(dev, info); }
     ~DescriptorSetLayout() NOEXCEPT;
 
     // Move constructor for Visual Studio 2013
