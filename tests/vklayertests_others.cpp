@@ -9894,7 +9894,8 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     {
         VkBufferObj bad_scratch;
         VkBufferCreateInfo bad_create_info = LvlInitStruct<VkBufferCreateInfo>();
-        bad_create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
+        bad_create_info.usage =
+            VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
         bad_create_info.size = acc_struct_properties.minAccelerationStructureScratchOffsetAlignment;
         bot_level_as.create_scratch_buffer(*m_device, &bad_scratch, &bad_create_info);
         VkBufferDeviceAddressInfo bad_device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
