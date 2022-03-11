@@ -6249,11 +6249,16 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
     library_info_one.libraryCount = 1;
     library_info_one.pLibraries = &library;
 
-    VkPipelineShaderStageCreateInfo stage_create_infos[1] = {};
+    VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
     stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
     stage_create_infos[0].module = rgen_shader.handle();
     stage_create_infos[0].pName = "main";
+
+    stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+    stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+    stage_create_infos[1].module = chit_shader.handle();
+    stage_create_infos[1].pName = "main";
 
     VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
     group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
@@ -6272,7 +6277,7 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
     VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
     pipeline_ci.pLibraryInfo = &library_info_one;
-    pipeline_ci.stageCount = 1;
+    pipeline_ci.stageCount = 2;
     pipeline_ci.pStages = stage_create_infos;
     pipeline_ci.groupCount = 2;
     pipeline_ci.pGroups = group_create_infos;
