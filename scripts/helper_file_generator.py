@@ -1151,7 +1151,11 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
 
         for object_type in type_list:
             kenum_type = vko_dict[kenum_to_key(object_type)]
+            if object_type_info[object_type]['Guard']:
+                object_types_header += '#ifdef %s\n' % object_type_info[object_type]['Guard']
             object_types_header += '        case %s: return %s;\n' % (object_type, kenum_type)
+            if object_type_info[object_type]['Guard']:
+                object_types_header += '#endif\n'
             object_type_info[object_type]['VkoType'] = kenum_type
         object_types_header += '        default: return VK_OBJECT_TYPE_UNKNOWN;\n'
         object_types_header += '    }\n'
@@ -1165,7 +1169,11 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
 
         for object_type in type_list:
             kenum_type = vko_dict[kenum_to_key(object_type)]
+            if object_type_info[object_type]['Guard']:
+                object_types_header += '#ifdef %s\n' % object_type_info[object_type]['Guard']
             object_types_header += '        case %s: return %s;\n' % (kenum_type, object_type)
+            if object_type_info[object_type]['Guard']:
+                object_types_header += '#endif\n'
         object_types_header += '        default: return kVulkanObjectTypeUnknown;\n'
         object_types_header += '    }\n'
         object_types_header += '};\n'
