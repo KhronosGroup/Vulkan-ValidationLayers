@@ -237,8 +237,12 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
         case kVulkanObjectTypeSwapchainKHR: return VK_OBJECT_TYPE_SWAPCHAIN_KHR;
         case kVulkanObjectTypeDisplayKHR: return VK_OBJECT_TYPE_DISPLAY_KHR;
         case kVulkanObjectTypeDisplayModeKHR: return VK_OBJECT_TYPE_DISPLAY_MODE_KHR;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case kVulkanObjectTypeVideoSessionKHR: return VK_OBJECT_TYPE_VIDEO_SESSION_KHR;
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case kVulkanObjectTypeVideoSessionParametersKHR: return VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR;
+#endif
         case kVulkanObjectTypeDeferredOperationKHR: return VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR;
         case kVulkanObjectTypeDebugReportCallbackEXT: return VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT;
         case kVulkanObjectTypeCuModuleNVX: return VK_OBJECT_TYPE_CU_MODULE_NVX;
@@ -248,7 +252,9 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
         case kVulkanObjectTypeAccelerationStructureNV: return VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV;
         case kVulkanObjectTypePerformanceConfigurationINTEL: return VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL;
         case kVulkanObjectTypeIndirectCommandsLayoutNV: return VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV;
+#ifdef VK_USE_PLATFORM_FUCHSIA
         case kVulkanObjectTypeBufferCollectionFUCHSIA: return VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA;
+#endif
         case kVulkanObjectTypeAccelerationStructureKHR: return VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
         default: return VK_OBJECT_TYPE_UNKNOWN;
     }
@@ -289,8 +295,12 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
         case VK_OBJECT_TYPE_SWAPCHAIN_KHR: return kVulkanObjectTypeSwapchainKHR;
         case VK_OBJECT_TYPE_DISPLAY_KHR: return kVulkanObjectTypeDisplayKHR;
         case VK_OBJECT_TYPE_DISPLAY_MODE_KHR: return kVulkanObjectTypeDisplayModeKHR;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_OBJECT_TYPE_VIDEO_SESSION_KHR: return kVulkanObjectTypeVideoSessionKHR;
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR: return kVulkanObjectTypeVideoSessionParametersKHR;
+#endif
         case VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR: return kVulkanObjectTypeDeferredOperationKHR;
         case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT: return kVulkanObjectTypeDebugReportCallbackEXT;
         case VK_OBJECT_TYPE_CU_MODULE_NVX: return kVulkanObjectTypeCuModuleNVX;
@@ -300,7 +310,9 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV: return kVulkanObjectTypeAccelerationStructureNV;
         case VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL: return kVulkanObjectTypePerformanceConfigurationINTEL;
         case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV: return kVulkanObjectTypeIndirectCommandsLayoutNV;
+#ifdef VK_USE_PLATFORM_FUCHSIA
         case VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA: return kVulkanObjectTypeBufferCollectionFUCHSIA;
+#endif
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR: return kVulkanObjectTypeAccelerationStructureKHR;
         default: return kVulkanObjectTypeUnknown;
     }
