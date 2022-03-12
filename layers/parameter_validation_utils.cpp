@@ -1776,6 +1776,37 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
+            if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
+                if (create_info.stageCount == 0) {
+                    skip |=
+                        LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stageCount-06604",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "].stageCount is 0, but %s is not enabled", i,
+                                 VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+                }
+                // TODO while PRIu32 should probably be used instead of %i below, %i is necessary due to
+                // ParameterName::IndexFormatSpecifier
+                skip |= validate_struct_type_array(
+                    "vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].stageCount", ParameterName::IndexVector{i}),
+                    ParameterName("pCreateInfos[%i].pStages", ParameterName::IndexVector{i}),
+                    "VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO", pCreateInfos[i].stageCount, pCreateInfos[i].pStages,
+                    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, true, true,
+                    "VUID-VkPipelineShaderStageCreateInfo-sType-sType", "VUID-VkGraphicsPipelineCreateInfo-pStages-06600",
+                    "VUID-VkGraphicsPipelineCreateInfo-stageCount-arraylength");
+                skip |= validate_struct_type("vkCreateGraphicsPipelines",
+                                             ParameterName("pCreateInfos[%i].pRasterizationState", ParameterName::IndexVector{i}),
+                                             "VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO",
+                                             pCreateInfos[i].pRasterizationState,
+                                             VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, true,
+                                             "VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-06601",
+                                             "VUID-VkPipelineRasterizationStateCreateInfo-sType-sType");
+                if (!create_info.layout) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-layout-06602",
+                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "].layout is VK_NULL_HANDLE, but %s is not enabled.",
+                                     i, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+                }
+            }
+
             // TODO probably should check dynamic state from graphics libraries, at least when creating an "executable pipeline"
             if (create_info.pDynamicState != nullptr) {
                 const auto &dynamic_state_info = *create_info.pDynamicState;
