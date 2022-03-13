@@ -2492,8 +2492,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                         if (viewport_state.scissorCount == 0) {
                             if (!has_dynamic_scissor_with_count) {
+                                const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)
+                                                       ? "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136"
+                                                       : "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength";
                                 skip |= LogError(
-                                    device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
+                                    device, vuid,
                                     "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "].pViewportState->scissorCount is 0.", i);
                             }
                         } else if (viewport_state.scissorCount > device_limits.maxViewports) {
@@ -2503,7 +2506,10 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                              ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
                                              i, viewport_state.scissorCount, device_limits.maxViewports);
                         } else if (has_dynamic_scissor_with_count) {
-                            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380",
+                            const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)
+                                                   ? "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136"
+                                                   : "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380";
+                            skip |= LogError(device, vuid,
                                              "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                              "].pViewportState->scissorCount (=%" PRIu32
                                              ") must be zero when VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT is used.",
@@ -2567,13 +2573,18 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          i, shading_rate_image_struct->viewportCount, device_limits.maxViewports);
                     }
 
-                    if (viewport_state.scissorCount != viewport_state.viewportCount &&
-                        !(has_dynamic_viewport_with_count || has_dynamic_scissor_with_count)) {
-                        skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220",
-                                         "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
-                                         "].pViewportState->scissorCount (=%" PRIu32 ") is not identical to pCreateInfos[%" PRIu32
-                                         "].pViewportState->viewportCount (=%" PRIu32 ").",
-                                         i, viewport_state.scissorCount, i, viewport_state.viewportCount);
+                    if (viewport_state.scissorCount != viewport_state.viewportCount) {
+                        if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) ||
+                            (!has_dynamic_viewport_with_count && !has_dynamic_scissor_with_count)) {
+                            const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)
+                                                   ? "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"
+                                                   : "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220";
+                            skip |= LogError(
+                                device, vuid,
+                                "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "].pViewportState->scissorCount (=%" PRIu32
+                                ") is not identical to pCreateInfos[%" PRIu32 "].pViewportState->viewportCount (=%" PRIu32 ").",
+                                i, viewport_state.scissorCount, i, viewport_state.viewportCount);
+                        }
                     }
 
                     if (exclusive_scissor_struct && exclusive_scissor_struct->exclusiveScissorCount != 0 &&
