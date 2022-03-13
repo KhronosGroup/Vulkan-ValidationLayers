@@ -2417,3 +2417,51 @@ TEST_F(VkLayerTest, TestCreatingWin32Surface) {
     m_errorMonitor->VerifyFound();
 #endif
 }
+
+TEST_F(VkLayerTest, TestCreatingSwapchainWithInvalidExtent) {
+    TEST_DESCRIPTION("Create swapchain with extent greater than maxImageExtent of SurfaceCapabilities");
+
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!InitSurface()) {
+        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    InitSwapchainInfo();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-imageExtent-01274");
+
+    VkSurfaceCapabilitiesKHR surface_capabilities;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &surface_capabilities);
+
+    VkSwapchainCreateInfoKHR swapchain_ci = LvlInitStruct<VkSwapchainCreateInfoKHR>();
+    swapchain_ci.surface = m_surface;
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent.width = surface_capabilities.maxImageExtent.width + 1;
+    swapchain_ci.imageExtent.height = surface_capabilities.maxImageExtent.height;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+
+    VkSwapchainKHR swapchain;
+    vk::CreateSwapchainKHR(device(), &swapchain_ci, nullptr, &swapchain);
+
+    m_errorMonitor->VerifyFound();
+}
