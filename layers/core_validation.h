@@ -297,6 +297,7 @@ class CoreChecks : public ValidationStateTracker {
     template <typename BufBarrier>
     bool ValidateBarrierQueueFamilies(const Location& loc, const CMD_BUFFER_STATE* cb_state, const BufBarrier& barrier,
                                       const BUFFER_STATE* state_data) const;
+    bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D max) const;
     bool ValidateCreateSwapchain(const char* func_name, VkSwapchainCreateInfoKHR const* pCreateInfo,
                                  const SURFACE_STATE* surface_state, const SWAPCHAIN_NODE* old_swapchain_state) const;
     bool ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE* cb_state, const PIPELINE_STATE* pipeline_state) const;

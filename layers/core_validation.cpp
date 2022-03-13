@@ -15706,6 +15706,13 @@ static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(VkSwapchainCreateInf
     return result;
 }
 
+bool CoreChecks::IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D max) const {
+    if ((extent.width < min.width) || (extent.width > max.width) || (extent.height < min.height) || (extent.height > max.height)) {
+        return false;
+    }
+    return true;
+}
+
 bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreateInfoKHR const *pCreateInfo,
                                          const SURFACE_STATE *surface_state, const SWAPCHAIN_NODE *old_swapchain_state) const {
     // All physical devices and queue families are required to be able to present to any native window on Android; require the
@@ -15790,18 +15797,21 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     }
 
     // Validate pCreateInfo->imageExtent against VkSurfaceCapabilitiesKHR::{current|min|max}ImageExtent:
-    if ((pCreateInfo->imageExtent.width < capabilities.minImageExtent.width) ||
-        (pCreateInfo->imageExtent.width > capabilities.maxImageExtent.width) ||
-        (pCreateInfo->imageExtent.height < capabilities.minImageExtent.height) ||
-        (pCreateInfo->imageExtent.height > capabilities.maxImageExtent.height)) {
-        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageExtent-01274",
-                     "%s called with imageExtent = (%d,%d), which is outside the bounds returned by "
-                     "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%d,%d), minImageExtent = (%d,%d), "
-                     "maxImageExtent = (%d,%d).",
-                     func_name, pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height, capabilities.currentExtent.width,
-                     capabilities.currentExtent.height, capabilities.minImageExtent.width, capabilities.minImageExtent.height,
-                     capabilities.maxImageExtent.width, capabilities.maxImageExtent.height)) {
-            return true;
+    if (!IsExtentInsideBounds(pCreateInfo->imageExtent, capabilities.minImageExtent, capabilities.maxImageExtent)) {
+        const auto cached_capabilities = surface_state->GetCapabilities(physical_device);
+        if (!IsExtentInsideBounds(pCreateInfo->imageExtent, cached_capabilities.minImageExtent,
+                                  cached_capabilities.maxImageExtent)) {
+            if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageExtent-01274",
+                         "%s called with imageExtent = (%" PRIu32 ",%" PRIu32 "), which is outside the bounds returned by "
+                         "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%" PRIu32 ",%" PRIu32
+                         "), minImageExtent = (%" PRIu32 ",%" PRIu32 "), "
+                         "maxImageExtent = (%" PRIu32 ",%" PRIu32 ").",
+                         func_name, pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height,
+                         capabilities.currentExtent.width, capabilities.currentExtent.height, capabilities.minImageExtent.width,
+                         capabilities.minImageExtent.height, capabilities.maxImageExtent.width,
+                         capabilities.maxImageExtent.height)) {
+                return true;
+            }
         }
     }
     // pCreateInfo->preTransform should have exactly one bit set, and that bit must also be set in
