@@ -81,6 +81,7 @@ set(COMMON_CPP
     vklayertests_dynamic_rendering.cpp
     vklayertests_command.cpp
     vklayertests_imageless_framebuffer.cpp
+    vklayertests_nvidia_best_practices.cpp
     vklayertests_portability_subset.cpp
     vklayertests_viewport_inheritance.cpp
     vklayertests_wsi.cpp
