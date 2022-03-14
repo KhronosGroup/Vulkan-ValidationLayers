@@ -235,3 +235,157 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    InitBestPracticesFramework(kEnableNVIDIAValidation);
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan >= 1.1 required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    InitState();
+
+    VkDeviceQueueCreateInfo general_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    general_queue_ci.queueFamilyIndex = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0);
+    general_queue_ci.queueCount = 1;
+    general_queue_ci.pQueuePriorities = &defaultQueuePriority;
+
+    VkDeviceQueueCreateInfo compute_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    compute_queue_ci.queueFamilyIndex = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    compute_queue_ci.queueCount = 1;
+    compute_queue_ci.pQueuePriorities = &defaultQueuePriority;
+
+    if (general_queue_ci.queueFamilyIndex == UINT32_MAX || compute_queue_ci.queueFamilyIndex == UINT32_MAX) {
+        // There's no asynchronous compute queue, skip.
+        return;
+    }
+
+    VkDeviceQueueCreateInfo queue_cis[2] = {
+        general_queue_ci,
+        compute_queue_ci,
+    };
+    uint32_t queue_family_indices[] = {
+        general_queue_ci.queueFamilyIndex,
+        compute_queue_ci.queueFamilyIndex,
+    };
+
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structures_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    acceleration_structures_features.accelerationStructure = VK_TRUE;
+
+    VkPhysicalDeviceBufferDeviceAddressFeaturesEXT buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesEXT>();
+    buffer_device_address_features.pNext = &acceleration_structures_features;
+    buffer_device_address_features.bufferDeviceAddress = VK_TRUE;
+
+    VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    device_ci.pNext = &buffer_device_address_features;
+    device_ci.queueCreateInfoCount = 2;
+    device_ci.pQueueCreateInfos = queue_cis;
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    vk_testing::Device test_device(gpu());
+    test_device.init(device_ci);
+
+    VkQueue graphics_queue = VK_NULL_HANDLE;
+    VkQueue transfer_queue = VK_NULL_HANDLE;
+    vk::GetDeviceQueue(test_device.handle(), general_queue_ci.queueFamilyIndex, 0, &graphics_queue);
+    vk::GetDeviceQueue(test_device.handle(), compute_queue_ci.queueFamilyIndex, 0, &transfer_queue);
+
+    VkBufferCreateInfo acceleration_structure_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    acceleration_structure_buffer_ci.size = 0x10000;
+    acceleration_structure_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+
+    VkBufferCreateInfo scratch_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    scratch_buffer_ci.size = 1ULL << 20;
+    scratch_buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    vk_testing::Buffer acceleration_structure_buffer(test_device, acceleration_structure_buffer_ci);
+    vk_testing::Buffer scratch_buffer(test_device, scratch_buffer_ci);
+
+    auto vkGetBufferDeviceAddressKHR =
+        (PFN_vkGetBufferDeviceAddress)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR");
+    ASSERT_TRUE(vkGetBufferDeviceAddressKHR != nullptr);
+
+    VkBufferDeviceAddressInfo scratch_buffer_device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
+    scratch_buffer_device_address_info.buffer = scratch_buffer.handle();
+    VkDeviceAddress scratch_address = vkGetBufferDeviceAddressKHR(test_device.handle(), &scratch_buffer_device_address_info);
+
+    VkAccelerationStructureCreateInfoKHR acceleration_structure_ci = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
+    acceleration_structure_ci.buffer = acceleration_structure_buffer.handle();
+    acceleration_structure_ci.offset = 0;
+    acceleration_structure_ci.size = acceleration_structure_buffer_ci.size;
+    acceleration_structure_ci.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    acceleration_structure_ci.deviceAddress = 0;
+
+    vk_testing::AccelerationStructureKHR acceleration_structure(test_device, acceleration_structure_ci);
+
+    VkAccelerationStructureGeometryTrianglesDataKHR triangle_data = LvlInitStruct<VkAccelerationStructureGeometryTrianglesDataKHR>();
+    triangle_data.vertexFormat = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
+    triangle_data.vertexData.deviceAddress = 0;
+    triangle_data.vertexStride = 0;
+    triangle_data.maxVertex = 3;
+    triangle_data.indexType = VK_INDEX_TYPE_UINT16;
+    triangle_data.indexData.deviceAddress = 0;
+    triangle_data.transformData.deviceAddress = 0;
+
+    VkAccelerationStructureGeometryKHR geometry = LvlInitStruct<VkAccelerationStructureGeometryKHR>();
+    geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+    geometry.geometry.triangles = triangle_data;
+    geometry.flags = 0;
+
+    VkAccelerationStructureBuildGeometryInfoKHR geometry_info = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
+    geometry_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    geometry_info.flags = 0;
+    geometry_info.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    geometry_info.srcAccelerationStructure = VK_NULL_HANDLE;
+    geometry_info.dstAccelerationStructure = acceleration_structure.handle();
+    geometry_info.geometryCount = 1;
+    geometry_info.pGeometries = &geometry;
+    geometry_info.ppGeometries = nullptr;
+    geometry_info.scratchData.deviceAddress = scratch_address;
+
+    VkAccelerationStructureBuildRangeInfoKHR build_range_info = {};
+    build_range_info.primitiveCount = 1;
+    build_range_info.primitiveOffset = 0;
+    build_range_info.firstVertex = 0;
+    build_range_info.transformOffset = 0;
+
+    VkAccelerationStructureBuildRangeInfoKHR *p_build_range_info = &build_range_info;
+
+    auto vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(
+        vk::GetDeviceProcAddr(test_device.handle(), "vkCmdBuildAccelerationStructuresKHR"));
+    ASSERT_NE(vkCmdBuildAccelerationStructuresKHR, nullptr);
+
+    for (uint32_t queue_family_index : queue_family_indices) {
+        VkCommandPoolCreateInfo command_pool_ci = LvlInitStruct<VkCommandPoolCreateInfo>();
+        command_pool_ci.queueFamilyIndex = queue_family_index;
+        vk_testing::CommandPool command_pool(test_device, command_pool_ci);
+
+        VkCommandBufferAllocateInfo command_buffer_ai = LvlInitStruct<VkCommandBufferAllocateInfo>();
+        command_buffer_ai.commandPool = command_pool.handle();
+        command_buffer_ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        command_buffer_ai.commandBufferCount = 1;
+
+        vk_testing::CommandBuffer command_buffer(test_device, command_buffer_ai);
+        VkCommandBufferBeginInfo command_buffer_bi = LvlInitStruct<VkCommandBufferBeginInfo>();
+        command_buffer_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        command_buffer.begin(&command_buffer_bi);
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-AccelerationStructure-NotAsync");
+        vkCmdBuildAccelerationStructuresKHR(command_buffer.handle(), 1, &geometry_info, &p_build_range_info);
+
+        if (queue_family_index == compute_queue_ci.queueFamilyIndex) {
+            m_errorMonitor->Finish();
+        } else {
+            m_errorMonitor->VerifyFound();
+        }
+
+        command_buffer.end();
+    }
+}
