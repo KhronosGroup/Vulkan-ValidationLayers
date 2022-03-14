@@ -95,3 +95,37 @@ TEST_F(VkNvidiaBestPracticesLayerTest, TilingLinear) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
+    InitBestPracticesFramework(kEnableNVIDIAValidation);
+    InitState();
+
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    // This should be VK_FORMAT_D24_UNORM_S8_UINT, but that's not a required format.
+    image_ci.format = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
+    image_ci.extent = { 512, 512, 1 };
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-CreateImage-Depth32Format");
+        vk_testing::Image image(*m_device, image_ci, vk_testing::no_mem);
+        m_errorMonitor->Finish();
+    }
+
+    VkFormat formats[] = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT };
+
+    for (VkFormat format : formats) {
+        image_ci.format = format;
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-CreateImage-Depth32Format");
+        vk_testing::Image image(*m_device, image_ci, vk_testing::no_mem);
+        m_errorMonitor->VerifyFound();
+    }
+}
