@@ -12441,6 +12441,17 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                 device, "VUID-VkRenderPassCreateInfo-pNext-02513",
                 "vkCreateRenderPass(): elements of VkRenderPassMultiviewCreateInfo pViewMasks must all be either 0 or not 0.");
         }
+        for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+            if ((pCreateInfo->pDependencies[i].dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0) {
+                if (i < multiview_info->dependencyCount && multiview_info->pViewOffsets[i] != 0) {
+                    skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-02512",
+                                     "vkCreateRenderPass(): VkRenderPassCreateInfo::pDependencies[%" PRIu32
+                                     "].dependencyFlags does not have VK_DEPENDENCY_VIEW_LOCAL_BIT bit set, but the corresponding "
+                                     "VkRenderPassMultiviewCreateInfo::pViewOffsets[%" PRIu32 "] is %" PRIi32 ".",
+                                     i, i, multiview_info->pViewOffsets[i]);
+                }
+            }
+        }
     }
     const VkRenderPassInputAttachmentAspectCreateInfo *input_attachment_aspect_info =
         LvlFindInChain<VkRenderPassInputAttachmentAspectCreateInfo>(pCreateInfo->pNext);
