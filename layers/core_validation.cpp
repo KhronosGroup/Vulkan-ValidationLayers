@@ -2958,6 +2958,28 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
     }
 
+    // If VK_EXT_graphics_pipeline_library is not enabled, a complete set of state must be defined at this point
+    if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
+        size_t missing_state_msg_size = 0;
+        std::string vi_msg = (pPipeline->vertex_input_state) ? "" : "<vertex input> ";
+        missing_state_msg_size += vi_msg.size();
+        std::string pr_msg = (pPipeline->pre_raster_state) ? "" : "<pre-raster> ";
+        missing_state_msg_size += pr_msg.size();
+        std::string fs_msg = (pPipeline->fragment_shader_state) ? "" : "<fragment shader> ";
+        missing_state_msg_size += fs_msg.size();
+        std::string fo_msg = (pPipeline->fragment_output_state) ? "" : "<fragment output> ";
+        missing_state_msg_size += fo_msg.size();
+
+        if (missing_state_msg_size > 0) {
+            skip |= LogError(
+                device, "VUID-VkGraphicsPipelineCreateInfo-None-06573",
+                "pCreateInfos[%" PRIu32
+                "] does not contain a complete set of state and %s is not enabled. The following state is missing: [ %s%s%s%s].",
+                pipelineIndex, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME, vi_msg.c_str(), pr_msg.c_str(), fs_msg.c_str(),
+                fo_msg.c_str());
+        }
+    }
+
     return skip;
 }
 
