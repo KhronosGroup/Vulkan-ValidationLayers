@@ -16135,3 +16135,74 @@ TEST_F(VkLayerTest, TestMismatchedRenderPassAndPipelineAttachments) {
     pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, IncompatibleScissorCountAndViewportCount) {
+    TEST_DESCRIPTION("Validate creating a pipeline with incompatible scissor and viewport count, without dynamic states.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        printf("%s test requires Vulkan 1.3+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkViewport viewports[2] = {{0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f}};
+
+    auto set_viewport_state_createinfo = [&](CreatePipelineHelper &helper) {
+        helper.vp_state_ci_.viewportCount = 2;
+        helper.vp_state_ci_.pViewports = viewports;
+    };
+
+    CreatePipelineHelper::OneshotTest(*this, set_viewport_state_createinfo, kErrorBit,
+                                      "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134");
+}
+
+TEST_F(VkLayerTest, TestCreatingPipelineWithScissorWithCount) {
+    TEST_DESCRIPTION("Validate creating graphics pipeline with dynamic state scissor with count.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        printf("%s test requires Vulkan 1.3+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    {
+        const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT};
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        dyn_state_ci.pDynamicStates = dyn_states;
+
+        auto set_viewport_state_createinfo = [&](CreatePipelineHelper &helper) {
+            helper.dyn_state_ci_ = dyn_state_ci;
+            helper.vp_state_ci_.scissorCount = 0;
+            helper.vp_state_ci_.viewportCount = 0;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, set_viewport_state_createinfo, kErrorBit,
+                                          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136");
+    }
+
+    {
+        const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT};
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 2;
+        dyn_state_ci.pDynamicStates = dyn_states;
+
+        VkRect2D scissors = {};
+
+        auto set_viewport_state_createinfo = [&](CreatePipelineHelper &helper) {
+            helper.dyn_state_ci_ = dyn_state_ci;
+            helper.vp_state_ci_.scissorCount = 1;
+            helper.vp_state_ci_.pScissors = &scissors;
+            helper.vp_state_ci_.viewportCount = 0;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, set_viewport_state_createinfo, kErrorBit,
+                                          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136");
+    }
+}
