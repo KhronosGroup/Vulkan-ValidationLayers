@@ -129,3 +129,109 @@ TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
+    InitBestPracticesFramework(kEnableNVIDIAValidation);
+    InitState();
+
+    if (!m_device->phy().features().sparseBinding) {
+        GTEST_SKIP() << "Test requires sparseBinding";
+    }
+
+    VkDeviceQueueCreateInfo general_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    general_queue_ci.queueFamilyIndex = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_SPARSE_BINDING_BIT, 0);
+    general_queue_ci.queueCount = 1;
+    general_queue_ci.pQueuePriorities = &defaultQueuePriority;
+
+    VkDeviceQueueCreateInfo transfer_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    transfer_queue_ci.queueFamilyIndex = m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT,
+                                                                       VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT);
+    transfer_queue_ci.queueCount = 1;
+    transfer_queue_ci.pQueuePriorities = &defaultQueuePriority;
+
+    if (general_queue_ci.queueFamilyIndex == UINT32_MAX || transfer_queue_ci.queueFamilyIndex == UINT32_MAX) {
+        GTEST_SKIP() << "Test requires a general and a transfer queue";
+    }
+
+    VkDeviceQueueCreateInfo queue_cis[2] = {
+        general_queue_ci,
+        transfer_queue_ci,
+    };
+    uint32_t queue_family_indices[] = {
+        general_queue_ci.queueFamilyIndex,
+        transfer_queue_ci.queueFamilyIndex,
+    };
+
+    VkPhysicalDeviceFeatures features = {};
+    features.sparseBinding = VK_TRUE;
+
+    VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    device_ci.queueCreateInfoCount = 2;
+    device_ci.pQueueCreateInfos = queue_cis;
+    device_ci.pEnabledFeatures = &features;
+
+    vk_testing::Device test_device(gpu());
+    test_device.init(device_ci);
+
+    VkQueue graphics_queue = VK_NULL_HANDLE;
+    VkQueue transfer_queue = VK_NULL_HANDLE;
+    vk::GetDeviceQueue(test_device.handle(), general_queue_ci.queueFamilyIndex, 0, &graphics_queue);
+    vk::GetDeviceQueue(test_device.handle(), transfer_queue_ci.queueFamilyIndex, 0, &transfer_queue);
+
+    VkBufferCreateInfo sparse_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    sparse_buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    sparse_buffer_ci.size = 0x10000;
+    sparse_buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    sparse_buffer_ci.sharingMode = VK_SHARING_MODE_CONCURRENT;
+    sparse_buffer_ci.queueFamilyIndexCount = 2;
+    sparse_buffer_ci.pQueueFamilyIndices = queue_family_indices;
+
+    vk_testing::Buffer sparse_buffer(test_device, sparse_buffer_ci, vk_testing::no_mem);
+
+    const VkMemoryRequirements memory_requirements = sparse_buffer.memory_requirements();
+    ASSERT_NE(memory_requirements.memoryTypeBits, 0);
+
+    // Find first valid bit, whatever it is
+    uint32_t memory_type_index = 0;
+    while (((memory_requirements.memoryTypeBits >> memory_type_index) & 1) == 0) {
+        ++memory_type_index;
+    }
+
+    VkMemoryAllocateInfo memory_ai = LvlInitStruct<VkMemoryAllocateInfo>();
+    memory_ai.allocationSize = memory_requirements.size;
+    memory_ai.memoryTypeIndex = memory_type_index;
+
+    vk_testing::DeviceMemory sparse_memory(test_device, memory_ai);
+
+    VkSparseMemoryBind bind = {};
+    bind.resourceOffset = 0;
+    bind.size = sparse_buffer_ci.size;
+    bind.memory = sparse_memory.handle();
+    bind.memoryOffset = 0;
+    bind.flags = 0;
+
+    VkSparseBufferMemoryBindInfo sparse_buffer_bind = {};
+    sparse_buffer_bind.buffer = sparse_buffer.handle();
+    sparse_buffer_bind.bindCount = 1;
+    sparse_buffer_bind.pBinds = &bind;
+
+    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    bind_info.bufferBindCount = 1;
+    bind_info.pBufferBinds = &sparse_buffer_bind;
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-QueueBindSparse-NotAsync");
+        vk::QueueBindSparse(transfer_queue, 1, &bind_info, VK_NULL_HANDLE);
+        m_errorMonitor->Finish();
+    }
+
+    test_device.wait();
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-QueueBindSparse-NotAsync");
+        vk::QueueBindSparse(graphics_queue, 1, &bind_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
+}
