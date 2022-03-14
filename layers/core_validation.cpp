@@ -752,21 +752,27 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 
         auto rendering_fragment_shading_rate_attachment_info = LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(
             pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
-        if (rendering_fragment_shading_rate_attachment_info && (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
-            if (!(pPipeline->rp_state->createInfo.flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        if (rendering_fragment_shading_rate_attachment_info &&
+            (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
+            if (!(pPipeline->create_info.graphics.flags &
+                  VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
                 skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_fsr,
-                    "%s: Currently bound graphics pipeline %s must have been created with VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
-                    caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+                                 "%s: Currently bound graphics pipeline %s must have been created with "
+                                 "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
             }
         }
 
         auto rendering_fragment_shading_rate_density_map = LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(
             pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
-        if (rendering_fragment_shading_rate_density_map && (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
-            if (!(pPipeline->rp_state->createInfo.flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
+        if (rendering_fragment_shading_rate_density_map &&
+            (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
+            if (!(pPipeline->create_info.graphics.flags &
+                  VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
                 skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_fdm,
-                    "%s: Currently bound graphics pipeline %s must have been created with VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
-                    caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+                                 "%s: Currently bound graphics pipeline %s must have been created with "
+                                 "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
+                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
             }
         }
 
