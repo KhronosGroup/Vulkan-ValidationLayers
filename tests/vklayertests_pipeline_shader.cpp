@@ -7814,8 +7814,8 @@ TEST_F(VkLayerTest, ComputePipelineStageCreationFeedbackCount) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
 
     feedback_info.pipelineStageCreationFeedbackCount = 2;
-    CreateComputePipelineHelper::OneshotTest(
-        *this, set_info, kErrorBit, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02669");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                             "VUID-VkComputePipelineCreateInfo-pipelineStageCreationFeedbackCount-06566");
 }
 
 TEST_F(VkLayerTest, NVRayTracingPipelineStageCreationFeedbackCount) {
@@ -16281,7 +16281,6 @@ TEST_F(VkLayerTest, DynamicSampleLocations) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
 }
 
 TEST_F(VkLayerTest, PrimitivesGeneratedQueryAndDiscardEnabled) {
