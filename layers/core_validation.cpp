@@ -7409,7 +7409,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
         if (pAttachment->resolveMode != VK_RESOLVE_MODE_NONE) {
             if (pAttachment->resolveImageLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06146",
-                                 "vlCmdBeginRenderingKHR(): resolveImageLayout must not be VK_IMAGE_LAYOUT_PRESENT_SRC_KHR");
+                                 "%s(): resolveImageLayout must not be VK_IMAGE_LAYOUT_PRESENT_SRC_KHR", func_name);
             }
 
             if (pAttachment->resolveImageLayout == VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
