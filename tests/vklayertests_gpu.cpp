@@ -937,7 +937,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         return;
     }
     if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
-        printf("%s This test should not be run on the RADV driver\n", kSkipPrefix);
+        printf("%s This test should not be run on the RADV driver.\n", kSkipPrefix);
+        return;
+    }
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        printf("%s This test should not be run on the AMD proprietary driver.\n", kSkipPrefix);
         return;
     }
 
