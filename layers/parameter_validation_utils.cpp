@@ -3583,12 +3583,21 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                                 ParameterName("pCreateInfos[%i].stage.pName", ParameterName::IndexVector{i}),
                                 "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", pCreateInfos[i].stage.pName);
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
-        if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 1)) {
-            skip |=
-                LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02669",
-                         "vkCreateComputePipelines(): in pCreateInfo[%" PRIu32
-                         "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount must equal 1, found %" PRIu32 ".",
-                         i, feedback_struct->pipelineStageCreationFeedbackCount);
+        if (feedback_struct && (feedback_struct->pipelineStageCreationFeedbackCount != 1)) {
+            const auto feedback_count = feedback_struct->pipelineStageCreationFeedbackCount;
+            if (api_version < VK_VERSION_1_3) {
+                skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02669",
+                                 "vkCreateComputePipelines(): in pCreateInfo[%" PRIu32
+                                 "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount must equal 1, found %" PRIu32
+                                 ".",
+                                 i, feedback_count);
+            } else if ((feedback_count != 0) && (feedback_count != 1)) {
+                skip |= LogError(
+                    device, "VUID-VkComputePipelineCreateInfo-pipelineStageCreationFeedbackCount-06566",
+                    "vkCreateComputePipelines(): VkPipelineCreationFeedbackCreateInfo::pipelineStageCreationFeedbackCount (%" PRIu32
+                    ") is not 0 or 1 in pCreateInfos[%" PRIu32 "].",
+                    feedback_count, i);
+            }
         }
 
         // Make sure compute stage is selected
