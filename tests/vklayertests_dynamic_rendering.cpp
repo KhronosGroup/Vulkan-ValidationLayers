@@ -1202,3 +1202,144 @@ TEST_F(VkLayerTest, DynamicRenderingSecondaryCommandBuffer) {
     vk::BeginCommandBuffer(cb.handle(), &cmd_buf_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TestDynamicRenderingPipelineMissingFlags) {
+    TEST_DESCRIPTION("Test dynamic rendering with pipeline missing flags.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        return;
+    }
+    bool fragment_density = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    bool shading_rate = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+
+    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
+    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
+    ASSERT_TRUE(depthStencilFormat != 0);
+
+    VkImageObj image(m_device);
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = depthStencilFormat;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    image.Init(image_create_info);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageViewCreateInfo ivci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                                  nullptr,
+                                  0,
+                                  image.handle(),
+                                  VK_IMAGE_VIEW_TYPE_2D,
+                                  depthStencilFormat,
+                                  {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                   VK_COMPONENT_SWIZZLE_IDENTITY},
+                                  {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1}};
+
+    vk_testing::ImageView depth_image_view;
+    depth_image_view.init(*m_device, ivci);
+
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    if (shading_rate) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-imageView-06183");
+        VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate =
+            LvlInitStruct<VkRenderingFragmentShadingRateAttachmentInfoKHR>();
+        fragment_shading_rate.imageView = depth_image_view.handle();
+        fragment_shading_rate.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        fragment_shading_rate.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+
+        VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>(&fragment_shading_rate);
+        begin_rendering_info.colorAttachmentCount = 1;
+        begin_rendering_info.pColorAttachments = &color_attachment;
+
+        VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+        auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+        pipeline_rendering_info.colorAttachmentCount = 1;
+        pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.gp_ci_.pNext = &pipeline_rendering_info;
+        pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+        m_commandBuffer->EndRendering();
+        m_commandBuffer->end();
+
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (fragment_density) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-imageView-06184");
+        VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map =
+            LvlInitStruct<VkRenderingFragmentDensityMapAttachmentInfoEXT>();
+        fragment_density_map.imageView = depth_image_view.handle();
+
+        VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>(&fragment_density_map);
+        begin_rendering_info.colorAttachmentCount = 1;
+        begin_rendering_info.pColorAttachments = &color_attachment;
+
+        VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+        auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+        pipeline_rendering_info.colorAttachmentCount = 1;
+        pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.gp_ci_.pNext = &pipeline_rendering_info;
+        pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+        m_commandBuffer->EndRendering();
+        m_commandBuffer->end();
+
+        m_errorMonitor->VerifyFound();
+    }
+}
