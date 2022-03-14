@@ -2780,6 +2780,27 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                              pipelineIndex, string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[1]),
                              struct_name);
         }
+
+        const auto combiner_ops = fragment_shading_rate_state->combinerOps;
+        if ((pPipeline->pre_raster_state || pPipeline->fragment_shader_state)) {
+            // TODO automate what a "valid combiner op" is
+            const auto combiner_op0_valid = (combiner_ops[0] >= VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) &&
+                                            (combiner_ops[0] <= VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR);
+            const auto combiner_op1_valid = (combiner_ops[1] >= VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) &&
+                                            (combiner_ops[1] <= VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR);
+            if (!combiner_op0_valid) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06567",
+                                 "vkCreateGraphicsPipelines(): in pCreateInfos[%" PRIu32
+                                 "], combinerOp[0] (%s) is not a valid VkFragmentShadingRateCombinerOpKHR value.",
+                                 pipelineIndex, string_VkFragmentShadingRateCombinerOpKHR(combiner_ops[0]));
+            }
+            if (!combiner_op1_valid) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06568",
+                                 "vkCreateGraphicsPipelines(): in pCreateInfos[%" PRIu32
+                                 "], combinerOp[1] (%s) is not a valid VkFragmentShadingRateCombinerOpKHR value.",
+                                 pipelineIndex, string_VkFragmentShadingRateCombinerOpKHR(combiner_ops[1]));
+            }
+        }
     }
 
     const auto *discard_rectangle_state = LvlFindInChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pPipeline->PNext());
