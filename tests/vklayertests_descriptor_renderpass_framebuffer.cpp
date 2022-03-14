@@ -1299,6 +1299,26 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayout) {
                                          "VUID-VkAttachmentReferenceStencilLayout-stencilLayout-03318");
             }
 
+            attachment_reference_stencil_layout.stencilLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
+
+            auto attachment_description_stencil_layout = LvlInitStruct<VkAttachmentDescriptionStencilLayoutKHR>();
+            attachment_description_stencil_layout.stencilInitialLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
+            attachment_description_stencil_layout.stencilFinalLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
+
+            rpci2.pAttachments[1].pNext = &attachment_description_stencil_layout;
+
+            rpci2.pAttachments[1].initialLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
+            rpci2.pAttachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(),
+                                     "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-06556");
+
+            rpci2.pAttachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            rpci2.pAttachments[1].finalLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
+            TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(),
+                                     "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-06557");
+
+            rpci2.pAttachments[1].pNext = nullptr;
+
             rpci2.pSubpasses[0].pDepthStencilAttachment->pNext = nullptr;
         } else {
             rpci2.pSubpasses[0].pDepthStencilAttachment->aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
