@@ -64,3 +64,34 @@ TEST_F(VkNvidiaBestPracticesLayerTest, PageableDeviceLocalMemory) {
         m_errorMonitor->Finish();
     }
 }
+
+TEST_F(VkNvidiaBestPracticesLayerTest, TilingLinear) {
+    InitBestPracticesFramework(kEnableNVIDIAValidation);
+    InitState();
+
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
+    image_ci.extent = { 512, 512, 1 };
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-CreateImage-TilingLinear");
+        vk_testing::Image image(*m_device, image_ci, vk_testing::no_mem);
+        m_errorMonitor->Finish();
+    }
+
+    image_ci.tiling = VK_IMAGE_TILING_LINEAR;
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-CreateImage-TilingLinear");
+        vk_testing::Image image(*m_device, image_ci, vk_testing::no_mem);
+        m_errorMonitor->VerifyFound();
+    }
+}
