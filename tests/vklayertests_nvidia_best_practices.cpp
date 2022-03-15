@@ -389,3 +389,30 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
         command_buffer.end();
     }
 }
+
+TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_SetPriority) {
+    InitBestPracticesFramework(kEnableNVIDIAValidation);
+    InitState();
+
+    VkMemoryAllocateInfo memory_ai = LvlInitStruct<VkMemoryAllocateInfo>();
+    memory_ai.allocationSize = 0x100000;
+    memory_ai.memoryTypeIndex = 0;
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-AllocateMemory-SetPriority");
+        vk_testing::DeviceMemory memory(*m_device, memory_ai);
+        m_errorMonitor->VerifyFound();
+    }
+
+    VkMemoryPriorityAllocateInfoEXT priority = LvlInitStruct<VkMemoryPriorityAllocateInfoEXT>();
+    priority.priority = 0.5f;
+    memory_ai.pNext = &priority;
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-AllocateMemory-SetPriority");
+        vk_testing::DeviceMemory memory(*m_device, memory_ai);
+        m_errorMonitor->Finish();
+    }
+}
