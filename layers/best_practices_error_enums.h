@@ -279,6 +279,8 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_BindMemory_NoPriority =
     "UNASSIGNED-BestPractices-BindMemory-NoPriority";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelineLayout_SeparateSampler =
     "UNASSIGNED-BestPractices-CreatePipelineLayout-SeparateSampler";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelinesLayout_LargePipelineLayout =
+    "UNASSIGNED-BestPractices-CreatePipelineLayout-LargePipelineLayout";
 
 // clang-format on
 

@@ -3705,12 +3705,48 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         bool has_separate_sampler = false;
+        size_t fast_space_usage = 0;
 
         for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
             auto descriptor_set_layout_state = Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
             for (const auto& binding : descriptor_set_layout_state->GetBindings()) {
                 if (binding.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) {
                     has_separate_sampler = true;
+                }
+
+                if ((descriptor_set_layout_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) == 0U) {
+                    size_t descriptor_type_size = 0;
+
+                    switch (binding.descriptorType) {
+                        case VK_DESCRIPTOR_TYPE_SAMPLER:
+                        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+                        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+                        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+                        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+                            descriptor_type_size = 4;
+                            break;
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+                            descriptor_type_size = 8;
+                            break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+                        case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE:
+                            descriptor_type_size = 16;
+                            break;
+                        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
+                            descriptor_type_size = 1;
+                        default:
+                            // Unknown type.
+                            break;
+                    }
+
+                    size_t descriptor_size = descriptor_type_size * binding.descriptorCount;
+                    fast_space_usage += descriptor_size;
                 }
             }
         }
@@ -3720,6 +3756,18 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
                 device, kVUID_BestPractices_CreatePipelineLayout_SeparateSampler,
                 "%s Consider using combined image samplers instead of separate samplers for marginally better performance.",
                 VendorSpecificTag(kBPVendorNVIDIA));
+        }
+
+        if (fast_space_usage > kPipelineLayoutFastDescriptorSpaceNVIDIA) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreatePipelinesLayout_LargePipelineLayout,
+                "%s Pipeline layout size is too large, prefer using pipeline-specific descriptor set layouts. "
+                "Aim for consuming less than %" PRIu32 " bytes to allow fast reads for all non-bindless descriptors. "
+                "Samplers, textures, texel buffers, and combined image samplers consume 4 bytes each. "
+                "Uniform buffers and acceleration structures consume 8 bytes. "
+                "Storage buffers consume 16 bytes. "
+                "Push constants do not consume space.",
+                VendorSpecificTag(kBPVendorNVIDIA), kPipelineLayoutFastDescriptorSpaceNVIDIA);
         }
     }
 

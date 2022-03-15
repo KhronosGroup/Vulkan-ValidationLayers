@@ -68,6 +68,8 @@ static const float kVertexStreamToDrawRatioWarningLimitAMD = 0.8f;
 static const float kDrawsPerPipelineRatioWarningLimitAMD = 5.f;
 // Check that command buffers are used with an appropriatly sized pool
 static const float kCmdBufferToCmdPoolRatioWarningLimitAMD = 0.1f;
+// Size for fast descriptor reads on modern NVIDIA devices
+static const uint32_t kPipelineLayoutFastDescriptorSpaceNVIDIA = 256;
 
 // How many small indexed drawcalls in a command buffer before a warning is thrown
 static const uint32_t kMaxSmallIndexedDrawcalls = 10;
