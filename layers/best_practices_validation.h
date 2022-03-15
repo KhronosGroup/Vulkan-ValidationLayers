@@ -363,6 +363,7 @@ class BestPractices : public ValidationStateTracker {
                                          const VkBindImageMemoryInfo* pBindInfos) const override;
     bool PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
                                             const VkBindImageMemoryInfo* pBindInfos) const override;
+    void PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) override;
     bool PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) const override;
     bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) const override;
@@ -822,6 +823,8 @@ class BestPractices : public ValidationStateTracker {
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin);
 
     bool ValidateBuildAccelerationStructure(VkCommandBuffer commandBuffer) const;
+
+    bool ValidateBindMemory(VkDevice device, VkDeviceMemory memory) const;
 
     void PipelineUsedInFrame(VkPipeline pipeline) {
         WriteLockGuard guard(pipeline_lock_);

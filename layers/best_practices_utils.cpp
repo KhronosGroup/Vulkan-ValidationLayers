@@ -805,6 +805,8 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
             api_name, report_data->FormatHandle(buffer).c_str(), mem_state->alloc_info.allocationSize, kMinDedicatedAllocationSize);
     }
 
+    skip |= ValidateBindMemory(device, memory);
+
     return skip;
 }
 
@@ -901,6 +903,8 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
         }
     }
 
+    skip |= ValidateBindMemory(device, memory);
+
     return skip;
 }
 
@@ -940,6 +944,11 @@ bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t
     }
 
     return skip;
+}
+
+void BestPractices::PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) {
+    auto mem_info = std::static_pointer_cast<bp_state::DeviceMemory>(Get<DEVICE_MEMORY_STATE>(memory));
+    mem_info->dynamic_priority.emplace(priority);
 }
 
 static inline bool FormatHasFullThroughputBlendingArm(VkFormat format) {
@@ -2508,6 +2517,25 @@ bool BestPractices::ValidateBuildAccelerationStructure(VkCommandBuffer commandBu
                                           "%s Performance warning: Prefer building acceleration structures on an asynchronous "
                                           "compute queue, instead of using the universal graphics queue.",
                                           VendorSpecificTag(kBPVendorNVIDIA));
+        }
+    }
+
+    return skip;
+}
+
+bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory) const {
+    bool skip = false;
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA) && device_extensions.vk_ext_pageable_device_local_memory) {
+        auto mem_info = std::static_pointer_cast<const bp_state::DeviceMemory>(Get<DEVICE_MEMORY_STATE>(memory));
+        if (!mem_info->dynamic_priority) {
+            skip |=
+                LogPerformanceWarning(device, kVUID_BestPractices_BindMemory_NoPriority,
+                                      "%s Use vkSetDeviceMemoryPriorityEXT to provide the OS with information on which allocations "
+                                      "should stay in memory and which should be demoted first when video memory is limited. The "
+                                      "highest priority should be given to GPU-written resources like color attachments, depth "
+                                      "attachments, storage images, and buffers written from the GPU.",
+                                      VendorSpecificTag(kBPVendorNVIDIA));
         }
     }
 
