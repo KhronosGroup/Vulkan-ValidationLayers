@@ -498,3 +498,58 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
         m_errorMonitor->Finish();
     }
 }
+
+static VkDescriptorSetLayoutBinding CreateSingleDescriptorBinding(VkDescriptorType type, uint32_t binding) {
+    VkDescriptorSetLayoutBinding layout_binding = {};
+    layout_binding.binding = binding;
+    layout_binding.descriptorType = type;
+    layout_binding.descriptorCount = 1;
+    layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    layout_binding.pImmutableSamplers = nullptr;
+    return layout_binding;
+}
+
+TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
+    InitBestPracticesFramework(kEnableNVIDIAValidation);
+    InitState();
+
+    VkDescriptorSetLayoutBinding separate_bindings[] = {
+        CreateSingleDescriptorBinding(VK_DESCRIPTOR_TYPE_SAMPLER, 0),
+        CreateSingleDescriptorBinding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1),
+    };
+    VkDescriptorSetLayoutBinding combined_bindings[] = {
+        CreateSingleDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0),
+    };
+
+    VkDescriptorSetLayoutCreateInfo separate_set_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    separate_set_layout_ci.flags = 0;
+    separate_set_layout_ci.bindingCount = sizeof(separate_bindings) / sizeof(separate_bindings[0]);
+    separate_set_layout_ci.pBindings = separate_bindings;
+
+    VkDescriptorSetLayoutCreateInfo combined_set_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    combined_set_layout_ci.flags = 0;
+    combined_set_layout_ci.bindingCount = sizeof(combined_bindings) / sizeof(combined_bindings[0]);
+    combined_set_layout_ci.pBindings = combined_bindings;
+
+    vk_testing::DescriptorSetLayout separate_set_layout(*m_device, separate_set_layout_ci);
+    vk_testing::DescriptorSetLayout combined_set_layout(*m_device, combined_set_layout_ci);
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    pipeline_layout_ci.flags = 0;
+    pipeline_layout_ci.pushConstantRangeCount = 0;
+    pipeline_layout_ci.pPushConstantRanges = nullptr;
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-CreatePipelineLayout-SeparateSampler");
+        vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, {&separate_set_layout});
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-CreatePipelineLayout-SeparateSampler");
+        vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, {&combined_set_layout});
+        m_errorMonitor->Finish();
+    }
+}
