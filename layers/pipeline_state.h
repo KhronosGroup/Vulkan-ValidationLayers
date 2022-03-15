@@ -162,6 +162,10 @@ class PIPELINE_STATE : public BASE_NODE {
 
   protected:
     // NOTE: The style guide suggests private data appear at the end, but we need this populated first, so placing it here
+
+    // Render pass state for dynamic rendering, etc.
+    std::shared_ptr<const RENDER_PASS_STATE> rp_state;
+
     const CreateInfo create_info;
 
   public:
@@ -426,16 +430,19 @@ class PIPELINE_STATE : public BASE_NODE {
     static std::shared_ptr<VertexInputState> CreateVertexInputState(const PIPELINE_STATE &p, const ValidationStateTracker &state,
                                                                     const safe_VkGraphicsPipelineCreateInfo &create_info);
     static std::shared_ptr<PreRasterState> CreatePreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &state,
-                                                                const safe_VkGraphicsPipelineCreateInfo &create_info);
-    static std::shared_ptr<FragmentShaderState> CreateFragmentShaderState(
-        const PIPELINE_STATE &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
-        const safe_VkGraphicsPipelineCreateInfo &safe_create_info);
-    static std::shared_ptr<FragmentOutputState> CreateFragmentOutputState(
-        const PIPELINE_STATE &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
-        const safe_VkGraphicsPipelineCreateInfo &safe_create_info);
+                                                                const safe_VkGraphicsPipelineCreateInfo &create_info,
+                                                                std::shared_ptr<const RENDER_PASS_STATE> rp);
+    static std::shared_ptr<FragmentShaderState> CreateFragmentShaderState(const PIPELINE_STATE &p,
+                                                                          const ValidationStateTracker &state,
+                                                                          const VkGraphicsPipelineCreateInfo &create_info,
+                                                                          const safe_VkGraphicsPipelineCreateInfo &safe_create_info,
+                                                                          std::shared_ptr<const RENDER_PASS_STATE> rp);
+    static std::shared_ptr<FragmentOutputState> CreateFragmentOutputState(const PIPELINE_STATE &p,
+                                                                          const ValidationStateTracker &state,
+                                                                          const VkGraphicsPipelineCreateInfo &create_info,
+                                                                          const safe_VkGraphicsPipelineCreateInfo &safe_create_info,
+                                                                          std::shared_ptr<const RENDER_PASS_STATE> rp);
 
-    // Render pass state for dynamic rendering, etc.
-    std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     // Merged layouts
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> merged_graphics_layout;
 };

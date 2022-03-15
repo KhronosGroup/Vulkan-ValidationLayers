@@ -62,7 +62,7 @@ struct VertexInputState {
 
 struct PreRasterState {
     PreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
-                   const safe_VkGraphicsPipelineCreateInfo &create_info);
+                   const safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const RENDER_PASS_STATE> rp);
 
     const PIPELINE_STATE &parent;
 
@@ -98,12 +98,13 @@ std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(cons
 std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(const VkPipelineShaderStageCreateInfo &cbs);
 
 struct FragmentShaderState {
-    FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, VkRenderPass rp, uint32_t subpass,
-                        VkPipelineLayout layout);
+    FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
+                        std::shared_ptr<const RENDER_PASS_STATE> rp, uint32_t subpass, VkPipelineLayout layout);
 
     template <typename CreateInfo>
-    FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, const CreateInfo &create_info)
-        : FragmentShaderState(p, dev_data, create_info.renderPass, create_info.subpass, create_info.layout) {
+    FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, const CreateInfo &create_info,
+                        std::shared_ptr<const RENDER_PASS_STATE> rp)
+        : FragmentShaderState(p, dev_data, rp, create_info.subpass, create_info.layout) {
         if (create_info.pMultisampleState) {
             ms_state = ToSafeMultisampleState(*create_info.pMultisampleState);
         }
@@ -148,13 +149,13 @@ static bool IsSampleLocationEnabled(const CreateInfo &create_info) {
 struct FragmentOutputState {
     using AttachmentVector = std::vector<VkPipelineColorBlendAttachmentState>;
 
-    FragmentOutputState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, VkRenderPass rp, uint32_t sp);
+    FragmentOutputState(const PIPELINE_STATE &p, std::shared_ptr<const RENDER_PASS_STATE> rp, uint32_t sp);
     // For a graphics library, a "non-safe" create info must be passed in in order for pColorBlendState and pMultisampleState to not
     // get stripped out. If this is a "normal" pipeline, then we want to keep the logic from safe_VkGraphicsPipelineCreateInfo that
     // strips out pointers that should be ignored.
     template <typename CreateInfo>
-    FragmentOutputState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, const CreateInfo &create_info)
-        : FragmentOutputState(p, dev_data, create_info.renderPass, create_info.subpass) {
+    FragmentOutputState(const PIPELINE_STATE &p, const CreateInfo &create_info, std::shared_ptr<const RENDER_PASS_STATE> rp)
+        : FragmentOutputState(p, rp, create_info.subpass) {
         if (create_info.pColorBlendState) {
             if (create_info.pColorBlendState) {
                 color_blend_state = ToSafeColorBlendState(*create_info.pColorBlendState);

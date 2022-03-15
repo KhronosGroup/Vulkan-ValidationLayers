@@ -253,10 +253,11 @@ std::shared_ptr<VertexInputState> PIPELINE_STATE::CreateVertexInputState(const P
 
 // static
 std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &state,
-                                                                     const safe_VkGraphicsPipelineCreateInfo &create_info) {
+                                                                     const safe_VkGraphicsPipelineCreateInfo &create_info,
+                                                                     std::shared_ptr<const RENDER_PASS_STATE> rp) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {  // Pre-raster graphics library
-        return std::make_shared<PreRasterState>(p, state, create_info);
+        return std::make_shared<PreRasterState>(p, state, create_info, rp);
     }
 
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
@@ -267,7 +268,7 @@ std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const PIPEL
         }
     } else {
         if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-            return std::make_shared<PreRasterState>(p, state, create_info);
+            return std::make_shared<PreRasterState>(p, state, create_info, rp);
         }
     }
 
@@ -278,10 +279,10 @@ std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const PIPEL
 // static
 std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
     const PIPELINE_STATE &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
-    const safe_VkGraphicsPipelineCreateInfo &safe_create_info) {
+    const safe_VkGraphicsPipelineCreateInfo &safe_create_info, std::shared_ptr<const RENDER_PASS_STATE> rp) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {  // Fragment shader graphics library
-        return std::make_shared<FragmentShaderState>(p, state, create_info);
+        return std::make_shared<FragmentShaderState>(p, state, create_info, rp);
     }
 
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
@@ -292,7 +293,7 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
         }
     } else {
         if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-            return std::make_shared<FragmentShaderState>(p, state, safe_create_info);
+            return std::make_shared<FragmentShaderState>(p, state, safe_create_info, rp);
         }
     }
 
@@ -305,10 +306,10 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
 // create_info.
 std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
     const PIPELINE_STATE &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
-    const safe_VkGraphicsPipelineCreateInfo &safe_create_info) {
+    const safe_VkGraphicsPipelineCreateInfo &safe_create_info, std::shared_ptr<const RENDER_PASS_STATE> rp) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {  // Fragment output graphics library
-        return std::make_shared<FragmentOutputState>(p, state, create_info);
+        return std::make_shared<FragmentOutputState>(p, create_info, rp);
     }
 
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
@@ -319,7 +320,7 @@ std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
         }
     } else {
         if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-            return std::make_shared<FragmentOutputState>(p, state, safe_create_info);
+            return std::make_shared<FragmentOutputState>(p, safe_create_info, rp);
         }
     }
 
@@ -348,19 +349,19 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
                                std::shared_ptr<const RENDER_PASS_STATE> &&rpstate,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
+      rp_state(rpstate),
       create_info(pCreateInfo, rpstate),
       graphics_lib_type(GetGraphicsLibType(create_info.graphics)),
       vertex_input_state(CreateVertexInputState(*this, *state_data, create_info.graphics)),
-      pre_raster_state(CreatePreRasterState(*this, *state_data, create_info.graphics)),
-      fragment_shader_state(CreateFragmentShaderState(*this, *state_data, *pCreateInfo, create_info.graphics)),
-      fragment_output_state(CreateFragmentOutputState(*this, *state_data, *pCreateInfo, create_info.graphics)),
+      pre_raster_state(CreatePreRasterState(*this, *state_data, create_info.graphics, rpstate)),
+      fragment_shader_state(CreateFragmentShaderState(*this, *state_data, *pCreateInfo, create_info.graphics, rpstate)),
+      fragment_output_state(CreateFragmentOutputState(*this, *state_data, *pCreateInfo, create_info.graphics, rpstate)),
       stage_state(GetStageStates(*state_data, *this)),
       fragmentShader_writable_output_location_list(GetFSOutputLocations(stage_state)),
       active_slots(GetActiveSlots(stage_state)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
       active_shaders(GetActiveShaders(stage_state)),
-      topology_at_rasterizer(GetTopologyAtRasterizer(stage_state, create_info.graphics.pInputAssemblyState)),
-      rp_state(rpstate) {
+      topology_at_rasterizer(GetTopologyAtRasterizer(stage_state, create_info.graphics.pInputAssemblyState)) {
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(PNext());
     if (link_info) {
         // accumulate dynamic state
