@@ -273,6 +273,8 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_QueueBindSparse_NotAsync 
     "UNASSIGNED-BestPractices-QueueBindSparse-NotAsync";
 static const char DECORATE_UNUSED *kVUID_BestPractices_AccelerationStructure_NotAsync =
     "UNASSIGNED-BestPractices-AccelerationStructure-NotAsync";
+static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateMemory_SetPriority =
+    "UNASSIGNED-BestPractices-AllocateMemory-SetPriority";
 
 // clang-format on
 
