@@ -10011,6 +10011,20 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
                          "%s: command can't be used in protected command buffers.", cmd_name);
     }
 
+    if (cb_state->activeRenderPass) {
+        const auto *render_pass_info = cb_state->activeRenderPass->createInfo.ptr();
+        const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state->activeSubpass];
+        constexpr int num_bits = sizeof(subpass_desc->viewMask) * CHAR_BIT;
+        std::bitset<num_bits> view_bits(subpass_desc->viewMask);
+        uint32_t bits = static_cast<uint32_t>(view_bits.count());
+        if (query_obj.query + bits > query_pool_state->createInfo.queryCount) {
+            skip |= LogError(cb_state->commandBuffer(), vuids->vuid_multiview_query,
+                             "%s: query (%" PRIu32 ") + bits set in current subpass view mask (%" PRIu32
+                             ") is greater than the number of queries in queryPool (%" PRIu32 ").",
+                             cmd_name, query_obj.query, bits, query_pool_state->createInfo.queryCount);
+        }
+    }
+
     skip |= ValidateCmd(cb_state, cmd);
     return skip;
 }
@@ -10033,6 +10047,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
             vuid_scope_in_rp = "VUID-vkCmdBeginQuery-queryPool-03225";
             vuid_dup_query_type = "VUID-vkCmdBeginQuery-queryPool-01922";
             vuid_protected_cb = "VUID-vkCmdBeginQuery-commandBuffer-01885";
+            vuid_multiview_query = "VUID-vkCmdBeginQuery-query-00808";
         }
     };
     BeginQueryVuids vuids;
@@ -16788,6 +16803,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
             vuid_scope_in_rp = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03225";
             vuid_dup_query_type = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-04753";
             vuid_protected_cb = "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-01885";
+            vuid_multiview_query = "VUID-vkCmdBeginQueryIndexedEXT-query-00808";
         }
     };
     BeginQueryIndexedVuids vuids;
