@@ -676,97 +676,104 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 
     if (pCB->activeRenderPass && pCB->activeRenderPass->use_dynamic_rendering) {
         const auto &rp_state = pPipeline->RenderPassState();
-        if (rp_state->renderPass() != VK_NULL_HANDLE) {
-            skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_06198,
-                "%s: Currently bound pipeline %s must have been created with a VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
-                caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
-        }
+        if (rp_state) {
+            if (rp_state->renderPass() != VK_NULL_HANDLE) {
+                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_06198,
+                                 "%s: Currently bound pipeline %s must have been created with a "
+                                 "VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
+                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+            }
 
-        if (rp_state->dynamic_rendering_pipeline_create_info.viewMask !=
-            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask) {
-            skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_view_mask,
-                             "%s: Currently bound pipeline %s viewMask ([%" PRIu32
-                             ") must be equal to pBeginRendering->viewMask ([%" PRIu32 ")",
-                             caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
-                             rp_state->dynamic_rendering_pipeline_create_info.viewMask,
-                             pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask);
-        }
+            if (rp_state->dynamic_rendering_pipeline_create_info.viewMask !=
+                pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask) {
+                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_view_mask,
+                                 "%s: Currently bound pipeline %s viewMask ([%" PRIu32
+                                 ") must be equal to pBeginRendering->viewMask ([%" PRIu32 ")",
+                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
+                                 rp_state->dynamic_rendering_pipeline_create_info.viewMask,
+                                 pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask);
+            }
 
-        const auto color_attachment_count = rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount;
-        if (color_attachment_count &&
-            (color_attachment_count != pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount)) {
-            skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_count,
-                             "%s: Currently bound pipeline %s colorAttachmentCount ([%" PRIu32
-                             ") must be equal to pBeginRendering->colorAttachmentCount ([%" PRIu32 ")",
-                             caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
-                             rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount,
-                             pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount);
-        }
+            const auto color_attachment_count = rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount;
+            if (color_attachment_count &&
+                (color_attachment_count != pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount)) {
+                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_count,
+                                 "%s: Currently bound pipeline %s colorAttachmentCount ([%" PRIu32
+                                 ") must be equal to pBeginRendering->colorAttachmentCount ([%" PRIu32 ")",
+                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
+                                 rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount,
+                                 pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount);
+            }
 
-        if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
-            for (uint32_t i = 0; i < pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
-                if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
-                    auto view_state = Get<IMAGE_VIEW_STATE>(
-                        pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView);
-                    if ((rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount > i) &&
-                        view_state->create_info.format !=
-                            rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[i]) {
-                        skip |=
-                            LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_formats,
-                                     "%s: Color attachment ([%" PRIu32
-                                     ") imageView format (%s) must match corresponding format in pipeline (%s)",
-                                     caller, i, string_VkFormat(view_state->create_info.format),
-                                     string_VkFormat(rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[i]));
+            if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
+                for (uint32_t i = 0; i < pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
+                    if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView !=
+                        VK_NULL_HANDLE) {
+                        auto view_state = Get<IMAGE_VIEW_STATE>(
+                            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView);
+                        if ((rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount > i) &&
+                            view_state->create_info.format !=
+                                rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[i]) {
+                            skip |= LogError(
+                                pCB->commandBuffer(), vuid.dynamic_rendering_color_formats,
+                                "%s: Color attachment ([%" PRIu32
+                                ") imageView format (%s) must match corresponding format in pipeline (%s)",
+                                caller, i, string_VkFormat(view_state->create_info.format),
+                                string_VkFormat(rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[i]));
+                        }
                     }
                 }
             }
-        }
 
-        if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment &&
-            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
-            auto view_state =
-                Get<IMAGE_VIEW_STATE>(pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView);
-            if (view_state->create_info.format != rp_state->dynamic_rendering_pipeline_create_info.depthAttachmentFormat) {
-                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_depth_format,
-                                 "%s: Depth attachment imageView format (%s) must match corresponding format in pipeline (%s)",
-                                 caller, string_VkFormat(view_state->create_info.format),
-                                 string_VkFormat(rp_state->dynamic_rendering_pipeline_create_info.depthAttachmentFormat));
+            if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment &&
+                pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
+                auto view_state = Get<IMAGE_VIEW_STATE>(
+                    pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView);
+                if (view_state->create_info.format != rp_state->dynamic_rendering_pipeline_create_info.depthAttachmentFormat) {
+                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_depth_format,
+                                     "%s: Depth attachment imageView format (%s) must match corresponding format in pipeline (%s)",
+                                     caller, string_VkFormat(view_state->create_info.format),
+                                     string_VkFormat(rp_state->dynamic_rendering_pipeline_create_info.depthAttachmentFormat));
+                }
             }
-        }
 
-        if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment &&
-            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
-            auto view_state =
-                Get<IMAGE_VIEW_STATE>(pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView);
-            if (view_state->create_info.format != rp_state->dynamic_rendering_pipeline_create_info.stencilAttachmentFormat) {
-                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_stencil_format,
+            if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment &&
+                pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
+                auto view_state = Get<IMAGE_VIEW_STATE>(
+                    pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView);
+                if (view_state->create_info.format != rp_state->dynamic_rendering_pipeline_create_info.stencilAttachmentFormat) {
+                    skip |=
+                        LogError(pCB->commandBuffer(), vuid.dynamic_rendering_stencil_format,
                                  "%s: Stencil attachment imageView format (%s) must match corresponding format in pipeline (%s)",
                                  caller, string_VkFormat(view_state->create_info.format),
                                  string_VkFormat(rp_state->dynamic_rendering_pipeline_create_info.stencilAttachmentFormat));
+                }
             }
-        }
 
-        auto rendering_fragment_shading_rate_attachment_info = LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(
-            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
-        if (rendering_fragment_shading_rate_attachment_info &&
-            (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
-            if (!(rp_state->createInfo.flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
-                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_fsr,
-                                 "%s: Currently bound graphics pipeline %s must have been created with "
-                                 "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
-                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+            auto rendering_fragment_shading_rate_attachment_info = LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(
+                pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
+            if (rendering_fragment_shading_rate_attachment_info &&
+                (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
+                if (!(rp_state->createInfo.flags &
+                      VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_fsr,
+                                     "%s: Currently bound graphics pipeline %s must have been created with "
+                                     "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+                                     caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+                }
             }
-        }
 
-        auto rendering_fragment_shading_rate_density_map = LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(
-            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
-        if (rendering_fragment_shading_rate_density_map &&
-            (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
-            if (!(rp_state->createInfo.flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
-                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_fdm,
-                                 "%s: Currently bound graphics pipeline %s must have been created with "
-                                 "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
-                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+            auto rendering_fragment_shading_rate_density_map = LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(
+                pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
+            if (rendering_fragment_shading_rate_density_map &&
+                (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
+                if (!(rp_state->createInfo.flags &
+                      VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
+                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_fdm,
+                                     "%s: Currently bound graphics pipeline %s must have been created with "
+                                     "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
+                                     caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+                }
             }
         }
 
@@ -1319,7 +1326,14 @@ static bool VerifySetLayoutCompatibility(const debug_report_data *report_data, c
     }
     if (descriptor_set->IsPushDescriptor()) return true;
     const auto *layout_node = pipeline_layout->set_layouts[layoutIndex].get();
-    return cvdescriptorset::VerifySetLayoutCompatibility(report_data, layout_node, descriptor_set->GetLayout().get(), &errorMsg);
+    if (layout_node) {
+        return cvdescriptorset::VerifySetLayoutCompatibility(report_data, layout_node, descriptor_set->GetLayout().get(),
+                                                             &errorMsg);
+    } else {
+        // It's possible the DSL is null when creating a graphics pipeline library, in which case we can't verify compatibility
+        // here.
+        return true;
+    }
 }
 
 // Validate overall state at the time of a draw call
@@ -1658,6 +1672,15 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
     safe_VkSubpassDescription2 *subpass_desc = nullptr;
 
     const auto &rp_state = pPipeline->RenderPassState();
+
+    if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) &&
+        (pPipeline->pre_raster_state || pPipeline->fragment_shader_state || pPipeline->fragment_output_state) && !rp_state) {
+        skip |=
+            LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575",
+                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] requires a valid renderPass, but one was not provided",
+                     pipelineIndex);
+    }
+
     const auto subpass = pPipeline->Subpass();
     if (rp_state && !rp_state->use_dynamic_rendering) {
         // Ensure the subpass index is valid. If not, then ValidateGraphicsPipelineShaderState
