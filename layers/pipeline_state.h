@@ -206,7 +206,8 @@ class PIPELINE_STATE : public BASE_NODE {
                    std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
 
     // Executable pipeline with all state defined within linked pipeline libraries
-    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo);
+    PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
+                   std::shared_ptr<const RENDER_PASS_STATE> &&rpstate = {});
 
     VkPipeline pipeline() const { return handle_.Cast<VkPipeline>(); }
 
