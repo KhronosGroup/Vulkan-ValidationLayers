@@ -98,6 +98,10 @@ TEST_F(VkLayerTest, DynamicRenderingCommandBufferInheritanceRenderingInfo) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06200");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06540");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06541");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkAttachmentSampleCountInfoAMD-pColorAttachmentSamples-parameter");
 
@@ -1481,7 +1485,7 @@ TEST_F(VkLayerTest, DynamicRenderingLayerCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestRenderingInfoMismatchedSamples) {
+TEST_F(VkLayerTest, DynamicRenderingTestRenderingInfoMismatchedSamples) {
     TEST_DESCRIPTION("Test beginning rendering with mismatched sample counts.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1578,7 +1582,7 @@ TEST_F(VkLayerTest, TestRenderingInfoMismatchedSamples) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestDeviceGroupRenderPassBeginInfo) {
+TEST_F(VkLayerTest, DynamicRenderingTestDeviceGroupRenderPassBeginInfo) {
     TEST_DESCRIPTION("Test render area of DeviceGroupRenderPassBeginInfo.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1649,7 +1653,7 @@ TEST_F(VkLayerTest, TestDeviceGroupRenderPassBeginInfo) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, BeginRenderingInvalidDepthAttachmentFormat) {
+TEST_F(VkLayerTest, DynamicRenderingBeginRenderingInvalidDepthAttachmentFormat) {
     TEST_DESCRIPTION("Test begin rendering with a depth attachment that has an invalid format");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1785,10 +1789,12 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfoImageView) {
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.pDepthAttachment = &depth_attachment;
+    begin_rendering_info.layerCount = 1;
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pDepthAttachment-06102");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06070");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06130");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06131");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06131");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06132");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06133");
@@ -1913,6 +1919,7 @@ TEST_F(VkLayerTest, DynamicRenderingFragmentShadingRateAttachmentInfo) {
     VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate_attachment =
         LvlInitStruct<VkRenderingFragmentShadingRateAttachmentInfoKHR>();
     fragment_shading_rate_attachment.imageView = attachment_image_view.handle();
+    fragment_shading_rate_attachment.imageLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
 
     VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageView = color_image_view.handle();
@@ -1922,9 +1929,9 @@ TEST_F(VkLayerTest, DynamicRenderingFragmentShadingRateAttachmentInfo) {
     begin_rendering_info.pNext = &fragment_shading_rate_attachment;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06147");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06148");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06149");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06151");
