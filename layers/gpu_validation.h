@@ -206,7 +206,7 @@ class GpuAssisted : public ValidationStateTracker {
                                    VkBuffer* pBuffer, void* cb_state_data) override;
     void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkBuffer* pBuffer, VkResult result) override;
-    void CreateAccelerationStructureBuildValidationState(GpuAssisted* device_GpuAssisted);
+    void CreateAccelerationStructureBuildValidationState();
     void DestroyAccelerationStructureBuildValidationState();
     void PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
                                                       VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
