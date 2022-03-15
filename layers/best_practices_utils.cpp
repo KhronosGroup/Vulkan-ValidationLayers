@@ -3703,6 +3703,26 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
         }
     }
 
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        bool has_separate_sampler = false;
+
+        for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
+            auto descriptor_set_layout_state = Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
+            for (const auto& binding : descriptor_set_layout_state->GetBindings()) {
+                if (binding.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) {
+                    has_separate_sampler = true;
+                }
+            }
+        }
+
+        if (has_separate_sampler) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreatePipelineLayout_SeparateSampler,
+                "%s Consider using combined image samplers instead of separate samplers for marginally better performance.",
+                VendorSpecificTag(kBPVendorNVIDIA));
+        }
+    }
+
     return skip;
 }
 
