@@ -221,6 +221,17 @@ class Swapchain : public SWAPCHAIN_NODE {
     CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
 };
 
+class DeviceMemory : public DEVICE_MEMORY_STATE {
+  public:
+    DeviceMemory(VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info, uint64_t fake_address,
+                 const VkMemoryType& memory_type, const VkMemoryHeap& memory_heap,
+                 layer_data::optional<DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count)
+        : DEVICE_MEMORY_STATE(mem, p_alloc_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
+                              physical_device_count) {}
+
+    layer_data::optional<float> dynamic_priority; // VK_EXT_pageable_device_local_memory priority
+};
+
 struct AttachmentInfo {
     uint32_t framebufferAttachment;
     VkImageAspectFlags aspects;
@@ -751,6 +762,15 @@ class BestPractices : public ValidationStateTracker {
     std::shared_ptr<DESCRIPTOR_POOL_STATE> CreateDescriptorPoolState(VkDescriptorPool pool,
                                                                      const VkDescriptorPoolCreateInfo* pCreateInfo) final {
         return std::static_pointer_cast<DESCRIPTOR_POOL_STATE>(std::make_shared<bp_state::DescriptorPool>(this, pool, pCreateInfo));
+    }
+
+    std::shared_ptr<DEVICE_MEMORY_STATE> CreateDeviceMemoryState(VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info,
+                                                                 uint64_t fake_address, const VkMemoryType& memory_type,
+                                                                 const VkMemoryHeap& memory_heap,
+                                                                 layer_data::optional<DedicatedBinding>&& dedicated_binding,
+                                                                 uint32_t physical_device_count) final {
+        return std::static_pointer_cast<DEVICE_MEMORY_STATE>(std::make_shared<bp_state::DeviceMemory>(
+            mem, p_alloc_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding), physical_device_count));
     }
 
     std::shared_ptr<PIPELINE_STATE> CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,

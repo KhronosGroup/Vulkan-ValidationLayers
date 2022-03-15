@@ -1665,8 +1665,8 @@ void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const
             dedicated_binding.emplace(dedicated->image, image_state->createInfo);
         }
     }
-    Add(std::make_shared<DEVICE_MEMORY_STATE>(*pMemory, pAllocateInfo, fake_address, memory_type, memory_heap,
-                                              std::move(dedicated_binding), physical_device_count));
+    Add(CreateDeviceMemoryState(*pMemory, pAllocateInfo, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
+                                physical_device_count));
     return;
 }
 
@@ -4863,4 +4863,11 @@ std::shared_ptr<CMD_BUFFER_STATE> ValidationStateTracker::CreateCmdBufferState(V
                                                                                const VkCommandBufferAllocateInfo *create_info,
                                                                                const COMMAND_POOL_STATE *pool) {
     return std::make_shared<CMD_BUFFER_STATE>(this, cb, create_info, pool);
+}
+
+std::shared_ptr<DEVICE_MEMORY_STATE> ValidationStateTracker::CreateDeviceMemoryState(
+    VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address, const VkMemoryType &memory_type,
+    const VkMemoryHeap &memory_heap, layer_data::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count) {
+    return std::make_shared<DEVICE_MEMORY_STATE>(mem, p_alloc_info, fake_address, memory_type, memory_heap,
+                                                 std::move(dedicated_binding), physical_device_count);
 }

@@ -881,6 +881,13 @@ class ValidationStateTracker : public ValidationObject {
                                                          VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                          const void* pData) override;
 
+    virtual std::shared_ptr<DEVICE_MEMORY_STATE> CreateDeviceMemoryState(VkDeviceMemory mem,
+                                                                         const VkMemoryAllocateInfo* p_alloc_info,
+                                                                         uint64_t fake_address, const VkMemoryType& memory_type,
+                                                                         const VkMemoryHeap& memory_heap,
+                                                                         layer_data::optional<DedicatedBinding>&& dedicated_binding,
+                                                                         uint32_t physical_device_count);
+
     // Memory mapping
     void PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
                                  void** ppData, VkResult result) override;
