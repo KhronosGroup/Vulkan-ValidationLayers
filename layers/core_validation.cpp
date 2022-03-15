@@ -1326,7 +1326,7 @@ static bool VerifySetLayoutCompatibility(const debug_report_data *report_data, c
     }
     if (descriptor_set->IsPushDescriptor()) return true;
     const auto *layout_node = pipeline_layout->set_layouts[layoutIndex].get();
-    if (layout_node) {
+    if (layout_node && (descriptor_set->GetBindingCount() > 0) && (layout_node->GetBindingCount() > 0)) {
         return cvdescriptorset::VerifySetLayoutCompatibility(report_data, layout_node, descriptor_set->GetLayout().get(),
                                                              &errorMsg);
     } else {
