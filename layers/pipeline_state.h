@@ -273,12 +273,12 @@ class PIPELINE_STATE : public BASE_NODE {
 
     const std::shared_ptr<const RENDER_PASS_STATE> RenderPassState() const {
         // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?
-        if (pre_raster_state && pre_raster_state->rp_state) {
-            return pre_raster_state->rp_state;
+        if (fragment_output_state && fragment_output_state->rp_state) {
+            return fragment_output_state->rp_state;
         } else if (fragment_shader_state && fragment_shader_state->rp_state) {
             return fragment_shader_state->rp_state;
-        } else if (fragment_output_state && fragment_output_state->rp_state) {
-            return fragment_output_state->rp_state;
+        } else if (pre_raster_state && pre_raster_state->rp_state) {
+            return pre_raster_state->rp_state;
         }
         return rp_state;
     }
