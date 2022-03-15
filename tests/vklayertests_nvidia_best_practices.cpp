@@ -416,3 +416,85 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_SetPriority) {
         m_errorMonitor->Finish();
     }
 }
+
+TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    InitBestPracticesFramework(kEnableNVIDIAValidation);
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan >= 1.1 required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    InitState();
+
+    VkDeviceQueueCreateInfo queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    queue_ci.queueFamilyIndex = 0;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = &defaultQueuePriority;
+
+    VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageable_features = LvlInitStruct<VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT>();
+    pageable_features.pNext = nullptr;
+    pageable_features.pageableDeviceLocalMemory = VK_TRUE;
+
+    VkPhysicalDeviceMaintenance4Features maintenance4_features = LvlInitStruct<VkPhysicalDeviceMaintenance4Features>();
+    maintenance4_features.pNext = &pageable_features;
+    maintenance4_features.maintenance4 = VK_TRUE;
+
+    VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    device_ci.pNext = &maintenance4_features;
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    vk_testing::Device test_device(gpu());
+    test_device.init(device_ci);
+
+    VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.flags = 0;
+    buffer_ci.size = 0x100000;
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buffer_ci.queueFamilyIndexCount = 0;
+    buffer_ci.pQueueFamilyIndices = nullptr;
+
+    vk_testing::Buffer buffer_a(test_device, buffer_ci, vk_testing::no_mem);
+    vk_testing::Buffer buffer_b(test_device, buffer_ci, vk_testing::no_mem);
+
+    const VkMemoryRequirements memory_requirements = buffer_a.memory_requirements();
+    ASSERT_NE(memory_requirements.memoryTypeBits, 0);
+
+    // Find first valid bit, whatever it is
+    uint32_t memory_type_index = 0;
+    while (((memory_requirements.memoryTypeBits >> memory_type_index) & 1) == 0) {
+        ++memory_type_index;
+    }
+
+    VkMemoryAllocateInfo memory_ai = LvlInitStruct<VkMemoryAllocateInfo>();
+    memory_ai.allocationSize = memory_requirements.size;
+    memory_ai.memoryTypeIndex = memory_type_index;
+
+    vk_testing::DeviceMemory memory(test_device, memory_ai);
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-BindMemory-NoPriority");
+        vk::BindBufferMemory(test_device.handle(), buffer_a.handle(), memory.handle(), 0);
+        m_errorMonitor->VerifyFound();
+    }
+
+    auto vkSetDeviceMemoryPriorityEXT = reinterpret_cast<PFN_vkSetDeviceMemoryPriorityEXT>(
+        vk::GetDeviceProcAddr(test_device.handle(), "vkSetDeviceMemoryPriorityEXT"));
+    vkSetDeviceMemoryPriorityEXT(test_device.handle(), memory.handle(), 0.5f);
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-BindMemory-NoPriority");
+        vk::BindBufferMemory(test_device.handle(), buffer_b.handle(), memory.handle(), 0);
+        m_errorMonitor->Finish();
+    }
+}
