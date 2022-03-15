@@ -553,3 +553,48 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
         m_errorMonitor->Finish();
     }
 }
+
+TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout) {
+    InitBestPracticesFramework(kEnableNVIDIAValidation);
+    InitState();
+
+    VkDescriptorSetLayoutBinding large_bindings[] = {
+        { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
+        { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
+    };
+    VkDescriptorSetLayoutBinding small_bindings[] = {
+        { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
+    };
+
+    VkDescriptorSetLayoutCreateInfo large_set_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    large_set_layout_ci.flags = 0;
+    large_set_layout_ci.bindingCount = sizeof(large_bindings) / sizeof(large_bindings[0]);
+    large_set_layout_ci.pBindings = large_bindings;
+
+    VkDescriptorSetLayoutCreateInfo small_set_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    small_set_layout_ci.flags = 0;
+    small_set_layout_ci.bindingCount = sizeof(small_bindings) / sizeof(small_bindings[0]);
+    small_set_layout_ci.pBindings = small_bindings;
+
+    vk_testing::DescriptorSetLayout large_set_layout(*m_device, large_set_layout_ci);
+    vk_testing::DescriptorSetLayout small_set_layout(*m_device, small_set_layout_ci);
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    pipeline_layout_ci.flags = 0;
+    pipeline_layout_ci.pushConstantRangeCount = 0;
+    pipeline_layout_ci.pPushConstantRanges = nullptr;
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-CreatePipelineLayout-LargePipelineLayout");
+        vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, {&large_set_layout});
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-CreatePipelineLayout-LargePipelineLayout");
+        vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, {&small_set_layout});
+        m_errorMonitor->Finish();
+    }
+}
