@@ -9701,6 +9701,42 @@ void DispatchSetDeviceMemoryPriorityEXT(
 
 }
 
+void DispatchGetDescriptorSetLayoutHostMappingInfoVALVE(
+    VkDevice                                    device,
+    const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
+    VkDescriptorSetLayoutHostMappingInfoVALVE*  pHostMapping)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
+    safe_VkDescriptorSetBindingReferenceVALVE var_local_pBindingReference;
+    safe_VkDescriptorSetBindingReferenceVALVE *local_pBindingReference = NULL;
+    {
+        if (pBindingReference) {
+            local_pBindingReference = &var_local_pBindingReference;
+            local_pBindingReference->initialize(pBindingReference);
+            if (pBindingReference->descriptorSetLayout) {
+                local_pBindingReference->descriptorSetLayout = layer_data->Unwrap(pBindingReference->descriptorSetLayout);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.GetDescriptorSetLayoutHostMappingInfoVALVE(device, (const VkDescriptorSetBindingReferenceVALVE*)local_pBindingReference, pHostMapping);
+
+}
+
+void DispatchGetDescriptorSetHostMappingVALVE(
+    VkDevice                                    device,
+    VkDescriptorSet                             descriptorSet,
+    void**                                      ppData)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
+    {
+        descriptorSet = layer_data->Unwrap(descriptorSet);
+    }
+    layer_data->device_dispatch_table.GetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
+
+}
+
 VkResult DispatchCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

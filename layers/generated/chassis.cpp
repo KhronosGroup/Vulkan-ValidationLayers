@@ -8681,6 +8681,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(
 
 
 
+
 VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirementsKHR(
     VkDevice                                    device,
     const VkDeviceBufferMemoryRequirements*     pInfo,
@@ -12700,6 +12701,51 @@ VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(
 }
 
 
+VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutHostMappingInfoVALVE(
+    VkDevice                                    device,
+    const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
+    VkDescriptorSetLayoutHostMappingInfoVALVE*  pHostMapping) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetDescriptorSetLayoutHostMappingInfoVALVE]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
+    }
+    DispatchGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(
+    VkDevice                                    device,
+    VkDescriptorSet                             descriptorSet,
+    void**                                      ppData) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetDescriptorSetHostMappingVALVE]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDescriptorSetHostMappingVALVE]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
+    }
+    DispatchGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetHostMappingVALVE]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
+    }
+}
+
+
 
 
 
@@ -13842,6 +13888,8 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
     {"vkCmdDrawMultiEXT", {kFuncTypeDev, (void*)CmdDrawMultiEXT}},
     {"vkCmdDrawMultiIndexedEXT", {kFuncTypeDev, (void*)CmdDrawMultiIndexedEXT}},
     {"vkSetDeviceMemoryPriorityEXT", {kFuncTypeDev, (void*)SetDeviceMemoryPriorityEXT}},
+    {"vkGetDescriptorSetLayoutHostMappingInfoVALVE", {kFuncTypeDev, (void*)GetDescriptorSetLayoutHostMappingInfoVALVE}},
+    {"vkGetDescriptorSetHostMappingVALVE", {kFuncTypeDev, (void*)GetDescriptorSetHostMappingVALVE}},
     {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
     {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
     {"vkCmdBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresKHR}},

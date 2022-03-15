@@ -4759,6 +4759,23 @@ struct safe_VkVideoCodingControlInfoKHR {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+struct safe_VkVideoDecodeCapabilitiesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkVideoDecodeCapabilityFlagsKHR flags;
+    safe_VkVideoDecodeCapabilitiesKHR(const VkVideoDecodeCapabilitiesKHR* in_struct);
+    safe_VkVideoDecodeCapabilitiesKHR(const safe_VkVideoDecodeCapabilitiesKHR& copy_src);
+    safe_VkVideoDecodeCapabilitiesKHR& operator=(const safe_VkVideoDecodeCapabilitiesKHR& copy_src);
+    safe_VkVideoDecodeCapabilitiesKHR();
+    ~safe_VkVideoDecodeCapabilitiesKHR();
+    void initialize(const VkVideoDecodeCapabilitiesKHR* in_struct);
+    void initialize(const safe_VkVideoDecodeCapabilitiesKHR* copy_src);
+    VkVideoDecodeCapabilitiesKHR *ptr() { return reinterpret_cast<VkVideoDecodeCapabilitiesKHR *>(this); }
+    VkVideoDecodeCapabilitiesKHR const *ptr() const { return reinterpret_cast<VkVideoDecodeCapabilitiesKHR const *>(this); }
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 struct safe_VkVideoDecodeInfoKHR {
     VkStructureType sType;
     const void* pNext;
@@ -11075,6 +11092,53 @@ struct safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT {
     void initialize(const safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT* copy_src);
     VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *>(this); }
     VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 descriptorSetHostMapping;
+    safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE(const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* in_struct);
+    safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE(const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE& copy_src);
+    safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE& operator=(const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE& copy_src);
+    safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE();
+    ~safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE();
+    void initialize(const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* in_struct);
+    void initialize(const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* copy_src);
+    VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE *ptr() { return reinterpret_cast<VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE *>(this); }
+    VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE const *>(this); }
+};
+
+struct safe_VkDescriptorSetBindingReferenceVALVE {
+    VkStructureType sType;
+    const void* pNext;
+    VkDescriptorSetLayout descriptorSetLayout;
+    uint32_t binding;
+    safe_VkDescriptorSetBindingReferenceVALVE(const VkDescriptorSetBindingReferenceVALVE* in_struct);
+    safe_VkDescriptorSetBindingReferenceVALVE(const safe_VkDescriptorSetBindingReferenceVALVE& copy_src);
+    safe_VkDescriptorSetBindingReferenceVALVE& operator=(const safe_VkDescriptorSetBindingReferenceVALVE& copy_src);
+    safe_VkDescriptorSetBindingReferenceVALVE();
+    ~safe_VkDescriptorSetBindingReferenceVALVE();
+    void initialize(const VkDescriptorSetBindingReferenceVALVE* in_struct);
+    void initialize(const safe_VkDescriptorSetBindingReferenceVALVE* copy_src);
+    VkDescriptorSetBindingReferenceVALVE *ptr() { return reinterpret_cast<VkDescriptorSetBindingReferenceVALVE *>(this); }
+    VkDescriptorSetBindingReferenceVALVE const *ptr() const { return reinterpret_cast<VkDescriptorSetBindingReferenceVALVE const *>(this); }
+};
+
+struct safe_VkDescriptorSetLayoutHostMappingInfoVALVE {
+    VkStructureType sType;
+    void* pNext;
+    size_t descriptorOffset;
+    uint32_t descriptorSize;
+    safe_VkDescriptorSetLayoutHostMappingInfoVALVE(const VkDescriptorSetLayoutHostMappingInfoVALVE* in_struct);
+    safe_VkDescriptorSetLayoutHostMappingInfoVALVE(const safe_VkDescriptorSetLayoutHostMappingInfoVALVE& copy_src);
+    safe_VkDescriptorSetLayoutHostMappingInfoVALVE& operator=(const safe_VkDescriptorSetLayoutHostMappingInfoVALVE& copy_src);
+    safe_VkDescriptorSetLayoutHostMappingInfoVALVE();
+    ~safe_VkDescriptorSetLayoutHostMappingInfoVALVE();
+    void initialize(const VkDescriptorSetLayoutHostMappingInfoVALVE* in_struct);
+    void initialize(const safe_VkDescriptorSetLayoutHostMappingInfoVALVE* copy_src);
+    VkDescriptorSetLayoutHostMappingInfoVALVE *ptr() { return reinterpret_cast<VkDescriptorSetLayoutHostMappingInfoVALVE *>(this); }
+    VkDescriptorSetLayoutHostMappingInfoVALVE const *ptr() const { return reinterpret_cast<VkDescriptorSetLayoutHostMappingInfoVALVE const *>(this); }
 };
 
 struct safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM {
