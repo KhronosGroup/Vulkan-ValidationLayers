@@ -21345,8 +21345,12 @@ safe_VkVideoProfilesKHR::safe_VkVideoProfilesKHR(const VkVideoProfilesKHR* in_st
     pProfiles(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
-    if (in_struct->pProfiles)
-        pProfiles = new safe_VkVideoProfileKHR(in_struct->pProfiles);
+    if (profileCount && in_struct->pProfiles) {
+        pProfiles = new safe_VkVideoProfileKHR[profileCount];
+        for (uint32_t i = 0; i < profileCount; ++i) {
+            pProfiles[i].initialize(&in_struct->pProfiles[i]);
+        }
+    }
 }
 
 safe_VkVideoProfilesKHR::safe_VkVideoProfilesKHR() :
@@ -21362,8 +21366,12 @@ safe_VkVideoProfilesKHR::safe_VkVideoProfilesKHR(const safe_VkVideoProfilesKHR& 
     profileCount = copy_src.profileCount;
     pProfiles = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
-    if (copy_src.pProfiles)
-        pProfiles = new safe_VkVideoProfileKHR(*copy_src.pProfiles);
+    if (profileCount && copy_src.pProfiles) {
+        pProfiles = new safe_VkVideoProfileKHR[profileCount];
+        for (uint32_t i = 0; i < profileCount; ++i) {
+            pProfiles[i].initialize(&copy_src.pProfiles[i]);
+        }
+    }
 }
 
 safe_VkVideoProfilesKHR& safe_VkVideoProfilesKHR::operator=(const safe_VkVideoProfilesKHR& copy_src)
@@ -21371,7 +21379,7 @@ safe_VkVideoProfilesKHR& safe_VkVideoProfilesKHR::operator=(const safe_VkVideoPr
     if (&copy_src == this) return *this;
 
     if (pProfiles)
-        delete pProfiles;
+        delete[] pProfiles;
     if (pNext)
         FreePnextChain(pNext);
 
@@ -21379,8 +21387,12 @@ safe_VkVideoProfilesKHR& safe_VkVideoProfilesKHR::operator=(const safe_VkVideoPr
     profileCount = copy_src.profileCount;
     pProfiles = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
-    if (copy_src.pProfiles)
-        pProfiles = new safe_VkVideoProfileKHR(*copy_src.pProfiles);
+    if (profileCount && copy_src.pProfiles) {
+        pProfiles = new safe_VkVideoProfileKHR[profileCount];
+        for (uint32_t i = 0; i < profileCount; ++i) {
+            pProfiles[i].initialize(&copy_src.pProfiles[i]);
+        }
+    }
 
     return *this;
 }
@@ -21388,7 +21400,7 @@ safe_VkVideoProfilesKHR& safe_VkVideoProfilesKHR::operator=(const safe_VkVideoPr
 safe_VkVideoProfilesKHR::~safe_VkVideoProfilesKHR()
 {
     if (pProfiles)
-        delete pProfiles;
+        delete[] pProfiles;
     if (pNext)
         FreePnextChain(pNext);
 }
@@ -21399,8 +21411,12 @@ void safe_VkVideoProfilesKHR::initialize(const VkVideoProfilesKHR* in_struct)
     profileCount = in_struct->profileCount;
     pProfiles = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
-    if (in_struct->pProfiles)
-        pProfiles = new safe_VkVideoProfileKHR(in_struct->pProfiles);
+    if (profileCount && in_struct->pProfiles) {
+        pProfiles = new safe_VkVideoProfileKHR[profileCount];
+        for (uint32_t i = 0; i < profileCount; ++i) {
+            pProfiles[i].initialize(&in_struct->pProfiles[i]);
+        }
+    }
 }
 
 void safe_VkVideoProfilesKHR::initialize(const safe_VkVideoProfilesKHR* copy_src)
@@ -21409,8 +21425,12 @@ void safe_VkVideoProfilesKHR::initialize(const safe_VkVideoProfilesKHR* copy_src
     profileCount = copy_src->profileCount;
     pProfiles = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
-    if (copy_src->pProfiles)
-        pProfiles = new safe_VkVideoProfileKHR(*copy_src->pProfiles);
+    if (profileCount && copy_src->pProfiles) {
+        pProfiles = new safe_VkVideoProfileKHR[profileCount];
+        for (uint32_t i = 0; i < profileCount; ++i) {
+            pProfiles[i].initialize(&copy_src->pProfiles[i]);
+        }
+    }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -22425,6 +22445,64 @@ void safe_VkVideoCodingControlInfoKHR::initialize(const VkVideoCodingControlInfo
 }
 
 void safe_VkVideoCodingControlInfoKHR::initialize(const safe_VkVideoCodingControlInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkVideoDecodeCapabilitiesKHR::safe_VkVideoDecodeCapabilitiesKHR(const VkVideoDecodeCapabilitiesKHR* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkVideoDecodeCapabilitiesKHR::safe_VkVideoDecodeCapabilitiesKHR() :
+    sType(VK_STRUCTURE_TYPE_VIDEO_DECODE_CAPABILITIES_KHR),
+    pNext(nullptr),
+    flags()
+{}
+
+safe_VkVideoDecodeCapabilitiesKHR::safe_VkVideoDecodeCapabilitiesKHR(const safe_VkVideoDecodeCapabilitiesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkVideoDecodeCapabilitiesKHR& safe_VkVideoDecodeCapabilitiesKHR::operator=(const safe_VkVideoDecodeCapabilitiesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkVideoDecodeCapabilitiesKHR::~safe_VkVideoDecodeCapabilitiesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkVideoDecodeCapabilitiesKHR::initialize(const VkVideoDecodeCapabilitiesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkVideoDecodeCapabilitiesKHR::initialize(const safe_VkVideoDecodeCapabilitiesKHR* copy_src)
 {
     sType = copy_src->sType;
     flags = copy_src->flags;
@@ -49514,6 +49592,180 @@ void safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::initialize(const
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE(const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* in_struct) :
+    sType(in_struct->sType),
+    descriptorSetHostMapping(in_struct->descriptorSetHostMapping)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE),
+    pNext(nullptr),
+    descriptorSetHostMapping()
+{}
+
+safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE(const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE& copy_src)
+{
+    sType = copy_src.sType;
+    descriptorSetHostMapping = copy_src.descriptorSetHostMapping;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE& safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::operator=(const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    descriptorSetHostMapping = copy_src.descriptorSetHostMapping;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::~safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::initialize(const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* in_struct)
+{
+    sType = in_struct->sType;
+    descriptorSetHostMapping = in_struct->descriptorSetHostMapping;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::initialize(const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* copy_src)
+{
+    sType = copy_src->sType;
+    descriptorSetHostMapping = copy_src->descriptorSetHostMapping;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDescriptorSetBindingReferenceVALVE::safe_VkDescriptorSetBindingReferenceVALVE(const VkDescriptorSetBindingReferenceVALVE* in_struct) :
+    sType(in_struct->sType),
+    descriptorSetLayout(in_struct->descriptorSetLayout),
+    binding(in_struct->binding)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDescriptorSetBindingReferenceVALVE::safe_VkDescriptorSetBindingReferenceVALVE() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_BINDING_REFERENCE_VALVE),
+    pNext(nullptr),
+    descriptorSetLayout(),
+    binding()
+{}
+
+safe_VkDescriptorSetBindingReferenceVALVE::safe_VkDescriptorSetBindingReferenceVALVE(const safe_VkDescriptorSetBindingReferenceVALVE& copy_src)
+{
+    sType = copy_src.sType;
+    descriptorSetLayout = copy_src.descriptorSetLayout;
+    binding = copy_src.binding;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDescriptorSetBindingReferenceVALVE& safe_VkDescriptorSetBindingReferenceVALVE::operator=(const safe_VkDescriptorSetBindingReferenceVALVE& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    descriptorSetLayout = copy_src.descriptorSetLayout;
+    binding = copy_src.binding;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDescriptorSetBindingReferenceVALVE::~safe_VkDescriptorSetBindingReferenceVALVE()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDescriptorSetBindingReferenceVALVE::initialize(const VkDescriptorSetBindingReferenceVALVE* in_struct)
+{
+    sType = in_struct->sType;
+    descriptorSetLayout = in_struct->descriptorSetLayout;
+    binding = in_struct->binding;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDescriptorSetBindingReferenceVALVE::initialize(const safe_VkDescriptorSetBindingReferenceVALVE* copy_src)
+{
+    sType = copy_src->sType;
+    descriptorSetLayout = copy_src->descriptorSetLayout;
+    binding = copy_src->binding;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDescriptorSetLayoutHostMappingInfoVALVE::safe_VkDescriptorSetLayoutHostMappingInfoVALVE(const VkDescriptorSetLayoutHostMappingInfoVALVE* in_struct) :
+    sType(in_struct->sType),
+    descriptorOffset(in_struct->descriptorOffset),
+    descriptorSize(in_struct->descriptorSize)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDescriptorSetLayoutHostMappingInfoVALVE::safe_VkDescriptorSetLayoutHostMappingInfoVALVE() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_HOST_MAPPING_INFO_VALVE),
+    pNext(nullptr),
+    descriptorOffset(),
+    descriptorSize()
+{}
+
+safe_VkDescriptorSetLayoutHostMappingInfoVALVE::safe_VkDescriptorSetLayoutHostMappingInfoVALVE(const safe_VkDescriptorSetLayoutHostMappingInfoVALVE& copy_src)
+{
+    sType = copy_src.sType;
+    descriptorOffset = copy_src.descriptorOffset;
+    descriptorSize = copy_src.descriptorSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDescriptorSetLayoutHostMappingInfoVALVE& safe_VkDescriptorSetLayoutHostMappingInfoVALVE::operator=(const safe_VkDescriptorSetLayoutHostMappingInfoVALVE& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    descriptorOffset = copy_src.descriptorOffset;
+    descriptorSize = copy_src.descriptorSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDescriptorSetLayoutHostMappingInfoVALVE::~safe_VkDescriptorSetLayoutHostMappingInfoVALVE()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDescriptorSetLayoutHostMappingInfoVALVE::initialize(const VkDescriptorSetLayoutHostMappingInfoVALVE* in_struct)
+{
+    sType = in_struct->sType;
+    descriptorOffset = in_struct->descriptorOffset;
+    descriptorSize = in_struct->descriptorSize;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDescriptorSetLayoutHostMappingInfoVALVE::initialize(const safe_VkDescriptorSetLayoutHostMappingInfoVALVE* copy_src)
+{
+    sType = copy_src->sType;
+    descriptorOffset = copy_src->descriptorOffset;
+    descriptorSize = copy_src->descriptorSize;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM(const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM* in_struct) :
     sType(in_struct->sType),
     fragmentDensityMapOffset(in_struct->fragmentDensityMapOffset)
@@ -52522,6 +52774,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE:
+            safe_pNext = new safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE(reinterpret_cast<const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM:
             safe_pNext = new safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM(reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM *>(pNext));
             break;
@@ -52564,6 +52819,9 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_VIDEO_PROFILES_KHR:
             safe_pNext = new safe_VkVideoProfilesKHR(reinterpret_cast<const VkVideoProfilesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_CAPABILITIES_KHR:
+            safe_pNext = new safe_VkVideoDecodeCapabilitiesKHR(reinterpret_cast<const VkVideoDecodeCapabilitiesKHR *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR(reinterpret_cast<const VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(pNext));
@@ -53683,6 +53941,9 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM:
             delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM *>(header);
             break;
@@ -53725,6 +53986,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_VIDEO_PROFILES_KHR:
             delete reinterpret_cast<const safe_VkVideoProfilesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_CAPABILITIES_KHR:
+            delete reinterpret_cast<const safe_VkVideoDecodeCapabilitiesKHR *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(header);

@@ -13540,3 +13540,16 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenCurrentRenderPassAndDescriptor
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, ZeroBitmask) {
+    TEST_DESCRIPTION("Test a reserved flags field set to a non-zero value");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreCreateInfo-flags-zerobitmask");
+    auto semaphore_ci = LvlInitStruct<VkSemaphoreCreateInfo>();
+    semaphore_ci.flags = 1;
+    VkSemaphore semaphore = VK_NULL_HANDLE;
+    vk::CreateSemaphore(m_device->device(), &semaphore_ci, nullptr, &semaphore);
+    m_errorMonitor->VerifyFound();
+}

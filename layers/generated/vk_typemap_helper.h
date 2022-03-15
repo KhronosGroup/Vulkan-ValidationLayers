@@ -2308,6 +2308,17 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_CODING_CONTROL_INFO_KHR> 
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+// Map type VkVideoDecodeCapabilitiesKHR to id VK_STRUCTURE_TYPE_VIDEO_DECODE_CAPABILITIES_KHR
+template <> struct LvlTypeMap<VkVideoDecodeCapabilitiesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_VIDEO_DECODE_CAPABILITIES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_DECODE_CAPABILITIES_KHR> {
+    typedef VkVideoDecodeCapabilitiesKHR Type;
+};
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoDecodeInfoKHR to id VK_STRUCTURE_TYPE_VIDEO_DECODE_INFO_KHR
 template <> struct LvlTypeMap<VkVideoDecodeInfoKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_VIDEO_DECODE_INFO_KHR;
@@ -5699,6 +5710,33 @@ template <> struct LvlTypeMap<VkPhysicalDevicePageableDeviceLocalMemoryFeaturesE
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT> {
     typedef VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT Type;
+};
+
+// Map type VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE
+template <> struct LvlTypeMap<VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE> {
+    typedef VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE Type;
+};
+
+// Map type VkDescriptorSetBindingReferenceVALVE to id VK_STRUCTURE_TYPE_DESCRIPTOR_SET_BINDING_REFERENCE_VALVE
+template <> struct LvlTypeMap<VkDescriptorSetBindingReferenceVALVE> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_BINDING_REFERENCE_VALVE;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DESCRIPTOR_SET_BINDING_REFERENCE_VALVE> {
+    typedef VkDescriptorSetBindingReferenceVALVE Type;
+};
+
+// Map type VkDescriptorSetLayoutHostMappingInfoVALVE to id VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_HOST_MAPPING_INFO_VALVE
+template <> struct LvlTypeMap<VkDescriptorSetLayoutHostMappingInfoVALVE> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_HOST_MAPPING_INFO_VALVE;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_HOST_MAPPING_INFO_VALVE> {
+    typedef VkDescriptorSetLayoutHostMappingInfoVALVE Type;
 };
 
 // Map type VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM

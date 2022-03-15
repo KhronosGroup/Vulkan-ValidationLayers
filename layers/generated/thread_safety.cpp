@@ -8744,6 +8744,36 @@ void ThreadSafety::PostCallRecordSetDeviceMemoryPriorityEXT(
     FinishReadObject(memory, "vkSetDeviceMemoryPriorityEXT");
 }
 
+void ThreadSafety::PreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(
+    VkDevice                                    device,
+    const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
+    VkDescriptorSetLayoutHostMappingInfoVALVE*  pHostMapping) {
+    StartReadObjectParentInstance(device, "vkGetDescriptorSetLayoutHostMappingInfoVALVE");
+}
+
+void ThreadSafety::PostCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(
+    VkDevice                                    device,
+    const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
+    VkDescriptorSetLayoutHostMappingInfoVALVE*  pHostMapping) {
+    FinishReadObjectParentInstance(device, "vkGetDescriptorSetLayoutHostMappingInfoVALVE");
+}
+
+void ThreadSafety::PreCallRecordGetDescriptorSetHostMappingVALVE(
+    VkDevice                                    device,
+    VkDescriptorSet                             descriptorSet,
+    void**                                      ppData) {
+    StartReadObjectParentInstance(device, "vkGetDescriptorSetHostMappingVALVE");
+    StartReadObject(descriptorSet, "vkGetDescriptorSetHostMappingVALVE");
+}
+
+void ThreadSafety::PostCallRecordGetDescriptorSetHostMappingVALVE(
+    VkDevice                                    device,
+    VkDescriptorSet                             descriptorSet,
+    void**                                      ppData) {
+    FinishReadObjectParentInstance(device, "vkGetDescriptorSetHostMappingVALVE");
+    FinishReadObject(descriptorSet, "vkGetDescriptorSetHostMappingVALVE");
+}
+
 void ThreadSafety::PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

@@ -1997,6 +1997,7 @@ const layer_data::unordered_map<std::string, std::string> special_use_extensions
     {"VK_INTEL_performance_query", "devtools"},
     {"VK_KHR_performance_query", "devtools"},
     {"VK_KHR_pipeline_executable_properties", "devtools"},
+    {"VK_VALVE_descriptor_set_host_mapping", "d3demulation"},
     {"VK_VALVE_mutable_descriptor_type", "d3demulation"},
 };
 

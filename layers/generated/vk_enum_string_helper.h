@@ -321,10 +321,14 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_INLINE_UNIFORM_BLOCK_CREATE_INFO";
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO:
             return "VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO";
+        case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_BINDING_REFERENCE_VALVE:
+            return "VK_STRUCTURE_TYPE_DESCRIPTOR_SET_BINDING_REFERENCE_VALVE";
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO";
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO";
+        case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_HOST_MAPPING_INFO_VALVE:
+            return "VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_HOST_MAPPING_INFO_VALVE";
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_SUPPORT:
             return "VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_SUPPORT";
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO:
@@ -685,6 +689,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_NV:
@@ -1272,6 +1278,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_VIDEO_CODING_CONTROL_INFO_KHR:
             return "VK_STRUCTURE_TYPE_VIDEO_CODING_CONTROL_INFO_KHR";
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_CAPABILITIES_KHR:
+            return "VK_STRUCTURE_TYPE_VIDEO_DECODE_CAPABILITIES_KHR";
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_CAPABILITIES_EXT:
@@ -2686,6 +2696,33 @@ static inline std::string string_VkImageUsageFlags(VkImageUsageFlags input_value
         input_value >>= 1;
     }
     if( ret.empty()) ret.append(string_VkImageUsageFlagBits(static_cast<VkImageUsageFlagBits>(0)));
+    return ret;
+}
+
+static inline const char* string_VkInstanceCreateFlagBits(VkInstanceCreateFlagBits input_value)
+{
+    switch (input_value)
+    {
+        case VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR:
+            return "VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR";
+        default:
+            return "Unhandled VkInstanceCreateFlagBits";
+    }
+}
+
+static inline std::string string_VkInstanceCreateFlags(VkInstanceCreateFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkInstanceCreateFlagBits(static_cast<VkInstanceCreateFlagBits>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkInstanceCreateFlagBits(static_cast<VkInstanceCreateFlagBits>(0)));
     return ret;
 }
 
@@ -6284,6 +6321,41 @@ static inline const char* string_VkQueryResultStatusKHR(VkQueryResultStatusKHR i
         default:
             return "Unhandled VkQueryResultStatusKHR";
     }
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+static inline const char* string_VkVideoDecodeCapabilityFlagBitsKHR(VkVideoDecodeCapabilityFlagBitsKHR input_value)
+{
+    switch (input_value)
+    {
+        case VK_VIDEO_DECODE_CAPABILITY_DEFAULT_KHR:
+            return "VK_VIDEO_DECODE_CAPABILITY_DEFAULT_KHR";
+        case VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_COINCIDE_BIT_KHR:
+            return "VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_COINCIDE_BIT_KHR";
+        case VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR:
+            return "VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR";
+        default:
+            return "Unhandled VkVideoDecodeCapabilityFlagBitsKHR";
+    }
+}
+
+static inline std::string string_VkVideoDecodeCapabilityFlagsKHR(VkVideoDecodeCapabilityFlagsKHR input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkVideoDecodeCapabilityFlagBitsKHR(static_cast<VkVideoDecodeCapabilityFlagBitsKHR>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkVideoDecodeCapabilityFlagBitsKHR(static_cast<VkVideoDecodeCapabilityFlagBitsKHR>(0)));
+    return ret;
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 

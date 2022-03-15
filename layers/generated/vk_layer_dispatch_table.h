@@ -930,6 +930,10 @@ typedef struct VkLayerDispatchTable_ {
     // ---- VK_EXT_pageable_device_local_memory extension commands
     PFN_vkSetDeviceMemoryPriorityEXT SetDeviceMemoryPriorityEXT;
 
+    // ---- VK_VALVE_descriptor_set_host_mapping extension commands
+    PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE GetDescriptorSetLayoutHostMappingInfoVALVE;
+    PFN_vkGetDescriptorSetHostMappingVALVE GetDescriptorSetHostMappingVALVE;
+
     // ---- VK_KHR_acceleration_structure extension commands
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
     PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;

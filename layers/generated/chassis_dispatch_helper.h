@@ -1241,6 +1241,12 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateSetDeviceMemoryPriorityEXT,
     InterceptIdPreCallRecordSetDeviceMemoryPriorityEXT,
     InterceptIdPostCallRecordSetDeviceMemoryPriorityEXT,
+    InterceptIdPreCallValidateGetDescriptorSetLayoutHostMappingInfoVALVE,
+    InterceptIdPreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE,
+    InterceptIdPostCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE,
+    InterceptIdPreCallValidateGetDescriptorSetHostMappingVALVE,
+    InterceptIdPreCallRecordGetDescriptorSetHostMappingVALVE,
+    InterceptIdPostCallRecordGetDescriptorSetHostMappingVALVE,
     InterceptIdPreCallValidateCreateAccelerationStructureKHR,
     InterceptIdPreCallRecordCreateAccelerationStructureKHR,
     InterceptIdPostCallRecordCreateAccelerationStructureKHR,
@@ -2697,6 +2703,12 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateSetDeviceMemoryPriorityEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordSetDeviceMemoryPriorityEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordSetDeviceMemoryPriorityEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetDescriptorSetLayoutHostMappingInfoVALVE);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetDescriptorSetHostMappingVALVE);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetDescriptorSetHostMappingVALVE);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetDescriptorSetHostMappingVALVE);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

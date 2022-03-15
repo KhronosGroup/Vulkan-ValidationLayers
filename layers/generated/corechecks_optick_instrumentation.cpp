@@ -8382,6 +8382,38 @@ void CoreChecksOptickInstrumented::PostCallRecordSetDeviceMemoryPriorityEXT(VkDe
     CoreChecks::PostCallRecordSetDeviceMemoryPriorityEXT(device, memory, priority);
 }
 
+bool CoreChecksOptickInstrumented::PreCallValidateGetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device, const VkDescriptorSetBindingReferenceVALVE* pBindingReference, VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device, const VkDescriptorSetBindingReferenceVALVE* pBindingReference, VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device, const VkDescriptorSetBindingReferenceVALVE* pBindingReference, VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateGetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet, void** ppData) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet, void** ppData) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet, void** ppData) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
+}
+
 bool CoreChecksOptickInstrumented::PreCallValidateCreateAccelerationStructureKHR(VkDevice                                           device, const VkAccelerationStructureCreateInfoKHR*        pCreateInfo, const VkAllocationCallbacks*       pAllocator, VkAccelerationStructureKHR*                        pAccelerationStructure) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
