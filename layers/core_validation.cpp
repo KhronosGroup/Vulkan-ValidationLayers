@@ -7753,6 +7753,20 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                         string_VkFormat(depth_format), string_VkFormat(stencil_format));
                 }
 
+                if ((depth_format != VK_FORMAT_UNDEFINED) && (FormatDepthSize(depth_format) == 0)) {
+                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06540",
+                                    "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfoKHR->depthAttachmentFormat "
+                                    "(%s) must contain a depth aspect.",
+                                    string_VkFormat(depth_format));
+                }
+
+                if ((stencil_format != VK_FORMAT_UNDEFINED) && (FormatStencilSize(stencil_format) == 0)) {
+                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06541",
+                                     "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfoKHR->stencilAttachmentFormat "
+                                     "(%s) must contain a stencil aspect.",
+                                     string_VkFormat(stencil_format));
+                }
+
                 if ((enabled_features.core11.multiview == VK_FALSE) && (p_inherited_rendering_info->viewMask != 0)) {
                     skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-multiview-06008",
                         "vkBeginCommandBuffer(): If the multiview feature is not enabled, viewMask must be 0 (%u)",
