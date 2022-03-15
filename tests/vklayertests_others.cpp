@@ -13553,3 +13553,107 @@ TEST_F(VkLayerTest, ZeroBitmask) {
     vk::CreateSemaphore(m_device->device(), &semaphore_ci, nullptr, &semaphore);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, BeginQueryWithMultiview) {
+    TEST_DESCRIPTION("Test CmdBeginQuery in subpass with multiview");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1 or greater, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkAttachmentDescription attach = {};
+    attach.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference color_att = {};
+    color_att.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_att;
+
+    uint32_t viewMasks[] = {0x3u};
+    uint32_t correlationMasks[] = {0x1u};
+    auto rpmv_ci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>();
+    rpmv_ci.subpassCount = 1;
+    rpmv_ci.pViewMasks = viewMasks;
+    rpmv_ci.correlationMaskCount = 1;
+    rpmv_ci.pCorrelationMasks = correlationMasks;
+
+    auto rp_ci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmv_ci);
+    rp_ci.attachmentCount = 1;
+    rp_ci.pAttachments = &attach;
+    rp_ci.subpassCount = 1;
+    rp_ci.pSubpasses = &subpass;
+
+    vk_testing::RenderPass render_pass;
+    render_pass.init(*m_device, rp_ci);
+
+    VkImageObj image(m_device);
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_ci.extent.width = 64;
+    image_ci.extent.height = 64;
+    image_ci.extent.depth = 1;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 4;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image.init(&image_ci);
+    ASSERT_TRUE(image.initialized());
+
+    vk_testing::ImageView image_view;
+    VkImageViewCreateInfo iv_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    iv_ci.image = image.handle();
+    iv_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    iv_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    iv_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    iv_ci.subresourceRange.baseMipLevel = 0;
+    iv_ci.subresourceRange.levelCount = 1;
+    iv_ci.subresourceRange.baseArrayLayer = 0;
+    iv_ci.subresourceRange.layerCount = 4;
+    image_view.init(*m_device, iv_ci);
+
+    VkImageView image_view_handle = image_view.handle();
+
+    auto fb_ci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_ci.renderPass = render_pass.handle();
+    fb_ci.attachmentCount = 1;
+    fb_ci.pAttachments = &image_view_handle;
+    fb_ci.width = 64;
+    fb_ci.height = 64;
+    fb_ci.layers = 1;
+
+    vk_testing::Framebuffer framebuffer;
+    framebuffer.init(*m_device, fb_ci);
+
+    VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
+    qpci.queryCount = 2;
+
+    vk_testing::QueryPool query_pool;
+    query_pool.init(*m_device, qpci);
+
+    auto rp_begin = LvlInitStruct<VkRenderPassBeginInfo>();
+    rp_begin.renderPass = render_pass.handle();
+    rp_begin.framebuffer = framebuffer.handle();
+    rp_begin.renderArea.extent = {64, 64};
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-query-00808");
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rp_begin);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 1, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyFound();
+}
