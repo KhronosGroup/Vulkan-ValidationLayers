@@ -55,8 +55,8 @@ VertexInputState::VertexInputState(const PIPELINE_STATE &p, const safe_VkGraphic
 }
 
 PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
-                               const safe_VkGraphicsPipelineCreateInfo &create_info)
-    : parent(p), subpass(create_info.subpass) {
+                               const safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const RENDER_PASS_STATE> rp)
+    : parent(p), rp_state(rp), subpass(create_info.subpass) {
     pipeline_layout = dev_data.Get<PIPELINE_LAYOUT_STATE>(create_info.layout);
 
     viewport_state = create_info.pViewportState;
@@ -181,16 +181,12 @@ void FragmentShaderState::SetFragmentShaderInfo(FragmentShaderState &fs_state, c
     SetFragmentShaderInfoPrivate(fs_state, state_data, create_info);
 }
 
-FragmentShaderState::FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, VkRenderPass rp,
-                                         uint32_t subp, VkPipelineLayout layout)
-    : parent(p),
-      rp_state(dev_data.Get<RENDER_PASS_STATE>(rp)),
-      subpass(subp),
-      pipeline_layout(dev_data.Get<PIPELINE_LAYOUT_STATE>(layout)) {}
+FragmentShaderState::FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
+                                         std::shared_ptr<const RENDER_PASS_STATE> rp, uint32_t subp, VkPipelineLayout layout)
+    : parent(p), rp_state(rp), subpass(subp), pipeline_layout(dev_data.Get<PIPELINE_LAYOUT_STATE>(layout)) {}
 
-FragmentOutputState::FragmentOutputState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data, VkRenderPass rp,
-                                         uint32_t sp)
-    : parent(p), rp_state(dev_data.Get<RENDER_PASS_STATE>(rp)), subpass(sp) {}
+FragmentOutputState::FragmentOutputState(const PIPELINE_STATE &p, std::shared_ptr<const RENDER_PASS_STATE> rp, uint32_t sp)
+    : parent(p), rp_state(rp), subpass(sp) {}
 
 // static
 bool FragmentOutputState::IsBlendConstantsEnabled(const AttachmentVector &attachments) {
