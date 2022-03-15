@@ -7291,7 +7291,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
         }
     }
 
-    if (pRenderingInfo->pDepthAttachment != NULL) {
+    if (pRenderingInfo->pDepthAttachment) {
         skip |= ValidateRenderingAttachmentInfo(commandBuffer, pRenderingInfo->pDepthAttachment, func_name);
 
         if (pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
@@ -7315,15 +7315,17 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                      "%s(): resolveImageLayout must not be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.", func_name);
                 }
 
-                if (pRenderingInfo->pDepthAttachment->resolveImageLayout ==
-                    VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
+                if (IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
+                    pRenderingInfo->pDepthAttachment->resolveImageLayout ==
+                        VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
                     skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pDepthAttachment-06098",
                                      "%s(): resolveImageLayout must not be "
                                      "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.",
                                      func_name);
                 }
 
-                if (!(pRenderingInfo->pDepthAttachment->resolveMode & phys_dev_props_core12.supportedDepthResolveModes)) {
+                if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve) &&
+                    !(pRenderingInfo->pDepthAttachment->resolveMode & phys_dev_props_core12.supportedDepthResolveModes)) {
                     skip |= LogError(device, "VUID-VkRenderingInfo-pDepthAttachment-06102",
                                      "%s(): Includes a resolveMode structure with invalid mode=%u.", func_name,
                                      pRenderingInfo->pDepthAttachment->resolveMode);
