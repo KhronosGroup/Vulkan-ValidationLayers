@@ -713,6 +713,17 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
             pAllocateInfo->allocationSize, kMinDeviceAllocationSize);
     }
 
+    if (VendorCheckEnabled(kBPVendorNVIDIA) && !device_extensions.vk_ext_pageable_device_local_memory &&
+        !LvlFindInChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext)) {
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_AllocateMemory_SetPriority,
+            "%s Use VkMemoryPriorityAllocateInfoEXT to provide the operating system information on the allocations that "
+            "should stay in video memory and which should be demoted first when video memory is limited. "
+            "The highest priority should be given to GPU-written resources like color attachments, depth attachments, "
+            "storage images, and buffers written from the GPU.",
+            VendorSpecificTag(kBPVendorNVIDIA));
+    }
+
     // TODO: Insert get check for GetPhysicalDeviceMemoryProperties once the state is tracked in the StateTracker
 
     return skip;
