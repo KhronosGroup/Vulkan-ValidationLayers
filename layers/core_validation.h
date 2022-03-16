@@ -115,6 +115,7 @@ struct ValidateBeginQueryVuids {
     const char* vuid_scope_in_rp = kVUIDUndefined;
     const char* vuid_dup_query_type = kVUIDUndefined;
     const char* vuid_protected_cb = kVUIDUndefined;
+    const char* vuid_multiview_query = kVUIDUndefined;
 };
 
 struct ValidateEndQueryVuids {
