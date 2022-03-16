@@ -26,6 +26,7 @@
 #include "image_state.h"
 #include "cmd_buffer_state.h"
 #include <string>
+#include <chrono>
 
 static const uint32_t kMemoryObjectWarningLimit = 250;
 
@@ -70,6 +71,8 @@ static const float kDrawsPerPipelineRatioWarningLimitAMD = 5.f;
 static const float kCmdBufferToCmdPoolRatioWarningLimitAMD = 0.1f;
 // Size for fast descriptor reads on modern NVIDIA devices
 static const uint32_t kPipelineLayoutFastDescriptorSpaceNVIDIA = 256;
+// Time threshold for flagging allocations that could have been reused
+static const auto kAllocateMemoryReuseTimeThresholdNVIDIA = std::chrono::seconds{5};
 
 // How many small indexed drawcalls in a command buffer before a warning is thrown
 static const uint32_t kMaxSmallIndexedDrawcalls = 10;
@@ -349,6 +352,8 @@ class BestPractices : public ValidationStateTracker {
                                           const VkDescriptorSet* pDescriptorSets, VkResult result) override;
     bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) const override;
+    void PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                     const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) override;
     void ManualPostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory, VkResult result);
     bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const char* api_name) const;
@@ -368,6 +373,7 @@ class BestPractices : public ValidationStateTracker {
     void PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) override;
     bool PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) const override;
+    void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) override;
     bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) const override;
     bool ValidateMultisampledBlendingArm(uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo* pCreateInfos) const;
 
@@ -849,6 +855,15 @@ class BestPractices : public ValidationStateTracker {
     std::atomic<uint32_t> num_queue_submissions_{0};
 
     std::atomic<VkPipelineCache> pipeline_cache_{VK_NULL_HANDLE};
+
+    // NVIDIA tracked
+    struct MemoryFreeEvent {
+        typename std::chrono::high_resolution_clock::time_point time {};
+        VkDeviceSize allocation_size = 0;
+        uint32_t memory_type_index = 0;
+    };
+    std::deque<MemoryFreeEvent> memory_free_events_;
+    mutable ReadWriteLock memory_free_events_lock_;
 
     layer_data::unordered_set<VkPipeline> pipelines_used_in_frame_;
     mutable ReadWriteLock pipeline_lock_;

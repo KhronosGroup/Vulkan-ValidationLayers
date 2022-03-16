@@ -695,6 +695,20 @@ void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescript
     }
 }
 
+void BestPractices::PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) {
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        WriteLockGuard guard{memory_free_events_lock_};
+
+        // Release old allocations to avoid overpopulating the container
+        const auto now = std::chrono::high_resolution_clock::now();
+        const auto last_old = std::find_if(memory_free_events_.rbegin(), memory_free_events_.rend(), [now](const MemoryFreeEvent& event) {
+            return now - event.time > kAllocateMemoryReuseTimeThresholdNVIDIA;
+        });
+        memory_free_events_.erase(memory_free_events_.begin(), last_old.base());
+    }
+}
+
 bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) const {
     bool skip = false;
@@ -713,15 +727,52 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
             pAllocateInfo->allocationSize, kMinDeviceAllocationSize);
     }
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA) && !device_extensions.vk_ext_pageable_device_local_memory &&
-        !LvlFindInChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext)) {
-        skip |= LogPerformanceWarning(
-            device, kVUID_BestPractices_AllocateMemory_SetPriority,
-            "%s Use VkMemoryPriorityAllocateInfoEXT to provide the operating system information on the allocations that "
-            "should stay in video memory and which should be demoted first when video memory is limited. "
-            "The highest priority should be given to GPU-written resources like color attachments, depth attachments, "
-            "storage images, and buffers written from the GPU.",
-            VendorSpecificTag(kBPVendorNVIDIA));
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        if (!device_extensions.vk_ext_pageable_device_local_memory &&
+            !LvlFindInChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext)) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_AllocateMemory_SetPriority,
+                "%s Use VkMemoryPriorityAllocateInfoEXT to provide the operating system information on the allocations that "
+                "should stay in video memory and which should be demoted first when video memory is limited. "
+                "The highest priority should be given to GPU-written resources like color attachments, depth attachments, "
+                "storage images, and buffers written from the GPU.",
+                VendorSpecificTag(kBPVendorNVIDIA));
+        }
+
+        {
+            // Size in bytes for an allocation to be considered "compatible"
+            static constexpr VkDeviceSize size_threshold = VkDeviceSize{1} << 20;
+
+            ReadLockGuard guard{memory_free_events_lock_};
+
+            const auto now = std::chrono::high_resolution_clock::now();
+            const VkDeviceSize alloc_size = pAllocateInfo->allocationSize;
+            const uint32_t memory_type_index = pAllocateInfo->memoryTypeIndex;
+            const auto latest_event = std::find_if(memory_free_events_.rbegin(), memory_free_events_.rend(), [&](const MemoryFreeEvent& event) {
+                return (memory_type_index == event.memory_type_index) && (alloc_size <= event.allocation_size) &&
+                       (alloc_size - event.allocation_size <= size_threshold) && (now - event.time < kAllocateMemoryReuseTimeThresholdNVIDIA);
+            });
+
+            if (latest_event != memory_free_events_.rend()) {
+                const auto time_delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - latest_event->time);
+                if (time_delta < std::chrono::milliseconds{5}) {
+                    skip |=
+                        LogPerformanceWarning(device, kVUID_BestPractices_AllocateMemory_ReuseAllocations,
+                                              "%s Reuse memory allocations instead of releasing and reallocating. A memory allocation "
+                                              "has just been released, and it could have been reused in place of this allocation.",
+                                              VendorSpecificTag(kBPVendorNVIDIA));
+                } else {
+                    const uint32_t seconds = static_cast<uint32_t>(time_delta.count() / 1000);
+                    const uint32_t milliseconds = static_cast<uint32_t>(time_delta.count() % 1000);
+
+                    skip |= LogPerformanceWarning(
+                        device, kVUID_BestPractices_AllocateMemory_ReuseAllocations,
+                        "%s Reuse memory allocations instead of releasing and reallocating. A memory allocation has been released "
+                        "%" PRIu32 ".%03" PRIu32 " seconds ago, and it could have been reused in place of this allocation.",
+                        VendorSpecificTag(kBPVendorNVIDIA), seconds, milliseconds);
+                }
+            }
+        }
     }
 
     // TODO: Insert get check for GetPhysicalDeviceMemoryProperties once the state is tracked in the StateTracker
@@ -762,6 +813,25 @@ void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result, c
         LogInfo(instance, kVUID_BestPractices_NonSuccess_Result, "%s(): Returned non-success return code %s.", api_name,
                 string_VkResult(result));
     }
+}
+
+void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
+    if (memory != VK_NULL_HANDLE && VendorCheckEnabled(kBPVendorNVIDIA)) {
+        auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
+
+        // Exclude memory free events on dedicated allocations, or imported/exported allocations.
+        if (!mem_info->IsDedicatedBuffer() && !mem_info->IsDedicatedImage() && !mem_info->IsExport() && !mem_info->IsImport()) {
+            MemoryFreeEvent event;
+            event.time = std::chrono::high_resolution_clock::now();
+            event.memory_type_index = mem_info->alloc_info.memoryTypeIndex;
+            event.allocation_size = mem_info->alloc_info.allocationSize;
+
+            WriteLockGuard guard{memory_free_events_lock_};
+            memory_free_events_.push_back(event);
+        }
+    }
+
+    ValidationStateTracker::PreCallRecordFreeMemory(device, memory, pAllocator);
 }
 
 bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory,
