@@ -658,8 +658,8 @@ class CoreChecks : public ValidationStateTracker {
                                        const IMAGE_VIEW_STATE *image_view_state, const VkRect2D& render_area,
                                        uint32_t rect_count, const VkClearRect* clear_rects) const;
 
-    template <typename ImageCopyRegionType>
-    bool ValidateImageCopyData(const uint32_t regionCount, const ImageCopyRegionType* ic_regions, const IMAGE_STATE* src_state,
+    template <typename RegionType>
+    bool ValidateImageCopyData(const uint32_t regionCount, const RegionType* pRegions, const IMAGE_STATE* src_state,
                                const IMAGE_STATE* dst_state, CMD_TYPE cmd_type) const;
 
     bool VerifyClearImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state,
@@ -860,23 +860,22 @@ class CoreChecks : public ValidationStateTracker {
 
     bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkImageView* pView) const override;
-    template <typename BufferImageCopyRegionType>
+    template <typename RegionType>
     bool ValidateCmdCopyBufferBounds(const BUFFER_STATE* src_buffer_state, const BUFFER_STATE* dst_buffer_state,
-                                     uint32_t regionCount, const BufferImageCopyRegionType* pRegions,
-                                     CMD_TYPE cmd_type) const;
+                                     uint32_t regionCount, const RegionType* pRegions, CMD_TYPE cmd_type) const;
 
-    template <typename BufferImageCopyRegionType>
-    bool ValidateImageBounds(const IMAGE_STATE* image_state, const uint32_t regionCount, const BufferImageCopyRegionType* pRegions,
+    template <typename RegionType>
+    bool ValidateImageBounds(const IMAGE_STATE* image_state, const uint32_t regionCount, const RegionType* pRegions,
                              const char* func_name, const char* msg_code) const;
 
-    template <typename BufferImageCopyRegionType>
+    template <typename RegionType>
     bool ValidateBufferBounds(const IMAGE_STATE* image_state, const BUFFER_STATE* buff_state, uint32_t regionCount,
-                              const BufferImageCopyRegionType* pRegions, const char* func_name, const char* msg_code) const;
+                              const RegionType* pRegions, const char* func_name, const char* msg_code) const;
 
-    template <typename BufferImageCopyRegionType>
+    template <typename RegionType>
     bool ValidateCopyBufferImageTransferGranularityRequirements(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img,
-                                                                const BufferImageCopyRegionType* region, const uint32_t i,
-                                                                const char* function, const char* vuid) const;
+                                                                const RegionType* region, const uint32_t i, const char* function,
+                                                                const char* vuid) const;
 
     bool ValidateImageMipLevel(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img, uint32_t mip_level, const uint32_t i,
                                const char* function, const char* member, const char* vuid) const;
