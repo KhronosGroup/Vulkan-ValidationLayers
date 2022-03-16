@@ -869,7 +869,7 @@ TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
     vinfo.components.g = VK_COMPONENT_SWIZZLE_G;
     vinfo.components.b = VK_COMPONENT_SWIZZLE_B;
     vinfo.components.a = VK_COMPONENT_SWIZZLE_A;
-    vinfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
+    vinfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
 
     vinfo.image = colorImage.handle();
     vinfo.format = VK_FORMAT_R8G8B8A8_UNORM;
