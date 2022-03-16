@@ -400,8 +400,8 @@ bool CoreChecks::ValidateDrawStateFlags(const CMD_BUFFER_STATE *pCB, const PIPEL
         result |=
             ValidateStatus(pCB, CBSTATUS_LINE_WIDTH_SET, "Dynamic line width state not set for this command buffer", msg_code);
     }
-    const auto &create_info = pPipe->GetUnifiedCreateInfo().graphics;
-    if (create_info.pRasterizationState && (create_info.pRasterizationState->depthBiasEnable == VK_TRUE)) {
+    const auto rp_state = pPipe->RasterizationState();
+    if (rp_state && (rp_state->depthBiasEnable == VK_TRUE)) {
         result |=
             ValidateStatus(pCB, CBSTATUS_DEPTH_BIAS_SET, "Dynamic depth bias state not set for this command buffer", msg_code);
     }
@@ -409,11 +409,13 @@ bool CoreChecks::ValidateDrawStateFlags(const CMD_BUFFER_STATE *pCB, const PIPEL
         result |= ValidateStatus(pCB, CBSTATUS_BLEND_CONSTANTS_SET, "Dynamic blend constants state not set for this command buffer",
                                  msg_code);
     }
-    if (create_info.pDepthStencilState && (create_info.pDepthStencilState->depthBoundsTestEnable == VK_TRUE)) {
+
+    const auto ds_state = pPipe->DepthStencilState();
+    if (ds_state && (ds_state->depthBoundsTestEnable == VK_TRUE)) {
         result |=
             ValidateStatus(pCB, CBSTATUS_DEPTH_BOUNDS_SET, "Dynamic depth bounds state not set for this command buffer", msg_code);
     }
-    if (create_info.pDepthStencilState && (create_info.pDepthStencilState->stencilTestEnable == VK_TRUE)) {
+    if (ds_state && (ds_state->stencilTestEnable == VK_TRUE)) {
         result |= ValidateStatus(pCB, CBSTATUS_STENCIL_READ_MASK_SET,
                                  "Dynamic stencil read mask state not set for this command buffer", msg_code);
         result |= ValidateStatus(pCB, CBSTATUS_STENCIL_WRITE_MASK_SET,
@@ -427,8 +429,7 @@ bool CoreChecks::ValidateDrawStateFlags(const CMD_BUFFER_STATE *pCB, const PIPEL
     }
     if (pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
         pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
-        const auto *line_state =
-            LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(create_info.pRasterizationState->pNext);
+        const auto *line_state = LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(rp_state);
         if (line_state && line_state->stippledLineEnable) {
             result |= ValidateStatus(pCB, CBSTATUS_LINE_STIPPLE_SET, "Dynamic line stipple state not set for this command buffer",
                                      msg_code);
