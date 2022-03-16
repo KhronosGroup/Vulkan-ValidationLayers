@@ -14914,3 +14914,25 @@ TEST_F(VkLayerTest, ImageViewMinLodFeature) {
 
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06455");
 }
+
+TEST_F(VkLayerTest, TestCompletelyOverlappingBufferCopy) {
+    TEST_DESCRIPTION("Test copying between buffers with completely overlapping source and destination regions.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkBufferCopy copy_info;
+    copy_info.srcOffset = 0;
+    copy_info.dstOffset = 0;
+    copy_info.size = 256;
+
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags reqs = 0;
+    buffer.init_as_src_and_dst(*m_device, copy_info.size, reqs);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
+
+    m_commandBuffer->begin();
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer.handle(), 1, &copy_info);
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
