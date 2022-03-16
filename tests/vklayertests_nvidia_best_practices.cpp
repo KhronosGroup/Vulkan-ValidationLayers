@@ -13,6 +13,9 @@
  * Author: Rodrigo Locatti <rlocatti@nvidia.com>
  */
 
+#include <chrono>
+#include <thread>
+
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
@@ -415,6 +418,42 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_SetPriority) {
         vk_testing::DeviceMemory memory(*m_device, memory_ai);
         m_errorMonitor->Finish();
     }
+}
+
+TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_ReuseAllocations) {
+    InitBestPracticesFramework(kEnableNVIDIAValidation);
+    InitState();
+
+    VkMemoryAllocateInfo memory_ai = LvlInitStruct<VkMemoryAllocateInfo>();
+    memory_ai.allocationSize = 0x100000;
+    memory_ai.memoryTypeIndex = 0;
+
+    VkMemoryPriorityAllocateInfoEXT priority = LvlInitStruct<VkMemoryPriorityAllocateInfoEXT>();
+    priority.priority = 0.5f;
+    memory_ai.pNext = &priority;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-AllocateMemory-ReuseAllocations");
+    {
+        vk_testing::DeviceMemory memory(*m_device, memory_ai);
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds{6});
+
+    {
+        vk_testing::DeviceMemory memory(*m_device, memory_ai);
+    }
+
+    m_errorMonitor->Finish();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-AllocateMemory-ReuseAllocations");
+
+    {
+        vk_testing::DeviceMemory memory(*m_device, memory_ai);
+    }
+
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
