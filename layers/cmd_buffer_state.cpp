@@ -1370,6 +1370,7 @@ void CMD_BUFFER_STATE::UnbindResources() {
 
     // Vertex and index buffers
     index_buffer_binding.reset();
+    status &= ~CBSTATUS_INDEX_BUFFER_BOUND;
     vertex_buffer_used = false;
     current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
 
