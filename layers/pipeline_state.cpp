@@ -405,9 +405,9 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
                                                  ? fragment_shader_state->pipeline_layout.get()
                                                  : nullptr;
         std::array<decltype(exe_layout), 3> layouts;
-        layouts[0] = pre_raster_layout;
+        layouts[0] = exe_layout;
         layouts[1] = fragment_shader_layout;
-        layouts[2] = exe_layout;
+        layouts[2] = pre_raster_layout;
         merged_graphics_layout = std::make_shared<PIPELINE_LAYOUT_STATE>(layouts);
 
         // TODO Could store the graphics_lib_type in the sub-state rather than searching for it again here.

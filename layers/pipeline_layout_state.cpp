@@ -114,12 +114,17 @@ static PushConstantRangesId GetCanonicalId(const VkPipelineLayoutCreateInfo *inf
 }
 
 static PushConstantRangesId GetPushConstantRangesFromLayouts(const layer_data::span<const PIPELINE_LAYOUT_STATE *const> &layouts) {
+    PushConstantRangesId ret{};
     for (const auto *layout : layouts) {
-        if (layout) {
-            return layout->push_constant_ranges;
+        if (layout && layout->push_constant_ranges) {
+            ret = layout->push_constant_ranges;
+
+            if (ret->size() > 0) {
+                return ret;
+            }
         }
     }
-    return {};
+    return ret;
 }
 
 static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(ValidationStateTracker *dev_data,
