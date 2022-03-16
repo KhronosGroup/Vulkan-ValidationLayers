@@ -6115,7 +6115,8 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(const BUFFER_STATE *src_buffer_stat
 
     // The union of the source regions, and the union of the destination regions, must not overlap in memory
     if (src_buffer_state->buffer() == dst_buffer_state->buffer()) {
-        if (((src_min > dst_min) && (src_min < dst_max)) || ((src_max > dst_min) && (src_max < dst_max))) {
+        if (((src_min > dst_min) && (src_min < dst_max)) || ((src_max > dst_min) && (src_max < dst_max)) ||
+            ((src_min == dst_min && src_max == dst_max))) {
             vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
             skip |= LogError(src_buffer_state->buffer(), vuid, "%s: Detected overlap between source and dest regions in memory.",
                              func_name);
