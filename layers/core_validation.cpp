@@ -8460,6 +8460,8 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].srcAccelerationStructure);
         auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].dstAccelerationStructure);
+        skip |= ValidateHostVisibleMemoryIsBoundToBuffer(dst_as_state->buffer_state.get(), "vkBuildAccelerationStructuresKHR",
+                                                         "VUID-vkBuildAccelerationStructuresKHR-pInfos-03722");
         if (pInfos[i].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
             if (src_as_state == nullptr || !src_as_state->built ||
                 !(src_as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
