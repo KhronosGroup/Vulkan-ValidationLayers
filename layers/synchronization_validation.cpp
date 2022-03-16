@@ -3591,7 +3591,7 @@ bool SyncValidator::ValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const V
                                                 copy_region.srcOffset, copy_region.extent);
             if (hazard.hazard) {
                 skip |= LogError(pCopyImageInfo->srcImage, string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", func_name, 
+                                 "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(pCopyImageInfo->srcImage).c_str(),
                                  region, cb_access_context->FormatUsage(hazard).c_str());
             }
@@ -3604,7 +3604,7 @@ bool SyncValidator::ValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const V
                                                 copy_region.dstOffset, dst_copy_extent);
             if (hazard.hazard) {
                 skip |= LogError(pCopyImageInfo->dstImage, string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", func_name, 
+                                 "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(pCopyImageInfo->dstImage).c_str(),
                                  region, cb_access_context->FormatUsage(hazard).c_str());
             }
@@ -3962,10 +3962,10 @@ void SyncValidator::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBu
     StateTracker::PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
 }
 
-template <typename BufferImageCopyRegionType>
+template <typename RegionType>
 bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                 VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                 const BufferImageCopyRegionType *pRegions, CMD_TYPE cmd_type) const {
+                                                 VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
+                                                 CMD_TYPE cmd_type) const {
     bool skip = false;
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
@@ -4033,10 +4033,10 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer command
                                         pCopyBufferToImageInfo->pRegions, CMD_COPYBUFFERTOIMAGE2);
 }
 
-template <typename BufferImageCopyRegionType>
+template <typename RegionType>
 void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                               VkImageLayout dstImageLayout, uint32_t regionCount,
-                                               const BufferImageCopyRegionType *pRegions, CMD_TYPE cmd_type) {
+                                               VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
+                                               CMD_TYPE cmd_type) {
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
 
@@ -4084,10 +4084,10 @@ void SyncValidator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBu
                                pCopyBufferToImageInfo->pRegions, CMD_COPYBUFFERTOIMAGE2);
 }
 
-template <typename BufferImageCopyRegionType>
+template <typename RegionType>
 bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                 VkBuffer dstBuffer, uint32_t regionCount,
-                                                 const BufferImageCopyRegionType *pRegions, CMD_TYPE cmd_type) const {
+                                                 VkBuffer dstBuffer, uint32_t regionCount, const RegionType *pRegions,
+                                                 CMD_TYPE cmd_type) const {
     bool skip = false;
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
@@ -4150,9 +4150,9 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer command
                                         pCopyImageToBufferInfo->pRegions, CMD_COPYIMAGETOBUFFER2);
 }
 
-template <typename BufferImageCopyRegionType>
+template <typename RegionType>
 void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                               VkBuffer dstBuffer, uint32_t regionCount, const BufferImageCopyRegionType *pRegions,
+                                               VkBuffer dstBuffer, uint32_t regionCount, const RegionType *pRegions,
                                                CMD_TYPE cmd_type) {
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);

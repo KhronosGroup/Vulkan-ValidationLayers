@@ -202,8 +202,8 @@ static inline bool IsExtentSizeZero(const VkExtent3D* extent) {
 }
 
 // Get buffer size from vkBufferImageCopy / vkBufferImageCopy2KHR structure, for a given format
-template <typename BufferImageCopyRegionType>
-static inline VkDeviceSize GetBufferSizeFromCopyImage(const BufferImageCopyRegionType& region, VkFormat image_format) {
+template <typename RegionType>
+static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, VkFormat image_format) {
     VkDeviceSize buffer_size = 0;
     VkExtent3D copy_extent = region.imageExtent;
     VkDeviceSize buffer_width = (0 == region.bufferRowLength ? copy_extent.width : region.bufferRowLength);
