@@ -3396,14 +3396,23 @@ TEST_F(VkLayerTest, CopyImageSrcSizeExceeded) {
                                &copy_region);
     m_errorMonitor->VerifyNotFound();
 
-    // Source exceeded in x-dim, VU 01202
+    // Source exceeded in x-dim
     copy_region.srcOffset.x = 4;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcOffset-00144");
     m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
 
-    // Source exceeded in y-dim, VU 01203
+    // Dest exceeded in x-dim in negative direction (since offset is a signed in)
+    copy_region.extent.width = 4;
+    copy_region.srcOffset.x = -8;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcOffset-00144");
+    m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+    copy_region.extent.width = 32;
+
+    // Source exceeded in y-dim
     copy_region.srcOffset.x = 0;
     copy_region.extent.height = 48;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcOffset-00145");
@@ -3411,7 +3420,7 @@ TEST_F(VkLayerTest, CopyImageSrcSizeExceeded) {
                                &copy_region);
     m_errorMonitor->VerifyFound();
 
-    // Source exceeded in z-dim, VU 01204
+    // Source exceeded in z-dim
     copy_region.extent = {4, 4, 4};
     copy_region.srcSubresource.mipLevel = 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcOffset-00147");
@@ -3474,14 +3483,22 @@ TEST_F(VkLayerTest, CopyImageDstSizeExceeded) {
                                &copy_region);
     m_errorMonitor->VerifyNotFound();
 
-    // Dest exceeded in x-dim, VU 01205
+    // Dest exceeded in x-dim
     copy_region.dstOffset.x = 4;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstOffset-00150");
     m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
 
-    // Dest exceeded in y-dim, VU 01206
+    // Dest exceeded in x-dim in negative direction (since offset is a signed in)
+    copy_region.extent.width = 4;
+    copy_region.dstOffset.x = -8;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstOffset-00150");
+    m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+    copy_region.extent.width = 32;
+
     copy_region.dstOffset.x = 0;
     copy_region.extent.height = 48;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstOffset-00151");
@@ -3489,7 +3506,7 @@ TEST_F(VkLayerTest, CopyImageDstSizeExceeded) {
                                &copy_region);
     m_errorMonitor->VerifyFound();
 
-    // Dest exceeded in z-dim, VU 01207
+    // Dest exceeded in z-dim
     copy_region.extent = {4, 4, 4};
     copy_region.dstSubresource.mipLevel = 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstOffset-00153");
