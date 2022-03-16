@@ -10709,6 +10709,7 @@ TEST_F(VkLayerTest, CopyCommands2V13) {
     vk::CmdCopyImage2(m_commandBuffer->handle(), &copy_image_info);
     m_errorMonitor->VerifyFound();
     auto copy_buffer = LvlInitStruct<VkBufferCopy2>();
+    copy_buffer.dstOffset = 4;
     copy_buffer.size = 4;
     auto copy_buffer_info = LvlInitStruct<VkCopyBufferInfo2>();
     copy_buffer_info.srcBuffer = dst_buffer.handle();
