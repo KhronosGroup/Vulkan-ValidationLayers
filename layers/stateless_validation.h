@@ -59,7 +59,6 @@ extern const VkBuildAccelerationStructureFlagsNV AllVkBuildAccelerationStructure
 extern const VkGeometryFlagsKHR AllVkGeometryFlagBitsKHR;
 extern const VkPipelineColorBlendStateCreateFlags AllVkPipelineColorBlendStateCreateFlagBits;
 extern const VkPipelineDepthStencilStateCreateFlags AllVkPipelineDepthStencilStateCreateFlagBits;
-extern const VkImageAspectFlags AllVkImageAspectFlagBits;
 
 extern const std::vector<VkGeometryTypeKHR> AllVkGeometryTypeKHREnums;
 extern const std::vector<VkCompareOp> AllVkCompareOpEnums;
@@ -1833,19 +1832,6 @@ class StatelessValidation : public ValidationObject {
                                                                         uint32_t *pPresentModeCount,
                                                                         VkPresentModeKHR *pPresentModes) const;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-    bool manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements *pInfo,
-                                                                   VkMemoryRequirements2 *pMemoryRequirements) const;
-
-    bool manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements *pInfo,
-                                                                VkMemoryRequirements2 *pMemoryRequirements) const;
-
-    bool manual_PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
-        VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-        VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) const;
-
-    bool manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
-        VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-        VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) const;
 
 #include "parameter_validation.h"
 };  // Class StatelessValidation
