@@ -289,7 +289,6 @@ TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06057");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06058");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06060");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfo-multiview-06066");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfo-pColorAttachmentFormats-06064");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
@@ -302,6 +301,15 @@ TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06054");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
+
+    color_format[0] = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    color_blend_attachment_state.blendEnable = VK_TRUE;
+    create_info.pColorBlendState = &color_blend_state_create_info;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfo-pColorAttachmentFormats-06064");
+    pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
+    m_errorMonitor->VerifyFound();
+    color_format[0] = VK_FORMAT_R8G8B8A8_UNORM;
 
     auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_ci.flags = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM;
