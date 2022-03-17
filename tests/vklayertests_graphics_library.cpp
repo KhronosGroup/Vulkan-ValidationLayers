@@ -111,8 +111,8 @@ TEST_F(VkGraphicsLibraryLayerTest, GPLInvalidDSLs) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSets) {
-    TEST_DESCRIPTION("Create a pipeline layout with invalid descriptor set layouts with VK_EXT_grahpics_pipeline_library enabled");
+TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSetsLinkOnly) {
+    TEST_DESCRIPTION("Link pre-raster and FS subsets with invalid VkPipelineLayout create flags");
     m_errorMonitor->ExpectSuccess();
 
     if (!AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME)) {
@@ -145,7 +145,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSets) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    VkPipelineLayout layout = VK_NULL_HANDLE;
     VkRenderPass render_pass = VK_NULL_HANDLE;
     uint32_t subpass = 0;
 
@@ -167,7 +166,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSets) {
         ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline());
     }
 
-    layout = pre_raster_lib.gp_ci_.layout;
     render_pass = pre_raster_lib.gp_ci_.renderPass;
     subpass = pre_raster_lib.gp_ci_.subpass;
 
