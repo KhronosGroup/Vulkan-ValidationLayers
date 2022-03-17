@@ -83,6 +83,7 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
     const PushConstantRangesId push_constant_ranges;
     // table of "compatible for set N" cannonical forms for trivial accept validation
     const std::vector<PipelineLayoutCompatId> compat_for_set;
+    VkPipelineLayoutCreateFlags create_flags;
 
     PIPELINE_LAYOUT_STATE(ValidationStateTracker *dev_data, VkPipelineLayout l, const VkPipelineLayoutCreateInfo *pCreateInfo);
     // Merge 2 or more non-overlapping layouts
@@ -100,4 +101,6 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
         }
         return dsl;
     }
+
+    VkPipelineLayoutCreateFlags CreateFlags() const { return create_flags; }
 };

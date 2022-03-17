@@ -191,15 +191,27 @@ static std::vector<PipelineLayoutCompatId> GetCompatForSet(const PIPELINE_LAYOUT
     return compat_for_set;
 }
 
+VkPipelineLayoutCreateFlags GetCreateFlags(const layer_data::span<const PIPELINE_LAYOUT_STATE *const> &layouts) {
+    VkPipelineLayoutCreateFlags flags = 0;
+    for (const auto &layout : layouts) {
+        if (layout) {
+            flags |= layout->CreateFlags();
+        }
+    }
+    return flags;
+}
+
 PIPELINE_LAYOUT_STATE::PIPELINE_LAYOUT_STATE(ValidationStateTracker *dev_data, VkPipelineLayout l,
                                              const VkPipelineLayoutCreateInfo *pCreateInfo)
     : BASE_NODE(l, kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(dev_data, pCreateInfo)),
       push_constant_ranges(GetCanonicalId(pCreateInfo)),
-      compat_for_set(GetCompatForSet(set_layouts, push_constant_ranges)) {}
+      compat_for_set(GetCompatForSet(set_layouts, push_constant_ranges)),
+      create_flags(pCreateInfo->flags) {}
 
 PIPELINE_LAYOUT_STATE::PIPELINE_LAYOUT_STATE(const layer_data::span<const PIPELINE_LAYOUT_STATE *const> &layouts)
     : BASE_NODE(static_cast<VkPipelineLayout>(VK_NULL_HANDLE), kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(layouts)),
       push_constant_ranges(GetPushConstantRangesFromLayouts(layouts)),  // TODO is this correct?
-      compat_for_set(GetCompatForSet(set_layouts, push_constant_ranges)) {}
+      compat_for_set(GetCompatForSet(set_layouts, push_constant_ranges)),
+      create_flags(GetCreateFlags(layouts)) {}
