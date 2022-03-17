@@ -2766,6 +2766,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                 VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(color_format);
                 if (((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) &&
                     (pPipeline->create_info.graphics.pColorBlendState &&
+                     color_index < pPipeline->create_info.graphics.pColorBlendState->attachmentCount &&
                      pPipeline->create_info.graphics.pColorBlendState->pAttachments[color_index].blendEnable != VK_FALSE)) {
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062",
                         "vkCreateGraphicsPipelines(): vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
