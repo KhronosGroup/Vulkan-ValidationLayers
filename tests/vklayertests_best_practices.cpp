@@ -1303,3 +1303,88 @@ TEST_F(VkBestPracticesLayerTest, ImageExtendedUsageWithoutMutableFormat) {
     vk::CreateImage(device(), &image_ci, nullptr, &image);
     m_errorMonitor->VerifyFound();
 }
+
+#if GTEST_IS_THREADSAFE
+TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
+    TEST_DESCRIPTION("Two threads updating the same UAB descriptor set, expected not to generate a threading error");
+    test_platform_thread thread;
+    m_errorMonitor->ExpectSuccess();
+
+    if (!AddRequiredInstanceExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Descriptor Indexing or Maintenance3 Extension not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device that enables descriptorBindingStorageBufferUpdateAfterBind
+    auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (VK_FALSE == indexing_features.descriptorBindingStorageBufferUpdateAfterBind) {
+        printf("%s Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind, skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    std::array<VkDescriptorBindingFlagsEXT, 2> flags = {
+        {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT}};
+    auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+    flags_create_info.bindingCount = (uint32_t)flags.size();
+    flags_create_info.pBindingFlags = flags.data();
+
+    OneOffDescriptorSet normal_descriptor_set(m_device,
+                                              {
+                                                  {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                              },
+                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
+                                              VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+
+    VkBufferObj buffer;
+    buffer.init(*m_device, 256, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    struct thread_data_struct data;
+    data.device = device();
+    data.descriptorSet = normal_descriptor_set.set_;
+    data.binding = 0;
+    data.buffer = buffer.handle();
+    bool bailout = false;
+    data.bailout = &bailout;
+    m_errorMonitor->SetBailout(data.bailout);
+
+    // Update descriptors from another thread.
+    test_platform_thread_create(&thread, UpdateDescriptor, (void *)&data);
+    // Update descriptors from this thread at the same time.
+
+    struct thread_data_struct data2;
+    data2.device = device();
+    data2.descriptorSet = normal_descriptor_set.set_;
+    data2.binding = 1;
+    data2.buffer = buffer.handle();
+    data2.bailout = &bailout;
+
+    UpdateDescriptor(&data2);
+
+    test_platform_thread_join(thread, NULL);
+
+    m_errorMonitor->SetBailout(NULL);
+
+    m_errorMonitor->VerifyNotFound();
+}
+#endif  // GTEST_IS_THREADSAFE
