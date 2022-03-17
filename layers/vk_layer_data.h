@@ -834,32 +834,34 @@ class span {
     using const_iterator = T const *;
 
     span() = default;
-    span(pointer start, size_t n) : data(start), count(n) {}
+    span(pointer start, size_t n) : data_(start), count_(n) {}
     template <typename Iterator>
-    span(Iterator start, Iterator end) : data(&(*start)), count(end - start) {}
+    span(Iterator start, Iterator end) : data_(&(*start)), count_(end - start) {}
     template <typename Container>
-    span(const Container &c) : data(c.data()), count(c.size()) {}
+    span(const Container &c) : data_(c.data()), count_(c.size()) {}
 
-    iterator begin() { return data; }
-    const_iterator begin() const { return data; }
+    iterator begin() { return data_; }
+    const_iterator begin() const { return data_; }
 
-    iterator end() { return data + count; }
-    const_iterator end() const { return data + count; }
+    iterator end() { return data_ + count_; }
+    const_iterator end() const { return data_ + count_; }
 
-    T &operator[](int i) { return data[i]; }
-    const T &operator[](int i) const { return data[i]; }
+    T &operator[](int i) { return data_[i]; }
+    const T &operator[](int i) const { return data_[i]; }
 
-    T &front() { return *data; }
-    const T &front() const { return *data; }
+    T &front() { return *data_; }
+    const T &front() const { return *data_; }
 
-    T &back() { return *(data + (count - 1)); }
-    const T &back() const { return *(data + (count - 1)); }
+    T &back() { return *(data_ + (count_ - 1)); }
+    const T &back() const { return *(data_ + (count_ - 1)); }
 
-    size_t size() const { return count; }
+    size_t size() const { return count_; }
+
+    pointer data() { return data_; }
 
   private:
-    pointer data = {};
-    size_t count = 0;
+    pointer data_ = {};
+    size_t count_ = 0;
 };
 }  // namespace layer_data
 #endif  // LAYER_DATA_H
