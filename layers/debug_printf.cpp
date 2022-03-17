@@ -55,8 +55,6 @@ void DebugPrintf::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
     ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
     ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, this->container_type);
     DebugPrintf *device_debug_printf = static_cast<DebugPrintf *>(validation_data);
-    device_debug_printf->physicalDevice = physicalDevice;
-    device_debug_printf->device = *pDevice;
 
     const char *size_string = getLayerOption("khronos_validation.printf_buffer_size");
     device_debug_printf->output_buffer_size = *size_string ? atoi(size_string) : 1024;

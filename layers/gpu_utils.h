@@ -71,7 +71,7 @@ void UtilPostCallRecordCreateDevice(const VkDeviceCreateInfo *pCreateInfo, std::
     }
     object_ptr->desc_set_bind_index = object_ptr->adjusted_max_desc_sets - 1;
 
-    VkResult result1 = UtilInitializeVma(object_ptr->physicalDevice, object_ptr->device, &object_ptr->vmaAllocator);
+    VkResult result1 = UtilInitializeVma(object_ptr->physical_device, object_ptr->device, &object_ptr->vmaAllocator);
     assert(result1 == VK_SUCCESS);
     std::unique_ptr<UtilDescriptorSetManager> desc_set_manager(
         new UtilDescriptorSetManager(object_ptr->device, static_cast<uint32_t>(bindings.size())));

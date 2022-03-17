@@ -304,8 +304,6 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
                    "shaderInt64 feature is not available.  No buffer device address checking will be attempted");
     }
     device_gpu_assisted->shaderInt64 = supported_features.shaderInt64;
-    device_gpu_assisted->physicalDevice = physicalDevice;
-    device_gpu_assisted->device = *pDevice;
     device_gpu_assisted->output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + 1);
     if (validate_descriptor_indexing) {
         device_gpu_assisted->descriptor_indexing = CheckForDescriptorIndexing(device_gpu_assisted->enabled_features);
