@@ -107,6 +107,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
@@ -171,6 +172,7 @@ TEST_F(VkPositiveLayerTest, CmdClearAttachmentTestsDynamicRendering) {
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.renderArea = clear_rect.rect;
+    begin_rendering_info.layerCount = 1;
     m_commandBuffer->BeginRendering(begin_rendering_info);
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
 
@@ -233,6 +235,7 @@ TEST_F(VkPositiveLayerTest, TestBarrierWithDynamicRendering) {
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
     begin_rendering_info.renderArea = clear_rect.rect;
+    begin_rendering_info.layerCount = 1;
 
     vkCmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
 

@@ -13325,6 +13325,7 @@ TEST_F(VkLayerTest, ValidateBeginRenderingDisabled) {
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
     auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.layerCount = 1;
 
     m_commandBuffer->begin();
 
