@@ -1287,6 +1287,7 @@ TEST_F(VkLayerTest, DynamicRenderingDepthFormatAndResolveMode) {
     depth_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.layerCount = 1;
     begin_rendering_info.pDepthAttachment = &depth_attachment;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06131");
@@ -1379,6 +1380,7 @@ TEST_F(VkLayerTest, TestDynamicRenderingPipelineMissingFlags) {
         fragment_shading_rate.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
 
         VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>(&fragment_shading_rate);
+        begin_rendering_info.layerCount = 1;
         begin_rendering_info.colorAttachmentCount = 1;
         begin_rendering_info.pColorAttachments = &color_attachment;
 
@@ -1412,6 +1414,7 @@ TEST_F(VkLayerTest, TestDynamicRenderingPipelineMissingFlags) {
         fragment_density_map.imageView = depth_image_view.handle();
 
         VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>(&fragment_density_map);
+        begin_rendering_info.layerCount = 1;
         begin_rendering_info.colorAttachmentCount = 1;
         begin_rendering_info.pColorAttachments = &color_attachment;
 
@@ -1563,6 +1566,7 @@ TEST_F(VkLayerTest, TestRenderingInfoMismatchedSamples) {
     depth_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.layerCount = 1;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.pDepthAttachment = &depth_attachment;
