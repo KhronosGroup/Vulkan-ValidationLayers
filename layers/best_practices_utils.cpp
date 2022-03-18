@@ -296,6 +296,13 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
                        image_hex.str().c_str(), pCreateInfo->queueFamilyIndexCount);
     }
 
+    if ((pCreateInfo->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) && !(pCreateInfo->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
+        skip |= LogWarning(device, kVUID_BestPractices_ImageCreateFlags,
+                           "vkCreateImage(): pCreateInfo->flags has VK_IMAGE_CREATE_EXTENDED_USAGE_BIT set, but not "
+                           "VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, therefore image views created from this image will have to use the "
+                           "same format and VK_IMAGE_CREATE_EXTENDED_USAGE_BIT will not have any effect.");
+    }
+
     if (VendorCheckEnabled(kBPVendorArm)) {
         if (pCreateInfo->samples > kMaxEfficientSamplesArm) {
             skip |= LogPerformanceWarning(
