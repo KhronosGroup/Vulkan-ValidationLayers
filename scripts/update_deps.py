@@ -2,7 +2,8 @@
 
 # Copyright 2017 The Glslang Authors. All rights reserved.
 # Copyright (c) 2018 Valve Corporation
-# Copyright (c) 2018-2021 LunarG, Inc.
+# Copyright (c) 2018-2022 LunarG, Inc.
+# Copyright (c) 2022 Socionext Europe GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -442,6 +443,9 @@ class GoodRepo(object):
             'cmake', self.repo_dir,
             '-DCMAKE_INSTALL_PREFIX=' + self.install_dir
         ]
+        for cmake_option in self._args.cmake_option:
+            pieces = cmake_option.split('=', 1)
+            cmake_cmd.append('-D{}={}'.format(pieces[0], pieces[1] if len(pieces) > 1 else 'ON'))
 
         # For each repo this repo depends on, generate a CMake variable
         # definitions for "...INSTALL_DIR" that points to that dependent
@@ -676,6 +680,14 @@ def main():
         type=lambda a: set(a.lower().split(',')),
         help="Comma-separated list of 'optional' resources that may be skipped. Only 'tests' is currently supported as 'optional'",
         default=set())
+    parser.add_argument(
+        '--cmake-option',
+        dest='cmake_option',
+        action='append',
+        metavar='VAR[=VALUE]',
+        help="Add CMake command line option -D'VAR'='VALUE' [ON by default] to "
+             "the CMake generation command line; may be used multiple times",
+        default=[])
 
     args = parser.parse_args()
     save_cwd = os.getcwd()
