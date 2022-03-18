@@ -6925,17 +6925,42 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
         uint32_t first_sample_count_attachment = VK_ATTACHMENT_UNUSED;
         for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
             if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
-                auto image_view = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[j].imageView);
+                const auto image_view = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[j].imageView);
                 first_sample_count_attachment = (first_sample_count_attachment == VK_ATTACHMENT_UNUSED)
                                                     ? static_cast<uint32_t>(image_view->samples)
                                                     : first_sample_count_attachment;
                 if (first_sample_count_attachment != image_view->samples) {
                     skip |=
                         LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06070",
-                                 "%s(): Color attachment ref %u has sample count %s, whereas first used color "
-                                 "attachment ref has sample count %u.",
-                                 func_name, j, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
+                                 "%s(): Color attachment ref %" PRIu32
+                                 " has sample count %s, whereas first used color "
+                                 "attachment ref has sample count %" PRIu32 ".",
+                                 func_name, j, string_VkSampleCountFlagBits(image_view->samples), first_sample_count_attachment);
                 }
+            }
+        }
+        if (pRenderingInfo->pDepthAttachment != VK_NULL_HANDLE) {
+            const auto image_view = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pDepthAttachment->imageView);
+            first_sample_count_attachment = (first_sample_count_attachment == VK_ATTACHMENT_UNUSED)
+                                                ? static_cast<uint32_t>(image_view->samples)
+                                                : first_sample_count_attachment;
+            if (first_sample_count_attachment != image_view->samples) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06070",
+                                 "%s(): Depth attachment ref has sample count %s, whereas first used color "
+                                 "attachment ref has sample count %" PRIu32 ".",
+                                 func_name, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
+            }
+        }
+        if (pRenderingInfo->pStencilAttachment != VK_NULL_HANDLE) {
+            const auto image_view = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pStencilAttachment->imageView);
+            first_sample_count_attachment = (first_sample_count_attachment == VK_ATTACHMENT_UNUSED)
+                                                ? static_cast<uint32_t>(image_view->samples)
+                                                : first_sample_count_attachment;
+            if (first_sample_count_attachment != image_view->samples) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06070",
+                                 "%s(): Stencil attachment ref has sample count %s, whereas another "
+                                 "attachment ref has sample count %" PRIu32 ".",
+                                 func_name, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
             }
         }
     }
