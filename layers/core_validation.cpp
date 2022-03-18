@@ -6803,10 +6803,10 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                          func_name);
     }
 
-    if (pRenderingInfo->viewMask != 0 && pRenderingInfo->layerCount == 0) {
+    if (pRenderingInfo->viewMask == 0 && pRenderingInfo->layerCount == 0) {
         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-viewMask-06069",
-                         "%s(): If viewMask is not 0 (%u), layerCount must not be 0 (%u).", func_name, pRenderingInfo->viewMask,
-                         pRenderingInfo->layerCount);
+                         "%s(): If viewMask is 0 (%" PRIu32 "), layerCount must not be 0 (%" PRIu32 ").", func_name,
+                         pRenderingInfo->viewMask, pRenderingInfo->layerCount);
     }
 
     auto rendering_fragment_shading_rate_attachment_info =
