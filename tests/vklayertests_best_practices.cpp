@@ -1277,3 +1277,29 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineWithoutRenderPass) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkBestPracticesLayerTest, ImageExtendedUsageWithoutMutableFormat) {
+    TEST_DESCRIPTION("Create image with extended usage bit but not mutable format bit.");
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.flags = VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_ci.extent.width = 256;
+    image_ci.extent.height = 256;
+    image_ci.extent.depth = 1;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImage image;
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_ImageCreateFlags);
+    vk::CreateImage(device(), &image_ci, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
