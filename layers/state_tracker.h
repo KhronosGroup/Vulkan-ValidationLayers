@@ -452,6 +452,17 @@ class ValidationStateTracker : public ValidationObject {
         return found_it->second;
     }
 
+    using BufferAddressRange = sparse_container::range<VkDeviceAddress>;
+    std::vector<BufferAddressRange> GetBufferAddressRanges() const {
+        ReadLockGuard guard(buffer_address_lock_);
+        std::vector<BufferAddressRange> result;
+        result.reserve(buffer_address_map_.size());
+        for (const auto& entry : buffer_address_map_) {
+            result.push_back(entry.first);
+        }
+        return result;
+    }
+
     using CommandBufferResetCallback = std::function<void(VkCommandBuffer)>;
     template <typename Fn>
     void SetCommandBufferResetCallback(Fn&& fn) {

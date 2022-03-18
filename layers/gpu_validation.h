@@ -149,13 +149,6 @@ class GpuAssisted : public ValidationStateTracker {
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, void* modified_create_info) override;
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result) override;
-    void PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
-                                              VkDeviceAddress address) override;
-    void PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
-                                                 VkDeviceAddress address) override;
-    void PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
-                                                 VkDeviceAddress address) override;
-    void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator) override;
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) override;
     void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                          const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
@@ -177,8 +170,6 @@ class GpuAssisted : public ValidationStateTracker {
                                        const VkDependencyInfo* pDependencyInfos) const override;
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, void* cb_state_data) override;
-    void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                    VkBuffer* pBuffer, VkResult result) override;
     void CreateAccelerationStructureBuildValidationState();
     void DestroyAccelerationStructureBuildValidationState();
     void PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
@@ -366,7 +357,6 @@ class GpuAssisted : public ValidationStateTracker {
     uint32_t output_buffer_size;
     bool buffer_oob_enabled;
     bool validate_draw_indirect;
-    std::map<VkDeviceAddress, VkDeviceSize> buffer_map;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
     GpuAssistedPreDrawValidationState pre_draw_validation_state;
 
