@@ -1351,3 +1351,99 @@ TEST_F(VkLayerTest, TestDynamicRenderingPipelineMissingFlags) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(VkLayerTest, TestRenderingInfoMismatchedSamples) {
+    TEST_DESCRIPTION("Test beginning rendering with mismatched sample counts.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent.width = 64;
+    image_ci.extent.height = 64;
+    image_ci.extent.depth = 1;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    VkImageObj color_image(m_device);
+    color_image.init(&image_ci);
+
+    VkImageViewCreateInfo civ_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    civ_ci.image = color_image.handle();
+    civ_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    civ_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    civ_ci.subresourceRange.layerCount = 1;
+    civ_ci.subresourceRange.baseMipLevel = 0;
+    civ_ci.subresourceRange.levelCount = 1;
+    civ_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    vk_testing::ImageView color_image_view;
+    color_image_view.init(*m_device, civ_ci);
+
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageView = color_image_view.handle();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
+
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
+    if (depth_format == VK_FORMAT_UNDEFINED) {
+        printf("%s requires a depth only format, skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    VkImageObj depth_image(m_device);
+    depth_image.Init(64, 64, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+
+    VkImageViewCreateInfo div_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    div_ci.image = depth_image.handle();
+    div_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    div_ci.format = depth_format;
+    div_ci.subresourceRange.layerCount = 1;
+    div_ci.subresourceRange.baseMipLevel = 0;
+    div_ci.subresourceRange.levelCount = 1;
+    div_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+    vk_testing::ImageView depth_image_view;
+    depth_image_view.init(*m_device, div_ci);
+
+    VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    depth_attachment.imageView = depth_image_view.handle();
+    depth_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
+
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.pDepthAttachment = &depth_attachment;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06070");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+}
