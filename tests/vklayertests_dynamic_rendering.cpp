@@ -1535,3 +1535,53 @@ TEST_F(VkLayerTest, TestRenderingInfoMismatchedSamples) {
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, BeginRenderingInvalidDepthAttachmentFormat) {
+    TEST_DESCRIPTION("Test begin rendering with a depth attachment that has an invalid format");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkFormat stencil_format = FindSupportedStencilOnlyFormat(gpu());
+    if (stencil_format == VK_FORMAT_UNDEFINED) {
+        printf("%s requires a stencil only format format.\n", kSkipPrefix);
+        return;
+    }
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    VkImageView image_view = image.targetView(stencil_format, VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depth_attachment.imageView = image_view;
+
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.pDepthAttachment = &depth_attachment;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pDepthAttachment-06547");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+}
