@@ -7567,6 +7567,9 @@ bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer
             skip |= LogError(commandBuffer, "VUID-vkCmdEndRendering-commandBuffer-06162",
                              "Calling vkCmdEndRenderingKHR() in a render pass instance that was not begun in this command buffer.");
         }
+    } else {
+        skip |= LogError(commandBuffer, "VUID-vkCmdEndRendering-renderpass",
+                         "Calling vkCmdEndRenderingKHR() outside of a render pass instance.");
     }
     return skip;
 }
