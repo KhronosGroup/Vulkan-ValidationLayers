@@ -1349,7 +1349,7 @@ TEST_F(VkLayerTest, TestDynamicRenderingPipelineMissingFlags) {
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     image.Init(image_create_info);
@@ -1681,21 +1681,77 @@ TEST_F(VkLayerTest, TestBeginRenderingInvalidFragmentShadingRateImage) {
     vk::GetPhysicalDeviceProperties2(gpu(), &properties2);
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT,
+               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UINT);
 
+    VkImageObj invalid_image(m_device);
+    invalid_image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    VkImageView invalid_image_view = invalid_image.targetView(VK_FORMAT_R8G8B8A8_UINT);
+
     auto fragment_shading_rate = LvlInitStruct<VkRenderingFragmentShadingRateAttachmentInfoKHR>();
-    fragment_shading_rate.imageView = image_view;
+    fragment_shading_rate.imageView = invalid_image_view;
     fragment_shading_rate.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     fragment_shading_rate.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>(&fragment_shading_rate);
+    begin_rendering_info.layerCount = 1;
+
+    m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06148");
-    m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
-    m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
+    fragment_shading_rate.imageView = image_view;
+
+    fragment_shading_rate.shadingRateAttachmentTexelSize.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width + 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06149");
+    if (fragment_shading_rate.shadingRateAttachmentTexelSize.width >
+        fsr_properties.minFragmentShadingRateAttachmentTexelSize.width) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06150");
+    }
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    if (fsr_properties.minFragmentShadingRateAttachmentTexelSize.width > 1) {
+        fragment_shading_rate.shadingRateAttachmentTexelSize.width =
+            fsr_properties.minFragmentShadingRateAttachmentTexelSize.width / 2;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06151");
+        if (fragment_shading_rate.shadingRateAttachmentTexelSize.height /
+                fragment_shading_rate.shadingRateAttachmentTexelSize.width >=
+            fsr_properties.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06156");
+        }
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    fragment_shading_rate.shadingRateAttachmentTexelSize.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
+
+    fragment_shading_rate.shadingRateAttachmentTexelSize.height =
+        fsr_properties.minFragmentShadingRateAttachmentTexelSize.height + 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06152");
+    if (fragment_shading_rate.shadingRateAttachmentTexelSize.height >
+        fsr_properties.minFragmentShadingRateAttachmentTexelSize.height) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06153");
+    }
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    if (fsr_properties.minFragmentShadingRateAttachmentTexelSize.height > 1) {
+        fragment_shading_rate.shadingRateAttachmentTexelSize.height =
+            fsr_properties.minFragmentShadingRateAttachmentTexelSize.height / 2;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06154");
+        if (fragment_shading_rate.shadingRateAttachmentTexelSize.width /
+                fragment_shading_rate.shadingRateAttachmentTexelSize.height >
+            fsr_properties.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06155");
+        }
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, BeginRenderingInvalidDepthAttachmentFormat) {
