@@ -232,18 +232,6 @@ void GpuAssisted::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreat
     ValidationStateTracker::PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, cb_state_data);
 }
 
-void GpuAssisted::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer, VkResult result) {
-    ValidationStateTracker::PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, result);
-    if (pCreateInfo) {
-        const auto *opaque_capture_address = LvlFindInChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
-        if (opaque_capture_address) {
-            // Validate against the size requested when the buffer was created
-            buffer_map[opaque_capture_address->opaqueCaptureAddress] = pCreateInfo->size;
-        }
-    }
-}
-
 // Turn on necessary device features.
 void GpuAssisted::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *create_info,
                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
@@ -321,33 +309,6 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
     }
     UtilPostCallRecordCreateDevice(pCreateInfo, bindings, device_gpu_assisted, device_gpu_assisted->phys_dev_props);
     device_gpu_assisted->CreateAccelerationStructureBuildValidationState();
-}
-
-void GpuAssisted::PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                       VkDeviceAddress address) {
-    auto buffer_state = Get<BUFFER_STATE>(pInfo->buffer);
-    // Validate against the size requested when the buffer was created
-    if (buffer_state) {
-        buffer_state->deviceAddress = address;
-        buffer_map[address] = buffer_state->createInfo.size;
-    }
-    ValidationStateTracker::PostCallRecordGetBufferDeviceAddress(device, pInfo, address);
-}
-
-void GpuAssisted::PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                          VkDeviceAddress address) {
-    PostCallRecordGetBufferDeviceAddress(device, pInfo, address);
-}
-
-void GpuAssisted::PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                          VkDeviceAddress address) {
-    PostCallRecordGetBufferDeviceAddress(device, pInfo, address);
-}
-
-void GpuAssisted::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
-    auto buffer_state = Get<BUFFER_STATE>(buffer);
-    if (buffer_state) buffer_map.erase(buffer_state->deviceAddress);
-    ValidationStateTracker::PreCallRecordDestroyBuffer(device, buffer, pAllocator);
 }
 
 // Clean up device-related resources
@@ -2391,57 +2352,60 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
 
     if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
          IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-        buffer_map.size() && shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
-        // Example BDA input buffer assuming 2 buffers using BDA:
-        // Word 0 | Index of start of buffer sizes (in this case 5)
-        // Word 1 | 0x0000000000000000
-        // Word 2 | Device Address of first buffer  (Addresses sorted in ascending order)
-        // Word 3 | Device Address of second buffer
-        // Word 4 | 0xffffffffffffffff
-        // Word 5 | 0 (size of pretend buffer at word 1)
-        // Word 6 | Size in bytes of first buffer
-        // Word 7 | Size in bytes of second buffer
-        // Word 8 | 0 (size of pretend buffer in word 4)
+        shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
+        auto address_ranges = GetBufferAddressRanges();
+        if (address_ranges.size() > 0) {
+            // Example BDA input buffer assuming 2 buffers using BDA:
+            // Word 0 | Index of start of buffer sizes (in this case 5)
+            // Word 1 | 0x0000000000000000
+            // Word 2 | Device Address of first buffer  (Addresses sorted in ascending order)
+            // Word 3 | Device Address of second buffer
+            // Word 4 | 0xffffffffffffffff
+            // Word 5 | 0 (size of pretend buffer at word 1)
+            // Word 6 | Size in bytes of first buffer
+            // Word 7 | Size in bytes of second buffer
+            // Word 8 | 0 (size of pretend buffer in word 4)
 
-        uint32_t num_buffers = static_cast<uint32_t>(buffer_map.size());
-        uint32_t words_needed = (num_buffers + 3) + (num_buffers + 2);
-        alloc_info.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        buffer_info.size = words_needed * 8;  // 64 bit words
-        result =
-            vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &bda_input_block.buffer, &bda_input_block.allocation, nullptr);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.");
-            aborted = true;
-            return;
+            uint32_t num_buffers = static_cast<uint32_t>(address_ranges.size());
+            uint32_t words_needed = (num_buffers + 3) + (num_buffers + 2);
+            alloc_info.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            buffer_info.size = words_needed * 8;  // 64 bit words
+            result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &bda_input_block.buffer, &bda_input_block.allocation,
+                                     nullptr);
+            if (result != VK_SUCCESS) {
+                ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.");
+                aborted = true;
+                return;
+            }
+            uint64_t *bda_data;
+            result = vmaMapMemory(vmaAllocator, bda_input_block.allocation, reinterpret_cast<void **>(&bda_data));
+            uint32_t address_index = 1;
+            uint32_t size_index = 3 + num_buffers;
+            memset(bda_data, 0, static_cast<size_t>(buffer_info.size));
+            bda_data[0] = size_index;       // Start of buffer sizes
+            bda_data[address_index++] = 0;  // NULL address
+            bda_data[size_index++] = 0;
+
+            for (const auto &range : address_ranges) {
+                bda_data[address_index++] = range.begin;
+                bda_data[size_index++] = range.end - range.begin;
+            }
+            bda_data[address_index] = UINTPTR_MAX;
+            bda_data[size_index] = 0;
+            vmaUnmapMemory(vmaAllocator, bda_input_block.allocation);
+
+            bda_input_desc_buffer_info.range = (words_needed * 8);
+            bda_input_desc_buffer_info.buffer = bda_input_block.buffer;
+            bda_input_desc_buffer_info.offset = 0;
+
+            desc_writes[desc_count] = LvlInitStruct<VkWriteDescriptorSet>();
+            desc_writes[desc_count].dstBinding = 2;
+            desc_writes[desc_count].descriptorCount = 1;
+            desc_writes[desc_count].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            desc_writes[desc_count].pBufferInfo = &bda_input_desc_buffer_info;
+            desc_writes[desc_count].dstSet = desc_sets[0];
+            desc_count++;
         }
-        uint64_t *bda_data;
-        result = vmaMapMemory(vmaAllocator, bda_input_block.allocation, reinterpret_cast<void **>(&bda_data));
-        uint32_t address_index = 1;
-        uint32_t size_index = 3 + num_buffers;
-        memset(bda_data, 0, static_cast<size_t>(buffer_info.size));
-        bda_data[0] = size_index;       // Start of buffer sizes
-        bda_data[address_index++] = 0;  // NULL address
-        bda_data[size_index++] = 0;
-
-        for (const auto &value : buffer_map) {
-            bda_data[address_index++] = value.first;
-            bda_data[size_index++] = value.second;
-        }
-        bda_data[address_index] = UINTPTR_MAX;
-        bda_data[size_index] = 0;
-        vmaUnmapMemory(vmaAllocator, bda_input_block.allocation);
-
-        bda_input_desc_buffer_info.range = (words_needed * 8);
-        bda_input_desc_buffer_info.buffer = bda_input_block.buffer;
-        bda_input_desc_buffer_info.offset = 0;
-
-        desc_writes[desc_count] = LvlInitStruct<VkWriteDescriptorSet>();
-        desc_writes[desc_count].dstBinding = 2;
-        desc_writes[desc_count].descriptorCount = 1;
-        desc_writes[desc_count].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[desc_count].pBufferInfo = &bda_input_desc_buffer_info;
-        desc_writes[desc_count].dstSet = desc_sets[0];
-        desc_count++;
     }
 
     // Write the descriptor
