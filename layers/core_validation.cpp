@@ -6815,7 +6815,15 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
     if (rendering_fragment_shading_rate_attachment_info &&
         (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
         auto view_state = Get<IMAGE_VIEW_STATE>(rendering_fragment_shading_rate_attachment_info->imageView);
-        if (pRenderingInfo->viewMask != 0) {
+        if (pRenderingInfo->viewMask == 0) {
+            if (view_state->create_info.subresourceRange.layerCount != 1 &&
+                view_state->create_info.subresourceRange.layerCount < pRenderingInfo->layerCount) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06123",
+                                 "%s(): imageView must have a layerCount (%" PRIu32 ") that is either equal to 1 or greater than or equal to "
+                                 "VkRenderingInfo::layerCount (%" PRIu32 ").",
+                                 func_name, view_state->create_info.subresourceRange.layerCount, pRenderingInfo->layerCount);
+            }
+        } else {
             int highest_view_bit = MostSignificantBit(pRenderingInfo->viewMask);
             int32_t layer_count = view_state->create_info.subresourceRange.layerCount;
             if (layer_count != 1 && layer_count < highest_view_bit) {
