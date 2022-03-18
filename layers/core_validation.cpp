@@ -7357,6 +7357,14 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                      pRenderingInfo->pDepthAttachment->resolveMode);
                 }
             }
+
+            if (!FormatHasDepth(depth_view_state->create_info.format)) {
+                skip |=
+                    LogError(commandBuffer, "VUID-VkRenderingInfo-pDepthAttachment-06547",
+                             "%s(): pRenderingInfo->pDepthAttachment->imageView was created with a format (%s) that does not have "
+                             "a depth aspect.",
+                             func_name, string_VkFormat(depth_view_state->create_info.format));
+            }
         }
     }
 
