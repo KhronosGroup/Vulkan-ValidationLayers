@@ -6826,6 +6826,13 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             }
         }
 
+        if ((view_state->inherited_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) == 0) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06148",
+                             "%s(): VkRenderingFragmentShadingRateAttachmentInfoKHR::imageView was not created with "
+                             "VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.",
+                             func_name);
+        }
+
         if (UniqueImageViews(pRenderingInfo, rendering_fragment_shading_rate_attachment_info->imageView) == false) {
             skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06125",
                              "%s(): imageView or resolveImageView member of pDepthAttachment, pStencilAttachment, or any element "
