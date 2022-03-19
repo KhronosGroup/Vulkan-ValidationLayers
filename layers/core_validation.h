@@ -325,7 +325,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo* pCreateInfo) const;
     bool MatchUsage(uint32_t count, const VkAttachmentReference2* attachments, const VkFramebufferCreateInfo* fbci,
                     VkImageUsageFlagBits usage_flag, const char* error_code) const;
-    bool IsImageLayoutReadOnly(VkImageLayout layout) const;
     bool IsDynamic(const PIPELINE_STATE* pPipeline, const VkDynamicState state) const;
     bool CheckDependencyExists(const VkRenderPass renderpass, const uint32_t subpass, const VkImageLayout layout,
                                const std::vector<SubpassLayout>& dependent_subpasses, const std::vector<DAGNode>& subpass_to_node,

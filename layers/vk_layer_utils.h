@@ -205,6 +205,20 @@ static inline uint32_t SampleCountSize(VkSampleCountFlagBits sample_count) {
     return size;
 }
 
+static inline bool IsImageLayoutReadOnly(VkImageLayout layout) {
+    constexpr std::array<VkImageLayout, 7> read_only_layouts = {
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
+        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+    };
+    return std::any_of(read_only_layouts.begin(), read_only_layouts.end(),
+                       [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
+}
+
 static inline bool IsIdentitySwizzle(VkComponentMapping components) {
     // clang-format off
     return (

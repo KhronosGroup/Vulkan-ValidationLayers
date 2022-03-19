@@ -1405,6 +1405,16 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
     skip |= CheckPipelineStageFlags("vkCmdPipelineBarrier", srcStageMask);
     skip |= CheckPipelineStageFlags("vkCmdPipelineBarrier", dstStageMask);
 
+    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+        if (pImageMemoryBarriers[i].oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
+            IsImageLayoutReadOnly(pImageMemoryBarriers[i].newLayout)) {
+            skip |= LogWarning(device, kVUID_BestPractices_TransitionUndefinedToReadOnly,
+                               "VkImageMemoryBarrier is being submitted with oldLayout VK_IMAGE_LAYOUT_UNDEFINED and the contents "
+                               "may be discarded, but the newLayout is %s, which is read only.",
+                               string_VkImageLayout(pImageMemoryBarriers[i].newLayout));
+        }
+    }
+
     if (VendorCheckEnabled(kBPVendorAMD)) {
         auto num = num_barriers_objects_.load();
         if (num + imageMemoryBarrierCount + bufferMemoryBarrierCount > kMaxRecommendedBarriersSizeAMD) {
