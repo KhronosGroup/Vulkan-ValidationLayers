@@ -11432,20 +11432,6 @@ static bool FindDependency(const uint32_t index, const uint32_t dependent, const
     return false;
 }
 
-bool CoreChecks::IsImageLayoutReadOnly(VkImageLayout layout) const {
-    constexpr std::array<VkImageLayout, 7> read_only_layouts = {
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
-        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-    };
-    return std::any_of(read_only_layouts.begin(), read_only_layouts.end(),
-                       [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
-}
-
 bool CoreChecks::CheckDependencyExists(const VkRenderPass renderpass, const uint32_t subpass, const VkImageLayout layout,
                                        const std::vector<SubpassLayout> &dependent_subpasses,
                                        const std::vector<DAGNode> &subpass_to_node, bool &skip) const {
