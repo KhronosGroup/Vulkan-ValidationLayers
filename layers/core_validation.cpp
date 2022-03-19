@@ -7409,6 +7409,14 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                      string_VkResolveModeFlagBits(pRenderingInfo->pStencilAttachment->resolveMode));
                 }
             }
+
+            if (!FormatHasStencil(stencil_view_state->create_info.format)) {
+                skip |= LogError(
+                    commandBuffer, "VUID-VkRenderingInfo-pStencilAttachment-06548",
+                    "%s(): pRenderingInfo->pStencilAttachment->imageView was created with a format (%s) that does not have "
+                    "a stencil aspect.",
+                    func_name, string_VkFormat(stencil_view_state->create_info.format));
+            }
         }
     }
 
