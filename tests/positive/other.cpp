@@ -657,3 +657,57 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
 
     vk::QueueWaitIdle(queue_h);
 }
+
+TEST_F(VkPositiveLayerTest, ValidateGetAccelerationStructureBuildSizes) {
+    TEST_DESCRIPTION("Test enabled features for GetAccelerationStructureBuildSizes");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    // Crashes without any warnings
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        printf("%s Test does not run on AMD proprietary driver, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+        return;
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1 extensions, not available, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
+    auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(&ray_query_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&ray_tracing_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (ray_tracing_features.rayTracingPipeline == VK_FALSE) {
+        printf("%s rayTracingPipeline feature not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    ray_query_features.rayQuery = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_errorMonitor->ExpectSuccess();
+
+    auto vkGetAccelerationStructureBuildSizesKHR = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetAccelerationStructureBuildSizesKHR"));
+    assert(vkGetAccelerationStructureBuildSizesKHR != nullptr);
+
+    auto build_info = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
+    build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    uint32_t max_primitives_count;
+    auto build_sizes_info = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
+    vkGetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
+                                            &max_primitives_count,
+                                            &build_sizes_info);
+
+    m_errorMonitor->VerifyNotFound();
+}
