@@ -7457,6 +7457,39 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                  func_name, image_state->createInfo.extent.height);
             }
         }
+
+        if (fragment_density_map_attachment_info && fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
+            auto view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
+            IMAGE_STATE *image_state = view_state->image_state.get();
+            if (image_state->createInfo.extent.width <
+                static_cast<uint32_t>(std::ceil(
+                    (pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width) /
+                    static_cast<float>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)))) {
+                skip |= LogError(
+                    commandBuffer, "VUID-VkRenderingInfo-pNext-06112",
+                    "%s(): width of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
+                    ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRIu32
+                    ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
+                    ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.width (%" PRIu32 ").",
+                    func_name, image_state->createInfo.extent.width, pRenderingInfo->renderArea.offset.x,
+                    pRenderingInfo->renderArea.extent.width,
+                    phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
+            }
+            if (image_state->createInfo.extent.height <
+                static_cast<uint32_t>(std::ceil(
+                    (pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height) /
+                    static_cast<float>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)))) {
+                skip |= LogError(
+                    commandBuffer, "VUID-VkRenderingInfo-pNext-06114",
+                    "%s(): height of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
+                    ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRIu32
+                    ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
+                    ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.height (%" PRIu32 ").",
+                    func_name, image_state->createInfo.extent.height, pRenderingInfo->renderArea.offset.y,
+                    pRenderingInfo->renderArea.extent.height,
+                    phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
+            }
+        }
     }
 
     if (chained_device_group_struct) {
@@ -7545,6 +7578,39 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                      " must be greater than or equal to"
                                      "renderArea.offset.y (%" PRIu32 ") +  renderArea.extent.height(%" PRIu32 ").",
                                      func_name, image_state->createInfo.extent.height, offset_y, height);
+                }
+            }
+
+            if (fragment_density_map_attachment_info && fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
+                auto view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
+                IMAGE_STATE *image_state = view_state->image_state.get();
+                if (image_state->createInfo.extent.width <
+                    static_cast<uint32_t>(std::ceil(
+                        (offset_x + width) /
+                        static_cast<float>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)))) {
+                    skip |= LogError(
+                        commandBuffer, "VUID-VkRenderingInfo-pNext-06113",
+                        "%s(): width of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
+                        ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
+                        "].offset.x (%" PRIu32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
+                        "].extent.width (%" PRIu32
+                        ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.width (%" PRIu32 ").",
+                        func_name, image_state->createInfo.extent.width, deviceRenderAreaIndex, offset_x, deviceRenderAreaIndex,
+                        width, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
+                }
+                if (image_state->createInfo.extent.height <
+                    static_cast<uint32_t>(std::ceil(
+                        (offset_y + height) /
+                        static_cast<float>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)))) {
+                    skip |= LogError(
+                        commandBuffer, "VUID-VkRenderingInfo-pNext-06115",
+                        "%s(): height of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
+                        ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
+                        "].offset.y (%" PRIu32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
+                        "].extent.height (%" PRIu32
+                        ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.height (%" PRIu32 ").",
+                        func_name, image_state->createInfo.extent.height, deviceRenderAreaIndex, offset_y, deviceRenderAreaIndex,
+                        height, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
                 }
             }
         }
