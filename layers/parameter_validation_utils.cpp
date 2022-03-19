@@ -7895,9 +7895,8 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
     const auto *ray_tracing_pipeline_features =
         LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
     const auto *ray_query_features = LvlFindInChain<VkPhysicalDeviceRayQueryFeaturesKHR>(device_createinfo_pnext);
-    if (!(ray_tracing_pipeline_features || ray_query_features) ||
-        ((ray_tracing_pipeline_features && ray_tracing_pipeline_features->rayTracingPipeline == VK_FALSE) ||
-         (ray_query_features && ray_query_features->rayQuery == VK_FALSE))) {
+    if (!((ray_tracing_pipeline_features && ray_tracing_pipeline_features->rayTracingPipeline == VK_TRUE) ||
+         (ray_query_features && ray_query_features->rayQuery == VK_TRUE))) {
         skip |= LogError(device, "VUID-vkGetAccelerationStructureBuildSizesKHR-rayTracingPipeline-03617",
                          "vkGetAccelerationStructureBuildSizesKHR: The rayTracingPipeline or rayQuery feature must be enabled");
     }
