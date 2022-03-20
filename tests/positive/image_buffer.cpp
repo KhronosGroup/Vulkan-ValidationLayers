@@ -2073,12 +2073,20 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     swapchain_images.resize(swapchain_images_count);
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
 
+    vk_testing::Fence fence;
+    fence.init(*m_device, VkFenceObj::create_info());
+    VkFence fence_handle = fence.handle();
+
+    uint32_t image_index;
+    vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence_handle, &image_index);
+    vk::WaitForFences(m_device->device(), 1, &fence_handle, VK_TRUE, std::numeric_limits<uint64_t>::max());
+
     m_commandBuffer->begin();
 
     auto img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    img_barrier.image = swapchain_images[0];
+    img_barrier.image = swapchain_images[image_index];
     img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
