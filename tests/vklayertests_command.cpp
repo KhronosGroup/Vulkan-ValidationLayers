@@ -11671,3 +11671,50 @@ TEST_F(VkLayerTest, CopyImageRemainingLayers) {
 
     m_commandBuffer->end();
 }
+TEST_F(VkLayerTest, EndRenderPassWithActiveTransformFeedback) {
+    TEST_DESCRIPTION("Call CmdEndRenderPass when transform feedback is active");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(tf_features);
+
+    if (tf_features.transformFeedback == VK_FALSE) {
+        GTEST_SKIP() << "transformFeedback not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto vkCmdBeginTransformFeedbackEXT = reinterpret_cast<PFN_vkCmdBeginTransformFeedbackEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginTransformFeedbackEXT"));
+    ASSERT_TRUE(vkCmdBeginTransformFeedbackEXT != nullptr);
+    auto vkCmdEndTransformFeedbackEXT = reinterpret_cast<PFN_vkCmdEndTransformFeedbackEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndTransformFeedbackEXT"));
+    ASSERT_TRUE(vkCmdEndTransformFeedbackEXT != nullptr);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vkCmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndRenderPass-None-02351");
+    m_commandBuffer->EndRenderPass();
+    m_errorMonitor->VerifyFound();
+    vkCmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
