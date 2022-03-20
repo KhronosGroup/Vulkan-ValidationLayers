@@ -1623,6 +1623,7 @@ TEST_F(VkLayerTest, TestDeviceGroupRenderPassBeginInfo) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>(&device_group_render_pass_begin_info);
+    begin_rendering_info.layerCount = 1;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
 
@@ -1689,6 +1690,7 @@ TEST_F(VkLayerTest, BeginRenderingInvalidDepthAttachmentFormat) {
     depth_attachment.imageView = image_view;
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.layerCount = 1;
     begin_rendering_info.pDepthAttachment = &depth_attachment;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pDepthAttachment-06547");
