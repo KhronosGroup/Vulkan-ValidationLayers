@@ -13724,3 +13724,59 @@ TEST_F(VkLayerTest, BuildAccelerationStructureKHR) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, PipelineStatisticsQuery) {
+    TEST_DESCRIPTION("Test unsupported pipeline statistics queries");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    uint32_t graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT);
+    uint32_t compute_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    if (graphics_queue_family_index == std::numeric_limits<uint32_t>::max() &&
+        compute_queue_family_index == std::numeric_limits<uint32_t>::max()) {
+        printf("%s required queue families not found, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    if (graphics_queue_family_index != std::numeric_limits<uint32_t>::max()) {
+        VkCommandPoolObj command_pool(m_device, graphics_queue_family_index);
+
+        VkCommandBufferObj command_buffer(m_device, &command_pool);
+        command_buffer.begin();
+
+        VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+        query_pool_ci.queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS;
+        query_pool_ci.queryCount = 1;
+        query_pool_ci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT;
+
+        vk_testing::QueryPool query_pool;
+        query_pool.init(*m_device, query_pool_ci);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-00805");
+        vk::CmdBeginQuery(command_buffer.handle(), query_pool.handle(), 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        command_buffer.end();
+    }
+
+    if (compute_queue_family_index != std::numeric_limits<uint32_t>::max()) {
+        VkCommandPoolObj command_pool(m_device, compute_queue_family_index);
+
+        VkCommandBufferObj command_buffer(m_device, &command_pool);
+        command_buffer.begin();
+
+        VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+        query_pool_ci.queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS;
+        query_pool_ci.queryCount = 1;
+        query_pool_ci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_FRAGMENT_SHADER_INVOCATIONS_BIT;
+
+        vk_testing::QueryPool query_pool;
+        query_pool.init(*m_device, query_pool_ci);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-00804");
+        vk::CmdBeginQuery(command_buffer.handle(), query_pool.handle(), 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        command_buffer.end();
+    }
+}
