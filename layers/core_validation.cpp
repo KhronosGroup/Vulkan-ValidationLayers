@@ -10060,6 +10060,38 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
             LogError(cb_state->commandBuffer(), vuid,
                      "%s: QueryPool was created with queryType VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV.", cmd_name);
     }
+    if (query_pool_ci.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
+        if ((cb_state->command_pool->queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
+            if (query_pool_ci.pipelineStatistics &
+                (VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT |
+                 VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT |
+                 VK_QUERY_PIPELINE_STATISTIC_VERTEX_SHADER_INVOCATIONS_BIT |
+                 VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_INVOCATIONS_BIT |
+                 VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_PRIMITIVES_BIT | VK_QUERY_PIPELINE_STATISTIC_CLIPPING_INVOCATIONS_BIT |
+                 VK_QUERY_PIPELINE_STATISTIC_CLIPPING_PRIMITIVES_BIT | VK_QUERY_PIPELINE_STATISTIC_FRAGMENT_SHADER_INVOCATIONS_BIT |
+                 VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_CONTROL_SHADER_PATCHES_BIT |
+                 VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_EVALUATION_SHADER_INVOCATIONS_BIT)) {
+                skip |= LogError(
+                    cb_state->commandBuffer(), vuids->vuid_graphics_support,
+                    "%s(): queryType of queryPool is VK_QUERY_TYPE_PIPELINE_STATISTICS (%s) and indicates graphics operations, but "
+                    "the command pool the command buffer %s was allocated from does not support graphics operations (%s).",
+                    cmd_name, string_VkQueryPipelineStatisticFlags(query_pool_ci.pipelineStatistics).c_str(),
+                    report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
+                    string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
+            }
+        }
+        if ((cb_state->command_pool->queue_flags & VK_QUEUE_COMPUTE_BIT) == 0) {
+            if (query_pool_ci.pipelineStatistics & VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT) {
+                skip |= LogError(
+                    cb_state->commandBuffer(), vuids->vuid_graphics_support,
+                    "%s(): queryType of queryPool is VK_QUERY_TYPE_PIPELINE_STATISTICS (%s) and indicates compute operations, but "
+                    "the command pool the command buffer %s was allocated from does not support compute operations (%s).",
+                    cmd_name, string_VkQueryPipelineStatisticFlags(query_pool_ci.pipelineStatistics).c_str(),
+                    report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
+                    string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
+            }
+        }
+    }
 
     skip |= ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuids->vuid_queue_flags);
 
@@ -10127,6 +10159,8 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
             vuid_dup_query_type = "VUID-vkCmdBeginQuery-queryPool-01922";
             vuid_protected_cb = "VUID-vkCmdBeginQuery-commandBuffer-01885";
             vuid_multiview_query = "VUID-vkCmdBeginQuery-query-00808";
+            vuid_graphics_support = "VUID-vkCmdBeginQuery-queryType-00804";
+            vuid_compute_support = "VUID-vkCmdBeginQuery-queryType-00805";
         }
     };
     BeginQueryVuids vuids;
@@ -16873,6 +16907,8 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
             vuid_dup_query_type = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-04753";
             vuid_protected_cb = "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-01885";
             vuid_multiview_query = "VUID-vkCmdBeginQueryIndexedEXT-query-00808";
+            vuid_graphics_support = "VUID-vkCmdBeginQueryIndexedEXT-queryType-00804";
+            vuid_compute_support = "VUID-vkCmdBeginQueryIndexedEXT-queryType-00805";
         }
     };
     BeginQueryIndexedVuids vuids;
