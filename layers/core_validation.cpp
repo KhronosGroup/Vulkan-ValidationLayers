@@ -15757,6 +15757,11 @@ bool CoreChecks::ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, Vk
         }
     }
 
+    if (cb_state->transform_feedback_active) {
+        vuid = use_rp2 ? "VUID-vkCmdEndRenderPass2-None-02352" : "VUID-vkCmdEndRenderPass-None-02351";
+        skip |= LogError(device, vuid, "%s(): transform feedback is active.", function_name);
+    }
+
     skip |= ValidateCmd(cb_state.get(), cmd_type);
     return skip;
 }
