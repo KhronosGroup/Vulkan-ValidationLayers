@@ -9921,6 +9921,10 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
                             loc.dot(Field::dependencyFlags).Message().c_str());
         }
     }
+    if (cb_state->activeRenderPass && cb_state->activeRenderPass->use_dynamic_rendering) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier-None-06191",
+                         "vkCmdPipelineBarrier(): a dynamic render pass instance is active.");
+    }
     skip |= ValidateBarriers(loc, cb_state.get(), srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
                              bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
     return skip;
@@ -9949,6 +9953,10 @@ bool CoreChecks::ValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, cons
                             "%s VK_DEPENDENCY_VIEW_LOCAL_BIT must not be set outside of a render pass instance",
                             loc.dot(Field::dependencyFlags).Message().c_str());
         }
+    }
+    if (cb_state->activeRenderPass && cb_state->activeRenderPass->use_dynamic_rendering) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier2-None-06191",
+                         "vkCmdPipelineBarrier(): a dynamic render pass instance is active.");
     }
     skip |= ValidateDependencyInfo(objects, loc, cb_state.get(), pDependencyInfo);
     return skip;
