@@ -3481,7 +3481,7 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
         // Mark the image as waiting for a semaphore
         auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
         if (swapchain_data) {
-            swapchain_data->ImageWaitingAcquire(image_index);
+            swapchain_data->ImageWaitingAcquire(image_index, semaphore, fence);
         }
     }
     const auto acquire = [this, swapchain, image_index]() {
