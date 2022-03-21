@@ -252,7 +252,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 
 enum SwapchainImageState {
     NON_ACQUIRED,
-    WAITING_SEMAPHORE,
+    WAITING,
     ACQUIRED,
 };
 
@@ -260,6 +260,8 @@ struct SWAPCHAIN_IMAGE {
     IMAGE_STATE *image_state = nullptr;
     VkDeviceSize fake_base_address = 0;
     SwapchainImageState acquired = SwapchainImageState::NON_ACQUIRED;
+    VkSemaphore waiting_semaphore;
+    VkFence waiting_fence;
 };
 
 // State for VkSwapchainKHR objects.
@@ -294,7 +296,7 @@ class SWAPCHAIN_NODE : public BASE_NODE {
 
     void AcquireImage(uint32_t image_index);
 
-    void ImageWaitingAcquire(uint32_t image_index);
+    void ImageWaitingAcquire(uint32_t image_index, VkSemaphore semaphore, VkFence fence);
 
     void Destroy() override;
 

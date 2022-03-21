@@ -565,12 +565,14 @@ void SWAPCHAIN_NODE::AcquireImage(uint32_t image_index) {
     }
 }
 
-void SWAPCHAIN_NODE::ImageWaitingAcquire(uint32_t image_index) {
+void SWAPCHAIN_NODE::ImageWaitingAcquire(uint32_t image_index, VkSemaphore semaphore, VkFence fence) {
     if (image_index >= images.size()) return;
 
     assert(acquired_images < std::numeric_limits<uint32_t>::max());
     acquired_images++;
-    images[image_index].acquired = SwapchainImageState::WAITING_SEMAPHORE;
+    images[image_index].acquired = SwapchainImageState::WAITING;
+    images[image_index].waiting_semaphore = semaphore;
+    images[image_index].waiting_fence = fence;
 }
 
 void SWAPCHAIN_NODE::Destroy() {

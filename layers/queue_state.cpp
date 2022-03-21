@@ -70,6 +70,21 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
     return retire_early ? next_seq : 0;
 }
 
+bool QUEUE_STATE::HasWait(VkSemaphore semaphore, VkFence fence) const {
+    auto guard = ReadLock();
+    for (const auto &submission : submissions_) {
+        if (fence != VK_NULL_HANDLE && submission.fence && submission.fence->Handle().Cast<VkFence>() == fence) {
+            return true;
+        }
+        for (const auto &wait_semaphore : submission.wait_semaphores) {
+            if (wait_semaphore.semaphore->Handle().Cast<VkSemaphore>() == semaphore) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static void MergeResults(SEMAPHORE_STATE::RetireResult &results, const SEMAPHORE_STATE::RetireResult &sem_result) {
     for (auto &entry : sem_result) {
         auto &last_seq = results[entry.first];

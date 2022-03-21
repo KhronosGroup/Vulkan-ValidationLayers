@@ -260,6 +260,8 @@ class QUEUE_STATE : public BASE_NODE {
 
     uint64_t Submit(CB_SUBMISSION &&submission);
 
+    bool HasWait(VkSemaphore semaphore, VkFence fence) const;
+
     void Retire(uint64_t until_seq = UINT64_MAX);
 
     const uint32_t queueFamilyIndex;
