@@ -250,4 +250,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_SyncObjects_HighNumberOfS
 static const char DECORATE_UNUSED *kVUID_BestPractices_DynamicRendering_NotSupported =
     "UNASSIGNED-BestPractices-DynamicRendering-NotSupported";
 
+// Imagination Technologies best practices
+static const char DECORATE_UNUSED *kVUID_BestPractices_Texture_Format_PVRTC_Outdated =
+    "UNASSIGNED-BestPractices-Texture-Format-PVRTC-Outdated";
 #endif
