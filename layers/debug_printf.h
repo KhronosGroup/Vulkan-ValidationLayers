@@ -67,17 +67,19 @@ struct DPFOutputRecord {
     uint32_t values;
 };
 
-class CMD_BUFFER_STATE_PRINTF : public CMD_BUFFER_STATE {
+namespace debug_printf_state {
+class CommandBuffer : public CMD_BUFFER_STATE {
   public:
     std::vector<DPFBufferInfo> buffer_infos;
 
-    CMD_BUFFER_STATE_PRINTF(DebugPrintf* dp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
-                            const COMMAND_POOL_STATE* pool);
+    CommandBuffer(DebugPrintf* dp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
+                  const COMMAND_POOL_STATE* pool);
 
     void Reset() final;
 };
+};  // namespace debug_printf_state
 
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, CMD_BUFFER_STATE_PRINTF, CMD_BUFFER_STATE);
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, debug_printf_state::CommandBuffer, CMD_BUFFER_STATE);
 
 class DebugPrintf : public ValidationStateTracker {
   public:
@@ -250,12 +252,12 @@ class DebugPrintf : public ValidationStateTracker {
 
     const std::vector<DPFBufferInfo>& GetBufferInfo(const CMD_BUFFER_STATE* cb_node) const {
         assert(cb_node);
-        return static_cast<const CMD_BUFFER_STATE_PRINTF*>(cb_node)->buffer_infos;
+        return static_cast<const debug_printf_state::CommandBuffer*>(cb_node)->buffer_infos;
     }
 
     std::vector<DPFBufferInfo>& GetBufferInfo(CMD_BUFFER_STATE* cb_node) {
         assert(cb_node);
-        return static_cast<CMD_BUFFER_STATE_PRINTF*>(cb_node)->buffer_infos;
+        return static_cast<debug_printf_state::CommandBuffer*>(cb_node)->buffer_infos;
     }
 
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
