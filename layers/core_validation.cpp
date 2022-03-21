@@ -9935,6 +9935,31 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffe
     return ValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, CMD_PIPELINEBARRIER2);
 }
 
+void CoreChecks::EnqueueVerifyPipelineBarrier(CMD_BUFFER_STATE *cb_state, uint32_t imageMemoryBarrierCount,
+                                              const VkImageMemoryBarrier *pImageMemoryBarriers, const char *func_name) {
+    if (imageMemoryBarrierCount == 0) {
+        return;
+    }
+    // Enqueue the submit time validation here, ahead of the submit time state update in the StateTracker's PostCallRecord
+    std::vector<VkImage> images;
+    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+        auto image_state = Get<IMAGE_STATE>(pImageMemoryBarriers[i].image);
+        // Add only swapchain images
+        if (image_state->create_from_swapchain) {
+            images.push_back(pImageMemoryBarriers[i].image);
+        }
+    }
+    if (!images.empty()) {
+        cb_state->barrierUpdates.emplace_back([this, images, func_name]() {
+            bool skip = false;
+            for (const auto image : images) {
+                skip |= ValidateImageAcquired(image, func_name);
+            }
+            return skip;
+        });
+    }
+}
+
 void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                                  VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                                  uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
@@ -9951,6 +9976,8 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
     RecordBarriers(Func::vkCmdPipelineBarrier, cb_state.get(), bufferMemoryBarrierCount, pBufferMemoryBarriers,
                    imageMemoryBarrierCount, pImageMemoryBarriers);
     TransitionImageLayouts(cb_state.get(), imageMemoryBarrierCount, pImageMemoryBarriers);
+
+    EnqueueVerifyPipelineBarrier(cb_state.get(), imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdPipelineBarrier()");
 
 }
 
@@ -16208,7 +16235,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                     "vkQueuePresentKHR: pSwapchains[%u] image index is too large (%u). There are only %u images in this swapchain.",
                     i, pPresentInfo->pImageIndices[i], static_cast<uint32_t>(swapchain_data->images.size()));
             } else if (!swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state ||
-                       !swapchain_data->images[pPresentInfo->pImageIndices[i]].acquired) {
+                       swapchain_data->images[pPresentInfo->pImageIndices[i]].acquired == SwapchainImageState::NON_ACQUIRED) {
                 skip |= LogError(pPresentInfo->pSwapchains[i], validation_error,
                                  "vkQueuePresentKHR: pSwapchains[%" PRIu32 "] image at index %" PRIu32
                                  " was not acquired from the swapchain.",

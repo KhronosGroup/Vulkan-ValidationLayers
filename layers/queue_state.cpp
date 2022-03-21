@@ -102,14 +102,6 @@ void QUEUE_STATE::Retire(uint64_t until_seq) {
             MergeResults(other_queue_seqs, result);
             wait.semaphore->EndUse();
         }
-        for (auto &signal : submission->signal_semaphores) {
-            auto result = signal.semaphore->Retire(this, signal.payload);
-            // in the case of timeline semaphores, signaling at payload == N
-            // may unblock waiting queues for payload <= N so we need to
-            // process them
-            MergeResults(other_queue_seqs, result);
-            signal.semaphore->EndUse();
-        }
         // Handle updates to how far the current queue has progressed
         // without going recursive when we call Retire on other_queue_seqs
         // below.
@@ -142,6 +134,15 @@ void QUEUE_STATE::Retire(uint64_t until_seq) {
             }
             cb_node->Retire(submission->perf_submit_pass, is_query_updated_after);
             cb_node->EndUse();
+        }
+
+        for (auto &signal : submission->signal_semaphores) {
+            auto result = signal.semaphore->Retire(this, signal.payload);
+            // in the case of timeline semaphores, signaling at payload == N
+            // may unblock waiting queues for payload <= N so we need to
+            // process them
+            MergeResults(other_queue_seqs, result);
+            signal.semaphore->EndUse();
         }
 
         if (submission->fence) {
@@ -182,6 +183,8 @@ void FENCE_STATE::Retire(bool notify_queue) {
         queue_ = nullptr;
         seq_ = 0;
         state_ = FENCE_RETIRED;
+
+        ExecuteWaitingFunctions();
     }
     if (q && notify_queue) {
         q->Retire(seq);
@@ -313,6 +316,7 @@ SEMAPHORE_STATE::RetireResult SEMAPHORE_STATE::Retire(QUEUE_STATE *queue, uint64
             last_seq = std::max(last_seq, completed_.seq);
         }
     }
+    ExecuteWaitingFunctions();
     return result;
 }
 
