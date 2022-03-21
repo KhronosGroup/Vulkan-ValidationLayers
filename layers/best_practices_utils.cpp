@@ -347,6 +347,20 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
             VendorSpecificTag(kBPVendorIMG), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesImg);
     }
 
+    if (VendorCheckEnabled(kBPVendorIMG) && (pCreateInfo->format == VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG ||
+                                             pCreateInfo->format == VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG ||
+                                             pCreateInfo->format == VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG ||
+                                             pCreateInfo->format == VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG ||
+                                             pCreateInfo->format == VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG ||
+                                             pCreateInfo->format == VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG ||
+                                             pCreateInfo->format == VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG ||
+                                             pCreateInfo->format == VK_FORMAT_PVRTC2_4BPP_UNORM_BLOCK_IMG)) {
+        skip |= LogPerformanceWarning(device, kVUID_BestPractices_Texture_Format_PVRTC_Outdated,
+                                      "%s vkCreateImage(): Trying to create an image with a PVRTC format. Both PVRTC1 and PVRTC2 "
+                                      "are slower than standard image formats on PowerVR GPUs, prefer ETC, BC, ASTC, etc.",
+                                      VendorSpecificTag(kBPVendorIMG));
+    }
+
     if (VendorCheckEnabled(kBPVendorAMD)) {
         std::stringstream image_hex;
         image_hex << "0x" << std::hex << HandleToUint64(pImage);
