@@ -12625,8 +12625,8 @@ TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidColorWriteEnableAttachmentCount) {
-    TEST_DESCRIPTION("Invalid usage of vkCmdSetColorWriteEnableEXT with attachment count 0");
+TEST_F(VkLayerTest, InvalidColorWriteEnableFeature) {
+    TEST_DESCRIPTION("Invalid usage of vkCmdSetColorWriteEnableEXT with feature not enabled");
 
     if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
@@ -12646,9 +12646,9 @@ TEST_F(VkLayerTest, InvalidColorWriteEnableAttachmentCount) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBool32 colorWriteEnable[2] = {VK_TRUE, VK_FALSE};
+    VkBool32 color_write_enable[2] = {VK_TRUE, VK_FALSE};
 
-    PFN_vkCmdSetColorWriteEnableEXT fpCmdSetColorWriteEnableEXT =
+    PFN_vkCmdSetColorWriteEnableEXT vkCmdSetColorWriteEnableEXT =
         (PFN_vkCmdSetColorWriteEnableEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetColorWriteEnableEXT");
 
     CreatePipelineHelper helper(*this);
@@ -12659,9 +12659,69 @@ TEST_F(VkLayerTest, InvalidColorWriteEnableAttachmentCount) {
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteEnableEXT-None-04803");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-04804");
-    fpCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 2, colorWriteEnable);
+    vkCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 1, color_write_enable);
     m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, InvalidColorWriteEnableAttachmentCount) {
+    TEST_DESCRIPTION("Invalid usage of attachmentCount for vkCmdSetColorWriteEnableEXT");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
+
+    // Feature required to be supported for extension
+    VkPhysicalDeviceColorWriteEnableFeaturesEXT color_write_features = LvlInitStruct<VkPhysicalDeviceColorWriteEnableFeaturesEXT>();
+    color_write_features.colorWriteEnable = VK_TRUE;
+    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&color_write_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // need a valid array to index into
+    std::vector<VkBool32> color_write_enable(m_device->props.limits.maxColorAttachments + 1, VK_TRUE);
+
+    PFN_vkCmdSetColorWriteEnableEXT vkCmdSetColorWriteEnableEXT =
+        (PFN_vkCmdSetColorWriteEnableEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetColorWriteEnableEXT");
+
+    CreatePipelineHelper helper(*this);
+    helper.InitInfo();
+    helper.InitState();
+    helper.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
+
+    // Value can't be zero
+    // TODO: The generated code is not use the correct implicit VUID, but at least its still correctly validating
+    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-arraylength");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+    vkCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 0, color_write_enable.data());
+    m_errorMonitor->VerifyFound();
+
+    // over the limit
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-06656");
+    vkCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), m_device->props.limits.maxColorAttachments + 1,
+                                color_write_enable.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
+    // mismatch of attachmentCount value is allowed for dynamic
+    // see https://gitlab.khronos.org/vulkan/vulkan/-/issues/2868
+    vkCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 2, color_write_enable.data());
+    m_errorMonitor->VerifyNotFound();
+
     m_commandBuffer->end();
 }
 

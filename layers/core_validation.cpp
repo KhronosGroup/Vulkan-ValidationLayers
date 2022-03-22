@@ -1771,7 +1771,15 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
         auto color_write = lvl_find_in_chain<VkPipelineColorWriteCreateInfoEXT>(create_info.pColorBlendState->pNext);
         if (color_write) {
-            if (color_write->attachmentCount != color_blend_state->attachmentCount) {
+            // if over limit don't give extra redundant error of mismatch of attachmentCount
+            if (color_write->attachmentCount > phys_dev_props.limits.maxColorAttachments) {
+                skip |= LogError(
+                    device, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-06655",
+                    "vkCreateGraphicsPipelines(): VkPipelineColorWriteCreateInfoEXT in the pNext chain of pPipelines[%" PRIu32
+                    "].pColorBlendState has an attachmentCount of (%" PRIu32
+                    ") which is greater than the VkPhysicalDeviceLimits::maxColorAttachments limit (%" PRIu32 ").",
+                    pipelineIndex, color_write->attachmentCount, phys_dev_props.limits.maxColorAttachments);
+            } else if (color_write->attachmentCount != color_blend_state->attachmentCount) {
                 skip |= LogError(
                     device, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-04802",
                     "vkCreateGraphicsPipelines(): VkPipelineColorWriteCreateInfoEXT in the pNext chain of pPipelines[%" PRIu32
@@ -6974,7 +6982,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
         }
     }
 
-    if (!(pRenderingInfo->colorAttachmentCount <= phys_dev_props.limits.maxColorAttachments)) {
+    if (pRenderingInfo->colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-colorAttachmentCount-06106",
                          "%s(): colorAttachmentCount (%u) must be less than or equal to "
                          "VkPhysicalDeviceLimits::maxColorAttachments (%u).",
@@ -18512,20 +18520,16 @@ bool CoreChecks::PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer comman
 
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
 
+    if (attachmentCount > phys_dev_props.limits.maxColorAttachments) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-06656",
+                         "vkCmdSetColorWriteEnableEXT(): attachmentCount (%" PRIu32
+                         ") is greater than the VkPhysicalDeviceLimits::maxColorAttachments limit (%" PRIu32 ").",
+                         attachmentCount, phys_dev_props.limits.maxColorAttachments);
+    }
+
     if (!enabled_features.color_write_features.colorWriteEnable) {
         skip |= LogError(commandBuffer, "VUID-vkCmdSetColorWriteEnableEXT-None-04803",
-                         "vkCmdSetColorWriteEnableEXT: color write is not enabled.");
-    }
-    auto graphics_pipeline = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (graphics_pipeline) {
-        uint32_t pipeline_attachment_count = graphics_pipeline->create_info.graphics.pColorBlendState->attachmentCount;
-        if (attachmentCount != pipeline_attachment_count) {
-            skip |= LogError(
-                commandBuffer, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-04804",
-                "vkCmdSetColorWriteEnableEXT: attachment count (%" PRIu32
-                ") is not equal to currenly bound pipelines VkPipelineColorBlendStateCreateInfo::attachmentCount (%" PRIu32 ").",
-                attachmentCount, pipeline_attachment_count);
-        }
+                         "vkCmdSetColorWriteEnableEXT(): color write is not enabled.");
     }
 
     return skip;

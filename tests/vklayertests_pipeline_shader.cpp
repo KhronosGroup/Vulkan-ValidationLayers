@@ -13256,6 +13256,13 @@ TEST_F(VkLayerTest, TestPipelineColorWriteCreateInfoEXT) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
+    std::vector<VkBool32> max_enabled(m_device->props.limits.maxColorAttachments + 1, VK_TRUE);
+    color_write.attachmentCount = m_device->props.limits.maxColorAttachments + 1;
+    color_write.pColorWriteEnables = max_enabled.data();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-06655");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
     VkBool32 enabled = VK_FALSE;
     color_write.attachmentCount = 1;
     color_write.pColorWriteEnables = &enabled;
