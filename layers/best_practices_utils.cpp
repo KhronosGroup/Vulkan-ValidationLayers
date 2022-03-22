@@ -1482,11 +1482,13 @@ bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
                                       "vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT is set.");
     }
 
-    if (!(pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) && VendorCheckEnabled(kBPVendorArm)) {
-        skip |= LogPerformanceWarning(device, kVUID_BestPractices_BeginCommandBuffer_OneTimeSubmit,
-                                      "%s vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT is not set. "
-                                      "For best performance on Mali GPUs, consider setting ONE_TIME_SUBMIT by default.",
-                                      VendorSpecificTag(kBPVendorArm));
+    if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorNVIDIA)) {
+        if (!(pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
+            skip |= LogPerformanceWarning(device, kVUID_BestPractices_BeginCommandBuffer_OneTimeSubmit,
+                                          "%s %s vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT is not set. "
+                                          "For best performance on Mali and NVIDIA GPUs, consider setting ONE_TIME_SUBMIT by default.",
+                                          VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorNVIDIA));
+        }
     }
 
     return skip;
