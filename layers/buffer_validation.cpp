@@ -3029,6 +3029,26 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 func_name, i, region.dstSubresource.aspectMask);
         }
 
+        // Make sure not a empty region
+        if (src_copy_extent.width == 0) {
+            vuid = is_2 ? "VUID-VkImageCopy2-extent-06668" : "VUID-VkImageCopy-extent-06668";
+            skip |=
+                LogError(command_buffer, vuid,
+                         "%s: pRegion[%" PRIu32 "] extent.width must not be zero as empty copies are not allowed.", func_name, i);
+        }
+        if (src_copy_extent.height == 0) {
+            vuid = is_2 ? "VUID-VkImageCopy2-extent-06669" : "VUID-VkImageCopy-extent-06669";
+            skip |=
+                LogError(command_buffer, vuid,
+                         "%s: pRegion[%" PRIu32 "] extent.height must not be zero as empty copies are not allowed.", func_name, i);
+        }
+        if (src_copy_extent.depth == 0) {
+            vuid = is_2 ? "VUID-VkImageCopy2-extent-06670" : "VUID-VkImageCopy-extent-06670";
+            skip |=
+                LogError(command_buffer, vuid,
+                         "%s: pRegion[%" PRIu32 "] extent.depth must not be zero as empty copies are not allowed.", func_name, i);
+        }
+
         // Each dimension offset + extent limits must fall with image subresource extent
         VkExtent3D subresource_extent = src_image_state->GetSubresourceExtent(region.srcSubresource);
         if (slice_override) src_copy_extent.depth = depth_slices;
@@ -6320,6 +6340,32 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             }
         }
 
+        // Make sure not a empty region
+        if (region.imageExtent.width == 0) {
+            vuid = is_2 ? "VUID-VkBufferImageCopy2-imageExtent-06659" : "VUID-VkBufferImageCopy-imageExtent-06659";
+            LogObjectList objlist(cb_node->commandBuffer());
+            objlist.add(image_state->image());
+            skip |=
+                LogError(objlist, vuid, "%s: pRegion[%" PRIu32 "] extent.width must not be zero as empty copies are not allowed.",
+                         function, i);
+        }
+        if (region.imageExtent.height == 0) {
+            vuid = is_2 ? "VUID-VkBufferImageCopy2-imageExtent-06660" : "VUID-VkBufferImageCopy-imageExtent-06660";
+            LogObjectList objlist(cb_node->commandBuffer());
+            objlist.add(image_state->image());
+            skip |=
+                LogError(objlist, vuid, "%s: pRegion[%" PRIu32 "] extent.height must not be zero as empty copies are not allowed.",
+                         function, i);
+        }
+        if (region.imageExtent.depth == 0) {
+            vuid = is_2 ? "VUID-VkBufferImageCopy2-imageExtent-06661" : "VUID-VkBufferImageCopy-imageExtent-06661";
+            LogObjectList objlist(cb_node->commandBuffer());
+            objlist.add(image_state->image());
+            skip |=
+                LogError(objlist, vuid, "%s: pRegion[%" PRIu32 "] extent.depth must not be zero as empty copies are not allowed.",
+                         function, i);
+        }
+
         //  BufferRowLength must be 0, or greater than or equal to the width member of imageExtent
         if ((region.bufferRowLength != 0) && (region.bufferRowLength < region.imageExtent.width)) {
             vuid = (is_2) ? "VUID-VkBufferImageCopy2-bufferRowLength-00195" : "VUID-VkBufferImageCopy-bufferRowLength-00195";
@@ -6521,13 +6567,6 @@ bool CoreChecks::ValidateImageBounds(const IMAGE_STATE *image_state, const uint3
         const RegionType region = pRegions[i];
         VkExtent3D extent = region.imageExtent;
         VkOffset3D offset = region.imageOffset;
-
-        if (IsExtentSizeZero(&extent))  // Warn on zero area subresource
-        {
-            skip |= LogWarning(image_state->image(), kVUID_Core_Image_ZeroAreaSubregion,
-                               "%s: pRegion[%d] imageExtent of {%1d, %1d, %1d} has zero area", func_name, i, extent.width,
-                               extent.height, extent.depth);
-        }
 
         VkExtent3D image_extent = image_state->GetSubresourceExtent(region.imageSubresource);
 

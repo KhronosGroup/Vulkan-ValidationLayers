@@ -2004,10 +2004,9 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
                                  &region);
         m_errorMonitor->VerifyFound();
 
-        // An extent with zero area should produce a warning, but no error
-        m_errorMonitor->SetDesiredFailureMsg(kWarningBit | kErrorBit, "} has zero area");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-imageExtent-06659");
         region.imageExtent.width = 0;
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_64k.handle(), 1,
                                  &region);
         m_errorMonitor->VerifyFound();
 
@@ -2442,6 +2441,7 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     // Introduce failure by setting imageExtent.depth to 0
     region.imageExtent.depth = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-srcImage-00201");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-imageExtent-06661");
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &region);
     m_errorMonitor->VerifyFound();
