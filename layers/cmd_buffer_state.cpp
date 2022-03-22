@@ -700,8 +700,10 @@ void CMD_BUFFER_STATE::NextSubpass(CMD_TYPE cmd_type, VkSubpassContents contents
             active_subpasses = nullptr;
             active_subpasses = std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
 
-            const auto &subpass = activeRenderPass->createInfo.pSubpasses[activeSubpass];
-            UpdateSubpassAttachments(subpass, *active_subpasses);
+            if (activeSubpass < activeRenderPass->createInfo.subpassCount) {
+                const auto &subpass = activeRenderPass->createInfo.pSubpasses[activeSubpass];
+                UpdateSubpassAttachments(subpass, *active_subpasses);
+            }
         }
 
         // Spec states that after NextSubpass all resources should be rebound

@@ -2493,6 +2493,9 @@ bool RenderPassAccessContext::ValidateNextSubpass(const CommandExecutionContext 
                                                     func_name);
 
     const auto next_subpass = current_subpass_ + 1;
+    if (next_subpass >= subpass_contexts_.size()) {
+        return skip;
+    }
     const auto &next_context = subpass_contexts_[next_subpass];
     skip |=
         next_context.ValidateLayoutTransitions(ex_context, *rp_state_, render_area_, next_subpass, attachment_views_, func_name);
@@ -2645,10 +2648,12 @@ void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag prev_subp
     CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, current_subpass_, prev_subpass_tag);
     CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, current_subpass_, prev_subpass_tag);
 
+    if (current_subpass_ + 1 >= subpass_contexts_.size()) {
+        return;
+    }
     // Move to the next sub-command for the new subpass. The resolve and store are logically part of the previous
     // subpass, so their tag needs to be different from the layout and load operations below.
     current_subpass_++;
-    assert(current_subpass_ < subpass_contexts_.size());
     subpass_contexts_[current_subpass_].SetStartTag(next_subpass_tag);
     RecordLayoutTransitions(next_subpass_tag);
     RecordLoadOperations(next_subpass_tag);
