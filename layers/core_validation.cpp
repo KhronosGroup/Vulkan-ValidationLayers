@@ -6842,7 +6842,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                              func_name, string_VkImageLayout(rendering_fragment_shading_rate_attachment_info->imageLayout));
         }
 
-        const auto& image_state = Get<IMAGE_STATE>(view_state->create_info.image);
+        const auto image_state = Get<IMAGE_STATE>(view_state->create_info.image);
         if (!(image_state->createInfo.usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
             skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06148",
                              "%s(): VkRenderingFragmentShadingRateAttachmentInfoKHR view image usage flags (%s) must be created with VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
@@ -6904,7 +6904,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
         auto max_frs_attach_texel_aspect_ratio =
             phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio;
-        if ((rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width /
+        if ((rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height != 0) &&
+            (rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width /
              rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height) >
             max_frs_attach_texel_aspect_ratio) {
             skip |= LogError(
@@ -6916,7 +6917,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 max_frs_attach_texel_aspect_ratio);
         }
 
-        if ((rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height /
+        if ((rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width != 0) &&
+            (rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height /
              rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width) >
             max_frs_attach_texel_aspect_ratio) {
             skip |= LogError(
