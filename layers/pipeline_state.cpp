@@ -380,14 +380,14 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
         AppendDynamicStateFromSubstate(fragment_output_state, dyn_states, dyn_flags);
         if (dyn_states.size() > 0) {
             // We have dynamic state
-            if (!dyn_state_ci) {
-                // *All* dynamic state defined is coming from graphics libraries
-                // NOTE: heap allocation cleaned up in ~safe_VkGraphicsPipelineCreateInfo
-                dyn_state_ci = new safe_VkPipelineDynamicStateCreateInfo;
-            }
-
-            if (dyn_state_ci->dynamicStateCount < dyn_states.size()) {
+            if (!dyn_state_ci || (dyn_state_ci->dynamicStateCount < dyn_states.size())) {
                 // There is dynamic state defined in libraries that the is not included in this pipeline's create info
+                if (!dyn_state_ci) {
+                    // *All* dynamic state defined is coming from graphics libraries
+                    // NOTE: heap allocation cleaned up in ~safe_VkGraphicsPipelineCreateInfo
+                    dyn_state_ci = new safe_VkPipelineDynamicStateCreateInfo;
+                    const_cast<safe_VkGraphicsPipelineCreateInfo *>(&create_info.graphics)->pDynamicState = dyn_state_ci;
+                }
                 dyn_state_ci->flags = dyn_flags;
                 dyn_state_ci->dynamicStateCount = static_cast<uint32_t>(dyn_states.size());
                 // NOTE: heap allocation cleaned up in ~safe_VkPipelineDynamicStateCreateInfo
