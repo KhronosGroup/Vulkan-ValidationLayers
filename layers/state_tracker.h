@@ -196,22 +196,26 @@ static inline VkExtent3D GetAdjustedDestImageExtent(VkFormat src_format, VkForma
     return adjusted_extent;
 }
 
-// Test if the extent argument has any dimensions set to 0.
-static inline bool IsExtentSizeZero(const VkExtent3D* extent) {
-    return ((extent->width == 0) || (extent->height == 0) || (extent->depth == 0));
-}
-
-// Get buffer size from vkBufferImageCopy / vkBufferImageCopy2KHR structure, for a given format
+// Get buffer size from VkBufferImageCopy / VkBufferImageCopy2KHR structure, for a given format
 template <typename RegionType>
 static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, VkFormat image_format) {
     VkDeviceSize buffer_size = 0;
     VkExtent3D copy_extent = region.imageExtent;
     VkDeviceSize buffer_width = (0 == region.bufferRowLength ? copy_extent.width : region.bufferRowLength);
     VkDeviceSize buffer_height = (0 == region.bufferImageHeight ? copy_extent.height : region.bufferImageHeight);
+    // VUID-VkImageCreateInfo-imageType-00961 prevents having both depth and layerCount ever both be greater than 1 together. Take
+    // max to logic simple. This is the number of 'slices' to copy.
+    const uint32_t z_copies = std::max(copy_extent.depth, region.imageSubresource.layerCount);
+
+    // Invalid if copy size is 0 and other validation checks will catch it. Returns zero as the caller should have fallback already
+    // to ignore.
+    if (copy_extent.width == 0 || copy_extent.height == 0 || copy_extent.depth == 0 || z_copies == 0) {
+        return 0;
+    }
 
     VkDeviceSize unit_size = 0;
     if (region.imageSubresource.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
-        // Spec in vkBufferImageCopy section list special cases for each format
+        // Spec in VkBufferImageCopy section list special cases for each format
         if (region.imageSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
             unit_size = 1;
         } else {
@@ -249,16 +253,10 @@ static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, 
         copy_extent.depth = (copy_extent.depth + block_dim.depth - 1) / block_dim.depth;
     }
 
-    // Either depth or layerCount may be greater than 1 (not both). This is the number of 'slices' to copy
-    uint32_t z_copies = std::max(copy_extent.depth, region.imageSubresource.layerCount);
-    if (IsExtentSizeZero(&copy_extent) || (0 == z_copies)) {
-        // TODO: Issue warning here? Already warned in ValidateImageBounds()...
-    } else {
-        // Calculate buffer offset of final copied byte, + 1.
-        buffer_size = (z_copies - 1) * buffer_height * buffer_width;                   // offset to slice
-        buffer_size += ((copy_extent.height - 1) * buffer_width) + copy_extent.width;  // add row,col
-        buffer_size *= unit_size;                                                      // convert to bytes
-    }
+    // Calculate buffer offset of final copied byte, + 1.
+    buffer_size = (z_copies - 1) * buffer_height * buffer_width;                   // offset to slice
+    buffer_size += ((copy_extent.height - 1) * buffer_width) + copy_extent.width;  // add row,col
+    buffer_size *= unit_size;                                                      // convert to bytes
     return buffer_size;
 }
 
