@@ -14936,3 +14936,41 @@ TEST_F(VkLayerTest, TestCompletelyOverlappingBufferCopy) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TestCopyingInterleavedRegions) {
+    TEST_DESCRIPTION("Test copying between interleaved source and destination regions.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkBufferCopy copy_infos[4];
+    copy_infos[0].srcOffset = 0;
+    copy_infos[0].dstOffset = 4;
+    copy_infos[0].size = 4;
+    copy_infos[1].srcOffset = 8;
+    copy_infos[1].dstOffset = 12;
+    copy_infos[1].size = 4;
+    copy_infos[2].srcOffset = 16;
+    copy_infos[2].dstOffset = 20;
+    copy_infos[2].size = 4;
+    copy_infos[3].srcOffset = 24;
+    copy_infos[3].dstOffset = 28;
+    copy_infos[3].size = 4;
+
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags reqs = 0;
+    buffer.init_as_src_and_dst(*m_device, 32, reqs);
+
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->ExpectSuccess();
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer.handle(), 4, copy_infos);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
+    copy_infos[2].dstOffset = 21;
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer.handle(), 4, copy_infos);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+
+}
