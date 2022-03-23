@@ -271,7 +271,7 @@ Since VkDevice’s state is a ValidationStateTracker, we don’t have a real C++
 
 * CoreChecks::validation_cache_path
 
-  
+
 
 State tracker Per-Device state that is changed:
 
@@ -314,7 +314,7 @@ QUEUE_STATE tracks command buffers, semaphores and fences that have been submitt
     std::deque<CB_SUBMISSION> submissions_;
 ```
 
-Each `CB_SUBMISSION` structure contains the state for a single call to `vkQueueSubmit()`, `vkQueueSubmit2()` or `vkQueueBindSparse()`. They are stored in order in the `submissions_` dequeue until the state tracker determines that they have completed execution. 
+Each `CB_SUBMISSION` structure contains the state for a single call to `vkQueueSubmit()`, `vkQueueSubmit2()` or `vkQueueBindSparse()`. They are stored in order in the `submissions_` dequeue until the state tracker determines that they have completed execution.
 
 `seq_` is a sequence number that increments in every `vkQueueSubmit()` call. It is also stored in `SEMAPHORE_STATE` and `FENCE_STATE`, to track at what point in the queue they will signal.
 
@@ -444,7 +444,7 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBu
     skip = ValidateExtendedDynamicState(commandBuffer, CMD_SETSCISSORWITHCOUNT, ...);
     skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(),
                                            "VUID-vkCmdSetScissorWithCount-commandBuffer-04820",
-                                           "vkCmdSetScissorWithCount");
+                                           CMD_SETSCISSORWITHCOUNTEXT);
 
     return skip;
 }
@@ -513,7 +513,7 @@ layers: Remove excess state object lookups](https://github.com/KhronosGroup/Vulk
 
 [corechecks: Remove extra GetRead() call in dynamic rendering](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3687)
 
-[layers: Clean up result variable declarations for GetRead<>(), GetWrite<>(), Get<>() and shared_ptr<>.get()](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3714) 
+[layers: Clean up result variable declarations for GetRead<>(), GetWrite<>(), Get<>() and shared_ptr<>.get()](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3714)
 
 
 ## Memory objects
@@ -637,13 +637,13 @@ Each `CMD_BUFFER_STATE` maintains its own copy of the image layout state, in a d
                                     std::shared_ptr<ImageSubresourceLayoutMap>>  CommandBufferImageLayoutMap;
    CommandBufferImageLayoutMap image_layout_map;
    typedef layer_data::unordered_map<const GlobalImageLayoutRangeMap *,
-                                     std::shared_ptr<ImageSubresourceLayoutMap>> 
+                                     std::shared_ptr<ImageSubresourceLayoutMap>>
                                                                                CommandBufferAliasedLayoutMap;
    CommandBufferAliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
 
 ```
 
-The image_layout_map maintains a local copy of the layout state for any images used by the command buffer.  It is used to update the global image states once the command buffer is submitted for execution.   The aliased_image_layout_map is used to make sure aliasing images share their local state so that they update correctly.  
+The image_layout_map maintains a local copy of the layout state for any images used by the command buffer.  It is used to update the global image states once the command buffer is submitted for execution.   The aliased_image_layout_map is used to make sure aliasing images share their local state so that they update correctly.
 
 ###### PRs:
 
@@ -713,7 +713,7 @@ layers: Refactor and improve acceleration structure state tracking](https://gith
     uint32_t acquired_images = 0;
 ```
 
-Some of this data is set in `vkGetSwapchainImagesKHR()` and `vkBindImageMemory2KHR()` with `VkBindImageMemorySwapchainInfoKHR`, which do not require the swapchain to be externally synchronized.  
+Some of this data is set in `vkGetSwapchainImagesKHR()` and `vkBindImageMemory2KHR()` with `VkBindImageMemorySwapchainInfoKHR`, which do not require the swapchain to be externally synchronized.
 
 TODO: Accesses to most of these fields will need to be atomic or lock guarded.
 
