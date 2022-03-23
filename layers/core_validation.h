@@ -1640,8 +1640,8 @@ class CoreChecks : public ValidationStateTracker {
         VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) const override;
     bool PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
         VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) const override;
-    bool ValidateExtendedDynamicState(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmdType, VkBool32 feature, const char* vuid,
-                                      const char* vuidMsg) const;
+    bool ValidateExtendedDynamicState(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd_type, VkBool32 feature, const char* vuid,
+                                      const char* feature_name) const;
     bool PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp) const override;
     bool PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) const override;
     bool PreCallValidateCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer,
@@ -1700,6 +1700,21 @@ class CoreChecks : public ValidationStateTracker {
                                                      const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) const override;
     bool PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                   const VkBool32* pColorWriteEnables) const override;
+    bool PreCallValidateCmdSetVertexInputEXT(
+        VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
+        const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
+        const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) const override;
+    bool PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType,
+                                                  uint32_t customSampleOrderCount,
+                                                  const VkCoarseSampleOrderCustomNV* pCustomSampleOrders) const override;
+    bool PreCallValidateCmdSetFragmentShadingRateEnumNV(VkCommandBuffer commandBuffer, VkFragmentShadingRateNV shadingRate,
+                                                        const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) const override;
+    bool PreCallValidateCmdSetPerformanceMarkerINTEL(VkCommandBuffer commandBuffer,
+                                                     const VkPerformanceMarkerInfoINTEL* pMarkerInfo) const override;
+    bool PreCallValidateCmdSetPerformanceStreamMarkerINTEL(VkCommandBuffer commandBuffer,
+                                                           const VkPerformanceStreamMarkerInfoINTEL* pMarkerInfo) const override;
+    bool PreCallValidateCmdSetPerformanceOverrideINTEL(VkCommandBuffer commandBuffer,
+                                                       const VkPerformanceOverrideInfoINTEL* pOverrideInfo) const override;
     bool PreCallValidateCmdBeginConditionalRenderingEXT(
         VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin) const override;
     bool PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer) const override;

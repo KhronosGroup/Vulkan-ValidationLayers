@@ -7915,16 +7915,8 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
     const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
     const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions) const {
     bool skip = false;
-    const auto *vertex_input_dynamic_state_features =
-        LvlFindInChain<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>(device_createinfo_pnext);
     const auto *vertex_attribute_divisor_features =
         LvlFindInChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(device_createinfo_pnext);
-
-    // VUID-vkCmdSetVertexInputEXT-None-04790
-    if (!vertex_input_dynamic_state_features || vertex_input_dynamic_state_features->vertexInputDynamicState == VK_FALSE) {
-        skip |= LogError(device, "VUID-vkCmdSetVertexInputEXT-None-04790",
-                         "vkCmdSetVertexInputEXT(): The vertexInputDynamicState feature must be enabled.");
-    }
 
     // VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791
     if (vertexBindingDescriptionCount > device_limits.maxVertexInputBindings) {

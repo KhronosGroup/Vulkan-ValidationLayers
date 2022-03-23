@@ -66,6 +66,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceMultiviewFeatures multiview_features;
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features;
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features;
+    VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV fragment_shading_rate_enums_features;
     VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL shader_integer_functions2_features;
     VkPhysicalDeviceShaderSMBuiltinsFeaturesNV shader_sm_builtins_features;
     VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shader_atomic_float_features;
@@ -83,7 +84,7 @@ struct DeviceFeatures {
     VkPhysicalDevicePresentIdFeaturesKHR present_id_features;
     VkPhysicalDevicePresentWaitFeaturesKHR present_wait_features;
     VkPhysicalDeviceRayTracingMotionBlurFeaturesNV ray_tracing_motion_blur_features;
-    VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR shader_integer_dot_product_features;																						   
+    VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR shader_integer_dot_product_features;
     VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT primitive_topology_list_restart_features;
     VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR zero_initialize_work_group_memory_features;
     VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT rgba10x6_formats_features;
