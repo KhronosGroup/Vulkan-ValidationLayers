@@ -39,46 +39,47 @@ void DebugPrintf::ReportSetupProblem(T object, const char *const specific_messag
 void DebugPrintf::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *create_info,
                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                             void *modified_create_info) {
-    DispatchGetPhysicalDeviceFeatures(gpu, &supported_features);
+    // Use a local variable to query features since this method runs in the instance validation object.
+    // To avoid confusion and race conditions about which physical device's features are stored in the
+    // 'supported_devices' member variable, it will only be set in the device validation objects.
+    // See CreateDevice() below.
+    VkPhysicalDeviceFeatures gpu_supported_features;
+    DispatchGetPhysicalDeviceFeatures(gpu, &gpu_supported_features);
     VkPhysicalDeviceFeatures features = {};
     features.vertexPipelineStoresAndAtomics = true;
     features.fragmentStoresAndAtomics = true;
-    UtilPreCallRecordCreateDevice(gpu, reinterpret_cast<safe_VkDeviceCreateInfo *>(modified_create_info), supported_features,
+    UtilPreCallRecordCreateDevice(gpu, reinterpret_cast<safe_VkDeviceCreateInfo *>(modified_create_info), gpu_supported_features,
                                   features);
 }
 
 // Perform initializations that can be done at Create Device time.
-void DebugPrintf::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) {
-    ValidationStateTracker::PostCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, result);
-
-    ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
-    ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, this->container_type);
-    DebugPrintf *device_debug_printf = static_cast<DebugPrintf *>(validation_data);
+void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
+    ValidationStateTracker::CreateDevice(pCreateInfo);
 
     const char *size_string = getLayerOption("khronos_validation.printf_buffer_size");
-    device_debug_printf->output_buffer_size = *size_string ? atoi(size_string) : 1024;
+    output_buffer_size = *size_string ? atoi(size_string) : 1024;
 
     std::string verbose_string = getLayerOption("khronos_validation.printf_verbose");
     transform(verbose_string.begin(), verbose_string.end(), verbose_string.begin(), ::tolower);
-    device_debug_printf->verbose = verbose_string.length() ? !verbose_string.compare("true") : false;
+    verbose = verbose_string.length() ? !verbose_string.compare("true") : false;
 
     std::string stdout_string = getLayerOption("khronos_validation.printf_to_stdout");
     transform(stdout_string.begin(), stdout_string.end(), stdout_string.begin(), ::tolower);
-    device_debug_printf->use_stdout = stdout_string.length() ? !stdout_string.compare("true") : false;
-    if (getenv("DEBUG_PRINTF_TO_STDOUT")) device_debug_printf->use_stdout = true;
+    use_stdout = stdout_string.length() ? !stdout_string.compare("true") : false;
+    if (getenv("DEBUG_PRINTF_TO_STDOUT")) use_stdout = true;
 
-    if (device_debug_printf->phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
+    if (phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(device, "Debug Printf requires Vulkan 1.1 or later.  Debug Printf disabled.");
-        device_debug_printf->aborted = true;
+        aborted = true;
         return;
     }
 
+    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
     if (!supported_features.fragmentStoresAndAtomics || !supported_features.vertexPipelineStoresAndAtomics) {
         ReportSetupProblem(device,
                            "Debug Printf requires fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics.  "
                            "Debug Printf disabled.");
-        device_debug_printf->aborted = true;
+        aborted = true;
         return;
     }
 
@@ -86,7 +87,7 @@ void DebugPrintf::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
         ReportSetupProblem(device,
                            "Debug Printf cannot be enabled when gpu assisted validation is enabled.  "
                            "Debug Printf disabled.");
-        device_debug_printf->aborted = true;
+        aborted = true;
         return;
     }
 
@@ -97,7 +98,7 @@ void DebugPrintf::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
                                                 kShaderStageAllRayTracing,
                                             NULL};
     bindings.push_back(binding);
-    UtilPostCallRecordCreateDevice(pCreateInfo, bindings, device_debug_printf, device_debug_printf->phys_dev_props);
+    UtilPostCallRecordCreateDevice(pCreateInfo, bindings, this, phys_dev_props);
 }
 
 void DebugPrintf::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
