@@ -93,6 +93,8 @@ struct GpuAssistedShaderTracker {
 
 class GpuAssistedBase : public ValidationStateTracker {
   public:
+    ReadLockGuard ReadLock() override;
+    WriteLockGuard WriteLock() override;
     void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, void *modified_create_info) override;
     void CreateDevice(const VkDeviceCreateInfo *pCreateInfo) override;

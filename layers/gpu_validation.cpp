@@ -727,7 +727,7 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
         return;
     }
 
-    auto cb_state = Get<gpuav_state::CommandBuffer>(commandBuffer);
+    auto cb_state = GetWrite<gpuav_state::CommandBuffer>(commandBuffer);
     assert(cb_state != nullptr);
 
     std::vector<uint64_t> current_valid_handles;
@@ -1359,9 +1359,10 @@ void GpuAssisted::UpdateInstrumentationBuffer(gpuav_state::CommandBuffer *cb_nod
 }
 
 void GpuAssisted::PreRecordCommandBuffer(VkCommandBuffer command_buffer) {
-    auto cb_node = Get<gpuav_state::CommandBuffer>(command_buffer);
+    auto cb_node = GetWrite<gpuav_state::CommandBuffer>(command_buffer);
     UpdateInstrumentationBuffer(cb_node.get());
     for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+        auto guard = secondary_cmd_buffer->WriteLock();
         UpdateInstrumentationBuffer(static_cast<gpuav_state::CommandBuffer *>(secondary_cmd_buffer));
     }
 }
@@ -1770,7 +1771,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
 
     if (aborted) return;
 
-    auto cb_node = Get<gpuav_state::CommandBuffer>(cmd_buffer);
+    auto cb_node = GetWrite<gpuav_state::CommandBuffer>(cmd_buffer);
     if (!cb_node) {
         ReportSetupProblem(device, "Unrecognized command buffer");
         aborted = true;

@@ -225,6 +225,22 @@ gpu_utils_state::CommandBuffer::CommandBuffer(GpuAssistedBase *ga, VkCommandBuff
                                               const VkCommandBufferAllocateInfo *pCreateInfo, const COMMAND_POOL_STATE *pool)
     : CMD_BUFFER_STATE(ga, cb, pCreateInfo, pool) {}
 
+ReadLockGuard GpuAssistedBase::ReadLock() {
+    if (fine_grained_locking) {
+        return ReadLockGuard(validation_object_mutex, std::defer_lock);
+    } else {
+        return ReadLockGuard(validation_object_mutex);
+    }
+}
+
+WriteLockGuard GpuAssistedBase::WriteLock() {
+    if (fine_grained_locking) {
+        return WriteLockGuard(validation_object_mutex, std::defer_lock);
+    } else {
+        return WriteLockGuard(validation_object_mutex);
+    }
+}
+
 void GpuAssistedBase::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, void *modified_ci) {
     ValidationStateTracker::PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, modified_ci);
@@ -402,12 +418,13 @@ void gpu_utils_state::Queue::SubmitBarrier() {
 }
 
 bool GpuAssistedBase::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) const {
-    auto cb_node = Get<gpu_utils_state::CommandBuffer>(command_buffer);
+    auto cb_node = GetRead<gpu_utils_state::CommandBuffer>(command_buffer);
     if (cb_node->NeedsProcessing()) {
         return true;
     }
     for (const auto *secondary_cb : cb_node->linkedCommandBuffers) {
         auto secondary_cb_node = static_cast<const gpu_utils_state::CommandBuffer *>(secondary_cb);
+        auto guard = secondary_cb_node->ReadLock();
         if (secondary_cb_node->NeedsProcessing()) {
             return true;
         }
@@ -416,11 +433,12 @@ bool GpuAssistedBase::CommandBufferNeedsProcessing(VkCommandBuffer command_buffe
 }
 
 void GpuAssistedBase::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) {
-    auto cb_node = Get<gpu_utils_state::CommandBuffer>(command_buffer);
+    auto cb_node = GetWrite<gpu_utils_state::CommandBuffer>(command_buffer);
 
     cb_node->Process(queue);
     for (auto *secondary_cmd_base : cb_node->linkedCommandBuffers) {
         auto *secondary_cb_node = static_cast<gpu_utils_state::CommandBuffer *>(secondary_cmd_base);
+        auto guard = secondary_cb_node->WriteLock();
         secondary_cb_node->Process(queue);
     }
 }
