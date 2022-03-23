@@ -1674,12 +1674,18 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
     const auto &rp_state = pPipeline->RenderPassState();
 
-    if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) &&
-        (pPipeline->pre_raster_state || pPipeline->fragment_shader_state || pPipeline->fragment_output_state) && !rp_state) {
-        skip |=
-            LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575",
-                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] requires a valid renderPass, but one was not provided",
-                     pipelineIndex);
+    if ((pPipeline->pre_raster_state || pPipeline->fragment_shader_state || pPipeline->fragment_output_state) && !rp_state) {
+        if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06574",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] requires a valid renderPass, but one was not provided",
+                             pipelineIndex);
+        } else if (!enabled_features.core13.dynamicRendering) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] requires a valid renderPass, but one was not provided",
+                             pipelineIndex);
+        }
     }
 
     const auto subpass = pPipeline->Subpass();
