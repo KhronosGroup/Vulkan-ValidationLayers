@@ -372,7 +372,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
         objlist.add(framebuffer);
         objlist.add(image_view);
         skip |=
-            LogError(image, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
+            LogError(objlist, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
                      "%s: RenderPass %s uses %s where pAttachments[%" PRIu32 "] = %s, which refers to an invalid image",
                      function_name, report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(framebuffer).c_str(),
                      attachment_index, report_data->FormatHandle(image_view).c_str());
@@ -6498,7 +6498,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         if (((queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) == 0) && (SafeModulo(bufferOffset, 4) != 0)) {
             LogObjectList objlist(cb_node->commandBuffer());
             objlist.add(command_pool->commandPool());
-            skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("04052", image_to_buffer, is_2),
+            objlist.add(image_state->image());
+            skip |= LogError(objlist, GetBufferImageCopyCommandVUID("04052", image_to_buffer, is_2),
                              "%s: pRegion[%d] bufferOffset 0x%" PRIxLEAST64
                              " must be a multiple 4 because the command buffer %s was allocated from the command pool %s "
                              "which was created with queueFamilyIndex %u, which doesn't contain the VK_QUEUE_GRAPHICS_BIT or "
@@ -6832,9 +6833,10 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
             ((region_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0)) {
             LogObjectList objlist(cb_node->commandBuffer());
             objlist.add(command_pool->commandPool());
+            objlist.add(dst_image_state->image());
             vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-commandBuffer-04477"
                            : "VUID-vkCmdCopyBufferToImage-commandBuffer-04477";
-            skip |= LogError(dst_image_state->image(), vuid,
+            skip |= LogError(objlist, vuid,
                              "%s(): pRegion[%d] subresource aspectMask 0x%x specifies VK_IMAGE_ASPECT_DEPTH_BIT or "
                              "VK_IMAGE_ASPECT_STENCIL_BIT but the command buffer %s was allocated from the command pool %s "
                              "which was created with queueFamilyIndex %u, which doesn't contain the VK_QUEUE_GRAPHICS_BIT flag.",
