@@ -517,12 +517,13 @@ void DebugPrintf::ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *
 
 bool DebugPrintf::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
     bool buffers_present = false;
-    auto cb_node = Get<debug_printf_state::CommandBuffer>(command_buffer);
+    auto cb_node = GetRead<debug_printf_state::CommandBuffer>(command_buffer);
     if (cb_node->buffer_infos.size()) {
         buffers_present = true;
     }
     for (const auto *secondary_cb : cb_node->linkedCommandBuffers) {
         auto secondary_cb_node = static_cast<const debug_printf_state::CommandBuffer *>(secondary_cb);
+        auto guard = secondary_cb_node->ReadLock();
         if (secondary_cb_node->buffer_infos.size()) {
             buffers_present = true;
         }
@@ -531,11 +532,12 @@ bool DebugPrintf::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
 }
 
 void DebugPrintf::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) {
-    auto cb_node = Get<debug_printf_state::CommandBuffer>(command_buffer);
+    auto cb_node = GetWrite<debug_printf_state::CommandBuffer>(command_buffer);
 
     ProcessInstrumentationBuffer(queue, cb_node.get());
 
     for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+        auto guard = secondary_cmd_buffer->WriteLock();
         ProcessInstrumentationBuffer(queue, static_cast<debug_printf_state::CommandBuffer *>(secondary_cmd_buffer));
     }
 }
@@ -673,7 +675,7 @@ void DebugPrintf::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                                                VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                                VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
                                                uint32_t width, uint32_t height, uint32_t depth) {
-    auto cb_state = Get<debug_printf_state::CommandBuffer>(commandBuffer);
+    auto cb_state = GetWrite<debug_printf_state::CommandBuffer>(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
@@ -692,7 +694,7 @@ void DebugPrintf::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                 const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
                                                 uint32_t height, uint32_t depth) {
-    auto cb_state = Get<debug_printf_state::CommandBuffer>(commandBuffer);
+    auto cb_state = GetWrite<debug_printf_state::CommandBuffer>(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
@@ -711,7 +713,7 @@ void DebugPrintf::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
                                                         const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                         const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
                                                         VkDeviceAddress indirectDeviceAddress) {
-    auto cb_state = Get<debug_printf_state::CommandBuffer>(commandBuffer);
+    auto cb_state = GetWrite<debug_printf_state::CommandBuffer>(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
@@ -737,7 +739,7 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
     VkDescriptorBufferInfo output_desc_buffer_info = {};
     output_desc_buffer_info.range = output_buffer_size;
 
-    auto cb_node = Get<debug_printf_state::CommandBuffer>(cmd_buffer);
+    auto cb_node = GetWrite<debug_printf_state::CommandBuffer>(cmd_buffer);
     if (!cb_node) {
         ReportSetupProblem(device, "Unrecognized command buffer");
         aborted = true;

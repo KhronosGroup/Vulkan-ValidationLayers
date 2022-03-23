@@ -221,6 +221,22 @@ VkResult UtilInitializeVma(VkPhysicalDevice physical_device, VkDevice device, Vm
     return vmaCreateAllocator(&allocator_info, pAllocator);
 }
 
+ReadLockGuard GpuAssistedBase::ReadLock() {
+    if (fine_grained_locking) {
+        return ReadLockGuard(validation_object_mutex, std::defer_lock);
+    } else {
+        return ReadLockGuard(validation_object_mutex);
+    }
+}
+
+WriteLockGuard GpuAssistedBase::WriteLock() {
+    if (fine_grained_locking) {
+        return WriteLockGuard(validation_object_mutex, std::defer_lock);
+    } else {
+        return WriteLockGuard(validation_object_mutex);
+    }
+}
+
 void GpuAssistedBase::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, void *modified_ci) {
     ValidationStateTracker::PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, modified_ci);
