@@ -16283,14 +16283,14 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                     "vkQueuePresentKHR: pSwapchains[%u] image index is too large (%u). There are only %u images in this swapchain.",
                     i, pPresentInfo->pImageIndices[i], static_cast<uint32_t>(swapchain_data->images.size()));
             } else if (!swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state ||
-                       swapchain_data->images[pPresentInfo->pImageIndices[i]].acquired != SwapchainImageState::ACQUIRED) {
-                if (swapchain_data->images[pPresentInfo->pImageIndices[i]].acquired == SwapchainImageState::NON_ACQUIRED) {
+                       swapchain_data->images[pPresentInfo->pImageIndices[i]].acquired != SWAPCHAIN_IMAGE::State::kAcquired) {
+                if (swapchain_data->images[pPresentInfo->pImageIndices[i]].acquired == SWAPCHAIN_IMAGE::State::kNonAcquired) {
                     skip |= LogError(pPresentInfo->pSwapchains[i], validation_error,
                                      "vkQueuePresentKHR: pSwapchains[%" PRIu32 "] image at index %" PRIu32
                                      " was not acquired from the swapchain.",
                                      i, pPresentInfo->pImageIndices[i]);
                 }
-                if (swapchain_data->images[pPresentInfo->pImageIndices[i]].acquired == SwapchainImageState::WAITING) {
+                if (swapchain_data->images[pPresentInfo->pImageIndices[i]].acquired == SWAPCHAIN_IMAGE::State::kWaiting) {
                     bool has_wait_semaphore = false;
                     for (uint32_t j = 0; j < pPresentInfo->waitSemaphoreCount; ++j) {
                         if (pPresentInfo->pWaitSemaphores[j] ==

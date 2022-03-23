@@ -54,6 +54,7 @@ class FENCE_STATE : public REFCOUNTED_NODE {
     VkFence fence() const { return handle_.Cast<VkFence>(); }
 
     void ExecuteWaitingFunctions() {
+        // This function must only be called with WriteLock acquired
         for (auto &func : waiting_functions_) {
             if (func.use_count() == 1) {
                 (*func)();
@@ -62,7 +63,10 @@ class FENCE_STATE : public REFCOUNTED_NODE {
         waiting_functions_.clear();
     }
 
-    void AddWaitingFunction(const std::shared_ptr<std::function<void()>> &func) { waiting_functions_.push_back(func); }
+    void AddWaitingFunction(const std::shared_ptr<std::function<void()>> &func) { 
+        auto guard = WriteLock();
+        waiting_functions_.push_back(func);
+    }
 
     bool EnqueueSignal(QUEUE_STATE *queue_state, uint64_t next_seq);
 
@@ -157,6 +161,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     }
 
     void ExecuteWaitingFunctions() {
+        // This function must only be called with WriteLock acquired
         for (auto &func : waiting_functions_) {
             // Waiting functions are function that must be executed after all the semaphores that hold it get signaled
             // The functions must be executed only once, so check if this is the last semaphore that is holding it
@@ -169,7 +174,10 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
         waiting_functions_.clear();
     }
 
-    void AddWaitingFunction(const std::shared_ptr<std::function<void()>> &func) { waiting_functions_.push_back(func); }
+    void AddWaitingFunction(const std::shared_ptr<std::function<void()>> &func) {
+        auto guard = WriteLock();
+        waiting_functions_.push_back(func);
+    }
 
     // Enqueue a semaphore operation. For binary semaphores, the payload value is generated and
     // returned, so that every semaphore operation has a unique value.
@@ -201,7 +209,6 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     void Export(VkExternalSemaphoreHandleTypeFlagBits handle_type);
 
     const VkSemaphoreType type;
-    std::vector<std::shared_ptr<std::function<void()>>> waiting_functions_;
 
   private:
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
@@ -212,6 +219,8 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     SemOp completed_{};
     // next payload value for binary semaphore operations
     uint64_t next_payload_;
+
+    std::vector<std::shared_ptr<std::function<void()>>> waiting_functions_;
 
     // Set of pending operations ordered by payload. This must be a multiset because
     // timeline operations can be added in any order and multiple operations

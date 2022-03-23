@@ -250,16 +250,15 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     bool Invalid() const override { return Destroyed() || !image_state || image_state->Invalid(); }
 };
 
-enum SwapchainImageState {
-    NON_ACQUIRED,
-    WAITING,
-    ACQUIRED,
-};
-
 struct SWAPCHAIN_IMAGE {
+    enum class State {
+        kNonAcquired,
+        kWaiting,
+        kAcquired,
+    };
     IMAGE_STATE *image_state = nullptr;
     VkDeviceSize fake_base_address = 0;
-    SwapchainImageState acquired = SwapchainImageState::NON_ACQUIRED;
+    State acquired = State::kNonAcquired;
     VkSemaphore waiting_semaphore;
     VkFence waiting_fence;
 };
