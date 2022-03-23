@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 208;
+const uint32_t GeneratedVulkanHeaderVersion = 209;
 
 const VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_NONE|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR|VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV|VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV|VK_ACCESS_NONE_KHR;
 const VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -114,9 +114,6 @@ const VkVideoEncodeFlagsKHR AllVkVideoEncodeFlagBitsKHR = VK_VIDEO_ENCODE_DEFAUL
 const VkVideoEncodeRateControlModeFlagsKHR AllVkVideoEncodeRateControlModeFlagBitsKHR = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_NONE_BIT_KHR|VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR|VK_VIDEO_ENCODE_RATE_CONTROL_MODE_VBR_BIT_KHR;
 #endif
 const VkDebugReportFlagsEXT AllVkDebugReportFlagBitsEXT = VK_DEBUG_REPORT_INFORMATION_BIT_EXT|VK_DEBUG_REPORT_WARNING_BIT_EXT|VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT|VK_DEBUG_REPORT_ERROR_BIT_EXT|VK_DEBUG_REPORT_DEBUG_BIT_EXT;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-const VkVideoEncodeH264CreateFlagsEXT AllVkVideoEncodeH264CreateFlagBitsEXT = VK_VIDEO_ENCODE_H264_CREATE_DEFAULT_EXT|VK_VIDEO_ENCODE_H264_CREATE_RESERVED_0_BIT_EXT;
-#endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 const VkVideoEncodeH264InputModeFlagsEXT AllVkVideoEncodeH264InputModeFlagBitsEXT = VK_VIDEO_ENCODE_H264_INPUT_MODE_FRAME_BIT_EXT|VK_VIDEO_ENCODE_H264_INPUT_MODE_SLICE_BIT_EXT|VK_VIDEO_ENCODE_H264_INPUT_MODE_NON_VCL_BIT_EXT;
 #endif
@@ -2943,23 +2940,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                 skip |= validate_flags("VkVideoEncodeH264CapabilitiesEXT", "outputModeFlags", "VkVideoEncodeH264OutputModeFlagBitsEXT", AllVkVideoEncodeH264OutputModeFlagBitsEXT, structure->outputModeFlags, kRequiredFlags, "VUID-VkVideoEncodeH264CapabilitiesEXT-outputModeFlags-parameter", "VUID-VkVideoEncodeH264CapabilitiesEXT-outputModeFlags-requiredbitmask");
 
                 skip |= validate_bool32("VkVideoEncodeH264CapabilitiesEXT", "motionVectorsOverPicBoundariesFlag", structure->motionVectorsOverPicBoundariesFlag);
-
-            }
-        } break;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-        // Validation code for VkVideoEncodeH264SessionCreateInfoEXT structure members
-        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_CREATE_INFO_EXT: { // Covers VUID-VkVideoEncodeH264SessionCreateInfoEXT-sType-sType
-            if (is_const_param) {
-                VkVideoEncodeH264SessionCreateInfoEXT *structure = (VkVideoEncodeH264SessionCreateInfoEXT *) header;
-                skip |= validate_flags("VkVideoEncodeH264SessionCreateInfoEXT", "flags", "VkVideoEncodeH264CreateFlagBitsEXT", AllVkVideoEncodeH264CreateFlagBitsEXT, structure->flags, kRequiredFlags, "VUID-VkVideoEncodeH264SessionCreateInfoEXT-flags-parameter", "VUID-VkVideoEncodeH264SessionCreateInfoEXT-flags-requiredbitmask");
-
-                skip |= validate_required_pointer("VkVideoEncodeH264SessionCreateInfoEXT", "pStdExtensionVersion", structure->pStdExtensionVersion, "VUID-VkVideoEncodeH264SessionCreateInfoEXT-pStdExtensionVersion-parameter");
-
-                if (structure->pStdExtensionVersion != NULL)
-                {
-                }
             }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -3120,23 +3100,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                 skip |= validate_flags("VkVideoEncodeH265CapabilitiesEXT", "ctbSizes", "VkVideoEncodeH265CtbSizeFlagBitsEXT", AllVkVideoEncodeH265CtbSizeFlagBitsEXT, structure->ctbSizes, kRequiredFlags, "VUID-VkVideoEncodeH265CapabilitiesEXT-ctbSizes-parameter", "VUID-VkVideoEncodeH265CapabilitiesEXT-ctbSizes-requiredbitmask");
 
                 skip |= validate_flags("VkVideoEncodeH265CapabilitiesEXT", "transformBlockSizes", "VkVideoEncodeH265TransformBlockSizeFlagBitsEXT", AllVkVideoEncodeH265TransformBlockSizeFlagBitsEXT, structure->transformBlockSizes, kRequiredFlags, "VUID-VkVideoEncodeH265CapabilitiesEXT-transformBlockSizes-parameter", "VUID-VkVideoEncodeH265CapabilitiesEXT-transformBlockSizes-requiredbitmask");
-
-            }
-        } break;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-        // Validation code for VkVideoEncodeH265SessionCreateInfoEXT structure members
-        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_CREATE_INFO_EXT: { // Covers VUID-VkVideoEncodeH265SessionCreateInfoEXT-sType-sType
-            if (is_const_param) {
-                VkVideoEncodeH265SessionCreateInfoEXT *structure = (VkVideoEncodeH265SessionCreateInfoEXT *) header;
-                skip |= validate_reserved_flags("VkVideoEncodeH265SessionCreateInfoEXT", "flags", structure->flags, "VUID-VkVideoEncodeH265SessionCreateInfoEXT-flags-zerobitmask");
-
-                skip |= validate_required_pointer("VkVideoEncodeH265SessionCreateInfoEXT", "pStdExtensionVersion", structure->pStdExtensionVersion, "VUID-VkVideoEncodeH265SessionCreateInfoEXT-pStdExtensionVersion-parameter");
-
-                if (structure->pStdExtensionVersion != NULL)
-                {
-                }
             }
         } break;
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -3294,22 +3257,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // No Validation code for VkVideoDecodeH264ProfileEXT structure members  -- Covers VUID-VkVideoDecodeH264ProfileEXT-sType-sType
 
         // No Validation code for VkVideoDecodeH264CapabilitiesEXT structure members  -- Covers VUID-VkVideoDecodeH264CapabilitiesEXT-sType-sType
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-        // Validation code for VkVideoDecodeH264SessionCreateInfoEXT structure members
-        case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_CREATE_INFO_EXT: { // Covers VUID-VkVideoDecodeH264SessionCreateInfoEXT-sType-sType
-            if (is_const_param) {
-                VkVideoDecodeH264SessionCreateInfoEXT *structure = (VkVideoDecodeH264SessionCreateInfoEXT *) header;
-                skip |= validate_reserved_flags("VkVideoDecodeH264SessionCreateInfoEXT", "flags", structure->flags, "VUID-VkVideoDecodeH264SessionCreateInfoEXT-flags-zerobitmask");
-
-                skip |= validate_required_pointer("VkVideoDecodeH264SessionCreateInfoEXT", "pStdExtensionVersion", structure->pStdExtensionVersion, "VUID-VkVideoDecodeH264SessionCreateInfoEXT-pStdExtensionVersion-parameter");
-
-                if (structure->pStdExtensionVersion != NULL)
-                {
-                }
-            }
-        } break;
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH264SessionParametersAddInfoEXT structure members
@@ -3890,26 +3837,12 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // No Validation code for VkVideoDecodeH265CapabilitiesEXT structure members  -- Covers VUID-VkVideoDecodeH265CapabilitiesEXT-sType-sType
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-        // Validation code for VkVideoDecodeH265SessionCreateInfoEXT structure members
-        case VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_CREATE_INFO_EXT: { // Covers VUID-VkVideoDecodeH265SessionCreateInfoEXT-sType-sType
-            if (is_const_param) {
-                VkVideoDecodeH265SessionCreateInfoEXT *structure = (VkVideoDecodeH265SessionCreateInfoEXT *) header;
-                skip |= validate_reserved_flags("VkVideoDecodeH265SessionCreateInfoEXT", "flags", structure->flags, "VUID-VkVideoDecodeH265SessionCreateInfoEXT-flags-zerobitmask");
-
-                skip |= validate_required_pointer("VkVideoDecodeH265SessionCreateInfoEXT", "pStdExtensionVersion", structure->pStdExtensionVersion, "VUID-VkVideoDecodeH265SessionCreateInfoEXT-pStdExtensionVersion-parameter");
-
-                if (structure->pStdExtensionVersion != NULL)
-                {
-                }
-            }
-        } break;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         // Validation code for VkVideoDecodeH265SessionParametersAddInfoEXT structure members
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT: { // Covers VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-sType-sType
             if (is_const_param) {
                 VkVideoDecodeH265SessionParametersAddInfoEXT *structure = (VkVideoDecodeH265SessionParametersAddInfoEXT *) header;
+                skip |= validate_array("VkVideoDecodeH265SessionParametersAddInfoEXT", "vpsStdCount", "pVpsStd", structure->vpsStdCount, &structure->pVpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-vpsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pVpsStd-parameter");
+
                 skip |= validate_array("VkVideoDecodeH265SessionParametersAddInfoEXT", "spsStdCount", "pSpsStd", structure->spsStdCount, &structure->pSpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pSpsStd-parameter");
 
                 skip |= validate_array("VkVideoDecodeH265SessionParametersAddInfoEXT", "ppsStdCount", "pPpsStd", structure->ppsStdCount, &structure->pPpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pPpsStd-parameter");
@@ -3926,6 +3859,8 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
                 if (structure->pParametersAddInfo != NULL)
                 {
+                    skip |= validate_array("VkVideoDecodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo->vpsStdCount", "pParametersAddInfo->pVpsStd", structure->pParametersAddInfo->vpsStdCount, &structure->pParametersAddInfo->pVpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-vpsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pVpsStd-parameter");
+
                     skip |= validate_array("VkVideoDecodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo->spsStdCount", "pParametersAddInfo->pSpsStd", structure->pParametersAddInfo->spsStdCount, &structure->pParametersAddInfo->pSpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-spsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pSpsStd-parameter");
 
                     skip |= validate_array("VkVideoDecodeH265SessionParametersCreateInfoEXT", "pParametersAddInfo->ppsStdCount", "pParametersAddInfo->pPpsStd", structure->pParametersAddInfo->ppsStdCount, &structure->pParametersAddInfo->pPpsStd, true, false, "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-ppsStdCount-arraylength", "VUID-VkVideoDecodeH265SessionParametersAddInfoEXT-pPpsStd-parameter");
@@ -11119,9 +11054,7 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionKHR(
     skip |= validate_struct_type("vkCreateVideoSessionKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_VIDEO_SESSION_CREATE_INFO_KHR", pCreateInfo, VK_STRUCTURE_TYPE_VIDEO_SESSION_CREATE_INFO_KHR, true, "VUID-vkCreateVideoSessionKHR-pCreateInfo-parameter", "VUID-VkVideoSessionCreateInfoKHR-sType-sType");
     if (pCreateInfo != NULL)
     {
-        const VkStructureType allowed_structs_VkVideoSessionCreateInfoKHR[] = { VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_SESSION_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_SESSION_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_CREATE_INFO_EXT };
-
-        skip |= validate_struct_pnext("vkCreateVideoSessionKHR", "pCreateInfo->pNext", "VkVideoDecodeH264SessionCreateInfoEXT, VkVideoDecodeH265SessionCreateInfoEXT, VkVideoEncodeH264SessionCreateInfoEXT, VkVideoEncodeH265SessionCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkVideoSessionCreateInfoKHR), allowed_structs_VkVideoSessionCreateInfoKHR, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionCreateInfoKHR-pNext-pNext", "VUID-VkVideoSessionCreateInfoKHR-sType-unique", false, true);
+        skip |= validate_struct_pnext("vkCreateVideoSessionKHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionCreateInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= validate_flags("vkCreateVideoSessionKHR", "pCreateInfo->flags", "VkVideoSessionCreateFlagBitsKHR", AllVkVideoSessionCreateFlagBitsKHR, pCreateInfo->flags, kOptionalFlags, "VUID-VkVideoSessionCreateInfoKHR-flags-parameter");
 
@@ -11147,6 +11080,13 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionKHR(
         // No xml-driven validation
 
         skip |= validate_ranged_enum("vkCreateVideoSessionKHR", "pCreateInfo->referencePicturesFormat", "VkFormat", AllVkFormatEnums, pCreateInfo->referencePicturesFormat, "VUID-VkVideoSessionCreateInfoKHR-referencePicturesFormat-parameter");
+
+        skip |= validate_required_pointer("vkCreateVideoSessionKHR", "pCreateInfo->pStdHeaderVersion", pCreateInfo->pStdHeaderVersion, "VUID-VkVideoSessionCreateInfoKHR-pStdHeaderVersion-parameter");
+
+        if (pCreateInfo->pStdHeaderVersion != NULL)
+        {
+            // No xml-driven validation
+        }
     }
     if (pAllocator != NULL)
     {
