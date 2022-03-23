@@ -954,11 +954,11 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     uint32_t attribute_binding_extent =
                         attribute_description.offset + FormatElementSize(attribute_description.format);
                     if (vertex_buffer_stride != 0 && vertex_buffer_stride < attribute_binding_extent) {
-                        const char *api_call = (cmd_type == CMD_BINDVERTEXBUFFERS2EXT) ? "vkCmdBindVertexBuffers2EXT" : "vkCmdBindVertexBuffers2";
                         skip |= LogError(pCB->commandBuffer(), "VUID-vkCmdBindVertexBuffers2-pStrides-06209",
                                          "The pStrides[%u] (%u) parameter in the last call to %s is not 0 "
                                          "and less than the extent of the binding for attribute %zu (%u).",
-                                         vertex_binding, vertex_buffer_stride, api_call, i, attribute_binding_extent);
+                                         vertex_binding, vertex_buffer_stride, CommandTypeString(cmd_type), i,
+                                         attribute_binding_extent);
                     }
                 }
                 const VkDeviceSize vertex_buffer_offset = current_vtx_bfr_binding_info[vertex_binding].offset;
@@ -8080,13 +8080,14 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
     return skip;
 }
 
-bool CoreChecks::ForbidInheritedViewportScissor(VkCommandBuffer commandBuffer, const CMD_BUFFER_STATE *cb_state,
-                                                const char* vuid, const char *cmdName) const {
+bool CoreChecks::ForbidInheritedViewportScissor(VkCommandBuffer commandBuffer, const CMD_BUFFER_STATE *cb_state, const char *vuid,
+                                                const CMD_TYPE cmd_type) const {
     bool skip = false;
     if (cb_state->inheritedViewportDepths.size() != 0) {
-        skip |= LogError(
-            commandBuffer, vuid,
-            "%s: commandBuffer must not have VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D enabled.", cmdName);
+        skip |=
+            LogError(commandBuffer, vuid,
+                     "%s: commandBuffer must not have VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D enabled.",
+                     CommandTypeString(cmd_type));
     }
     return skip;
 }
@@ -8097,8 +8098,8 @@ bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, ui
     assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(cb_state.get(), CMD_SETVIEWPORT);
-    skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetViewport-commandBuffer-04821",
-                                           "vkCmdSetViewport");
+    skip |=
+        ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetViewport-commandBuffer-04821", CMD_SETVIEWPORT);
     return skip;
 }
 
@@ -8109,7 +8110,7 @@ bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uin
     bool skip = false;
     skip |= ValidateCmd(cb_state.get(), CMD_SETSCISSOR);
     skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetScissor-viewportScissor2D-04789",
-                                           "vkCmdSetScissor");
+                                           CMD_SETSCISSOR);
     return skip;
 }
 
@@ -10209,7 +10210,7 @@ static QueryState GetLocalQueryState(const QueryMap *localQueryToStateMap, VkQue
 }
 
 bool CoreChecks::VerifyQueryIsReset(const ValidationStateTracker *state_data, VkCommandBuffer commandBuffer, QueryObject query_obj,
-                                    const char *func_name, VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                    const CMD_TYPE cmd_type, VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
                                     QueryMap *localQueryToStateMap) {
     bool skip = false;
 
@@ -10236,14 +10237,15 @@ bool CoreChecks::VerifyQueryIsReset(const ValidationStateTracker *state_data, Vk
                                      ": query not reset. "
                                      "After query pool creation, each query must be reset before it is used. "
                                      "Queries must also be reset between uses.",
-                                     func_name, state_data->report_data->FormatHandle(query_obj.pool).c_str(), query_obj.query);
+                                     CommandTypeString(cmd_type), state_data->report_data->FormatHandle(query_obj.pool).c_str(),
+                                     query_obj.query);
     }
 
     return skip;
 }
 
 bool CoreChecks::ValidatePerformanceQuery(const ValidationStateTracker *state_data, VkCommandBuffer commandBuffer,
-                                          QueryObject query_obj, const char *func_name, VkQueryPool &firstPerfQueryPool,
+                                          QueryObject query_obj, const CMD_TYPE cmd_type, VkQueryPool &firstPerfQueryPool,
                                           uint32_t perfPass, QueryMap *localQueryToStateMap) {
     auto query_pool_state = state_data->Get<QUERY_POOL_STATE>(query_obj.pool);
     const auto &query_pool_ci = query_pool_state->createInfo;
@@ -10255,25 +10257,26 @@ bool CoreChecks::ValidatePerformanceQuery(const ValidationStateTracker *state_da
 
     if (perfPass >= query_pool_state->n_performance_passes) {
         skip |= state_data->LogError(commandBuffer, "VUID-VkPerformanceQuerySubmitInfoKHR-counterPassIndex-03221",
-                                     "Invalid counterPassIndex (%u, maximum allowed %u) value for query pool %s.", perfPass,
-                                     query_pool_state->n_performance_passes,
+                                     "%s: Invalid counterPassIndex (%u, maximum allowed %u) value for query pool %s.",
+                                     CommandTypeString(cmd_type), perfPass, query_pool_state->n_performance_passes,
                                      state_data->report_data->FormatHandle(query_obj.pool).c_str());
     }
 
     if (!cb_state->performance_lock_acquired || cb_state->performance_lock_released) {
         skip |= state_data->LogError(commandBuffer, "VUID-vkQueueSubmit-pCommandBuffers-03220",
-                                     "Commandbuffer %s was submitted and contains a performance query but the"
+                                     "%s: Commandbuffer %s was submitted and contains a performance query but the"
                                      "profiling lock was not held continuously throughout the recording of commands.",
-                                     state_data->report_data->FormatHandle(commandBuffer).c_str());
+                                     CommandTypeString(cmd_type), state_data->report_data->FormatHandle(commandBuffer).c_str());
     }
 
     QueryState command_buffer_state = GetLocalQueryState(localQueryToStateMap, query_obj.pool, query_obj.query, perfPass);
     if (command_buffer_state == QUERYSTATE_RESET) {
         skip |= state_data->LogError(
             commandBuffer, query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-None-02863" : "VUID-vkCmdBeginQuery-None-02863",
-            "VkQuery begin command recorded in a command buffer that, either directly or "
+            "%s: VkQuery begin command recorded in a command buffer that, either directly or "
             "through secondary command buffers, also contains a vkCmdResetQueryPool command "
-            "affecting the same query.");
+            "affecting the same query.",
+            CommandTypeString(cmd_type));
     }
 
     if (firstPerfQueryPool != VK_NULL_HANDLE) {
@@ -10282,9 +10285,9 @@ bool CoreChecks::ValidatePerformanceQuery(const ValidationStateTracker *state_da
             skip |= state_data->LogError(
                 commandBuffer,
                 query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03226" : "VUID-vkCmdBeginQuery-queryPool-03226",
-                "Commandbuffer %s contains more than one performance query pool but "
+                "%s: Commandbuffer %s contains more than one performance query pool but "
                 "performanceCounterMultipleQueryPools is not enabled.",
-                state_data->report_data->FormatHandle(commandBuffer).c_str());
+                CommandTypeString(cmd_type), state_data->report_data->FormatHandle(commandBuffer).c_str());
         }
     } else {
         firstPerfQueryPool = query_obj.pool;
@@ -10293,18 +10296,18 @@ bool CoreChecks::ValidatePerformanceQuery(const ValidationStateTracker *state_da
     return skip;
 }
 
-void CoreChecks::EnqueueVerifyBeginQuery(VkCommandBuffer command_buffer, const QueryObject &query_obj, const char *func_name) {
+void CoreChecks::EnqueueVerifyBeginQuery(VkCommandBuffer command_buffer, const QueryObject &query_obj, const CMD_TYPE cmd_type) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(command_buffer);
 
     // Enqueue the submit time validation here, ahead of the submit time state update in the StateTracker's PostCallRecord
-    cb_state->queryUpdates.emplace_back([command_buffer, query_obj, func_name](const ValidationStateTracker *device_data,
-                                                                               bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                                                               uint32_t perfPass, QueryMap *localQueryToStateMap) {
+    cb_state->queryUpdates.emplace_back([command_buffer, query_obj, cmd_type](const ValidationStateTracker *device_data,
+                                                                              bool do_validate, VkQueryPool &firstPerfQueryPool,
+                                                                              uint32_t perfPass, QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
         bool skip = false;
-        skip |= ValidatePerformanceQuery(device_data, command_buffer, query_obj, func_name, firstPerfQueryPool, perfPass,
+        skip |= ValidatePerformanceQuery(device_data, command_buffer, query_obj, cmd_type, firstPerfQueryPool, perfPass,
                                          localQueryToStateMap);
-        skip |= VerifyQueryIsReset(device_data, command_buffer, query_obj, func_name, firstPerfQueryPool, perfPass,
+        skip |= VerifyQueryIsReset(device_data, command_buffer, query_obj, cmd_type, firstPerfQueryPool, perfPass,
                                    localQueryToStateMap);
         return skip;
     });
@@ -10313,7 +10316,7 @@ void CoreChecks::EnqueueVerifyBeginQuery(VkCommandBuffer command_buffer, const Q
 void CoreChecks::PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
     if (disabled[query_validation]) return;
     QueryObject query_obj = {queryPool, slot};
-    EnqueueVerifyBeginQuery(commandBuffer, query_obj, "vkCmdBeginQuery()");
+    EnqueueVerifyBeginQuery(commandBuffer, query_obj, CMD_BEGINQUERY);
 }
 
 void CoreChecks::EnqueueVerifyEndQuery(CMD_BUFFER_STATE &cb_state, const QueryObject &query_obj) {
@@ -10710,12 +10713,12 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, V
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     QueryObject query = {queryPool, slot};
-    const char *func_name = "vkCmdWriteTimestamp()";
-    cb_state->queryUpdates.emplace_back([commandBuffer, query, func_name](const ValidationStateTracker *device_data,
-                                                                          bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                                                          uint32_t perfPass, QueryMap *localQueryToStateMap) {
+    CMD_TYPE cmd_type = CMD_WRITETIMESTAMP;
+    cb_state->queryUpdates.emplace_back([commandBuffer, query, cmd_type](const ValidationStateTracker *device_data,
+                                                                         bool do_validate, VkQueryPool &firstPerfQueryPool,
+                                                                         uint32_t perfPass, QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
-        return VerifyQueryIsReset(device_data, commandBuffer, query, func_name, firstPerfQueryPool, perfPass, localQueryToStateMap);
+        return VerifyQueryIsReset(device_data, commandBuffer, query, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
     });
 }
 
@@ -10725,12 +10728,12 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffe
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     QueryObject query = {queryPool, slot};
-    const char *func_name = "vkCmdWriteTimestamp2KHR()";
-    cb_state->queryUpdates.emplace_back([commandBuffer, query, func_name](const ValidationStateTracker *device_data,
-                                                                          bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                                                          uint32_t perfPass, QueryMap *localQueryToStateMap) {
+    CMD_TYPE cmd_type = CMD_WRITETIMESTAMP2KHR;
+    cb_state->queryUpdates.emplace_back([commandBuffer, query, cmd_type](const ValidationStateTracker *device_data,
+                                                                         bool do_validate, VkQueryPool &firstPerfQueryPool,
+                                                                         uint32_t perfPass, QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
-        return VerifyQueryIsReset(device_data, commandBuffer, query, func_name, firstPerfQueryPool, perfPass, localQueryToStateMap);
+        return VerifyQueryIsReset(device_data, commandBuffer, query, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
     });
 }
 
@@ -10740,12 +10743,12 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, 
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     QueryObject query = {queryPool, slot};
-    const char *func_name = "vkCmdWriteTimestamp2()";
-    cb_state->queryUpdates.emplace_back([commandBuffer, query, func_name](const ValidationStateTracker *device_data,
-                                                                          bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                                                          uint32_t perfPass, QueryMap *localQueryToStateMap) {
+    CMD_TYPE cmd_type = CMD_WRITETIMESTAMP2;
+    cb_state->queryUpdates.emplace_back([commandBuffer, query, cmd_type](const ValidationStateTracker *device_data,
+                                                                         bool do_validate, VkQueryPool &firstPerfQueryPool,
+                                                                         uint32_t perfPass, QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
-        return VerifyQueryIsReset(device_data, commandBuffer, query, func_name, firstPerfQueryPool, perfPass, localQueryToStateMap);
+        return VerifyQueryIsReset(device_data, commandBuffer, query, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
     });
 }
 
@@ -10757,16 +10760,16 @@ void CoreChecks::PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkComm
     if (disabled[query_validation]) return;
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    const char *func_name = "vkCmdWriteAccelerationStructuresPropertiesKHR()";
-    cb_state->queryUpdates.emplace_back([accelerationStructureCount, commandBuffer, firstQuery, func_name, queryPool](
+    CMD_TYPE cmd_type = CMD_WRITEACCELERATIONSTRUCTURESPROPERTIESKHR;
+    cb_state->queryUpdates.emplace_back([accelerationStructureCount, commandBuffer, firstQuery, queryPool, cmd_type](
                                             const ValidationStateTracker *device_data, bool do_validate,
                                             VkQueryPool &firstPerfQueryPool, uint32_t perfPass, QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
         bool skip = false;
         for (uint32_t i = 0; i < accelerationStructureCount; i++) {
             QueryObject query = {{queryPool, firstQuery + i}, perfPass};
-            skip |= VerifyQueryIsReset(device_data, commandBuffer, query, func_name, firstPerfQueryPool, perfPass,
-                                       localQueryToStateMap);
+            skip |=
+                VerifyQueryIsReset(device_data, commandBuffer, query, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
         }
         return skip;
     });
@@ -16991,7 +16994,7 @@ void CoreChecks::PreCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuf
                                                       VkQueryControlFlags flags, uint32_t index) {
     if (disabled[query_validation]) return;
     QueryObject query_obj = {queryPool, query, index};
-    EnqueueVerifyBeginQuery(commandBuffer, query_obj, "vkCmdBeginQueryIndexedEXT()");
+    EnqueueVerifyBeginQuery(commandBuffer, query_obj, CMD_BEGINQUERYINDEXEDEXT);
 }
 
 void CoreChecks::PreCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
@@ -17057,8 +17060,8 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
     bool skip = false;
     // Minimal validation for command buffer state
     skip |= ValidateCmd(cb_state.get(), CMD_SETDISCARDRECTANGLEEXT);
-    skip |= ForbidInheritedViewportScissor(
-        commandBuffer, cb_state.get(), "VUID-vkCmdSetDiscardRectangleEXT-viewportScissor2D-04788", "vkCmdSetDiscardRectangleEXT");
+    skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(),
+                                           "VUID-vkCmdSetDiscardRectangleEXT-viewportScissor2D-04788", CMD_SETDISCARDRECTANGLEEXT);
     for (uint32_t i = 0; i < discardRectangleCount; ++i) {
         if (pDiscardRectangles[i].offset.x < 0) {
             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetDiscardRectangleEXT-x-00587",
@@ -18297,7 +18300,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer comma
         *cb_state, CMD_SETVIEWPORTWITHCOUNTEXT, enabled_features.extended_dynamic_state_features.extendedDynamicState,
         "VUID-vkCmdSetViewportWithCount-None-03393", "vkCmdSetViewportWithCountEXT: extendedDynamicState feature is not enabled.");
     skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetViewportWithCount-commandBuffer-04819",
-                                           "vkCmdSetViewportWithCountEXT");
+                                           CMD_SETVIEWPORTWITHCOUNTEXT);
 
     return skip;
 }
@@ -18308,7 +18311,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandB
     bool skip = false;
     skip = ValidateCmd(cb_state.get(), CMD_SETVIEWPORTWITHCOUNT);
     skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetViewportWithCount-commandBuffer-04819",
-                                           "vkCmdSetViewportWithCount");
+                                           CMD_SETVIEWPORTWITHCOUNT);
 
     return skip;
 }
@@ -18321,7 +18324,7 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer comman
         *cb_state, CMD_SETSCISSORWITHCOUNTEXT, enabled_features.extended_dynamic_state_features.extendedDynamicState,
         "VUID-vkCmdSetScissorWithCount-None-03396", "vkCmdSetScissorWithCountEXT: extendedDynamicState feature is not enabled.");
     skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetScissorWithCount-commandBuffer-04820",
-                                           "vkCmdSetScissorWithCountEXT");
+                                           CMD_SETSCISSORWITHCOUNTEXT);
 
     return skip;
 }
@@ -18332,7 +18335,7 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBu
     bool skip = false;
     skip = ValidateCmd(cb_state.get(), CMD_SETSCISSORWITHCOUNT);
     skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetScissorWithCount-commandBuffer-04820",
-                                           "vkCmdSetScissorWithCount");
+                                           CMD_SETSCISSORWITHCOUNT);
 
     return skip;
 }
@@ -18340,8 +18343,7 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBu
 bool CoreChecks::ValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                const VkBuffer *pBuffers, const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
                                                const VkDeviceSize *pStrides, CMD_TYPE cmd_type) const {
-    const bool is_2ext = (cmd_type == CMD_BINDVERTEXBUFFERS2EXT);
-    const char *api_call = is_2ext ? "vkCmdBindVertexBuffers2EXT()" : "vkCmdBindVertexBuffers2()";
+    const char *api_call = CommandTypeString(cmd_type);
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
 
