@@ -115,13 +115,6 @@ WriteLockGuard CoreChecks::WriteLock() {
     }
 }
 
-// Override base class, we have some extra work to do here
-void CoreChecks::InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
-    if (add_obj) {
-        ValidationStateTracker::InitDeviceValidationObject(add_obj, inst_obj, dev_obj);
-    }
-}
-
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
 template <typename T1>
 bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, const T1 object,
@@ -3348,24 +3341,20 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
     return skip;
 }
 
-void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) {
+void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     // The state tracker sets up the device state
-    StateTracker::PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, result);
+    StateTracker::CreateDevice(pCreateInfo);
 
     // Add the callback hooks for the functions that are either broadly or deeply used and that the ValidationStateTracker refactor
     // would be messier without.
     // TODO: Find a good way to do this hooklessly.
-    ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
-    ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
-    CoreChecks *core_checks = static_cast<CoreChecks *>(validation_data);
-    core_checks->SetSetImageViewInitialLayoutCallback(
+    SetSetImageViewInitialLayoutCallback(
         [](CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &iv_state, VkImageLayout layout) -> void {
             cb_node->SetImageViewInitialLayout(iv_state, layout);
         });
 
     // Allocate shader validation cache
-    if (!disabled[shader_validation_caching] && !disabled[shader_validation] && !core_checks->core_validation_cache) {
+    if (!disabled[shader_validation_caching] && !disabled[shader_validation] && !core_validation_cache) {
         std::string validation_cache_path;
         auto tmp_path = GetEnvironment("XDG_CACHE_HOME");
         if (!tmp_path.size()) {
@@ -3381,22 +3370,21 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         if (!tmp_path.size()) tmp_path = GetEnvironment("TMP");
         if (!tmp_path.size()) tmp_path = GetEnvironment("TEMP");
         if (!tmp_path.size()) tmp_path = "/tmp";
-        core_checks->validation_cache_path = tmp_path + "/shader_validation_cache";
+        validation_cache_path = tmp_path + "/shader_validation_cache";
 #if defined(__linux__) || defined(__FreeBSD__)
-        core_checks->validation_cache_path += "-" + std::to_string(getuid());
+        validation_cache_path += "-" + std::to_string(getuid());
 #endif
-        core_checks->validation_cache_path += ".bin";
+        validation_cache_path += ".bin";
 
         std::vector<char> validation_cache_data;
-        std::ifstream read_file(core_checks->validation_cache_path.c_str(), std::ios::in | std::ios::binary);
+        std::ifstream read_file(validation_cache_path.c_str(), std::ios::in | std::ios::binary);
 
         if (read_file) {
             std::copy(std::istreambuf_iterator<char>(read_file), {}, std::back_inserter(validation_cache_data));
             read_file.close();
         } else {
-            LogInfo(core_checks->device, "UNASSIGNED-cache-file-error",
-                    "Cannot open shader validation cache at %s for reading (it may not exist yet)",
-                    core_checks->validation_cache_path.c_str());
+            LogInfo(device, "UNASSIGNED-cache-file-error",
+                    "Cannot open shader validation cache at %s for reading (it may not exist yet)", validation_cache_path.c_str());
         }
 
         VkValidationCacheCreateInfoEXT cacheCreateInfo = {};
@@ -3405,7 +3393,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         cacheCreateInfo.initialDataSize = validation_cache_data.size();
         cacheCreateInfo.pInitialData = validation_cache_data.data();
         cacheCreateInfo.flags = 0;
-        CoreLayerCreateValidationCacheEXT(*pDevice, &cacheCreateInfo, nullptr, &core_checks->core_validation_cache);
+        CoreLayerCreateValidationCacheEXT(device, &cacheCreateInfo, nullptr, &core_validation_cache);
     }
 }
 

@@ -178,9 +178,6 @@ class CoreChecks : public ValidationStateTracker {
     ReadLockGuard ReadLock() override;
     WriteLockGuard WriteLock() override;
 
-    // Override base class, we have some extra work to do here
-    void InitDeviceValidationObject(bool add_obj, ValidationObject* inst_obj, ValidationObject* dev_obj) override;
-
     struct SimpleErrorLocation {
         const char* func_name;
         const char* vuid;
@@ -1043,8 +1040,7 @@ class CoreChecks : public ValidationStateTracker {
                                                 VkDeviceAddress indirectDeviceAddress) const override;
     bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) const override;
-    void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
-                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result) override;
+    void CreateDevice(const VkDeviceCreateInfo* pCreateInfo) override;
     bool PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                         VkDeviceSize dataSize, const void* pData) const override;
     bool PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,

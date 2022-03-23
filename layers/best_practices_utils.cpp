@@ -202,13 +202,6 @@ bool BestPractices::ValidateSpecialUseExtensions(const char* api_name, const cha
     return skip;
 }
 
-void BestPractices::InitDeviceValidationObject(bool add_obj, ValidationObject* inst_obj, ValidationObject* dev_obj) {
-    if (add_obj) {
-        ValidationStateTracker::InitDeviceValidationObject(add_obj, inst_obj, dev_obj);
-    }
-}
-
-
 bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                                   VkInstance* pInstance) const {
     bool skip = false;
