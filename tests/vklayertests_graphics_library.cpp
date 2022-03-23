@@ -373,7 +373,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSetsGPL) {
     m_errorMonitor->VerifyNotFound();
 
     // Now bind with a layout that was _not_ created with independent sets, which should trigger 06564
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06564");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-layout-06564");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
                               static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
     m_errorMonitor->VerifyFound();
