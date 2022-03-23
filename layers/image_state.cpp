@@ -543,7 +543,7 @@ void SWAPCHAIN_NODE::PresentImage(uint32_t image_index) {
     if (image_index >= images.size()) return;
     assert(acquired_images > 0);
     acquired_images--;
-    images[image_index].acquired = SwapchainImageState::NON_ACQUIRED;
+    images[image_index].acquired = SWAPCHAIN_IMAGE::State::kNonAcquired;
     if (shared_presentable) {
         IMAGE_STATE *image_state = images[image_index].image_state;
         if (image_state) {
@@ -556,7 +556,7 @@ void SWAPCHAIN_NODE::AcquireImage(uint32_t image_index) {
     if (image_index >= images.size()) return;
 
     assert(acquired_images < std::numeric_limits<uint32_t>::max());
-    images[image_index].acquired = SwapchainImageState::ACQUIRED;
+    images[image_index].acquired = SWAPCHAIN_IMAGE::State::kAcquired;
     if (shared_presentable) {
         IMAGE_STATE *image_state = images[image_index].image_state;
         if (image_state) {
@@ -570,7 +570,7 @@ void SWAPCHAIN_NODE::ImageWaitingAcquire(uint32_t image_index, VkSemaphore semap
 
     assert(acquired_images < std::numeric_limits<uint32_t>::max());
     acquired_images++;
-    images[image_index].acquired = SwapchainImageState::WAITING;
+    images[image_index].acquired = SWAPCHAIN_IMAGE::State::kWaiting;
     images[image_index].waiting_semaphore = semaphore;
     images[image_index].waiting_fence = fence;
 }
