@@ -3911,3 +3911,126 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkSyncValTest, TestCopyingToCompressedImage) {
+    TEST_DESCRIPTION("Copy from uncompressed to compressed image with and without overlap.");
+
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    bool copy_commands_2 = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+        copy_commands_2 = true;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    VkFormatProperties format_properties;
+    VkFormat mp_format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), mp_format, &format_properties);
+    if ((format_properties.linearTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
+        printf(
+            "%s Device does not support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n",
+            kSkipPrefix);
+        return;
+    }
+
+    VkImageObj src_image(m_device);
+    src_image.Init(1, 1, 1, VK_FORMAT_R32G32_UINT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
+    VkImageObj dst_image(m_device);
+    dst_image.Init(12, 4, 1, VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_LINEAR);
+
+    VkImageCopy copy_regions[2] = {};
+    copy_regions[0].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_regions[0].srcSubresource.mipLevel = 0;
+    copy_regions[0].srcSubresource.baseArrayLayer = 0;
+    copy_regions[0].srcSubresource.layerCount = 1;
+    copy_regions[0].srcOffset = {0, 0, 0};
+    copy_regions[0].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_regions[0].dstSubresource.mipLevel = 0;
+    copy_regions[0].dstSubresource.baseArrayLayer = 0;
+    copy_regions[0].dstSubresource.layerCount = 1;
+    copy_regions[0].dstOffset = {0, 0, 0};
+    copy_regions[0].extent = {1, 1, 1};
+    copy_regions[1].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_regions[1].srcSubresource.mipLevel = 0;
+    copy_regions[1].srcSubresource.baseArrayLayer = 0;
+    copy_regions[1].srcSubresource.layerCount = 1;
+    copy_regions[1].srcOffset = {0, 0, 0};
+    copy_regions[1].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_regions[1].dstSubresource.mipLevel = 0;
+    copy_regions[1].dstSubresource.baseArrayLayer = 0;
+    copy_regions[1].dstSubresource.layerCount = 1;
+    copy_regions[1].dstOffset = {4, 0, 0};
+    copy_regions[1].extent = {1, 1, 1};
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->ExpectSuccess();
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_regions[0]);
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_regions[1]);
+    m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    copy_regions[1].dstOffset = {7, 0, 0};
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_regions[1]);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+
+    if (copy_commands_2) {
+        auto vkCmdCopyImage2KHR =
+            reinterpret_cast<PFN_vkCmdCopyImage2KHR>(vk::GetInstanceProcAddr(instance(), "vkCmdCopyImage2KHR"));
+        assert(vkCmdCopyImage2KHR != nullptr);
+
+        m_commandBuffer->reset();
+
+        VkImageCopy2KHR copy_regions2[2];
+        copy_regions2[0] = LvlInitStruct<VkImageCopy2KHR>();
+        copy_regions2[0].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copy_regions2[0].srcSubresource.mipLevel = 0;
+        copy_regions2[0].srcSubresource.baseArrayLayer = 0;
+        copy_regions2[0].srcSubresource.layerCount = 1;
+        copy_regions2[0].srcOffset = {0, 0, 0};
+        copy_regions2[0].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copy_regions2[0].dstSubresource.mipLevel = 0;
+        copy_regions2[0].dstSubresource.baseArrayLayer = 0;
+        copy_regions2[0].dstSubresource.layerCount = 1;
+        copy_regions2[0].dstOffset = {0, 0, 0};
+        copy_regions2[0].extent = {1, 1, 1};
+        copy_regions2[1] = LvlInitStruct<VkImageCopy2KHR>();
+        copy_regions2[1].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copy_regions2[1].srcSubresource.mipLevel = 0;
+        copy_regions2[1].srcSubresource.baseArrayLayer = 0;
+        copy_regions2[1].srcSubresource.layerCount = 1;
+        copy_regions2[1].srcOffset = {0, 0, 0};
+        copy_regions2[1].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copy_regions2[1].dstSubresource.mipLevel = 0;
+        copy_regions2[1].dstSubresource.baseArrayLayer = 0;
+        copy_regions2[1].dstSubresource.layerCount = 1;
+        copy_regions2[1].dstOffset = {4, 0, 0};
+        copy_regions2[1].extent = {1, 1, 1};
+
+        auto copy_image_info = LvlInitStruct<VkCopyImageInfo2KHR>();
+        copy_image_info.srcImage = src_image.handle();
+        copy_image_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        copy_image_info.dstImage = dst_image.handle();
+        copy_image_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        copy_image_info.regionCount = 2;
+        copy_image_info.pRegions = copy_regions2;
+
+        m_commandBuffer->begin();
+
+        m_errorMonitor->ExpectSuccess();
+        vkCmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info);
+        m_errorMonitor->VerifyNotFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+        copy_image_info.regionCount = 1;
+        copy_image_info.pRegions = &copy_regions2[1];
+        copy_regions[1].dstOffset = {7, 0, 0};
+        vkCmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->end();
+    }
+}
