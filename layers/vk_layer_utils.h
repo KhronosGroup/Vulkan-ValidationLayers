@@ -412,16 +412,18 @@ class LockedSharedPtr : public std::shared_ptr<T> {
 template <typename Key, typename T, int BUCKETSLOG2 = 2, typename Hash = layer_data::hash<Key>>
 class vl_concurrent_unordered_map {
   public:
-    void insert_or_assign(const Key &key, const T &value) {
+    template <typename... Args>
+    void insert_or_assign(const Key &key, Args &&...args) {
         uint32_t h = ConcurrentMapHashObject(key);
         WriteLockGuard lock(locks[h].lock);
-        maps[h][key] = value;
+        maps[h][key] = {std::forward<Args>(args)...};
     }
 
-    bool insert(const Key &key, const T &value) {
+    template <typename... Args>
+    bool insert(const Key &key, Args &&...args) {
         uint32_t h = ConcurrentMapHashObject(key);
         WriteLockGuard lock(locks[h].lock);
-        auto ret = maps[h].emplace(key, value);
+        auto ret = maps[h].emplace(key, std::forward<Args>(args)...);
         return ret.second;
     }
 
