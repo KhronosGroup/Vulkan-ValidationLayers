@@ -182,7 +182,7 @@ class GpuAssistedBase : public ValidationStateTracker {
     uint32_t desc_set_bind_index = 0;
     VmaAllocator vmaAllocator = {};
     std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
-    layer_data::unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
+    vl_concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
     std::vector<VkDescriptorSetLayoutBinding> bindings_;
 };
 
