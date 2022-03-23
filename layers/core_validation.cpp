@@ -9224,9 +9224,22 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                  "vkCmdBindDescriptorSets(): pDescriptorSets[%" PRIu32 "] was allocated from a pool that was created with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE.", set_idx);
             }
         } else {
-            skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-parameter",
-                             "vkCmdBindDescriptorSets(): Attempt to bind %s that doesn't exist!",
-                             report_data->FormatHandle(pDescriptorSets[set_idx]).c_str());
+            if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
+                skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563",
+                                 "vkCmdBindDescriptorSets(): Attempt to bind pDescriptorSets[%" PRIu32
+                                 "] (%s) that does not exist, and %s is not enabled.",
+                                 set_idx, report_data->FormatHandle(pDescriptorSets[set_idx]).c_str(),
+                                 VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+            } else {
+                const auto layout_flags = pipeline_layout->CreateFlags();
+                if ((layout_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) == 0) {
+                    skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-layout-06564",
+                                     "vkCmdBindDescriptorSets(): Attempt to bind pDescriptorSets[%" PRIu32
+                                     "] (%s) that does not exist, and the layout was not created "
+                                     "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
+                                     set_idx, report_data->FormatHandle(pDescriptorSets[set_idx]).c_str());
+                }
+            }
         }
     }
     //  dynamicOffsetCount must equal the total number of dynamic descriptors in the sets being bound
