@@ -652,12 +652,9 @@ void GpuAssistedBase::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device
 
 // Remove all the shader trackers associated with this destroyed pipeline.
 void GpuAssistedBase::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
-    for (auto it = shader_map.begin(); it != shader_map.end();) {
-        if (it->second.pipeline == pipeline) {
-            it = shader_map.erase(it);
-        } else {
-            ++it;
-        }
+    auto to_erase = shader_map.snapshot([pipeline](const GpuAssistedShaderTracker &entry) { return entry.pipeline == pipeline; });
+    for (const auto &entry : to_erase) {
+        shader_map.erase(entry.first);
     }
     ValidationStateTracker::PreCallRecordDestroyPipeline(device, pipeline, pAllocator);
 }
@@ -839,8 +836,8 @@ void GpuAssistedBase::PostCallRecordPipelineCreations(const uint32_t count, cons
             } else {
                 assert(false);
             }
-            shader_map.emplace(module_state->gpu_validation_shader_id, GpuAssistedShaderTracker{pipeline_state->pipeline(), shader_module,
-                                std::move(code)});
+            shader_map.insert_or_assign(module_state->gpu_validation_shader_id, pipeline_state->pipeline(), shader_module,
+                                        std::move(code));
         }
     }
 }
