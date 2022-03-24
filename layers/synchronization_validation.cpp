@@ -264,8 +264,9 @@ std::string CommandBufferAccessContext::FormatUsage(const HazardResult &hazard) 
         out << ", write_barriers: " << string_SyncStageAccessFlags(write_barrier);
     }
 
-    assert(tag < access_log_.size());
-    out << ", " << FormatUsage(tag) << ")";
+    if (tag < access_log_.size()) {
+        out << ", " << FormatUsage(tag) << ")";
+    }
     return out.str();
 }
 
