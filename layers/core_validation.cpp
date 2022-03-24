@@ -1674,17 +1674,21 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
     const auto &rp_state = pPipeline->RenderPassState();
 
-    if ((pPipeline->pre_raster_state || pPipeline->fragment_shader_state || pPipeline->fragment_output_state) && !rp_state) {
-        if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06574",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] requires a valid renderPass, but one was not provided",
-                             pipelineIndex);
-        } else if (!enabled_features.core13.dynamicRendering) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] requires a valid renderPass, but one was not provided",
-                             pipelineIndex);
+    const bool rp_state_required =
+        pPipeline->pre_raster_state || pPipeline->fragment_shader_state || pPipeline->fragment_output_state;
+    if (rp_state_required) {
+        if (!rp_state) {
+            if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06574",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] requires a valid renderPass, but one was not provided",
+                                 pipelineIndex);
+            } else if (!enabled_features.core13.dynamicRendering) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] requires a valid renderPass, but one was not provided",
+                                 pipelineIndex);
+            }
         }
     }
 
@@ -2948,12 +2952,13 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                              string_VkFormat(rendering_struct->stencilAttachmentFormat));
         }
 
-        if ((enabled_features.core11.multiview == VK_FALSE) && (rendering_struct->viewMask != 0)) {
-            skip |=
-                LogError(device, "VUID-VkPipelineRenderingCreateInfo-multiview-06066",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32 "]: multiview is not enabled but viewMask is (%u).",
-                         pipelineIndex, rendering_struct->viewMask);
-        }
+        if (rp_state_required) {
+            if ((enabled_features.core11.multiview == VK_FALSE) && (rendering_struct->viewMask != 0)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-multiview-06577",
+                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                 "]: multiview is not enabled but viewMask is (%u).",
+                                 pipelineIndex, rendering_struct->viewMask);
+            }
 
         if (MostSignificantBit(rendering_struct->viewMask) >=
             static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
