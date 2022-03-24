@@ -2909,12 +2909,23 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                         pipelineIndex);
                 }
 
-                if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) == 0) {
-                    skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfo-pColorAttachmentFormats-06064",
-                                     "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                                     "]: color_format (%s) must be a format with potential format features that include "
-                                     "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
-                                     pipelineIndex, string_VkFormat(color_format));
+                if (!IsExtEnabled(device_extensions.vk_nv_linear_color_attachment)) {
+                    if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) == 0) {
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06581",
+                                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                         "]: color_format (%s) must be a format with potential format features that include "
+                                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
+                                         pipelineIndex, string_VkFormat(color_format));
+                    }
+                } else {
+                    if ((format_features &
+                         (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582",
+                                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                         "]: color_format (%s) must be a format with potential format features that include "
+                                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
+                                         pipelineIndex, string_VkFormat(color_format));
+                    }
                 }
             }
         }

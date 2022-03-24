@@ -1776,6 +1776,26 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
+            if (!create_info.renderPass) {
+                if (create_info.pColorBlendState && create_info.pMultisampleState) {
+                    // Pipeline has fragment outout state
+                    const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
+                    if (rendering_struct) {
+                        if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED)) {
+                            skip |= validate_ranged_enum("VkPipelineRenderingCreateInfo", "stencilAttachmentFormat", "VkFormat",
+                                                         AllVkFormatEnums, rendering_struct->stencilAttachmentFormat,
+                                                         "VUID-VkGraphicsPipelineCreateInfo-renderPass-06583");
+                        }
+
+                        if ((rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) {
+                            skip |= validate_ranged_enum("VkPipelineRenderingCreateInfo", "stencilAttachmentFormat", "VkFormat",
+                                                         AllVkFormatEnums, rendering_struct->stencilAttachmentFormat,
+                                                         "VUID-VkGraphicsPipelineCreateInfo-renderPass-06584");
+                        }
+                    }
+                }
+            }
+
             if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
                 if (create_info.stageCount == 0) {
                     skip |=
