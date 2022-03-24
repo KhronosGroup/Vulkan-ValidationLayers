@@ -15981,7 +15981,7 @@ TEST_F(VkLayerTest, InvalidPipelineRenderingParameters) {
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
 
     // Invalid color format
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfo-pColorAttachmentFormats-06064");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06581");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
 

@@ -39,6 +39,8 @@
 TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering.");
 
+    m_errorMonitor->ExpectSuccess();
+
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -54,8 +56,6 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
         printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
@@ -97,7 +97,9 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
     create_info.pNext = &pipeline_rendering_info;
 
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
+    m_errorMonitor->VerifyNotFound();
 
+    m_errorMonitor->ExpectSuccess();
     VkViewport viewport = {0, 0, 16, 16, 0, 1};
     VkRect2D scissor = {{0, 0}, {16, 16}};
 

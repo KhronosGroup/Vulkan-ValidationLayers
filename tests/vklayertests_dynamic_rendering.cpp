@@ -210,6 +210,7 @@ TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {
 
 TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     TEST_DESCRIPTION("Test graphics pipeline creation with dynamic rendering.");
+    m_errorMonitor->ExpectSuccess();
 
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
     if (version < VK_API_VERSION_1_2) {
@@ -278,12 +279,15 @@ TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     pipe.AddShader(&tc);
     pipe.AddShader(&fs);
     pipe.InitGraphicsPipelineCreateInfo(&create_info);
+    m_errorMonitor->VerifyNotFound();
+
     create_info.pColorBlendState = &color_blend_state_create_info;
     create_info.pNext = &pipeline_rendering_info;
     create_info.pTessellationState = &pipeline_tessellation_state_info;
     create_info.pInputAssemblyState = &pipeline_input_assembly_state_info;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06053");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06581");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06055");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06057");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06058");
@@ -303,8 +307,8 @@ TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     color_format[0] = VK_FORMAT_D32_SFLOAT_S8_UINT;
     color_blend_attachment_state.blendEnable = VK_TRUE;
     create_info.pColorBlendState = &color_blend_state_create_info;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06581");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfo-pColorAttachmentFormats-06064");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
     color_format[0] = VK_FORMAT_R8G8B8A8_UNORM;
