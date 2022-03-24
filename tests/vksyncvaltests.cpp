@@ -3912,6 +3912,131 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkSyncValTest, TestInvalidExternalSubpassDependency) {
+    TEST_DESCRIPTION("Test write after write hazard with invalid external subpass dependency");
+
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkSubpassDependency subpass_dependency = {};
+    subpass_dependency.srcSubpass = 0;
+    subpass_dependency.dstSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dependency.srcStageMask = 0;
+    subpass_dependency.dstStageMask = 0;
+    subpass_dependency.srcAccessMask = 0;
+    subpass_dependency.dstAccessMask = 0;
+    subpass_dependency.dependencyFlags = 0;
+
+    VkAttachmentReference attach_ref1 = {};
+    attach_ref1.attachment = 0;
+    attach_ref1.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference attach_ref2 = {};
+    attach_ref2.attachment = 0;
+    attach_ref2.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkSubpassDescription subpass_descriptions[2] = {};
+    subpass_descriptions[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_descriptions[0].pDepthStencilAttachment = &attach_ref1;
+    subpass_descriptions[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_descriptions[1].pDepthStencilAttachment = &attach_ref2;
+
+    VkAttachmentDescription attachment_description = {};
+    attachment_description.format = VK_FORMAT_D32_SFLOAT;
+    attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment_description.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    attachment_description.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    auto rp_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rp_ci.subpassCount = 1;
+    rp_ci.pSubpasses = subpass_descriptions;
+    rp_ci.attachmentCount = 1;
+    rp_ci.pAttachments = &attachment_description;
+    rp_ci.dependencyCount = 1;
+    rp_ci.pDependencies = &subpass_dependency;
+
+    vk_testing::RenderPass render_pass;
+    render_pass.init(*m_device, rp_ci);
+
+    VkClearValue clear_value = {};
+    clear_value.color = {{0, 0, 0, 0}};
+
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_D32_SFLOAT;
+    image_ci.extent.width = 32;
+    image_ci.extent.height = 32;
+    image_ci.extent.depth = 1;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    VkImageObj image1(m_device);
+    image1.init(&image_ci);
+    ASSERT_TRUE(image1.initialized());
+
+    vk_testing::ImageView image_view1;
+    VkImageViewCreateInfo iv_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    iv_ci.image = image1.handle();
+    iv_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    iv_ci.format = VK_FORMAT_D32_SFLOAT;
+    iv_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    iv_ci.subresourceRange.baseMipLevel = 0;
+    iv_ci.subresourceRange.levelCount = 1;
+    iv_ci.subresourceRange.baseArrayLayer = 0;
+    iv_ci.subresourceRange.layerCount = 1;
+    image_view1.init(*m_device, iv_ci);
+
+    VkImageView framebuffer_attachments[1] = {image_view1.handle()};
+
+    auto fb_ci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_ci.renderPass = render_pass.handle();
+    fb_ci.attachmentCount = 1;
+    fb_ci.pAttachments = framebuffer_attachments;
+    fb_ci.width = 32;
+    fb_ci.height = 32;
+    fb_ci.layers = 1;
+
+    vk_testing::Framebuffer framebuffer;
+    framebuffer.init(*m_device, fb_ci);
+
+    auto rp_bi = LvlInitStruct<VkRenderPassBeginInfo>();
+    rp_bi.renderPass = render_pass.handle();
+    rp_bi.framebuffer = framebuffer.handle();
+    rp_bi.renderArea.extent.width = 32;
+    rp_bi.renderArea.extent.height = 32;
+    rp_bi.clearValueCount = 1;
+    rp_bi.pClearValues = &clear_value;
+
+    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    ds_ci.depthTestEnable = VK_FALSE;
+    ds_ci.depthWriteEnable = VK_FALSE;
+    ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.pDepthStencilState = &ds_ci;
+    pipe.InitState();
+    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline());
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rp_bi);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkSyncValTest, TestCopyingToCompressedImage) {
     TEST_DESCRIPTION("Copy from uncompressed to compressed image with and without overlap.");
 
