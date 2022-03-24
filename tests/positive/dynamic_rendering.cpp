@@ -260,3 +260,61 @@ TEST_F(VkPositiveLayerTest, TestBarrierWithDynamicRendering) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, TestBeginQueryInDynamicRendering) {
+    TEST_DESCRIPTION("Test calling vkCmdBeginQuery with a dynamic render pass.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        printf("%s Tests requires Vulkan 1.3+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto vk13features = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vk13features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!vk13features.dynamicRendering) {
+        printf("%s Test requires (unsupported) dynamicRendering, skipping\n", kSkipPrefix);
+        return;
+    }
+    if (!vk13features.synchronization2) {
+        printf("%s Test requires (unsupported) synchronization2, skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkCmdBeginRendering vkCmdBeginRendering =
+        reinterpret_cast<PFN_vkCmdBeginRendering>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginRendering"));
+    assert(vkCmdBeginRendering != nullptr);
+    PFN_vkCmdEndRendering vkCmdEndRendering =
+        reinterpret_cast<PFN_vkCmdEndRendering>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndRendering"));
+    assert(vkCmdEndRendering != nullptr);
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.layerCount = 1;
+
+    VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
+    qpci.queryCount = 2;
+
+    vk_testing::QueryPool query_pool;
+    query_pool.init(*m_device, qpci);
+
+    m_commandBuffer->begin();
+
+    vkCmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+    vkCmdEndRendering(m_commandBuffer->handle());
+
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyNotFound();
+}
