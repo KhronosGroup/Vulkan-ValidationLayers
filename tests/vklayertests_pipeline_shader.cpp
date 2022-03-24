@@ -16090,7 +16090,7 @@ TEST_F(VkLayerTest, InvalidPipelineRenderingViewMaskParameter) {
         return;
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfo-viewMask-06067");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06578");
     pipeline_rendering_info.viewMask = 1 << multiview_props.maxMultiviewViewCount;
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();

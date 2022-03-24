@@ -2960,13 +2960,14 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                  pipelineIndex, rendering_struct->viewMask);
             }
 
-        if (MostSignificantBit(rendering_struct->viewMask) >=
-            static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
-            skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfo-viewMask-06067",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: Most significant bit in "
-                             "VkPipelineRenderingCreateInfo->viewMask(%u) must be less maxMultiviewViewCount(%u)",
-                             pipelineIndex, rendering_struct->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
+            if (MostSignificantBit(rendering_struct->viewMask) >=
+                static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06578",
+                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                 "]: Most significant bit in "
+                                 "VkPipelineRenderingCreateInfo->viewMask(%u) must be less maxMultiviewViewCount(%u)",
+                                 pipelineIndex, rendering_struct->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
+            }
         }
     }
 
