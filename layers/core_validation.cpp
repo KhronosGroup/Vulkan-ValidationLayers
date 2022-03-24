@@ -17639,6 +17639,11 @@ bool CoreChecks::PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevic
                                  report_data->FormatHandle(as_state->acceleration_structure()).c_str());
             }
         }
+        if (as_state) {
+            skip |=
+                ValidateHostVisibleMemoryIsBoundToBuffer(as_state->buffer_state.get(), "vkWriteAccelerationStructuresPropertiesKHR",
+                                                         "VUID-vkWriteAccelerationStructuresPropertiesKHR-buffer-03733");
+        }
     }
     return skip;
 }
