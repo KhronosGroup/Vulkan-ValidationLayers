@@ -6948,7 +6948,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 }
             }
         }
-        if (pRenderingInfo->pDepthAttachment != VK_NULL_HANDLE) {
+        if (pRenderingInfo->pDepthAttachment && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
             const auto image_view = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pDepthAttachment->imageView);
             first_sample_count_attachment = (first_sample_count_attachment == VK_ATTACHMENT_UNUSED)
                                                 ? static_cast<uint32_t>(image_view->samples)
@@ -6960,7 +6960,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                  func_name, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
             }
         }
-        if (pRenderingInfo->pStencilAttachment != VK_NULL_HANDLE) {
+        if (pRenderingInfo->pStencilAttachment && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
             const auto image_view = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pStencilAttachment->imageView);
             first_sample_count_attachment = (first_sample_count_attachment == VK_ATTACHMENT_UNUSED)
                                                 ? static_cast<uint32_t>(image_view->samples)
