@@ -10082,15 +10082,17 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
 
     if (cb_state->activeRenderPass) {
         const auto *render_pass_info = cb_state->activeRenderPass->createInfo.ptr();
-        const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state->activeSubpass];
-        constexpr int num_bits = sizeof(subpass_desc->viewMask) * CHAR_BIT;
-        std::bitset<num_bits> view_bits(subpass_desc->viewMask);
-        uint32_t bits = static_cast<uint32_t>(view_bits.count());
-        if (query_obj.query + bits > query_pool_state->createInfo.queryCount) {
-            skip |= LogError(cb_state->commandBuffer(), vuids->vuid_multiview_query,
-                             "%s: query (%" PRIu32 ") + bits set in current subpass view mask (%" PRIu32
-                             ") is greater than the number of queries in queryPool (%" PRIu32 ").",
-                             cmd_name, query_obj.query, bits, query_pool_state->createInfo.queryCount);
+        if (!cb_state->activeRenderPass->use_dynamic_rendering && !cb_state->activeRenderPass->use_dynamic_rendering_inherited) {
+            const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state->activeSubpass];
+            constexpr int num_bits = sizeof(subpass_desc->viewMask) * CHAR_BIT;
+            std::bitset<num_bits> view_bits(subpass_desc->viewMask);
+            uint32_t bits = static_cast<uint32_t>(view_bits.count());
+            if (query_obj.query + bits > query_pool_state->createInfo.queryCount) {
+                skip |= LogError(cb_state->commandBuffer(), vuids->vuid_multiview_query,
+                                 "%s: query (%" PRIu32 ") + bits set in current subpass view mask (%" PRIu32
+                                 ") is greater than the number of queries in queryPool (%" PRIu32 ").",
+                                 cmd_name, query_obj.query, bits, query_pool_state->createInfo.queryCount);
+            }
         }
     }
 
