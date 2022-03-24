@@ -13841,6 +13841,88 @@ TEST_F(VkLayerTest, PipelineStatisticsQuery) {
     }
 }
 
+TEST_F(VkLayerTest, TestWriteAccelerationStructureMemory) {
+    TEST_DESCRIPTION("Test memory in vkWriteAccelerationStructuresPropertiesKHR is host visible");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1 or greater, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+        return;
+    }
+
+    auto as_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&as_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (as_features.accelerationStructure == VK_FALSE) {
+        printf("%s accelerationStructure feature is not supported.\n", kSkipPrefix);
+        return;
+    }
+    if (as_features.accelerationStructureHostCommands == VK_FALSE) {
+        printf("%s accelerationStructure feature is not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto vkWriteAccelerationStructuresPropertiesKHR = reinterpret_cast<PFN_vkWriteAccelerationStructuresPropertiesKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkWriteAccelerationStructuresPropertiesKHR"));
+    assert(vkWriteAccelerationStructuresPropertiesKHR);
+    PFN_vkBuildAccelerationStructuresKHR vkBuildAccelerationStructuresKHR =
+        (PFN_vkBuildAccelerationStructuresKHR)vk::GetInstanceProcAddr(instance(), "vkBuildAccelerationStructuresKHR");
+    assert(vkBuildAccelerationStructuresKHR);
+
+    VkBufferObj buffer;
+    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+
+    VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
+    as_create_info.buffer = buffer.handle();
+    as_create_info.offset = 0;
+    as_create_info.size = 0;
+    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    as_create_info.deviceAddress = 0;
+
+    vk_testing::AccelerationStructureKHR acceleration_structure(*m_device, as_create_info);
+
+    auto build_info_khr = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
+    build_info_khr.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    build_info_khr.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    build_info_khr.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR;
+    build_info_khr.srcAccelerationStructure = VK_NULL_HANDLE;
+    build_info_khr.dstAccelerationStructure = acceleration_structure.handle();
+    build_info_khr.geometryCount = 0;
+    build_info_khr.pGeometries = nullptr;
+    build_info_khr.ppGeometries = nullptr;
+
+    VkAccelerationStructureBuildRangeInfoKHR build_range_info;
+    build_range_info.firstVertex = 0;
+    build_range_info.primitiveCount = 1;
+    build_range_info.primitiveOffset = 3;
+    build_range_info.transformOffset = 0;
+
+    VkAccelerationStructureBuildRangeInfoKHR *pBuildRangeInfos = &build_range_info;
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkBuildAccelerationStructuresKHR-pInfos-03722");
+    vkBuildAccelerationStructuresKHR(device(), VK_NULL_HANDLE, 1, &build_info_khr, &pBuildRangeInfos);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->VerifyNotFound();
+
+    uint32_t data[4096];
+
+    VkAccelerationStructureKHR acceleration_structure_handle = acceleration_structure.handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-buffer-03733");
+    vkWriteAccelerationStructuresPropertiesKHR(device(), 1, &acceleration_structure_handle,
+                                               VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, 4096, &data, 4096);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, TestGetQueryPoolResultsDataAndStride) {
     TEST_DESCRIPTION("Test pData and stride multiple in GetQueryPoolResults");
 
