@@ -14936,3 +14936,103 @@ TEST_F(VkLayerTest, TestCompletelyOverlappingBufferCopy) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TestBufferImageCopyExtent) {
+    TEST_DESCRIPTION("Test invalid extent in VkBufferImageCopy nad VkBufferImageCopy2.");
+
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    const bool copy_commands2 = CanEnableDeviceExtension(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags reqs = 0;
+    buffer.init_as_src(*m_device, 1024, reqs);
+
+    auto image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent.width = 16;
+    image_ci.extent.height = 16;
+    image_ci.extent.depth = 1;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    VkImageObj image(m_device);
+    image.init(&image_ci);
+
+    VkBufferImageCopy region = {};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 16;
+    region.bufferImageHeight = 16;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageExtent.width = 16;
+    region.imageExtent.height = 16;
+    region.imageExtent.depth = 1;
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-imageExtent-06659");
+    region.imageExtent.width = 0;
+    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    region.imageExtent.width = 16;
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-imageExtent-06660");
+    region.imageExtent.height = 0;
+    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    region.imageExtent.height = 16;
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-imageExtent-06661");
+    region.imageExtent.depth = 0;
+    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    region.imageExtent.depth = 1;
+    m_errorMonitor->VerifyFound();
+
+    if (copy_commands2) {
+        auto vkCmdCopyBufferToImage2Function =
+                reinterpret_cast<PFN_vkCmdCopyBufferToImage2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBufferToImage2KHR"));
+
+        auto region2 = LvlInitStruct<VkBufferImageCopy2KHR>();
+        region2.bufferOffset = 0;
+        region2.bufferRowLength = 16;
+        region2.bufferImageHeight = 16;
+        region2.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region2.imageSubresource.layerCount = 1;
+        region2.imageExtent.width = 16;
+        region2.imageExtent.height = 16;
+        region2.imageExtent.depth = 1;
+
+        auto copy2 = LvlInitStruct<VkCopyBufferToImageInfo2>();
+        copy2.srcBuffer = buffer.handle();
+        copy2.dstImage = image.handle();
+        copy2.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        copy2.regionCount = 1;
+        copy2.pRegions = &region2;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy2-imageExtent-06659");
+        region2.imageExtent.width = 0;
+        vkCmdCopyBufferToImage2Function(m_commandBuffer->handle(), &copy2);
+        region2.imageExtent.width = 16;
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy2-imageExtent-06660");
+        region2.imageExtent.height = 0;
+        vkCmdCopyBufferToImage2Function(m_commandBuffer->handle(), &copy2);
+        region2.imageExtent.height = 16;
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy2-imageExtent-06661");
+        region2.imageExtent.depth = 0;
+        vkCmdCopyBufferToImage2Function(m_commandBuffer->handle(), &copy2);
+        region2.imageExtent.depth = 1;
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_commandBuffer->end();
+}
