@@ -6400,6 +6400,19 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
                          function, i, region_aspect_mask, image_format);
         }
 
+        if (region.imageExtent.width == 0) {
+            vuid = (is_2) ? "VUID-VkBufferImageCopy2-imageExtent-06659" : "VUID-VkBufferImageCopy-imageExtent-06659";
+            skip |= LogError(image_state->image(), vuid, "%s: pRegion[%" PRIu32 "].imageExtent.width is 0.", function, i);
+        }
+        if (region.imageExtent.height == 0) {
+            vuid = (is_2) ? "VUID-VkBufferImageCopy2-imageExtent-06660" : "VUID-VkBufferImageCopy-imageExtent-06660";
+            skip |= LogError(image_state->image(), vuid, "%s: pRegion[%" PRIu32 "].imageExtent.height is 0.", function, i);
+        }
+        if (region.imageExtent.depth == 0) {
+            vuid = (is_2) ? "VUID-VkBufferImageCopy2-imageExtent-06661" : "VUID-VkBufferImageCopy-imageExtent-06661";
+            skip |= LogError(image_state->image(), vuid, "%s: pRegion[%" PRIu32 "].imageExtent.depth is 0.", function, i);
+        }
+
         // Checks that apply only to compressed images
         if (FormatIsBlockedImage(image_format)) {
             auto block_size = FormatTexelBlockExtent(image_format);
