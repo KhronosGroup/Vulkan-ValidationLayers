@@ -5094,8 +5094,6 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                                                     VkQueryResultFlags flags) const {
     if (disabled[query_validation]) return false;
     bool skip = false;
-    skip |= ValidateQueryPoolStride("VUID-vkGetQueryPoolResults-flags-02827", "VUID-vkGetQueryPoolResults-flags-00815", stride,
-                                    "dataSize", dataSize, flags);
     skip |= ValidateQueryPoolIndex(queryPool, firstQuery, queryCount, "vkGetQueryPoolResults()",
                                    "VUID-vkGetQueryPoolResults-firstQuery-00813", "VUID-vkGetQueryPoolResults-firstQuery-00816");
     skip |=
@@ -5103,6 +5101,12 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
 
     auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
     if (query_pool_state) {
+        if (query_pool_state->createInfo.queryType != VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
+            const char *vuid = IsExtEnabled(device_extensions.vk_khr_performance_query) ? "VUID-vkGetQueryPoolResults-flags-02828"
+                                                                                        : "VUID-vkGetQueryPoolResults-flags-02827";
+            skip |= ValidateQueryPoolStride(vuid, "VUID-vkGetQueryPoolResults-flags-00815",
+                                            stride, "dataSize", dataSize, flags);
+        }
         if ((query_pool_state->createInfo.queryType == VK_QUERY_TYPE_TIMESTAMP) && (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
             skip |= LogError(
                 queryPool, "VUID-vkGetQueryPoolResults-queryType-00818",
