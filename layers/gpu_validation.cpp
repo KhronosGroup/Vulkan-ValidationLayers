@@ -1198,7 +1198,31 @@ void GpuAssisted::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
         device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, result, crtpl_state_data);
     if (aborted) return;
     UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, crtpl_state->gpu_create_infos.data());
-    UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, this);
+
+    bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE && result == VK_OPERATION_DEFERRED_KHR);
+    if (is_operation_deferred) {
+        std::vector<safe_VkRayTracingPipelineCreateInfoKHR> infos{pCreateInfos, pCreateInfos + count};
+        auto register_fn = [this, infos, pAllocator](const std::vector<VkPipeline> &pipelines) {
+            UtilPostCallRecordPipelineCreations(static_cast<uint32_t>(infos.size()),
+                                                reinterpret_cast<const VkRayTracingPipelineCreateInfoKHR *>(infos.data()),
+                                                pAllocator, pipelines.data(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, this);
+        };
+
+        auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+        if (wrap_handles) {
+            deferredOperation = layer_data->Unwrap(deferredOperation);
+        }
+        std::vector<std::function<void(const std::vector<VkPipeline> &)>> cleanup_fn;
+        auto find_res = layer_data->deferred_operation_post_check.pop(deferredOperation);
+        if (find_res->first) {
+            cleanup_fn = std::move(find_res->second);
+        }
+        cleanup_fn.emplace_back(register_fn);
+        layer_data->deferred_operation_post_check.insert(deferredOperation, cleanup_fn);
+    } else {
+        UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                                            this);
+    }
 }
 
 // Remove all the shader trackers associated with this destroyed pipeline.

@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 #include "chassis.h"
 
 #include "object_lifetime_validation.h"
+#include "layer_chassis_dispatch.h"
 
 uint64_t object_track_index = 0;
 
@@ -1083,4 +1084,82 @@ bool ObjectLifetimes::PreCallValidateBuildAccelerationStructuresKHR(
     skip |=
         ValidateAccelerationStructures("VUID-vkBuildAccelerationStructuresKHR-dstAccelerationStructure-03800", infoCount, pInfos);
     return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                  VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                                  const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
+                                                                  const VkAllocationCallbacks *pAllocator,
+                                                                  VkPipeline *pPipelines) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateRayTracingPipelinesKHR-device-parameter",
+                           kVUIDUndefined);
+    skip |= ValidateObject(deferredOperation, kVulkanObjectTypeDeferredOperationKHR, true,
+                           "VUID-vkCreateRayTracingPipelinesKHR-deferredOperation-parameter",
+                           "VUID-vkCreateRayTracingPipelinesKHR-deferredOperation-parent");
+    skip |= ValidateObject(pipelineCache, kVulkanObjectTypePipelineCache, true,
+                           "VUID-vkCreateRayTracingPipelinesKHR-pipelineCache-parameter",
+                           "VUID-vkCreateRayTracingPipelinesKHR-pipelineCache-parent");
+    if (pCreateInfos) {
+        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+            if (pCreateInfos[index0].pStages) {
+                for (uint32_t index1 = 0; index1 < pCreateInfos[index0].stageCount; ++index1) {
+                    skip |= ValidateObject(pCreateInfos[index0].pStages[index1].module, kVulkanObjectTypeShaderModule, false,
+                                           "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined);
+                }
+            }
+            if (pCreateInfos[index0].pLibraryInfo) {
+                if (pCreateInfos[index0].pLibraryInfo->pLibraries) {
+                    for (uint32_t index2 = 0; index2 < pCreateInfos[index0].pLibraryInfo->libraryCount; ++index2) {
+                        skip |= ValidateObject(pCreateInfos[index0].pLibraryInfo->pLibraries[index2], kVulkanObjectTypePipeline,
+                                               false, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter", kVUIDUndefined);
+                    }
+                }
+            }
+            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false,
+                                   "VUID-VkRayTracingPipelineCreateInfoKHR-layout-parameter",
+                                   "VUID-VkRayTracingPipelineCreateInfoKHR-commonparent");
+            if ((pCreateInfos[index0].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (pCreateInfos[index0].basePipelineIndex == -1))
+                skip |= ValidateObject(pCreateInfos[index0].basePipelineHandle, kVulkanObjectTypePipeline, false,
+                                       "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03421",
+                                       "VUID-VkRayTracingPipelineCreateInfoKHR-commonparent");
+        }
+    }
+
+    return skip;
+}
+
+void ObjectLifetimes::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                 VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                                 const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
+                                                                 const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                                 VkResult result) {
+    if (VK_ERROR_VALIDATION_FAILED_EXT == result) return;
+    if (pPipelines) {
+        if (deferredOperation != VK_NULL_HANDLE && result == VK_OPERATION_DEFERRED_KHR) {
+            auto register_fn = [this, pAllocator](const std::vector<VkPipeline> &pipelines) {
+                for (auto pipe : pipelines) {
+                    if (!pipe) continue;
+                    this->CreateObject(pipe, kVulkanObjectTypePipeline, pAllocator);
+                }
+            };
+
+            auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+            if (wrap_handles) {
+                deferredOperation = layer_data->Unwrap(deferredOperation);
+            }
+            std::vector<std::function<void(const std::vector<VkPipeline> &)>> cleanup_fn;
+            auto find_res = layer_data->deferred_operation_post_check.pop(deferredOperation);
+            if (find_res->first) {
+                cleanup_fn = std::move(find_res->second);
+            }
+            cleanup_fn.emplace_back(register_fn);
+            layer_data->deferred_operation_post_check.insert(deferredOperation, cleanup_fn);
+        } else {
+            for (uint32_t index = 0; index < createInfoCount; index++) {
+                if (!pPipelines[index]) continue;
+                CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator);
+            }
+        }
+    }
 }

@@ -375,7 +375,9 @@ class ValidationObject {
         std::vector<ValidationObject*> object_dispatch;
         LayerObjectTypeId container_type;
 
-        vl_concurrent_unordered_map<VkDeferredOperationKHR, std::function<void()>, 0> deferred_operation_cleanup;
+        vl_concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
+        vl_concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0> deferred_operation_post_check;
+        vl_concurrent_unordered_map<VkDeferredOperationKHR, std::vector<VkPipeline>, 0> deferred_operation_pipelines;
 
         std::string layer_name = "CHASSIS";
 
