@@ -13840,3 +13840,32 @@ TEST_F(VkLayerTest, PipelineStatisticsQuery) {
         command_buffer.end();
     }
 }
+
+TEST_F(VkLayerTest, TestGetQueryPoolResultsDataAndStride) {
+    TEST_DESCRIPTION("Test pData and stride multiple in GetQueryPoolResults");
+
+    AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    vk_testing::QueryPool query_pool;
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_ci.queryCount = 1;
+    query_pool.init(*m_device, query_pool_ci);
+
+    m_commandBuffer->begin();
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-02828");
+    const size_t out_data_size = 16;
+    uint8_t data[out_data_size];
+    vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, out_data_size, &data, 3, 0);
+    m_errorMonitor->VerifyFound();
+}
