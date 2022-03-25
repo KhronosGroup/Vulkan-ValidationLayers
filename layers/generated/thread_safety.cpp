@@ -22,6 +22,7 @@
  * Author: Mark Lobodzinski <mark@lunarg.com>
  */
 #include "chassis.h"
+#include "layer_chassis_dispatch.h"
 #include "thread_safety.h"
 
 
@@ -773,6 +774,77 @@ void ThreadSafety::PostCallRecordDeviceWaitIdle(
     const auto &queue_set = device_queues_map[device];
     for (const auto &queue : queue_set) {
         FinishWriteObject(queue, "vkDeviceWaitIdle");
+    }
+}
+
+void ThreadSafety::PreCallRecordCreateRayTracingPipelinesKHR(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines) {
+    StartReadObjectParentInstance(device, "vkCreateRayTracingPipelinesKHR");
+    StartReadObject(deferredOperation, "vkCreateRayTracingPipelinesKHR");
+    StartReadObject(pipelineCache, "vkCreateRayTracingPipelinesKHR");
+}
+
+void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines,
+    VkResult                                    result) {
+    auto unlock_objects = [this, device, deferredOperation, pipelineCache]() {
+        this->FinishReadObjectParentInstance(device, "vkCreateRayTracingPipelinesKHR");
+        this->FinishReadObject(deferredOperation, "vkCreateRayTracingPipelinesKHR");
+        this->FinishReadObject(pipelineCache, "vkCreateRayTracingPipelinesKHR");
+    };
+
+    auto register_objects = [this](const std::vector<VkPipeline>& pipelines) {
+        for(auto pipe : pipelines) {
+            if (!pipe) continue;
+            CreateObject(pipe);
+        }
+    };
+
+    bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE && result == VK_OPERATION_DEFERRED_KHR);
+
+    if(is_operation_deferred) {
+        auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+        if (wrap_handles) {
+            deferredOperation = layer_data->Unwrap(deferredOperation);
+        }
+
+        // Unlock objects once the deferred operation is complete
+        std::vector<std::function<void()>> post_completion_fns;
+        auto completion_find = layer_data->deferred_operation_post_completion.pop(deferredOperation);
+        if (completion_find->first) {
+            post_completion_fns = std::move(completion_find->second);
+        }
+        post_completion_fns.emplace_back(unlock_objects);
+        layer_data->deferred_operation_post_completion.insert(deferredOperation, std::move(post_completion_fns));
+
+        // We will only register the object once we know it was created successfully
+        std::vector<std::function<void(const std::vector<VkPipeline> &)>> post_check_fns;
+        auto check_find = layer_data->deferred_operation_post_check.pop(deferredOperation);
+        if (check_find->first) {
+            post_check_fns = std::move(check_find->second);
+        }
+        post_check_fns.emplace_back(register_objects);
+        layer_data->deferred_operation_post_check.insert(deferredOperation, std::move(post_check_fns));
+    } else {
+        unlock_objects();
+        if (pPipelines) {
+            for (uint32_t index = 0; index < createInfoCount; index++) {
+                if (!pPipelines[index]) continue;
+                CreateObject(pPipelines[index]);
+            }
+        }
     }
 }
 
@@ -9107,39 +9179,6 @@ void ThreadSafety::PostCallRecordCmdTraceRaysKHR(
     uint32_t                                    depth) {
     FinishWriteObject(commandBuffer, "vkCmdTraceRaysKHR");
     // Host access to commandBuffer must be externally synchronized
-}
-
-void ThreadSafety::PreCallRecordCreateRayTracingPipelinesKHR(
-    VkDevice                                    device,
-    VkDeferredOperationKHR                      deferredOperation,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines) {
-    StartReadObjectParentInstance(device, "vkCreateRayTracingPipelinesKHR");
-    StartReadObject(deferredOperation, "vkCreateRayTracingPipelinesKHR");
-    StartReadObject(pipelineCache, "vkCreateRayTracingPipelinesKHR");
-}
-
-void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(
-    VkDevice                                    device,
-    VkDeferredOperationKHR                      deferredOperation,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines,
-    VkResult                                    result) {
-    FinishReadObjectParentInstance(device, "vkCreateRayTracingPipelinesKHR");
-    FinishReadObject(deferredOperation, "vkCreateRayTracingPipelinesKHR");
-    FinishReadObject(pipelineCache, "vkCreateRayTracingPipelinesKHR");
-    if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
-            if (!pPipelines[index]) continue;
-            CreateObject(pPipelines[index]);
-        }
-    }
 }
 
 void ThreadSafety::PreCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(

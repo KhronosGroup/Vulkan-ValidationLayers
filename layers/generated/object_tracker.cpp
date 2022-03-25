@@ -7550,60 +7550,6 @@ bool ObjectLifetimes::PreCallValidateCmdTraceRaysKHR(
     return skip;
 }
 
-bool ObjectLifetimes::PreCallValidateCreateRayTracingPipelinesKHR(
-    VkDevice                                    device,
-    VkDeferredOperationKHR                      deferredOperation,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines) const {
-    bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateRayTracingPipelinesKHR-device-parameter", kVUIDUndefined);
-    skip |= ValidateObject(deferredOperation, kVulkanObjectTypeDeferredOperationKHR, true, "VUID-vkCreateRayTracingPipelinesKHR-deferredOperation-parameter", "VUID-vkCreateRayTracingPipelinesKHR-deferredOperation-parent");
-    skip |= ValidateObject(pipelineCache, kVulkanObjectTypePipelineCache, true, "VUID-vkCreateRayTracingPipelinesKHR-pipelineCache-parameter", "VUID-vkCreateRayTracingPipelinesKHR-pipelineCache-parent");
-    if (pCreateInfos) {
-        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
-            if (pCreateInfos[index0].pStages) {
-                for (uint32_t index1 = 0; index1 < pCreateInfos[index0].stageCount; ++index1) {
-                    skip |= ValidateObject(pCreateInfos[index0].pStages[index1].module, kVulkanObjectTypeShaderModule, true, "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined);
-                }
-            }
-            if (pCreateInfos[index0].pLibraryInfo) {
-                if ((pCreateInfos[index0].pLibraryInfo->libraryCount > 0) && (pCreateInfos[index0].pLibraryInfo->pLibraries)) {
-                    for (uint32_t index2 = 0; index2 < pCreateInfos[index0].pLibraryInfo->libraryCount; ++index2) {
-                        skip |= ValidateObject(pCreateInfos[index0].pLibraryInfo->pLibraries[index2], kVulkanObjectTypePipeline, false, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter", kVUIDUndefined);
-                    }
-                }
-            }
-            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false, "VUID-VkRayTracingPipelineCreateInfoKHR-layout-parameter", "VUID-VkRayTracingPipelineCreateInfoKHR-commonparent");
-            if ((pCreateInfos[index0].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (pCreateInfos[index0].basePipelineIndex == -1))
-                skip |= ValidateObject(pCreateInfos[index0].basePipelineHandle, kVulkanObjectTypePipeline, false, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03421", "VUID-VkRayTracingPipelineCreateInfoKHR-commonparent");
-        }
-    }
-
-    return skip;
-}
-
-void ObjectLifetimes::PostCallRecordCreateRayTracingPipelinesKHR(
-    VkDevice                                    device,
-    VkDeferredOperationKHR                      deferredOperation,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines,
-    VkResult                                    result) {
-    if (VK_ERROR_VALIDATION_FAILED_EXT == result) return;
-    if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
-            if (!pPipelines[index]) continue;
-            CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator);
-        }
-    }
-
-}
-
 bool ObjectLifetimes::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     VkDevice                                    device,
     VkPipeline                                  pipeline,

@@ -259,7 +259,7 @@ void UtilPreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreat
 //   - Save the shader binary if it contains debug code
 template <typename CreateInfo, typename ObjectType>
 void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
-                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                         const VkAllocationCallbacks *pAllocator, const VkPipeline *pPipelines,
                                          const VkPipelineBindPoint bind_point, ObjectType *object_ptr) {
     using Accessor = CreatePipelineTraits<CreateInfo>;
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&

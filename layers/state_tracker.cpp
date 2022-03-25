@@ -2190,12 +2190,35 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice
                                                                         VkPipeline *pPipelines, VkResult result,
                                                                         void *crtpl_state_data) {
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
+    bool operation_is_deferred = (deferredOperation != VK_NULL_HANDLE && result == VK_OPERATION_DEFERRED_KHR);
     // This API may create pipelines regardless of the return value
-    for (uint32_t i = 0; i < count; i++) {
-        if (pPipelines[i] != VK_NULL_HANDLE) {
-            (crtpl_state->pipe_state)[i]->SetHandle(pPipelines[i]);
-            Add(std::move((crtpl_state->pipe_state)[i]));
+
+    if (!operation_is_deferred) {
+        for (uint32_t i = 0; i < count; i++) {
+            if (pPipelines[i] != VK_NULL_HANDLE) {
+                (crtpl_state->pipe_state)[i]->SetHandle(pPipelines[i]);
+                Add(std::move((crtpl_state->pipe_state)[i]));
+            }
         }
+    } else {
+        auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+        if (wrap_handles) {
+            deferredOperation = layer_data->Unwrap(deferredOperation);
+        }
+        std::vector<std::function<void(const std::vector<VkPipeline> &)>> cleanup_fn;
+        auto find_res = layer_data->deferred_operation_post_check.pop(deferredOperation);
+        if (find_res->first) {
+            cleanup_fn = std::move(find_res->second);
+        }
+        auto &pipeline_states = crtpl_state->pipe_state;
+        // Mutable lambda because we want to move the shared pointer contained in the copied vector
+        cleanup_fn.emplace_back([this, pipeline_states](const std::vector<VkPipeline> &pipelines) mutable {
+            for (size_t i = 0; i < pipeline_states.size(); ++i) {
+                pipeline_states[i]->SetHandle(pipelines[i]);
+                this->Add(std::move(pipeline_states[i]));
+            }
+        });
+        layer_data->deferred_operation_post_check.insert(deferredOperation, cleanup_fn);
     }
     crtpl_state->pipe_state.clear();
 }
