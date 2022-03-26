@@ -146,6 +146,8 @@ VkDynamicState ConvertToDynamicState(CBStatusFlagBits flag) {
             return VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT;
         case CBSTATUS_VERTEX_INPUT_SET:
             return VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
+        case CBSTATUS_COLOR_WRITE_ENABLE_SET:
+            return VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT;
         default:
             // CBSTATUS_INDEX_BUFFER_BOUND is not in VkDynamicState
             return VK_DYNAMIC_STATE_MAX_ENUM;
@@ -223,6 +225,8 @@ CBStatusFlagBits ConvertToCBStatusFlagBits(VkDynamicState state) {
             return CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET;
         case VK_DYNAMIC_STATE_VERTEX_INPUT_EXT:
             return CBSTATUS_VERTEX_INPUT_SET;
+        case VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT:
+            return CBSTATUS_COLOR_WRITE_ENABLE_SET;
         default:
             return CBSTATUS_NONE;
     }
@@ -300,6 +304,7 @@ void CMD_BUFFER_STATE::Reset() {
     usedDynamicViewportCount = false;
     usedDynamicScissorCount = false;
     primitiveTopology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+    dynamicColorWriteEnableAttachmentCount = 0;
 
     activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo();
     activeRenderPass = nullptr;
@@ -1205,6 +1210,11 @@ void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bit
     RecordCmd(cmd_type);
     status |= state_bits;
     static_status &= ~state_bits;
+}
+
+void CMD_BUFFER_STATE::RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits, uint32_t attachment_count) {
+    RecordStateCmd(cmd_type, state_bits);
+    dynamicColorWriteEnableAttachmentCount = std::max(dynamicColorWriteEnableAttachmentCount, attachment_count);
 }
 
 void CMD_BUFFER_STATE::RecordTransferCmd(CMD_TYPE cmd_type, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2) {
