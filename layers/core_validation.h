@@ -87,6 +87,7 @@ struct DrawDispatchVuid {
     const char* vertex_input_binding_stride = kVUIDUndefined;
     const char* vertex_input = kVUIDUndefined;
     const char* blend_enable = kVUIDUndefined;
+    const char* color_write_enable = kVUIDUndefined;
     const char* dynamic_rendering_view_mask = kVUIDUndefined;
     const char* dynamic_rendering_color_count = kVUIDUndefined;
     const char* dynamic_rendering_color_formats = kVUIDUndefined;
