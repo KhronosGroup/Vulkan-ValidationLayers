@@ -2519,3 +2519,62 @@ TEST_F(VkLayerTest, TestCreatingSwapchainWithInvalidExtent) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TestReacquiringSwapchainImageBeforeSemaphoreWait) {
+    TEST_DESCRIPTION("Acquire a swapchain image for the second time, before waiting on a semaphore.");
+
+    if (!AddSurfaceInstanceExtension()) return;
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AddSwapchainDeviceExtension()) return;
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSwapchain()) {
+        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImageKHR-swapchain-01802");
+
+    uint32_t image_count;
+    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
+    std::vector<VkImage> swapchain_images(image_count);
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, swapchain_images.data());
+    VkSurfaceCapabilitiesKHR caps;
+    ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &caps));
+
+    const uint32_t acquirable_count = image_count - caps.minImageCount + 1;
+    std::vector<vk_testing::Semaphore> semaphores(acquirable_count);
+    std::vector<uint32_t> indices(acquirable_count);
+    auto semaphore_ci = LvlInitStruct<VkSemaphoreCreateInfo>();
+    for (uint32_t i = 0; i < acquirable_count; ++i) {
+        semaphores[i].init(*m_device, semaphore_ci);
+        const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(),
+                                                 semaphores[i].handle(), VK_NULL_HANDLE, &indices[i]);
+        ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
+    }
+
+    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, swapchain_images[indices[0]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+    VkSemaphore semaphore_handle = semaphores[0].handle();
+
+    auto present_info = LvlInitStruct<VkPresentInfoKHR>();
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores = &semaphore_handle;
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = &m_swapchain;
+    present_info.pImageIndices = &indices[0];
+
+    vk::QueuePresentKHR(m_device->m_queue, &present_info);
+
+    VkFenceObj fence;
+    fence.init(*m_device, VkFenceObj::create_info());
+    // Invalid, semaphores[0] has not yet been waited on
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, fence.handle(),
+                            &indices[0]);
+
+    m_errorMonitor->VerifyFound();
+
+    // Cleanup
+    vk::DeviceWaitIdle(device());
+    DestroySwapchain();
+}
