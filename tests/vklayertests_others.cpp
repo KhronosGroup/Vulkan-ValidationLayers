@@ -12738,6 +12738,32 @@ TEST_F(VkLayerTest, ValidateColorWriteDynamicStateNotSet) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, InstanceCreateEnumeratePortability) {
+    TEST_DESCRIPTION("Validate creating instances with VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR.");
+
+    auto ici = GetInstanceCreateInfo();
+    ici.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+
+    VkInstance local_instance;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-flags-06559");
+    vk::CreateInstance(&ici, nullptr, &local_instance);
+    m_errorMonitor->VerifyFound();
+
+    if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        std::vector<const char *> enabled_extensions;
+        for (uint32_t i = 0; i < ici.enabledExtensionCount; ++i) {
+            enabled_extensions.push_back(ici.ppEnabledExtensionNames[i]);
+        }
+        enabled_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+
+        ici.enabledExtensionCount++;
+        ici.ppEnabledExtensionNames = enabled_extensions.data();
+
+        vk::CreateInstance(&ici, nullptr, &local_instance);
+    }
+}
+
 TEST_F(VkLayerTest, MismatchedDeviceQueueGlobalPriority) {
     TEST_DESCRIPTION("Create multiple device queues with same queue family index but different global priorty.");
 
