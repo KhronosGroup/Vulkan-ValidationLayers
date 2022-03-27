@@ -2098,14 +2098,20 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
     }
 
-    if (image_usage & VK_IMAGE_USAGE_SAMPLED_BIT && FormatRequiresYcbcrConversionExplicitly(view_format)) {
-        const auto ycbcr_conversion = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
-        if ((!ycbcr_conversion || ycbcr_conversion->conversion == VK_NULL_HANDLE) && (image_usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
-            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-format-06415",
-                             "vkCreateImageView(): When using VK_IMAGE_USAGE_SAMPLED_BIT, YCbCr Format %s requires a "
-                             "VkSamplerYcbcrConversion but one was not passed in the pNext chain.",
-                             string_VkFormat(view_format));
+    const auto ycbcr_conversion = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
+    if (ycbcr_conversion && ycbcr_conversion->conversion != VK_NULL_HANDLE) {
+        auto ycbcr_state = Get<SAMPLER_YCBCR_CONVERSION_STATE>(ycbcr_conversion->conversion);
+        if (pCreateInfo->format != ycbcr_state->format) {
+            skip |=
+                LogError(device, "VUID-VkImageViewCreateInfo-pNext-06658",
+                         "vkCreateImageView(): Format %s does not match the format %s VkSamplerYcbcrConversion was created with.",
+                         string_VkFormat(view_format), string_VkFormat(ycbcr_state->format));
         }
+    } else if ((image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) && FormatRequiresYcbcrConversionExplicitly(view_format)) {
+        skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-format-06415",
+                         "vkCreateImageView(): When using VK_IMAGE_USAGE_SAMPLED_BIT, YCbCr Format %s requires a "
+                         "VkSamplerYcbcrConversion but one was not passed in the pNext chain.",
+                         string_VkFormat(view_format));
     }
 
     if (pCreateInfo->viewType != VK_IMAGE_VIEW_TYPE_2D && pCreateInfo->viewType != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
