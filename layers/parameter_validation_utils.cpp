@@ -90,6 +90,12 @@ bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInf
         skip |= validate_extension_reqs(local_instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388",
                                         "instance", pCreateInfo->ppEnabledExtensionNames[i]);
     }
+    if (pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR &&
+        !local_instance_extensions.vk_khr_portability_enumeration) {
+        skip |= LogError(instance, "VUID-VkInstanceCreateInfo-flags-06559",
+                         "vkCreateInstance(): pCreateInfo->flags has VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR set, but "
+                         "pCreateInfo->ppEnabledExtensionNames does not include VK_KHR_portability_enumeration");
+    }
 
     return skip;
 }
