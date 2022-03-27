@@ -3316,6 +3316,9 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
         std::string queue_family_var_name = "pCreateInfo->pQueueCreateInfos[" + std::to_string(i) + "].queueFamilyIndex";
         skip |= ValidateQueueFamilyIndex(pd_state, requested_queue_family, "VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381",
                                          "vkCreateDevice", queue_family_var_name.c_str());
+        if (skip) { // Skip if queue family index is invalid, as it will be used as index in arrays
+            continue;
+        }
 
         if (api_version == VK_API_VERSION_1_0) {
             // Vulkan 1.0 didn't have protected memory so always needed unique info
