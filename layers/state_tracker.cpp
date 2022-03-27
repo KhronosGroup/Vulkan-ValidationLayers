@@ -3428,8 +3428,11 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
     auto queue_state = Get<QUEUE_STATE>(queue);
     // Semaphore waits occur before error generation, if the call reached the ICD. (Confirm?)
     VkPresentInfoKHR pPresentInfoCopy = *pPresentInfo;
-    const auto present = [this, pPresentInfoCopy, result]() {
-        const auto *present_id_info = LvlFindInChain<VkPresentIdKHR>(pPresentInfoCopy.pNext);
+    VkPresentIdKHR present_id_info_copy = {};
+    if (LvlFindInChain<VkPresentIdKHR>(pPresentInfoCopy.pNext)) {
+        present_id_info_copy = *LvlFindInChain<VkPresentIdKHR>(pPresentInfoCopy.pNext);
+    }
+    const auto present = [this, pPresentInfoCopy, present_id_info_copy, result]() {
         for (uint32_t i = 0; i < pPresentInfoCopy.swapchainCount; ++i) {
             // Note: this is imperfect, in that we can get confused about what did or didn't succeed-- but if the app does that,
             // it's confused itself just as much.
@@ -3439,9 +3442,10 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
             auto swapchain_data = ValidationStateTracker::Get<SWAPCHAIN_NODE>(pPresentInfoCopy.pSwapchains[i]);
             if (swapchain_data) {
                 swapchain_data->PresentImage(pPresentInfoCopy.pImageIndices[i]);
-                if (present_id_info) {
-                    if (i < present_id_info->swapchainCount && present_id_info->pPresentIds[i] > swapchain_data->max_present_id) {
-                        swapchain_data->max_present_id = present_id_info->pPresentIds[i];
+                if (present_id_info_copy.sType == VK_STRUCTURE_TYPE_PRESENT_ID_KHR) {
+                    if (i < present_id_info_copy.swapchainCount &&
+                        present_id_info_copy.pPresentIds[i] > swapchain_data->max_present_id) {
+                        swapchain_data->max_present_id = present_id_info_copy.pPresentIds[i];
                     }
                 }
             }
