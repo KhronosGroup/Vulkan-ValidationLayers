@@ -966,7 +966,9 @@ void AccessContext::ResolveAccessRange(AccessAddressType type, const ResourceAcc
                 current.invalidate_A(inserted);  // Update the parallel iterator to point at the correct segment after insert
             }
         }
-        ++current;
+        if (current->range.non_empty()) {
+            ++current;
+        }
     }
 
     // Infill if range goes passed both the current and resolve map prior contents
