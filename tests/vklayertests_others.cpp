@@ -13951,3 +13951,70 @@ TEST_F(VkLayerTest, TestGetQueryPoolResultsDataAndStride) {
     vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, out_data_size, &data, 3, 0);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, MismatchedDeviceQueueGlobalPriority) {
+    TEST_DESCRIPTION("Create multiple device queues with same queue family index but different global priorty.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1 or greater, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME);
+        return;
+    }
+
+    uint32_t queue_family_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_props.data());
+
+    uint32_t queue_family_index = queue_family_count;
+
+    for (uint32_t i = 0; i < queue_family_count; ++i) {
+        if (queue_props[i].queueCount > 1) {
+            queue_family_index = i;
+            break;
+        }
+    }
+    if (queue_family_index == queue_family_count) {
+        printf("%s Multiple queues from same queue family are required to run this test. .\n", kSkipPrefix);
+        return;
+    }
+
+    VkDeviceQueueGlobalPriorityCreateInfoKHR queue_global_priority_ci[2] = {};
+    queue_global_priority_ci[0] = LvlInitStruct<VkDeviceQueueGlobalPriorityCreateInfoKHR>();
+    queue_global_priority_ci[0].globalPriority = VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR;
+    queue_global_priority_ci[1] = LvlInitStruct<VkDeviceQueueGlobalPriorityCreateInfoKHR>();
+    queue_global_priority_ci[1].globalPriority = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
+
+    float priorities[] = {1.0f, 1.0f};
+    VkDeviceQueueCreateInfo device_queue_ci[2] = {};
+    device_queue_ci[0] = LvlInitStruct<VkDeviceQueueCreateInfo>(&queue_global_priority_ci[0]);
+    device_queue_ci[0].queueFamilyIndex = queue_family_index;
+    device_queue_ci[0].queueCount = 1;
+    device_queue_ci[0].pQueuePriorities = &priorities[0];
+
+    device_queue_ci[1] = LvlInitStruct<VkDeviceQueueCreateInfo>(&queue_global_priority_ci[1]);
+    device_queue_ci[1].queueFamilyIndex = queue_family_index;
+    device_queue_ci[1].queueCount = 1;
+    device_queue_ci[1].pQueuePriorities = &priorities[1];
+
+    auto device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    device_ci.queueCreateInfoCount = 2;
+    device_ci.pQueueCreateInfos = device_queue_ci;
+    device_ci.enabledLayerCount = 0;
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pQueueCreateInfos-06654");
+    VkDevice device;
+    vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
