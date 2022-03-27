@@ -3083,6 +3083,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
         create_flags(uint32_t a, uint32_t b) : unprocted_index(a), protected_index(b) {}
     };
     layer_data::unordered_map<uint32_t, create_flags> queue_family_map;
+    layer_data::unordered_map<uint32_t, VkQueueGlobalPriorityKHR> global_priorities;
 
     for (uint32_t i = 0; i < info_count; ++i) {
         const auto requested_queue_family = infos[i].queueFamilyIndex;
@@ -3139,6 +3140,24 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
                     }
                 }
             }
+        }
+
+        VkQueueGlobalPriorityKHR global_priority = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR; // Implicit default value
+        const auto *global_priority_ci = LvlFindInChain<VkDeviceQueueGlobalPriorityCreateInfoKHR>(infos[i].pNext);
+        if (global_priority_ci) {
+            global_priority = global_priority_ci->globalPriority;
+        }
+        const auto prev_global_priority = global_priorities.find(infos[i].queueFamilyIndex);
+        if (prev_global_priority != global_priorities.end()) {
+            if (prev_global_priority->second != global_priority) {
+                skip |= LogError(pd_state->Handle(), "VUID-VkDeviceCreateInfo-pQueueCreateInfos-06654",
+                                 "vkCreateDevice(): Multiple queues are created with queueFamilyIndex %" PRIu32
+                                 ", but one has global priority %s and another %s.",
+                                 infos[i].queueFamilyIndex, string_VkQueueGlobalPriorityKHR(prev_global_priority->second),
+                                 string_VkQueueGlobalPriorityKHR(global_priority));
+            }
+        } else {
+            global_priorities.insert({infos[i].queueFamilyIndex, global_priority});
         }
 
         const VkQueueFamilyProperties requested_queue_family_props = pd_state->queue_family_properties[requested_queue_family];
