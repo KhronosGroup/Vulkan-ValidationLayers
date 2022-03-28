@@ -54,6 +54,7 @@ VkResult UtilDescriptorSetManager::GetDescriptorSet(VkDescriptorPool *desc_pool,
 
 VkResult UtilDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, VkDescriptorSetLayout ds_layout,
                                                      std::vector<VkDescriptorSet> *desc_sets) {
+    auto guard = Lock();
     const uint32_t default_pool_size = kItemsPerChunk;
     VkResult result = VK_SUCCESS;
     VkDescriptorPool pool_to_use = VK_NULL_HANDLE;
@@ -108,6 +109,7 @@ VkResult UtilDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescripto
 }
 
 void UtilDescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set) {
+    auto guard = Lock();
     auto iter = desc_pool_map_.find(desc_pool);
     if (iter != desc_pool_map_.end()) {
         VkResult result = DispatchFreeDescriptorSets(device, desc_pool, 1, &desc_set);
@@ -312,17 +314,6 @@ void GpuAssistedBase::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
 }
 
 void GpuAssistedBase::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
-    for (auto &queue_barrier_command_info_kv : queue_barrier_command_infos) {
-        UtilQueueBarrierCommandInfo &queue_barrier_command_info = queue_barrier_command_info_kv.second;
-
-        DispatchFreeCommandBuffers(device, queue_barrier_command_info.barrier_command_pool, 1,
-                                   &queue_barrier_command_info.barrier_command_buffer);
-        queue_barrier_command_info.barrier_command_buffer = VK_NULL_HANDLE;
-
-        DispatchDestroyCommandPool(device, queue_barrier_command_info.barrier_command_pool, NULL);
-        queue_barrier_command_info.barrier_command_pool = VK_NULL_HANDLE;
-    }
-    queue_barrier_command_infos.clear();
     if (debug_desc_layout) {
         DispatchDestroyDescriptorSetLayout(device, debug_desc_layout, NULL);
         debug_desc_layout = VK_NULL_HANDLE;
@@ -337,6 +328,138 @@ void GpuAssistedBase::PreCallRecordDestroyDevice(VkDevice device, const VkAlloca
         vmaDestroyAllocator(vmaAllocator);
     }
     desc_set_manager.reset();
+}
+
+gpu_utils_state::Queue::Queue(GpuAssistedBase &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags)
+    : QUEUE_STATE(q, index, flags), state_(state) {}
+
+gpu_utils_state::Queue::~Queue() {
+    if (barrier_command_buffer_) {
+        DispatchFreeCommandBuffers(state_.device, barrier_command_pool_, 1, &barrier_command_buffer_);
+        barrier_command_buffer_ = VK_NULL_HANDLE;
+    }
+    if (barrier_command_pool_) {
+        DispatchDestroyCommandPool(state_.device, barrier_command_pool_, NULL);
+        barrier_command_pool_ = VK_NULL_HANDLE;
+    }
+}
+
+// Submit a memory barrier on graphics queues.
+// Lazy-create and record the needed command buffer.
+void gpu_utils_state::Queue::SubmitBarrier() {
+    if (barrier_command_pool_ == VK_NULL_HANDLE) {
+        VkResult result = VK_SUCCESS;
+
+        auto pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+        pool_create_info.queueFamilyIndex = queueFamilyIndex;
+        result = DispatchCreateCommandPool(state_.device, &pool_create_info, nullptr, &barrier_command_pool_);
+        if (result != VK_SUCCESS) {
+            state_.ReportSetupProblem(state_.device, "Unable to create command pool for barrier CB.");
+            barrier_command_pool_ = VK_NULL_HANDLE;
+            return;
+        }
+
+        auto buffer_alloc_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+        buffer_alloc_info.commandPool = barrier_command_pool_;
+        buffer_alloc_info.commandBufferCount = 1;
+        buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        result = DispatchAllocateCommandBuffers(state_.device, &buffer_alloc_info, &barrier_command_buffer_);
+        if (result != VK_SUCCESS) {
+            state_.ReportSetupProblem(state_.device, "Unable to create barrier command buffer.");
+            DispatchDestroyCommandPool(state_.device, barrier_command_pool_, nullptr);
+            barrier_command_pool_ = VK_NULL_HANDLE;
+            barrier_command_buffer_ = VK_NULL_HANDLE;
+            return;
+        }
+
+        // Hook up command buffer dispatch
+        state_.vkSetDeviceLoaderData(state_.device, barrier_command_buffer_);
+
+        // Record a global memory barrier to force availability of device memory operations to the host domain.
+        auto command_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        result = DispatchBeginCommandBuffer(barrier_command_buffer_, &command_buffer_begin_info);
+        if (result == VK_SUCCESS) {
+            auto memory_barrier = LvlInitStruct<VkMemoryBarrier>();
+            memory_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+            memory_barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+            DispatchCmdPipelineBarrier(barrier_command_buffer_, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0,
+                                       1, &memory_barrier, 0, nullptr, 0, nullptr);
+            DispatchEndCommandBuffer(barrier_command_buffer_);
+        }
+    }
+    if (barrier_command_buffer_ != VK_NULL_HANDLE) {
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &barrier_command_buffer_;
+        DispatchQueueSubmit(QUEUE_STATE::Queue(), 1, &submit_info, VK_NULL_HANDLE);
+    }
+}
+
+// Issue a memory barrier to make GPU-written data available to host.
+// Wait for the queue to complete execution.
+// Check the debug buffers for all the command buffers that were submitted.
+void GpuAssistedBase::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
+                                                VkResult result) {
+    ValidationStateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
+
+    if (aborted || (result != VK_SUCCESS)) return;
+    bool buffers_present = false;
+    // Don't QueueWaitIdle if there's nothing to process
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            buffers_present |= CommandBufferNeedsProcessing(submit->pCommandBuffers[i]);
+        }
+    }
+    if (!buffers_present) return;
+
+    SubmitBarrier(queue);
+
+    DispatchQueueWaitIdle(queue);
+
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            ProcessCommandBuffer(queue, submit->pCommandBuffers[i]);
+        }
+    }
+}
+
+void GpuAssistedBase::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
+                                         VkResult result) {
+    if (aborted || (result != VK_SUCCESS)) return;
+    bool buffers_present = false;
+    // Don't QueueWaitIdle if there's nothing to process
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo2 *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
+            buffers_present |= CommandBufferNeedsProcessing(submit->pCommandBufferInfos[i].commandBuffer);
+        }
+    }
+    if (!buffers_present) return;
+
+    SubmitBarrier(queue);
+
+    DispatchQueueWaitIdle(queue);
+
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo2 *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
+            ProcessCommandBuffer(queue, submit->pCommandBufferInfos[i].commandBuffer);
+        }
+    }
+}
+
+void GpuAssistedBase::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                    VkFence fence, VkResult result) {
+    ValidationStateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
+    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
+}
+
+void GpuAssistedBase::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
+                                                 VkResult result) {
+    ValidationStateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
+    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
 }
 
 // Generate the stage-specific part of the message.

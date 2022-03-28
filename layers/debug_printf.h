@@ -141,6 +141,8 @@ class DebugPrintf : public GpuAssistedBase {
     std::string FindFormatString(std::vector<uint32_t> pgm, uint32_t string_id);
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, DPFBufferInfo &buffer_info,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer);
+    void ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE* cb_node);
+
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                               uint32_t firstInstance) override;
     void PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
@@ -220,34 +222,7 @@ class DebugPrintf : public GpuAssistedBase {
                                                const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                                const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
                                                VkDeviceAddress indirectDeviceAddress) override;
-
-    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
-                                   VkResult result) override;
-    void RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence, VkResult result);
-    void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
-                                       VkResult result) override;
-    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                    VkResult result) override;
     void AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point);
-
-    std::shared_ptr<SHADER_MODULE_STATE> GetShaderModuleState(VkShaderModule shader_module) {
-        return Get<SHADER_MODULE_STATE>(shader_module);
-    }
-    std::shared_ptr<const SHADER_MODULE_STATE> GetShaderModuleState(VkShaderModule shader_module) const {
-        return Get<SHADER_MODULE_STATE>(shader_module);
-    }
-    std::shared_ptr<const PIPELINE_STATE> GetPipelineState(VkPipeline pipeline) const { return Get<PIPELINE_STATE>(pipeline); }
-    std::shared_ptr<PIPELINE_STATE> GetPipelineState(VkPipeline pipeline) { return Get<PIPELINE_STATE>(pipeline); }
-
-    const std::vector<DPFBufferInfo>& GetBufferInfo(const CMD_BUFFER_STATE* cb_node) const {
-        assert(cb_node);
-        return static_cast<const debug_printf_state::CommandBuffer*>(cb_node)->buffer_infos;
-    }
-
-    std::vector<DPFBufferInfo>& GetBufferInfo(CMD_BUFFER_STATE* cb_node) {
-        assert(cb_node);
-        return static_cast<debug_printf_state::CommandBuffer*>(cb_node)->buffer_infos;
-    }
 
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;
@@ -255,8 +230,8 @@ class DebugPrintf : public GpuAssistedBase {
     void DestroyBuffer(DPFBufferInfo& buffer_info);
 
   private:
-    bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer);
-    void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer);
+    bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) override;
+    void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) override;
 
     bool verbose = false;
     bool use_stdout = false;

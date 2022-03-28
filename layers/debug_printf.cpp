@@ -640,6 +640,48 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     memset(debug_output_buffer, 0, 4 * (debug_output_buffer[0] + 1));
 }
 
+// For the given command buffer, map its debug data buffers and read their contents for analysis.
+void DebugPrintf::ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_base) {
+    auto *cb_node = static_cast<debug_printf_state::CommandBuffer *>(cb_base);
+    if (cb_node && (cb_node->hasDrawCmd || cb_node->hasTraceRaysCmd || cb_node->hasDispatchCmd)) {
+        auto &gpu_buffer_list = cb_node->buffer_infos;
+        uint32_t draw_index = 0;
+        uint32_t compute_index = 0;
+        uint32_t ray_trace_index = 0;
+
+        for (auto &buffer_info : gpu_buffer_list) {
+            char *pData;
+
+            uint32_t operation_index = 0;
+            if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+                operation_index = draw_index;
+            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+                operation_index = compute_index;
+            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+                operation_index = ray_trace_index;
+            } else {
+                assert(false);
+            }
+
+            VkResult result = vmaMapMemory(vmaAllocator, buffer_info.output_mem_block.allocation, (void **)&pData);
+            if (result == VK_SUCCESS) {
+                AnalyzeAndGenerateMessages(cb_node->commandBuffer(), queue, buffer_info, operation_index, (uint32_t *)pData);
+                vmaUnmapMemory(vmaAllocator, buffer_info.output_mem_block.allocation);
+            }
+
+            if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+                draw_index++;
+            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+                compute_index++;
+            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+                ray_trace_index++;
+            } else {
+                assert(false);
+            }
+        }
+    }
+}
+
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
@@ -647,11 +689,12 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
 bool DebugPrintf::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
     bool buffers_present = false;
     auto cb_node = Get<debug_printf_state::CommandBuffer>(command_buffer);
-    if (GetBufferInfo(cb_node.get()).size()) {
+    if (cb_node->buffer_infos.size()) {
         buffers_present = true;
     }
-    for (const auto *secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
-        if (GetBufferInfo(secondaryCmdBuffer).size()) {
+    for (const auto *secondary_cb : cb_node->linkedCommandBuffers) {
+        auto secondary_cb_node = static_cast<const debug_printf_state::CommandBuffer *>(secondary_cb);
+        if (secondary_cb_node->buffer_infos.size()) {
             buffers_present = true;
         }
     }
@@ -660,77 +703,12 @@ bool DebugPrintf::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
 
 void DebugPrintf::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) {
     auto cb_node = Get<debug_printf_state::CommandBuffer>(command_buffer);
-    UtilProcessInstrumentationBuffer(queue, cb_node.get(), this);
+
+    ProcessInstrumentationBuffer(queue, cb_node.get());
+
     for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
-        UtilProcessInstrumentationBuffer(queue, secondary_cmd_buffer, this);
+        ProcessInstrumentationBuffer(queue, static_cast<debug_printf_state::CommandBuffer *>(secondary_cmd_buffer));
     }
-}
-
-// Issue a memory barrier to make GPU-written data available to host.
-// Wait for the queue to complete execution.
-// Check the debug buffers for all the command buffers that were submitted.
-void DebugPrintf::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                            VkResult result) {
-    ValidationStateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
-
-    if (aborted || (result != VK_SUCCESS)) return;
-    bool buffers_present = false;
-    // Don't QueueWaitIdle if there's nothing to process
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            buffers_present |= CommandBufferNeedsProcessing(submit->pCommandBuffers[i]);
-        }
-    }
-    if (!buffers_present) return;
-
-    UtilSubmitBarrier(queue, this);
-
-    DispatchQueueWaitIdle(queue);
-
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            ProcessCommandBuffer(queue, submit->pCommandBuffers[i]);
-        }
-    }
-}
-
-void DebugPrintf::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
-                                     VkResult result) {
-    if (aborted || (result != VK_SUCCESS)) return;
-    bool buffers_present = false;
-    // Don't QueueWaitIdle if there's nothing to process
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const auto *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
-            buffers_present |= CommandBufferNeedsProcessing(submit->pCommandBufferInfos[i].commandBuffer);
-        }
-    }
-    if (!buffers_present) return;
-
-    UtilSubmitBarrier(queue, this);
-
-    DispatchQueueWaitIdle(queue);
-
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo2 *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
-            ProcessCommandBuffer(queue, submit->pCommandBufferInfos[i].commandBuffer);
-        }
-    }
-}
-
-void DebugPrintf::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                VkFence fence, VkResult result) {
-    ValidationStateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
-    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
-}
-
-void DebugPrintf::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
-                                             VkResult result) {
-    ValidationStateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
-    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
 }
 
 void DebugPrintf::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
