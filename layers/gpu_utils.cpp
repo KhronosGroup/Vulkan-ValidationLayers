@@ -17,11 +17,8 @@
  * Author: Tony Barbour <tony@lunarg.com>
  */
 
-#include "chassis.h"
-#include "layer_chassis_dispatch.h"
-#include "state_tracker.h"
+#include "gpu_utils.h"
 #include "descriptor_sets.h"
-#include "shader_validation.h"
 #include "spirv-tools/libspirv.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
@@ -33,27 +30,6 @@
 // This define indicates that we will supply Vulkan function pointers at initialization
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #include "vk_mem_alloc.h"
-
-class UtilDescriptorSetManager {
-  public:
-    UtilDescriptorSetManager(VkDevice device, uint32_t numBindingsInSet);
-    ~UtilDescriptorSetManager();
-
-    VkResult GetDescriptorSet(VkDescriptorPool *desc_pool, VkDescriptorSetLayout ds_layout, VkDescriptorSet *desc_sets);
-    VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, VkDescriptorSetLayout ds_layout,
-                               std::vector<VkDescriptorSet> *desc_sets);
-    void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
-
-  private:
-    static const uint32_t kItemsPerChunk = 512;
-    struct PoolTracker {
-        uint32_t size;
-        uint32_t used;
-    };
-    VkDevice device;
-    uint32_t numBindingsInSet;
-    layer_data::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
-};
 
 // Implementation for Descriptor Set Manager class
 UtilDescriptorSetManager::UtilDescriptorSetManager(VkDevice device, uint32_t numBindingsInSet)

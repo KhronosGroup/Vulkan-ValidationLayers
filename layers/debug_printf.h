@@ -19,11 +19,7 @@
 
 #pragma once
 
-#include "chassis.h"
-#include "vk_mem_alloc.h"
-#include "state_tracker.h"
 #include "gpu_utils.h"
-#include <map>
 class DebugPrintf;
 
 struct DPFDeviceMemoryBlock {
@@ -39,12 +35,6 @@ struct DPFBufferInfo {
     DPFBufferInfo(DPFDeviceMemoryBlock output_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
                   VkPipelineBindPoint pipeline_bind_point)
         : output_mem_block(output_mem_block), desc_set(desc_set), desc_pool(desc_pool), pipeline_bind_point(pipeline_bind_point){};
-};
-
-struct DPFShaderTracker {
-    VkPipeline pipeline;
-    VkShaderModule shader_module;
-    std::vector<uint32_t> pgm;
 };
 
 enum vartype { varsigned, varunsigned, varfloat };
@@ -81,9 +71,14 @@ class CommandBuffer : public CMD_BUFFER_STATE {
 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, debug_printf_state::CommandBuffer, CMD_BUFFER_STATE);
 
-class DebugPrintf : public ValidationStateTracker {
+class DebugPrintf : public GpuAssistedBase {
   public:
-    DebugPrintf() { container_type = LayerObjectTypeDebugPrintf; }
+    DebugPrintf() {
+        setup_vuid = "UNASSIGNED-DEBUG-PRINTF";
+        container_type = LayerObjectTypeDebugPrintf;
+        desired_features.vertexPipelineStoresAndAtomics = true;
+        desired_features.fragmentStoresAndAtomics = true;
+    }
 
     template <typename T>
     void ReportSetupProblem(T object, const char* const specific_message) const;
@@ -264,26 +259,10 @@ class DebugPrintf : public ValidationStateTracker {
 
     void DestroyBuffer(DPFBufferInfo& buffer_info);
 
-private:
+  private:
     bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer);
     void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer);
 
-    VkPhysicalDeviceFeatures supported_features;
-
-    uint32_t unique_shader_module_id = 0;
-    uint32_t output_buffer_size;
-
-public:
-    bool aborted = false;
     bool verbose = false;
     bool use_stdout = false;
-    uint32_t adjusted_max_desc_sets;
-    uint32_t desc_set_bind_index;
-    VkDescriptorSetLayout debug_desc_layout = VK_NULL_HANDLE;
-    VkDescriptorSetLayout dummy_desc_layout = VK_NULL_HANDLE;
-    std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
-    layer_data::unordered_map<uint32_t, DPFShaderTracker> shader_map;
-    PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
-    VmaAllocator vmaAllocator = {};
-    std::map<VkQueue, UtilQueueBarrierCommandInfo> queue_barrier_command_infos;
 };
