@@ -2434,10 +2434,21 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     assert(image_node);
 
     format = image_node->createInfo.format;
-    usage = image_node->createInfo.usage;
+    const auto image_view_usage_info = LvlFindInChain<VkImageViewUsageCreateInfo>(iv_state->create_info.pNext);
     const auto stencil_usage_info = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_node->createInfo.pNext);
+    if (image_view_usage_info) {
+        usage = image_view_usage_info->usage;
+    } else {
+        usage = image_node->createInfo.usage;
+    }
     if (stencil_usage_info) {
-        usage |= stencil_usage_info->stencilUsage;
+        bool stencil_aspect = (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) > 0;
+        bool depth_aspect = (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) > 0;
+        if (stencil_aspect && !depth_aspect) {
+            usage = stencil_usage_info->stencilUsage;
+        } else if (stencil_aspect && depth_aspect) {
+            usage &= stencil_usage_info->stencilUsage;
+        }
     }
 
     // Validate that memory is bound to image
