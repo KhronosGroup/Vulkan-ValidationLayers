@@ -80,12 +80,7 @@ class DebugPrintf : public GpuAssistedBase {
         desired_features.fragmentStoresAndAtomics = true;
     }
 
-    template <typename T>
-    void ReportSetupProblem(T object, const char* const specific_message) const;
-    void PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
-                                   const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, void* modified_create_info) override;
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo) override;
-    void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) override;
     void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
                                            void* cpl_state_data) override;

@@ -50,86 +50,6 @@ struct UtilQueueBarrierCommandInfo {
     VkCommandBuffer barrier_command_buffer = VK_NULL_HANDLE;
 };
 VkResult UtilInitializeVma(VkPhysicalDevice physical_device, VkDevice device, VmaAllocator *pAllocator);
-void UtilPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo *modified_create_info,
-                                   VkPhysicalDeviceFeatures supported_features, VkPhysicalDeviceFeatures desired_features);
-template <typename ObjectType>
-void UtilPostCallRecordCreateDevice(const VkDeviceCreateInfo *pCreateInfo, std::vector<VkDescriptorSetLayoutBinding> bindings,
-                                    ObjectType *object_ptr, VkPhysicalDeviceProperties physical_device_properties) {
-    // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
-    auto chain_info = get_chain_info(pCreateInfo, VK_LOADER_DATA_CALLBACK);
-    assert(chain_info->u.pfnSetDeviceLoaderData);
-    object_ptr->vkSetDeviceLoaderData = chain_info->u.pfnSetDeviceLoaderData;
-
-    // Some devices have extremely high limits here, so set a reasonable max because we have to pad
-    // the pipeline layout with dummy descriptor set layouts.
-    object_ptr->adjusted_max_desc_sets = physical_device_properties.limits.maxBoundDescriptorSets;
-    object_ptr->adjusted_max_desc_sets = std::min(33U, object_ptr->adjusted_max_desc_sets);
-
-    // We can't do anything if there is only one.
-    // Device probably not a legit Vulkan device, since there should be at least 4. Protect ourselves.
-    if (object_ptr->adjusted_max_desc_sets == 1) {
-        object_ptr->ReportSetupProblem(object_ptr->device, "Device can bind only a single descriptor set.");
-        object_ptr->aborted = true;
-        return;
-    }
-    object_ptr->desc_set_bind_index = object_ptr->adjusted_max_desc_sets - 1;
-
-    VkResult result1 = UtilInitializeVma(object_ptr->physical_device, object_ptr->device, &object_ptr->vmaAllocator);
-    assert(result1 == VK_SUCCESS);
-    std::unique_ptr<UtilDescriptorSetManager> desc_set_manager(
-        new UtilDescriptorSetManager(object_ptr->device, static_cast<uint32_t>(bindings.size())));
-
-    const VkDescriptorSetLayoutCreateInfo debug_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0,
-                                                                    static_cast<uint32_t>(bindings.size()), bindings.data()};
-
-    const VkDescriptorSetLayoutCreateInfo dummy_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0, 0,
-                                                                    NULL};
-
-    result1 = DispatchCreateDescriptorSetLayout(object_ptr->device, &debug_desc_layout_info, NULL, &object_ptr->debug_desc_layout);
-
-    // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index.
-    VkResult result2 =
-        DispatchCreateDescriptorSetLayout(object_ptr->device, &dummy_desc_layout_info, NULL, &object_ptr->dummy_desc_layout);
-
-    assert((result1 == VK_SUCCESS) && (result2 == VK_SUCCESS));
-    if ((result1 != VK_SUCCESS) || (result2 != VK_SUCCESS)) {
-        object_ptr->ReportSetupProblem(object_ptr->device, "Unable to create descriptor set layout.");
-        if (result1 == VK_SUCCESS) {
-            DispatchDestroyDescriptorSetLayout(object_ptr->device, object_ptr->debug_desc_layout, NULL);
-        }
-        if (result2 == VK_SUCCESS) {
-            DispatchDestroyDescriptorSetLayout(object_ptr->device, object_ptr->dummy_desc_layout, NULL);
-        }
-        object_ptr->debug_desc_layout = VK_NULL_HANDLE;
-        object_ptr->dummy_desc_layout = VK_NULL_HANDLE;
-        object_ptr->aborted = true;
-        return;
-    }
-    object_ptr->desc_set_manager = std::move(desc_set_manager);
-}
-template <typename ObjectType>
-void UtilPreCallRecordDestroyDevice(ObjectType *object_ptr) {
-    for (auto &queue_barrier_command_info_kv : object_ptr->queue_barrier_command_infos) {
-        UtilQueueBarrierCommandInfo &queue_barrier_command_info = queue_barrier_command_info_kv.second;
-
-        DispatchFreeCommandBuffers(object_ptr->device, queue_barrier_command_info.barrier_command_pool, 1,
-                                   &queue_barrier_command_info.barrier_command_buffer);
-        queue_barrier_command_info.barrier_command_buffer = VK_NULL_HANDLE;
-
-        DispatchDestroyCommandPool(object_ptr->device, queue_barrier_command_info.barrier_command_pool, NULL);
-        queue_barrier_command_info.barrier_command_pool = VK_NULL_HANDLE;
-    }
-    object_ptr->queue_barrier_command_infos.clear();
-    if (object_ptr->debug_desc_layout) {
-        DispatchDestroyDescriptorSetLayout(object_ptr->device, object_ptr->debug_desc_layout, NULL);
-        object_ptr->debug_desc_layout = VK_NULL_HANDLE;
-    }
-    if (object_ptr->dummy_desc_layout) {
-        DispatchDestroyDescriptorSetLayout(object_ptr->device, object_ptr->dummy_desc_layout, NULL);
-        object_ptr->dummy_desc_layout = VK_NULL_HANDLE;
-    }
-}
-
 template <typename ObjectType>
 void UtilPreCallRecordCreatePipelineLayout(create_pipeline_layout_api_state *cpl_state, ObjectType *object_ptr,
                                            const VkPipelineLayoutCreateInfo *pCreateInfo) {
@@ -473,6 +393,17 @@ struct GpuAssistedShaderTracker {
 
 class GpuAssistedBase : public ValidationStateTracker {
   public:
+    void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+                                   const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, void *modified_create_info) override;
+    void CreateDevice(const VkDeviceCreateInfo *pCreateInfo) override;
+
+    void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) override;
+
+    template <typename T>
+    void ReportSetupProblem(T object, const char *const specific_message) const {
+        LogError(object, setup_vuid, "Setup Error. Detail: (%s)", specific_message);
+    }
+
     bool aborted = false;
     const char *setup_vuid;
     VkPhysicalDeviceFeatures supported_features{};

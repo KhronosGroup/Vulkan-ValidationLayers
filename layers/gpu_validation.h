@@ -143,8 +143,6 @@ class GpuAssisted : public GpuAssistedBase {
     template <typename T>
     void ReportSetupProblem(T object, const char* const specific_message) const;
     bool CheckForDescriptorIndexing(DeviceFeatures enabled_features) const;
-    void PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
-                                   const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, void* modified_create_info) override;
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo) override;
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) override;
     void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,

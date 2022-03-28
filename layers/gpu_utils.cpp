@@ -217,9 +217,17 @@ VkResult UtilInitializeVma(VkPhysicalDevice physical_device, VkDevice device, Vm
     return vmaCreateAllocator(&allocator_info, pAllocator);
 }
 
-void UtilPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo *modified_create_info,
-                                   VkPhysicalDeviceFeatures supported_features, VkPhysicalDeviceFeatures desired_features) {
+void GpuAssistedBase::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, void *modified_ci) {
+    ValidationStateTracker::PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, modified_ci);
     VkPhysicalDeviceFeatures *features = nullptr;
+    // Use a local variable to query features since this method runs in the instance validation object.
+    // To avoid confusion and race conditions about which physical device's features are stored in the
+    // 'supported_devices' member variable, it will only be set in the device validation objects.
+    // See CreateDevice() below.
+    VkPhysicalDeviceFeatures gpu_supported_features;
+    DispatchGetPhysicalDeviceFeatures(gpu, &gpu_supported_features);
+    auto modified_create_info = static_cast<VkDeviceCreateInfo *>(modified_ci);
     if (modified_create_info->pEnabledFeatures) {
         // If pEnabledFeatures, VkPhysicalDeviceFeatures2 in pNext chain is not allowed
         features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
@@ -249,6 +257,86 @@ void UtilPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo
         delete modified_create_info->pEnabledFeatures;
         modified_create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
     }
+}
+
+void GpuAssistedBase::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
+    ValidationStateTracker::CreateDevice(pCreateInfo);
+    // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
+    auto chain_info = get_chain_info(pCreateInfo, VK_LOADER_DATA_CALLBACK);
+    assert(chain_info->u.pfnSetDeviceLoaderData);
+    vkSetDeviceLoaderData = chain_info->u.pfnSetDeviceLoaderData;
+
+    // Some devices have extremely high limits here, so set a reasonable max because we have to pad
+    // the pipeline layout with dummy descriptor set layouts.
+    adjusted_max_desc_sets = phys_dev_props.limits.maxBoundDescriptorSets;
+    adjusted_max_desc_sets = std::min(33U, adjusted_max_desc_sets);
+
+    // We can't do anything if there is only one.
+    // Device probably not a legit Vulkan device, since there should be at least 4. Protect ourselves.
+    if (adjusted_max_desc_sets == 1) {
+        ReportSetupProblem(device, "Device can bind only a single descriptor set.");
+        aborted = true;
+        return;
+    }
+    desc_set_bind_index = adjusted_max_desc_sets - 1;
+
+    VkResult result1 = UtilInitializeVma(physical_device, device, &vmaAllocator);
+    assert(result1 == VK_SUCCESS);
+    desc_set_manager = layer_data::make_unique<UtilDescriptorSetManager>(device, static_cast<uint32_t>(bindings_.size()));
+
+    const VkDescriptorSetLayoutCreateInfo debug_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0,
+                                                                    static_cast<uint32_t>(bindings_.size()), bindings_.data()};
+
+    const VkDescriptorSetLayoutCreateInfo dummy_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0, 0,
+                                                                    NULL};
+
+    result1 = DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, NULL, &debug_desc_layout);
+
+    // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index.
+    VkResult result2 = DispatchCreateDescriptorSetLayout(device, &dummy_desc_layout_info, NULL, &dummy_desc_layout);
+
+    assert((result1 == VK_SUCCESS) && (result2 == VK_SUCCESS));
+    if ((result1 != VK_SUCCESS) || (result2 != VK_SUCCESS)) {
+        ReportSetupProblem(device, "Unable to create descriptor set layout.");
+        if (result1 == VK_SUCCESS) {
+            DispatchDestroyDescriptorSetLayout(device, debug_desc_layout, NULL);
+        }
+        if (result2 == VK_SUCCESS) {
+            DispatchDestroyDescriptorSetLayout(device, dummy_desc_layout, NULL);
+        }
+        debug_desc_layout = VK_NULL_HANDLE;
+        dummy_desc_layout = VK_NULL_HANDLE;
+        aborted = true;
+        return;
+    }
+}
+
+void GpuAssistedBase::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
+    for (auto &queue_barrier_command_info_kv : queue_barrier_command_infos) {
+        UtilQueueBarrierCommandInfo &queue_barrier_command_info = queue_barrier_command_info_kv.second;
+
+        DispatchFreeCommandBuffers(device, queue_barrier_command_info.barrier_command_pool, 1,
+                                   &queue_barrier_command_info.barrier_command_buffer);
+        queue_barrier_command_info.barrier_command_buffer = VK_NULL_HANDLE;
+
+        DispatchDestroyCommandPool(device, queue_barrier_command_info.barrier_command_pool, NULL);
+        queue_barrier_command_info.barrier_command_pool = VK_NULL_HANDLE;
+    }
+    queue_barrier_command_infos.clear();
+    if (debug_desc_layout) {
+        DispatchDestroyDescriptorSetLayout(device, debug_desc_layout, NULL);
+        debug_desc_layout = VK_NULL_HANDLE;
+    }
+    if (dummy_desc_layout) {
+        DispatchDestroyDescriptorSetLayout(device, dummy_desc_layout, NULL);
+        dummy_desc_layout = VK_NULL_HANDLE;
+    }
+    ValidationStateTracker::PreCallRecordDestroyDevice(device, pAllocator);
+    // State Tracker can end up making vma calls through callbacks - don't destroy allocator until ST is done
+    if (vmaAllocator) {
+        vmaDestroyAllocator(vmaAllocator);
+    }
+    desc_set_manager.reset();
 }
 
 // Generate the stage-specific part of the message.
