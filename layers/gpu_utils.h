@@ -20,6 +20,9 @@
 #include "chassis.h"
 #include "shader_validation.h"
 #include "cmd_buffer_state.h"
+#include "state_tracker.h"
+#include "vk_mem_alloc.h"
+
 class QUEUE_STATE;
 
 class UtilDescriptorSetManager {
@@ -461,3 +464,30 @@ void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCom
                                const uint32_t operation_index, std::string &msg);
 void UtilGenerateSourceMessages(const std::vector<uint32_t> &pgm, const uint32_t *debug_record, bool from_printf,
                                 std::string &filename_msg, std::string &source_msg);
+
+struct GpuAssistedShaderTracker {
+    VkPipeline pipeline;
+    VkShaderModule shader_module;
+    std::vector<uint32_t> pgm;
+};
+
+class GpuAssistedBase : public ValidationStateTracker {
+  public:
+    bool aborted = false;
+    const char *setup_vuid;
+    VkPhysicalDeviceFeatures supported_features{};
+    VkPhysicalDeviceFeatures desired_features{};
+    uint32_t adjusted_max_desc_sets = 0;
+    uint32_t unique_shader_module_id = 0;
+    uint32_t output_buffer_size = 0;
+    VkDescriptorSetLayout debug_desc_layout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout dummy_desc_layout = VK_NULL_HANDLE;
+    uint32_t desc_set_bind_index = 0;
+    VmaAllocator vmaAllocator = {};
+    std::map<VkQueue, UtilQueueBarrierCommandInfo> queue_barrier_command_infos;
+    std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
+    PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
+    layer_data::unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
+    std::vector<VkDescriptorSetLayoutBinding> bindings_;
+};
+

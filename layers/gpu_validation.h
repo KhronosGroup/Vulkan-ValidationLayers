@@ -20,10 +20,8 @@
 
 #pragma once
 
-#include "chassis.h"
-#include "state_tracker.h"
-#include "vk_mem_alloc.h"
 #include "gpu_utils.h"
+
 class GpuAssisted;
 
 struct GpuAssistedDeviceMemoryBlock {
@@ -62,12 +60,6 @@ struct GpuAssistedBufferInfo {
           desc_pool(desc_pool),
           pipeline_bind_point(pipeline_bind_point),
           cmd_type(cmd_type){};
-};
-
-struct GpuAssistedShaderTracker {
-    VkPipeline pipeline;
-    VkShaderModule shader_module;
-    std::vector<uint32_t> pgm;
 };
 
 struct GpuVuid {
@@ -138,9 +130,15 @@ class CommandBuffer : public CMD_BUFFER_STATE {
 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav_state::CommandBuffer, CMD_BUFFER_STATE);
 
-class GpuAssisted : public ValidationStateTracker {
+class GpuAssisted : public GpuAssistedBase {
   public:
-    GpuAssisted() { container_type = LayerObjectTypeGpuAssisted; }
+    GpuAssisted() {
+        setup_vuid = "UNASSIGNED-GPU-Assisted-Validation";
+        container_type = LayerObjectTypeGpuAssisted;
+        desired_features.vertexPipelineStoresAndAtomics = true;
+        desired_features.fragmentStoresAndAtomics = true;
+        desired_features.shaderInt64 = true;
+    }
 
     template <typename T>
     void ReportSetupProblem(T object, const char* const specific_message) const;
@@ -350,25 +348,11 @@ class GpuAssisted : public ValidationStateTracker {
     bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer);
     void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer);
 
-    VkPhysicalDeviceFeatures supported_features;
     VkBool32 shaderInt64;
-    uint32_t unique_shader_module_id = 0;
-    uint32_t output_buffer_size;
     bool buffer_oob_enabled;
     bool validate_draw_indirect;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
     GpuAssistedPreDrawValidationState pre_draw_validation_state;
 
-  public:
-    bool aborted = false;
     bool descriptor_indexing = false;
-    uint32_t adjusted_max_desc_sets;
-    uint32_t desc_set_bind_index;
-    VkDescriptorSetLayout debug_desc_layout = VK_NULL_HANDLE;
-    VkDescriptorSetLayout dummy_desc_layout = VK_NULL_HANDLE;
-    std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
-    layer_data::unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
-    PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
-    VmaAllocator vmaAllocator = {};
-    std::map<VkQueue, UtilQueueBarrierCommandInfo> queue_barrier_command_infos;
 };
