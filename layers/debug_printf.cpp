@@ -29,32 +29,15 @@ static const VkShaderStageFlags kShaderStageAllRayTracing =
     VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV |
     VK_SHADER_STAGE_INTERSECTION_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV | VK_SHADER_STAGE_RAYGEN_BIT_NV;
 
-// Convenience function for reporting problems with setting up Debug Printf.
-template <typename T>
-void DebugPrintf::ReportSetupProblem(T object, const char *const specific_message) const {
-    LogError(object, "UNASSIGNED-DEBUG-PRINTF ", "Detail: (%s)", specific_message);
-}
-
-// Turn on necessary device features.
-void DebugPrintf::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *create_info,
-                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                            void *modified_create_info) {
-    // Use a local variable to query features since this method runs in the instance validation object.
-    // To avoid confusion and race conditions about which physical device's features are stored in the
-    // 'supported_devices' member variable, it will only be set in the device validation objects.
-    // See CreateDevice() below.
-    VkPhysicalDeviceFeatures gpu_supported_features;
-    DispatchGetPhysicalDeviceFeatures(gpu, &gpu_supported_features);
-    VkPhysicalDeviceFeatures features = {};
-    features.vertexPipelineStoresAndAtomics = true;
-    features.fragmentStoresAndAtomics = true;
-    UtilPreCallRecordCreateDevice(gpu, reinterpret_cast<safe_VkDeviceCreateInfo *>(modified_create_info), gpu_supported_features,
-                                  features);
-}
-
 // Perform initializations that can be done at Create Device time.
 void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
-    ValidationStateTracker::CreateDevice(pCreateInfo);
+    if (enabled[gpu_validation]) {
+        ReportSetupProblem(device,
+                           "Debug Printf cannot be enabled when gpu assisted validation is enabled.  "
+                           "Debug Printf disabled.");
+        aborted = true;
+        return;
+    }
 
     const char *size_string = getLayerOption("khronos_validation.printf_buffer_size");
     output_buffer_size = *size_string ? atoi(size_string) : 1024;
@@ -67,6 +50,16 @@ void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     transform(stdout_string.begin(), stdout_string.end(), stdout_string.begin(), ::tolower);
     use_stdout = stdout_string.length() ? !stdout_string.compare("true") : false;
     if (getenv("DEBUG_PRINTF_TO_STDOUT")) use_stdout = true;
+
+    // GpuAssistedBase::CreateDevice will set up bindings
+    VkDescriptorSetLayoutBinding binding = {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+                                            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_MESH_BIT_NV |
+                                                VK_SHADER_STAGE_TASK_BIT_NV | VK_SHADER_STAGE_COMPUTE_BIT |
+                                                kShaderStageAllRayTracing,
+                                            NULL};
+    bindings_.push_back(binding);
+
+    GpuAssistedBase::CreateDevice(pCreateInfo);
 
     if (phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(device, "Debug Printf requires Vulkan 1.1 or later.  Debug Printf disabled.");
@@ -83,32 +76,6 @@ void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         return;
     }
 
-    if (enabled[gpu_validation]) {
-        ReportSetupProblem(device,
-                           "Debug Printf cannot be enabled when gpu assisted validation is enabled.  "
-                           "Debug Printf disabled.");
-        aborted = true;
-        return;
-    }
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings;
-    VkDescriptorSetLayoutBinding binding = {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
-                                            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_MESH_BIT_NV |
-                                                VK_SHADER_STAGE_TASK_BIT_NV | VK_SHADER_STAGE_COMPUTE_BIT |
-                                                kShaderStageAllRayTracing,
-                                            NULL};
-    bindings.push_back(binding);
-    UtilPostCallRecordCreateDevice(pCreateInfo, bindings, this, phys_dev_props);
-}
-
-void DebugPrintf::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
-    UtilPreCallRecordDestroyDevice(this);
-    ValidationStateTracker::PreCallRecordDestroyDevice(device, pAllocator);
-    // State Tracker can end up making vma calls through callbacks - don't destroy allocator until ST is done
-    if (vmaAllocator) {
-        vmaDestroyAllocator(vmaAllocator);
-    }
-    desc_set_manager.reset();
 }
 
 // Modify the pipeline layout to include our debug descriptor set and any needed padding with the dummy descriptor set.

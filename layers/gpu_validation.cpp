@@ -232,28 +232,20 @@ void GpuAssisted::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreat
     ValidationStateTracker::PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, cb_state_data);
 }
 
-// Turn on necessary device features.
-void GpuAssisted::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *create_info,
-                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                            void *modified_create_info) {
-    // Use a local variable to query features since this method runs in the instance validation object.
-    // To avoid confusion and race conditions about which physical device's features are stored in the
-    // 'supported_devices' member variable, it will only be set in the device validation objects.
-    // See CreateDevice() below.
-    VkPhysicalDeviceFeatures gpu_supported_features;
-    DispatchGetPhysicalDeviceFeatures(gpu, &gpu_supported_features);
-    VkPhysicalDeviceFeatures features = {};
-    features.vertexPipelineStoresAndAtomics = true;
-    features.fragmentStoresAndAtomics = true;
-    features.shaderInt64 = true;
-    UtilPreCallRecordCreateDevice(gpu, reinterpret_cast<safe_VkDeviceCreateInfo *>(modified_create_info), gpu_supported_features,
-                                  features);
-    ValidationStateTracker::PreCallRecordCreateDevice(gpu, create_info, pAllocator, pDevice, modified_create_info);
-}
 // Perform initializations that can be done at Create Device time.
 void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
-    // The state tracker sets up the device state
-    ValidationStateTracker::CreateDevice(pCreateInfo);
+    // GpuAssistedBase::CreateDevice will set up bindings
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+                                            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT |
+                                                VK_SHADER_STAGE_MESH_BIT_NV | VK_SHADER_STAGE_TASK_BIT_NV |
+                                                kShaderStageAllRayTracing,
+                                            NULL};
+    bindings_.push_back(binding);
+    for (auto i = 1; i < 3; i++) {
+        binding.binding = i;
+        bindings_.push_back(binding);
+    }
+    GpuAssistedBase::CreateDevice(pCreateInfo);
 
     if (enabled_features.core.robustBufferAccess || enabled_features.robustness2_features.robustBufferAccess2) {
         buffer_oob_enabled = false;
@@ -296,26 +288,12 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     if (validate_descriptor_indexing) {
         descriptor_indexing = CheckForDescriptorIndexing(enabled_features);
     }
-    std::vector<VkDescriptorSetLayoutBinding> bindings;
-    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
-                                            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT |
-                                                VK_SHADER_STAGE_MESH_BIT_NV | VK_SHADER_STAGE_TASK_BIT_NV |
-                                                kShaderStageAllRayTracing,
-                                            NULL};
-    bindings.push_back(binding);
-    for (auto i = 1; i < 3; i++) {
-        binding.binding = i;
-        bindings.push_back(binding);
-    }
-    UtilPostCallRecordCreateDevice(pCreateInfo, bindings, this, phys_dev_props);
     CreateAccelerationStructureBuildValidationState();
 }
 
 // Clean up device-related resources
 void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     DestroyAccelerationStructureBuildValidationState();
-    UtilPreCallRecordDestroyDevice(this);
-    ValidationStateTracker::PreCallRecordDestroyDevice(device, pAllocator);
     if (pre_draw_validation_state.globals_created) {
         DispatchDestroyShaderModule(device, pre_draw_validation_state.validation_shader_module, nullptr);
         DispatchDestroyDescriptorSetLayout(device, pre_draw_validation_state.validation_ds_layout, nullptr);
@@ -327,11 +305,7 @@ void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocation
         pre_draw_validation_state.renderpass_to_pipeline.clear();
         pre_draw_validation_state.globals_created = false;
     }
-    // State Tracker can end up making vma calls through callbacks - don't destroy allocator until ST is done
-    if (vmaAllocator) {
-        vmaDestroyAllocator(vmaAllocator);
-    }
-    desc_set_manager.reset();
+    GpuAssistedBase::PreCallRecordDestroyDevice(device, pAllocator);
 }
 
 void GpuAssisted::CreateAccelerationStructureBuildValidationState() {
