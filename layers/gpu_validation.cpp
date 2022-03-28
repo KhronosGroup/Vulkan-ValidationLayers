@@ -184,12 +184,6 @@ static const uint32_t kComputeShaderSpirv[] = {
     0x000200f8, 0x0000000d, 0x0004003d, 0x00000006, 0x0000006b, 0x00000008, 0x00050080, 0x00000006, 0x0000006c, 0x0000006b,
     0x00000024, 0x0003003e, 0x00000008, 0x0000006c, 0x000200f9, 0x0000000a, 0x000200f8, 0x0000000c, 0x000100fd, 0x00010038};
 
-// Convenience function for reporting problems with setting up GPU Validation.
-template <typename T>
-void GpuAssisted::ReportSetupProblem(T object, const char *const specific_message) const {
-    LogError(object, "UNASSIGNED-GPU-Assisted Validation Error. ", "Detail: (%s)", specific_message);
-}
-
 bool GpuAssisted::CheckForDescriptorIndexing(DeviceFeatures enabled_features) const {
     bool result =
         (IsExtEnabled(device_extensions.vk_ext_descriptor_indexing) &&
@@ -1451,6 +1445,48 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     memset(debug_output_buffer, 0, sizeof(uint32_t) * words_to_clear);
 }
 
+// For the given command buffer, map its debug data buffers and read their contents for analysis.
+void GpuAssisted::ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_base) {
+    auto *cb_node = static_cast<gpuav_state::CommandBuffer *>(cb_base);
+    if (cb_node && (cb_node->hasDrawCmd || cb_node->hasTraceRaysCmd || cb_node->hasDispatchCmd)) {
+        auto &gpu_buffer_list = cb_node->gpuav_buffer_list;
+        uint32_t draw_index = 0;
+        uint32_t compute_index = 0;
+        uint32_t ray_trace_index = 0;
+
+        for (auto &buffer_info : gpu_buffer_list) {
+            char *pData;
+
+            uint32_t operation_index = 0;
+            if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+                operation_index = draw_index;
+            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+                operation_index = compute_index;
+            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+                operation_index = ray_trace_index;
+            } else {
+                assert(false);
+            }
+
+            VkResult result = vmaMapMemory(vmaAllocator, buffer_info.output_mem_block.allocation, (void **)&pData);
+            if (result == VK_SUCCESS) {
+                AnalyzeAndGenerateMessages(cb_node->commandBuffer(), queue, buffer_info, operation_index, (uint32_t *)pData);
+                vmaUnmapMemory(vmaAllocator, buffer_info.output_mem_block.allocation);
+            }
+
+            if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+                draw_index++;
+            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+                compute_index++;
+            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+                ray_trace_index++;
+            } else {
+                assert(false);
+            }
+        }
+    }
+}
+
 void GpuAssisted::SetDescriptorInitialized(uint32_t *pData, uint32_t index, const cvdescriptorset::Descriptor *descriptor) {
     if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::GeneralBuffer) {
         auto buffer = static_cast<const cvdescriptorset::BufferDescriptor *>(descriptor)->GetBuffer();
@@ -1559,79 +1595,12 @@ bool GpuAssisted::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
 void GpuAssisted::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) {
     auto cb_node = Get<gpuav_state::CommandBuffer>(command_buffer);
 
-    UtilProcessInstrumentationBuffer(queue, cb_node.get(), this);
+    ProcessInstrumentationBuffer(queue, cb_node.get());
     ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node.get());
     for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
-        UtilProcessInstrumentationBuffer(queue, secondary_cmd_buffer, this);
+        ProcessInstrumentationBuffer(queue, static_cast<gpuav_state::CommandBuffer *>(secondary_cmd_buffer));
         ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node.get());
     }
-}
-
-// Issue a memory barrier to make GPU-written data available to host.
-// Wait for the queue to complete execution.
-// Check the debug buffers for all the command buffers that were submitted.
-void GpuAssisted::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                            VkResult result) {
-    ValidationStateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
-
-    if (aborted || (result != VK_SUCCESS)) return;
-    bool buffers_present = false;
-    // Don't QueueWaitIdle if there's nothing to process
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            buffers_present |= CommandBufferNeedsProcessing(submit->pCommandBuffers[i]);
-        }
-    }
-    if (!buffers_present) return;
-
-    UtilSubmitBarrier(queue, this);
-
-    DispatchQueueWaitIdle(queue);
-
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            ProcessCommandBuffer(queue, submit->pCommandBuffers[i]);
-        }
-    }
-}
-
-void GpuAssisted::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
-                                                VkFence fence, VkResult result) {
-    if (aborted || (result != VK_SUCCESS)) return;
-    bool buffers_present = false;
-    // Don't QueueWaitIdle if there's nothing to process
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo2 *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
-            buffers_present |= CommandBufferNeedsProcessing(submit->pCommandBufferInfos[i].commandBuffer);
-        }
-    }
-    if (!buffers_present) return;
-
-    UtilSubmitBarrier(queue, this);
-
-    DispatchQueueWaitIdle(queue);
-
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo2 *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
-            ProcessCommandBuffer(queue, submit->pCommandBufferInfos[i].commandBuffer);
-        }
-    }
-}
-
-void GpuAssisted::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
-    VkFence fence, VkResult result) {
-    ValidationStateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
-    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
-}
-
-void GpuAssisted::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits,
-    VkFence fence, VkResult result) {
-    ValidationStateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
-    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
 }
 
 void GpuAssisted::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,

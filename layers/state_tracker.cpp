@@ -579,6 +579,10 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     device_state->CreateDevice(pCreateInfo);
 }
 
+std::shared_ptr<QUEUE_STATE> ValidationStateTracker::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags) {
+    return std::make_shared<QUEUE_STATE>(q, index, flags);
+}
+
 void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
     if (nullptr == enabled_features_found) {
@@ -1406,7 +1410,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
                     DispatchGetDeviceQueue(device, queue_info.queue_family_index, i, &queue);
                 }
                 assert(queue != VK_NULL_HANDLE);
-                Add(std::make_shared<QUEUE_STATE>(queue, queue_info.queue_family_index, queue_info.flags));
+                Add(CreateQueue(queue, queue_info.queue_family_index, queue_info.flags));
             }
         }
     }
@@ -1756,7 +1760,7 @@ void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFen
 
 void ValidationStateTracker::RecordGetDeviceQueueState(uint32_t queue_family_index, VkDeviceQueueCreateFlags flags, VkQueue queue) {
     if (Get<QUEUE_STATE>(queue) == nullptr) {
-        Add(std::make_shared<QUEUE_STATE>(queue, queue_family_index, flags));
+        Add(CreateQueue(queue, queue_family_index, flags));
     }
 }
 

@@ -22,8 +22,9 @@
 #include "cmd_buffer_state.h"
 #include "state_tracker.h"
 #include "vk_mem_alloc.h"
+#include "queue_state.h"
 
-class QUEUE_STATE;
+class GpuAssistedBase;
 
 class UtilDescriptorSetManager {
   public:
@@ -36,6 +37,8 @@ class UtilDescriptorSetManager {
     void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
 
   private:
+    std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
+
     static const uint32_t kItemsPerChunk = 512;
     struct PoolTracker {
         uint32_t size;
@@ -44,11 +47,24 @@ class UtilDescriptorSetManager {
     VkDevice device;
     uint32_t numBindingsInSet;
     layer_data::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
+    mutable std::mutex lock_;
 };
-struct UtilQueueBarrierCommandInfo {
-    VkCommandPool barrier_command_pool = VK_NULL_HANDLE;
-    VkCommandBuffer barrier_command_buffer = VK_NULL_HANDLE;
+
+namespace gpu_utils_state {
+class Queue : public QUEUE_STATE {
+  public:
+    Queue(GpuAssistedBase &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags);
+    virtual ~Queue();
+    void SubmitBarrier();
+
+  private:
+    GpuAssistedBase &state_;
+    VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
+    VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
 };
+}  // namespace gpu_utils_state
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpu_utils_state::Queue, QUEUE_STATE);
+
 VkResult UtilInitializeVma(VkPhysicalDevice physical_device, VkDevice device, VmaAllocator *pAllocator);
 template <typename ObjectType>
 void UtilPreCallRecordCreatePipelineLayout(create_pipeline_layout_api_state *cpl_state, ObjectType *object_ptr,
@@ -269,114 +285,8 @@ void UtilCopyCreatePipelineFeedbackData(const uint32_t count, CreateInfos *pCrea
     }
 }
 
-template <typename ObjectType>
-// For the given command buffer, map its debug data buffers and read their contents for analysis.
-void UtilProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node, ObjectType *object_ptr) {
-    if (cb_node && (cb_node->hasDrawCmd || cb_node->hasTraceRaysCmd || cb_node->hasDispatchCmd)) {
-        auto gpu_buffer_list = object_ptr->GetBufferInfo(cb_node);
-        uint32_t draw_index = 0;
-        uint32_t compute_index = 0;
-        uint32_t ray_trace_index = 0;
+VkResult UtilInitializeVma(VkPhysicalDevice physical_device, VkDevice device, VmaAllocator *pAllocator);
 
-        for (auto &buffer_info : gpu_buffer_list) {
-            char *pData;
-
-            uint32_t operation_index = 0;
-            if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                operation_index = draw_index;
-            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-                operation_index = compute_index;
-            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-                operation_index = ray_trace_index;
-            } else {
-                assert(false);
-            }
-
-            VkResult result = vmaMapMemory(object_ptr->vmaAllocator, buffer_info.output_mem_block.allocation, (void **)&pData);
-            if (result == VK_SUCCESS) {
-                object_ptr->AnalyzeAndGenerateMessages(cb_node->commandBuffer(), queue, buffer_info,
-                                                       operation_index, (uint32_t *)pData);
-                vmaUnmapMemory(object_ptr->vmaAllocator, buffer_info.output_mem_block.allocation);
-            }
-
-            if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                draw_index++;
-            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-                compute_index++;
-            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-                ray_trace_index++;
-            } else {
-                assert(false);
-            }
-        }
-    }
-}
-template <typename ObjectType>
-// Submit a memory barrier on graphics queues.
-// Lazy-create and record the needed command buffer.
-void UtilSubmitBarrier(VkQueue queue, ObjectType *object_ptr) {
-    auto queue_barrier_command_info_it = object_ptr->queue_barrier_command_infos.emplace(queue, UtilQueueBarrierCommandInfo{});
-    if (queue_barrier_command_info_it.second) {
-        UtilQueueBarrierCommandInfo &queue_barrier_command_info = queue_barrier_command_info_it.first->second;
-
-        uint32_t queue_family_index = 0;
-
-        auto queue_state = object_ptr->ValidationStateTracker::template Get<QUEUE_STATE>(queue);
-        if (queue_state) {
-            queue_family_index = queue_state->queueFamilyIndex;
-        }
-
-        VkResult result = VK_SUCCESS;
-
-        auto pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
-        pool_create_info.queueFamilyIndex = queue_family_index;
-        result = DispatchCreateCommandPool(object_ptr->device, &pool_create_info, nullptr,
-                                           &queue_barrier_command_info.barrier_command_pool);
-        if (result != VK_SUCCESS) {
-            object_ptr->ReportSetupProblem(object_ptr->device, "Unable to create command pool for barrier CB.");
-            queue_barrier_command_info.barrier_command_pool = VK_NULL_HANDLE;
-            return;
-        }
-
-        auto buffer_alloc_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
-        buffer_alloc_info.commandPool = queue_barrier_command_info.barrier_command_pool;
-        buffer_alloc_info.commandBufferCount = 1;
-        buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        result = DispatchAllocateCommandBuffers(object_ptr->device, &buffer_alloc_info,
-                                                &queue_barrier_command_info.barrier_command_buffer);
-        if (result != VK_SUCCESS) {
-            object_ptr->ReportSetupProblem(object_ptr->device, "Unable to create barrier command buffer.");
-            DispatchDestroyCommandPool(object_ptr->device, queue_barrier_command_info.barrier_command_pool, nullptr);
-            queue_barrier_command_info.barrier_command_pool = VK_NULL_HANDLE;
-            queue_barrier_command_info.barrier_command_buffer = VK_NULL_HANDLE;
-            return;
-        }
-
-        // Hook up command buffer dispatch
-        object_ptr->vkSetDeviceLoaderData(object_ptr->device, queue_barrier_command_info.barrier_command_buffer);
-
-        // Record a global memory barrier to force availability of device memory operations to the host domain.
-        auto command_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
-        result = DispatchBeginCommandBuffer(queue_barrier_command_info.barrier_command_buffer, &command_buffer_begin_info);
-        if (result == VK_SUCCESS) {
-            auto memory_barrier = LvlInitStruct<VkMemoryBarrier>();
-            memory_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-            memory_barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-
-            DispatchCmdPipelineBarrier(queue_barrier_command_info.barrier_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                       VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
-            DispatchEndCommandBuffer(queue_barrier_command_info.barrier_command_buffer);
-        }
-    }
-
-    UtilQueueBarrierCommandInfo &queue_barrier_command_info = queue_barrier_command_info_it.first->second;
-    if (queue_barrier_command_info.barrier_command_buffer != VK_NULL_HANDLE) {
-        auto submit_info = LvlInitStruct<VkSubmitInfo>();
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &queue_barrier_command_info.barrier_command_buffer;
-        DispatchQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
-    }
-}
 void UtilGenerateStageMessage(const uint32_t *debug_record, std::string &msg);
 void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCommandBuffer commandBuffer,
                                const uint32_t *debug_record, const VkShaderModule shader_module_handle,
@@ -399,12 +309,36 @@ class GpuAssistedBase : public ValidationStateTracker {
 
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) override;
 
+    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
+                                   VkResult result) override;
+    void RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence, VkResult result);
+    void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+                                       VkResult result) override;
+    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
+                                    VkResult result) override;
     template <typename T>
     void ReportSetupProblem(T object, const char *const specific_message) const {
         LogError(object, setup_vuid, "Setup Error. Detail: (%s)", specific_message);
     }
 
+  protected:
+    virtual bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) = 0;
+    virtual void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) = 0;
+
+    void SubmitBarrier(VkQueue queue) {
+        auto queue_state = Get<gpu_utils_state::Queue>(queue);
+        if (queue_state) {
+            queue_state->SubmitBarrier();
+        }
+    }
+
+    std::shared_ptr<QUEUE_STATE> CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags) override {
+        return std::static_pointer_cast<QUEUE_STATE>(std::make_shared<gpu_utils_state::Queue>(*this, q, index, flags));
+    }
+
+  public:
     bool aborted = false;
+    PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     const char *setup_vuid;
     VkPhysicalDeviceFeatures supported_features{};
     VkPhysicalDeviceFeatures desired_features{};
@@ -415,9 +349,7 @@ class GpuAssistedBase : public ValidationStateTracker {
     VkDescriptorSetLayout dummy_desc_layout = VK_NULL_HANDLE;
     uint32_t desc_set_bind_index = 0;
     VmaAllocator vmaAllocator = {};
-    std::map<VkQueue, UtilQueueBarrierCommandInfo> queue_barrier_command_infos;
     std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
-    PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     layer_data::unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
     std::vector<VkDescriptorSetLayoutBinding> bindings_;
 };
