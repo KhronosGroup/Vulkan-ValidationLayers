@@ -291,11 +291,11 @@ void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocation
         DispatchDestroyShaderModule(device, pre_draw_validation_state.validation_shader_module, nullptr);
         DispatchDestroyDescriptorSetLayout(device, pre_draw_validation_state.validation_ds_layout, nullptr);
         DispatchDestroyPipelineLayout(device, pre_draw_validation_state.validation_pipeline_layout, nullptr);
-        for (auto it = pre_draw_validation_state.renderpass_to_pipeline.begin();
-             it != pre_draw_validation_state.renderpass_to_pipeline.end(); ++it) {
-            DispatchDestroyPipeline(device, it->second, nullptr);
+        auto to_destroy = pre_draw_validation_state.renderpass_to_pipeline.snapshot();
+        for (auto &entry: to_destroy) {
+            DispatchDestroyPipeline(device, entry.second, nullptr);
+            pre_draw_validation_state.renderpass_to_pipeline.erase(entry.first);
         }
-        pre_draw_validation_state.renderpass_to_pipeline.clear();
         pre_draw_validation_state.globals_created = false;
     }
     GpuAssistedBase::PreCallRecordDestroyDevice(device, pAllocator);
@@ -1027,10 +1027,9 @@ void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice ph
 
 void GpuAssisted::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
                                                  const VkAllocationCallbacks *pAllocator) {
-    auto pipeline = pre_draw_validation_state.renderpass_to_pipeline.find(renderPass);
+    auto pipeline = pre_draw_validation_state.renderpass_to_pipeline.pop(renderPass);
     if (pipeline != pre_draw_validation_state.renderpass_to_pipeline.end()) {
         DispatchDestroyPipeline(device, pipeline->second, nullptr);
-        pre_draw_validation_state.renderpass_to_pipeline.erase(pipeline);
     }
     ValidationStateTracker::PreCallRecordDestroyRenderPass(device, renderPass, pAllocator);
 }
@@ -1639,6 +1638,49 @@ void GpuAssisted::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
     auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
+VkPipeline GpuAssisted::GetValidationPipeline(VkRenderPass render_pass) {
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    //NOTE: for dynamic rendering, render_pass will be VK_NULL_HANDLE but we'll use that as a map
+    //key anyways;
+    auto pipeentry = pre_draw_validation_state.renderpass_to_pipeline.find(render_pass);
+    if (pipeentry != pre_draw_validation_state.renderpass_to_pipeline.end()) {
+        pipeline = pipeentry->second;
+    }
+    if (pipeline != VK_NULL_HANDLE) {
+        return pipeline;
+    }
+    auto pipeline_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+    pipeline_stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    pipeline_stage_ci.module = pre_draw_validation_state.validation_shader_module;
+    pipeline_stage_ci.pName = "main";
+
+    auto graphicsPipelineCreateInfo = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+    auto vertexInputState = LvlInitStruct<VkPipelineVertexInputStateCreateInfo>();
+    auto inputAssemblyState = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+    inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    auto rasterizationState = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
+    rasterizationState.rasterizerDiscardEnable = VK_TRUE;
+    auto colorBlendState = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+
+    graphicsPipelineCreateInfo.pVertexInputState = &vertexInputState;
+    graphicsPipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
+    graphicsPipelineCreateInfo.pRasterizationState = &rasterizationState;
+    graphicsPipelineCreateInfo.pColorBlendState = &colorBlendState;
+    graphicsPipelineCreateInfo.renderPass = render_pass;
+    graphicsPipelineCreateInfo.layout = pre_draw_validation_state.validation_pipeline_layout;
+    graphicsPipelineCreateInfo.stageCount = 1;
+    graphicsPipelineCreateInfo.pStages = &pipeline_stage_ci;
+
+    VkResult result = DispatchCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &pipeline);
+    if (result != VK_SUCCESS) {
+        ReportSetupProblem(device, "Unable to create graphics pipeline.  Aborting GPU-AV");
+        aborted = true;
+        return VK_NULL_HANDLE;
+    }
+
+    pre_draw_validation_state.renderpass_to_pipeline.insert(render_pass, pipeline);
+    return pipeline;
+}
 
 // To generate the pre draw validation shader, run the following from the repository base level
 // python ./scripts/generate_spirv.py --outfilename ./layers/generated/gpu_pre_draw_shader.h ./layers/gpu_pre_draw_shader.vert
@@ -1701,55 +1743,11 @@ void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBloc
         pre_draw_validation_state.globals_created = true;
     }
 
-    VkPipeline pipeline = VK_NULL_HANDLE;
     VkRenderPass render_pass = state.pipeline_state->RenderPassState()->renderPass();
-    if (render_pass != VK_NULL_HANDLE) {
-        auto pipeentry = pre_draw_validation_state.renderpass_to_pipeline.find(render_pass);
-        if (pipeentry != pre_draw_validation_state.renderpass_to_pipeline.end()) {
-            pipeline = pipeentry->second;
-        }
-    } else {
-        // Dynamic Rendering
-        pipeline = pre_draw_validation_state.dyn_rendering_pipeline;
-    }
-    if (pipeline == VK_NULL_HANDLE) {
-        auto pipeline_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
-        pipeline_stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        pipeline_stage_ci.module = pre_draw_validation_state.validation_shader_module;
-        pipeline_stage_ci.pName = "main";
-
-        auto graphicsPipelineCreateInfo = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
-        auto vertexInputState = LvlInitStruct<VkPipelineVertexInputStateCreateInfo>();
-        auto inputAssemblyState = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
-        inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        auto rasterizationState = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
-        rasterizationState.rasterizerDiscardEnable = VK_TRUE;
-        auto colorBlendState = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
-
-        graphicsPipelineCreateInfo.pVertexInputState = &vertexInputState;
-        graphicsPipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
-        graphicsPipelineCreateInfo.pRasterizationState = &rasterizationState;
-        graphicsPipelineCreateInfo.pColorBlendState = &colorBlendState;
-        graphicsPipelineCreateInfo.renderPass = render_pass;
-        graphicsPipelineCreateInfo.layout = pre_draw_validation_state.validation_pipeline_layout;
-        graphicsPipelineCreateInfo.stageCount = 1;
-        graphicsPipelineCreateInfo.pStages = &pipeline_stage_ci;
-
-        VkPipeline new_pipeline = VK_NULL_HANDLE;
-        result = DispatchCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &new_pipeline);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to create graphics pipeline.  Aborting GPU-AV");
-            aborted = true;
-            return;
-        }
-
-        *pPipeline = new_pipeline;
-        if (render_pass != VK_NULL_HANDLE)
-            pre_draw_validation_state.renderpass_to_pipeline[render_pass] = new_pipeline;
-        else
-            pre_draw_validation_state.dyn_rendering_pipeline = new_pipeline;
-    } else {
-        *pPipeline = pipeline;
+    *pPipeline = GetValidationPipeline(render_pass);
+    if (*pPipeline == VK_NULL_HANDLE) {
+        // could not find or create a pipeline
+        return;
     }
 
     result = desc_set_manager->GetDescriptorSet(&resources.desc_pool, pre_draw_validation_state.validation_ds_layout,
