@@ -1011,8 +1011,9 @@ class StatelessValidation : public ValidationObject {
             const VkImageLayout initial_layout = pCreateInfo->pAttachments[i].initialLayout;
             const VkImageLayout final_layout = pCreateInfo->pAttachments[i].finalLayout;
             if (attachment_format == VK_FORMAT_UNDEFINED) {
-                vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-parameter" : "VUID-VkAttachmentDescription-format-parameter";
-                skip |= LogWarning(device, vuid, "%s: pCreateInfo->pAttachments[%u].format is VK_FORMAT_UNDEFINED.", func_name, i);
+                vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06701" : "VUID-VkAttachmentDescription-format-06698";
+                skip |= LogError(device, vuid, "%s: pCreateInfo->pAttachments[%" PRIu32 "].format is VK_FORMAT_UNDEFINED.",
+                                 func_name, i);
             }
             if (final_layout == VK_IMAGE_LAYOUT_UNDEFINED || final_layout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
                 vuid =

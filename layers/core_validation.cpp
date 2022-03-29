@@ -12043,25 +12043,42 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
     const char *vuid;
 
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
-        VkFormat format = pCreateInfo->pAttachments[i].format;
-        if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
-            if ((FormatIsColor(format) || FormatHasDepth(format)) &&
-                pCreateInfo->pAttachments[i].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
-                skip |= LogWarning(device, kVUID_Core_DrawState_InvalidRenderpass,
-                                   "%s: Render pass pAttachment[%u] has loadOp == VK_ATTACHMENT_LOAD_OP_LOAD and initialLayout == "
-                                   "VK_IMAGE_LAYOUT_UNDEFINED.  This is probably not what you intended.  Consider using "
-                                   "VK_ATTACHMENT_LOAD_OP_DONT_CARE instead if the image truely is undefined at the start of the "
-                                   "render pass.",
-                                   function_name, i);
-            }
-            if (FormatHasStencil(format) && pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
-                skip |=
-                    LogWarning(device, kVUID_Core_DrawState_InvalidRenderpass,
-                               "%s: Render pass pAttachment[%u] has stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD and initialLayout "
-                               "== VK_IMAGE_LAYOUT_UNDEFINED.  This is probably not what you intended.  Consider using "
-                               "VK_ATTACHMENT_LOAD_OP_DONT_CARE instead if the image truely is undefined at the start of the "
-                               "render pass.",
-                               function_name, i);
+        const VkFormat format = pCreateInfo->pAttachments[i].format;
+        if ((FormatIsColor(format) || FormatHasDepth(format)) &&
+            pCreateInfo->pAttachments[i].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD &&
+            pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+            vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06702" : "VUID-VkAttachmentDescription-format-06699";
+            skip |= LogError(device, vuid,
+                             "%s: Render pass pAttachment[%" PRIu32
+                             "] has loadOp == VK_ATTACHMENT_LOAD_OP_LOAD and initialLayout == "
+                             "VK_IMAGE_LAYOUT_UNDEFINED. Consider using VK_ATTACHMENT_LOAD_OP_DONT_CARE instead if the image "
+                             "truely is undefined at the start of the render pass.",
+                             function_name, i);
+        }
+        if (FormatHasStencil(format) && pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+            const auto *stencil_layout =
+                (use_rp2) ? LvlFindInChain<VkAttachmentDescriptionStencilLayout>(pCreateInfo->pAttachments[i].pNext) : nullptr;
+
+            if (stencil_layout && stencil_layout->stencilInitialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                skip |= LogError(
+                    device, "VUID-VkAttachmentDescription2-format-06705",
+                    "%s: Render pass pAttachment[%" PRIu32
+                    "] has stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD and stencilInitialLayout "
+                    "== VK_IMAGE_LAYOUT_UNDEFINED. Consider using VK_ATTACHMENT_LOAD_OP_DONT_CARE instead if the image truely "
+                    "is undefined at the start of the render pass.",
+                    function_name, i);
+            } else if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                vuid = use_rp2 ? (IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts)
+                                      ? "VUID-VkAttachmentDescription2-format-06704"
+                                      : "VUID-VkAttachmentDescription2-format-06703")
+                               : "VUID-VkAttachmentDescription-format-06700";
+                skip |= LogError(
+                    device, vuid,
+                    "%s: Render pass pAttachment[%" PRIu32
+                    "] has stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD and initialLayout "
+                    "== VK_IMAGE_LAYOUT_UNDEFINED. Consider using VK_ATTACHMENT_LOAD_OP_DONT_CARE instead if the image truely "
+                    "is undefined at the start of the render pass.",
+                    function_name, i);
             }
         }
     }
