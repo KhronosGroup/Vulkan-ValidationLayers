@@ -1430,3 +1430,60 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(VkBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
+    TEST_DESCRIPTION("Test creating fifo relaxed swapchain");
+
+    AddSurfaceInstanceExtension();
+    InitBestPracticesFramework();
+    AddSwapchainDeviceExtension();
+    InitState();
+    if (!InitSurface()) {
+        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
+        return;
+    }
+    InitSwapchainInfo();
+
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    if (!supported) {
+        printf("%s Graphics queue does not support present, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    bool fifo_relaxed = false;
+    for (const auto& present_mode : m_surface_present_modes) {
+        if (present_mode == VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
+            fifo_relaxed = true;
+            break;
+        }
+    }
+    if (!fifo_relaxed) {
+        printf("%s fifo relaxed present mode not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = {};
+    swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swapchain_create_info.pNext = 0;
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = 2;
+    swapchain_create_info.imageFormat = m_surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = imageUsage;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = preTransform;
+    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
+    swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = 0;
+
+    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT);
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    m_errorMonitor->VerifyNotFound();
+}
