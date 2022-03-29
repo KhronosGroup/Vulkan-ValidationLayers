@@ -1007,7 +1007,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
 static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(const safe_VkGraphicsPipelineCreateInfo& create_info,
                                                                  std::shared_ptr<const RENDER_PASS_STATE>& rp) {
     std::vector<bp_state::AttachmentInfo> result;
-    if (!rp) {
+    if (!rp || rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
         return result;
     }
 
