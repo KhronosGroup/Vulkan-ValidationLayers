@@ -53,21 +53,6 @@ class FENCE_STATE : public REFCOUNTED_NODE {
 
     VkFence fence() const { return handle_.Cast<VkFence>(); }
 
-    void ExecuteWaitingFunctions() {
-        // This function must only be called with WriteLock acquired
-        for (auto &func : waiting_functions_) {
-            if (func.use_count() == 1) {
-                (*func)();
-            }
-        }
-        waiting_functions_.clear();
-    }
-
-    void AddWaitingFunction(const std::shared_ptr<std::function<void()>> &func) { 
-        auto guard = WriteLock();
-        waiting_functions_.push_back(func);
-    }
-
     bool EnqueueSignal(QUEUE_STATE *queue_state, uint64_t next_seq);
 
     void Retire(bool notify_queue = true);
@@ -93,7 +78,6 @@ class FENCE_STATE : public REFCOUNTED_NODE {
     uint64_t seq_{0};
     FENCE_STATUS state_;
     SyncScope scope_{kSyncScopeInternal};
-    std::vector<std::shared_ptr<std::function<void()>>> waiting_functions_;
     mutable ReadWriteLock lock_;
 };
 
@@ -158,25 +142,6 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     SemOp Completed() const {
         auto guard = ReadLock();
         return completed_;
-    }
-
-    void ExecuteWaitingFunctions() {
-        // This function must only be called with WriteLock acquired
-        for (auto &func : waiting_functions_) {
-            // Waiting functions are function that must be executed after all the semaphores that hold it get signaled
-            // The functions must be executed only once, so check if this is the last semaphore that is holding it
-            // If use_count() > 1, that means there are still other semaphores that need to be waited on before executing this
-            // function
-            if (func.use_count() == 1) {
-                (*func)();
-            }
-        }
-        waiting_functions_.clear();
-    }
-
-    void AddWaitingFunction(const std::shared_ptr<std::function<void()>> &func) {
-        auto guard = WriteLock();
-        waiting_functions_.push_back(func);
     }
 
     // Enqueue a semaphore operation. For binary semaphores, the payload value is generated and

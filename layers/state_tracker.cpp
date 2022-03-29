@@ -3427,38 +3427,27 @@ void ValidationStateTracker::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice
 void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
     auto queue_state = Get<QUEUE_STATE>(queue);
     // Semaphore waits occur before error generation, if the call reached the ICD. (Confirm?)
-    VkPresentInfoKHR pPresentInfoCopy = *pPresentInfo;
-    VkPresentIdKHR present_id_info_copy = {};
-    if (LvlFindInChain<VkPresentIdKHR>(pPresentInfoCopy.pNext)) {
-        present_id_info_copy = *LvlFindInChain<VkPresentIdKHR>(pPresentInfoCopy.pNext);
-    }
-    const auto present = [this, pPresentInfoCopy, present_id_info_copy, result]() {
-        for (uint32_t i = 0; i < pPresentInfoCopy.swapchainCount; ++i) {
-            // Note: this is imperfect, in that we can get confused about what did or didn't succeed-- but if the app does that,
-            // it's confused itself just as much.
-            auto local_result = pPresentInfoCopy.pResults ? pPresentInfoCopy.pResults[i] : result;
-            if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
-            // Mark the image as having been released to the WSI
-            auto swapchain_data = ValidationStateTracker::Get<SWAPCHAIN_NODE>(pPresentInfoCopy.pSwapchains[i]);
-            if (swapchain_data) {
-                swapchain_data->PresentImage(pPresentInfoCopy.pImageIndices[i]);
-                if (present_id_info_copy.sType == VK_STRUCTURE_TYPE_PRESENT_ID_KHR) {
-                    if (i < present_id_info_copy.swapchainCount &&
-                        present_id_info_copy.pPresentIds[i] > swapchain_data->max_present_id) {
-                        swapchain_data->max_present_id = present_id_info_copy.pPresentIds[i];
-                    }
-                }
-            }
+    for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
+        auto semaphore_state = Get<SEMAPHORE_STATE>(pPresentInfo->pWaitSemaphores[i]);
+        if (semaphore_state) {
+            semaphore_state->EnqueuePresent(queue_state.get());
         }
-    };
-    if (pPresentInfo->waitSemaphoreCount == 0) {
-        present();
-    } else {
-        const auto func = std::make_shared<std::function<void()>>(present);
-        for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
-            auto semaphore_state = Get<SEMAPHORE_STATE>(pPresentInfo->pWaitSemaphores[i]);
-            if (semaphore_state) {
-                semaphore_state->AddWaitingFunction(func);
+    }
+
+    const auto *present_id_info = LvlFindInChain<VkPresentIdKHR>(pPresentInfo->pNext);
+    for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
+        // Note: this is imperfect, in that we can get confused about what did or didn't succeed-- but if the app does that, it's
+        // confused itself just as much.
+        auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
+        if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
+        // Mark the image as having been released to the WSI
+        auto swapchain_data = Get<SWAPCHAIN_NODE>(pPresentInfo->pSwapchains[i]);
+        if (swapchain_data) {
+            swapchain_data->PresentImage(pPresentInfo->pImageIndices[i]);
+            if (present_id_info) {
+                if (i < present_id_info->swapchainCount && present_id_info->pPresentIds[i] > swapchain_data->max_present_id) {
+                    swapchain_data->max_present_id = present_id_info->pPresentIds[i];
+                }
             }
         }
     }
@@ -3480,29 +3469,11 @@ void ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(VkDevice de
 
 void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                          VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) {
-    uint32_t image_index = *pImageIndex;
-    {
-        // Mark the image as waiting for a semaphore
-        auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
-        if (swapchain_data) {
-            swapchain_data->ImageWaitingAcquire(image_index, semaphore, fence);
-        }
-    }
-    const auto acquire = [this, swapchain, image_index]() {
-        // Mark the image as acquired.
-        auto swapchain_data = ValidationStateTracker::Get<SWAPCHAIN_NODE>(swapchain);
-        if (swapchain_data) {
-            swapchain_data->AcquireImage(image_index);
-        }
-    };
-    auto func = std::make_shared<std::function<void()>>(acquire);
-
     auto fence_state = Get<FENCE_STATE>(fence);
     if (fence_state) {
         // Treat as inflight since it is valid to wait on this fence, even in cases where it is technically a temporary
         // import
         fence_state->EnqueueSignal(nullptr, 0);
-        fence_state->AddWaitingFunction(func);
     }
 
     auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
@@ -3510,7 +3481,12 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
         // Treat as signaled since it is valid to wait on this semaphore, even in cases where it is technically a
         // temporary import
         semaphore_state->EnqueueAcquire();
-        semaphore_state->AddWaitingFunction(func);
+    }
+
+    // Mark the image as acquired.
+    auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
+    if (swapchain_data) {
+        swapchain_data->AcquireImage(*pImageIndex);
     }
 }
 
