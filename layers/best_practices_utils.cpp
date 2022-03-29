@@ -408,7 +408,9 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
                        pCreateInfo->queueFamilyIndexCount);
     }
 
-    if (pCreateInfo->minImageCount == 2) {
+    const auto present_mode = pCreateInfo->presentMode;
+    if (((present_mode == VK_PRESENT_MODE_MAILBOX_KHR) || (present_mode == VK_PRESENT_MODE_FIFO_KHR)) &&
+        (pCreateInfo->minImageCount == 2)) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_SuboptimalSwapchainImageCount,
             "Warning: A Swapchain is being created with minImageCount set to %" PRIu32
