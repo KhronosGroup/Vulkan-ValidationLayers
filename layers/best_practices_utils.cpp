@@ -1138,14 +1138,16 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
 
         skip |= VendorCheckEnabled(kBPVendorArm) && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos);
     }
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         auto prev_pipeline = pipeline_cache_.load();
         if (pipelineCache && prev_pipeline && pipelineCache != prev_pipeline) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_MultiplePipelineCaches,
-                            "%s Performance Warning: A second pipeline cache is in use. Consider using only one pipeline cache to "
-                            "improve cache hit rate", VendorSpecificTag(kBPVendorAMD));
+                                          "%s %s Performance Warning: A second pipeline cache is in use. "
+                                          "Consider using only one pipeline cache to improve cache hit rate.",
+                                          VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA));
         }
-
+    }
+    if (VendorCheckEnabled(kBPVendorAMD)) {
         if (num_pso_ > kMaxRecommendedNumberOfPSOAMD) {
             skip |=
                 LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_TooManyPipelines,
@@ -1602,8 +1604,9 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
                                           "Consider consolidating and re-organizing the frame to use fewer barriers.",
                                           VendorSpecificTag(kBPVendorAMD), num);
         }
-
-        std::array<VkImageLayout, 3> read_layouts = {
+    }
+    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
+        static constexpr std::array<VkImageLayout, 3> read_layouts = {
             VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -1611,19 +1614,19 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
 
         for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
             // read to read barriers
-            auto found = std::find(read_layouts.begin(), read_layouts.end(), pImageMemoryBarriers[i].oldLayout);
-            bool old_is_read_layout = found != read_layouts.end();
-            found = std::find(read_layouts.begin(), read_layouts.end(), pImageMemoryBarriers[i].newLayout);
-            bool new_is_read_layout = found != read_layouts.end();
+            const auto &image_barrier = pImageMemoryBarriers[i];
+            bool old_is_read_layout = std::find(read_layouts.begin(), read_layouts.end(), image_barrier.oldLayout) != read_layouts.end();
+            bool new_is_read_layout = std::find(read_layouts.begin(), read_layouts.end(), image_barrier.newLayout) != read_layouts.end();
+
             if (old_is_read_layout && new_is_read_layout) {
                 skip |= LogPerformanceWarning(device, kVUID_BestPractices_PipelineBarrier_readToReadBarrier,
-                            "%s Performance warning: Don't issue read-to-read barriers. Get the resource in the right state the first "
-                    "time you use it.",
-                    VendorSpecificTag(kBPVendorAMD));
+                                              "%s %s Performance warning: Don't issue read-to-read barriers. "
+                                              "Get the resource in the right state the first time you use it.",
+                                              VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA));
             }
 
             // general with no storage
-            if (pImageMemoryBarriers[i].newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+            if (VendorCheckEnabled(kBPVendorAMD) && image_barrier.newLayout == VK_IMAGE_LAYOUT_GENERAL) {
                 auto image_state = Get<IMAGE_STATE>(pImageMemoryBarriers[i].image);
                 if (!(image_state->createInfo.usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                     skip |= LogPerformanceWarning(device, kVUID_BestPractices_vkImage_AvoidGeneral,
@@ -3914,15 +3917,15 @@ bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer
 
     auto cb = Get<bp_state::CommandBuffer>(commandBuffer);
 
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (IsPipelineUsedInFrame(pipeline)) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_Pipeline_SortAndBind,
-                        "%s Performance warning: Pipeline %s was bound twice in the frame. Keep pipeline state changes to a minimum,"
-                        "for example, by sorting draw calls by pipeline.",
-                        VendorSpecificTag(kBPVendorAMD), report_data->FormatHandle(pipeline).c_str());
+                                          "%s %s Performance warning: Pipeline %s was bound twice in the frame. "
+                                          "Keep pipeline state changes to a minimum, for example, by sorting draw calls by pipeline.",
+                                          VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA),
+                                          report_data->FormatHandle(pipeline).c_str());
         }
     }
-
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         const auto& tgm = cb->nv.tess_geometry_mesh;
         if (tgm.num_switches >= kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA && !tgm.threshold_signaled) {
@@ -3946,14 +3949,14 @@ void BestPractices::ManualPostCallRecordQueueSubmit(VkQueue queue, uint32_t subm
 bool BestPractices::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) const {
     bool skip = false;
 
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         auto num = num_queue_submissions_.load();
         if (num > kNumberOfSubmissionWarningLimitAMD) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_Submission_ReduceNumberOfSubmissions,
-                                          "%s Performance warning: command buffers submitted %" PRId32
+                                          "%s %s Performance warning: command buffers submitted %" PRId32
                                           " times this frame. Submitting command buffers has a CPU "
                                           "and GPU overhead. Submit fewer times to incur less overhead.",
-                                          VendorSpecificTag(kBPVendorAMD), num);
+                                          VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), num);
         }
     }
 
@@ -3973,13 +3976,13 @@ void BestPractices::PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuff
 bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore) const {
     bool skip = false;
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (Count<SEMAPHORE_STATE>() > kMaxRecommendedSemaphoreObjectsSizeAMD) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_SyncObjects_HighNumberOfSemaphores,
-                            "%s Performance warning: High number of vkSemaphore objects created."
+                            "%s %s Performance warning: High number of vkSemaphore objects created. "
                             "Minimize the amount of queue synchronization that is used. "
                             "Semaphores and fences have overhead. Each fence has a CPU and GPU cost with it.",
-                            VendorSpecificTag(kBPVendorAMD));
+                            VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA));
         }
     }
 
@@ -3989,13 +3992,13 @@ bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSema
 bool BestPractices::PreCallValidateCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkFence* pFence) const {
     bool skip = false;
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (Count<FENCE_STATE>() > kMaxRecommendedFenceObjectsSizeAMD) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_SyncObjects_HighNumberOfFences,
-                                          "%s Performance warning: High number of VkFence objects created."
+                                          "%s %s Performance warning: High number of VkFence objects created."
                                           "Minimize the amount of CPU-GPU synchronization that is used. "
-                                          "Semaphores and fences have overhead.Each fence has a CPU and GPU cost with it.",
-                                          VendorSpecificTag(kBPVendorAMD));
+                                          "Semaphores and fences have overhead. Each fence has a CPU and GPU cost with it.",
+                                          VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA));
         }
     }
 
