@@ -2785,8 +2785,9 @@ bool BestPractices::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
     if (drawCount == 0) {
         skip |= LogWarning(device, kVUID_BestPractices_CmdDraw_DrawCountZero,
                            "Warning: You are calling vkCmdDrawIndirect() with a drawCount of Zero.");
-        skip |= ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndirect()");
     }
+
+    skip |= ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndirect()");
 
     return skip;
 }
@@ -2804,8 +2805,9 @@ bool BestPractices::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
     if (drawCount == 0) {
         skip |= LogWarning(device, kVUID_BestPractices_CmdDraw_DrawCountZero,
                            "Warning: You are calling vkCmdDrawIndexedIndirect() with a drawCount of Zero.");
-        skip |= ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndexedIndirect()");
     }
+
+    skip |= ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndexedIndirect()");
 
     return skip;
 }
