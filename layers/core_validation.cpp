@@ -8423,11 +8423,15 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     skip |= ValidateCmd(cb_state.get(), CMD_BUILDACCELERATIONSTRUCTURESKHR);
-    if (pInfos != NULL) {
+    if (pInfos != nullptr) {
         for (uint32_t info_index = 0; info_index < infoCount; ++info_index) {
             auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[info_index].srcAccelerationStructure);
             auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[info_index].dstAccelerationStructure);
+            skip |= ValidateMemoryIsBoundToBuffer(dst_as_state->buffer_state.get(), "vkCmdBuildAccelerationStructuresKHR",
+                                                  "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03707");
             if (pInfos[info_index].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
+                skip |= ValidateMemoryIsBoundToBuffer(src_as_state->buffer_state.get(), "vkCmdBuildAccelerationStructuresKHR",
+                                                      "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03708");
                 if (src_as_state == nullptr || !src_as_state->built ||
                     !(src_as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
                     skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03667",
@@ -17842,7 +17846,11 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkComm
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].srcAccelerationStructure);
         auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].dstAccelerationStructure);
+        skip |= ValidateMemoryIsBoundToBuffer(dst_as_state->buffer_state.get(), "vkCmdBuildAccelerationStructuresIndirectKHR",
+                                              "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03707");
         if (pInfos[i].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
+            skip |= ValidateMemoryIsBoundToBuffer(src_as_state->buffer_state.get(), "vkCmdBuildAccelerationStructuresIndirectKHR",
+                                                  "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03708");
             if (src_as_state == nullptr || !src_as_state->built ||
                 !(src_as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
                 skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03667",
