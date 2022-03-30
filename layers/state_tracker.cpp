@@ -3671,8 +3671,16 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
     VkSurfaceCapabilities2KHR *pSurfaceCapabilities, VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
-    surface_state->SetCapabilities(physicalDevice, pSurfaceCapabilities->surfaceCapabilities);
+
+    if (pSurfaceInfo->surface) {
+        auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
+        surface_state->SetCapabilities(physicalDevice, pSurfaceCapabilities->surfaceCapabilities);
+    } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query) &&
+               lvl_find_in_chain<VkSurfaceProtectedCapabilitiesKHR>(pSurfaceCapabilities->pNext)) {
+        auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+        assert(pd_state);
+        pd_state->surfaceless_query_state.capabilities = pSurfaceCapabilities->surfaceCapabilities;
+    }
 }
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice,
@@ -3706,9 +3714,16 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModesK
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
 
     if (pPresentModes) {
-        auto surface_state = Get<SURFACE_STATE>(surface);
-        surface_state->SetPresentModes(physicalDevice,
-                                       std::vector<VkPresentModeKHR>(pPresentModes, pPresentModes + *pPresentModeCount));
+        if (surface) {
+            auto surface_state = Get<SURFACE_STATE>(surface);
+            surface_state->SetPresentModes(physicalDevice,
+                                           std::vector<VkPresentModeKHR>(pPresentModes, pPresentModes + *pPresentModeCount));
+        } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+            auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+            assert(pd_state);
+            pd_state->surfaceless_query_state.present_modes =
+                std::vector<VkPresentModeKHR>(pPresentModes, pPresentModes + *pPresentModeCount);
+        }
     }
 }
 
@@ -3719,9 +3734,16 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(Vk
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
 
     if (pSurfaceFormats) {
-        auto surface_state = Get<SURFACE_STATE>(surface);
-        surface_state->SetFormats(physicalDevice,
-                                  std::vector<VkSurfaceFormatKHR>(pSurfaceFormats, pSurfaceFormats + *pSurfaceFormatCount));
+        if (surface) {
+            auto surface_state = Get<SURFACE_STATE>(surface);
+            surface_state->SetFormats(physicalDevice,
+                                      std::vector<VkSurfaceFormatKHR>(pSurfaceFormats, pSurfaceFormats + *pSurfaceFormatCount));
+        } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+            auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+            assert(pd_state);
+            pd_state->surfaceless_query_state.formats =
+                std::vector<VkSurfaceFormatKHR>(pSurfaceFormats, pSurfaceFormats + *pSurfaceFormatCount);
+        }
     }
 }
 
@@ -3734,11 +3756,17 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(V
 
     if (pSurfaceFormats) {
         std::vector<VkSurfaceFormatKHR> fmts(*pSurfaceFormatCount);
-        auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
         for (uint32_t i = 0; i < *pSurfaceFormatCount; i++) {
             fmts[i] = pSurfaceFormats[i].surfaceFormat;
         }
-        surface_state->SetFormats(physicalDevice, std::move(fmts));
+        if (pSurfaceInfo->surface) {
+            auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
+            surface_state->SetFormats(physicalDevice, std::move(fmts));
+        } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+            auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+            assert(pd_state);
+            pd_state->surfaceless_query_state.formats = std::move(fmts);
+        }
     }
 }
 

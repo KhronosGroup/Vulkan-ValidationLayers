@@ -15885,7 +15885,12 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
 
     // Validate pCreateInfo->imageExtent against VkSurfaceCapabilitiesKHR::{current|min|max}ImageExtent:
     if (!IsExtentInsideBounds(pCreateInfo->imageExtent, capabilities.minImageExtent, capabilities.maxImageExtent)) {
-        const auto cached_capabilities = surface_state->GetCapabilities(physical_device);
+        VkSurfaceCapabilitiesKHR cached_capabilities{};
+        if (surface_state) {
+            cached_capabilities = surface_state->GetCapabilities(physical_device);
+        } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+            cached_capabilities = physical_device_state->surfaceless_query_state.capabilities;
+        }
         if (!IsExtentInsideBounds(pCreateInfo->imageExtent, cached_capabilities.minImageExtent,
                                   cached_capabilities.maxImageExtent)) {
             if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageExtent-01274",
@@ -15995,7 +16000,13 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         bool found_format = false;
         bool found_color_space = false;
         bool found_match = false;
-        const auto formats = surface_state->GetFormats(physical_device);
+
+        std::vector<VkSurfaceFormatKHR> formats{};
+        if (surface_state) {
+            formats = surface_state->GetFormats(physical_device);
+        } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+            formats = physical_device_state->surfaceless_query_state.formats;
+        }
         for (const auto &format : formats) {
             if (pCreateInfo->imageFormat == format.format) {
                 // Validate pCreateInfo->imageColorSpace against VkSurfaceFormatKHR::colorSpace:
@@ -16029,7 +16040,13 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     }
 
     // Validate pCreateInfo->presentMode against vkGetPhysicalDeviceSurfacePresentModesKHR():
-    auto present_modes = surface_state->GetPresentModes(physical_device);
+
+    std::vector<VkPresentModeKHR> present_modes{};
+    if (surface_state) {
+        present_modes = surface_state->GetPresentModes(physical_device);
+    } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+        present_modes = physical_device_state->surfaceless_query_state.present_modes;
+    }
     bool found_match = std::find(present_modes.begin(), present_modes.end(), present_mode) != present_modes.end();
     if (!found_match) {
         if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-presentMode-01281",
@@ -16493,7 +16510,13 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const AcquireVersion 
 
         const uint32_t acquired_images = swapchain_data->acquired_images;
         const uint32_t swapchain_image_count = static_cast<uint32_t>(swapchain_data->images.size());
-        auto caps = swapchain_data->surface->GetCapabilities(physical_device);
+
+        VkSurfaceCapabilitiesKHR caps{};
+        if (swapchain_data->surface) {
+            caps = swapchain_data->surface->GetCapabilities(physical_device);
+        } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+            caps = physical_device_state->surfaceless_query_state.capabilities;
+        }
         const auto min_image_count = caps.minImageCount;
         const bool too_many_already_acquired = acquired_images > swapchain_image_count - min_image_count;
         if (timeout == UINT64_MAX && too_many_already_acquired) {
