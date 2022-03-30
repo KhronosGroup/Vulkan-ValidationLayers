@@ -9823,6 +9823,26 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
         vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &invalid_build_info_khr, &pBuildRangeInfos);
         m_errorMonitor->VerifyFound();
     }
+    // Invalid dst buffer
+    {
+        auto buffer_ci = VkBufferObj::create_info(
+            4096, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        VkBufferObj invalid_buffer;
+        invalid_buffer.init_no_mem(*m_device, buffer_ci);
+        as_create_info.buffer = invalid_buffer.handle();
+        as_create_info.createFlags = 0;
+        as_create_info.offset = 0;
+        as_create_info.size = 0;
+        as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        as_create_info.deviceAddress = 0;
+        VkAccelerationStructurekhrObj invalid_bot_level_as(*m_device, as_create_info);
+
+        VkAccelerationStructureBuildGeometryInfoKHR invalid_build_info_khr = build_info_khr;
+        invalid_build_info_khr.dstAccelerationStructure = invalid_bot_level_as.handle();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03707");
+        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &invalid_build_info_khr, &pBuildRangeInfos);
+        m_errorMonitor->VerifyFound();
+    }
     // Invalid sType
     {
         VkAccelerationStructureBuildGeometryInfoKHR invalid_build_info_khr = build_info_khr;
