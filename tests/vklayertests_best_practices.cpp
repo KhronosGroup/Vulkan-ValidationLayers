@@ -933,6 +933,18 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
         return;
     }
 
+    bool fifo_present = false;
+    for (const auto &present_mode : m_surface_present_modes) {
+        if (present_mode == VK_PRESENT_MODE_FIFO_KHR) {
+            fifo_present = true;
+            break;
+        }
+    }
+    if (!fifo_present) {
+        printf("%s fifo present mode not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
     VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 
@@ -949,14 +961,14 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchain_create_info.preTransform = preTransform;
     swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
-    swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
+    swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 
     VkResult err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit,
                                          "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count");
     swapchain_create_info.minImageCount = 3;
     err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
