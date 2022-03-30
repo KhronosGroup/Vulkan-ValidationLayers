@@ -247,6 +247,7 @@ class PIPELINE_STATE : public BASE_NODE {
     // Flag of which shader stages are active for this pipeline
     const uint32_t active_shaders = 0;
     const VkPrimitiveTopology topology_at_rasterizer;
+    const bool dual_source_blending_;
 
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const RENDER_PASS_STATE> &&rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
