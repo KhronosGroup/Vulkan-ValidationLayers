@@ -97,6 +97,13 @@ class QUEUE_FAMILY_PERF_COUNTERS {
     std::vector<VkPerformanceCounterKHR> counters;
 };
 
+class SURFACELESS_QUERY_STATE {
+  public:
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> present_modes;
+    VkSurfaceCapabilitiesKHR capabilities;
+};
+
 class PHYSICAL_DEVICE_STATE : public BASE_NODE {
   public:
     uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
@@ -107,6 +114,9 @@ class PHYSICAL_DEVICE_STATE : public BASE_NODE {
 
     // Map of queue family index to QUEUE_FAMILY_PERF_COUNTERS
     layer_data::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
+
+    // Surfaceless Query extension needs 'global' surface_state data
+    SURFACELESS_QUERY_STATE surfaceless_query_state{};
 
     PHYSICAL_DEVICE_STATE(VkPhysicalDevice phys_dev)
         : BASE_NODE(phys_dev, kVulkanObjectTypePhysicalDevice), queue_family_properties(GetQueueFamilyProps(phys_dev)) {}
