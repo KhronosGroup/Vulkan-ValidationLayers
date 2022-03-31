@@ -1,6 +1,6 @@
-/* Copyright (c) 2021 The Khronos Group Inc.
+/* Copyright (c) 2021-2022 The Khronos Group Inc.
  * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,6 +120,13 @@ struct GpuVuidsCmdTraceRaysIndirectKHR : GpuVuid {
     }
 };
 
+struct GpuVuidsCmdTraceRaysIndirect2KHR : GpuVuid {
+    GpuVuidsCmdTraceRaysIndirect2KHR() : GpuVuid() {
+        uniform_access_oob = "VUID-vkCmdTraceRaysIndirect2KHR-None-02705";
+        storage_access_oob = "VUID-vkCmdTraceRaysIndirect2KHR-None-02706";
+    }
+};
+
 struct GpuVuidsCmdDrawMeshTasksNV : GpuVuid {
     GpuVuidsCmdDrawMeshTasksNV() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawMeshTasksNV-None-02705";
@@ -172,6 +179,7 @@ static const std::map<CMD_TYPE, GpuVuid> gpu_vuid = {
     {CMD_TRACERAYSNV, GpuVuidsCmdTraceRaysNV()},
     {CMD_TRACERAYSKHR, GpuVuidsCmdTraceRaysKHR()},
     {CMD_TRACERAYSINDIRECTKHR, GpuVuidsCmdTraceRaysIndirectKHR()},
+    {CMD_TRACERAYSINDIRECT2KHR, GpuVuidsCmdTraceRaysIndirect2KHR()},
     {CMD_DRAWMESHTASKSNV, GpuVuidsCmdDrawMeshTasksNV()},
     {CMD_DRAWMESHTASKSINDIRECTNV, GpuVuidsCmdDrawMeshTasksIndirectNV()},
     {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, GpuVuidsCmdDrawMeshTasksIndirectCountNV()},

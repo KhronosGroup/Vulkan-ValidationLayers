@@ -242,6 +242,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdTraceRaysKHR',
             'vkCmdTraceRaysNV',
             'vkCmdTraceRaysIndirectKHR',
+            'vkCmdTraceRaysIndirect2KHR',
             'vkCmdBuildAccelerationStructureIndirectKHR',
             'vkGetDeviceAccelerationStructureCompatibilityKHR',
             'vkCmdSetViewportWithCountEXT',
