@@ -2413,6 +2413,40 @@ static bool RegionIntersects(const RegionType *region0, const RegionType *region
     return result;
 }
 
+template <typename RegionType>
+static bool RegionIntersectsBlit(const RegionType *region0, const RegionType *region1, VkImageType type, bool is_multiplane) {
+    bool result = false;
+
+    // Separate planes within a multiplane image cannot intersect
+    if (is_multiplane && (region0->srcSubresource.aspectMask != region1->dstSubresource.aspectMask)) {
+        return result;
+    }
+
+    if ((region0->srcSubresource.mipLevel == region1->dstSubresource.mipLevel) &&
+        (RangesIntersect(region0->srcSubresource.baseArrayLayer, region0->srcSubresource.layerCount,
+                         region1->dstSubresource.baseArrayLayer, region1->dstSubresource.layerCount))) {
+        result = true;
+        switch (type) {
+            case VK_IMAGE_TYPE_3D:
+                result &= RangesIntersect(region0->srcOffsets[0].z, region0->srcOffsets[1].z - region0->srcOffsets[0].z,
+                                          region1->dstOffsets[0].z, region1->dstOffsets[1].z - region1->dstOffsets[0].z);
+                // fall through
+            case VK_IMAGE_TYPE_2D:
+                result &= RangesIntersect(region0->srcOffsets[0].y, region0->srcOffsets[1].y - region0->srcOffsets[0].y,
+                                          region1->dstOffsets[0].y, region1->dstOffsets[1].y - region1->dstOffsets[0].y);
+                // fall through
+            case VK_IMAGE_TYPE_1D:
+                result &= RangesIntersect(region0->srcOffsets[0].x, region0->srcOffsets[1].x - region0->srcOffsets[0].x,
+                                          region1->dstOffsets[0].x, region1->dstOffsets[1].x - region1->dstOffsets[0].x);
+                break;
+            default:
+                // Unrecognized or new IMAGE_TYPE enums will be caught in parameter_validation
+                assert(false);
+        }
+    }
+    return result;
+}
+
 // Returns non-zero if offset and extent exceed image extents
 static const uint32_t kXBit = 1;
 static const uint32_t kYBit = 2;
@@ -4247,6 +4281,19 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                      "%s: region [%d] blit to/from a 3D image type with a non-zero baseArrayLayer, or a "
                                      "layerCount other than 1.",
                                      func_name, i);
+                }
+            }
+
+            // The union of all source regions, and the union of all destination regions, specified by the elements of regions,
+            // must not overlap in memory
+            if (srcImage == dstImage) {
+                for (uint32_t j = 0; j < regionCount; j++) {
+                    if (RegionIntersectsBlit(&region, &pRegions[j], src_image_state->createInfo.imageType,
+                                             FormatIsMultiplane(src_format))) {
+                        vuid = is_2 ? "VUID-VkBlitImageInfo2-pRegions-00217" : "VUID-vkCmdBlitImage-pRegions-00217";
+                        skip |= LogError(cb_node->commandBuffer(), vuid,
+                                         "%s: pRegion[%" PRIu32 "] src overlaps with pRegions[%" PRIu32 "] dst.", func_name, i, j);
+                    }
                 }
             }
         }  // per-region checks
