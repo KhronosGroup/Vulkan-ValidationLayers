@@ -1324,8 +1324,8 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                     continue;
                 }
 
-                bool readable = false;
-                bool writable = false;
+                bool descriptor_readable = false;
+                bool descriptor_writable = false;
                 uint32_t set_index = std::numeric_limits<uint32_t>::max();
                 for (uint32_t i = 0; i < cb_node->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].per_set.size(); ++i) {
                     const auto &set = cb_node->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].per_set[i];
@@ -1339,16 +1339,19 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                 for (const auto &stage : pipeline->stage_state) {
                     for (const auto &descriptor : stage.descriptor_uses) {
                         if (descriptor.first.set == set_index && descriptor.first.binding == binding) {
-                            writable |= descriptor.second.is_writable;
-                            readable |= descriptor.second.is_readable | descriptor.second.is_sampler_implicitLod_dref_proj;
+                            descriptor_writable |= descriptor.second.is_writable;
+                            descriptor_readable |=
+                                descriptor.second.is_readable | descriptor.second.is_sampler_implicitLod_dref_proj;
                             break;
                         }
                     }
                 }
 
+                bool layout_read_only = IsImageLayoutReadOnly(subpass.layout);
                 bool write_attachment =
-                    (subpass.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) > 0;
-                if (write_attachment && readable) {
+                    (subpass.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) > 0 &&
+                    !layout_read_only;
+                if (write_attachment && descriptor_readable) {
                     if (same_view) {
                         auto set = descriptor_set->GetSet();
                         LogObjectList objlist(set);
@@ -1379,7 +1382,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                     }
                 }
                 bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) > 0;
-                if (read_attachment && writable) {
+                if (read_attachment && descriptor_writable) {
                     if (same_view) {
                         auto set = descriptor_set->GetSet();
                         LogObjectList objlist(set);
@@ -1409,7 +1412,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                     }
                 }
 
-                if (writable) {
+                if (descriptor_writable && !layout_read_only) {
                     if (same_view) {
                         auto set = descriptor_set->GetSet();
                         LogObjectList objlist(set);
