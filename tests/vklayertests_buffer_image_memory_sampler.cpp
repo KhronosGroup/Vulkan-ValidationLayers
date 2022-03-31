@@ -2990,18 +2990,22 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
         bool ycbcrdst = !ImageFormatAndFeaturesSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
 
         VkImageObj ycbcr_image(m_device);
-        ycbcr_image.Init(64, 64, 1, f_ycbcr, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                         VK_IMAGE_TILING_OPTIMAL, 0);
+        ycbcr_image.Init(64, 64, 1, f_ycbcr, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
         ASSERT_TRUE(ycbcr_image.initialized());
         ycbcr_image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+        VkImageObj ycbcr_image_2(m_device);
+        ycbcr_image_2.Init(64, 64, 1, f_ycbcr, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+        ASSERT_TRUE(ycbcr_image_2.initialized());
+        ycbcr_image_2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
         // Src, dst is ycbcr format
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-srcImage-06421");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-dstImage-06422");
         if (ycbcrsrc) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
         if (ycbcrdst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
-        vk::CmdBlitImage(m_commandBuffer->handle(), ycbcr_image.image(), ycbcr_image.Layout(), ycbcr_image.image(),
-                         ycbcr_image.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
+        vk::CmdBlitImage(m_commandBuffer->handle(), ycbcr_image.image(), ycbcr_image.Layout(), ycbcr_image_2.image(),
+                         ycbcr_image_2.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
         m_errorMonitor->VerifyFound();
     } else {
         printf("%s Requested ycbcr format not supported - skipping test case.\n", kSkipPrefix);
@@ -3390,6 +3394,61 @@ TEST_F(VkLayerTest, BlitImageOffsets) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-dstOffset-00251");  // z
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-pRegions-00216");   // dst region
     vk::CmdBlitImage(m_commandBuffer->handle(), image_2D.image(), image_2D.Layout(), image_3D.image(), image_3D.Layout(), 1,
+                     &blit_region, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, BlitImageOverlap) {
+    TEST_DESCRIPTION("Try to blit an image on same region.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
+    if (!ImageFormatAndFeaturesSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+        printf("%s No blit feature bits - BlitImageOverlap skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = fmt;
+    ci.extent = {64, 64, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.queueFamilyIndexCount = 0;
+    ci.pQueueFamilyIndices = nullptr;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageObj image_2D(m_device);
+    image_2D.init(&ci);
+    ASSERT_TRUE(image_2D.initialized());
+
+    VkImageBlit blit_region = {};
+    blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit_region.srcSubresource.baseArrayLayer = 0;
+    blit_region.srcSubresource.layerCount = 1;
+    blit_region.srcSubresource.mipLevel = 0;
+    blit_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit_region.dstSubresource.baseArrayLayer = 0;
+    blit_region.dstSubresource.layerCount = 1;
+    blit_region.dstSubresource.mipLevel = 0;
+
+    m_commandBuffer->begin();
+
+    blit_region.srcOffsets[0] = {0, 0, 0};
+    blit_region.srcOffsets[1] = {31, 31, 1};
+    blit_region.dstOffsets[0] = {15, 15, 0};
+    blit_region.dstOffsets[1] = {47, 47, 1};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-pRegions-00217");
+    vk::CmdBlitImage(m_commandBuffer->handle(), image_2D.image(), image_2D.Layout(), image_2D.image(), image_2D.Layout(), 1,
                      &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
