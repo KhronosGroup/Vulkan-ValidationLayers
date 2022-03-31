@@ -10920,9 +10920,9 @@ TEST_F(VkLayerTest, CopyCommands2V13) {
     blit_region.dstSubresource.layerCount = 1;
     blit_region.dstSubresource.mipLevel = 0;
     blit_region.srcOffsets[0] = {0, 0, 0};
-    blit_region.srcOffsets[1] = {64, 64, 1};
-    blit_region.dstOffsets[0] = {0, 0, 0};
-    blit_region.dstOffsets[1] = {32, 32, 1};
+    blit_region.srcOffsets[1] = {31, 31, 1};
+    blit_region.dstOffsets[0] = {32, 32, 0};
+    blit_region.dstOffsets[1] = {64, 64, 1};
     auto blit_image_info = LvlInitStruct<VkBlitImageInfo2>();
     blit_image_info.srcImage = image.handle();
     blit_image_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
