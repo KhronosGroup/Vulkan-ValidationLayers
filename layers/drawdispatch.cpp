@@ -737,6 +737,34 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
     }
 };
 
+struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
+    DispatchVuidsCmdTraceRaysIndirect2KHR() : DrawDispatchVuid() {
+        pipeline_bound                     = "VUID-vkCmdTraceRaysIndirect2KHR-None-02700";
+        dynamic_state                      = "VUID-vkCmdTraceRaysIndirect2KHR-commandBuffer-02701";
+        compatible_pipeline                = "VUID-vkCmdTraceRaysIndirect2KHR-None-02697";
+        linear_sampler                     = "VUID-vkCmdTraceRaysIndirect2KHR-magFilter-04553";
+        cubic_sampler                      = "VUID-vkCmdTraceRaysIndirect2KHR-None-02692";
+        indirect_contiguous_memory         = "VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03632";
+        indirect_buffer_bit                = "VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03633";
+        corner_sampled_address_mode        = "VUID-vkCmdTraceRaysIndirect2KHR-flags-02696";
+        imageview_atomic                   = "VUID-vkCmdTraceRaysIndirect2KHR-None-02691";
+        push_constants_set                 = "VUID-vkCmdTraceRaysIndirect2KHR-maintenance4-06425";
+        descriptor_valid                   = "VUID-vkCmdTraceRaysIndirect2KHR-None-02699";
+        sampler_imageview_type             = "VUID-vkCmdTraceRaysIndirect2KHR-None-02702";
+        sampler_implicitLod_dref_proj      = "VUID-vkCmdTraceRaysIndirect2KHR-None-02703";
+        sampler_bias_offset                = "VUID-vkCmdTraceRaysIndirect2KHR-None-02704";
+        dynamic_state_setting_commands     = "VUID-vkCmdTraceRaysIndirect2KHR-None-02859";
+        unprotected_command_buffer         = "VUID-vkCmdTraceRaysIndirect2KHR-commandBuffer-02707";
+        ray_query_protected_cb             = "VUID-vkCmdTraceRaysIndirect2KHR-commandBuffer-03635";
+        img_filter_cubic                   = "VUID-vkCmdTraceRaysIndirect2KHR-None-02693";
+        filter_cubic                       = "VUID-vkCmdTraceRaysIndirect2KHR-filterCubic-02694";
+        filter_cubic_min_max               = "VUID-vkCmdTraceRaysIndirect2KHR-filterCubicMinmax-02695";
+        storage_image_read_without_format  = "VUID-vkCmdTraceRaysIndirect2KHR-OpTypeImage-06424";
+        storage_image_write_without_format = "VUID-vkCmdTraceRaysIndirect2KHR-OpTypeImage-06423";
+        depth_compare_sample               = "VUID-vkCmdTraceRaysIndirect2KHR-None-06479";
+    }
+};
+
 struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
     DispatchVuidsCmdDrawMeshTasksNV() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawMeshTasksNV-None-02700";
@@ -1082,6 +1110,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> kDrawdispatchVuid = {
     {CMD_TRACERAYSNV, DispatchVuidsCmdTraceRaysNV()},
     {CMD_TRACERAYSKHR, DispatchVuidsCmdTraceRaysKHR()},
     {CMD_TRACERAYSINDIRECTKHR, DispatchVuidsCmdTraceRaysIndirectKHR()},
+    {CMD_TRACERAYSINDIRECT2KHR, DispatchVuidsCmdTraceRaysIndirect2KHR()},
     {CMD_DRAWMESHTASKSNV, DispatchVuidsCmdDrawMeshTasksNV()},
     {CMD_DRAWMESHTASKSINDIRECTNV, DispatchVuidsCmdDrawMeshTasksIndirectNV()},
     {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, DispatchVuidsCmdDrawMeshTasksIndirectCountNV()},
@@ -1607,6 +1636,13 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
             }
         }
     }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
+                                                         VkDeviceAddress indirectDeviceAddress) const {
+    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    bool skip = ValidateCmdDrawType(*cb_state, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSINDIRECTKHR);
     return skip;
 }
 

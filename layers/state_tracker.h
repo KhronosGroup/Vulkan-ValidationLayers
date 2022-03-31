@@ -1003,6 +1003,7 @@ class ValidationStateTracker : public ValidationObject {
                                                const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
                                                VkDeviceAddress indirectDeviceAddress) override;
+    void PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress) override;
     void PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) override;
     void PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) override;
     void PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,

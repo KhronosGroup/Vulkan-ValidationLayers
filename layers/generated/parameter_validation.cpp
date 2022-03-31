@@ -14082,6 +14082,7 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysIndirect2KHR(
     if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure)) skip |= OutputExtensionError("vkCmdTraceRaysIndirect2KHR", VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_maintenance1)) skip |= OutputExtensionError("vkCmdTraceRaysIndirect2KHR", VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
     // No xml-driven validation
+    if (!skip) skip |= manual_PreCallValidateCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
     return skip;
 }
 

@@ -1055,6 +1055,8 @@ class CoreChecks : public ValidationStateTracker {
                                                 const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
                                                 VkDeviceAddress indirectDeviceAddress) const override;
+    bool PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
+                                                 VkDeviceAddress indirectDeviceAddress) const override;
     bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) const override;
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo) override;

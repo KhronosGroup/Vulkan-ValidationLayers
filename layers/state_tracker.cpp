@@ -4328,6 +4328,13 @@ std::shared_ptr<SHADER_MODULE_STATE> ValidationStateTracker::CreateShaderModuleS
                     : std::make_shared<SHADER_MODULE_STATE>();
 }
 
+void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
+                                                                    VkDeviceAddress indirectDeviceAddress) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->UpdateStateCmdDrawDispatchType(CMD_TRACERAYSINDIRECT2KHR, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    cb_state->hasTraceRaysCmd = true;
+}
+
 void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkShaderModule *pShaderModule, VkResult result,
