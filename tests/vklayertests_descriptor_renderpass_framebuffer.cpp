@@ -12152,6 +12152,162 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewOffsets) {
                          nullptr);
 }
 
+TEST_F(VkLayerTest, SamplingFromReadOnlyDepthStencilAttachment) {
+    TEST_DESCRIPTION("Use same image as depth stencil attachment in read only layer and as sampler");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->ExpectSuccess();
+
+    const uint32_t width = 32;
+    const uint32_t height = 32;
+    const VkFormat format = FindSupportedDepthStencilFormat(gpu());
+    if (format == VK_FORMAT_UNDEFINED) {
+        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkAttachmentReference attach_ref = {};
+    attach_ref.attachment = 0;
+    attach_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.pDepthStencilAttachment = &attach_ref;
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = format;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    vk_testing::RenderPass render_pass(*m_device, rpci);
+
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = format;
+    image_create_info.extent.width = width;
+    image_create_info.extent.height = height;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.flags = 0;
+
+    VkImageObj image(m_device);
+    image.init(&image_create_info);
+
+    auto ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = format;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    vk_testing::ImageView image_view;
+    image_view.init(*m_device, ivci);
+    VkImageView image_view_handle = image_view.handle();
+
+    vk_testing::Sampler sampler;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler.init(*m_device, sampler_ci);
+
+    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fbci.width = width;
+    fbci.height = height;
+    fbci.layers = 1;
+    fbci.renderPass = render_pass.handle();
+    fbci.attachmentCount = 1;
+    fbci.pAttachments = &image_view_handle;
+
+    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+
+    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    rpbi.framebuffer = framebuffer.handle();
+    rpbi.renderPass = render_pass.handle();
+    rpbi.renderArea.extent.width = width;
+    rpbi.renderArea.extent.height = height;
+    rpbi.clearValueCount = 1;
+    rpbi.pClearValues = m_renderPassClearValues.data();
+
+    char const *fsSource = R"glsl(
+            #version 450
+            layout(set = 0, binding = 0) uniform sampler2D depth;
+            void main(){
+                vec4 color = texture(depth, ivec2(0));
+            }
+        )glsl";
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineObj pipe(m_device);
+    pipe.AddDefaultColorAttachment();
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    m_viewports.push_back(viewport);
+    pipe.SetViewport(m_viewports);
+    VkRect2D rect = {};
+    m_scissors.push_back(rect);
+    pipe.SetScissor(m_scissors);
+    auto pipe_ds_state_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    pipe_ds_state_ci.depthTestEnable = VK_TRUE;
+    pipe_ds_state_ci.stencilTestEnable = VK_FALSE;
+    pipe.SetDepthStencil(&pipe_ds_state_ci);
+
+    VkDescriptorSetLayoutBinding layout_binding = {};
+    layout_binding.binding = 0;
+    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    layout_binding.descriptorCount = 1;
+    layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    layout_binding.pImmutableSamplers = nullptr;
+    const VkDescriptorSetLayoutObj descriptor_set_layout(m_device, {layout_binding});
+
+    const VkPipelineLayoutObj pipeline_layout(DeviceObj(), {&descriptor_set_layout, &descriptor_set_layout});
+    pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+    VkDescriptorImageInfo image_info = {};
+    image_info.sampler = sampler.handle();
+    image_info.imageView = image_view.handle();
+    image_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_write.pImageInfo = &image_info;
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkLayerTest, TestColorAttachmentImageViewUsage) {
     TEST_DESCRIPTION("Create image view with missing usage bits.");
 
