@@ -164,6 +164,15 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                     }
                 } break;
 
+            case VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR: {
+                    safe_VkPipelineLibraryCreateInfoKHR *safe_struct = reinterpret_cast<safe_VkPipelineLibraryCreateInfoKHR *>(cur_pnext);
+                    if (safe_struct->pLibraries) {
+                        for (uint32_t index0 = 0; index0 < safe_struct->libraryCount; ++index0) {
+                            safe_struct->pLibraries[index0] = layer_data->Unwrap(safe_struct->pLibraries[index0]);
+                        }
+                    }
+                } break;
+
             case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {
                     safe_VkWriteDescriptorSetAccelerationStructureKHR *safe_struct = reinterpret_cast<safe_VkWriteDescriptorSetAccelerationStructureKHR *>(cur_pnext);
                     if (safe_struct->pAccelerationStructures) {

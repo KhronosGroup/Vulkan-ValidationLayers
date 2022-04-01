@@ -420,6 +420,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_full_screen_exclusive{kNotEnabled};
     ExtEnabled vk_ext_global_priority{kNotEnabled};
     ExtEnabled vk_ext_global_priority_query{kNotEnabled};
+    ExtEnabled vk_ext_graphics_pipeline_library{kNotEnabled};
     ExtEnabled vk_ext_hdr_metadata{kNotEnabled};
     ExtEnabled vk_ext_host_query_reset{kNotEnabled};
     ExtEnabled vk_ext_image_drm_format_modifier{kNotEnabled};
@@ -439,6 +440,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_pipeline_creation_feedback{kNotEnabled};
     ExtEnabled vk_ext_post_depth_coverage{kNotEnabled};
     ExtEnabled vk_ext_primitive_topology_list_restart{kNotEnabled};
+    ExtEnabled vk_ext_primitives_generated_query{kNotEnabled};
     ExtEnabled vk_ext_private_data{kNotEnabled};
     ExtEnabled vk_ext_provoking_vertex{kNotEnabled};
     ExtEnabled vk_ext_queue_family_foreign{kNotEnabled};
@@ -719,6 +721,9 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_global_priority_query, {{
                            {&DeviceExtensions::vk_ext_global_priority, VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_graphics_pipeline_library, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_pipeline_library, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME}}})},
             {VK_EXT_HDR_METADATA_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_hdr_metadata, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
             {VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_host_query_reset, {{
@@ -754,6 +759,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_feedback, {})},
             {VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_post_depth_coverage, {})},
             {VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_primitive_topology_list_restart, {})},
+            {VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_primitives_generated_query, {{
+                           {&DeviceExtensions::vk_ext_transform_feedback, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME}}})},
             {VK_EXT_PRIVATE_DATA_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_private_data, {})},
             {VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_provoking_vertex, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -1307,6 +1314,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #endif
     VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME,
     VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME,
+    VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME,
     VK_EXT_HDR_METADATA_EXTENSION_NAME,
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
     VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME,
@@ -1326,6 +1334,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME,
     VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME,
     VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME,
+    VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME,
     VK_EXT_PRIVATE_DATA_EXTENSION_NAME,
     VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME,
     VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME,
