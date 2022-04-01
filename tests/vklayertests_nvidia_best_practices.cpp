@@ -637,3 +637,76 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout)
         m_errorMonitor->Finish();
     }
 }
+
+TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
+{
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework(kEnableNVIDIAValidation));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "This test requires dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    char const *vsSource = R"glsl(
+        #version 450
+        void main() {}
+    )glsl";
+
+    char const *gsSource = R"glsl(
+        #version 450
+        layout(triangles) in;
+        layout(triangle_strip, max_vertices = 3) out;
+        void main() {}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+
+    CreatePipelineHelper vsPipe(*this);
+    vsPipe.InitInfo();
+    vsPipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    vsPipe.InitState();
+    vsPipe.gp_ci_.pNext = &pipeline_rendering_info;
+    vsPipe.CreateGraphicsPipeline();
+
+    CreatePipelineHelper vgsPipe(*this);
+    vgsPipe.InitInfo();
+    vgsPipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo()};
+    vgsPipe.InitState();
+    vgsPipe.gp_ci_.pNext = &pipeline_rendering_info;
+    vgsPipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+
+    {
+        m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-Pipeline-SortAndBind");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-BindPipeline-SwitchTessGeometryMesh");
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, vsPipe.pipeline_);
+        m_errorMonitor->Finish();
+    }
+    {
+        m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-Pipeline-SortAndBind");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-BindPipeline-SwitchTessGeometryMesh");
+        for (int i = 0; i < 10; ++i) {
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, vgsPipe.pipeline_);
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, vsPipe.pipeline_);
+        }
+        m_errorMonitor->VerifyFound();
+    }
+}
