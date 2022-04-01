@@ -13771,6 +13771,9 @@ TEST_F(VkLayerTest, BuildAccelerationStructureKHR) {
     VkBufferObj buffer;
     buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
 
+    VkBufferObj host_buffer;
+    host_buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+
     VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
     as_create_info.buffer = buffer.handle();
     as_create_info.createFlags = 0;
@@ -13779,6 +13782,8 @@ TEST_F(VkLayerTest, BuildAccelerationStructureKHR) {
     as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     as_create_info.deviceAddress = 0;
     VkAccelerationStructurekhrObj bot_level_as(*m_device, as_create_info);
+    as_create_info.buffer = host_buffer.handle();
+    VkAccelerationStructurekhrObj host_bot_level_as(*m_device, as_create_info);
 
     auto build_info_khr = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
     build_info_khr.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
@@ -13795,14 +13800,18 @@ TEST_F(VkLayerTest, BuildAccelerationStructureKHR) {
     build_range_info.primitiveOffset = 3;
     build_range_info.transformOffset = 0;
 
-    VkAccelerationStructureBuildRangeInfoKHR* p_build_range_info = &build_range_info;
+    VkAccelerationStructureBuildRangeInfoKHR *p_build_range_info = &build_range_info;
 
     m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03722");
-
     vkBuildAccelerationStructuresKHR(device(), VK_NULL_HANDLE, 1, &build_info_khr, &p_build_range_info);
+    m_errorMonitor->VerifyFound();
 
+    build_info_khr.srcAccelerationStructure = bot_level_as.handle();
+    build_info_khr.dstAccelerationStructure = host_bot_level_as.handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03723");
+    vkBuildAccelerationStructuresKHR(device(), VK_NULL_HANDLE, 1, &build_info_khr, &p_build_range_info);
     m_errorMonitor->VerifyFound();
 }
 
