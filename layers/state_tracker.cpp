@@ -1475,7 +1475,10 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
         submission.perf_submit_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            submission.AddCommandBuffer(GetWrite<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]));
+            auto cb_state = Get<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]);
+            if (cb_state) {
+                submission.AddCommandBuffer(std::move(cb_state));
+            }
         }
         if (submit_idx == (submitCount - 1) && fence != VK_NULL_HANDLE) {
             submission.AddFence(Get<FENCE_STATE>(fence));
