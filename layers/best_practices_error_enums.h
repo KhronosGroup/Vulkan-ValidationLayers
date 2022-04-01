@@ -283,6 +283,8 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelineLayout_Sepa
     "UNASSIGNED-BestPractices-CreatePipelineLayout-SeparateSampler";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelinesLayout_LargePipelineLayout =
     "UNASSIGNED-BestPractices-CreatePipelineLayout-LargePipelineLayout";
+static const char DECORATE_UNUSED *kVUID_BestPractices_BindPipeline_SwitchTessGeometryMesh =
+    "UNASSIGNED-BestPractices-BindPipeline-SwitchTessGeometryMesh";
 
 // clang-format on
 
