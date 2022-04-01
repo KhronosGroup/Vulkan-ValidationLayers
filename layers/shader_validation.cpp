@@ -2963,6 +2963,14 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
                 a_component = 0;
                 a_it++;
             }
+            if (a_component == 4) {
+                a_component = 0;
+                a_it++;
+            }
+            if (b_component == 4) {
+                b_component = 0;
+                b_it++;
+            }
         }
     }
 
