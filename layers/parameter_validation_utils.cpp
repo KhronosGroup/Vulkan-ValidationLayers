@@ -1745,6 +1745,16 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             auto create_info = pCreateInfos[i];
             const auto *graphics_lib_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
             if (graphics_lib_info) {
+                // TODO (ncesario) Remove this once GPU-AV and debug printf is supported with pipeline libraries
+                if (enabled[gpu_validation]) {
+                    skip |=
+                        LogError(device, kVUIDUndefined, "GPU-AV with VK_EXT_graphics_pipeline_library is not currently supported");
+                }
+                if (enabled[gpu_validation]) {
+                    skip |= LogError(device, kVUIDUndefined,
+                                     "Debug printf with VK_EXT_graphics_pipeline_library is not currently supported");
+                }
+
                 if (!(graphics_lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT)) {
                     create_info.pVertexInputState = nullptr;
                     create_info.pInputAssemblyState = nullptr;

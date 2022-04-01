@@ -970,6 +970,16 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
         return;
     }
 
+    const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
+    const auto *pipeline_state = cb_node->lastBound[lv_bind_point].pipeline_state;
+
+    // TODO (ncesario) remove once VK_EXT_graphics_pipeline_library support is added for debug printf
+    if (pipeline_state && pipeline_state->IsGraphicsLibrary()) {
+        ReportSetupProblem(device, "Debug printf does not currently support VK_EXT_graphics_pipeline_library");
+        aborted = true;
+        return;
+    }
+
     // Allocate memory for the output block that the gpu will use to return values for printf
     DPFDeviceMemoryBlock output_block = {};
     VkBufferCreateInfo buffer_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
@@ -1006,8 +1016,6 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
     desc_writes.dstBinding = 3;
     DispatchUpdateDescriptorSets(device, desc_count, &desc_writes, 0, NULL);
 
-    const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    const auto *pipeline_state = cb_node->lastBound[lv_bind_point].pipeline_state;
     if (pipeline_state) {
         const auto &pipeline_layout = pipeline_state->PipelineLayoutState();
         if (pipeline_layout->set_layouts.size() <= desc_set_bind_index) {
