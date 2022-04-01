@@ -96,7 +96,6 @@ TEST_F(VkLayerTest, DynamicRenderingCommandBufferInheritanceRenderingInfo) {
                                          "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06200");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkAttachmentSampleCountInfoAMD-pColorAttachmentSamples-parameter");
 
     VkCommandBufferBeginInfo cmd_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     cmd_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
