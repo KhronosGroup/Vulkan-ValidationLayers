@@ -3517,6 +3517,100 @@ TEST_F(VkLayerTest, CopyImageDstSizeExceeded) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, CopyImageZeroSize) {
+    TEST_DESCRIPTION("Image Copy with empty regions");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // Create images with full mip chain
+    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_3D;
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ci.extent = {32, 32, 8};
+    ci.mipLevels = 6;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.queueFamilyIndexCount = 0;
+    ci.pQueueFamilyIndices = NULL;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageObj src_image(m_device);
+    src_image.init(&ci);
+    ASSERT_TRUE(src_image.initialized());
+
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkImageObj dst_image(m_device);
+    dst_image.init(&ci);
+    ASSERT_TRUE(dst_image.initialized());
+
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags reqs = 0;
+    buffer.init_as_src_and_dst(*m_device, 16384, reqs);  // large enough for image
+
+    m_commandBuffer->begin();
+
+    VkImageCopy copy_region;
+    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_region.srcSubresource.mipLevel = 0;
+    copy_region.dstSubresource.mipLevel = 0;
+    copy_region.srcSubresource.baseArrayLayer = 0;
+    copy_region.dstSubresource.baseArrayLayer = 0;
+    copy_region.srcSubresource.layerCount = 1;
+    copy_region.dstSubresource.layerCount = 1;
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+
+    copy_region.extent = {4, 4, 0};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-extent-06670");
+    m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    copy_region.extent = {0, 0, 4};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-extent-06668");  // width
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-extent-06669");  // height
+    m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    VkImageSubresourceLayers image_subresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    VkBufferImageCopy buffer_image_copy;
+    buffer_image_copy.bufferRowLength = 0;
+    buffer_image_copy.bufferImageHeight = 0;
+    buffer_image_copy.imageSubresource = image_subresource;
+    buffer_image_copy.imageOffset = {0, 0, 0};
+    buffer_image_copy.bufferOffset = 0;
+
+    buffer_image_copy.imageExtent = {4, 0, 1};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-imageExtent-06660");
+    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1,
+                             &buffer_image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-imageExtent-06660");
+    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                             &buffer_image_copy);
+    m_errorMonitor->VerifyFound();
+
+    // depth is now zero
+    buffer_image_copy.imageExtent = {4, 1, 0};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-imageExtent-06661");
+    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1,
+                             &buffer_image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-imageExtent-06661");
+    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                             &buffer_image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, CopyImageMultiPlaneSizeExceeded) {
     TEST_DESCRIPTION("Image Copy for multi-planar format that exceed size of plane for both src and dst");
 
