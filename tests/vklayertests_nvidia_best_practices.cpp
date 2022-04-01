@@ -710,3 +710,353 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
+{
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework(kEnableNVIDIAValidation));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    VkPhysicalDeviceSynchronization2Features synchronization2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>(&dynamic_rendering_features);
+    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&synchronization2_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "This test requires dynamicRendering";
+    }
+    if (!synchronization2_features.synchronization2) {
+        GTEST_SKIP() << "This test requires synchronization2";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    pipeline_rendering_info.depthAttachmentFormat = depth_format;
+    pipeline_rendering_info.stencilAttachmentFormat = depth_format;
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageViewCreateInfo image_view_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    image_view_ci.image = image.handle();
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = depth_format;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    vk_testing::ImageView depth_image_view(*m_device, image_view_ci);
+
+    VkRenderingAttachmentInfo depth_attachment = LvlInitStruct<VkRenderingAttachmentInfo>();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    depth_attachment.imageView = depth_image_view.handle();
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+    VkRenderingInfo begin_rendering_info = LvlInitStruct<VkRenderingInfo>();
+    begin_rendering_info.renderArea.extent = {32, 32};
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.pDepthAttachment = &depth_attachment;
+    begin_rendering_info.pStencilAttachment = &depth_attachment;
+
+    VkClearRect clear_rect{};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+    clear_rect.rect.extent.width = 32;
+    clear_rect.rect.extent.height = 32;
+
+    VkClearAttachment attachment{};
+    attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+    VkImageMemoryBarrier discard_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    discard_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    discard_barrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
+    discard_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    discard_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    discard_barrier.image = image.handle();
+    discard_barrier.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    VkImageMemoryBarrier2 discard_barrier2 = LvlInitStruct<VkImageMemoryBarrier2>();
+    discard_barrier2.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
+    discard_barrier2.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
+    discard_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    discard_barrier2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    discard_barrier2.image = image.handle();
+    discard_barrier2.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    VkDependencyInfo discard_dependency_info = LvlInitStruct<VkDependencyInfo>();
+    discard_dependency_info.imageMemoryBarrierCount = 1;
+    discard_dependency_info.pImageMemoryBarriers = &discard_barrier2;
+
+    auto set_desired_failure_msg = [this] {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-Zcull-LessGreaterRatio");
+    };
+
+    const char *vsSource = R"glsl(
+        #version 450
+        void main() {}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddDefaultColorAttachment();
+    pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+    pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+
+    VkPipelineDepthStencilStateCreateInfo depth_stencil_state_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+
+    VkGraphicsPipelineCreateInfo create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+    pipe.InitGraphicsPipelineCreateInfo(&create_info);
+    create_info.pNext = &pipeline_rendering_info;
+    create_info.pDepthStencilState = &depth_stencil_state_ci;
+    pipe.CreateVKPipeline(pipeline_layout.handle(), VK_NULL_HANDLE, &create_info);
+
+    VkViewport viewport = {};
+    viewport.width = 32;
+    viewport.height = 32;
+    viewport.minDepth = 1.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor = {};
+    scissor.extent.width = 32;
+    scissor.extent.height = 32;
+
+    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    m_commandBuffer->begin(&begin_info);
+
+    auto cmd = m_commandBuffer->handle();
+
+    vk::CmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdSetDepthTestEnable(cmd, VK_TRUE);
+
+    vk::CmdSetViewport(cmd, 0, 1, &viewport);
+    vk::CmdSetScissor(cmd, 0, 1, &scissor);
+
+    {
+        SCOPED_TRACE("Unbalance");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 90; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 10; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        set_desired_failure_msg();
+        vk::CmdEndRendering(cmd);
+        m_errorMonitor->Finish();
+    }
+
+    {
+        SCOPED_TRACE("Balance");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 60; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 40; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        set_desired_failure_msg();
+        vk::CmdEndRendering(cmd);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        // This should miss because BeginRendering uses LOAD_OP_CLEAR
+        SCOPED_TRACE("Balance with end rendering");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 60; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdEndRendering(cmd);
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 40; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        set_desired_failure_msg();
+        vk::CmdEndRendering(cmd);
+        m_errorMonitor->Finish();
+    }
+
+    {
+        SCOPED_TRACE("Clear before balance");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 60; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdClearAttachments(cmd, 1, &attachment, 1, &clear_rect);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 40; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        set_desired_failure_msg();
+        vk::CmdEndRendering(cmd);
+        m_errorMonitor->Finish();
+    }
+
+    {
+        SCOPED_TRACE("Balance before clear");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 60; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 40; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        set_desired_failure_msg();
+        vk::CmdClearAttachments(cmd, 1, &attachment, 1, &clear_rect);
+        m_errorMonitor->VerifyFound();
+
+        vk::CmdEndRendering(cmd);
+    }
+
+    // The tests below use LOAD_OP for depth
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+    {
+        SCOPED_TRACE("Load previous scope");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 60; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdEndRendering(cmd);
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 40; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        set_desired_failure_msg();
+        vk::CmdEndRendering(cmd);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        SCOPED_TRACE("Transition to discard");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 60; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdEndRendering(cmd);
+
+        vk::CmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0,
+                               nullptr, 1, &discard_barrier);
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 40; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        set_desired_failure_msg();
+        vk::CmdEndRendering(cmd);
+        m_errorMonitor->Finish();
+    }
+
+    {
+        SCOPED_TRACE("Transition to discard 2");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 60; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdEndRendering(cmd);
+
+        vk::CmdPipelineBarrier2(cmd, &discard_dependency_info);
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 40; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        set_desired_failure_msg();
+        vk::CmdEndRendering(cmd);
+        m_errorMonitor->Finish();
+    }
+
+    {
+        SCOPED_TRACE("Balance before discard");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 60; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 40; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdEndRendering(cmd);
+
+        set_desired_failure_msg();
+        vk::CmdPipelineBarrier2(cmd, &discard_dependency_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        SCOPED_TRACE("Transfer clear to discard");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 60; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdEndRendering(cmd);
+
+        VkClearDepthStencilValue ds_value{};
+        vk::CmdClearDepthStencilImage(cmd, image.handle(), VK_IMAGE_LAYOUT_GENERAL, &ds_value, 1, &discard_barrier.subresourceRange);
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 40; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        set_desired_failure_msg();
+        vk::CmdEndRendering(cmd);
+        m_errorMonitor->Finish();
+    }
+
+    {
+        SCOPED_TRACE("Transfer clear to validate");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 60; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 40; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdEndRendering(cmd);
+
+        set_desired_failure_msg();
+        VkClearDepthStencilValue ds_value{};
+        vk::CmdClearDepthStencilImage(cmd, image.handle(), VK_IMAGE_LAYOUT_GENERAL, &ds_value, 1, &discard_barrier.subresourceRange);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_commandBuffer->end();
+}
