@@ -227,33 +227,37 @@ void UtilPreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreat
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
         uint32_t stageCount = Accessor::GetStageCount(pCreateInfos[pipeline]);
         new_pipeline_create_infos->push_back(Accessor::GetPipelineCI(pipe_state[pipeline].get()));
+        const auto &pipe = pipe_state[pipeline];
 
-        bool replace_shaders = false;
-        if (pipe_state[pipeline]->active_slots.find(object_ptr->desc_set_bind_index) != pipe_state[pipeline]->active_slots.end()) {
-            replace_shaders = true;
-        }
-        // If the app requests all available sets, the pipeline layout was not modified at pipeline layout creation and the already
-        // instrumented shaders need to be replaced with uninstrumented shaders
-        if (pipe_state[pipeline]->PipelineLayoutState()->set_layouts.size() >= object_ptr->adjusted_max_desc_sets) {
-            replace_shaders = true;
-        }
+        if (!pipe->IsGraphicsLibrary()) {
+            bool replace_shaders = false;
+            if (pipe->active_slots.find(object_ptr->desc_set_bind_index) != pipe->active_slots.end()) {
+                replace_shaders = true;
+            }
+            // If the app requests all available sets, the pipeline layout was not modified at pipeline layout creation and the
+            // already instrumented shaders need to be replaced with uninstrumented shaders
+            const auto pipeline_layout = pipe->PipelineLayoutState();
+            if (pipeline_layout->set_layouts.size() >= object_ptr->adjusted_max_desc_sets) {
+                replace_shaders = true;
+            }
 
-        if (replace_shaders) {
-            for (uint32_t stage = 0; stage < stageCount; ++stage) {
-                const auto module_state =
-                    object_ptr->template Get<SHADER_MODULE_STATE>(Accessor::GetShaderModule(pCreateInfos[pipeline], stage));
+            if (replace_shaders) {
+                for (uint32_t stage = 0; stage < stageCount; ++stage) {
+                    const auto module_state =
+                        object_ptr->template Get<SHADER_MODULE_STATE>(Accessor::GetShaderModule(pCreateInfos[pipeline], stage));
 
-                VkShaderModule shader_module;
-                auto create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
-                create_info.pCode = module_state->words.data();
-                create_info.codeSize = module_state->words.size() * sizeof(uint32_t);
-                VkResult result = DispatchCreateShaderModule(object_ptr->device, &create_info, pAllocator, &shader_module);
-                if (result == VK_SUCCESS) {
-                    Accessor::SetShaderModule(&(*new_pipeline_create_infos)[pipeline], shader_module, stage);
-                } else {
-                    object_ptr->ReportSetupProblem(object_ptr->device,
-                                                   "Unable to replace instrumented shader with non-instrumented one.  "
-                                                   "Device could become unstable.");
+                    VkShaderModule shader_module;
+                    auto create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
+                    create_info.pCode = module_state->words.data();
+                    create_info.codeSize = module_state->words.size() * sizeof(uint32_t);
+                    VkResult result = DispatchCreateShaderModule(object_ptr->device, &create_info, pAllocator, &shader_module);
+                    if (result == VK_SUCCESS) {
+                        Accessor::SetShaderModule(&(*new_pipeline_create_infos)[pipeline], shader_module, stage);
+                    } else {
+                        object_ptr->ReportSetupProblem(object_ptr->device,
+                                                       "Unable to replace instrumented shader with non-instrumented one.  "
+                                                       "Device could become unstable.");
+                    }
                 }
             }
         }
@@ -276,7 +280,7 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
     }
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
         auto pipeline_state = object_ptr->template Get<PIPELINE_STATE>(pPipelines[pipeline]);
-        if (!pipeline_state) continue;
+        if (!pipeline_state || pipeline_state->IsGraphicsLibrary()) continue;
 
         const uint32_t stageCount = static_cast<uint32_t>(pipeline_state->stage_state.size());
         assert(stageCount > 0);
