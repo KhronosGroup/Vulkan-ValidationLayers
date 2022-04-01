@@ -1675,6 +1675,36 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuf
     return skip;
 }
 
+void BestPractices::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                 VkPipeline pipeline) {
+    StateTracker::PreCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
+
+    auto pipeline_info = Get<PIPELINE_STATE>(pipeline);
+    auto cb = Get<bp_state::CommandBuffer>(commandBuffer);
+
+    assert(pipeline_info);
+    assert(cb);
+
+    if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS && VendorCheckEnabled(kBPVendorNVIDIA)) {
+        using TessGeometryMeshState = bp_state::CommandBufferStateNV::TessGeometryMesh::State;
+        auto& tgm = cb->nv.tess_geometry_mesh;
+
+        // Make sure the message is only signaled once per command buffer
+        tgm.threshold_signaled = tgm.num_switches >= kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA;
+
+        // Track pipeline switches with tessellation, geometry, and/or mesh shaders enabled, and disabled
+        auto tgm_stages = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
+                          VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TASK_BIT_NV | VK_SHADER_STAGE_MESH_BIT_NV;
+        auto new_tgm_state = (pipeline_info->active_shaders & tgm_stages) != 0
+                                                  ? TessGeometryMeshState::Enabled
+                                                  : TessGeometryMeshState::Disabled;
+        if (tgm.state != new_tgm_state && tgm.state != TessGeometryMeshState::Unknown) {
+            tgm.num_switches++;
+        }
+        tgm.state = new_tgm_state;
+    }
+}
+
 void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                   VkPipeline pipeline) {
     StateTracker::PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
@@ -2178,6 +2208,9 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rend
     render_pass_state.depthAttachment = false;
     render_pass_state.drawTouchAttachments = true;
     // Don't reset state related to pipeline state.
+
+    // Reset NV state
+    cb->nv = {};
 
     auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
 
@@ -3879,12 +3912,25 @@ bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer
                                                    VkPipeline pipeline) const {
     bool skip = false;
 
+    auto cb = Get<bp_state::CommandBuffer>(commandBuffer);
+
     if (VendorCheckEnabled(kBPVendorAMD)) {
         if (IsPipelineUsedInFrame(pipeline)) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_Pipeline_SortAndBind,
                         "%s Performance warning: Pipeline %s was bound twice in the frame. Keep pipeline state changes to a minimum,"
                         "for example, by sorting draw calls by pipeline.",
                         VendorSpecificTag(kBPVendorAMD), report_data->FormatHandle(pipeline).c_str());
+        }
+    }
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        const auto& tgm = cb->nv.tess_geometry_mesh;
+        if (tgm.num_switches >= kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA && !tgm.threshold_signaled) {
+            LogPerformanceWarning(commandBuffer, kVUID_BestPractices_BindPipeline_SwitchTessGeometryMesh,
+                                  "%s Avoid switching between pipelines with and without tessellation, geometry, task, "
+                                  "and/or mesh shaders. Group draw calls using these shader stages together.",
+                                  VendorSpecificTag(kBPVendorNVIDIA));
+            // Do not set 'skip' so the number of switches gets properly counted after the message.
         }
     }
 

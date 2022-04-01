@@ -73,6 +73,8 @@ static const float kCmdBufferToCmdPoolRatioWarningLimitAMD = 0.1f;
 static const uint32_t kPipelineLayoutFastDescriptorSpaceNVIDIA = 256;
 // Time threshold for flagging allocations that could have been reused
 static const auto kAllocateMemoryReuseTimeThresholdNVIDIA = std::chrono::seconds{5};
+// Number of switches in tessellation, gemetry, and mesh shader state before signalling a message
+static const uint32_t kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA = 4;
 
 // How many small indexed drawcalls in a command buffer before a warning is thrown
 static const uint32_t kMaxSmallIndexedDrawcalls = 10;
@@ -265,12 +267,30 @@ struct RenderPassState {
     bool drawTouchAttachments = false;
 };
 
+struct CommandBufferStateNV {
+    struct TessGeometryMesh {
+        enum class State {
+            Unknown,
+            Disabled,
+            Enabled,
+        };
+
+        uint32_t num_switches = 0;
+        State state = State::Unknown;
+        bool threshold_signaled = false;
+    };
+
+    TessGeometryMesh tess_geometry_mesh;
+};
+
 class CommandBuffer : public CMD_BUFFER_STATE {
   public:
     CommandBuffer(BestPractices* bp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
                   const COMMAND_POOL_STATE* pool);
 
     RenderPassState render_pass_state;
+
+    CommandBufferStateNV nv;
 };
 
 class DescriptorPool : public DESCRIPTOR_POOL_STATE {
@@ -433,6 +453,8 @@ class BestPractices : public ValidationStateTracker {
                                               VkQueryPool queryPool, uint32_t query) const override;
     bool PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
                                            VkQueryPool queryPool, uint32_t query) const override;
+    void PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                      VkPipeline pipeline) override;
     void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                        VkPipeline pipeline) override;
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
