@@ -1640,17 +1640,52 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
         }
     }
 
+    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+        skip |= ValidateCmdPipelineBarrierImageBarrier(commandBuffer, pImageMemoryBarriers[i]);
+    }
+
     return skip;
 }
 
 bool BestPractices::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
                                                           const VkDependencyInfoKHR* pDependencyInfo) const {
-    return CheckDependencyInfo("vkCmdPipelineBarrier2KHR", *pDependencyInfo);
+    bool skip = false;
+
+    skip |= CheckDependencyInfo("vkCmdPipelineBarrier2KHR", *pDependencyInfo);
+
+    for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
+        skip |= ValidateCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i]);
+    }
+
+    return skip;
 }
 
 bool BestPractices::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer,
                                                        const VkDependencyInfo* pDependencyInfo) const {
-    return CheckDependencyInfo("vkCmdPipelineBarrier2", *pDependencyInfo);
+    bool skip = false;
+
+    skip |= CheckDependencyInfo("vkCmdPipelineBarrier2", *pDependencyInfo);
+
+    for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
+        skip |= ValidateCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i]);
+    }
+
+    return skip;
+}
+
+template <typename ImageMemoryBarrier>
+bool BestPractices::ValidateCmdPipelineBarrierImageBarrier(VkCommandBuffer commandBuffer,
+                                                           const ImageMemoryBarrier& barrier) const {
+
+    bool skip = false;
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        if (barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && barrier.newLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
+            skip |= ValidateZcull(commandBuffer, barrier.image, barrier.subresourceRange);
+        }
+    }
+
+    return skip;
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
@@ -1685,7 +1720,7 @@ void BestPractices::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, 
     StateTracker::PreCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
 
     auto pipeline_info = Get<PIPELINE_STATE>(pipeline);
-    auto cb = Get<bp_state::CommandBuffer>(commandBuffer);
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
 
     assert(pipeline_info);
     assert(cb);
@@ -1707,6 +1742,25 @@ void BestPractices::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, 
             tgm.num_switches++;
         }
         tgm.state = new_tgm_state;
+
+        // Track depthTestEnable and depthCompareOp
+        auto &pipeline_create_info = pipeline_info->GetCreateInfo<VkGraphicsPipelineCreateInfo>();
+        auto depth_stencil_state = pipeline_create_info.pDepthStencilState;
+        auto dynamic_state = pipeline_create_info.pDynamicState;
+        if (depth_stencil_state && dynamic_state) {
+            auto dynamic_state_begin = dynamic_state->pDynamicStates;
+            auto dynamic_state_end = dynamic_state->pDynamicStates + dynamic_state->dynamicStateCount;
+
+            bool dynamic_depth_test_enable = std::find(dynamic_state_begin, dynamic_state_end, VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE) != dynamic_state_end;
+            bool dynamic_depth_func = std::find(dynamic_state_begin, dynamic_state_end, VK_DYNAMIC_STATE_DEPTH_COMPARE_OP) != dynamic_state_end;
+
+            if (!dynamic_depth_test_enable) {
+                RecordSetDepthTestState(*cb, cb->nv.depth_compare_op, depth_stencil_state->depthTestEnable != VK_FALSE);
+            }
+            if (!dynamic_depth_func) {
+                RecordSetDepthTestState(*cb, depth_stencil_state->depthCompareOp, cb->nv.depth_test_enable);
+            }
+        }
     }
 }
 
@@ -1757,6 +1811,355 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
             }
         }
     }
+}
+
+void BestPractices::PreCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
+    StateTracker::PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp);
+
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    assert(cb);
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        RecordSetDepthTestState(*cb, depthCompareOp, cb->nv.depth_test_enable);
+    }
+}
+
+void BestPractices::PreCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
+    StateTracker::PreCallRecordCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
+
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    assert(cb);
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        RecordSetDepthTestState(*cb, depthCompareOp, cb->nv.depth_test_enable);
+    }
+}
+
+void BestPractices::PreCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
+    StateTracker::PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable);
+
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    assert(cb);
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        RecordSetDepthTestState(*cb, cb->nv.depth_compare_op, depthTestEnable != VK_FALSE);
+    }
+}
+
+void BestPractices::PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
+    StateTracker::PreCallRecordCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
+
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    assert(cb);
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        RecordSetDepthTestState(*cb, cb->nv.depth_compare_op, depthTestEnable != VK_FALSE);
+    }
+}
+
+void BestPractices::RecordSetDepthTestState(bp_state::CommandBuffer& cmd_state, VkCompareOp new_depth_compare_op, bool new_depth_test_enable) {
+    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+
+    if (cmd_state.nv.depth_compare_op != new_depth_compare_op) {
+        switch (new_depth_compare_op) {
+        case VK_COMPARE_OP_LESS:
+        case VK_COMPARE_OP_LESS_OR_EQUAL:
+            cmd_state.nv.zcull_direction = bp_state::CommandBufferStateNV::ZcullDirection::Less;
+            break;
+        case VK_COMPARE_OP_GREATER:
+        case VK_COMPARE_OP_GREATER_OR_EQUAL:
+            cmd_state.nv.zcull_direction = bp_state::CommandBufferStateNV::ZcullDirection::Greater;
+            break;
+        default:
+            // The other ops carry over the previous state.
+            break;
+        }
+    }
+    cmd_state.nv.depth_compare_op = new_depth_compare_op;
+    cmd_state.nv.depth_test_enable = new_depth_test_enable;
+}
+
+void BestPractices::RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer) {
+    auto cmd_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    assert(cmd_state);
+
+    auto rp = cmd_state->activeRenderPass.get();
+    assert(rp);
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        std::shared_ptr<IMAGE_VIEW_STATE> depth_image_view_shared_ptr;
+        IMAGE_VIEW_STATE* depth_image_view = nullptr;
+        layer_data::optional<VkAttachmentLoadOp> load_op;
+
+        if (rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
+            const auto depth_attachment = rp->dynamic_rendering_begin_rendering_info.pDepthAttachment;
+            if (depth_attachment) {
+                load_op.emplace(depth_attachment->loadOp);
+                depth_image_view_shared_ptr = Get<IMAGE_VIEW_STATE>(depth_attachment->imageView);
+                depth_image_view = depth_image_view_shared_ptr.get();
+            }
+        } else {
+            if (rp->createInfo.subpassCount > 0) {
+                const auto depth_attachment = rp->createInfo.pSubpasses[0].pDepthStencilAttachment;
+                if (depth_attachment) {
+                    const uint32_t attachment_index = depth_attachment->attachment;
+                    if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                        load_op.emplace(rp->createInfo.pAttachments[attachment_index].loadOp);
+                        depth_image_view = (*cmd_state->active_attachments)[attachment_index];
+                    }
+                }
+            }
+        }
+        if (depth_image_view && (depth_image_view->create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U) {
+            const VkImage depth_image = depth_image_view->image_state->image();
+            const VkImageSubresourceRange& subresource_range = depth_image_view->create_info.subresourceRange;
+            RecordBindZcullScope(*cmd_state, depth_image, subresource_range);
+        } else {
+            RecordUnbindZcullScope(*cmd_state);
+        }
+        if (load_op) {
+            if (*load_op == VK_ATTACHMENT_LOAD_OP_CLEAR || *load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE) {
+                RecordResetScopeZcullDirection(*cmd_state);
+            }
+        }
+    }
+}
+
+void BestPractices::RecordCmdEndRenderingCommon(VkCommandBuffer commandBuffer) {
+    auto cmd_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    assert(cmd_state);
+
+    auto rp = cmd_state->activeRenderPass.get();
+    assert(rp);
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        layer_data::optional<VkAttachmentStoreOp> store_op;
+
+        if (rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
+            const auto depth_attachment = rp->dynamic_rendering_begin_rendering_info.pDepthAttachment;
+            if (depth_attachment) {
+                store_op.emplace(depth_attachment->storeOp);
+            }
+        } else {
+            if (rp->createInfo.subpassCount > 0) {
+                const uint32_t last_subpass = rp->createInfo.subpassCount - 1;
+                const auto depth_attachment = rp->createInfo.pSubpasses[last_subpass].pDepthStencilAttachment;
+                if (depth_attachment) {
+                    const uint32_t attachment = depth_attachment->attachment;
+                    if (attachment != VK_ATTACHMENT_UNUSED) {
+                        store_op.emplace(rp->createInfo.pAttachments[attachment].storeOp);
+                    }
+                }
+            }
+        }
+
+        if (store_op) {
+            if (*store_op == VK_ATTACHMENT_STORE_OP_DONT_CARE || *store_op == VK_ATTACHMENT_STORE_OP_NONE) {
+                RecordResetScopeZcullDirection(*cmd_state);
+            }
+        }
+
+        RecordUnbindZcullScope(*cmd_state);
+    }
+}
+
+void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cmd_state, VkImage depth_attachment, const VkImageSubresourceRange& subresource_range) {
+    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+
+    if (depth_attachment == VK_NULL_HANDLE) {
+        cmd_state.nv.zcull_scope = {};
+        return;
+    }
+
+    assert((subresource_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U);
+
+    auto image_state = Get<IMAGE_STATE>(depth_attachment);
+    assert(image_state);
+
+    const uint32_t mip_levels = image_state->createInfo.mipLevels;
+    const uint32_t array_layers = image_state->createInfo.arrayLayers;
+
+    auto& tree = cmd_state.nv.zcull_per_image[depth_attachment];
+    if (tree.states.empty()) {
+        tree.mip_levels = mip_levels;
+        tree.array_layers = array_layers;
+        tree.states.resize(array_layers * mip_levels);
+    }
+
+    cmd_state.nv.zcull_scope.image = depth_attachment;
+    cmd_state.nv.zcull_scope.range = subresource_range;
+    cmd_state.nv.zcull_scope.tree = &tree;
+}
+
+void BestPractices::RecordUnbindZcullScope(bp_state::CommandBuffer& cmd_state) {
+    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+
+    RecordBindZcullScope(cmd_state, VK_NULL_HANDLE, VkImageSubresourceRange{});
+}
+
+void BestPractices::RecordResetScopeZcullDirection(bp_state::CommandBuffer& cmd_state) {
+    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+
+    auto& scope = cmd_state.nv.zcull_scope;
+    RecordResetZcullDirection(cmd_state, scope.image, scope.range);
+}
+
+void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state, VkImage depth_image,
+                                              const VkImageSubresourceRange& subresource_range) {
+    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+
+    RecordSetZcullDirection(cmd_state, depth_image, subresource_range, bp_state::CommandBufferStateNV::ZcullDirection::Unknown);
+
+    const auto image_it = cmd_state.nv.zcull_per_image.find(depth_image);
+    if (image_it == cmd_state.nv.zcull_per_image.end()) {
+        return;
+    }
+    auto& tree = image_it->second;
+
+    for (uint32_t i = 0; i < subresource_range.layerCount; ++i) {
+        const uint32_t layer = subresource_range.baseArrayLayer + i;
+
+        for (uint32_t j = 0; j < subresource_range.levelCount; ++j) {
+            const uint32_t level = subresource_range.baseMipLevel + j;
+
+            auto& subresource = tree.GetState(layer, level);
+            subresource.num_less_draws = 0;
+            subresource.num_greater_draws = 0;
+        }
+    }
+}
+
+void BestPractices::RecordSetScopeZcullDirection(bp_state::CommandBuffer& cmd_state, bp_state::CommandBufferStateNV::ZcullDirection mode) {
+    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+
+    auto& scope = cmd_state.nv.zcull_scope;
+    RecordSetZcullDirection(cmd_state, scope.image, scope.range, mode);
+}
+
+void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cmd_state, VkImage depth_image,
+                                            const VkImageSubresourceRange& subresource_range,
+                                            bp_state::CommandBufferStateNV::ZcullDirection mode) {
+    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+
+    const auto image_it = cmd_state.nv.zcull_per_image.find(depth_image);
+    if (image_it == cmd_state.nv.zcull_per_image.end()) {
+        return;
+    }
+    auto& tree = image_it->second;
+
+    for (uint32_t i = 0; i < subresource_range.layerCount; ++i) {
+        const uint32_t layer = subresource_range.baseArrayLayer + i;
+
+        for (uint32_t j = 0; j < subresource_range.levelCount; ++j) {
+            const uint32_t level = subresource_range.baseMipLevel + j;
+            tree.GetState(layer, level).direction = cmd_state.nv.zcull_direction;
+        }
+    }
+}
+
+void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
+    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+
+    // Add one draw to each subresource depending on the current Z-cull direction
+    auto& scope = cmd_state.nv.zcull_scope;
+
+    for (uint32_t i = 0; i < scope.range.layerCount; ++i) {
+        const uint32_t layer = scope.range.baseArrayLayer + i;
+        auto& subresource = scope.tree->GetState(layer, scope.range.baseMipLevel);
+
+        switch (subresource.direction) {
+        case bp_state::CommandBufferStateNV::ZcullDirection::Unknown:
+            // Unreachable
+            assert(0);
+            break;
+        case bp_state::CommandBufferStateNV::ZcullDirection::Less:
+            ++subresource.num_less_draws;
+            break;
+        case bp_state::CommandBufferStateNV::ZcullDirection::Greater:
+            ++subresource.num_greater_draws;
+            break;
+        }
+    }
+}
+
+bool BestPractices::ValidateZcullScope(VkCommandBuffer commandBuffer) const {
+    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+
+    bool skip = false;
+
+    const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
+    assert(cmd_state);
+
+    if (cmd_state->nv.depth_test_enable) {
+        auto& scope = cmd_state->nv.zcull_scope;
+        skip |= ValidateZcull(commandBuffer, scope.image, scope.range);
+    }
+
+    return skip;
+}
+
+bool BestPractices::ValidateZcull(VkCommandBuffer commandBuffer, VkImage image,
+                                  const VkImageSubresourceRange& subresource_range) const {
+    bool skip = false;
+
+    const char* good_mode = nullptr;
+    const char* bad_mode = nullptr;
+
+    const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
+    assert(cmd_state);
+
+    const auto image_it = cmd_state->nv.zcull_per_image.find(image);
+    if (image_it == cmd_state->nv.zcull_per_image.end()) {
+        return skip;
+    }
+    const auto& tree = image_it->second;
+
+    bool is_balanced = false;
+
+    for (uint32_t i = 0; i < subresource_range.layerCount; ++i) {
+        const uint32_t layer = subresource_range.baseArrayLayer + i;
+
+        for (uint32_t j = 0; j < subresource_range.levelCount; ++j) {
+            const uint32_t level = subresource_range.baseMipLevel + j;
+
+            const auto& resource = tree.GetState(layer, level);
+            const uint64_t num_draws = resource.num_less_draws + resource.num_greater_draws;
+
+            if (num_draws > 0) {
+                const uint64_t less_ratio = (resource.num_less_draws * 100) / num_draws;
+                const uint64_t greater_ratio = (resource.num_greater_draws * 100) / num_draws;
+
+                if ((less_ratio > kZcullDirectionBalanceRatioNVIDIA) && (greater_ratio > kZcullDirectionBalanceRatioNVIDIA)) {
+                    is_balanced = true;
+
+                    if (greater_ratio > less_ratio) {
+                        good_mode = "GREATER";
+                        bad_mode = "LESS";
+                    } else {
+                        good_mode = "LESS";
+                        bad_mode = "GREATER";
+                    }
+                    break;
+                }
+            }
+        }
+        if (is_balanced) {
+            break;
+        }
+    }
+
+    if (is_balanced) {
+        skip |= LogPerformanceWarning(
+            commandBuffer, kVUID_BestPractices_Zcull_LessGreaterRatio,
+            "%s Depth attachment %s is primarily rendered with depth compare op %s, but some draws use %s. "
+            "Z-cull is disabled for the least used direction, which harms depth testing performance. "
+            "The Z-cull direction can be reset by clearing the depth attachment, transitioning from VK_IMAGE_LAYOUT_UNDEFINED, "
+            "using VK_ATTACHMENT_LOAD_OP_DONT_CARE, or using VK_ATTACHMENT_STORE_OP_DONT_CARE.",
+            VendorSpecificTag(kBPVendorNVIDIA), report_data->FormatHandle(cmd_state->nv.zcull_scope.image).c_str(), good_mode,
+            bad_mode);
+    }
+
+    return skip;
 }
 
 static inline bool RenderPassUsesAttachmentAsResolve(const safe_VkRenderPassCreateInfo2& createInfo, uint32_t attachment) {
@@ -2053,6 +2456,8 @@ void BestPractices::AddDeferredQueueOperations(bp_state::CommandBuffer& cb) {
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
+    RecordCmdEndRenderingCommon(commandBuffer);
+
     ValidationStateTracker::PreCallRecordCmdEndRenderPass(commandBuffer);
     auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     if (cb_node) {
@@ -2061,6 +2466,8 @@ void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer)
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassInfo) {
+    RecordCmdEndRenderingCommon(commandBuffer);
+
     ValidationStateTracker::PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassInfo);
     auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     if (cb_node) {
@@ -2069,6 +2476,8 @@ void BestPractices::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassInfo) {
+    RecordCmdEndRenderingCommon(commandBuffer);
+
     ValidationStateTracker::PreCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassInfo);
     auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     if (cb_node) {
@@ -2076,10 +2485,23 @@ void BestPractices::PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuf
     }
 }
 
+void BestPractices::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer) {
+    RecordCmdEndRenderingCommon(commandBuffer);
+
+    ValidationStateTracker::PreCallRecordCmdEndRendering(commandBuffer);
+}
+
+void BestPractices::PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer) {
+    RecordCmdEndRenderingCommon(commandBuffer);
+
+    ValidationStateTracker::PreCallRecordCmdEndRenderingKHR(commandBuffer);
+}
+
 void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer,
                                                     const VkRenderPassBeginInfo* pRenderPassBegin,
                                                     VkSubpassContents contents) {
     ValidationStateTracker::PreCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
+    RecordCmdBeginRenderingCommon(commandBuffer);
     RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin);
 }
 
@@ -2087,6 +2509,7 @@ void BestPractices::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuff
                                                      const VkRenderPassBeginInfo* pRenderPassBegin,
                                                      const VkSubpassBeginInfo* pSubpassBeginInfo) {
     ValidationStateTracker::PreCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+    RecordCmdBeginRenderingCommon(commandBuffer);
     RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin);
 }
 
@@ -2094,7 +2517,45 @@ void BestPractices::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandB
                                                         const VkRenderPassBeginInfo* pRenderPassBegin,
                                                         const VkSubpassBeginInfo* pSubpassBeginInfo) {
     ValidationStateTracker::PreCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+    RecordCmdBeginRenderingCommon(commandBuffer);
     RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin);
+}
+
+void BestPractices::PreCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
+    ValidationStateTracker::PreCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo);
+    RecordCmdBeginRenderingCommon(commandBuffer);
+}
+
+void BestPractices::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
+    ValidationStateTracker::PreCallRecordCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+    RecordCmdBeginRenderingCommon(commandBuffer);
+}
+
+void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
+    ValidationStateTracker::PostCallRecordCmdNextSubpass(commandBuffer, contents);
+
+    auto cmd_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    auto rp = cmd_state->activeRenderPass.get();
+    assert(rp);
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        IMAGE_VIEW_STATE* depth_image_view = nullptr;
+
+        const auto depth_attachment = rp->createInfo.pSubpasses[cmd_state->activeSubpass].pDepthStencilAttachment;
+        if (depth_attachment) {
+            const uint32_t attachment_index = depth_attachment->attachment;
+            if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                depth_image_view = (*cmd_state->active_attachments)[attachment_index];
+            }
+        }
+        if (depth_image_view && (depth_image_view->create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U) {
+            const VkImage depth_image = depth_image_view->image_state->image();
+            const VkImageSubresourceRange& subresource_range = depth_image_view->create_info.subresourceRange;
+            RecordBindZcullScope(*cmd_state, depth_image, subresource_range);
+        } else {
+            RecordUnbindZcullScope(*cmd_state);
+        }
+    }
 }
 
 void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin) {
@@ -2295,6 +2756,9 @@ void BestPractices::RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_
     if (VendorCheckEnabled(kBPVendorArm)) {
         RecordCmdDrawTypeArm(*cb_node, draw_count, caller);
     }
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        RecordCmdDrawTypeNVIDIA(*cb_node);
+    }
 
     if (cb_node->render_pass_state.drawTouchAttachments) {
         for (auto& touch : cb_node->render_pass_state.nextDrawTouchesAttachments) {
@@ -2317,6 +2781,15 @@ void BestPractices::RecordCmdDrawTypeArm(bp_state::CommandBuffer& cb_node, uint3
     if (draw_count >= lowestEnabledMinDrawCount) {
         if (render_pass_state.depthOnly) render_pass_state.numDrawCallsDepthOnly++;
         if (render_pass_state.depthEqualComparison) render_pass_state.numDrawCallsDepthEqualCompare++;
+    }
+}
+
+void BestPractices::RecordCmdDrawTypeNVIDIA(bp_state::CommandBuffer& cmd_state) {
+    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+
+    if (cmd_state.nv.depth_test_enable && cmd_state.nv.zcull_direction != bp_state::CommandBufferStateNV::ZcullDirection::Unknown) {
+        RecordSetScopeZcullDirection(cmd_state, cmd_state.nv.zcull_direction);
+        RecordZcullDraw(cmd_state);
     }
 }
 
@@ -2708,20 +3181,36 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
         return;
     }
 
-    if (!is_secondary && !fb_state) {
+    if (!is_secondary && !fb_state && !rp_state->use_dynamic_rendering && !rp_state->use_dynamic_rendering_inherited) {
         return;
     }
 
     // If we have a rect which covers the entire frame buffer, we have a LOAD_OP_CLEAR-like command.
-    bool full_clear = ClearAttachmentsIsFullClear(*cmd_state, rectCount, pRects);
+    const bool full_clear = ClearAttachmentsIsFullClear(*cmd_state, rectCount, pRects);
 
-    if (!rp_state->UsesDynamicRendering()) {
+    if (rp_state->UsesDynamicRendering()) {
+        if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+            for (uint32_t i = 0; i < attachmentCount; i++) {
+                if (pClearAttachments[i].aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+                    RecordResetScopeZcullDirection(*cmd_state);
+                }
+            }
+        }
+
+        // TODO: Implement other best practices for dynamic rendering
+
+    } else {
         auto& subpass = rp_state->createInfo.pSubpasses[cmd_state->activeSubpass];
         for (uint32_t i = 0; i < attachmentCount; i++) {
             auto& attachment = pClearAttachments[i];
             uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
             VkImageAspectFlags aspects = attachment.aspectMask;
 
+            if (aspects & VK_IMAGE_ASPECT_DEPTH_BIT) {
+                if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+                    RecordResetScopeZcullDirection(*cmd_state);
+                }
+            }
             if (aspects & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
                 if (subpass.pDepthStencilAttachment) {
                     fb_attachment = subpass.pDepthStencilAttachment->attachment;
@@ -2729,7 +3218,6 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
             } else if (aspects & VK_IMAGE_ASPECT_COLOR_BIT) {
                 fb_attachment = subpass.pColorAttachments[attachment.colorAttachment].attachment;
             }
-
             if (fb_attachment != VK_ATTACHMENT_UNUSED) {
                 if (full_clear) {
                     RecordAttachmentClearAttachments(*cmd_state, fb_attachment, attachment.colorAttachment,
@@ -3082,6 +3570,9 @@ bool BestPractices::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuff
     bool skip = false;
     skip |= StateTracker::PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
     skip |= ValidateCmdEndRenderPass(commandBuffer);
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        skip |= ValidateZcullScope(commandBuffer);
+    }
     return skip;
 }
 
@@ -3089,6 +3580,9 @@ bool BestPractices::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandB
     bool skip = false;
     skip |= StateTracker::PreCallValidateCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
     skip |= ValidateCmdEndRenderPass(commandBuffer);
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        skip |= ValidateZcullScope(commandBuffer);
+    }
     return skip;
 }
 
@@ -3096,6 +3590,27 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
     bool skip = false;
     skip |= StateTracker::PreCallValidateCmdEndRenderPass(commandBuffer);
     skip |= ValidateCmdEndRenderPass(commandBuffer);
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        skip |= ValidateZcullScope(commandBuffer);
+    }
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer) const {
+    bool skip = false;
+    skip |= StateTracker::PreCallValidateCmdEndRendering(commandBuffer);
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        skip |= ValidateZcullScope(commandBuffer);
+    }
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer) const {
+    bool skip = false;
+    skip |= StateTracker::PreCallValidateCmdEndRenderingKHR(commandBuffer);
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        skip |= ValidateZcullScope(commandBuffer);
+    }
     return skip;
 }
 
@@ -3567,6 +4082,10 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cmd, 
                                   "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
                                   "it is more efficient.",
                                   secondary ? "vkCmdExecuteCommands(): " : "", report_data->FormatHandle(cmd.Handle()).c_str());
+
+        if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+            skip |= ValidateZcullScope(cmd.commandBuffer());
+        }
     }
 
     if ((new_aspects & VK_IMAGE_ASPECT_STENCIL_BIT) &&
@@ -3595,29 +4114,45 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
     }
 
     // Only care about full clears, partial clears might have legitimate uses.
-    if (!ClearAttachmentsIsFullClear(*cb_node, rectCount, pRects)) {
-        return skip;
-    }
+    const bool is_full_clear = ClearAttachmentsIsFullClear(*cb_node, rectCount, pRects);
 
     // Check for uses of ClearAttachments along with LOAD_OP_LOAD,
     // as it can be more efficient to just use LOAD_OP_CLEAR
     const RENDER_PASS_STATE* rp = cb_node->activeRenderPass.get();
     if (rp) {
-        const auto& subpass = rp->createInfo.pSubpasses[cb_node->activeSubpass];
+        if (rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
 
-        for (uint32_t i = 0; i < attachmentCount; i++) {
-            const auto& attachment = pAttachments[i];
-
-            if (attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
-                uint32_t color_attachment = attachment.colorAttachment;
-                uint32_t fb_attachment = subpass.pColorAttachments[color_attachment].attachment;
-                skip |= ValidateClearAttachment(*cb_node, fb_attachment, color_attachment, attachment.aspectMask, false);
+            if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+                for (uint32_t i = 0; i < attachmentCount; i++) {
+                    if (pAttachments[i].aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
+                        skip |= ValidateZcullScope(commandBuffer);
+                    }
+                }
             }
 
-            if (subpass.pDepthStencilAttachment &&
-                (attachment.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
-                uint32_t fb_attachment = subpass.pDepthStencilAttachment->attachment;
-                skip |= ValidateClearAttachment(*cb_node, fb_attachment, VK_ATTACHMENT_UNUSED, attachment.aspectMask, false);
+            if (is_full_clear) {
+                // TODO: Implement ValidateClearAttachment for dynamic rendering
+            }
+
+        } else {
+            const auto& subpass = rp->createInfo.pSubpasses[cb_node->activeSubpass];
+
+            if (is_full_clear) {
+                for (uint32_t i = 0; i < attachmentCount; i++) {
+                    const auto& attachment = pAttachments[i];
+
+                    if (attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
+                        uint32_t color_attachment = attachment.colorAttachment;
+                        uint32_t fb_attachment = subpass.pColorAttachments[color_attachment].attachment;
+                        skip |= ValidateClearAttachment(*cb_node, fb_attachment, color_attachment, attachment.aspectMask, false);
+                    }
+
+                    if (subpass.pDepthStencilAttachment &&
+                        (attachment.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
+                        uint32_t fb_attachment = subpass.pDepthStencilAttachment->attachment;
+                        skip |= ValidateClearAttachment(*cb_node, fb_attachment, VK_ATTACHMENT_UNUSED, attachment.aspectMask, false);
+                    }
+                }
             }
         }
     }
@@ -3770,6 +4305,9 @@ void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
 void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                            const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                            const VkImageSubresourceRange* pRanges) {
+    ValidationStateTracker::PreCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount,
+                                                                   pRanges);
+
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
     auto dst = Get<bp_state::Image>(image);
@@ -3777,11 +4315,17 @@ void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
     for (uint32_t i = 0; i < rangeCount; i++) {
         QueueValidateImage(funcs, "vkCmdClearDepthStencilImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
     }
+    for (uint32_t i = 0; i < rangeCount; i++) {
+        RecordResetZcullDirection(*cb, image, pRanges[i]);
+    }
 }
 
 void BestPractices::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                               const VkImageCopy* pRegions) {
+    ValidationStateTracker::PreCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout,
+                                                      regionCount, pRegions);
+
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto &funcs = cb->queue_submit_functions;
     auto src = Get<bp_state::Image>(srcImage);
@@ -3959,6 +4503,11 @@ bool BestPractices::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
                         "%s Performance warning: using vkCmdClearDepthStencilImage is not recommended. Prefer using LOAD_OP_CLEAR or "
                     "vkCmdClearAttachments instead",
                     VendorSpecificTag(kBPVendorAMD));
+    }
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        for (uint32_t i = 0; i < rangeCount; i++) {
+            skip |= ValidateZcull(commandBuffer, image, pRanges[i]);
+        }
     }
 
     return skip;
@@ -4156,7 +4705,41 @@ void BestPractices::PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuff
                                                      const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                                      uint32_t imageMemoryBarrierCount,
                                                      const VkImageMemoryBarrier* pImageMemoryBarriers) {
+    ValidationStateTracker::PostCallRecordCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags,
+                                                             memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
+                                                             pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+
     num_barriers_objects_ += (memoryBarrierCount + imageMemoryBarrierCount + bufferMemoryBarrierCount);
+
+    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+         RecordCmdPipelineBarrierImageBarrier(commandBuffer, pImageMemoryBarriers[i]);
+    }
+}
+
+void BestPractices::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo) {
+    ValidationStateTracker::PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
+
+    for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
+         RecordCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i]);
+    }
+}
+
+void BestPractices::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo) {
+    ValidationStateTracker::PostCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
+
+    for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
+         RecordCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i]);
+    }
+}
+
+template <typename ImageMemoryBarrier>
+void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer commandBuffer, const ImageMemoryBarrier& barrier) {
+    auto cb = Get<bp_state::CommandBuffer>(commandBuffer);
+    assert(cb);
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        RecordResetZcullDirection(*cb, barrier.image, barrier.subresourceRange);
+    }
 }
 
 bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,

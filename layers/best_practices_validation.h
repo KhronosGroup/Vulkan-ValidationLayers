@@ -75,6 +75,8 @@ static const uint32_t kPipelineLayoutFastDescriptorSpaceNVIDIA = 256;
 static const auto kAllocateMemoryReuseTimeThresholdNVIDIA = std::chrono::seconds{5};
 // Number of switches in tessellation, gemetry, and mesh shader state before signalling a message
 static const uint32_t kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA = 4;
+// Ratio where the Z-cull direction starts being considered balanced
+static const int kZcullDirectionBalanceRatioNVIDIA = 20;
 
 // How many small indexed drawcalls in a command buffer before a warning is thrown
 static const uint32_t kMaxSmallIndexedDrawcalls = 10;
@@ -279,8 +281,43 @@ struct CommandBufferStateNV {
         State state = State::Unknown;
         bool threshold_signaled = false;
     };
+    enum class ZcullDirection {
+        Unknown,
+        Less,
+        Greater,
+    };
+    struct ZcullResourceState {
+        ZcullDirection direction = ZcullDirection::Unknown;
+        uint64_t num_less_draws = 0;
+        uint64_t num_greater_draws = 0;
+    };
+    struct ZcullTree {
+        std::vector<ZcullResourceState> states;
+        uint32_t mip_levels = 0;
+        uint32_t array_layers = 0;
+
+        const ZcullResourceState& GetState(uint32_t layer, uint32_t level) const {
+            return states[layer * mip_levels + level];
+        }
+
+        ZcullResourceState& GetState(uint32_t layer, uint32_t level) {
+            return states[layer * mip_levels + level];
+        }
+    };
+    struct ZcullScope {
+        VkImage image = VK_NULL_HANDLE;
+        VkImageSubresourceRange range{};
+        ZcullTree* tree = nullptr;
+    };
 
     TessGeometryMesh tess_geometry_mesh;
+
+    std::unordered_map<VkImage, ZcullTree> zcull_per_image;
+    ZcullScope zcull_scope;
+    ZcullDirection zcull_direction = ZcullDirection::Unknown;
+
+    VkCompareOp depth_compare_op = VK_COMPARE_OP_NEVER;
+    bool depth_test_enable = false;
 };
 
 class CommandBuffer : public CMD_BUFFER_STATE {
@@ -439,6 +476,10 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
                                                const VkDependencyInfoKHR* pDependencyInfo) const override;
     bool PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) const override;
+
+    template <typename ImageMemoryBarrier>
+    bool ValidateCmdPipelineBarrierImageBarrier(VkCommandBuffer commandBuffer, const ImageMemoryBarrier& barrier) const;
+
     bool PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                           VkQueryPool queryPool, uint32_t query) const override;
     bool PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
@@ -449,6 +490,10 @@ class BestPractices : public ValidationStateTracker {
                                       VkPipeline pipeline) override;
     void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                        VkPipeline pipeline) override;
+    void PreCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) override;
+    void PreCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) override;
+    void PreCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) override;
+    void PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) override;
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                     const VkRenderPassBeginInfo* pRenderPassBegin) const;
 
@@ -457,10 +502,18 @@ class BestPractices : public ValidationStateTracker {
     void PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                           const VkSubpassBeginInfo* pSubpassBeginInfo) override;
     void PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                             const VkSubpassBeginInfo* pSubpassBeginInfo) override;
+                                             const VkSubpassBeginInfo *pSubpassBeginInfo) override;
+    void PreCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) override;
+    void PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) override;
+
+    void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) override;
+
     void PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) override;
-    void PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) override;
-    void PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR* pSubpassEndInfo) override;
+    void PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) override;
+    void PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo) override;
+    void PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer) override;
+    void PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer) override;
+
     bool PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                            VkSubpassContents contents) const override;
     bool PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
@@ -468,6 +521,9 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                             const VkSubpassBeginInfo* pSubpassBeginInfo) const override;
     void ValidateBoundDescriptorSets(bp_state::CommandBuffer& commandBuffer, const char* function_name);
+    bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer) const override;
+    bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer) const override;
+
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                   const VkRenderPassBeginInfo* pRenderPassBegin);
     void PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
@@ -732,6 +788,10 @@ class BestPractices : public ValidationStateTracker {
                                           uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                           uint32_t imageMemoryBarrierCount,
                                           const VkImageMemoryBarrier* pImageMemoryBarriers) override;
+    void PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo) override;
+    void PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo) override;
+    template <typename ImageMemoryBarrier>
+    void RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer commandBuffer, const ImageMemoryBarrier& barrier);
 
     void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                               const VkGraphicsPipelineCreateInfo* pCreateInfos,
@@ -891,6 +951,7 @@ class BestPractices : public ValidationStateTracker {
     bool VendorCheckEnabled(BPVendorFlags vendors) const;
 
     void RecordCmdDrawTypeArm(bp_state::CommandBuffer& cmd_state, uint32_t draw_count, const char* caller);
+    void RecordCmdDrawTypeNVIDIA(bp_state::CommandBuffer& cmd_state);
 
     void AddDeferredQueueOperations(bp_state::CommandBuffer& cb);
 
@@ -913,6 +974,26 @@ class BestPractices : public ValidationStateTracker {
     bool ValidateBuildAccelerationStructure(VkCommandBuffer commandBuffer) const;
 
     bool ValidateBindMemory(VkDevice device, VkDeviceMemory memory) const;
+
+    void RecordSetDepthTestState(bp_state::CommandBuffer& cmd_state, VkCompareOp new_depth_compare_op, bool new_depth_test_enable);
+
+    void RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer);
+    void RecordCmdEndRenderingCommon(VkCommandBuffer commandBuffer);
+
+    void RecordBindZcullScope(bp_state::CommandBuffer& cmd_state, VkImage depth_attachment, const VkImageSubresourceRange& subresource_range);
+    void RecordUnbindZcullScope(bp_state::CommandBuffer& cmd_state);
+    void RecordResetScopeZcullDirection(bp_state::CommandBuffer& cmd_state);
+    void RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state, VkImage depth_image, const VkImageSubresourceRange& subresource_range);
+
+    void RecordSetScopeZcullDirection(bp_state::CommandBuffer& cmd_state, bp_state::CommandBufferStateNV::ZcullDirection mode);
+    void RecordSetZcullDirection(bp_state::CommandBuffer& cmd_state, VkImage depth_image,
+                                 const VkImageSubresourceRange& subresource_range,
+                                 bp_state::CommandBufferStateNV::ZcullDirection mode);
+
+    void RecordZcullDraw(bp_state::CommandBuffer& cmd_state);
+
+    bool ValidateZcullScope(VkCommandBuffer commandBuffer) const;
+    bool ValidateZcull(VkCommandBuffer commandBuffer, VkImage image, const VkImageSubresourceRange& subresource_range) const;
 
     void PipelineUsedInFrame(VkPipeline pipeline) {
         WriteLockGuard guard(pipeline_lock_);
