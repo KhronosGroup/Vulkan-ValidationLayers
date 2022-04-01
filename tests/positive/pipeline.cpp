@@ -6787,3 +6787,118 @@ TEST_F(VkPositiveLayerTest, AttachmentsDisableRasterization) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch) {
+    TEST_DESCRIPTION("Test matching vertex shader output with fragment shader input.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->ExpectSuccess();
+
+    const char vsSource[] = R"glsl(#version 450
+
+        layout(location = 0) in vec4 dEQP_Position;
+        layout(location = 1) in mat3 in0;
+        layout(location = 0) out vec4 v1;
+        layout(location = 1) out vec4 v2;
+        layout(location = 2) out vec4 v3;
+        layout(location = 3) out vec4 v4;
+
+        void main() {
+            v1 = mat4(in0)[0];
+            v2 = mat4(in0)[1];
+            v3 = mat4(in0)[2];
+            v4 = mat4(in0)[3];
+            gl_Position = dEQP_Position;
+        }
+    )glsl";
+
+    const char fsSource[] = R"glsl(#version 450
+
+        bool isOk (mat4 a, mat4 b, float eps) {
+            vec4 diff = max(max(abs(a[0]-b[0]), abs(a[1]-b[1])), max(abs(a[2]-b[2]), abs(a[3]-b[3])));
+            return all(lessThanEqual(diff, vec4(eps)));
+        }
+
+        layout(location = 0) in mat4 out0;
+        layout(set = 0, binding = 0) uniform block { mat4 ref_out0; };
+        layout(location = 0) out vec4 color;
+
+        void main() {
+            bool RES = isOk(out0, ref_out0, 0.05);
+            color = vec4(RES, RES, RES, 1.0);
+        }
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkVertexInputBindingDescription vertex_input_binding_description{};
+    vertex_input_binding_description.binding = 0;
+    vertex_input_binding_description.stride = 0;
+    vertex_input_binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription vertex_input_attribute_descriptions[4];
+    vertex_input_attribute_descriptions[0].location = 0;
+    vertex_input_attribute_descriptions[0].binding = 0;
+    vertex_input_attribute_descriptions[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    vertex_input_attribute_descriptions[0].offset = 0;
+    vertex_input_attribute_descriptions[1].location = 1;
+    vertex_input_attribute_descriptions[1].binding = 0;
+    vertex_input_attribute_descriptions[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+    vertex_input_attribute_descriptions[1].offset = 32;
+    vertex_input_attribute_descriptions[2].location = 2;
+    vertex_input_attribute_descriptions[2].binding = 0;
+    vertex_input_attribute_descriptions[2].format = VK_FORMAT_R8G8B8A8_UNORM;
+    vertex_input_attribute_descriptions[2].offset = 64;
+    vertex_input_attribute_descriptions[3].location = 3;
+    vertex_input_attribute_descriptions[3].binding = 0;
+    vertex_input_attribute_descriptions[3].format = VK_FORMAT_R8G8B8A8_UNORM;
+    vertex_input_attribute_descriptions[3].offset = 96;
+
+    OneOffDescriptorSet ds(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                  });
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 4;
+    pipe.vi_ci_.pVertexAttributeDescriptions = vertex_input_attribute_descriptions;
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.CreateGraphicsPipeline();
+
+    VkBufferObj uniform_buffer;
+    auto ub_ci = LvlInitStruct<VkBufferCreateInfo>();
+    ub_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    ub_ci.size = 1024;
+    uniform_buffer.init(*m_device, ub_ci);
+    ds.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
+    ds.UpdateDescriptorSets();
+
+    VkBufferObj buffer;
+    VkBufferCreateInfo vb_ci = LvlInitStruct<VkBufferCreateInfo>();
+    vb_ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    vb_ci.size = 1024;
+    buffer.init(*m_device, vb_ci);
+    VkBuffer buffer_handle = buffer.handle();
+    VkDeviceSize offset = 0;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer_handle, &offset);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &ds.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyNotFound();
+}
