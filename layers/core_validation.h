@@ -1635,6 +1635,8 @@ class CoreChecks : public ValidationStateTracker {
                                                      const VkCopyAccelerationStructureInfoKHR* pInfo) const override;
     bool PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
         VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) const override;
+    bool PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) const override;
     bool PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
         VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) const override;
     bool ValidateExtendedDynamicState(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd_type, VkBool32 feature, const char* vuid,

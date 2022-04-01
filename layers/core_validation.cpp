@@ -17990,6 +17990,19 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCopyMemoryToAccelerationStructureKHR(
+    VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const {
+    bool skip = false;
+
+    auto accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
+    if (accel_state) {
+        skip |= ValidateHostVisibleMemoryIsBoundToBuffer(accel_state->buffer_state.get(), "vkCopyMemoryToAccelerationStructureKHR",
+                                                         "VUID-vkCopyMemoryToAccelerationStructureKHR-buffer-03730");
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
