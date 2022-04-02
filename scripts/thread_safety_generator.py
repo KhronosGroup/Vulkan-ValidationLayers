@@ -762,8 +762,10 @@ void ThreadSafety::PostCallRecordFreeDescriptorSets(
         auto lock = WriteLockGuard(thread_safety_lock);
         auto &pool_descriptor_sets = pool_descriptor_sets_map[descriptorPool];
         for (uint32_t index0 = 0; index0 < descriptorSetCount; index0++) {
-            DestroyObject(pDescriptorSets[index0]);
-            pool_descriptor_sets.erase(pDescriptorSets[index0]);
+            auto descriptor_set = pDescriptorSets[index0];
+            DestroyObject(descriptor_set);
+            pool_descriptor_sets.erase(descriptor_set);
+            ds_update_after_bind_map.erase(descriptor_set);
         }
     }
 }
@@ -799,6 +801,7 @@ void ThreadSafety::PostCallRecordDestroyDescriptorPool(
         for(auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
             FinishWriteObject(descriptor_set, "vkDestroyDescriptorPool");
             DestroyObject(descriptor_set);
+            ds_update_after_bind_map.erase(descriptor_set);
         }
         pool_descriptor_sets_map[descriptorPool].clear();
         pool_descriptor_sets_map.erase(descriptorPool);
@@ -838,6 +841,7 @@ void ThreadSafety::PostCallRecordResetDescriptorPool(
         for(auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
             FinishWriteObject(descriptor_set, "vkResetDescriptorPool");
             DestroyObject(descriptor_set);
+            ds_update_after_bind_map.erase(descriptor_set);
         }
         pool_descriptor_sets_map[descriptorPool].clear();
     }
