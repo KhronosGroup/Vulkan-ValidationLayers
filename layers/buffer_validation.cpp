@@ -3117,6 +3117,9 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
     VkCommandBuffer command_buffer = cb_node->commandBuffer();
 
+    bool has_stencil_aspect = false;
+    bool has_non_stencil_aspect = false;
+
     for (uint32_t i = 0; i < regionCount; i++) {
         const RegionType region = pRegions[i];
 
@@ -3439,6 +3442,14 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  string_VkImageAspectFlags(region.dstSubresource.aspectMask).c_str());
             }
         }
+
+        // track aspect mask in loop through regions
+        if ((region.srcSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
+            has_stencil_aspect = true;
+        }
+        if ((region.srcSubresource.aspectMask & (~VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
+            has_non_stencil_aspect = true;
+        }
     }
 
     // The formats of non-multiplane src_image and dst_image must be compatible. Formats are considered compatible if their texel
@@ -3486,13 +3497,43 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                ? (is_2 ? "VUID-VkCopyImageInfo2-dstImage-01547" : "VUID-vkCmdCopyImage-dstImage-01547")
                : (is_2 ? "VUID-VkCopyImageInfo2-dstImage-00132" : "VUID-vkCmdCopyImage-dstImage-00132");
     skip |= ValidateMemoryIsBoundToImage(dst_image_state.get(), func_name, vuid);
+
     // Validate that SRC & DST images have correct usage flags set
-    vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-00126" : "VUID-vkCmdCopyImage-srcImage-00126";
-    skip |= ValidateImageUsageFlags(src_image_state.get(), VK_IMAGE_USAGE_TRANSFER_SRC_BIT, true, vuid, func_name,
-                                    "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
-    vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-00131" : "VUID-vkCmdCopyImage-dstImage-00131";
-    skip |= ValidateImageUsageFlags(dst_image_state.get(), VK_IMAGE_USAGE_TRANSFER_DST_BIT, true, vuid, func_name,
-                                    "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
+    if (!IsExtEnabled(device_extensions.vk_ext_separate_stencil_usage)) {
+        vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-00126" : "VUID-vkCmdCopyImage-srcImage-00126";
+        skip |= ValidateImageUsageFlags(src_image_state.get(), VK_IMAGE_USAGE_TRANSFER_SRC_BIT, false, vuid, func_name,
+                                        "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
+        vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-00131" : "VUID-vkCmdCopyImage-dstImage-00131";
+        skip |= ValidateImageUsageFlags(dst_image_state.get(), VK_IMAGE_USAGE_TRANSFER_DST_BIT, false, vuid, func_name,
+                                        "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
+    } else {
+        auto src_separate_stencil = LvlFindInChain<VkImageStencilUsageCreateInfo>(src_image_state->createInfo.pNext);
+        if (src_separate_stencil && has_stencil_aspect) {
+            vuid = is_2 ? "VUID-VkCopyImageInfo2-aspect-06664" : "VUID-vkCmdCopyImage-aspect-06664";
+            skip |= ValidateUsageFlags(src_separate_stencil->stencilUsage, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, false,
+                                       src_image_state->image(), src_image_state->Handle(), vuid, func_name,
+                                       "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
+        }
+        if (!src_separate_stencil || has_non_stencil_aspect) {
+            vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-06662" : "VUID-vkCmdCopyImage-aspect-06662";
+            skip |= ValidateImageUsageFlags(src_image_state.get(), VK_IMAGE_USAGE_TRANSFER_SRC_BIT, false, vuid, func_name,
+                                            "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
+        }
+
+        auto dst_separate_stencil = LvlFindInChain<VkImageStencilUsageCreateInfo>(dst_image_state->createInfo.pNext);
+        if (dst_separate_stencil && has_stencil_aspect) {
+            vuid = is_2 ? "VUID-VkCopyImageInfo2-aspect-06665" : "VUID-vkCmdCopyImage-aspect-06665";
+            skip |= ValidateUsageFlags(dst_separate_stencil->stencilUsage, VK_IMAGE_USAGE_TRANSFER_DST_BIT, false,
+                                       dst_image_state->image(), dst_image_state->Handle(), vuid, func_name,
+                                       "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
+        }
+        if (!dst_separate_stencil || has_non_stencil_aspect) {
+            vuid = is_2 ? "VUID-vkCmdCopyImage-aspect-06663" : "VUID-vkCmdCopyImage-aspect-06663";
+            skip |= ValidateImageUsageFlags(dst_image_state.get(), VK_IMAGE_USAGE_TRANSFER_DST_BIT, false, vuid, func_name,
+                                            "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
+        }
+    }
+
     vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-01825" : "VUID-vkCmdCopyImage-commandBuffer-01825";
     skip |= ValidateProtectedImage(cb_node.get(), src_image_state.get(), func_name, vuid);
     vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-01826" : "VUID-vkCmdCopyImage-commandBuffer-01826";
