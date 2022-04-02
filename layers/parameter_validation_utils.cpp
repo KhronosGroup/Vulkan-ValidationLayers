@@ -3484,11 +3484,12 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                                 ParameterName("pCreateInfos[%i].stage.pName", ParameterName::IndexVector{i}),
                                 "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", pCreateInfos[i].stage.pName);
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
-        if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 1)) {
+        if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 0) &&
+            (feedback_struct->pipelineStageCreationFeedbackCount != 1)) {
             skip |=
-                LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02669",
+                LogError(device, "VUID-VkComputePipelineCreateInfo-pipelineStageCreationFeedbackCount-06566",
                          "vkCreateComputePipelines(): in pCreateInfo[%" PRIu32
-                         "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount must equal 1, found %" PRIu32 ".",
+                         "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount must be either 0 or 1, found %" PRIu32 ".",
                          i, feedback_struct->pipelineStageCreationFeedbackCount);
         }
 
