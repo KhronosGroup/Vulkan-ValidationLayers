@@ -881,6 +881,25 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
     }
 
+    if (enabled_features.primitives_generated_query_features.primitivesGeneratedQueryWithRasterizerDiscard == VK_FALSE) {
+        bool primitives_generated_query = false;
+        for (const auto &query : pCB->activeQueries) {
+            auto query_pool_state = Get<QUERY_POOL_STATE>(query.pool);
+            if (query_pool_state && query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+                primitives_generated_query = true;
+                break;
+            }
+        }
+        if (primitives_generated_query && pPipeline->create_info.graphics.pRasterizationState &&
+            pPipeline->create_info.graphics.pRasterizationState->rasterizerDiscardEnable == VK_TRUE) {
+            skip |= LogError(pCB->commandBuffer(), vuid.primitives_generated,
+                             "%s: a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
+                             "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable set to VK_TRUE, but  "
+                             "primitivesGeneratedQueryWithRasterizerDiscard feature is not enabled.",
+                             caller);
+        }
+    }
+
     // Verify vertex & index buffer for unprotected command buffer.
     // Because vertex & index buffer is read only, it doesn't need to care protected command buffer case.
     if (enabled_features.core11.protectedMemory == VK_TRUE) {
