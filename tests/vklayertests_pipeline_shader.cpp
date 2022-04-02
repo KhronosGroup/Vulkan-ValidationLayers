@@ -16347,3 +16347,47 @@ TEST_F(VkLayerTest, DynamicSampleLocations) {
     m_commandBuffer->end();
 
 }
+
+TEST_F(VkLayerTest, PrimitivesGeneratedQueryAndDiscardEnabled) {
+    TEST_DESCRIPTION("Test missing primitivesGeneratedQueryWithRasterizerDiscard feature.");
+
+    AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto rs_ci = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
+    rs_ci.lineWidth = 1.0f;
+    rs_ci.rasterizerDiscardEnable = VK_TRUE;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.rs_state_ci_ = rs_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    auto query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_ci.queryCount = 1;
+    query_pool_ci.queryType = VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT;
+
+    vk_testing::QueryPool query_pool;
+    query_pool.init(*m_device, query_pool_ci);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-primitivesGeneratedQueryWithRasterizerDiscard-06708");
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
