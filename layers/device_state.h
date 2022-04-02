@@ -88,6 +88,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR zero_initialize_work_group_memory_features;
     VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT rgba10x6_formats_features;
     VkPhysicalDeviceImageViewMinLodFeaturesEXT image_view_min_lod_features;
+    VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT primitives_generated_query_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };
