@@ -10324,7 +10324,7 @@ TEST_F(VkLayerTest, CopyCommands2V13) {
     copy_image_info.regionCount = 1;
     copy_image_info.pRegions = &copy_region;
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-dstImage-00131");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-aspect-06663");
     vk::CmdCopyImage2(m_commandBuffer->handle(), &copy_image_info);
     m_errorMonitor->VerifyFound();
     auto copy_buffer = LvlInitStruct<VkBufferCopy2>();
