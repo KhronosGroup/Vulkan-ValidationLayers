@@ -2092,7 +2092,7 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                           (VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM |
                            VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM)) != 0)) {
                         skip |= LogError(
-                            device, " VUID-VkGraphicsPipelineCreateInfo-pStages-06466",
+                            device, "VUID-VkGraphicsPipelineCreateInfo-flags-06591",
                             "The fragment shader enables early fragment tests, but VkPipelineDepthStencilStateCreateInfo::flags == "
                             "%s",
                             string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
