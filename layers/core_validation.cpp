@@ -10084,7 +10084,7 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
         if ((cb_state->command_pool->queue_flags & VK_QUEUE_COMPUTE_BIT) == 0) {
             if (query_pool_ci.pipelineStatistics & VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT) {
                 skip |= LogError(
-                    cb_state->commandBuffer(), vuids->vuid_graphics_support,
+                    cb_state->commandBuffer(), vuids->vuid_compute_support,
                     "%s(): queryType of queryPool is VK_QUERY_TYPE_PIPELINE_STATISTICS (%s) and indicates compute operations, but "
                     "the command pool the command buffer %s was allocated from does not support compute operations (%s).",
                     cmd_name, string_VkQueryPipelineStatisticFlags(query_pool_ci.pipelineStatistics).c_str(),
