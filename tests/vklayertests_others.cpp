@@ -14098,3 +14098,23 @@ TEST_F(VkLayerTest, MismatchedDeviceQueueGlobalPriority) {
     vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, PrimitivesGeneratedQueryFeature) {
+    TEST_DESCRIPTION("Test missing primitives generated query feature");
+
+    AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
+        //return;
+    }
+
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_ci.queryType = VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT;
+    query_pool_ci.queryCount = 1;
+
+    VkQueryPool query_pool;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-06688");
+    vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+    m_errorMonitor->VerifyFound();
+}
