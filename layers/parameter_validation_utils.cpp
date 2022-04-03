@@ -5499,6 +5499,14 @@ bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device,
             skip |= LogError(device, "VUID-VkQueryPoolCreateInfo-queryCount-02763",
                              "vkCreateQueryPool(): queryCount must be greater than zero.");
         }
+        if (pCreateInfo->queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+            const auto *primitives_generated_query_features =
+                LvlFindInChain<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>(device_createinfo_pnext);
+            if (!primitives_generated_query_features || primitives_generated_query_features->primitivesGeneratedQuery == VK_FALSE) {
+                skip |= LogError(device, "VUID-vkCmdBeginQuery-queryType-06688",
+                                 "vkCreateQueryPool(): If pCreateInfo->queryType is VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT primitivesGeneratedQuery feature must be enabled.");
+            }
+        }
     }
     return skip;
 }
