@@ -12201,6 +12201,45 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewOffsets) {
                          nullptr);
 }
 
+TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewMask) {
+    TEST_DESCRIPTION("Create a render pass with invalid view mask");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto render_pass_mutliview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&render_pass_mutliview_props);
+    vk::GetPhysicalDeviceProperties2(gpu(), &prop2);
+
+    if (render_pass_mutliview_props.maxMultiviewViewCount >= 32) {
+        printf("%s maxMultiviewViewCount too high, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
+    uint32_t viewMask = 1 << render_pass_mutliview_props.maxMultiviewViewCount;
+    uint32_t correlationMask = 0x1u;
+    VkRenderPassMultiviewCreateInfo rpmvci = {
+        VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO, nullptr, 1, &viewMask, 0, nullptr, 1, &correlationMask};
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, &rpmvci, 0, 0, nullptr, 1, &subpass, 0, nullptr};
+
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697",
+                         nullptr);
+}
+
 TEST_F(VkLayerTest, InvalidRenderPassAttachmentFormat) {
     TEST_DESCRIPTION("Test creating render pass with attachment format VK_FORMAT_UNDEFINED");
 
