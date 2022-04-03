@@ -1790,16 +1790,19 @@ TEST_F(VkLayerTest, RenderPassCreate2SubpassInvalidInputAttachmentParameters) {
         VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR, nullptr, 0, 1, &attach_desc, 1, &subpass, 0, nullptr, 0, nullptr};
 
     // Test for aspect mask of 0
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkAttachmentDescription2-format-06701");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-pInputAttachments-02897");
     TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), &rpci2, "VUID-VkSubpassDescription2-attachment-02800");
 
     // Test for invalid aspect mask bits
     reference.aspectMask = 0x40000000;  // invalid VkImageAspectFlagBits value
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkAttachmentDescription2-format-06701");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-pInputAttachments-02897");
     TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), &rpci2, "VUID-VkSubpassDescription2-attachment-02799");
 
     // Test for invalid use of VK_IMAGE_ASPECT_METADATA_BIT
     reference.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkAttachmentDescription2-format-06701");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-pInputAttachments-02897");
     TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), &rpci2, "VUID-VkSubpassDescription2-attachment-02801");
 }
@@ -7492,7 +7495,7 @@ TEST_F(VkLayerTest, AttachmentDescriptionUndefinedFormat) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "format is VK_FORMAT_UNDEFINED");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-06698");
 
     VkAttachmentReference color_attach = {};
     color_attach.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -7516,7 +7519,7 @@ TEST_F(VkLayerTest, AttachmentDescriptionUndefinedFormat) {
     m_errorMonitor->VerifyFound();
 
     if (result == VK_SUCCESS) {
-        vk::DestroyRenderPass(m_device->device(), rp, NULL);
+        vk::DestroyRenderPass(m_device->device(), rp, nullptr);
     }
 }
 
@@ -12150,6 +12153,58 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewOffsets) {
 
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pNext-02512",
                          nullptr);
+}
+
+TEST_F(VkLayerTest, InvalidRenderPassAttachmentFormat) {
+    TEST_DESCRIPTION("Test creating render pass with attachment format VK_FORMAT_UNDEFINED");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_UNDEFINED;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
+
+    auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attach_desc;
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass;
+
+    VkRenderPass render_pass;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-06698");
+    vk::CreateRenderPass(device(), &render_pass_ci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+
+    VkAttachmentDescription2 attach_desc_2 = LvlInitStruct<VkAttachmentDescription2>();
+    attach_desc_2.format = VK_FORMAT_UNDEFINED;
+    attach_desc_2.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc_2.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc_2.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    auto subpass_2 = LvlInitStruct<VkSubpassDescription2>();
+
+    auto render_pass_ci_2 = LvlInitStruct<VkRenderPassCreateInfo2>();
+    render_pass_ci_2.attachmentCount = 1;
+    render_pass_ci_2.pAttachments = &attach_desc_2;
+    render_pass_ci_2.subpassCount = 1;
+    render_pass_ci_2.pSubpasses = &subpass_2;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription2-format-06701");
+    vk::CreateRenderPass2(device(), &render_pass_ci_2, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, SamplingFromReadOnlyDepthStencilAttachment) {
