@@ -1988,15 +1988,11 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
         const auto *ia_state = pPipeline->InputAssemblyState();
         if (!ia_state) {
-            if (!pPipeline->IsGraphicsLibrary()) {
-                // This is a "regular" pipeline
-                if ((pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT)) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02098",
-                                     "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Missing pInputAssemblyState.", pipelineIndex);
-                }
-            } else if (pPipeline->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT) {
-                // This is a "graphics library"
-                skip |= LogError(device, "VUID-GraphicsLibrary-UNKNOWN",
+            if ((!pPipeline->IsGraphicsLibrary() &&
+                 (pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT)) ||  // This is a legacy pipeline with a VS
+                (pPipeline->IsGraphicsLibrary() &&
+                 pPipeline->vertex_input_state)) {  // This is a graphics library that defines vertex input state
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02098",
                                  "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Missing pInputAssemblyState.", pipelineIndex);
             }
         }
@@ -2287,10 +2283,6 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
                                  "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Missing pVertexInputState.", pipelineIndex);
             }
-        } else if (pPipeline->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT) {
-            // This "pipeline" is a graphics library
-            skip |= LogError(device, "VUID-GraphicsLibrary-VertexInput-UNKNOWN",
-                             "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Missing pVertexInputState.", pipelineIndex);
         }
     }
 
@@ -2933,7 +2925,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         if (rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
             VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->depthAttachmentFormat);
             if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-                skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfo-depthAttachmentFormat-06065",
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06585",
                                  "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
                                  "]: depthAttachmentFormat (%s) must be a format with potential format features that include "
                                  "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
@@ -2944,7 +2936,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         if (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
             VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->stencilAttachmentFormat);
             if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-                skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfo-stencilAttachmentFormat-06164",
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06586",
                                  "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
                                  "]: stencilAttachmentFormat (%s) must be a format with potential format features that include "
                                  "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
@@ -2955,7 +2947,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) &&
             (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) &&
             (rendering_struct->depthAttachmentFormat != rendering_struct->stencilAttachmentFormat)) {
-            skip |= LogError(device, "VUID-VkPipelineRenderingCreateInfo-depthAttachmentFormat-06165",
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06589",
                              "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
                              "]: depthAttachmentFormat is not VK_FORMAT_UNDEFINED and stencilAttachmentFormat is not "
                              "VK_FORMAT_UNDEFINED, but depthAttachmentFormat (%s) does not equal stencilAttachmentFormat (%s)",
@@ -6094,11 +6086,11 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
         if (!pipe_state->RenderPassState() &&
             (pipe_state->pre_raster_state || pipe_state->fragment_shader_state || pipe_state->fragment_output_state)) {
             if ((api_version < VK_API_VERSION_1_3) && (!enabled_features.core13.dynamicRendering)) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06051",
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575",
                                  "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32 "]: renderpass must not be VK_NULL_HANDLE.", i);
                 return true;
             } else if (!enabled_features.core13.dynamicRendering) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06052",
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576",
                                  "vkCreateGraphicsPipeline: pCreateInfos[%" PRIu32
                                  "].renderPass is VK_NULL_HANDLE but dynamicRendering is not enabled.",
                                  i);

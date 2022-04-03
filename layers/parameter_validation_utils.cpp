@@ -1821,7 +1821,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     "VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO", pCreateInfos[i].stageCount, pCreateInfos[i].pStages,
                     VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, true, true,
                     "VUID-VkPipelineShaderStageCreateInfo-sType-sType", "VUID-VkGraphicsPipelineCreateInfo-pStages-06600",
-                    "VUID-VkGraphicsPipelineCreateInfo-stageCount-arraylength");
+                    "VUID-VkGraphicsPipelineCreateInfo-pStages-06600");
                 skip |= validate_struct_type("vkCreateGraphicsPipelines",
                                              ParameterName("pCreateInfos[%i].pRasterizationState", ParameterName::IndexVector{i}),
                                              "VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO",
@@ -2190,7 +2190,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
             auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(create_info.pNext);
             if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != create_info.stageCount)) {
-                skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02668",
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pipelineStageCreationFeedbackCount-06594",
                                  "vkCreateGraphicsPipelines(): in pCreateInfo[%" PRIu32
                                  "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"
                                  "(=%" PRIu32 ") must equal VkGraphicsPipelineCreateInfo::stageCount(=%" PRIu32 ").",
@@ -2217,7 +2217,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     skip |= validate_string(
                         "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pStages[%i].pName", ParameterName::IndexVector{i, stage_index}),
-                        "VUID-VkGraphicsPipelineCreateInfo-pStages-parameter", create_info.pStages[stage_index].pName);
+                        kVUID_Stateless_InvalidShaderStagesArray, create_info.pStages[stage_index].pName);
 
                     std::stringstream msg;
                     msg << "pCreateInfos[%" << i << "].pStages[%" << stage_index << "]";
@@ -3615,13 +3615,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if (feedback_struct && (feedback_struct->pipelineStageCreationFeedbackCount != 1)) {
             const auto feedback_count = feedback_struct->pipelineStageCreationFeedbackCount;
-            if (api_version < VK_VERSION_1_3) {
-                skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02669",
-                                 "vkCreateComputePipelines(): in pCreateInfo[%" PRIu32
-                                 "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount must equal 1, found %" PRIu32
-                                 ".",
-                                 i, feedback_count);
-            } else if ((feedback_count != 0) && (feedback_count != 1)) {
+            if ((feedback_count != 0) && (feedback_count != 1)) {
                 skip |= LogError(
                     device, "VUID-VkComputePipelineCreateInfo-pipelineStageCreationFeedbackCount-06566",
                     "vkCreateComputePipelines(): VkPipelineCreationFeedbackCreateInfo::pipelineStageCreationFeedbackCount (%" PRIu32
@@ -6082,7 +6076,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
         }
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
-            skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02969",
+            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-pipelineStageCreationFeedbackCount-06651",
                              "vkCreateRayTracingPipelinesNV(): in pCreateInfo[%" PRIu32
                              "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"
                              "(=%" PRIu32 ") must equal VkRayTracingPipelineCreateInfoNV::stageCount(=%" PRIu32 ").",
@@ -6229,7 +6223,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         }
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
-            skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02670",
+            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineStageCreationFeedbackCount-06652",
                              "vkCreateRayTracingPipelinesKHR: in pCreateInfo[%" PRIu32
                              "], When chained to VkRayTracingPipelineCreateInfoKHR, "
                              "VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"

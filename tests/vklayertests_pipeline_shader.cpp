@@ -7771,8 +7771,7 @@ TEST_F(VkLayerTest, GraphicsPipelineStageCreationFeedbackCount) {
     auto set_feedback = [&feedback_info](CreatePipelineHelper &helper) { helper.gp_ci_.pNext = &feedback_info; };
 
     CreatePipelineHelper::OneshotTest(*this, set_feedback, kErrorBit,
-                                      "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02668",
-                                      true);
+                                      "VUID-VkGraphicsPipelineCreateInfo-pipelineStageCreationFeedbackCount-06594", true);
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s Driver data writeback check not supported by MockICD, skipping.\n", kSkipPrefix);
@@ -7786,8 +7785,7 @@ TEST_F(VkLayerTest, GraphicsPipelineStageCreationFeedbackCount) {
 
     feedback_info.pipelineStageCreationFeedbackCount = 1;
     CreatePipelineHelper::OneshotTest(*this, set_feedback, kErrorBit,
-                                      "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02668",
-                                      false);
+                                      "VUID-VkGraphicsPipelineCreateInfo-pipelineStageCreationFeedbackCount-06594", false);
 }
 
 TEST_F(VkLayerTest, ComputePipelineStageCreationFeedbackCount) {
@@ -7851,8 +7849,8 @@ TEST_F(VkLayerTest, NVRayTracingPipelineStageCreationFeedbackCount) {
     CreateNVRayTracingPipelineHelper::OneshotPositiveTest(*this, set_feedback);
 
     feedback_info.pipelineStageCreationFeedbackCount = 2;
-    CreateNVRayTracingPipelineHelper::OneshotTest(
-        *this, set_feedback, "VUID-VkPipelineCreationFeedbackCreateInfo-pipelineStageCreationFeedbackCount-02969");
+    CreateNVRayTracingPipelineHelper::OneshotTest(*this, set_feedback,
+                                                  "VUID-VkRayTracingPipelineCreateInfoNV-pipelineStageCreationFeedbackCount-06651");
 }
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderImageFootprintEnabled) {
@@ -15643,7 +15641,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
 
     m_errorMonitor->VerifyNotFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06051");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
 }
@@ -15898,7 +15896,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessNoSu
         create_render_pass(VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM, render_pass);
         render_pass_handle = render_pass.handle();
         CreatePipelineHelper::OneshotTest(*this, set_stages_pipeline_createinfo, kErrorBit,
-                                          "VUID-VkGraphicsPipelineCreateInfo-pStages-06466");
+                                          "VUID-VkGraphicsPipelineCreateInfo-flags-06591");
     }
 }
 
@@ -15986,21 +15984,21 @@ TEST_F(VkLayerTest, InvalidPipelineRenderingParameters) {
     // Invalid depth format
     pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfo-depthAttachmentFormat-06065");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06585");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
 
     // Invalid stecil format
     pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
     pipeline_rendering_info.stencilAttachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfo-stencilAttachmentFormat-06164");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06586");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
 
     // mismatching depth/stencil formats
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
     pipeline_rendering_info.stencilAttachmentFormat = stencil_format;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfo-depthAttachmentFormat-06165");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06589");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
 
