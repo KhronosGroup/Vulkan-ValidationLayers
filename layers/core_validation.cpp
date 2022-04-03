@@ -13107,6 +13107,14 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
         for (uint32_t i = 0; i < multiview_info->subpassCount; ++i) {
             all_zero &= multiview_info->pViewMasks[i] == 0;
             all_not_zero &= !(multiview_info->pViewMasks[i] == 0);
+            if (MostSignificantBit(multiview_info->pViewMasks[i]) >=
+                static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
+                skip |= LogError(device, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697",
+                                 "vkCreateRenderPass(): Most significant bit in "
+                                 "VkRenderPassMultiviewCreateInfo->pViewMask[%" PRIu32 "] (%" PRIu32
+                                 ") must be less than maxMultiviewViewCount(%" PRIu32 ").",
+                                 i, multiview_info->pViewMasks[i], phys_dev_props_core11.maxMultiviewViewCount);
+            }
         }
         if (!all_zero && !all_not_zero) {
             skip |= LogError(
