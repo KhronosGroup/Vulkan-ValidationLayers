@@ -368,7 +368,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
         // TODO is this correct?
         auto *dyn_state_ci = const_cast<safe_VkPipelineDynamicStateCreateInfo *>(create_info.graphics.pDynamicState);
         std::vector<VkDynamicState> dyn_states;
-        VkPipelineDynamicStateCreateFlags dyn_flags;
+        VkPipelineDynamicStateCreateFlags dyn_flags = 0;
         if (create_info.graphics.pDynamicState) {
             std::copy(dyn_state_ci->pDynamicStates, dyn_state_ci->pDynamicStates + dyn_state_ci->dynamicStateCount,
                       std::back_inserter(dyn_states));
