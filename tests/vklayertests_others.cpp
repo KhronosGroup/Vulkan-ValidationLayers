@@ -14161,6 +14161,55 @@ TEST_F(VkLayerTest, MismatchedDeviceQueueGlobalPriority) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, PrimitivesGeneratedQuery) {
+    TEST_DESCRIPTION("Test unsupported primitives generated queries");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Vulkan12Struct requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
+        return;
+    }
+
+    auto primitives_generated_features = LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&primitives_generated_features);
+
+    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
+        printf("%s primitivesGeneratedQuery feature is not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    uint32_t compute_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    if (compute_queue_family_index == std::numeric_limits<uint32_t>::max()) {
+        printf("%s required queue family not found, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    VkCommandPoolObj command_pool(m_device, compute_queue_family_index);
+
+    VkCommandBufferObj command_buffer(m_device, &command_pool);
+    command_buffer.begin();
+
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_ci.queryType = VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT;
+    query_pool_ci.queryCount = 1;
+
+    vk_testing::QueryPool query_pool;
+    query_pool.init(*m_device, query_pool_ci);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-06687");
+    vk::CmdBeginQuery(command_buffer.handle(), query_pool.handle(), 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    command_buffer.end();
+}
+
 TEST_F(VkLayerTest, TestCopyMemoryToAsBuffer) {
     TEST_DESCRIPTION("Test invalid buffer used in vkCopyMemoryToAccelerationStructureKHR.");
 
