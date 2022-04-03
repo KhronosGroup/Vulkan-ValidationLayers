@@ -123,6 +123,7 @@ struct ValidateBeginQueryVuids {
     const char* vuid_multiview_query = kVUIDUndefined;
     const char* vuid_graphics_support = kVUIDUndefined;
     const char* vuid_compute_support = kVUIDUndefined;
+    const char* vuid_primitives_generated = kVUIDUndefined;
 };
 
 struct ValidateEndQueryVuids {
