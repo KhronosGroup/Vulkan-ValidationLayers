@@ -2942,7 +2942,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
             //   expressed in the member type -- it's expressed in the block type.
             if (!TypesMatch(producer, consumer, a_it->second.type_id, b_it->second.type_id)) {
                 skip |= LogError(producer->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
-                                 "Type mismatch on location %" PRIu32 ".%" PRIu32 ": '%s' vs '%s'", a_first.first, a_first.second,
+                                 "Type mismatch on location %" PRIu32 ".%" PRIu32 ", between %s and %s: '%s' vs '%s'",
+                                 a_first.first, a_first.second, producer_stage->name, consumer_stage->name,
                                  producer->DescribeType(a_it->second.type_id).c_str(),
                                  consumer->DescribeType(b_it->second.type_id).c_str());
                 a_it++;
@@ -2951,7 +2952,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
             }
             if (a_it->second.is_patch != b_it->second.is_patch) {
                 skip |= LogError(producer->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
-                                 "Decoration mismatch on location %u.%u: is per-%s in %s stage but per-%s in %s stage",
+                                 "Decoration mismatch on location %" PRIu32 ".%" PRIu32 ": is per-%s in %s stage but per-%s in %s stage",
                                  a_first.first, a_first.second, a_it->second.is_patch ? "patch" : "vertex", producer_stage->name,
                                  b_it->second.is_patch ? "patch" : "vertex", consumer_stage->name);
             }
