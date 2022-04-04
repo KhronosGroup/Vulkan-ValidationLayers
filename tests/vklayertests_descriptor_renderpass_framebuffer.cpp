@@ -6997,6 +6997,7 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
     attach.samples = VK_SAMPLE_COUNT_1_BIT;
     attach.format = VK_FORMAT_B8G8R8A8_UNORM;
     attach.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -7022,6 +7023,7 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
     attach2.samples = VK_SAMPLE_COUNT_1_BIT;
     attach2.format = VK_FORMAT_B8G8R8A8_UNORM;
     attach2.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach2.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 
     VkSubpassDescription2 subpass2 = LvlInitStruct<VkSubpassDescription2>();
     subpass2.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -12195,6 +12197,41 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewOffsets) {
 
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pNext-02512",
                          nullptr);
+}
+
+TEST_F(VkLayerTest, CreateRenderPassWithInvalidAttachmentInitialLayout) {
+    TEST_DESCRIPTION("Create a render pass with loadOp load and initialLayout undefined");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass_description = {};
+    subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attach_desc;
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass_description;
+
+    VkRenderPass render_pass;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-06699");
+    vk::CreateRenderPass(device(), &render_pass_ci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+
+    const VkFormat ds_format = FindSupportedStencilOnlyFormat(gpu());
+    if (ds_format != VK_FORMAT_UNDEFINED) {
+        attach_desc.format = ds_format;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-06700");
+        vk::CreateRenderPass(device(), &render_pass_ci, nullptr, &render_pass);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, InvalidRenderPassAttachmentFormat) {
