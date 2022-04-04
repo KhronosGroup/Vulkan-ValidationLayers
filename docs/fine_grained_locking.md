@@ -81,7 +81,7 @@ The `CoreCheck's` `ValidationObject` overrides these methods to **optionally** l
 
 ## Thread safety goals
 
-Vulkan places much of the burden of [thread safety](https://www.khronos.org/registry/vulkan/specs/1.2/html/vkspec.html#fundamentals-threadingbehavior) on the application author, by requiring parameters to API calls to be externally synchronized by the calling code.  The Thread Safety validation object performs checks to make sure that applications follow the synchronization requirements. It may be desirable to enable Thread Safety validation in the standard configurations so that users hit these errors before getting unexpected behavior from Core validation.
+Vulkan places much of the burden of [thread safety](https://www.khronos.org/registry/vulkan/specs/1.3/html/vkspec.html#fundamentals-threadingbehavior) on the application author, by requiring parameters to API calls to be externally synchronized by the calling code.  The Thread Safety validation object performs checks to make sure that applications follow the synchronization requirements. It may be desirable to enable Thread Safety validation in the standard configurations so that users hit these errors before getting unexpected behavior from Core validation.
 
 Because it is impossible to predict all possible ways an incorrect program behaves, we need to have limits on what is expected of core validation:
 

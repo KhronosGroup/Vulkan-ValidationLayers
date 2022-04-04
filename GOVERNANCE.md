@@ -5,7 +5,7 @@
 * Alignment with the Vulkan Specification
   - The goal is for validation layer behavior to enforce the vulkan specification on applications. Questions on specification
 interpretations may require consulting with the Khronos Vulkan Workgroup for resolution
-    - [Core Specification](https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html)
+    - [Core Specification](https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/vkspec.html)
     - [Header Files](https://www.khronos.org/registry/vulkan/#headers)
 * ISV Enablement
   - Updates of validation layer functionality should be available in a timely fashion
