@@ -6902,3 +6902,43 @@ TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch2) {
+    TEST_DESCRIPTION("Test matching vertex shader output with fragment shader input.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->ExpectSuccess();
+
+    const char vsSource[] = R"glsl(#version 450
+        layout(location = 0) out vec2 v1;
+        layout(location = 1) out vec2 v2;
+        layout(location = 2) out vec2 v3;
+
+        void main() {
+            v1 = vec2(0.0f);
+            v2 = vec2(1.0f);
+            v3 = vec2(0.5f);
+        }
+    )glsl";
+
+    const char fsSource[] = R"glsl(#version 450
+        layout(location = 0) in mat3x2 v;
+        layout(location = 0) out vec4 color;
+
+        void main() {
+            color = vec4(v[0][0], v[0][1], v[1][0], v[1][1]);
+        }
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_errorMonitor->VerifyNotFound();
+}
