@@ -1060,3 +1060,121 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
 
     m_commandBuffer->end();
 }
+
+TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
+{
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework(kEnableNVIDIAValidation));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "This test requires dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto set_desired = [this] {
+        m_errorMonitor->Finish();
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-ClearColor-NotCompressed");
+        m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
+    };
+
+    VkImageObj image(m_device);
+    image.Init((uint32_t)m_width, (uint32_t)m_height, 1, VK_FORMAT_B8G8R8A8_UNORM,
+               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageViewCreateInfo image_view_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    image_view_ci.image = image.handle();
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    vk_testing::ImageView image_view(*m_device, image_view_ci);
+
+    VkRenderingAttachmentInfo color_attachment = LvlInitStruct<VkRenderingAttachmentInfo>();
+    color_attachment.imageView = image_view.handle();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.clearValue = {};
+
+    VkRenderingInfo begin_rendering_info = LvlInitStruct<VkRenderingInfo>();
+    begin_rendering_info.renderArea.extent = {(uint32_t)m_width, (uint32_t)m_height};
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    VkClearAttachment clear{};
+    clear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clear.clearValue.color.float32[0] = 0.0f;
+    clear.clearValue.color.float32[1] = 0.0f;
+    clear.clearValue.color.float32[2] = 0.0f;
+    clear.clearValue.color.float32[3] = 0.0f;
+    clear.colorAttachment = 0;
+
+    auto set_clear_color = [&clear](const std::array<float, 4>& color) {
+        for (size_t i = 0; i < 4; ++i) {
+            clear.clearValue.color.float32[i] = color[i];
+        }
+    };
+
+    VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+
+    {
+        set_desired();
+        set_clear_color({1.0f, 0.5f, 0.25f, 0.0f});
+
+        for (int i = 0; i < 16 + 1; ++i) {
+            clear.clearValue.color.float32[3] += 0.05f;
+            vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear, 1, &clear_rect);
+        }
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        set_desired();
+        set_clear_color({1.0f, 1.0f, 1.0f, 1.0f});
+        vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear, 1, &clear_rect);
+        m_errorMonitor->Finish();
+    }
+    {
+        set_desired();
+        set_clear_color({0.0f, 0.0f, 0.0f, 0.0f});
+        vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear, 1, &clear_rect);
+        m_errorMonitor->Finish();
+    }
+    {
+        set_desired();
+        set_clear_color({0.9f, 1.0f, 1.0f, 1.0f});
+        vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear, 1, &clear_rect);
+        m_errorMonitor->VerifyFound();
+    }
+
+    vk::CmdEndRendering(m_commandBuffer->handle());
+
+    {
+        set_desired();
+        vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+        m_errorMonitor->Finish();
+        vk::CmdEndRendering(m_commandBuffer->handle());
+    }
+    {
+        color_attachment.clearValue.color.float32[0] = 0.55f;
+
+        set_desired();
+        vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_commandBuffer->end();
+}
