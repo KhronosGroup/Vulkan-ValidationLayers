@@ -16294,6 +16294,41 @@ TEST_F(VkLayerTest, DynamicSampleLocations) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, TestShaderInputOutputMismatch) {
+    TEST_DESCRIPTION("Test mismatch between vertex shader output and fragment shader input.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char vsSource[] = R"glsl(
+        #version 450
+        layout(location = 1) out int v;
+        void main() {
+            v = 1;
+        }
+    )glsl";
+
+    const char fsSource[] = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 color;
+        layout(location = 1) in float v;
+        void main() {
+           color = vec4(v);
+        }
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-InterfaceTypeMismatch");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, PrimitivesGeneratedQueryAndDiscardEnabled) {
     TEST_DESCRIPTION("Test missing primitivesGeneratedQueryWithRasterizerDiscard feature.");
 
