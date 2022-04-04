@@ -1792,8 +1792,8 @@ uint32_t SHADER_MODULE_STATE::GetNumComponentsInBaseType(const spirv_inst_iter &
     } else if (opcode == spv::OpTypeMatrix) {
         const auto column_type = get_def(iter.word(2));
         const uint32_t vector_length = GetNumComponentsInBaseType(column_type);
-        const uint32_t column_count = iter.word(3);
-        return vector_length * column_count;
+        // Because we are calculating components for a single location we do not care about column count
+        return vector_length;
     } else if (opcode == spv::OpTypeArray) {
         const auto element_type = get_def(iter.word(2));
         const uint32_t element_length = GetNumComponentsInBaseType(element_type);
