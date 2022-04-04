@@ -48,7 +48,7 @@
       "cmake_options": [
         "-DRH_STANDALONE_PROJECT=OFF"
       ],
-      "commit": "3.11.3"
+      "commit": "3.11.5"
     },
     {
         "name": "googletest",
