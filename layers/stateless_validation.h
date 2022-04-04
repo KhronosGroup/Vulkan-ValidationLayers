@@ -1044,6 +1044,28 @@ class StatelessValidation : public ValidationObject {
                                  "VK_IMAGE_LAYOUT_PREINITIALIZED.",
                                  func_name, i);
             }
+            if (FormatIsColor(attachment_format) || FormatHasDepth(attachment_format)) {
+                if (pCreateInfo->pAttachments[i].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD &&
+                    initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06702" : "VUID-VkAttachmentDescription-format-06699";
+                    skip |= LogError(device, vuid,
+                                     "%s: pCreateInfo->pAttachments[%" PRIu32
+                                     "] has format with color or depth aspect and loadOp VK_ATTACHMENT_LOAD_OP_LOAD, but "
+                                     "initialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
+                                     func_name, i);
+                }
+            }
+            if (FormatHasStencil(attachment_format)) {
+                if (pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD &&
+                    initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06703" : "VUID-VkAttachmentDescription-format-06700";
+                    skip |= LogError(device, vuid,
+                                     "%s: pCreateInfo->pAttachments[%" PRIu32
+                                     "] has format with stencil aspect and stencilLoadOp VK_ATTACHMENT_LOAD_OP_LOAD, but "
+                                     "initialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
+                                     func_name, i);
+                }
+            }
             if (!separate_depth_stencil_layouts) {
                 if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
