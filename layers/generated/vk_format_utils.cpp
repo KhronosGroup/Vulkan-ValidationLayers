@@ -1901,4 +1901,29 @@ double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask) {
     return texel_size;
 }
 
+static bool FormatHasComponent(VkFormat format, COMPONENT_TYPE component) {
+    auto item = kVkFormatTable.find(format);
+    if (item == kVkFormatTable.end()) {
+        return false;
+    }
+    const COMPONENT_INFO* begin = item->second.components;
+    const COMPONENT_INFO* end = item->second.components + FORMAT_MAX_COMPONENTS;
+    return std::find_if(begin, end, [component](const COMPONENT_INFO& info) { return info.type == component; }) != end;
+}
+
+bool FormatHasRed(VkFormat format) {
+    return FormatHasComponent(format, COMPONENT_TYPE::R);
+}
+
+bool FormatHasGreen(VkFormat format) {
+    return FormatHasComponent(format, COMPONENT_TYPE::G);
+}
+
+bool FormatHasBlue(VkFormat format) {
+    return FormatHasComponent(format, COMPONENT_TYPE::B);
+}
+
+bool FormatHasAlpha(VkFormat format) {
+    return FormatHasComponent(format, COMPONENT_TYPE::A);
+}
 

@@ -287,6 +287,8 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_BindPipeline_SwitchTessGe
     "UNASSIGNED-BestPractices-BindPipeline-SwitchTessGeometryMesh";
 static const char DECORATE_UNUSED *kVUID_BestPractices_Zcull_LessGreaterRatio =
     "UNASSIGNED-BestPractices-Zcull-LessGreaterRatio";
+static const char DECORATE_UNUSED *kVUID_BestPractices_ClearColor_NotCompressed =
+    "UNASSIGNED-BestPractices-ClearColor-NotCompressed";
 
 // clang-format on
 
