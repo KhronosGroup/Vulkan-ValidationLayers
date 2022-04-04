@@ -200,6 +200,12 @@ VK_LAYER_EXPORT bool FormatElementIsTexel(VkFormat format);
 VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 VK_LAYER_EXPORT double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 
+// Components
+VK_LAYER_EXPORT bool FormatHasRed(VkFormat format);
+VK_LAYER_EXPORT bool FormatHasGreen(VkFormat format);
+VK_LAYER_EXPORT bool FormatHasBlue(VkFormat format);
+VK_LAYER_EXPORT bool FormatHasAlpha(VkFormat format);
+
 
 // Utils/misc
 static inline bool FormatIsUndef(VkFormat format) { return (format == VK_FORMAT_UNDEFINED); }

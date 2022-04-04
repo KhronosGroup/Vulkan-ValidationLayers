@@ -58,6 +58,13 @@ const SpecialUseVUIDs kSpecialUseDeviceVUIDs {
     kVUID_BestPractices_CreateDevice_SpecialUseExtension_GLEmulation,
 };
 
+static constexpr std::array<VkFormat, 12> kCustomClearColorCompressedFormatsNVIDIA = {
+    VK_FORMAT_R8G8B8A8_UNORM,           VK_FORMAT_B8G8R8A8_UNORM,           VK_FORMAT_A8B8G8R8_UNORM_PACK32,
+    VK_FORMAT_A2R10G10B10_UNORM_PACK32, VK_FORMAT_A2B10G10R10_UNORM_PACK32, VK_FORMAT_R16G16B16A16_UNORM,
+    VK_FORMAT_R16G16B16A16_SNORM,       VK_FORMAT_R16G16B16A16_UINT,        VK_FORMAT_R16G16B16A16_SINT,
+    VK_FORMAT_R16G16B16A16_SFLOAT,      VK_FORMAT_R32G32B32A32_SFLOAT,      VK_FORMAT_B10G11R11_UFLOAT_PACK32,
+};
+
 ReadLockGuard BestPractices::ReadLock() {
     if (fine_grained_locking) {
         return ReadLockGuard(validation_object_mutex, std::defer_lock);
@@ -1898,14 +1905,32 @@ void BestPractices::RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer)
                 depth_image_view_shared_ptr = Get<IMAGE_VIEW_STATE>(depth_attachment->imageView);
                 depth_image_view = depth_image_view_shared_ptr.get();
             }
+
+            for (uint32_t i = 0; i < rp->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
+                const auto& color_attachment = rp->dynamic_rendering_begin_rendering_info.pColorAttachments[i];
+                if (color_attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+                    const VkFormat format = Get<IMAGE_VIEW_STATE>(color_attachment.imageView)->create_info.format;
+                    RecordClearColor(format, color_attachment.clearValue.color);
+                }
+            }
+
         } else {
-            if (rp->createInfo.subpassCount > 0) {
-                const auto depth_attachment = rp->createInfo.pSubpasses[0].pDepthStencilAttachment;
-                if (depth_attachment) {
-                    const uint32_t attachment_index = depth_attachment->attachment;
-                    if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                        load_op.emplace(rp->createInfo.pAttachments[attachment_index].loadOp);
-                        depth_image_view = (*cmd_state->active_attachments)[attachment_index];
+            if (rp->createInfo.pAttachments) {
+                if (rp->createInfo.subpassCount > 0) {
+                    const auto depth_attachment = rp->createInfo.pSubpasses[0].pDepthStencilAttachment;
+                    if (depth_attachment) {
+                        const uint32_t attachment_index = depth_attachment->attachment;
+                        if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                            load_op.emplace(rp->createInfo.pAttachments[attachment_index].loadOp);
+                            depth_image_view = (*cmd_state->active_attachments)[attachment_index];
+                        }
+                    }
+                }
+                for (uint32_t i = 0; i < cmd_state->activeRenderPassBeginInfo.clearValueCount; ++i) {
+                    const auto& attachment = rp->createInfo.pAttachments[i];
+                    if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+                        const auto& clear_color = cmd_state->activeRenderPassBeginInfo.pClearValues[i].color;
+                        RecordClearColor(attachment.format, clear_color);
                     }
                 }
             }
@@ -2162,6 +2187,136 @@ bool BestPractices::ValidateZcull(VkCommandBuffer commandBuffer, VkImage image,
     return skip;
 }
 
+static std::array<uint32_t, 4> GetRawClearColor(VkFormat format, const VkClearColorValue& clear_value) {
+    std::array<uint32_t, 4> raw_color{};
+    std::copy_n(clear_value.uint32, raw_color.size(), raw_color.data());
+
+    // Zero out unused components to avoid polluting the cache with garbage
+    if (!FormatHasRed(format))   raw_color[0] = 0;
+    if (!FormatHasGreen(format)) raw_color[1] = 0;
+    if (!FormatHasBlue(format))  raw_color[2] = 0;
+    if (!FormatHasAlpha(format)) raw_color[3] = 0;
+
+    return raw_color;
+}
+
+static bool IsClearColorZeroOrOne(VkFormat format, const std::array<uint32_t, 4> clear_color) {
+    static_assert(sizeof(float) == sizeof(uint32_t), "Mismatching float <-> uint32 sizes");
+    const float one = 1.0f;
+    const float zero = 0.0f;
+    uint32_t raw_one{};
+    uint32_t raw_zero{};
+    memcpy(&raw_one, &one, sizeof(one));
+    memcpy(&raw_zero, &zero, sizeof(zero));
+
+    const bool is_one = (!FormatHasRed(format)   || (clear_color[0] == raw_one)) &&
+                        (!FormatHasGreen(format) || (clear_color[1] == raw_one)) &&
+                        (!FormatHasBlue(format)  || (clear_color[2] == raw_one)) &&
+                        (!FormatHasAlpha(format) || (clear_color[3] == raw_one));
+    const bool is_zero = (!FormatHasRed(format)   || (clear_color[0] == raw_zero)) &&
+                         (!FormatHasGreen(format) || (clear_color[1] == raw_zero)) &&
+                         (!FormatHasBlue(format)  || (clear_color[2] == raw_zero)) &&
+                         (!FormatHasAlpha(format) || (clear_color[3] == raw_zero));
+    return is_one || is_zero;
+}
+
+static std::string MakeCompressedFormatListNVIDIA() {
+    std::string format_list;
+    for (VkFormat compressed_format : kCustomClearColorCompressedFormatsNVIDIA) {
+        if (compressed_format == kCustomClearColorCompressedFormatsNVIDIA.back()) {
+            format_list += "or ";
+        }
+        format_list += string_VkFormat(compressed_format);
+        if (compressed_format != kCustomClearColorCompressedFormatsNVIDIA.back()) {
+            format_list += ", ";
+        }
+    }
+    return format_list;
+}
+
+void BestPractices::RecordClearColor(VkFormat format, const VkClearColorValue& clear_value) {
+    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+
+    const std::array<uint32_t, 4> raw_color = GetRawClearColor(format, clear_value);
+    if (IsClearColorZeroOrOne(format, raw_color)) {
+        // These colors are always compressed
+        return;
+    }
+
+    const auto it = std::find(kCustomClearColorCompressedFormatsNVIDIA.begin(), kCustomClearColorCompressedFormatsNVIDIA.end(), format);
+    if (it == kCustomClearColorCompressedFormatsNVIDIA.end()) {
+        // The format cannot be compressed with a custom color
+        return;
+    }
+
+    // Record custom clear color
+    WriteLockGuard guard{clear_colors_lock_};
+    if (clear_colors_.size() < kMaxRecommendedNumberOfClearColorsNVIDIA) {
+        clear_colors_.insert(raw_color);
+    }
+}
+
+bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat format, const VkClearColorValue& clear_value) const {
+    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+
+    bool skip = false;
+
+    const std::array<uint32_t, 4> raw_color = GetRawClearColor(format, clear_value);
+    if (IsClearColorZeroOrOne(format, raw_color)) {
+        return skip;
+    }
+
+    const auto it = std::find(kCustomClearColorCompressedFormatsNVIDIA.begin(), kCustomClearColorCompressedFormatsNVIDIA.end(), format);
+    if (it == kCustomClearColorCompressedFormatsNVIDIA.end()) {
+        // The format is not compressible
+        static const std::string format_list = MakeCompressedFormatListNVIDIA();
+
+        skip |= LogPerformanceWarning(commandBuffer, kVUID_BestPractices_ClearColor_NotCompressed,
+                                      "%s Clearing image with format %s without a 1.0f or 0.0f clear color. "
+                                      "The clear will not get compressed in the GPU, harming performance. "
+                                      "This can be fixed using a clear color of VkClearColorValue{0.0f, 0.0f, 0.0f, 0.0f}, or "
+                                      "VkClearColorValue{1.0f, 1.0f, 1.0f, 1.0f}. Alternatively, use %s.",
+                                      VendorSpecificTag(kBPVendorNVIDIA), string_VkFormat(format), format_list.c_str());
+    } else {
+        // The format is compressible
+        bool registered = false;
+        {
+            ReadLockGuard guard{clear_colors_lock_};
+            registered = clear_colors_.find(raw_color) != clear_colors_.end();
+
+            if (!registered) {
+                // If it's not in the list, it might be new. Check if there's still space for new entries.
+                registered = clear_colors_.size() < kMaxRecommendedNumberOfClearColorsNVIDIA;
+            }
+        }
+        if (!registered) {
+            std::string clear_color_str;
+
+            if (FormatIsUINT(format)) {
+                clear_color_str = std::to_string(clear_value.uint32[0]) + ", " + std::to_string(clear_value.uint32[1]) + ", " +
+                                  std::to_string(clear_value.uint32[2]) + ", " + std::to_string(clear_value.uint32[3]);
+            } else if (FormatIsSINT(format)) {
+                clear_color_str = std::to_string(clear_value.int32[0]) + ", " + std::to_string(clear_value.int32[1]) + ", " +
+                                  std::to_string(clear_value.int32[2]) + ", " + std::to_string(clear_value.int32[3]);
+            } else {
+                clear_color_str = std::to_string(clear_value.float32[0]) + ", " + std::to_string(clear_value.float32[1]) + ", " +
+                                  std::to_string(clear_value.float32[2]) + ", " + std::to_string(clear_value.float32[3]);
+            }
+
+            skip |= LogPerformanceWarning(
+                commandBuffer, kVUID_BestPractices_ClearColor_NotCompressed,
+                "%s Clearing image with unregistered VkClearColorValue{%s}. "
+                "This clear will not get compressed in the GPU, harming performance. "
+                "The clear color is not registered because too many unique colors have been used. "
+                "Select a discrete set of clear colors and stick to those. "
+                "VkClearColorValue{0, 0, 0, 0} and VkClearColorValue{1.0f, 1.0f, 1.0f, 1.0f} are always registered.",
+                VendorSpecificTag(kBPVendorNVIDIA), clear_color_str.c_str());
+        }
+    }
+
+    return skip;
+}
+
 static inline bool RenderPassUsesAttachmentAsResolve(const safe_VkRenderPassCreateInfo2& createInfo, uint32_t attachment) {
     for (uint32_t subpass = 0; subpass < createInfo.subpassCount; subpass++) {
         const auto& subpass_info = createInfo.pSubpasses[subpass];
@@ -2306,6 +2461,35 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
                 "This render pass has VkRenderPassBeginInfo.clearValueCount > VkRenderPassCreateInfo.attachmentCount "
                 "(%" PRIu32 " > %" PRIu32 ") and as such the clearValues that do not have a corresponding attachment will be ignored.",
                 pRenderPassBegin->clearValueCount, rp_state->createInfo.attachmentCount);
+        }
+
+        if (VendorCheckEnabled(kBPVendorNVIDIA) && rp_state->createInfo.pAttachments) {
+            for (uint32_t i = 0; i < pRenderPassBegin->clearValueCount; ++i) {
+                const auto& attachment = rp_state->createInfo.pAttachments[i];
+                if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+                    const auto& clear_color = pRenderPassBegin->pClearValues[i].color;
+                    skip |= ValidateClearColor(commandBuffer, attachment.format, clear_color);
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool BestPractices::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) const {
+    bool skip = false;
+
+    auto cmd_state = Get<bp_state::CommandBuffer>(commandBuffer);
+    assert(cmd_state);
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
+            const auto& color_attachment = pRenderingInfo->pColorAttachments[i];
+            if (color_attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+                const VkFormat format = Get<IMAGE_VIEW_STATE>(color_attachment.imageView)->create_info.format;
+                skip |= ValidateClearColor(commandBuffer, format, color_attachment.clearValue.color);
+            }
         }
     }
 
@@ -2655,6 +2839,18 @@ bool BestPractices::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBu
                                                        const VkSubpassBeginInfo* pSubpassBeginInfo) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     skip |= ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) const {
+    bool skip = StateTracker::PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo);
+    skip |= ValidateCmdBeginRendering(commandBuffer, pRenderingInfo);
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) const {
+    bool skip = StateTracker::PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+    skip |= ValidateCmdBeginRendering(commandBuffer, pRenderingInfo);
     return skip;
 }
 
@@ -3190,9 +3386,23 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
 
     if (rp_state->UsesDynamicRendering()) {
         if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+            auto pColorAttachments = rp_state->dynamic_rendering_begin_rendering_info.pColorAttachments;
+
             for (uint32_t i = 0; i < attachmentCount; i++) {
-                if (pClearAttachments[i].aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+                auto& clear_attachment = pClearAttachments[i];
+
+                if (clear_attachment.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
                     RecordResetScopeZcullDirection(*cmd_state);
+                }
+                if ((clear_attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) &&
+                    clear_attachment.colorAttachment != VK_ATTACHMENT_UNUSED &&
+                    pColorAttachments) {
+                    const auto& attachment = pColorAttachments[clear_attachment.colorAttachment];
+                    if (attachment.imageView) {
+                        auto image_view_state = Get<IMAGE_VIEW_STATE>(attachment.imageView);
+                        const VkFormat format = image_view_state->create_info.format;
+                        RecordClearColor(format, clear_attachment.clearValue.color);
+                    }
                 }
             }
         }
@@ -3224,6 +3434,10 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
                                                      aspects, rectCount, pRects);
                 } else {
                     RecordAttachmentAccess(*cmd_state, fb_attachment, aspects);
+                }
+                if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+                    const VkFormat format = rp_state->createInfo.pAttachments[fb_attachment].format;
+                    RecordClearColor(format, attachment.clearValue.color);
                 }
             }
         }
@@ -4121,11 +4335,21 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
     const RENDER_PASS_STATE* rp = cb_node->activeRenderPass.get();
     if (rp) {
         if (rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
+            const auto pColorAttachments = rp->dynamic_rendering_begin_rendering_info.pColorAttachments;
 
             if (VendorCheckEnabled(kBPVendorNVIDIA)) {
                 for (uint32_t i = 0; i < attachmentCount; i++) {
-                    if (pAttachments[i].aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
+                    const auto& attachment = pAttachments[i];
+                    if (attachment.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
                         skip |= ValidateZcullScope(commandBuffer);
+                    }
+                    if ((attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) && attachment.colorAttachment != VK_ATTACHMENT_UNUSED) {
+                        const auto& color_attachment = pColorAttachments[attachment.colorAttachment];
+                        if (color_attachment.imageView) {
+                            auto image_view_state = Get<IMAGE_VIEW_STATE>(color_attachment.imageView);
+                            const VkFormat format = image_view_state->create_info.format;
+                            skip |= ValidateClearColor(commandBuffer, format, attachment.clearValue.color);
+                        }
                     }
                 }
             }
@@ -4151,6 +4375,19 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                         (attachment.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
                         uint32_t fb_attachment = subpass.pDepthStencilAttachment->attachment;
                         skip |= ValidateClearAttachment(*cb_node, fb_attachment, VK_ATTACHMENT_UNUSED, attachment.aspectMask, false);
+                    }
+                }
+            }
+            if (VendorCheckEnabled(kBPVendorNVIDIA) && rp->createInfo.pAttachments) {
+                for (uint32_t attachment_idx = 0; attachment_idx < attachmentCount; ++attachment_idx) {
+                    const auto& attachment = pAttachments[attachment_idx];
+
+                    if (attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
+                        const uint32_t fb_attachment = subpass.pColorAttachments[attachment.colorAttachment].attachment;
+                        if (fb_attachment != VK_ATTACHMENT_UNUSED) {
+                            const VkFormat format = rp->createInfo.pAttachments[fb_attachment].format;
+                            skip |= ValidateClearColor(commandBuffer, format, attachment.clearValue.color);
+                        }
                     }
                 }
             }
@@ -4299,6 +4536,10 @@ void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
 
     for (uint32_t i = 0; i < rangeCount; i++) {
         QueueValidateImage(funcs, "vkCmdClearColorImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
+    }
+
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        RecordClearColor(dst->createInfo.format, *pColor);
     }
 }
 
@@ -4481,12 +4722,18 @@ bool BestPractices::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
                                                       const VkClearColorValue* pColor, uint32_t rangeCount,
                                                       const VkImageSubresourceRange* pRanges) const {
     bool skip = false;
+
+    auto dst = Get<bp_state::Image>(image);
+
     if (VendorCheckEnabled(kBPVendorAMD)) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_ClearAttachment_ClearImage,
             "%s Performance warning: using vkCmdClearColorImage is not recommended. Prefer using LOAD_OP_CLEAR or "
             "vkCmdClearAttachments instead",
             VendorSpecificTag(kBPVendorAMD));
+    }
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        skip |= ValidateClearColor(commandBuffer, dst->createInfo.format, *pColor);
     }
 
     return skip;

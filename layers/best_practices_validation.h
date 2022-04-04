@@ -77,6 +77,8 @@ static const auto kAllocateMemoryReuseTimeThresholdNVIDIA = std::chrono::seconds
 static const uint32_t kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA = 4;
 // Ratio where the Z-cull direction starts being considered balanced
 static const int kZcullDirectionBalanceRatioNVIDIA = 20;
+// Maximum number of custom clear colors
+static const size_t kMaxRecommendedNumberOfClearColorsNVIDIA = 16;
 
 // How many small indexed drawcalls in a command buffer before a warning is thrown
 static const uint32_t kMaxSmallIndexedDrawcalls = 10;
@@ -496,6 +498,7 @@ class BestPractices : public ValidationStateTracker {
     void PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) override;
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                     const VkRenderPassBeginInfo* pRenderPassBegin) const;
+    bool ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) const;
 
     void PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          VkSubpassContents contents) override;
@@ -520,6 +523,8 @@ class BestPractices : public ValidationStateTracker {
                                                const VkSubpassBeginInfo* pSubpassBeginInfo) const override;
     bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                             const VkSubpassBeginInfo* pSubpassBeginInfo) const override;
+    bool PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) const override;
+    bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) const override;
     void ValidateBoundDescriptorSets(bp_state::CommandBuffer& commandBuffer, const char* function_name);
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer) const override;
     bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer) const override;
@@ -995,6 +1000,9 @@ class BestPractices : public ValidationStateTracker {
     bool ValidateZcullScope(VkCommandBuffer commandBuffer) const;
     bool ValidateZcull(VkCommandBuffer commandBuffer, VkImage image, const VkImageSubresourceRange& subresource_range) const;
 
+    void RecordClearColor(VkFormat format, const VkClearColorValue& clear_value);
+    bool ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat format, const VkClearColorValue& clear_value) const;
+
     void PipelineUsedInFrame(VkPipeline pipeline) {
         WriteLockGuard guard(pipeline_lock_);
         pipelines_used_in_frame_.insert(pipeline);
@@ -1025,6 +1033,9 @@ class BestPractices : public ValidationStateTracker {
     };
     std::deque<MemoryFreeEvent> memory_free_events_;
     mutable ReadWriteLock memory_free_events_lock_;
+
+    std::set<std::array<uint32_t, 4>> clear_colors_;
+    mutable ReadWriteLock clear_colors_lock_;
 
     layer_data::unordered_set<VkPipeline> pipelines_used_in_frame_;
     mutable ReadWriteLock pipeline_lock_;
