@@ -1019,7 +1019,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         const auto *fragment_shading_rate_enums_features =
             LvlFindInChain<VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV>(pCreateInfo->pNext);
         if (fragment_shading_rate_enums_features) {
-            state_tracker->enabled_features.fragment_shading_rate_enums_features = *fragment_shading_rate_enums_features;
+            enabled_features.fragment_shading_rate_enums_features = *fragment_shading_rate_enums_features;
         }
 
         const auto *extended_dynamic_state_features =
