@@ -259,7 +259,7 @@ std::shared_ptr<VertexInputState> PIPELINE_STATE::CreateVertexInputState(const V
 
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
     if (link_info) {
-        auto ss = GetLibSubState<VertexInputState, VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>(state, *link_info);
+        auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>(state, *link_info);
         if (ss) {
             return ss;
         }
@@ -283,7 +283,7 @@ std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const Valid
 
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
     if (link_info) {
-        auto ss = GetLibSubState<PreRasterState, VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(state, *link_info);
+        auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(state, *link_info);
         if (ss) {
             return ss;
         }
@@ -308,7 +308,7 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
 
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
     if (link_info) {
-        auto ss = GetLibSubState<FragmentShaderState, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(state, *link_info);
+        auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(state, *link_info);
         if (ss) {
             return ss;
         }
@@ -335,8 +335,7 @@ std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
 
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
     if (link_info) {
-        auto ss =
-            GetLibSubState<FragmentOutputState, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>(state, *link_info);
+        auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>(state, *link_info);
         if (ss) {
             return ss;
         }
