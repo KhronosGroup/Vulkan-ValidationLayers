@@ -7276,7 +7276,7 @@ TEST_F(VkLayerTest, Maint1BindingSliceOf3DImage) {
     ASSERT_VK_SUCCESS(err);
 
     // Meat of the test.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageView-00343");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageView-06711");
 
     VkDescriptorImageInfo dii = {VK_NULL_HANDLE, view, VK_IMAGE_LAYOUT_GENERAL};
     VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,

@@ -2466,9 +2466,17 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     // KHR_maintenance1 allows rendering into 2D or 2DArray views which slice a 3D image,
     // but not binding them to descriptor sets.
     if (iv_state->IsDepthSliced()) {
-        *error_code = "VUID-VkDescriptorImageInfo-imageView-00343";
-        *error_msg = "ImageView must not be a 2D or 2DArray view of a 3D image";
-        return false;
+        if (!device_extensions.vk_ext_image_2d_view_of_3d) {
+            if (iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D) {
+                *error_code = "VUID-VkDescriptorImageInfo-imageView-06711";
+                *error_msg = "ImageView must not be a 2D view of a 3D image";
+                return false;
+            }
+        } else if (iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            *error_code = "VUID-VkDescriptorImageInfo-imageView-06712";
+            *error_msg = "ImageView must not be a 2DArray view of a 3D image";
+            return false;
+        }
     }
 
     // TODO : The various image aspect and format checks here are based on general spec language in 11.5 Image Views section under
@@ -2694,6 +2702,45 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                   << ") that is not 0.0";
         *error_msg = error_str.str();
         return false;
+    }
+
+    if (device_extensions.vk_ext_image_2d_view_of_3d && iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D &&
+        image_node->createInfo.imageType == VK_IMAGE_TYPE_3D) {
+        if ((type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) || (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) ||
+            (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) {
+            if (!(image_node->createInfo.flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)) {
+                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-06710";
+                std::stringstream error_str;
+                error_str << "ImageView (" << report_data->FormatHandle(image_view)
+                          << ") , is a 2D image view created from 3D image (" << report_data->FormatHandle(image)
+                          << ") , written to a descriptor of type " << string_VkDescriptorType(type)
+                          << " but the image used to create the image view was not created with "
+                             "VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT set";
+                *error_msg = error_str.str();
+                return false;
+            }
+            if (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE && !enabled_features.image_2d_view_of_3d_features.image2DViewOf3D) {
+                *error_code = "VUID-VkDescriptorImageInfo-descriptorType-06713";
+                std::stringstream error_str;
+                error_str << "ImageView (" << report_data->FormatHandle(image_view)
+                          << ") , is a 2D image view created from 3D image (" << report_data->FormatHandle(image)
+                          << ") , written to a descriptor of type VK_DESCRIPTOR_TYPE_STORAGE_IMAGE"
+                          << " and the image2DViewOf3D feature is not enabled";
+                *error_msg = error_str.str();
+                return false;
+            }
+            if ((type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE || type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) &&
+                !enabled_features.image_2d_view_of_3d_features.sampler2DViewOf3D) {
+                *error_code = "VUID-VkDescriptorImageInfo-descriptorType-06714";
+                std::stringstream error_str;
+                error_str << "ImageView (" << report_data->FormatHandle(image_view)
+                          << ") , is a 2D image view created from 3D image (" << report_data->FormatHandle(image)
+                          << ") , written to a descriptor of type " << string_VkDescriptorType(type)
+                          << " and the image2DViewOf3D feature is not enabled";
+                *error_msg = error_str.str();
+                return false;
+            }
+        }
     }
 
     return true;
