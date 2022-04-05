@@ -112,11 +112,6 @@ struct PipelineStageState {
     PipelineStageState(const VkPipelineShaderStageCreateInfo *stage, std::shared_ptr<const SHADER_MODULE_STATE> &module_state);
 };
 
-template <typename SubStateType, VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
-inline std::shared_ptr<SubStateType> GetSubState(const PIPELINE_STATE &) {
-    return {};
-}
-
 class PIPELINE_STATE : public BASE_NODE {
   public:
     union CreateInfo {
@@ -259,13 +254,21 @@ class PIPELINE_STATE : public BASE_NODE {
 
     bool IsGraphicsLibrary() const { return graphics_lib_type != static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0); }
 
-    template <typename SubStateType, VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
-    static inline std::shared_ptr<SubStateType> GetLibSubState(const ValidationStateTracker &state,
-                                                               const VkPipelineLibraryCreateInfoKHR &link_info) {
+    template <VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
+    struct SubStateTraits {};
+
+    template <VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
+    static inline typename SubStateTraits<type_flag>::type GetSubState(const PIPELINE_STATE &) {
+        return {};
+    }
+
+    template <VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
+    static inline typename SubStateTraits<type_flag>::type GetLibSubState(const ValidationStateTracker &state,
+                                                                          const VkPipelineLibraryCreateInfoKHR &link_info) {
         for (uint32_t i = 0; i < link_info.libraryCount; ++i) {
             const auto lib_state = state.Get<PIPELINE_STATE>(link_info.pLibraries[i]);
             if (lib_state && ((lib_state->graphics_lib_type & type_flag) != 0)) {
-                return GetSubState<SubStateType, type_flag>(*lib_state);
+                return GetSubState<type_flag>(*lib_state);
             }
         }
         return {};
@@ -285,26 +288,50 @@ class PIPELINE_STATE : public BASE_NODE {
 };
 
 template <>
-inline std::shared_ptr<VertexInputState> GetSubState<VertexInputState, VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>(
-    const PIPELINE_STATE &pipe_state) {
+struct PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT> {
+    using type = std::shared_ptr<VertexInputState>;
+};
+
+// static
+template <>
+inline PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>::type
+PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>(const PIPELINE_STATE &pipe_state) {
     return pipe_state.vertex_input_state;
 }
 
 template <>
-inline std::shared_ptr<PreRasterState> GetSubState<PreRasterState, VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(
-    const PIPELINE_STATE &pipe_state) {
+struct PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT> {
+    using type = std::shared_ptr<PreRasterState>;
+};
+
+// static
+template <>
+inline PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>::type
+PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(const PIPELINE_STATE &pipe_state) {
     return pipe_state.pre_raster_state;
 }
 
 template <>
-inline std::shared_ptr<FragmentShaderState> GetSubState<FragmentShaderState, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(
-    const PIPELINE_STATE &pipe_state) {
+struct PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT> {
+    using type = std::shared_ptr<FragmentShaderState>;
+};
+
+// static
+template <>
+inline PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>::type
+PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(const PIPELINE_STATE &pipe_state) {
     return pipe_state.fragment_shader_state;
 }
 
 template <>
-inline std::shared_ptr<FragmentOutputState>
-GetSubState<FragmentOutputState, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>(const PIPELINE_STATE &pipe_state) {
+struct PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT> {
+    using type = std::shared_ptr<FragmentOutputState>;
+};
+
+// static
+template <>
+inline PIPELINE_STATE::SubStateTraits<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>::type
+PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>(const PIPELINE_STATE &pipe_state) {
     return pipe_state.fragment_output_state;
 }
 
