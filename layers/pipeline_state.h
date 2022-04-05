@@ -166,7 +166,7 @@ struct PipelineStageState {
 class PIPELINE_STATE : public BASE_NODE {
   public:
     union CreateInfo {
-        CreateInfo(const VkGraphicsPipelineCreateInfo *ci, std::shared_ptr<const RENDER_PASS_STATE> rpstate) {
+        CreateInfo(const VkGraphicsPipelineCreateInfo *ci, std::shared_ptr<const RENDER_PASS_STATE> rpstate) : graphics() {
             bool use_color = false;
             bool use_depth_stencil = false;
 
