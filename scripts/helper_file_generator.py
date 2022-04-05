@@ -697,12 +697,14 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                         if member_index is not None and self.NeedSafeStruct(self.structMembers[member_index]) == True:
                             if member.ispointer:
                                 num_indirections = member.cdecl.count('*')
-                                safe_struct_header += '    safe_%s%s %s;\n' % (member.type, '*' * num_indirections, member.name)
+                                safe_struct_header += '    safe_%s%s %s{};\n' % (member.type, '*' * num_indirections, member.name)
                             else:
                                 safe_struct_header += '    safe_%s %s;\n' % (member.type, member.name)
                             continue
                     if member.len is not None and (self.TypeContainsObjectHandle(member.type, True) or self.TypeContainsObjectHandle(member.type, False)):
-                            safe_struct_header += '    %s* %s;\n' % (member.type, member.name)
+                            safe_struct_header += '    %s* %s{};\n' % (member.type, member.name)
+                    elif member.ispointer:
+                        safe_struct_header += '%s{};\n' % member.cdecl
                     else:
                         safe_struct_header += '%s;\n' % member.cdecl
                 safe_struct_header += '    safe_%s(const %s* in_struct%s);\n' % (item.name, item.name, self.custom_construct_params.get(item.name, ''))
@@ -1883,7 +1885,8 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 destruct_txt = custom_destruct_txt[item.name]
 
             if copy_pnext:
-                destruct_txt += '    if (pNext)\n        FreePnextChain(pNext);\n'
+                destruct_txt += '    if (pNext)\n'
+                destruct_txt += '        FreePnextChain(pNext);\n'
 
             if (self.structOrUnion[item.name] == 'union'):
                 # Unions don't allow multiple members in the initialization list, so just call initialize
@@ -1903,7 +1906,8 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             safe_struct_body.append("\n%s::%s(const %s& copy_src)\n{\n%s%s}" % (ss_name, ss_name, ss_name, copy_construct_init, copy_construct_txt)) # Copy constructor
             safe_struct_body.append("\n%s& %s::operator=(const %s& copy_src)\n{\n%s\n}" % (ss_name, ss_name, ss_name, copy_assign_txt)) # Copy assignment operator
             safe_struct_body.append("\n%s::~%s()\n{\n%s}" % (ss_name, ss_name, destruct_txt))
-            safe_struct_body.append("\nvoid %s::initialize(const %s* in_struct%s)\n{\n%s%s}" % (ss_name, item.name, self.custom_construct_params.get(item.name, ''), init_func_txt, construct_txt))
+            safe_struct_body.append("\nvoid %s::initialize(const %s* in_struct%s)\n{\n%s%s%s}" % (ss_name, item.name, self.custom_construct_params.get(item.name, ''),
+                                    destruct_txt, init_func_txt, construct_txt))
             # Copy initializer uses same txt as copy constructor but has a ptr and not a reference
             init_copy = copy_construct_init.replace('copy_src.', 'copy_src->')
             init_construct = copy_construct_txt.replace('copy_src.', 'copy_src->')
