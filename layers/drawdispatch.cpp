@@ -108,6 +108,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         depth_compare_sample               = "VUID-vkCmdDraw-None-06479";
         dynamic_sample_locations           = "VUID-vkCmdDraw-None-06666";
         primitives_generated               = "VUID-vkCmdDraw-primitivesGeneratedQueryWithRasterizerDiscard-06708";
+        primitives_generated_streams       = "VUID-vkCmdDraw-primitivesGeneratedQueryWithNonZeroStreams-06709";
     }
 };
 
@@ -176,6 +177,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         depth_compare_sample               = "VUID-vkCmdDrawMultiEXT-None-06479";
         dynamic_sample_locations           = "VUID-vkCmdDrawMultiEXT-None-06666";
         primitives_generated               = "VUID-vkCmdDrawMultiEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
+        primitives_generated_streams       = "VUID-vkCmdDrawMultiEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
     }
 };
 
@@ -244,6 +246,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         depth_compare_sample               = "VUID-vkCmdDrawIndexed-None-06479";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndexed-None-06666";
         primitives_generated               = "VUID-vkCmdDrawIndexed-primitivesGeneratedQueryWithRasterizerDiscard-06708";
+        primitives_generated_streams       = "VUID-vkCmdDrawIndexed-primitivesGeneratedQueryWithNonZeroStreams-06709";
     }
 };
 
@@ -312,6 +315,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         depth_compare_sample               = "VUID-vkCmdDrawMultiIndexedEXT-None-06479";
         dynamic_sample_locations           = "VUID-vkCmdDrawMultiIndexedEXT-None-06666";
         primitives_generated               = "VUID-vkCmdDrawMultiIndexedEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
+        primitives_generated_streams       = "VUID-vkCmdDrawMultiIndexedEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
     }
 };
 
@@ -382,6 +386,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         depth_compare_sample               = "VUID-vkCmdDrawIndirect-None-06479";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndirect-None-06666";
         primitives_generated               = "VUID-vkCmdDrawIndirect-primitivesGeneratedQueryWithRasterizerDiscard-06708";
+        primitives_generated_streams       = "VUID-vkCmdDrawIndirect-primitivesGeneratedQueryWithNonZeroStreams-06709";
     }
 };
 
@@ -452,6 +457,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         depth_compare_sample               = "VUID-vkCmdDrawIndexedIndirect-None-06479";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndexedIndirect-None-06666";
         primitives_generated               = "VUID-vkCmdDrawIndexedIndirect-primitivesGeneratedQueryWithRasterizerDiscard-06708";
+        primitives_generated_streams       = "VUID-vkCmdDrawIndexedIndirect-primitivesGeneratedQueryWithNonZeroStreams-06709";
     }
 };
 
@@ -576,6 +582,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         depth_compare_sample               = "VUID-vkCmdDrawIndirectCount-None-06479";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndirectCount-None-06666";
         primitives_generated               = "VUID-vkCmdDrawIndirectCount-primitivesGeneratedQueryWithRasterizerDiscard-06708";
+        primitives_generated_streams       = "VUID-vkCmdDrawIndirectCount-primitivesGeneratedQueryWithNonZeroStreams-06709";
     }
 };
 
@@ -646,6 +653,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         depth_compare_sample               = "VUID-vkCmdDrawIndexedIndirectCount-None-06479";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndexedIndirectCount-None-06666";
         primitives_generated               = "VUID-vkCmdDrawIndexedIndirectCount-primitivesGeneratedQueryWithRasterizerDiscard-06708";
+        primitives_generated_streams       = "VUID-vkCmdDrawIndexedIndirectCount-primitivesGeneratedQueryWithNonZeroStreams-06709";
     }
 };
 
@@ -786,6 +794,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         depth_compare_sample               = "VUID-vkCmdDrawMeshTasksNV-None-06479";
         dynamic_sample_locations           = "VUID-vkCmdDrawMeshTasksNV-None-06666";
         primitives_generated               = "VUID-vkCmdDrawMeshTasksNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
+        primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
     }
 };
 
@@ -863,6 +872,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         dynamic_rendering_06198            = "VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-06198";
         dynamic_sample_locations           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06666";
         primitives_generated               = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
+        primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
     }
 };
 
@@ -940,6 +950,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         dynamic_rendering_06198            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-06198";
         dynamic_sample_locations           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06666";
         primitives_generated               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
+        primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
     }
 };
 
@@ -1024,6 +1035,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         dynamic_rendering_06198            = "VUID-vkCmdDrawIndirectByteCountEXT-renderPass-06198";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndirectByteCountEXT-None-06666";
         primitives_generated               = "VUID-vkCmdDrawIndirectByteCountEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
+        primitives_generated_streams       = "VUID-vkCmdDrawIndirectByteCountEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
     }
 };
 

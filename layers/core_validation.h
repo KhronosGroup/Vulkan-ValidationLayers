@@ -107,6 +107,7 @@ struct DrawDispatchVuid {
     const char* depth_compare_sample = kVUIDUndefined;
     const char* dynamic_sample_locations = kVUIDUndefined;
     const char* primitives_generated = kVUIDUndefined;
+    const char* primitives_generated_streams = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {

@@ -890,22 +890,44 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
     }
 
-    if (enabled_features.primitives_generated_query_features.primitivesGeneratedQueryWithRasterizerDiscard == VK_FALSE) {
-        bool primitives_generated_query = false;
-        for (const auto &query : pCB->activeQueries) {
-            auto query_pool_state = Get<QUERY_POOL_STATE>(query.pool);
-            if (query_pool_state && query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
-                primitives_generated_query = true;
-                break;
+    if (device_extensions.vk_ext_primitives_generated_query) {
+        bool primitives_generated_query_with_rasterizer_discard =
+            enabled_features.primitives_generated_query_features.primitivesGeneratedQueryWithRasterizerDiscard == VK_TRUE;
+        bool primitives_generated_query_with_non_zero_streams =
+            enabled_features.primitives_generated_query_features.primitivesGeneratedQueryWithNonZeroStreams == VK_TRUE;
+        if (!primitives_generated_query_with_rasterizer_discard || !primitives_generated_query_with_non_zero_streams) {
+            bool primitives_generated_query = false;
+            for (const auto &query : pCB->activeQueries) {
+                auto query_pool_state = Get<QUERY_POOL_STATE>(query.pool);
+                if (query_pool_state && query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+                    primitives_generated_query = true;
+                    break;
+                }
             }
-        }
-        const auto rp_state = pPipeline->RasterizationState();
-        if (primitives_generated_query && rp_state && rp_state->rasterizerDiscardEnable == VK_TRUE) {
-            skip |= LogError(pCB->commandBuffer(), vuid.primitives_generated,
-                             "%s: a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
-                             "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable set to VK_TRUE, but  "
-                             "primitivesGeneratedQueryWithRasterizerDiscard feature is not enabled.",
-                             caller);
+            const auto rp_state = pPipeline->RasterizationState();
+            if (primitives_generated_query) {
+                if (!primitives_generated_query_with_rasterizer_discard && rp_state &&
+                    rp_state->rasterizerDiscardEnable == VK_TRUE) {
+                    skip |= LogError(pCB->commandBuffer(), vuid.primitives_generated,
+                                     "%s: a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
+                                     "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable set to VK_TRUE, but  "
+                                     "primitivesGeneratedQueryWithRasterizerDiscard feature is not enabled.",
+                                     caller);
+                }
+                if (!primitives_generated_query_with_non_zero_streams) {
+                    const auto rasterization_state_stream_ci =
+                        LvlFindInChain<VkPipelineRasterizationStateStreamCreateInfoEXT>(rp_state->pNext);
+                    if (rasterization_state_stream_ci && rasterization_state_stream_ci->rasterizationStream != 0) {
+                        skip |=
+                            LogError(pCB->commandBuffer(), vuid.primitives_generated_streams,
+                                     "%s: a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
+                                     "VkPipelineRasterizationStateStreamCreateInfoEXT::rasterizationStream set to %" PRIu32
+                                     ", but  "
+                                     "primitivesGeneratedQueryWithNonZeroStreams feature is not enabled.",
+                                     caller, rasterization_state_stream_ci->rasterizationStream);
+                    }
+                }
+            }
         }
     }
 
