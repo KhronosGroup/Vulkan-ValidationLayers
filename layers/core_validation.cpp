@@ -3003,17 +3003,20 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                 fo_msg.c_str());
         }
     } else {
-        layer_data::optional<VkPipelineLayoutCreateFlags> pre_raster_flags, fs_flags;
+        // TODO (ncesario) layer_data::optional would probably be a bit more robust here, but not currently possible due to an
+        // apparent bug in GCC 5.4
+        VkPipelineLayoutCreateFlags pre_raster_flags = VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM,
+                                    fs_flags = VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM;
         const auto gpl_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pPipeline->PNext());
         const char *vuid = "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06615";
         if (gpl_info) {
             vuid = "VUID-VkGraphicsPipelineCreateInfo-flags-06614";
             if ((gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) &&
                 !(gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) {
-                pre_raster_flags.emplace(pPipeline->pre_raster_state->pipeline_layout->CreateFlags());
+                pre_raster_flags = pPipeline->pre_raster_state->pipeline_layout->CreateFlags();
             } else if ((gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) &&
                        !(gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT)) {
-                fs_flags.emplace(pPipeline->fragment_shader_state->pipeline_layout->CreateFlags());
+                fs_flags = pPipeline->fragment_shader_state->pipeline_layout->CreateFlags();
             }
         }
 
@@ -3023,17 +3026,18 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                 const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
                 if (lib) {
                     if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
-                        pre_raster_flags.emplace(lib->PipelineLayoutState()->CreateFlags());
+                        pre_raster_flags = lib->PipelineLayoutState()->CreateFlags();
                     } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
-                        fs_flags.emplace(lib->PipelineLayoutState()->CreateFlags());
+                        fs_flags = lib->PipelineLayoutState()->CreateFlags();
                     }
                 }
             }
         }
 
-        if ((gpl_info || link_info) && (pre_raster_flags && fs_flags)) {
-            const auto pre_raster_indset = (*pre_raster_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-            const auto fs_indset = (*fs_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+        if ((gpl_info || link_info) && ((pre_raster_flags != VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM) &&
+                                        (fs_flags != VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM))) {
+            const auto pre_raster_indset = (pre_raster_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+            const auto fs_indset = (fs_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
             if (pre_raster_indset ^ fs_indset) {
                 const char *pre_raster_str = (pre_raster_indset != 0) ? "defined with" : "not defined with";
                 const char *fs_str = (fs_indset != 0) ? "defined with" : "not defined with";
@@ -3044,8 +3048,8 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                     "the "
                     "pre-raster layout create flags (%s) are %s VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, and the "
                     "fragment shader layout create flags (%s) are %s VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT",
-                    pipelineIndex, string_VkPipelineLayoutCreateFlags(*pre_raster_flags).c_str(), pre_raster_str,
-                    string_VkPipelineLayoutCreateFlags(*fs_flags).c_str(), fs_str);
+                    pipelineIndex, string_VkPipelineLayoutCreateFlags(pre_raster_flags).c_str(), pre_raster_str,
+                    string_VkPipelineLayoutCreateFlags(fs_flags).c_str(), fs_str);
             }
         }
     }
