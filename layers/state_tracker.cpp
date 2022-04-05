@@ -1159,6 +1159,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (primitives_generated_query_features) {
             enabled_features.primitives_generated_query_features = *primitives_generated_query_features;
         }
+
+        const auto image_2d_view_of_3d_features = LvlFindInChain<VkPhysicalDeviceImage2DViewOf3DFeaturesEXT>(pCreateInfo->pNext);
+        if (image_2d_view_of_3d_features) {
+            enabled_features.image_2d_view_of_3d_features = *image_2d_view_of_3d_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs

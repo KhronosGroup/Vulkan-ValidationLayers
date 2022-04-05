@@ -5013,8 +5013,11 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
 bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *image_state, bool is_imageview_2d_type,
                                                          const VkImageSubresourceRange &subresourceRange) const {
     bool is_khr_maintenance1 = IsExtEnabled(device_extensions.vk_khr_maintenance1);
-    bool is_image_slicable = image_state->createInfo.imageType == VK_IMAGE_TYPE_3D &&
-                             (image_state->createInfo.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT);
+    bool is_2d_compatible = (image_state->createInfo.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) ? true : false;
+    if (device_extensions.vk_ext_image_2d_view_of_3d)
+        is_2d_compatible |= (image_state->createInfo.flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) ? true : false;
+    bool is_image_slicable =
+            (image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) && is_2d_compatible;
     bool is_3_d_to_2_d_map = is_khr_maintenance1 && is_image_slicable && is_imageview_2d_type;
 
     uint32_t image_layer_count;
@@ -5034,12 +5037,16 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *imag
     subresource_range_error_codes.mip_count_err = "VUID-VkImageViewCreateInfo-subresourceRange-01718";
     subresource_range_error_codes.base_layer_err =
         is_khr_maintenance1
-            ? (is_3_d_to_2_d_map ? "VUID-VkImageViewCreateInfo-image-02724" : "VUID-VkImageViewCreateInfo-image-01482")
+            ? (is_3_d_to_2_d_map ? "VUID-VkImageViewCreateInfo-image-02724"
+                                 : (device_extensions.vk_ext_image_2d_view_of_3d ? "VUID-VkImageViewCreateInfo-image-06724"
+                                                                                 : "VUID-VkImageViewCreateInfo-image-01482"))
             : "VUID-VkImageViewCreateInfo-subresourceRange-01480";
-    subresource_range_error_codes.layer_count_err = is_khr_maintenance1
-                                                        ? (is_3_d_to_2_d_map ? "VUID-VkImageViewCreateInfo-subresourceRange-02725"
-                                                                             : "VUID-VkImageViewCreateInfo-subresourceRange-01483")
-                                                        : "VUID-VkImageViewCreateInfo-subresourceRange-01719";
+    subresource_range_error_codes.layer_count_err =
+        is_khr_maintenance1
+            ? (is_3_d_to_2_d_map ? "VUID-VkImageViewCreateInfo-subresourceRange-02725"
+                                 : (device_extensions.vk_ext_image_2d_view_of_3d ? "VUID-VkImageViewCreateInfo-subresourceRange-06725"
+                                                                                 : "VUID-VkImageViewCreateInfo-subresourceRange-01483"))
+            : "VUID-VkImageViewCreateInfo-subresourceRange-01719";
 
     return ValidateImageSubresourceRange(image_state->createInfo.mipLevels, image_layer_count, subresourceRange,
                                          "vkCreateImageView", "pCreateInfo->subresourceRange", image_layer_count_var_name,
@@ -5806,13 +5813,34 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                 if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
                     if (view_type != VK_IMAGE_VIEW_TYPE_3D) {
                         if ((view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
-                            if (!(image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT)) {
+                            if (device_extensions.vk_ext_image_2d_view_of_3d) {
+                                if (!(image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT)) {
+                                    if (view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                                        skip |= LogError(
+                                            pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-06723",
+                                            "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type "
+                                            "%s since the image doesn't have VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag set.",
+                                            string_VkImageViewType(view_type), string_VkImageType(image_type));
+                                    } else if (view_type == VK_IMAGE_VIEW_TYPE_2D &&
+                                               !(image_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)) {
+                                        skip |= LogError(
+                                            pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-06728",
+                                            "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type "
+                                            "%s since the image doesn't have VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT or "
+                                            "VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT flag set.",
+                                            string_VkImageViewType(view_type), string_VkImageType(image_type));
+                                    }
+                                }
+                            } else if (!(image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) &&
+                                       (view_type == VK_IMAGE_VIEW_TYPE_2D)) {
                                 skip |=
-                                    LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01005",
-                                             "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type "
+                                    LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-06727",
+                                             "vkCreateImageView(): pCreateInfo->viewType VK_IMAGE_VIEW_TYPE_2D is not compatible "
+                                             "with image type "
                                              "%s since the image doesn't have VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag set.",
-                                             string_VkImageViewType(view_type), string_VkImageType(image_type));
-                            } else if ((image_flags & (VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT |
+                                             string_VkImageType(image_type));
+                            }
+                            if ((image_flags & (VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT |
                                                        VK_IMAGE_CREATE_SPARSE_ALIASED_BIT))) {
                                 skip |= LogError(
                                     pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04971",

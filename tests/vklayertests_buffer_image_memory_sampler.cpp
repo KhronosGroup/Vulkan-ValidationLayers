@@ -7715,7 +7715,7 @@ TEST_F(VkLayerTest, CreateImageViewBreaksParameterCompatibilityRequirements) {
 
     // Test for error message
     if (maintenance1_support) {
-        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01005");
+        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-06727");
     } else {
         CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
     }
