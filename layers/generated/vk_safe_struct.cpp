@@ -109,6 +109,8 @@ safe_VkBufferMemoryBarrier::~safe_VkBufferMemoryBarrier()
 
 void safe_VkBufferMemoryBarrier::initialize(const VkBufferMemoryBarrier* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcAccessMask = in_struct->srcAccessMask;
     dstAccessMask = in_struct->dstAccessMask;
@@ -203,6 +205,8 @@ safe_VkImageMemoryBarrier::~safe_VkImageMemoryBarrier()
 
 void safe_VkImageMemoryBarrier::initialize(const VkImageMemoryBarrier* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcAccessMask = in_struct->srcAccessMask;
     dstAccessMask = in_struct->dstAccessMask;
@@ -275,6 +279,8 @@ safe_VkMemoryBarrier::~safe_VkMemoryBarrier()
 
 void safe_VkMemoryBarrier::initialize(const VkMemoryBarrier* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcAccessMask = in_struct->srcAccessMask;
     dstAccessMask = in_struct->dstAccessMask;
@@ -419,6 +425,10 @@ safe_VkApplicationInfo::~safe_VkApplicationInfo()
 
 void safe_VkApplicationInfo::initialize(const VkApplicationInfo* in_struct)
 {
+    if (pApplicationName) delete [] pApplicationName;
+    if (pEngineName) delete [] pEngineName;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     applicationVersion = in_struct->applicationVersion;
     engineVersion = in_struct->engineVersion;
@@ -559,6 +569,22 @@ safe_VkInstanceCreateInfo::~safe_VkInstanceCreateInfo()
 
 void safe_VkInstanceCreateInfo::initialize(const VkInstanceCreateInfo* in_struct)
 {
+    if (pApplicationInfo)
+        delete pApplicationInfo;
+    if (ppEnabledLayerNames) {
+        for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+            delete [] ppEnabledLayerNames[i];
+        }
+        delete [] ppEnabledLayerNames;
+    }
+    if (ppEnabledExtensionNames) {
+        for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+            delete [] ppEnabledExtensionNames[i];
+        }
+        delete [] ppEnabledExtensionNames;
+    }
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pApplicationInfo = nullptr;
@@ -671,6 +697,10 @@ safe_VkDeviceQueueCreateInfo::~safe_VkDeviceQueueCreateInfo()
 
 void safe_VkDeviceQueueCreateInfo::initialize(const VkDeviceQueueCreateInfo* in_struct)
 {
+    if (pQueuePriorities)
+        delete[] pQueuePriorities;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     queueFamilyIndex = in_struct->queueFamilyIndex;
@@ -850,6 +880,24 @@ safe_VkDeviceCreateInfo::~safe_VkDeviceCreateInfo()
 
 void safe_VkDeviceCreateInfo::initialize(const VkDeviceCreateInfo* in_struct)
 {
+    if (pQueueCreateInfos)
+        delete[] pQueueCreateInfos;
+    if (ppEnabledLayerNames) {
+        for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+            delete [] ppEnabledLayerNames[i];
+        }
+        delete [] ppEnabledLayerNames;
+    }
+    if (ppEnabledExtensionNames) {
+        for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+            delete [] ppEnabledExtensionNames[i];
+        }
+        delete [] ppEnabledExtensionNames;
+    }
+    if (pEnabledFeatures)
+        delete pEnabledFeatures;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     queueCreateInfoCount = in_struct->queueCreateInfoCount;
@@ -1052,6 +1100,16 @@ safe_VkSubmitInfo::~safe_VkSubmitInfo()
 
 void safe_VkSubmitInfo::initialize(const VkSubmitInfo* in_struct)
 {
+    if (pWaitSemaphores)
+        delete[] pWaitSemaphores;
+    if (pWaitDstStageMask)
+        delete[] pWaitDstStageMask;
+    if (pCommandBuffers)
+        delete[] pCommandBuffers;
+    if (pSignalSemaphores)
+        delete[] pSignalSemaphores;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     waitSemaphoreCount = in_struct->waitSemaphoreCount;
     pWaitSemaphores = nullptr;
@@ -1166,6 +1224,8 @@ safe_VkMappedMemoryRange::~safe_VkMappedMemoryRange()
 
 void safe_VkMappedMemoryRange::initialize(const VkMappedMemoryRange* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memory = in_struct->memory;
     offset = in_struct->offset;
@@ -1228,6 +1288,8 @@ safe_VkMemoryAllocateInfo::~safe_VkMemoryAllocateInfo()
 
 void safe_VkMemoryAllocateInfo::initialize(const VkMemoryAllocateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     allocationSize = in_struct->allocationSize;
     memoryTypeIndex = in_struct->memoryTypeIndex;
@@ -1302,6 +1364,8 @@ safe_VkSparseBufferMemoryBindInfo::~safe_VkSparseBufferMemoryBindInfo()
 
 void safe_VkSparseBufferMemoryBindInfo::initialize(const VkSparseBufferMemoryBindInfo* in_struct)
 {
+    if (pBinds)
+        delete[] pBinds;
     buffer = in_struct->buffer;
     bindCount = in_struct->bindCount;
     pBinds = nullptr;
@@ -1386,6 +1450,8 @@ safe_VkSparseImageOpaqueMemoryBindInfo::~safe_VkSparseImageOpaqueMemoryBindInfo(
 
 void safe_VkSparseImageOpaqueMemoryBindInfo::initialize(const VkSparseImageOpaqueMemoryBindInfo* in_struct)
 {
+    if (pBinds)
+        delete[] pBinds;
     image = in_struct->image;
     bindCount = in_struct->bindCount;
     pBinds = nullptr;
@@ -1470,6 +1536,8 @@ safe_VkSparseImageMemoryBindInfo::~safe_VkSparseImageMemoryBindInfo()
 
 void safe_VkSparseImageMemoryBindInfo::initialize(const VkSparseImageMemoryBindInfo* in_struct)
 {
+    if (pBinds)
+        delete[] pBinds;
     image = in_struct->image;
     bindCount = in_struct->bindCount;
     pBinds = nullptr;
@@ -1682,6 +1750,18 @@ safe_VkBindSparseInfo::~safe_VkBindSparseInfo()
 
 void safe_VkBindSparseInfo::initialize(const VkBindSparseInfo* in_struct)
 {
+    if (pWaitSemaphores)
+        delete[] pWaitSemaphores;
+    if (pBufferBinds)
+        delete[] pBufferBinds;
+    if (pImageOpaqueBinds)
+        delete[] pImageOpaqueBinds;
+    if (pImageBinds)
+        delete[] pImageBinds;
+    if (pSignalSemaphores)
+        delete[] pSignalSemaphores;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     waitSemaphoreCount = in_struct->waitSemaphoreCount;
     pWaitSemaphores = nullptr;
@@ -1814,6 +1894,8 @@ safe_VkFenceCreateInfo::~safe_VkFenceCreateInfo()
 
 void safe_VkFenceCreateInfo::initialize(const VkFenceCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -1868,6 +1950,8 @@ safe_VkSemaphoreCreateInfo::~safe_VkSemaphoreCreateInfo()
 
 void safe_VkSemaphoreCreateInfo::initialize(const VkSemaphoreCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -1922,6 +2006,8 @@ safe_VkEventCreateInfo::~safe_VkEventCreateInfo()
 
 void safe_VkEventCreateInfo::initialize(const VkEventCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -1988,6 +2074,8 @@ safe_VkQueryPoolCreateInfo::~safe_VkQueryPoolCreateInfo()
 
 void safe_VkQueryPoolCreateInfo::initialize(const VkQueryPoolCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     queryType = in_struct->queryType;
@@ -2091,6 +2179,10 @@ safe_VkBufferCreateInfo::~safe_VkBufferCreateInfo()
 
 void safe_VkBufferCreateInfo::initialize(const VkBufferCreateInfo* in_struct)
 {
+    if (pQueueFamilyIndices)
+        delete[] pQueueFamilyIndices;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     size = in_struct->size;
@@ -2183,6 +2275,8 @@ safe_VkBufferViewCreateInfo::~safe_VkBufferViewCreateInfo()
 
 void safe_VkBufferViewCreateInfo::initialize(const VkBufferViewCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     buffer = in_struct->buffer;
@@ -2316,6 +2410,10 @@ safe_VkImageCreateInfo::~safe_VkImageCreateInfo()
 
 void safe_VkImageCreateInfo::initialize(const VkImageCreateInfo* in_struct)
 {
+    if (pQueueFamilyIndices)
+        delete[] pQueueFamilyIndices;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     imageType = in_struct->imageType;
@@ -2426,6 +2524,8 @@ safe_VkImageViewCreateInfo::~safe_VkImageViewCreateInfo()
 
 void safe_VkImageViewCreateInfo::initialize(const VkImageViewCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     image = in_struct->image;
@@ -2514,6 +2614,10 @@ safe_VkShaderModuleCreateInfo::~safe_VkShaderModuleCreateInfo()
 
 void safe_VkShaderModuleCreateInfo::initialize(const VkShaderModuleCreateInfo* in_struct)
 {
+    if (pCode)
+        delete[] reinterpret_cast<const uint8_t *>(pCode);
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     codeSize = in_struct->codeSize;
@@ -2588,6 +2692,8 @@ safe_VkPipelineCacheCreateInfo::~safe_VkPipelineCacheCreateInfo()
 
 void safe_VkPipelineCacheCreateInfo::initialize(const VkPipelineCacheCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     initialDataSize = in_struct->initialDataSize;
@@ -2662,6 +2768,8 @@ safe_VkSpecializationInfo::~safe_VkSpecializationInfo()
 
 void safe_VkSpecializationInfo::initialize(const VkSpecializationInfo* in_struct)
 {
+    if (pMapEntries)
+        delete[] pMapEntries;
     mapEntryCount = in_struct->mapEntryCount;
     pMapEntries = nullptr;
     dataSize = in_struct->dataSize;
@@ -2754,6 +2862,11 @@ safe_VkPipelineShaderStageCreateInfo::~safe_VkPipelineShaderStageCreateInfo()
 
 void safe_VkPipelineShaderStageCreateInfo::initialize(const VkPipelineShaderStageCreateInfo* in_struct)
 {
+    if (pName) delete [] pName;
+    if (pSpecializationInfo)
+        delete pSpecializationInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     stage = in_struct->stage;
@@ -2835,6 +2948,8 @@ safe_VkComputePipelineCreateInfo::~safe_VkComputePipelineCreateInfo()
 
 void safe_VkComputePipelineCreateInfo::initialize(const VkComputePipelineCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     stage.initialize(&in_struct->stage);
@@ -2945,6 +3060,12 @@ safe_VkPipelineVertexInputStateCreateInfo::~safe_VkPipelineVertexInputStateCreat
 
 void safe_VkPipelineVertexInputStateCreateInfo::initialize(const VkPipelineVertexInputStateCreateInfo* in_struct)
 {
+    if (pVertexBindingDescriptions)
+        delete[] pVertexBindingDescriptions;
+    if (pVertexAttributeDescriptions)
+        delete[] pVertexAttributeDescriptions;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     vertexBindingDescriptionCount = in_struct->vertexBindingDescriptionCount;
@@ -3031,6 +3152,8 @@ safe_VkPipelineInputAssemblyStateCreateInfo::~safe_VkPipelineInputAssemblyStateC
 
 void safe_VkPipelineInputAssemblyStateCreateInfo::initialize(const VkPipelineInputAssemblyStateCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     topology = in_struct->topology;
@@ -3093,6 +3216,8 @@ safe_VkPipelineTessellationStateCreateInfo::~safe_VkPipelineTessellationStateCre
 
 void safe_VkPipelineTessellationStateCreateInfo::initialize(const VkPipelineTessellationStateCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     patchControlPoints = in_struct->patchControlPoints;
@@ -3209,6 +3334,12 @@ safe_VkPipelineViewportStateCreateInfo::~safe_VkPipelineViewportStateCreateInfo(
 
 void safe_VkPipelineViewportStateCreateInfo::initialize(const VkPipelineViewportStateCreateInfo* in_struct, const bool is_dynamic_viewports, const bool is_dynamic_scissors)
 {
+    if (pViewports)
+        delete[] pViewports;
+    if (pScissors)
+        delete[] pScissors;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     viewportCount = in_struct->viewportCount;
@@ -3335,6 +3466,8 @@ safe_VkPipelineRasterizationStateCreateInfo::~safe_VkPipelineRasterizationStateC
 
 void safe_VkPipelineRasterizationStateCreateInfo::initialize(const VkPipelineRasterizationStateCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     depthClampEnable = in_struct->depthClampEnable;
@@ -3446,6 +3579,10 @@ safe_VkPipelineMultisampleStateCreateInfo::~safe_VkPipelineMultisampleStateCreat
 
 void safe_VkPipelineMultisampleStateCreateInfo::initialize(const VkPipelineMultisampleStateCreateInfo* in_struct)
 {
+    if (pSampleMask)
+        delete pSampleMask;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     rasterizationSamples = in_struct->rasterizationSamples;
@@ -3554,6 +3691,8 @@ safe_VkPipelineDepthStencilStateCreateInfo::~safe_VkPipelineDepthStencilStateCre
 
 void safe_VkPipelineDepthStencilStateCreateInfo::initialize(const VkPipelineDepthStencilStateCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     depthTestEnable = in_struct->depthTestEnable;
@@ -3667,6 +3806,10 @@ safe_VkPipelineColorBlendStateCreateInfo::~safe_VkPipelineColorBlendStateCreateI
 
 void safe_VkPipelineColorBlendStateCreateInfo::initialize(const VkPipelineColorBlendStateCreateInfo* in_struct)
 {
+    if (pAttachments)
+        delete[] pAttachments;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     logicOpEnable = in_struct->logicOpEnable;
@@ -3767,6 +3910,10 @@ safe_VkPipelineDynamicStateCreateInfo::~safe_VkPipelineDynamicStateCreateInfo()
 
 void safe_VkPipelineDynamicStateCreateInfo::initialize(const VkPipelineDynamicStateCreateInfo* in_struct)
 {
+    if (pDynamicStates)
+        delete[] pDynamicStates;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     dynamicStateCount = in_struct->dynamicStateCount;
@@ -4111,6 +4258,28 @@ safe_VkGraphicsPipelineCreateInfo::~safe_VkGraphicsPipelineCreateInfo()
 
 void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreateInfo* in_struct, const bool uses_color_attachment, const bool uses_depthstencil_attachment)
 {
+    if (pStages)
+        delete[] pStages;
+    if (pVertexInputState)
+        delete pVertexInputState;
+    if (pInputAssemblyState)
+        delete pInputAssemblyState;
+    if (pTessellationState)
+        delete pTessellationState;
+    if (pViewportState)
+        delete pViewportState;
+    if (pRasterizationState)
+        delete pRasterizationState;
+    if (pMultisampleState)
+        delete pMultisampleState;
+    if (pDepthStencilState)
+        delete pDepthStencilState;
+    if (pColorBlendState)
+        delete pColorBlendState;
+    if (pDynamicState)
+        delete pDynamicState;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     stageCount = in_struct->stageCount;
@@ -4371,6 +4540,12 @@ safe_VkPipelineLayoutCreateInfo::~safe_VkPipelineLayoutCreateInfo()
 
 void safe_VkPipelineLayoutCreateInfo::initialize(const VkPipelineLayoutCreateInfo* in_struct)
 {
+    if (pSetLayouts)
+        delete[] pSetLayouts;
+    if (pPushConstantRanges)
+        delete[] pPushConstantRanges;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     setLayoutCount = in_struct->setLayoutCount;
@@ -4513,6 +4688,8 @@ safe_VkSamplerCreateInfo::~safe_VkSamplerCreateInfo()
 
 void safe_VkSamplerCreateInfo::initialize(const VkSamplerCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     magFilter = in_struct->magFilter;
@@ -4621,6 +4798,8 @@ safe_VkCopyDescriptorSet::~safe_VkCopyDescriptorSet()
 
 void safe_VkCopyDescriptorSet::initialize(const VkCopyDescriptorSet* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcSet = in_struct->srcSet;
     srcBinding = in_struct->srcBinding;
@@ -4715,6 +4894,10 @@ safe_VkDescriptorPoolCreateInfo::~safe_VkDescriptorPoolCreateInfo()
 
 void safe_VkDescriptorPoolCreateInfo::initialize(const VkDescriptorPoolCreateInfo* in_struct)
 {
+    if (pPoolSizes)
+        delete[] pPoolSizes;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     maxSets = in_struct->maxSets;
@@ -4813,6 +4996,10 @@ safe_VkDescriptorSetAllocateInfo::~safe_VkDescriptorSetAllocateInfo()
 
 void safe_VkDescriptorSetAllocateInfo::initialize(const VkDescriptorSetAllocateInfo* in_struct)
 {
+    if (pSetLayouts)
+        delete[] pSetLayouts;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     descriptorPool = in_struct->descriptorPool;
     descriptorSetCount = in_struct->descriptorSetCount;
@@ -4912,6 +5099,8 @@ safe_VkDescriptorSetLayoutBinding::~safe_VkDescriptorSetLayoutBinding()
 
 void safe_VkDescriptorSetLayoutBinding::initialize(const VkDescriptorSetLayoutBinding* in_struct)
 {
+    if (pImmutableSamplers)
+        delete[] pImmutableSamplers;
     binding = in_struct->binding;
     descriptorType = in_struct->descriptorType;
     descriptorCount = in_struct->descriptorCount;
@@ -5014,6 +5203,10 @@ safe_VkDescriptorSetLayoutCreateInfo::~safe_VkDescriptorSetLayoutCreateInfo()
 
 void safe_VkDescriptorSetLayoutCreateInfo::initialize(const VkDescriptorSetLayoutCreateInfo* in_struct)
 {
+    if (pBindings)
+        delete[] pBindings;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     bindingCount = in_struct->bindingCount;
@@ -5232,6 +5425,14 @@ safe_VkWriteDescriptorSet::~safe_VkWriteDescriptorSet()
 
 void safe_VkWriteDescriptorSet::initialize(const VkWriteDescriptorSet* in_struct)
 {
+    if (pImageInfo)
+        delete[] pImageInfo;
+    if (pBufferInfo)
+        delete[] pBufferInfo;
+    if (pTexelBufferView)
+        delete[] pTexelBufferView;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     dstSet = in_struct->dstSet;
     dstBinding = in_struct->dstBinding;
@@ -5418,6 +5619,10 @@ safe_VkFramebufferCreateInfo::~safe_VkFramebufferCreateInfo()
 
 void safe_VkFramebufferCreateInfo::initialize(const VkFramebufferCreateInfo* in_struct)
 {
+    if (pAttachments)
+        delete[] pAttachments;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     renderPass = in_struct->renderPass;
@@ -5597,6 +5802,16 @@ safe_VkSubpassDescription::~safe_VkSubpassDescription()
 
 void safe_VkSubpassDescription::initialize(const VkSubpassDescription* in_struct)
 {
+    if (pInputAttachments)
+        delete[] pInputAttachments;
+    if (pColorAttachments)
+        delete[] pColorAttachments;
+    if (pResolveAttachments)
+        delete[] pResolveAttachments;
+    if (pDepthStencilAttachment)
+        delete pDepthStencilAttachment;
+    if (pPreserveAttachments)
+        delete[] pPreserveAttachments;
     flags = in_struct->flags;
     pipelineBindPoint = in_struct->pipelineBindPoint;
     inputAttachmentCount = in_struct->inputAttachmentCount;
@@ -5781,6 +5996,14 @@ safe_VkRenderPassCreateInfo::~safe_VkRenderPassCreateInfo()
 
 void safe_VkRenderPassCreateInfo::initialize(const VkRenderPassCreateInfo* in_struct)
 {
+    if (pAttachments)
+        delete[] pAttachments;
+    if (pSubpasses)
+        delete[] pSubpasses;
+    if (pDependencies)
+        delete[] pDependencies;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     attachmentCount = in_struct->attachmentCount;
@@ -5879,6 +6102,8 @@ safe_VkCommandPoolCreateInfo::~safe_VkCommandPoolCreateInfo()
 
 void safe_VkCommandPoolCreateInfo::initialize(const VkCommandPoolCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     queueFamilyIndex = in_struct->queueFamilyIndex;
@@ -5943,6 +6168,8 @@ safe_VkCommandBufferAllocateInfo::~safe_VkCommandBufferAllocateInfo()
 
 void safe_VkCommandBufferAllocateInfo::initialize(const VkCommandBufferAllocateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     commandPool = in_struct->commandPool;
     level = in_struct->level;
@@ -6021,6 +6248,8 @@ safe_VkCommandBufferInheritanceInfo::~safe_VkCommandBufferInheritanceInfo()
 
 void safe_VkCommandBufferInheritanceInfo::initialize(const VkCommandBufferInheritanceInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     renderPass = in_struct->renderPass;
     subpass = in_struct->subpass;
@@ -6099,6 +6328,10 @@ safe_VkCommandBufferBeginInfo::~safe_VkCommandBufferBeginInfo()
 
 void safe_VkCommandBufferBeginInfo::initialize(const VkCommandBufferBeginInfo* in_struct)
 {
+    if (pInheritanceInfo)
+        delete pInheritanceInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pInheritanceInfo = nullptr;
@@ -6191,6 +6424,10 @@ safe_VkRenderPassBeginInfo::~safe_VkRenderPassBeginInfo()
 
 void safe_VkRenderPassBeginInfo::initialize(const VkRenderPassBeginInfo* in_struct)
 {
+    if (pClearValues)
+        delete[] pClearValues;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     renderPass = in_struct->renderPass;
     framebuffer = in_struct->framebuffer;
@@ -6273,6 +6510,8 @@ safe_VkPhysicalDeviceSubgroupProperties::~safe_VkPhysicalDeviceSubgroupPropertie
 
 void safe_VkPhysicalDeviceSubgroupProperties::initialize(const VkPhysicalDeviceSubgroupProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     subgroupSize = in_struct->subgroupSize;
     supportedStages = in_struct->supportedStages;
@@ -6341,6 +6580,8 @@ safe_VkBindBufferMemoryInfo::~safe_VkBindBufferMemoryInfo()
 
 void safe_VkBindBufferMemoryInfo::initialize(const VkBindBufferMemoryInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     buffer = in_struct->buffer;
     memory = in_struct->memory;
@@ -6407,6 +6648,8 @@ safe_VkBindImageMemoryInfo::~safe_VkBindImageMemoryInfo()
 
 void safe_VkBindImageMemoryInfo::initialize(const VkBindImageMemoryInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     image = in_struct->image;
     memory = in_struct->memory;
@@ -6477,6 +6720,8 @@ safe_VkPhysicalDevice16BitStorageFeatures::~safe_VkPhysicalDevice16BitStorageFea
 
 void safe_VkPhysicalDevice16BitStorageFeatures::initialize(const VkPhysicalDevice16BitStorageFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     storageBuffer16BitAccess = in_struct->storageBuffer16BitAccess;
     uniformAndStorageBuffer16BitAccess = in_struct->uniformAndStorageBuffer16BitAccess;
@@ -6541,6 +6786,8 @@ safe_VkMemoryDedicatedRequirements::~safe_VkMemoryDedicatedRequirements()
 
 void safe_VkMemoryDedicatedRequirements::initialize(const VkMemoryDedicatedRequirements* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     prefersDedicatedAllocation = in_struct->prefersDedicatedAllocation;
     requiresDedicatedAllocation = in_struct->requiresDedicatedAllocation;
@@ -6601,6 +6848,8 @@ safe_VkMemoryDedicatedAllocateInfo::~safe_VkMemoryDedicatedAllocateInfo()
 
 void safe_VkMemoryDedicatedAllocateInfo::initialize(const VkMemoryDedicatedAllocateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     image = in_struct->image;
     buffer = in_struct->buffer;
@@ -6661,6 +6910,8 @@ safe_VkMemoryAllocateFlagsInfo::~safe_VkMemoryAllocateFlagsInfo()
 
 void safe_VkMemoryAllocateFlagsInfo::initialize(const VkMemoryAllocateFlagsInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     deviceMask = in_struct->deviceMask;
@@ -6741,6 +6992,10 @@ safe_VkDeviceGroupRenderPassBeginInfo::~safe_VkDeviceGroupRenderPassBeginInfo()
 
 void safe_VkDeviceGroupRenderPassBeginInfo::initialize(const VkDeviceGroupRenderPassBeginInfo* in_struct)
 {
+    if (pDeviceRenderAreas)
+        delete[] pDeviceRenderAreas;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     deviceMask = in_struct->deviceMask;
     deviceRenderAreaCount = in_struct->deviceRenderAreaCount;
@@ -6807,6 +7062,8 @@ safe_VkDeviceGroupCommandBufferBeginInfo::~safe_VkDeviceGroupCommandBufferBeginI
 
 void safe_VkDeviceGroupCommandBufferBeginInfo::initialize(const VkDeviceGroupCommandBufferBeginInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     deviceMask = in_struct->deviceMask;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -6929,6 +7186,14 @@ safe_VkDeviceGroupSubmitInfo::~safe_VkDeviceGroupSubmitInfo()
 
 void safe_VkDeviceGroupSubmitInfo::initialize(const VkDeviceGroupSubmitInfo* in_struct)
 {
+    if (pWaitSemaphoreDeviceIndices)
+        delete[] pWaitSemaphoreDeviceIndices;
+    if (pCommandBufferDeviceMasks)
+        delete[] pCommandBufferDeviceMasks;
+    if (pSignalSemaphoreDeviceIndices)
+        delete[] pSignalSemaphoreDeviceIndices;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     waitSemaphoreCount = in_struct->waitSemaphoreCount;
     pWaitSemaphoreDeviceIndices = nullptr;
@@ -7021,6 +7286,8 @@ safe_VkDeviceGroupBindSparseInfo::~safe_VkDeviceGroupBindSparseInfo()
 
 void safe_VkDeviceGroupBindSparseInfo::initialize(const VkDeviceGroupBindSparseInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     resourceDeviceIndex = in_struct->resourceDeviceIndex;
     memoryDeviceIndex = in_struct->memoryDeviceIndex;
@@ -7097,6 +7364,10 @@ safe_VkBindBufferMemoryDeviceGroupInfo::~safe_VkBindBufferMemoryDeviceGroupInfo(
 
 void safe_VkBindBufferMemoryDeviceGroupInfo::initialize(const VkBindBufferMemoryDeviceGroupInfo* in_struct)
 {
+    if (pDeviceIndices)
+        delete[] pDeviceIndices;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     deviceIndexCount = in_struct->deviceIndexCount;
     pDeviceIndices = nullptr;
@@ -7205,6 +7476,12 @@ safe_VkBindImageMemoryDeviceGroupInfo::~safe_VkBindImageMemoryDeviceGroupInfo()
 
 void safe_VkBindImageMemoryDeviceGroupInfo::initialize(const VkBindImageMemoryDeviceGroupInfo* in_struct)
 {
+    if (pDeviceIndices)
+        delete[] pDeviceIndices;
+    if (pSplitInstanceBindRegions)
+        delete[] pSplitInstanceBindRegions;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     deviceIndexCount = in_struct->deviceIndexCount;
     pDeviceIndices = nullptr;
@@ -7294,6 +7571,8 @@ safe_VkPhysicalDeviceGroupProperties::~safe_VkPhysicalDeviceGroupProperties()
 
 void safe_VkPhysicalDeviceGroupProperties::initialize(const VkPhysicalDeviceGroupProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     physicalDeviceCount = in_struct->physicalDeviceCount;
     subsetAllocation = in_struct->subsetAllocation;
@@ -7376,6 +7655,10 @@ safe_VkDeviceGroupDeviceCreateInfo::~safe_VkDeviceGroupDeviceCreateInfo()
 
 void safe_VkDeviceGroupDeviceCreateInfo::initialize(const VkDeviceGroupDeviceCreateInfo* in_struct)
 {
+    if (pPhysicalDevices)
+        delete[] pPhysicalDevices;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     physicalDeviceCount = in_struct->physicalDeviceCount;
     pPhysicalDevices = nullptr;
@@ -7440,6 +7723,8 @@ safe_VkBufferMemoryRequirementsInfo2::~safe_VkBufferMemoryRequirementsInfo2()
 
 void safe_VkBufferMemoryRequirementsInfo2::initialize(const VkBufferMemoryRequirementsInfo2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     buffer = in_struct->buffer;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -7494,6 +7779,8 @@ safe_VkImageMemoryRequirementsInfo2::~safe_VkImageMemoryRequirementsInfo2()
 
 void safe_VkImageMemoryRequirementsInfo2::initialize(const VkImageMemoryRequirementsInfo2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     image = in_struct->image;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -7548,6 +7835,8 @@ safe_VkImageSparseMemoryRequirementsInfo2::~safe_VkImageSparseMemoryRequirements
 
 void safe_VkImageSparseMemoryRequirementsInfo2::initialize(const VkImageSparseMemoryRequirementsInfo2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     image = in_struct->image;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -7602,6 +7891,8 @@ safe_VkMemoryRequirements2::~safe_VkMemoryRequirements2()
 
 void safe_VkMemoryRequirements2::initialize(const VkMemoryRequirements2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memoryRequirements = in_struct->memoryRequirements;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -7656,6 +7947,8 @@ safe_VkSparseImageMemoryRequirements2::~safe_VkSparseImageMemoryRequirements2()
 
 void safe_VkSparseImageMemoryRequirements2::initialize(const VkSparseImageMemoryRequirements2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memoryRequirements = in_struct->memoryRequirements;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -7710,6 +8003,8 @@ safe_VkPhysicalDeviceFeatures2::~safe_VkPhysicalDeviceFeatures2()
 
 void safe_VkPhysicalDeviceFeatures2::initialize(const VkPhysicalDeviceFeatures2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     features = in_struct->features;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -7764,6 +8059,8 @@ safe_VkPhysicalDeviceProperties2::~safe_VkPhysicalDeviceProperties2()
 
 void safe_VkPhysicalDeviceProperties2::initialize(const VkPhysicalDeviceProperties2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     properties = in_struct->properties;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -7818,6 +8115,8 @@ safe_VkFormatProperties2::~safe_VkFormatProperties2()
 
 void safe_VkFormatProperties2::initialize(const VkFormatProperties2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     formatProperties = in_struct->formatProperties;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -7872,6 +8171,8 @@ safe_VkImageFormatProperties2::~safe_VkImageFormatProperties2()
 
 void safe_VkImageFormatProperties2::initialize(const VkImageFormatProperties2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     imageFormatProperties = in_struct->imageFormatProperties;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -7942,6 +8243,8 @@ safe_VkPhysicalDeviceImageFormatInfo2::~safe_VkPhysicalDeviceImageFormatInfo2()
 
 void safe_VkPhysicalDeviceImageFormatInfo2::initialize(const VkPhysicalDeviceImageFormatInfo2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     format = in_struct->format;
     type = in_struct->type;
@@ -8004,6 +8307,8 @@ safe_VkQueueFamilyProperties2::~safe_VkQueueFamilyProperties2()
 
 void safe_VkQueueFamilyProperties2::initialize(const VkQueueFamilyProperties2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     queueFamilyProperties = in_struct->queueFamilyProperties;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -8058,6 +8363,8 @@ safe_VkPhysicalDeviceMemoryProperties2::~safe_VkPhysicalDeviceMemoryProperties2(
 
 void safe_VkPhysicalDeviceMemoryProperties2::initialize(const VkPhysicalDeviceMemoryProperties2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memoryProperties = in_struct->memoryProperties;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -8112,6 +8419,8 @@ safe_VkSparseImageFormatProperties2::~safe_VkSparseImageFormatProperties2()
 
 void safe_VkSparseImageFormatProperties2::initialize(const VkSparseImageFormatProperties2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     properties = in_struct->properties;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -8182,6 +8491,8 @@ safe_VkPhysicalDeviceSparseImageFormatInfo2::~safe_VkPhysicalDeviceSparseImageFo
 
 void safe_VkPhysicalDeviceSparseImageFormatInfo2::initialize(const VkPhysicalDeviceSparseImageFormatInfo2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     format = in_struct->format;
     type = in_struct->type;
@@ -8244,6 +8555,8 @@ safe_VkPhysicalDevicePointClippingProperties::~safe_VkPhysicalDevicePointClippin
 
 void safe_VkPhysicalDevicePointClippingProperties::initialize(const VkPhysicalDevicePointClippingProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pointClippingBehavior = in_struct->pointClippingBehavior;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -8318,6 +8631,10 @@ safe_VkRenderPassInputAttachmentAspectCreateInfo::~safe_VkRenderPassInputAttachm
 
 void safe_VkRenderPassInputAttachmentAspectCreateInfo::initialize(const VkRenderPassInputAttachmentAspectCreateInfo* in_struct)
 {
+    if (pAspectReferences)
+        delete[] pAspectReferences;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     aspectReferenceCount = in_struct->aspectReferenceCount;
     pAspectReferences = nullptr;
@@ -8382,6 +8699,8 @@ safe_VkImageViewUsageCreateInfo::~safe_VkImageViewUsageCreateInfo()
 
 void safe_VkImageViewUsageCreateInfo::initialize(const VkImageViewUsageCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     usage = in_struct->usage;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -8436,6 +8755,8 @@ safe_VkPipelineTessellationDomainOriginStateCreateInfo::~safe_VkPipelineTessella
 
 void safe_VkPipelineTessellationDomainOriginStateCreateInfo::initialize(const VkPipelineTessellationDomainOriginStateCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     domainOrigin = in_struct->domainOrigin;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -8558,6 +8879,14 @@ safe_VkRenderPassMultiviewCreateInfo::~safe_VkRenderPassMultiviewCreateInfo()
 
 void safe_VkRenderPassMultiviewCreateInfo::initialize(const VkRenderPassMultiviewCreateInfo* in_struct)
 {
+    if (pViewMasks)
+        delete[] pViewMasks;
+    if (pViewOffsets)
+        delete[] pViewOffsets;
+    if (pCorrelationMasks)
+        delete[] pCorrelationMasks;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     subpassCount = in_struct->subpassCount;
     pViewMasks = nullptr;
@@ -8654,6 +8983,8 @@ safe_VkPhysicalDeviceMultiviewFeatures::~safe_VkPhysicalDeviceMultiviewFeatures(
 
 void safe_VkPhysicalDeviceMultiviewFeatures::initialize(const VkPhysicalDeviceMultiviewFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     multiview = in_struct->multiview;
     multiviewGeometryShader = in_struct->multiviewGeometryShader;
@@ -8716,6 +9047,8 @@ safe_VkPhysicalDeviceMultiviewProperties::~safe_VkPhysicalDeviceMultiviewPropert
 
 void safe_VkPhysicalDeviceMultiviewProperties::initialize(const VkPhysicalDeviceMultiviewProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxMultiviewViewCount = in_struct->maxMultiviewViewCount;
     maxMultiviewInstanceIndex = in_struct->maxMultiviewInstanceIndex;
@@ -8776,6 +9109,8 @@ safe_VkPhysicalDeviceVariablePointersFeatures::~safe_VkPhysicalDeviceVariablePoi
 
 void safe_VkPhysicalDeviceVariablePointersFeatures::initialize(const VkPhysicalDeviceVariablePointersFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     variablePointersStorageBuffer = in_struct->variablePointersStorageBuffer;
     variablePointers = in_struct->variablePointers;
@@ -8832,6 +9167,8 @@ safe_VkPhysicalDeviceProtectedMemoryFeatures::~safe_VkPhysicalDeviceProtectedMem
 
 void safe_VkPhysicalDeviceProtectedMemoryFeatures::initialize(const VkPhysicalDeviceProtectedMemoryFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     protectedMemory = in_struct->protectedMemory;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -8886,6 +9223,8 @@ safe_VkPhysicalDeviceProtectedMemoryProperties::~safe_VkPhysicalDeviceProtectedM
 
 void safe_VkPhysicalDeviceProtectedMemoryProperties::initialize(const VkPhysicalDeviceProtectedMemoryProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     protectedNoFault = in_struct->protectedNoFault;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -8948,6 +9287,8 @@ safe_VkDeviceQueueInfo2::~safe_VkDeviceQueueInfo2()
 
 void safe_VkDeviceQueueInfo2::initialize(const VkDeviceQueueInfo2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     queueFamilyIndex = in_struct->queueFamilyIndex;
@@ -9006,6 +9347,8 @@ safe_VkProtectedSubmitInfo::~safe_VkProtectedSubmitInfo()
 
 void safe_VkProtectedSubmitInfo::initialize(const VkProtectedSubmitInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     protectedSubmit = in_struct->protectedSubmit;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -9088,6 +9431,8 @@ safe_VkSamplerYcbcrConversionCreateInfo::~safe_VkSamplerYcbcrConversionCreateInf
 
 void safe_VkSamplerYcbcrConversionCreateInfo::initialize(const VkSamplerYcbcrConversionCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     format = in_struct->format;
     ycbcrModel = in_struct->ycbcrModel;
@@ -9156,6 +9501,8 @@ safe_VkSamplerYcbcrConversionInfo::~safe_VkSamplerYcbcrConversionInfo()
 
 void safe_VkSamplerYcbcrConversionInfo::initialize(const VkSamplerYcbcrConversionInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     conversion = in_struct->conversion;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -9210,6 +9557,8 @@ safe_VkBindImagePlaneMemoryInfo::~safe_VkBindImagePlaneMemoryInfo()
 
 void safe_VkBindImagePlaneMemoryInfo::initialize(const VkBindImagePlaneMemoryInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     planeAspect = in_struct->planeAspect;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -9264,6 +9613,8 @@ safe_VkImagePlaneMemoryRequirementsInfo::~safe_VkImagePlaneMemoryRequirementsInf
 
 void safe_VkImagePlaneMemoryRequirementsInfo::initialize(const VkImagePlaneMemoryRequirementsInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     planeAspect = in_struct->planeAspect;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -9318,6 +9669,8 @@ safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures::~safe_VkPhysicalDeviceSampl
 
 void safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures::initialize(const VkPhysicalDeviceSamplerYcbcrConversionFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     samplerYcbcrConversion = in_struct->samplerYcbcrConversion;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -9372,6 +9725,8 @@ safe_VkSamplerYcbcrConversionImageFormatProperties::~safe_VkSamplerYcbcrConversi
 
 void safe_VkSamplerYcbcrConversionImageFormatProperties::initialize(const VkSamplerYcbcrConversionImageFormatProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     combinedImageSamplerDescriptorCount = in_struct->combinedImageSamplerDescriptorCount;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -9470,6 +9825,10 @@ safe_VkDescriptorUpdateTemplateCreateInfo::~safe_VkDescriptorUpdateTemplateCreat
 
 void safe_VkDescriptorUpdateTemplateCreateInfo::initialize(const VkDescriptorUpdateTemplateCreateInfo* in_struct)
 {
+    if (pDescriptorUpdateEntries)
+        delete[] pDescriptorUpdateEntries;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     descriptorUpdateEntryCount = in_struct->descriptorUpdateEntryCount;
@@ -9546,6 +9905,8 @@ safe_VkPhysicalDeviceExternalImageFormatInfo::~safe_VkPhysicalDeviceExternalImag
 
 void safe_VkPhysicalDeviceExternalImageFormatInfo::initialize(const VkPhysicalDeviceExternalImageFormatInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleType = in_struct->handleType;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -9600,6 +9961,8 @@ safe_VkExternalImageFormatProperties::~safe_VkExternalImageFormatProperties()
 
 void safe_VkExternalImageFormatProperties::initialize(const VkExternalImageFormatProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     externalMemoryProperties = in_struct->externalMemoryProperties;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -9662,6 +10025,8 @@ safe_VkPhysicalDeviceExternalBufferInfo::~safe_VkPhysicalDeviceExternalBufferInf
 
 void safe_VkPhysicalDeviceExternalBufferInfo::initialize(const VkPhysicalDeviceExternalBufferInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     usage = in_struct->usage;
@@ -9720,6 +10085,8 @@ safe_VkExternalBufferProperties::~safe_VkExternalBufferProperties()
 
 void safe_VkExternalBufferProperties::initialize(const VkExternalBufferProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     externalMemoryProperties = in_struct->externalMemoryProperties;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -9805,6 +10172,8 @@ safe_VkPhysicalDeviceIDProperties::~safe_VkPhysicalDeviceIDProperties()
 
 void safe_VkPhysicalDeviceIDProperties::initialize(const VkPhysicalDeviceIDProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     deviceNodeMask = in_struct->deviceNodeMask;
     deviceLUIDValid = in_struct->deviceLUIDValid;
@@ -9879,6 +10248,8 @@ safe_VkExternalMemoryImageCreateInfo::~safe_VkExternalMemoryImageCreateInfo()
 
 void safe_VkExternalMemoryImageCreateInfo::initialize(const VkExternalMemoryImageCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleTypes = in_struct->handleTypes;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -9933,6 +10304,8 @@ safe_VkExternalMemoryBufferCreateInfo::~safe_VkExternalMemoryBufferCreateInfo()
 
 void safe_VkExternalMemoryBufferCreateInfo::initialize(const VkExternalMemoryBufferCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleTypes = in_struct->handleTypes;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -9987,6 +10360,8 @@ safe_VkExportMemoryAllocateInfo::~safe_VkExportMemoryAllocateInfo()
 
 void safe_VkExportMemoryAllocateInfo::initialize(const VkExportMemoryAllocateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleTypes = in_struct->handleTypes;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -10041,6 +10416,8 @@ safe_VkPhysicalDeviceExternalFenceInfo::~safe_VkPhysicalDeviceExternalFenceInfo(
 
 void safe_VkPhysicalDeviceExternalFenceInfo::initialize(const VkPhysicalDeviceExternalFenceInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleType = in_struct->handleType;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -10103,6 +10480,8 @@ safe_VkExternalFenceProperties::~safe_VkExternalFenceProperties()
 
 void safe_VkExternalFenceProperties::initialize(const VkExternalFenceProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     exportFromImportedHandleTypes = in_struct->exportFromImportedHandleTypes;
     compatibleHandleTypes = in_struct->compatibleHandleTypes;
@@ -10161,6 +10540,8 @@ safe_VkExportFenceCreateInfo::~safe_VkExportFenceCreateInfo()
 
 void safe_VkExportFenceCreateInfo::initialize(const VkExportFenceCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleTypes = in_struct->handleTypes;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -10215,6 +10596,8 @@ safe_VkExportSemaphoreCreateInfo::~safe_VkExportSemaphoreCreateInfo()
 
 void safe_VkExportSemaphoreCreateInfo::initialize(const VkExportSemaphoreCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleTypes = in_struct->handleTypes;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -10269,6 +10652,8 @@ safe_VkPhysicalDeviceExternalSemaphoreInfo::~safe_VkPhysicalDeviceExternalSemaph
 
 void safe_VkPhysicalDeviceExternalSemaphoreInfo::initialize(const VkPhysicalDeviceExternalSemaphoreInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleType = in_struct->handleType;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -10331,6 +10716,8 @@ safe_VkExternalSemaphoreProperties::~safe_VkExternalSemaphoreProperties()
 
 void safe_VkExternalSemaphoreProperties::initialize(const VkExternalSemaphoreProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     exportFromImportedHandleTypes = in_struct->exportFromImportedHandleTypes;
     compatibleHandleTypes = in_struct->compatibleHandleTypes;
@@ -10393,6 +10780,8 @@ safe_VkPhysicalDeviceMaintenance3Properties::~safe_VkPhysicalDeviceMaintenance3P
 
 void safe_VkPhysicalDeviceMaintenance3Properties::initialize(const VkPhysicalDeviceMaintenance3Properties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxPerSetDescriptors = in_struct->maxPerSetDescriptors;
     maxMemoryAllocationSize = in_struct->maxMemoryAllocationSize;
@@ -10449,6 +10838,8 @@ safe_VkDescriptorSetLayoutSupport::~safe_VkDescriptorSetLayoutSupport()
 
 void safe_VkDescriptorSetLayoutSupport::initialize(const VkDescriptorSetLayoutSupport* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     supported = in_struct->supported;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -10503,6 +10894,8 @@ safe_VkPhysicalDeviceShaderDrawParametersFeatures::~safe_VkPhysicalDeviceShaderD
 
 void safe_VkPhysicalDeviceShaderDrawParametersFeatures::initialize(const VkPhysicalDeviceShaderDrawParametersFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderDrawParameters = in_struct->shaderDrawParameters;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -10601,6 +10994,8 @@ safe_VkPhysicalDeviceVulkan11Features::~safe_VkPhysicalDeviceVulkan11Features()
 
 void safe_VkPhysicalDeviceVulkan11Features::initialize(const VkPhysicalDeviceVulkan11Features* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     storageBuffer16BitAccess = in_struct->storageBuffer16BitAccess;
     uniformAndStorageBuffer16BitAccess = in_struct->uniformAndStorageBuffer16BitAccess;
@@ -10748,6 +11143,8 @@ safe_VkPhysicalDeviceVulkan11Properties::~safe_VkPhysicalDeviceVulkan11Propertie
 
 void safe_VkPhysicalDeviceVulkan11Properties::initialize(const VkPhysicalDeviceVulkan11Properties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     deviceNodeMask = in_struct->deviceNodeMask;
     deviceLUIDValid = in_struct->deviceLUIDValid;
@@ -11026,6 +11423,8 @@ safe_VkPhysicalDeviceVulkan12Features::~safe_VkPhysicalDeviceVulkan12Features()
 
 void safe_VkPhysicalDeviceVulkan12Features::initialize(const VkPhysicalDeviceVulkan12Features* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     samplerMirrorClampToEdge = in_struct->samplerMirrorClampToEdge;
     drawIndirectCount = in_struct->drawIndirectCount;
@@ -11386,6 +11785,8 @@ safe_VkPhysicalDeviceVulkan12Properties::~safe_VkPhysicalDeviceVulkan12Propertie
 
 void safe_VkPhysicalDeviceVulkan12Properties::initialize(const VkPhysicalDeviceVulkan12Properties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     driverID = in_struct->driverID;
     conformanceVersion = in_struct->conformanceVersion;
@@ -11570,6 +11971,10 @@ safe_VkImageFormatListCreateInfo::~safe_VkImageFormatListCreateInfo()
 
 void safe_VkImageFormatListCreateInfo::initialize(const VkImageFormatListCreateInfo* in_struct)
 {
+    if (pViewFormats)
+        delete[] pViewFormats;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     viewFormatCount = in_struct->viewFormatCount;
     pViewFormats = nullptr;
@@ -11666,6 +12071,8 @@ safe_VkAttachmentDescription2::~safe_VkAttachmentDescription2()
 
 void safe_VkAttachmentDescription2::initialize(const VkAttachmentDescription2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     format = in_struct->format;
@@ -11744,6 +12151,8 @@ safe_VkAttachmentReference2::~safe_VkAttachmentReference2()
 
 void safe_VkAttachmentReference2::initialize(const VkAttachmentReference2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     attachment = in_struct->attachment;
     layout = in_struct->layout;
@@ -11934,6 +12343,18 @@ safe_VkSubpassDescription2::~safe_VkSubpassDescription2()
 
 void safe_VkSubpassDescription2::initialize(const VkSubpassDescription2* in_struct)
 {
+    if (pInputAttachments)
+        delete[] pInputAttachments;
+    if (pColorAttachments)
+        delete[] pColorAttachments;
+    if (pResolveAttachments)
+        delete[] pResolveAttachments;
+    if (pDepthStencilAttachment)
+        delete pDepthStencilAttachment;
+    if (pPreserveAttachments)
+        delete[] pPreserveAttachments;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pipelineBindPoint = in_struct->pipelineBindPoint;
@@ -12084,6 +12505,8 @@ safe_VkSubpassDependency2::~safe_VkSubpassDependency2()
 
 void safe_VkSubpassDependency2::initialize(const VkSubpassDependency2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcSubpass = in_struct->srcSubpass;
     dstSubpass = in_struct->dstSubpass;
@@ -12266,6 +12689,16 @@ safe_VkRenderPassCreateInfo2::~safe_VkRenderPassCreateInfo2()
 
 void safe_VkRenderPassCreateInfo2::initialize(const VkRenderPassCreateInfo2* in_struct)
 {
+    if (pAttachments)
+        delete[] pAttachments;
+    if (pSubpasses)
+        delete[] pSubpasses;
+    if (pDependencies)
+        delete[] pDependencies;
+    if (pCorrelatedViewMasks)
+        delete[] pCorrelatedViewMasks;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     attachmentCount = in_struct->attachmentCount;
@@ -12380,6 +12813,8 @@ safe_VkSubpassBeginInfo::~safe_VkSubpassBeginInfo()
 
 void safe_VkSubpassBeginInfo::initialize(const VkSubpassBeginInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     contents = in_struct->contents;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -12430,6 +12865,8 @@ safe_VkSubpassEndInfo::~safe_VkSubpassEndInfo()
 
 void safe_VkSubpassEndInfo::initialize(const VkSubpassEndInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pNext = SafePnextCopy(in_struct->pNext);
 }
@@ -12490,6 +12927,8 @@ safe_VkPhysicalDevice8BitStorageFeatures::~safe_VkPhysicalDevice8BitStorageFeatu
 
 void safe_VkPhysicalDevice8BitStorageFeatures::initialize(const VkPhysicalDevice8BitStorageFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     storageBuffer8BitAccess = in_struct->storageBuffer8BitAccess;
     uniformAndStorageBuffer8BitAccess = in_struct->uniformAndStorageBuffer8BitAccess;
@@ -12570,6 +13009,8 @@ safe_VkPhysicalDeviceDriverProperties::~safe_VkPhysicalDeviceDriverProperties()
 
 void safe_VkPhysicalDeviceDriverProperties::initialize(const VkPhysicalDeviceDriverProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     driverID = in_struct->driverID;
     conformanceVersion = in_struct->conformanceVersion;
@@ -12642,6 +13083,8 @@ safe_VkPhysicalDeviceShaderAtomicInt64Features::~safe_VkPhysicalDeviceShaderAtom
 
 void safe_VkPhysicalDeviceShaderAtomicInt64Features::initialize(const VkPhysicalDeviceShaderAtomicInt64Features* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderBufferInt64Atomics = in_struct->shaderBufferInt64Atomics;
     shaderSharedInt64Atomics = in_struct->shaderSharedInt64Atomics;
@@ -12702,6 +13145,8 @@ safe_VkPhysicalDeviceShaderFloat16Int8Features::~safe_VkPhysicalDeviceShaderFloa
 
 void safe_VkPhysicalDeviceShaderFloat16Int8Features::initialize(const VkPhysicalDeviceShaderFloat16Int8Features* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderFloat16 = in_struct->shaderFloat16;
     shaderInt8 = in_struct->shaderInt8;
@@ -12822,6 +13267,8 @@ safe_VkPhysicalDeviceFloatControlsProperties::~safe_VkPhysicalDeviceFloatControl
 
 void safe_VkPhysicalDeviceFloatControlsProperties::initialize(const VkPhysicalDeviceFloatControlsProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     denormBehaviorIndependence = in_struct->denormBehaviorIndependence;
     roundingModeIndependence = in_struct->roundingModeIndependence;
@@ -12928,6 +13375,10 @@ safe_VkDescriptorSetLayoutBindingFlagsCreateInfo::~safe_VkDescriptorSetLayoutBin
 
 void safe_VkDescriptorSetLayoutBindingFlagsCreateInfo::initialize(const VkDescriptorSetLayoutBindingFlagsCreateInfo* in_struct)
 {
+    if (pBindingFlags)
+        delete[] pBindingFlags;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     bindingCount = in_struct->bindingCount;
     pBindingFlags = nullptr;
@@ -13068,6 +13519,8 @@ safe_VkPhysicalDeviceDescriptorIndexingFeatures::~safe_VkPhysicalDeviceDescripto
 
 void safe_VkPhysicalDeviceDescriptorIndexingFeatures::initialize(const VkPhysicalDeviceDescriptorIndexingFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderInputAttachmentArrayDynamicIndexing = in_struct->shaderInputAttachmentArrayDynamicIndexing;
     shaderUniformTexelBufferArrayDynamicIndexing = in_struct->shaderUniformTexelBufferArrayDynamicIndexing;
@@ -13248,6 +13701,8 @@ safe_VkPhysicalDeviceDescriptorIndexingProperties::~safe_VkPhysicalDeviceDescrip
 
 void safe_VkPhysicalDeviceDescriptorIndexingProperties::initialize(const VkPhysicalDeviceDescriptorIndexingProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxUpdateAfterBindDescriptorsInAllPools = in_struct->maxUpdateAfterBindDescriptorsInAllPools;
     shaderUniformBufferArrayNonUniformIndexingNative = in_struct->shaderUniformBufferArrayNonUniformIndexingNative;
@@ -13366,6 +13821,10 @@ safe_VkDescriptorSetVariableDescriptorCountAllocateInfo::~safe_VkDescriptorSetVa
 
 void safe_VkDescriptorSetVariableDescriptorCountAllocateInfo::initialize(const VkDescriptorSetVariableDescriptorCountAllocateInfo* in_struct)
 {
+    if (pDescriptorCounts)
+        delete[] pDescriptorCounts;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     descriptorSetCount = in_struct->descriptorSetCount;
     pDescriptorCounts = nullptr;
@@ -13430,6 +13889,8 @@ safe_VkDescriptorSetVariableDescriptorCountLayoutSupport::~safe_VkDescriptorSetV
 
 void safe_VkDescriptorSetVariableDescriptorCountLayoutSupport::initialize(const VkDescriptorSetVariableDescriptorCountLayoutSupport* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxVariableDescriptorCount = in_struct->maxVariableDescriptorCount;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -13502,6 +13963,10 @@ safe_VkSubpassDescriptionDepthStencilResolve::~safe_VkSubpassDescriptionDepthSte
 
 void safe_VkSubpassDescriptionDepthStencilResolve::initialize(const VkSubpassDescriptionDepthStencilResolve* in_struct)
 {
+    if (pDepthStencilResolveAttachment)
+        delete pDepthStencilResolveAttachment;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     depthResolveMode = in_struct->depthResolveMode;
     stencilResolveMode = in_struct->stencilResolveMode;
@@ -13576,6 +14041,8 @@ safe_VkPhysicalDeviceDepthStencilResolveProperties::~safe_VkPhysicalDeviceDepthS
 
 void safe_VkPhysicalDeviceDepthStencilResolveProperties::initialize(const VkPhysicalDeviceDepthStencilResolveProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     supportedDepthResolveModes = in_struct->supportedDepthResolveModes;
     supportedStencilResolveModes = in_struct->supportedStencilResolveModes;
@@ -13636,6 +14103,8 @@ safe_VkPhysicalDeviceScalarBlockLayoutFeatures::~safe_VkPhysicalDeviceScalarBloc
 
 void safe_VkPhysicalDeviceScalarBlockLayoutFeatures::initialize(const VkPhysicalDeviceScalarBlockLayoutFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     scalarBlockLayout = in_struct->scalarBlockLayout;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -13690,6 +14159,8 @@ safe_VkImageStencilUsageCreateInfo::~safe_VkImageStencilUsageCreateInfo()
 
 void safe_VkImageStencilUsageCreateInfo::initialize(const VkImageStencilUsageCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     stencilUsage = in_struct->stencilUsage;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -13744,6 +14215,8 @@ safe_VkSamplerReductionModeCreateInfo::~safe_VkSamplerReductionModeCreateInfo()
 
 void safe_VkSamplerReductionModeCreateInfo::initialize(const VkSamplerReductionModeCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     reductionMode = in_struct->reductionMode;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -13802,6 +14275,8 @@ safe_VkPhysicalDeviceSamplerFilterMinmaxProperties::~safe_VkPhysicalDeviceSample
 
 void safe_VkPhysicalDeviceSamplerFilterMinmaxProperties::initialize(const VkPhysicalDeviceSamplerFilterMinmaxProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     filterMinmaxSingleComponentFormats = in_struct->filterMinmaxSingleComponentFormats;
     filterMinmaxImageComponentMapping = in_struct->filterMinmaxImageComponentMapping;
@@ -13866,6 +14341,8 @@ safe_VkPhysicalDeviceVulkanMemoryModelFeatures::~safe_VkPhysicalDeviceVulkanMemo
 
 void safe_VkPhysicalDeviceVulkanMemoryModelFeatures::initialize(const VkPhysicalDeviceVulkanMemoryModelFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     vulkanMemoryModel = in_struct->vulkanMemoryModel;
     vulkanMemoryModelDeviceScope = in_struct->vulkanMemoryModelDeviceScope;
@@ -13924,6 +14401,8 @@ safe_VkPhysicalDeviceImagelessFramebufferFeatures::~safe_VkPhysicalDeviceImagele
 
 void safe_VkPhysicalDeviceImagelessFramebufferFeatures::initialize(const VkPhysicalDeviceImagelessFramebufferFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     imagelessFramebuffer = in_struct->imagelessFramebuffer;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -14018,6 +14497,10 @@ safe_VkFramebufferAttachmentImageInfo::~safe_VkFramebufferAttachmentImageInfo()
 
 void safe_VkFramebufferAttachmentImageInfo::initialize(const VkFramebufferAttachmentImageInfo* in_struct)
 {
+    if (pViewFormats)
+        delete[] pViewFormats;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     usage = in_struct->usage;
@@ -14118,6 +14601,10 @@ safe_VkFramebufferAttachmentsCreateInfo::~safe_VkFramebufferAttachmentsCreateInf
 
 void safe_VkFramebufferAttachmentsCreateInfo::initialize(const VkFramebufferAttachmentsCreateInfo* in_struct)
 {
+    if (pAttachmentImageInfos)
+        delete[] pAttachmentImageInfos;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     attachmentImageInfoCount = in_struct->attachmentImageInfoCount;
     pAttachmentImageInfos = nullptr;
@@ -14212,6 +14699,10 @@ safe_VkRenderPassAttachmentBeginInfo::~safe_VkRenderPassAttachmentBeginInfo()
 
 void safe_VkRenderPassAttachmentBeginInfo::initialize(const VkRenderPassAttachmentBeginInfo* in_struct)
 {
+    if (pAttachments)
+        delete[] pAttachments;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     attachmentCount = in_struct->attachmentCount;
     pAttachments = nullptr;
@@ -14280,6 +14771,8 @@ safe_VkPhysicalDeviceUniformBufferStandardLayoutFeatures::~safe_VkPhysicalDevice
 
 void safe_VkPhysicalDeviceUniformBufferStandardLayoutFeatures::initialize(const VkPhysicalDeviceUniformBufferStandardLayoutFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     uniformBufferStandardLayout = in_struct->uniformBufferStandardLayout;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -14334,6 +14827,8 @@ safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures::~safe_VkPhysicalDevice
 
 void safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures::initialize(const VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderSubgroupExtendedTypes = in_struct->shaderSubgroupExtendedTypes;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -14388,6 +14883,8 @@ safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures::~safe_VkPhysicalDevice
 
 void safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures::initialize(const VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     separateDepthStencilLayouts = in_struct->separateDepthStencilLayouts;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -14442,6 +14939,8 @@ safe_VkAttachmentReferenceStencilLayout::~safe_VkAttachmentReferenceStencilLayou
 
 void safe_VkAttachmentReferenceStencilLayout::initialize(const VkAttachmentReferenceStencilLayout* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     stencilLayout = in_struct->stencilLayout;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -14500,6 +14999,8 @@ safe_VkAttachmentDescriptionStencilLayout::~safe_VkAttachmentDescriptionStencilL
 
 void safe_VkAttachmentDescriptionStencilLayout::initialize(const VkAttachmentDescriptionStencilLayout* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     stencilInitialLayout = in_struct->stencilInitialLayout;
     stencilFinalLayout = in_struct->stencilFinalLayout;
@@ -14556,6 +15057,8 @@ safe_VkPhysicalDeviceHostQueryResetFeatures::~safe_VkPhysicalDeviceHostQueryRese
 
 void safe_VkPhysicalDeviceHostQueryResetFeatures::initialize(const VkPhysicalDeviceHostQueryResetFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     hostQueryReset = in_struct->hostQueryReset;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -14610,6 +15113,8 @@ safe_VkPhysicalDeviceTimelineSemaphoreFeatures::~safe_VkPhysicalDeviceTimelineSe
 
 void safe_VkPhysicalDeviceTimelineSemaphoreFeatures::initialize(const VkPhysicalDeviceTimelineSemaphoreFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     timelineSemaphore = in_struct->timelineSemaphore;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -14664,6 +15169,8 @@ safe_VkPhysicalDeviceTimelineSemaphoreProperties::~safe_VkPhysicalDeviceTimeline
 
 void safe_VkPhysicalDeviceTimelineSemaphoreProperties::initialize(const VkPhysicalDeviceTimelineSemaphoreProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxTimelineSemaphoreValueDifference = in_struct->maxTimelineSemaphoreValueDifference;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -14722,6 +15229,8 @@ safe_VkSemaphoreTypeCreateInfo::~safe_VkSemaphoreTypeCreateInfo()
 
 void safe_VkSemaphoreTypeCreateInfo::initialize(const VkSemaphoreTypeCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     semaphoreType = in_struct->semaphoreType;
     initialValue = in_struct->initialValue;
@@ -14822,6 +15331,12 @@ safe_VkTimelineSemaphoreSubmitInfo::~safe_VkTimelineSemaphoreSubmitInfo()
 
 void safe_VkTimelineSemaphoreSubmitInfo::initialize(const VkTimelineSemaphoreSubmitInfo* in_struct)
 {
+    if (pWaitSemaphoreValues)
+        delete[] pWaitSemaphoreValues;
+    if (pSignalSemaphoreValues)
+        delete[] pSignalSemaphoreValues;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     waitSemaphoreValueCount = in_struct->waitSemaphoreValueCount;
     pWaitSemaphoreValues = nullptr;
@@ -14948,6 +15463,12 @@ safe_VkSemaphoreWaitInfo::~safe_VkSemaphoreWaitInfo()
 
 void safe_VkSemaphoreWaitInfo::initialize(const VkSemaphoreWaitInfo* in_struct)
 {
+    if (pSemaphores)
+        delete[] pSemaphores;
+    if (pValues)
+        delete[] pValues;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     semaphoreCount = in_struct->semaphoreCount;
@@ -15032,6 +15553,8 @@ safe_VkSemaphoreSignalInfo::~safe_VkSemaphoreSignalInfo()
 
 void safe_VkSemaphoreSignalInfo::initialize(const VkSemaphoreSignalInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     semaphore = in_struct->semaphore;
     value = in_struct->value;
@@ -15096,6 +15619,8 @@ safe_VkPhysicalDeviceBufferDeviceAddressFeatures::~safe_VkPhysicalDeviceBufferDe
 
 void safe_VkPhysicalDeviceBufferDeviceAddressFeatures::initialize(const VkPhysicalDeviceBufferDeviceAddressFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     bufferDeviceAddress = in_struct->bufferDeviceAddress;
     bufferDeviceAddressCaptureReplay = in_struct->bufferDeviceAddressCaptureReplay;
@@ -15154,6 +15679,8 @@ safe_VkBufferDeviceAddressInfo::~safe_VkBufferDeviceAddressInfo()
 
 void safe_VkBufferDeviceAddressInfo::initialize(const VkBufferDeviceAddressInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     buffer = in_struct->buffer;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -15208,6 +15735,8 @@ safe_VkBufferOpaqueCaptureAddressCreateInfo::~safe_VkBufferOpaqueCaptureAddressC
 
 void safe_VkBufferOpaqueCaptureAddressCreateInfo::initialize(const VkBufferOpaqueCaptureAddressCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     opaqueCaptureAddress = in_struct->opaqueCaptureAddress;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -15262,6 +15791,8 @@ safe_VkMemoryOpaqueCaptureAddressAllocateInfo::~safe_VkMemoryOpaqueCaptureAddres
 
 void safe_VkMemoryOpaqueCaptureAddressAllocateInfo::initialize(const VkMemoryOpaqueCaptureAddressAllocateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     opaqueCaptureAddress = in_struct->opaqueCaptureAddress;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -15316,6 +15847,8 @@ safe_VkDeviceMemoryOpaqueCaptureAddressInfo::~safe_VkDeviceMemoryOpaqueCaptureAd
 
 void safe_VkDeviceMemoryOpaqueCaptureAddressInfo::initialize(const VkDeviceMemoryOpaqueCaptureAddressInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memory = in_struct->memory;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -15426,6 +15959,8 @@ safe_VkPhysicalDeviceVulkan13Features::~safe_VkPhysicalDeviceVulkan13Features()
 
 void safe_VkPhysicalDeviceVulkan13Features::initialize(const VkPhysicalDeviceVulkan13Features* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     robustImageAccess = in_struct->robustImageAccess;
     inlineUniformBlock = in_struct->inlineUniformBlock;
@@ -15684,6 +16219,8 @@ safe_VkPhysicalDeviceVulkan13Properties::~safe_VkPhysicalDeviceVulkan13Propertie
 
 void safe_VkPhysicalDeviceVulkan13Properties::initialize(const VkPhysicalDeviceVulkan13Properties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     minSubgroupSize = in_struct->minSubgroupSize;
     maxSubgroupSize = in_struct->maxSubgroupSize;
@@ -15863,6 +16400,12 @@ safe_VkPipelineCreationFeedbackCreateInfo::~safe_VkPipelineCreationFeedbackCreat
 
 void safe_VkPipelineCreationFeedbackCreateInfo::initialize(const VkPipelineCreationFeedbackCreateInfo* in_struct)
 {
+    if (pPipelineCreationFeedback)
+        delete pPipelineCreationFeedback;
+    if (pPipelineStageCreationFeedbacks)
+        delete[] pPipelineStageCreationFeedbacks;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pPipelineCreationFeedback = nullptr;
     pipelineStageCreationFeedbackCount = in_struct->pipelineStageCreationFeedbackCount;
@@ -15935,6 +16478,8 @@ safe_VkPhysicalDeviceShaderTerminateInvocationFeatures::~safe_VkPhysicalDeviceSh
 
 void safe_VkPhysicalDeviceShaderTerminateInvocationFeatures::initialize(const VkPhysicalDeviceShaderTerminateInvocationFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderTerminateInvocation = in_struct->shaderTerminateInvocation;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -16025,6 +16570,8 @@ safe_VkPhysicalDeviceToolProperties::~safe_VkPhysicalDeviceToolProperties()
 
 void safe_VkPhysicalDeviceToolProperties::initialize(const VkPhysicalDeviceToolProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     purposes = in_struct->purposes;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -16103,6 +16650,8 @@ safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures::~safe_VkPhysicalDev
 
 void safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures::initialize(const VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderDemoteToHelperInvocation = in_struct->shaderDemoteToHelperInvocation;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -16157,6 +16706,8 @@ safe_VkPhysicalDevicePrivateDataFeatures::~safe_VkPhysicalDevicePrivateDataFeatu
 
 void safe_VkPhysicalDevicePrivateDataFeatures::initialize(const VkPhysicalDevicePrivateDataFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     privateData = in_struct->privateData;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -16211,6 +16762,8 @@ safe_VkDevicePrivateDataCreateInfo::~safe_VkDevicePrivateDataCreateInfo()
 
 void safe_VkDevicePrivateDataCreateInfo::initialize(const VkDevicePrivateDataCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     privateDataSlotRequestCount = in_struct->privateDataSlotRequestCount;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -16265,6 +16818,8 @@ safe_VkPrivateDataSlotCreateInfo::~safe_VkPrivateDataSlotCreateInfo()
 
 void safe_VkPrivateDataSlotCreateInfo::initialize(const VkPrivateDataSlotCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -16319,6 +16874,8 @@ safe_VkPhysicalDevicePipelineCreationCacheControlFeatures::~safe_VkPhysicalDevic
 
 void safe_VkPhysicalDevicePipelineCreationCacheControlFeatures::initialize(const VkPhysicalDevicePipelineCreationCacheControlFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pipelineCreationCacheControl = in_struct->pipelineCreationCacheControl;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -16385,6 +16942,8 @@ safe_VkMemoryBarrier2::~safe_VkMemoryBarrier2()
 
 void safe_VkMemoryBarrier2::initialize(const VkMemoryBarrier2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcStageMask = in_struct->srcStageMask;
     srcAccessMask = in_struct->srcAccessMask;
@@ -16477,6 +17036,8 @@ safe_VkBufferMemoryBarrier2::~safe_VkBufferMemoryBarrier2()
 
 void safe_VkBufferMemoryBarrier2::initialize(const VkBufferMemoryBarrier2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcStageMask = in_struct->srcStageMask;
     srcAccessMask = in_struct->srcAccessMask;
@@ -16583,6 +17144,8 @@ safe_VkImageMemoryBarrier2::~safe_VkImageMemoryBarrier2()
 
 void safe_VkImageMemoryBarrier2::initialize(const VkImageMemoryBarrier2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcStageMask = in_struct->srcStageMask;
     srcAccessMask = in_struct->srcAccessMask;
@@ -16745,6 +17308,14 @@ safe_VkDependencyInfo::~safe_VkDependencyInfo()
 
 void safe_VkDependencyInfo::initialize(const VkDependencyInfo* in_struct)
 {
+    if (pMemoryBarriers)
+        delete[] pMemoryBarriers;
+    if (pBufferMemoryBarriers)
+        delete[] pBufferMemoryBarriers;
+    if (pImageMemoryBarriers)
+        delete[] pImageMemoryBarriers;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     dependencyFlags = in_struct->dependencyFlags;
     memoryBarrierCount = in_struct->memoryBarrierCount;
@@ -16859,6 +17430,8 @@ safe_VkSemaphoreSubmitInfo::~safe_VkSemaphoreSubmitInfo()
 
 void safe_VkSemaphoreSubmitInfo::initialize(const VkSemaphoreSubmitInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     semaphore = in_struct->semaphore;
     value = in_struct->value;
@@ -16923,6 +17496,8 @@ safe_VkCommandBufferSubmitInfo::~safe_VkCommandBufferSubmitInfo()
 
 void safe_VkCommandBufferSubmitInfo::initialize(const VkCommandBufferSubmitInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     commandBuffer = in_struct->commandBuffer;
     deviceMask = in_struct->deviceMask;
@@ -17069,6 +17644,14 @@ safe_VkSubmitInfo2::~safe_VkSubmitInfo2()
 
 void safe_VkSubmitInfo2::initialize(const VkSubmitInfo2* in_struct)
 {
+    if (pWaitSemaphoreInfos)
+        delete[] pWaitSemaphoreInfos;
+    if (pCommandBufferInfos)
+        delete[] pCommandBufferInfos;
+    if (pSignalSemaphoreInfos)
+        delete[] pSignalSemaphoreInfos;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     waitSemaphoreInfoCount = in_struct->waitSemaphoreInfoCount;
@@ -17171,6 +17754,8 @@ safe_VkPhysicalDeviceSynchronization2Features::~safe_VkPhysicalDeviceSynchroniza
 
 void safe_VkPhysicalDeviceSynchronization2Features::initialize(const VkPhysicalDeviceSynchronization2Features* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     synchronization2 = in_struct->synchronization2;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -17225,6 +17810,8 @@ safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures::~safe_VkPhysicalDevi
 
 void safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures::initialize(const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderZeroInitializeWorkgroupMemory = in_struct->shaderZeroInitializeWorkgroupMemory;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -17279,6 +17866,8 @@ safe_VkPhysicalDeviceImageRobustnessFeatures::~safe_VkPhysicalDeviceImageRobustn
 
 void safe_VkPhysicalDeviceImageRobustnessFeatures::initialize(const VkPhysicalDeviceImageRobustnessFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     robustImageAccess = in_struct->robustImageAccess;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -17341,6 +17930,8 @@ safe_VkBufferCopy2::~safe_VkBufferCopy2()
 
 void safe_VkBufferCopy2::initialize(const VkBufferCopy2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcOffset = in_struct->srcOffset;
     dstOffset = in_struct->dstOffset;
@@ -17433,6 +18024,10 @@ safe_VkCopyBufferInfo2::~safe_VkCopyBufferInfo2()
 
 void safe_VkCopyBufferInfo2::initialize(const VkCopyBufferInfo2* in_struct)
 {
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcBuffer = in_struct->srcBuffer;
     dstBuffer = in_struct->dstBuffer;
@@ -17521,6 +18116,8 @@ safe_VkImageCopy2::~safe_VkImageCopy2()
 
 void safe_VkImageCopy2::initialize(const VkImageCopy2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcSubresource = in_struct->srcSubresource;
     srcOffset = in_struct->srcOffset;
@@ -17625,6 +18222,10 @@ safe_VkCopyImageInfo2::~safe_VkCopyImageInfo2()
 
 void safe_VkCopyImageInfo2::initialize(const VkCopyImageInfo2* in_struct)
 {
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcImage = in_struct->srcImage;
     srcImageLayout = in_struct->srcImageLayout;
@@ -17721,6 +18322,8 @@ safe_VkBufferImageCopy2::~safe_VkBufferImageCopy2()
 
 void safe_VkBufferImageCopy2::initialize(const VkBufferImageCopy2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     bufferOffset = in_struct->bufferOffset;
     bufferRowLength = in_struct->bufferRowLength;
@@ -17823,6 +18426,10 @@ safe_VkCopyBufferToImageInfo2::~safe_VkCopyBufferToImageInfo2()
 
 void safe_VkCopyBufferToImageInfo2::initialize(const VkCopyBufferToImageInfo2* in_struct)
 {
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcBuffer = in_struct->srcBuffer;
     dstImage = in_struct->dstImage;
@@ -17935,6 +18542,10 @@ safe_VkCopyImageToBufferInfo2::~safe_VkCopyImageToBufferInfo2()
 
 void safe_VkCopyImageToBufferInfo2::initialize(const VkCopyImageToBufferInfo2* in_struct)
 {
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcImage = in_struct->srcImage;
     srcImageLayout = in_struct->srcImageLayout;
@@ -18031,6 +18642,8 @@ safe_VkImageBlit2::~safe_VkImageBlit2()
 
 void safe_VkImageBlit2::initialize(const VkImageBlit2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcSubresource = in_struct->srcSubresource;
     dstSubresource = in_struct->dstSubresource;
@@ -18145,6 +18758,10 @@ safe_VkBlitImageInfo2::~safe_VkBlitImageInfo2()
 
 void safe_VkBlitImageInfo2::initialize(const VkBlitImageInfo2* in_struct)
 {
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcImage = in_struct->srcImage;
     srcImageLayout = in_struct->srcImageLayout;
@@ -18239,6 +18856,8 @@ safe_VkImageResolve2::~safe_VkImageResolve2()
 
 void safe_VkImageResolve2::initialize(const VkImageResolve2* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcSubresource = in_struct->srcSubresource;
     srcOffset = in_struct->srcOffset;
@@ -18343,6 +18962,10 @@ safe_VkResolveImageInfo2::~safe_VkResolveImageInfo2()
 
 void safe_VkResolveImageInfo2::initialize(const VkResolveImageInfo2* in_struct)
 {
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcImage = in_struct->srcImage;
     srcImageLayout = in_struct->srcImageLayout;
@@ -18423,6 +19046,8 @@ safe_VkPhysicalDeviceSubgroupSizeControlFeatures::~safe_VkPhysicalDeviceSubgroup
 
 void safe_VkPhysicalDeviceSubgroupSizeControlFeatures::initialize(const VkPhysicalDeviceSubgroupSizeControlFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     subgroupSizeControl = in_struct->subgroupSizeControl;
     computeFullSubgroups = in_struct->computeFullSubgroups;
@@ -18491,6 +19116,8 @@ safe_VkPhysicalDeviceSubgroupSizeControlProperties::~safe_VkPhysicalDeviceSubgro
 
 void safe_VkPhysicalDeviceSubgroupSizeControlProperties::initialize(const VkPhysicalDeviceSubgroupSizeControlProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     minSubgroupSize = in_struct->minSubgroupSize;
     maxSubgroupSize = in_struct->maxSubgroupSize;
@@ -18551,6 +19178,8 @@ safe_VkPipelineShaderStageRequiredSubgroupSizeCreateInfo::~safe_VkPipelineShader
 
 void safe_VkPipelineShaderStageRequiredSubgroupSizeCreateInfo::initialize(const VkPipelineShaderStageRequiredSubgroupSizeCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     requiredSubgroupSize = in_struct->requiredSubgroupSize;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -18609,6 +19238,8 @@ safe_VkPhysicalDeviceInlineUniformBlockFeatures::~safe_VkPhysicalDeviceInlineUni
 
 void safe_VkPhysicalDeviceInlineUniformBlockFeatures::initialize(const VkPhysicalDeviceInlineUniformBlockFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     inlineUniformBlock = in_struct->inlineUniformBlock;
     descriptorBindingInlineUniformBlockUpdateAfterBind = in_struct->descriptorBindingInlineUniformBlockUpdateAfterBind;
@@ -18681,6 +19312,8 @@ safe_VkPhysicalDeviceInlineUniformBlockProperties::~safe_VkPhysicalDeviceInlineU
 
 void safe_VkPhysicalDeviceInlineUniformBlockProperties::initialize(const VkPhysicalDeviceInlineUniformBlockProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxInlineUniformBlockSize = in_struct->maxInlineUniformBlockSize;
     maxPerStageDescriptorInlineUniformBlocks = in_struct->maxPerStageDescriptorInlineUniformBlocks;
@@ -18747,6 +19380,8 @@ safe_VkWriteDescriptorSetInlineUniformBlock::~safe_VkWriteDescriptorSetInlineUni
 
 void safe_VkWriteDescriptorSetInlineUniformBlock::initialize(const VkWriteDescriptorSetInlineUniformBlock* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     dataSize = in_struct->dataSize;
     pData = in_struct->pData;
@@ -18803,6 +19438,8 @@ safe_VkDescriptorPoolInlineUniformBlockCreateInfo::~safe_VkDescriptorPoolInlineU
 
 void safe_VkDescriptorPoolInlineUniformBlockCreateInfo::initialize(const VkDescriptorPoolInlineUniformBlockCreateInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxInlineUniformBlockBindings = in_struct->maxInlineUniformBlockBindings;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -18857,6 +19494,8 @@ safe_VkPhysicalDeviceTextureCompressionASTCHDRFeatures::~safe_VkPhysicalDeviceTe
 
 void safe_VkPhysicalDeviceTextureCompressionASTCHDRFeatures::initialize(const VkPhysicalDeviceTextureCompressionASTCHDRFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     textureCompressionASTC_HDR = in_struct->textureCompressionASTC_HDR;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -18939,6 +19578,8 @@ safe_VkRenderingAttachmentInfo::~safe_VkRenderingAttachmentInfo()
 
 void safe_VkRenderingAttachmentInfo::initialize(const VkRenderingAttachmentInfo* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     imageView = in_struct->imageView;
     imageLayout = in_struct->imageLayout;
@@ -19077,6 +19718,14 @@ safe_VkRenderingInfo::~safe_VkRenderingInfo()
 
 void safe_VkRenderingInfo::initialize(const VkRenderingInfo* in_struct)
 {
+    if (pColorAttachments)
+        delete[] pColorAttachments;
+    if (pDepthAttachment)
+        delete pDepthAttachment;
+    if (pStencilAttachment)
+        delete pStencilAttachment;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     renderArea = in_struct->renderArea;
@@ -19197,6 +19846,10 @@ safe_VkPipelineRenderingCreateInfo::~safe_VkPipelineRenderingCreateInfo()
 
 void safe_VkPipelineRenderingCreateInfo::initialize(const VkPipelineRenderingCreateInfo* in_struct)
 {
+    if (pColorAttachmentFormats)
+        delete[] pColorAttachmentFormats;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     viewMask = in_struct->viewMask;
     colorAttachmentCount = in_struct->colorAttachmentCount;
@@ -19267,6 +19920,8 @@ safe_VkPhysicalDeviceDynamicRenderingFeatures::~safe_VkPhysicalDeviceDynamicRend
 
 void safe_VkPhysicalDeviceDynamicRenderingFeatures::initialize(const VkPhysicalDeviceDynamicRenderingFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     dynamicRendering = in_struct->dynamicRendering;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -19361,6 +20016,10 @@ safe_VkCommandBufferInheritanceRenderingInfo::~safe_VkCommandBufferInheritanceRe
 
 void safe_VkCommandBufferInheritanceRenderingInfo::initialize(const VkCommandBufferInheritanceRenderingInfo* in_struct)
 {
+    if (pColorAttachmentFormats)
+        delete[] pColorAttachmentFormats;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     viewMask = in_struct->viewMask;
@@ -19435,6 +20094,8 @@ safe_VkPhysicalDeviceShaderIntegerDotProductFeatures::~safe_VkPhysicalDeviceShad
 
 void safe_VkPhysicalDeviceShaderIntegerDotProductFeatures::initialize(const VkPhysicalDeviceShaderIntegerDotProductFeatures* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderIntegerDotProduct = in_struct->shaderIntegerDotProduct;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -19605,6 +20266,8 @@ safe_VkPhysicalDeviceShaderIntegerDotProductProperties::~safe_VkPhysicalDeviceSh
 
 void safe_VkPhysicalDeviceShaderIntegerDotProductProperties::initialize(const VkPhysicalDeviceShaderIntegerDotProductProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     integerDotProduct8BitUnsignedAccelerated = in_struct->integerDotProduct8BitUnsignedAccelerated;
     integerDotProduct8BitSignedAccelerated = in_struct->integerDotProduct8BitSignedAccelerated;
@@ -19729,6 +20392,8 @@ safe_VkPhysicalDeviceTexelBufferAlignmentProperties::~safe_VkPhysicalDeviceTexel
 
 void safe_VkPhysicalDeviceTexelBufferAlignmentProperties::initialize(const VkPhysicalDeviceTexelBufferAlignmentProperties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     storageTexelBufferOffsetAlignmentBytes = in_struct->storageTexelBufferOffsetAlignmentBytes;
     storageTexelBufferOffsetSingleTexelAlignment = in_struct->storageTexelBufferOffsetSingleTexelAlignment;
@@ -19797,6 +20462,8 @@ safe_VkFormatProperties3::~safe_VkFormatProperties3()
 
 void safe_VkFormatProperties3::initialize(const VkFormatProperties3* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     linearTilingFeatures = in_struct->linearTilingFeatures;
     optimalTilingFeatures = in_struct->optimalTilingFeatures;
@@ -19855,6 +20522,8 @@ safe_VkPhysicalDeviceMaintenance4Features::~safe_VkPhysicalDeviceMaintenance4Fea
 
 void safe_VkPhysicalDeviceMaintenance4Features::initialize(const VkPhysicalDeviceMaintenance4Features* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maintenance4 = in_struct->maintenance4;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -19909,6 +20578,8 @@ safe_VkPhysicalDeviceMaintenance4Properties::~safe_VkPhysicalDeviceMaintenance4P
 
 void safe_VkPhysicalDeviceMaintenance4Properties::initialize(const VkPhysicalDeviceMaintenance4Properties* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxBufferSize = in_struct->maxBufferSize;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -19973,6 +20644,10 @@ safe_VkDeviceBufferMemoryRequirements::~safe_VkDeviceBufferMemoryRequirements()
 
 void safe_VkDeviceBufferMemoryRequirements::initialize(const VkDeviceBufferMemoryRequirements* in_struct)
 {
+    if (pCreateInfo)
+        delete pCreateInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pCreateInfo = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -20045,6 +20720,10 @@ safe_VkDeviceImageMemoryRequirements::~safe_VkDeviceImageMemoryRequirements()
 
 void safe_VkDeviceImageMemoryRequirements::initialize(const VkDeviceImageMemoryRequirements* in_struct)
 {
+    if (pCreateInfo)
+        delete pCreateInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pCreateInfo = nullptr;
     planeAspect = in_struct->planeAspect;
@@ -20188,6 +20867,10 @@ safe_VkSwapchainCreateInfoKHR::~safe_VkSwapchainCreateInfoKHR()
 
 void safe_VkSwapchainCreateInfoKHR::initialize(const VkSwapchainCreateInfoKHR* in_struct)
 {
+    if (pQueueFamilyIndices)
+        delete[] pQueueFamilyIndices;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     surface = in_struct->surface;
@@ -20380,6 +21063,16 @@ safe_VkPresentInfoKHR::~safe_VkPresentInfoKHR()
 
 void safe_VkPresentInfoKHR::initialize(const VkPresentInfoKHR* in_struct)
 {
+    if (pWaitSemaphores)
+        delete[] pWaitSemaphores;
+    if (pSwapchains)
+        delete[] pSwapchains;
+    if (pImageIndices)
+        delete[] pImageIndices;
+    if (pResults)
+        delete[] pResults;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     waitSemaphoreCount = in_struct->waitSemaphoreCount;
     pWaitSemaphores = nullptr;
@@ -20484,6 +21177,8 @@ safe_VkImageSwapchainCreateInfoKHR::~safe_VkImageSwapchainCreateInfoKHR()
 
 void safe_VkImageSwapchainCreateInfoKHR::initialize(const VkImageSwapchainCreateInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     swapchain = in_struct->swapchain;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -20542,6 +21237,8 @@ safe_VkBindImageMemorySwapchainInfoKHR::~safe_VkBindImageMemorySwapchainInfoKHR(
 
 void safe_VkBindImageMemorySwapchainInfoKHR::initialize(const VkBindImageMemorySwapchainInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     swapchain = in_struct->swapchain;
     imageIndex = in_struct->imageIndex;
@@ -20614,6 +21311,8 @@ safe_VkAcquireNextImageInfoKHR::~safe_VkAcquireNextImageInfoKHR()
 
 void safe_VkAcquireNextImageInfoKHR::initialize(const VkAcquireNextImageInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     swapchain = in_struct->swapchain;
     timeout = in_struct->timeout;
@@ -20685,6 +21384,8 @@ safe_VkDeviceGroupPresentCapabilitiesKHR::~safe_VkDeviceGroupPresentCapabilities
 
 void safe_VkDeviceGroupPresentCapabilitiesKHR::initialize(const VkDeviceGroupPresentCapabilitiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     modes = in_struct->modes;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -20769,6 +21470,10 @@ safe_VkDeviceGroupPresentInfoKHR::~safe_VkDeviceGroupPresentInfoKHR()
 
 void safe_VkDeviceGroupPresentInfoKHR::initialize(const VkDeviceGroupPresentInfoKHR* in_struct)
 {
+    if (pDeviceMasks)
+        delete[] pDeviceMasks;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     swapchainCount = in_struct->swapchainCount;
     pDeviceMasks = nullptr;
@@ -20835,6 +21540,8 @@ safe_VkDeviceGroupSwapchainCreateInfoKHR::~safe_VkDeviceGroupSwapchainCreateInfo
 
 void safe_VkDeviceGroupSwapchainCreateInfoKHR::initialize(const VkDeviceGroupSwapchainCreateInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     modes = in_struct->modes;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -20893,6 +21600,8 @@ safe_VkDisplayModeCreateInfoKHR::~safe_VkDisplayModeCreateInfoKHR()
 
 void safe_VkDisplayModeCreateInfoKHR::initialize(const VkDisplayModeCreateInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     parameters = in_struct->parameters;
@@ -20963,6 +21672,7 @@ safe_VkDisplayPropertiesKHR::~safe_VkDisplayPropertiesKHR()
 
 void safe_VkDisplayPropertiesKHR::initialize(const VkDisplayPropertiesKHR* in_struct)
 {
+    if (displayName) delete [] displayName;
     display = in_struct->display;
     physicalDimensions = in_struct->physicalDimensions;
     physicalResolution = in_struct->physicalResolution;
@@ -21053,6 +21763,8 @@ safe_VkDisplaySurfaceCreateInfoKHR::~safe_VkDisplaySurfaceCreateInfoKHR()
 
 void safe_VkDisplaySurfaceCreateInfoKHR::initialize(const VkDisplaySurfaceCreateInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     displayMode = in_struct->displayMode;
@@ -21129,6 +21841,8 @@ safe_VkDisplayPresentInfoKHR::~safe_VkDisplayPresentInfoKHR()
 
 void safe_VkDisplayPresentInfoKHR::initialize(const VkDisplayPresentInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcRect = in_struct->srcRect;
     dstRect = in_struct->dstRect;
@@ -21189,6 +21903,8 @@ safe_VkQueueFamilyQueryResultStatusProperties2KHR::~safe_VkQueueFamilyQueryResul
 
 void safe_VkQueueFamilyQueryResultStatusProperties2KHR::initialize(const VkQueueFamilyQueryResultStatusProperties2KHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     supported = in_struct->supported;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -21247,6 +21963,8 @@ safe_VkVideoQueueFamilyProperties2KHR::~safe_VkVideoQueueFamilyProperties2KHR()
 
 void safe_VkVideoQueueFamilyProperties2KHR::initialize(const VkVideoQueueFamilyProperties2KHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     videoCodecOperations = in_struct->videoCodecOperations;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -21317,6 +22035,8 @@ safe_VkVideoProfileKHR::~safe_VkVideoProfileKHR()
 
 void safe_VkVideoProfileKHR::initialize(const VkVideoProfileKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     videoCodecOperation = in_struct->videoCodecOperation;
     chromaSubsampling = in_struct->chromaSubsampling;
@@ -21407,6 +22127,10 @@ safe_VkVideoProfilesKHR::~safe_VkVideoProfilesKHR()
 
 void safe_VkVideoProfilesKHR::initialize(const VkVideoProfilesKHR* in_struct)
 {
+    if (pProfiles)
+        delete[] pProfiles;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     profileCount = in_struct->profileCount;
     pProfiles = nullptr;
@@ -21511,6 +22235,8 @@ safe_VkVideoCapabilitiesKHR::~safe_VkVideoCapabilitiesKHR()
 
 void safe_VkVideoCapabilitiesKHR::initialize(const VkVideoCapabilitiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     capabilityFlags = in_struct->capabilityFlags;
     minBitstreamBufferOffsetAlignment = in_struct->minBitstreamBufferOffsetAlignment;
@@ -21599,6 +22325,10 @@ safe_VkPhysicalDeviceVideoFormatInfoKHR::~safe_VkPhysicalDeviceVideoFormatInfoKH
 
 void safe_VkPhysicalDeviceVideoFormatInfoKHR::initialize(const VkPhysicalDeviceVideoFormatInfoKHR* in_struct)
 {
+    if (pVideoProfiles)
+        delete pVideoProfiles;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     imageUsage = in_struct->imageUsage;
     pVideoProfiles = nullptr;
@@ -21663,6 +22393,8 @@ safe_VkVideoFormatPropertiesKHR::~safe_VkVideoFormatPropertiesKHR()
 
 void safe_VkVideoFormatPropertiesKHR::initialize(const VkVideoFormatPropertiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     format = in_struct->format;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -21733,6 +22465,8 @@ safe_VkVideoPictureResourceKHR::~safe_VkVideoPictureResourceKHR()
 
 void safe_VkVideoPictureResourceKHR::initialize(const VkVideoPictureResourceKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     codedOffset = in_struct->codedOffset;
     codedExtent = in_struct->codedExtent;
@@ -21811,6 +22545,10 @@ safe_VkVideoReferenceSlotKHR::~safe_VkVideoReferenceSlotKHR()
 
 void safe_VkVideoReferenceSlotKHR::initialize(const VkVideoReferenceSlotKHR* in_struct)
 {
+    if (pPictureResource)
+        delete pPictureResource;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     slotIndex = in_struct->slotIndex;
     pPictureResource = nullptr;
@@ -21889,6 +22627,10 @@ safe_VkVideoGetMemoryPropertiesKHR::~safe_VkVideoGetMemoryPropertiesKHR()
 
 void safe_VkVideoGetMemoryPropertiesKHR::initialize(const VkVideoGetMemoryPropertiesKHR* in_struct)
 {
+    if (pMemoryRequirements)
+        delete pMemoryRequirements;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memoryBindIndex = in_struct->memoryBindIndex;
     pMemoryRequirements = nullptr;
@@ -21965,6 +22707,8 @@ safe_VkVideoBindMemoryKHR::~safe_VkVideoBindMemoryKHR()
 
 void safe_VkVideoBindMemoryKHR::initialize(const VkVideoBindMemoryKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memoryBindIndex = in_struct->memoryBindIndex;
     memory = in_struct->memory;
@@ -22084,6 +22828,12 @@ safe_VkVideoSessionCreateInfoKHR::~safe_VkVideoSessionCreateInfoKHR()
 
 void safe_VkVideoSessionCreateInfoKHR::initialize(const VkVideoSessionCreateInfoKHR* in_struct)
 {
+    if (pVideoProfile)
+        delete pVideoProfile;
+    if (pStdHeaderVersion)
+        delete pStdHeaderVersion;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     queueFamilyIndex = in_struct->queueFamilyIndex;
     flags = in_struct->flags;
@@ -22172,6 +22922,8 @@ safe_VkVideoSessionParametersCreateInfoKHR::~safe_VkVideoSessionParametersCreate
 
 void safe_VkVideoSessionParametersCreateInfoKHR::initialize(const VkVideoSessionParametersCreateInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     videoSessionParametersTemplate = in_struct->videoSessionParametersTemplate;
     videoSession = in_struct->videoSession;
@@ -22232,6 +22984,8 @@ safe_VkVideoSessionParametersUpdateInfoKHR::~safe_VkVideoSessionParametersUpdate
 
 void safe_VkVideoSessionParametersUpdateInfoKHR::initialize(const VkVideoSessionParametersUpdateInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     updateSequenceCount = in_struct->updateSequenceCount;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -22332,6 +23086,10 @@ safe_VkVideoBeginCodingInfoKHR::~safe_VkVideoBeginCodingInfoKHR()
 
 void safe_VkVideoBeginCodingInfoKHR::initialize(const VkVideoBeginCodingInfoKHR* in_struct)
 {
+    if (pReferenceSlots)
+        delete[] pReferenceSlots;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     codecQualityPreset = in_struct->codecQualityPreset;
@@ -22412,6 +23170,8 @@ safe_VkVideoEndCodingInfoKHR::~safe_VkVideoEndCodingInfoKHR()
 
 void safe_VkVideoEndCodingInfoKHR::initialize(const VkVideoEndCodingInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -22470,6 +23230,8 @@ safe_VkVideoCodingControlInfoKHR::~safe_VkVideoCodingControlInfoKHR()
 
 void safe_VkVideoCodingControlInfoKHR::initialize(const VkVideoCodingControlInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -22528,6 +23290,8 @@ safe_VkVideoDecodeCapabilitiesKHR::~safe_VkVideoDecodeCapabilitiesKHR()
 
 void safe_VkVideoDecodeCapabilitiesKHR::initialize(const VkVideoDecodeCapabilitiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -22645,6 +23409,12 @@ safe_VkVideoDecodeInfoKHR::~safe_VkVideoDecodeInfoKHR()
 
 void safe_VkVideoDecodeInfoKHR::initialize(const VkVideoDecodeInfoKHR* in_struct)
 {
+    if (pSetupReferenceSlot)
+        delete pSetupReferenceSlot;
+    if (pReferenceSlots)
+        delete[] pReferenceSlots;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     srcBuffer = in_struct->srcBuffer;
@@ -22739,6 +23509,8 @@ safe_VkRenderingFragmentShadingRateAttachmentInfoKHR::~safe_VkRenderingFragmentS
 
 void safe_VkRenderingFragmentShadingRateAttachmentInfoKHR::initialize(const VkRenderingFragmentShadingRateAttachmentInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     imageView = in_struct->imageView;
     imageLayout = in_struct->imageLayout;
@@ -22801,6 +23573,8 @@ safe_VkRenderingFragmentDensityMapAttachmentInfoEXT::~safe_VkRenderingFragmentDe
 
 void safe_VkRenderingFragmentDensityMapAttachmentInfoEXT::initialize(const VkRenderingFragmentDensityMapAttachmentInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     imageView = in_struct->imageView;
     imageLayout = in_struct->imageLayout;
@@ -22881,6 +23655,10 @@ safe_VkAttachmentSampleCountInfoAMD::~safe_VkAttachmentSampleCountInfoAMD()
 
 void safe_VkAttachmentSampleCountInfoAMD::initialize(const VkAttachmentSampleCountInfoAMD* in_struct)
 {
+    if (pColorAttachmentSamples)
+        delete[] pColorAttachmentSamples;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     colorAttachmentCount = in_struct->colorAttachmentCount;
     pColorAttachmentSamples = nullptr;
@@ -22951,6 +23729,8 @@ safe_VkMultiviewPerViewAttributesInfoNVX::~safe_VkMultiviewPerViewAttributesInfo
 
 void safe_VkMultiviewPerViewAttributesInfoNVX::initialize(const VkMultiviewPerViewAttributesInfoNVX* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     perViewAttributes = in_struct->perViewAttributes;
     perViewAttributesPositionXOnly = in_struct->perViewAttributesPositionXOnly;
@@ -23017,6 +23797,8 @@ safe_VkImportMemoryWin32HandleInfoKHR::~safe_VkImportMemoryWin32HandleInfoKHR()
 
 void safe_VkImportMemoryWin32HandleInfoKHR::initialize(const VkImportMemoryWin32HandleInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleType = in_struct->handleType;
     handle = in_struct->handle;
@@ -23100,6 +23882,10 @@ safe_VkExportMemoryWin32HandleInfoKHR::~safe_VkExportMemoryWin32HandleInfoKHR()
 
 void safe_VkExportMemoryWin32HandleInfoKHR::initialize(const VkExportMemoryWin32HandleInfoKHR* in_struct)
 {
+    if (pAttributes)
+        delete pAttributes;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pAttributes = nullptr;
     dwAccess = in_struct->dwAccess;
@@ -23168,6 +23954,8 @@ safe_VkMemoryWin32HandlePropertiesKHR::~safe_VkMemoryWin32HandlePropertiesKHR()
 
 void safe_VkMemoryWin32HandlePropertiesKHR::initialize(const VkMemoryWin32HandlePropertiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memoryTypeBits = in_struct->memoryTypeBits;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -23230,6 +24018,8 @@ safe_VkMemoryGetWin32HandleInfoKHR::~safe_VkMemoryGetWin32HandleInfoKHR()
 
 void safe_VkMemoryGetWin32HandleInfoKHR::initialize(const VkMemoryGetWin32HandleInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memory = in_struct->memory;
     handleType = in_struct->handleType;
@@ -23292,6 +24082,8 @@ safe_VkImportMemoryFdInfoKHR::~safe_VkImportMemoryFdInfoKHR()
 
 void safe_VkImportMemoryFdInfoKHR::initialize(const VkImportMemoryFdInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleType = in_struct->handleType;
     fd = in_struct->fd;
@@ -23348,6 +24140,8 @@ safe_VkMemoryFdPropertiesKHR::~safe_VkMemoryFdPropertiesKHR()
 
 void safe_VkMemoryFdPropertiesKHR::initialize(const VkMemoryFdPropertiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memoryTypeBits = in_struct->memoryTypeBits;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -23406,6 +24200,8 @@ safe_VkMemoryGetFdInfoKHR::~safe_VkMemoryGetFdInfoKHR()
 
 void safe_VkMemoryGetFdInfoKHR::initialize(const VkMemoryGetFdInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memory = in_struct->memory;
     handleType = in_struct->handleType;
@@ -23580,6 +24376,18 @@ safe_VkWin32KeyedMutexAcquireReleaseInfoKHR::~safe_VkWin32KeyedMutexAcquireRelea
 
 void safe_VkWin32KeyedMutexAcquireReleaseInfoKHR::initialize(const VkWin32KeyedMutexAcquireReleaseInfoKHR* in_struct)
 {
+    if (pAcquireSyncs)
+        delete[] pAcquireSyncs;
+    if (pAcquireKeys)
+        delete[] pAcquireKeys;
+    if (pAcquireTimeouts)
+        delete[] pAcquireTimeouts;
+    if (pReleaseSyncs)
+        delete[] pReleaseSyncs;
+    if (pReleaseKeys)
+        delete[] pReleaseKeys;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     acquireCount = in_struct->acquireCount;
     pAcquireSyncs = nullptr;
@@ -23714,6 +24522,8 @@ safe_VkImportSemaphoreWin32HandleInfoKHR::~safe_VkImportSemaphoreWin32HandleInfo
 
 void safe_VkImportSemaphoreWin32HandleInfoKHR::initialize(const VkImportSemaphoreWin32HandleInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     semaphore = in_struct->semaphore;
     flags = in_struct->flags;
@@ -23801,6 +24611,10 @@ safe_VkExportSemaphoreWin32HandleInfoKHR::~safe_VkExportSemaphoreWin32HandleInfo
 
 void safe_VkExportSemaphoreWin32HandleInfoKHR::initialize(const VkExportSemaphoreWin32HandleInfoKHR* in_struct)
 {
+    if (pAttributes)
+        delete pAttributes;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pAttributes = nullptr;
     dwAccess = in_struct->dwAccess;
@@ -23913,6 +24727,12 @@ safe_VkD3D12FenceSubmitInfoKHR::~safe_VkD3D12FenceSubmitInfoKHR()
 
 void safe_VkD3D12FenceSubmitInfoKHR::initialize(const VkD3D12FenceSubmitInfoKHR* in_struct)
 {
+    if (pWaitSemaphoreValues)
+        delete[] pWaitSemaphoreValues;
+    if (pSignalSemaphoreValues)
+        delete[] pSignalSemaphoreValues;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     waitSemaphoreValuesCount = in_struct->waitSemaphoreValuesCount;
     pWaitSemaphoreValues = nullptr;
@@ -23997,6 +24817,8 @@ safe_VkSemaphoreGetWin32HandleInfoKHR::~safe_VkSemaphoreGetWin32HandleInfoKHR()
 
 void safe_VkSemaphoreGetWin32HandleInfoKHR::initialize(const VkSemaphoreGetWin32HandleInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     semaphore = in_struct->semaphore;
     handleType = in_struct->handleType;
@@ -24067,6 +24889,8 @@ safe_VkImportSemaphoreFdInfoKHR::~safe_VkImportSemaphoreFdInfoKHR()
 
 void safe_VkImportSemaphoreFdInfoKHR::initialize(const VkImportSemaphoreFdInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     semaphore = in_struct->semaphore;
     flags = in_struct->flags;
@@ -24131,6 +24955,8 @@ safe_VkSemaphoreGetFdInfoKHR::~safe_VkSemaphoreGetFdInfoKHR()
 
 void safe_VkSemaphoreGetFdInfoKHR::initialize(const VkSemaphoreGetFdInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     semaphore = in_struct->semaphore;
     handleType = in_struct->handleType;
@@ -24187,6 +25013,8 @@ safe_VkPhysicalDevicePushDescriptorPropertiesKHR::~safe_VkPhysicalDevicePushDesc
 
 void safe_VkPhysicalDevicePushDescriptorPropertiesKHR::initialize(const VkPhysicalDevicePushDescriptorPropertiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxPushDescriptors = in_struct->maxPushDescriptors;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -24249,6 +25077,8 @@ safe_VkPresentRegionKHR::~safe_VkPresentRegionKHR()
 
 void safe_VkPresentRegionKHR::initialize(const VkPresentRegionKHR* in_struct)
 {
+    if (pRectangles)
+        delete[] pRectangles;
     rectangleCount = in_struct->rectangleCount;
     pRectangles = nullptr;
     if (in_struct->pRectangles) {
@@ -24335,6 +25165,10 @@ safe_VkPresentRegionsKHR::~safe_VkPresentRegionsKHR()
 
 void safe_VkPresentRegionsKHR::initialize(const VkPresentRegionsKHR* in_struct)
 {
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     swapchainCount = in_struct->swapchainCount;
     pRegions = nullptr;
@@ -24403,6 +25237,8 @@ safe_VkSharedPresentSurfaceCapabilitiesKHR::~safe_VkSharedPresentSurfaceCapabili
 
 void safe_VkSharedPresentSurfaceCapabilitiesKHR::initialize(const VkSharedPresentSurfaceCapabilitiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     sharedPresentSupportedUsageFlags = in_struct->sharedPresentSupportedUsageFlags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -24475,6 +25311,8 @@ safe_VkImportFenceWin32HandleInfoKHR::~safe_VkImportFenceWin32HandleInfoKHR()
 
 void safe_VkImportFenceWin32HandleInfoKHR::initialize(const VkImportFenceWin32HandleInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fence = in_struct->fence;
     flags = in_struct->flags;
@@ -24562,6 +25400,10 @@ safe_VkExportFenceWin32HandleInfoKHR::~safe_VkExportFenceWin32HandleInfoKHR()
 
 void safe_VkExportFenceWin32HandleInfoKHR::initialize(const VkExportFenceWin32HandleInfoKHR* in_struct)
 {
+    if (pAttributes)
+        delete pAttributes;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pAttributes = nullptr;
     dwAccess = in_struct->dwAccess;
@@ -24634,6 +25476,8 @@ safe_VkFenceGetWin32HandleInfoKHR::~safe_VkFenceGetWin32HandleInfoKHR()
 
 void safe_VkFenceGetWin32HandleInfoKHR::initialize(const VkFenceGetWin32HandleInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fence = in_struct->fence;
     handleType = in_struct->handleType;
@@ -24704,6 +25548,8 @@ safe_VkImportFenceFdInfoKHR::~safe_VkImportFenceFdInfoKHR()
 
 void safe_VkImportFenceFdInfoKHR::initialize(const VkImportFenceFdInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fence = in_struct->fence;
     flags = in_struct->flags;
@@ -24768,6 +25614,8 @@ safe_VkFenceGetFdInfoKHR::~safe_VkFenceGetFdInfoKHR()
 
 void safe_VkFenceGetFdInfoKHR::initialize(const VkFenceGetFdInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fence = in_struct->fence;
     handleType = in_struct->handleType;
@@ -24828,6 +25676,8 @@ safe_VkPhysicalDevicePerformanceQueryFeaturesKHR::~safe_VkPhysicalDevicePerforma
 
 void safe_VkPhysicalDevicePerformanceQueryFeaturesKHR::initialize(const VkPhysicalDevicePerformanceQueryFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     performanceCounterQueryPools = in_struct->performanceCounterQueryPools;
     performanceCounterMultipleQueryPools = in_struct->performanceCounterMultipleQueryPools;
@@ -24884,6 +25734,8 @@ safe_VkPhysicalDevicePerformanceQueryPropertiesKHR::~safe_VkPhysicalDevicePerfor
 
 void safe_VkPhysicalDevicePerformanceQueryPropertiesKHR::initialize(const VkPhysicalDevicePerformanceQueryPropertiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     allowCommandBufferQueryCopies = in_struct->allowCommandBufferQueryCopies;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -24955,6 +25807,8 @@ safe_VkPerformanceCounterKHR::~safe_VkPerformanceCounterKHR()
 
 void safe_VkPerformanceCounterKHR::initialize(const VkPerformanceCounterKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     unit = in_struct->unit;
     scope = in_struct->scope;
@@ -25046,6 +25900,8 @@ safe_VkPerformanceCounterDescriptionKHR::~safe_VkPerformanceCounterDescriptionKH
 
 void safe_VkPerformanceCounterDescriptionKHR::initialize(const VkPerformanceCounterDescriptionKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -25142,6 +25998,10 @@ safe_VkQueryPoolPerformanceCreateInfoKHR::~safe_VkQueryPoolPerformanceCreateInfo
 
 void safe_VkQueryPoolPerformanceCreateInfoKHR::initialize(const VkQueryPoolPerformanceCreateInfoKHR* in_struct)
 {
+    if (pCounterIndices)
+        delete[] pCounterIndices;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     queueFamilyIndex = in_struct->queueFamilyIndex;
     counterIndexCount = in_struct->counterIndexCount;
@@ -25212,6 +26072,8 @@ safe_VkAcquireProfilingLockInfoKHR::~safe_VkAcquireProfilingLockInfoKHR()
 
 void safe_VkAcquireProfilingLockInfoKHR::initialize(const VkAcquireProfilingLockInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     timeout = in_struct->timeout;
@@ -25268,6 +26130,8 @@ safe_VkPerformanceQuerySubmitInfoKHR::~safe_VkPerformanceQuerySubmitInfoKHR()
 
 void safe_VkPerformanceQuerySubmitInfoKHR::initialize(const VkPerformanceQuerySubmitInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     counterPassIndex = in_struct->counterPassIndex;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -25322,6 +26186,8 @@ safe_VkPhysicalDeviceSurfaceInfo2KHR::~safe_VkPhysicalDeviceSurfaceInfo2KHR()
 
 void safe_VkPhysicalDeviceSurfaceInfo2KHR::initialize(const VkPhysicalDeviceSurfaceInfo2KHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     surface = in_struct->surface;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -25376,6 +26242,8 @@ safe_VkSurfaceCapabilities2KHR::~safe_VkSurfaceCapabilities2KHR()
 
 void safe_VkSurfaceCapabilities2KHR::initialize(const VkSurfaceCapabilities2KHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     surfaceCapabilities = in_struct->surfaceCapabilities;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -25430,6 +26298,8 @@ safe_VkSurfaceFormat2KHR::~safe_VkSurfaceFormat2KHR()
 
 void safe_VkSurfaceFormat2KHR::initialize(const VkSurfaceFormat2KHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     surfaceFormat = in_struct->surfaceFormat;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -25483,6 +26353,8 @@ safe_VkDisplayProperties2KHR::~safe_VkDisplayProperties2KHR()
 
 void safe_VkDisplayProperties2KHR::initialize(const VkDisplayProperties2KHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     displayProperties.initialize(&in_struct->displayProperties);
     pNext = SafePnextCopy(in_struct->pNext);
@@ -25537,6 +26409,8 @@ safe_VkDisplayPlaneProperties2KHR::~safe_VkDisplayPlaneProperties2KHR()
 
 void safe_VkDisplayPlaneProperties2KHR::initialize(const VkDisplayPlaneProperties2KHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     displayPlaneProperties = in_struct->displayPlaneProperties;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -25591,6 +26465,8 @@ safe_VkDisplayModeProperties2KHR::~safe_VkDisplayModeProperties2KHR()
 
 void safe_VkDisplayModeProperties2KHR::initialize(const VkDisplayModeProperties2KHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     displayModeProperties = in_struct->displayModeProperties;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -25649,6 +26525,8 @@ safe_VkDisplayPlaneInfo2KHR::~safe_VkDisplayPlaneInfo2KHR()
 
 void safe_VkDisplayPlaneInfo2KHR::initialize(const VkDisplayPlaneInfo2KHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     mode = in_struct->mode;
     planeIndex = in_struct->planeIndex;
@@ -25705,6 +26583,8 @@ safe_VkDisplayPlaneCapabilities2KHR::~safe_VkDisplayPlaneCapabilities2KHR()
 
 void safe_VkDisplayPlaneCapabilities2KHR::initialize(const VkDisplayPlaneCapabilities2KHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     capabilities = in_struct->capabilities;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -25817,6 +26697,8 @@ safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR::~safe_VkPhysicalDevicePortabi
 
 void safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR::initialize(const VkPhysicalDevicePortabilitySubsetFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     constantAlphaColorBlendFactors = in_struct->constantAlphaColorBlendFactors;
     events = in_struct->events;
@@ -25903,6 +26785,8 @@ safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR::~safe_VkPhysicalDevicePorta
 
 void safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR::initialize(const VkPhysicalDevicePortabilitySubsetPropertiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     minVertexInputBindingStrideAlignment = in_struct->minVertexInputBindingStrideAlignment;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -25963,6 +26847,8 @@ safe_VkPhysicalDeviceShaderClockFeaturesKHR::~safe_VkPhysicalDeviceShaderClockFe
 
 void safe_VkPhysicalDeviceShaderClockFeaturesKHR::initialize(const VkPhysicalDeviceShaderClockFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderSubgroupClock = in_struct->shaderSubgroupClock;
     shaderDeviceClock = in_struct->shaderDeviceClock;
@@ -26019,6 +26905,8 @@ safe_VkDeviceQueueGlobalPriorityCreateInfoKHR::~safe_VkDeviceQueueGlobalPriority
 
 void safe_VkDeviceQueueGlobalPriorityCreateInfoKHR::initialize(const VkDeviceQueueGlobalPriorityCreateInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     globalPriority = in_struct->globalPriority;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -26073,6 +26961,8 @@ safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR::~safe_VkPhysicalDeviceGloba
 
 void safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR::initialize(const VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     globalPriorityQuery = in_struct->globalPriorityQuery;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -26136,6 +27026,8 @@ safe_VkQueueFamilyGlobalPriorityPropertiesKHR::~safe_VkQueueFamilyGlobalPriority
 
 void safe_VkQueueFamilyGlobalPriorityPropertiesKHR::initialize(const VkQueueFamilyGlobalPriorityPropertiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     priorityCount = in_struct->priorityCount;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -26210,6 +27102,10 @@ safe_VkFragmentShadingRateAttachmentInfoKHR::~safe_VkFragmentShadingRateAttachme
 
 void safe_VkFragmentShadingRateAttachmentInfoKHR::initialize(const VkFragmentShadingRateAttachmentInfoKHR* in_struct)
 {
+    if (pFragmentShadingRateAttachment)
+        delete pFragmentShadingRateAttachment;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pFragmentShadingRateAttachment = nullptr;
     shadingRateAttachmentTexelSize = in_struct->shadingRateAttachmentTexelSize;
@@ -26279,6 +27175,8 @@ safe_VkPipelineFragmentShadingRateStateCreateInfoKHR::~safe_VkPipelineFragmentSh
 
 void safe_VkPipelineFragmentShadingRateStateCreateInfoKHR::initialize(const VkPipelineFragmentShadingRateStateCreateInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fragmentSize = in_struct->fragmentSize;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -26347,6 +27245,8 @@ safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR::~safe_VkPhysicalDeviceFragm
 
 void safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR::initialize(const VkPhysicalDeviceFragmentShadingRateFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pipelineFragmentShadingRate = in_struct->pipelineFragmentShadingRate;
     primitiveFragmentShadingRate = in_struct->primitiveFragmentShadingRate;
@@ -26469,6 +27369,8 @@ safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR::~safe_VkPhysicalDeviceFra
 
 void safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR::initialize(const VkPhysicalDeviceFragmentShadingRatePropertiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     minFragmentShadingRateAttachmentTexelSize = in_struct->minFragmentShadingRateAttachmentTexelSize;
     maxFragmentShadingRateAttachmentTexelSize = in_struct->maxFragmentShadingRateAttachmentTexelSize;
@@ -26559,6 +27461,8 @@ safe_VkPhysicalDeviceFragmentShadingRateKHR::~safe_VkPhysicalDeviceFragmentShadi
 
 void safe_VkPhysicalDeviceFragmentShadingRateKHR::initialize(const VkPhysicalDeviceFragmentShadingRateKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     sampleCounts = in_struct->sampleCounts;
     fragmentSize = in_struct->fragmentSize;
@@ -26615,6 +27519,8 @@ safe_VkSurfaceProtectedCapabilitiesKHR::~safe_VkSurfaceProtectedCapabilitiesKHR(
 
 void safe_VkSurfaceProtectedCapabilitiesKHR::initialize(const VkSurfaceProtectedCapabilitiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     supportsProtected = in_struct->supportsProtected;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -26669,6 +27575,8 @@ safe_VkPhysicalDevicePresentWaitFeaturesKHR::~safe_VkPhysicalDevicePresentWaitFe
 
 void safe_VkPhysicalDevicePresentWaitFeaturesKHR::initialize(const VkPhysicalDevicePresentWaitFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     presentWait = in_struct->presentWait;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -26723,6 +27631,8 @@ safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR::~safe_VkPhysicalDe
 
 void safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR::initialize(const VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pipelineExecutableInfo = in_struct->pipelineExecutableInfo;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -26777,6 +27687,8 @@ safe_VkPipelineInfoKHR::~safe_VkPipelineInfoKHR()
 
 void safe_VkPipelineInfoKHR::initialize(const VkPipelineInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pipeline = in_struct->pipeline;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -26853,6 +27765,8 @@ safe_VkPipelineExecutablePropertiesKHR::~safe_VkPipelineExecutablePropertiesKHR(
 
 void safe_VkPipelineExecutablePropertiesKHR::initialize(const VkPipelineExecutablePropertiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     stages = in_struct->stages;
     subgroupSize = in_struct->subgroupSize;
@@ -26925,6 +27839,8 @@ safe_VkPipelineExecutableInfoKHR::~safe_VkPipelineExecutableInfoKHR()
 
 void safe_VkPipelineExecutableInfoKHR::initialize(const VkPipelineExecutableInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pipeline = in_struct->pipeline;
     executableIndex = in_struct->executableIndex;
@@ -27003,6 +27919,8 @@ safe_VkPipelineExecutableStatisticKHR::~safe_VkPipelineExecutableStatisticKHR()
 
 void safe_VkPipelineExecutableStatisticKHR::initialize(const VkPipelineExecutableStatisticKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     format = in_struct->format;
     value = in_struct->value;
@@ -27097,6 +28015,8 @@ safe_VkPipelineExecutableInternalRepresentationKHR::~safe_VkPipelineExecutableIn
 
 void safe_VkPipelineExecutableInternalRepresentationKHR::initialize(const VkPipelineExecutableInternalRepresentationKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     isText = in_struct->isText;
     dataSize = in_struct->dataSize;
@@ -27193,6 +28113,10 @@ safe_VkPipelineLibraryCreateInfoKHR::~safe_VkPipelineLibraryCreateInfoKHR()
 
 void safe_VkPipelineLibraryCreateInfoKHR::initialize(const VkPipelineLibraryCreateInfoKHR* in_struct)
 {
+    if (pLibraries)
+        delete[] pLibraries;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     libraryCount = in_struct->libraryCount;
     pLibraries = nullptr;
@@ -27281,6 +28205,10 @@ safe_VkPresentIdKHR::~safe_VkPresentIdKHR()
 
 void safe_VkPresentIdKHR::initialize(const VkPresentIdKHR* in_struct)
 {
+    if (pPresentIds)
+        delete[] pPresentIds;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     swapchainCount = in_struct->swapchainCount;
     pPresentIds = nullptr;
@@ -27345,6 +28273,8 @@ safe_VkPhysicalDevicePresentIdFeaturesKHR::~safe_VkPhysicalDevicePresentIdFeatur
 
 void safe_VkPhysicalDevicePresentIdFeaturesKHR::initialize(const VkPhysicalDevicePresentIdFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     presentId = in_struct->presentId;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -27468,6 +28398,12 @@ safe_VkVideoEncodeInfoKHR::~safe_VkVideoEncodeInfoKHR()
 
 void safe_VkVideoEncodeInfoKHR::initialize(const VkVideoEncodeInfoKHR* in_struct)
 {
+    if (pSetupReferenceSlot)
+        delete pSetupReferenceSlot;
+    if (pReferenceSlots)
+        delete[] pReferenceSlots;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     qualityLevel = in_struct->qualityLevel;
@@ -27576,6 +28512,8 @@ safe_VkVideoEncodeCapabilitiesKHR::~safe_VkVideoEncodeCapabilitiesKHR()
 
 void safe_VkVideoEncodeCapabilitiesKHR::initialize(const VkVideoEncodeCapabilitiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     rateControlModes = in_struct->rateControlModes;
@@ -27662,6 +28600,8 @@ safe_VkVideoEncodeRateControlLayerInfoKHR::~safe_VkVideoEncodeRateControlLayerIn
 
 void safe_VkVideoEncodeRateControlLayerInfoKHR::initialize(const VkVideoEncodeRateControlLayerInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     averageBitrate = in_struct->averageBitrate;
     maxBitrate = in_struct->maxBitrate;
@@ -27764,6 +28704,10 @@ safe_VkVideoEncodeRateControlInfoKHR::~safe_VkVideoEncodeRateControlInfoKHR()
 
 void safe_VkVideoEncodeRateControlInfoKHR::initialize(const VkVideoEncodeRateControlInfoKHR* in_struct)
 {
+    if (pLayerConfigs)
+        delete[] pLayerConfigs;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     rateControlMode = in_struct->rateControlMode;
@@ -27838,6 +28782,8 @@ safe_VkQueueFamilyCheckpointProperties2NV::~safe_VkQueueFamilyCheckpointProperti
 
 void safe_VkQueueFamilyCheckpointProperties2NV::initialize(const VkQueueFamilyCheckpointProperties2NV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     checkpointExecutionStageMask = in_struct->checkpointExecutionStageMask;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -27896,6 +28842,8 @@ safe_VkCheckpointData2NV::~safe_VkCheckpointData2NV()
 
 void safe_VkCheckpointData2NV::initialize(const VkCheckpointData2NV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     stage = in_struct->stage;
     pCheckpointMarker = in_struct->pCheckpointMarker;
@@ -27952,6 +28900,8 @@ safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR::~safe_VkPhysic
 
 void safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR::initialize(const VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderSubgroupUniformControlFlow = in_struct->shaderSubgroupUniformControlFlow;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -28018,6 +28968,8 @@ safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::~safe_VkPhysicalD
 
 void safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::initialize(const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     workgroupMemoryExplicitLayout = in_struct->workgroupMemoryExplicitLayout;
     workgroupMemoryExplicitLayoutScalarBlockLayout = in_struct->workgroupMemoryExplicitLayoutScalarBlockLayout;
@@ -28086,6 +29038,8 @@ safe_VkDebugReportCallbackCreateInfoEXT::~safe_VkDebugReportCallbackCreateInfoEX
 
 void safe_VkDebugReportCallbackCreateInfoEXT::initialize(const VkDebugReportCallbackCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pfnCallback = in_struct->pfnCallback;
@@ -28144,6 +29098,8 @@ safe_VkPipelineRasterizationStateRasterizationOrderAMD::~safe_VkPipelineRasteriz
 
 void safe_VkPipelineRasterizationStateRasterizationOrderAMD::initialize(const VkPipelineRasterizationStateRasterizationOrderAMD* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     rasterizationOrder = in_struct->rasterizationOrder;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -28208,6 +29164,9 @@ safe_VkDebugMarkerObjectNameInfoEXT::~safe_VkDebugMarkerObjectNameInfoEXT()
 
 void safe_VkDebugMarkerObjectNameInfoEXT::initialize(const VkDebugMarkerObjectNameInfoEXT* in_struct)
 {
+    if (pObjectName) delete [] pObjectName;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     objectType = in_struct->objectType;
     object = in_struct->object;
@@ -28282,6 +29241,8 @@ safe_VkDebugMarkerObjectTagInfoEXT::~safe_VkDebugMarkerObjectTagInfoEXT()
 
 void safe_VkDebugMarkerObjectTagInfoEXT::initialize(const VkDebugMarkerObjectTagInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     objectType = in_struct->objectType;
     object = in_struct->object;
@@ -28355,6 +29316,9 @@ safe_VkDebugMarkerMarkerInfoEXT::~safe_VkDebugMarkerMarkerInfoEXT()
 
 void safe_VkDebugMarkerMarkerInfoEXT::initialize(const VkDebugMarkerMarkerInfoEXT* in_struct)
 {
+    if (pMarkerName) delete [] pMarkerName;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pNext = SafePnextCopy(in_struct->pNext);
     pMarkerName = SafeStringCopy(in_struct->pMarkerName);
@@ -28415,6 +29379,8 @@ safe_VkDedicatedAllocationImageCreateInfoNV::~safe_VkDedicatedAllocationImageCre
 
 void safe_VkDedicatedAllocationImageCreateInfoNV::initialize(const VkDedicatedAllocationImageCreateInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     dedicatedAllocation = in_struct->dedicatedAllocation;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -28469,6 +29435,8 @@ safe_VkDedicatedAllocationBufferCreateInfoNV::~safe_VkDedicatedAllocationBufferC
 
 void safe_VkDedicatedAllocationBufferCreateInfoNV::initialize(const VkDedicatedAllocationBufferCreateInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     dedicatedAllocation = in_struct->dedicatedAllocation;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -28527,6 +29495,8 @@ safe_VkDedicatedAllocationMemoryAllocateInfoNV::~safe_VkDedicatedAllocationMemor
 
 void safe_VkDedicatedAllocationMemoryAllocateInfoNV::initialize(const VkDedicatedAllocationMemoryAllocateInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     image = in_struct->image;
     buffer = in_struct->buffer;
@@ -28587,6 +29557,8 @@ safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT::~safe_VkPhysicalDeviceTransfo
 
 void safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT::initialize(const VkPhysicalDeviceTransformFeedbackFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     transformFeedback = in_struct->transformFeedback;
     geometryStreams = in_struct->geometryStreams;
@@ -28679,6 +29651,8 @@ safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT::~safe_VkPhysicalDeviceTrans
 
 void safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT::initialize(const VkPhysicalDeviceTransformFeedbackPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxTransformFeedbackStreams = in_struct->maxTransformFeedbackStreams;
     maxTransformFeedbackBuffers = in_struct->maxTransformFeedbackBuffers;
@@ -28755,6 +29729,8 @@ safe_VkPipelineRasterizationStateStreamCreateInfoEXT::~safe_VkPipelineRasterizat
 
 void safe_VkPipelineRasterizationStateStreamCreateInfoEXT::initialize(const VkPipelineRasterizationStateStreamCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     rasterizationStream = in_struct->rasterizationStream;
@@ -28815,6 +29791,8 @@ safe_VkCuModuleCreateInfoNVX::~safe_VkCuModuleCreateInfoNVX()
 
 void safe_VkCuModuleCreateInfoNVX::initialize(const VkCuModuleCreateInfoNVX* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     dataSize = in_struct->dataSize;
     pData = in_struct->pData;
@@ -28877,6 +29855,9 @@ safe_VkCuFunctionCreateInfoNVX::~safe_VkCuFunctionCreateInfoNVX()
 
 void safe_VkCuFunctionCreateInfoNVX::initialize(const VkCuFunctionCreateInfoNVX* in_struct)
 {
+    if (pName) delete [] pName;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     module = in_struct->module;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -28977,6 +29958,8 @@ safe_VkCuLaunchInfoNVX::~safe_VkCuLaunchInfoNVX()
 
 void safe_VkCuLaunchInfoNVX::initialize(const VkCuLaunchInfoNVX* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     function = in_struct->function;
     gridDimX = in_struct->gridDimX;
@@ -29061,6 +30044,8 @@ safe_VkImageViewHandleInfoNVX::~safe_VkImageViewHandleInfoNVX()
 
 void safe_VkImageViewHandleInfoNVX::initialize(const VkImageViewHandleInfoNVX* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     imageView = in_struct->imageView;
     descriptorType = in_struct->descriptorType;
@@ -29123,6 +30108,8 @@ safe_VkImageViewAddressPropertiesNVX::~safe_VkImageViewAddressPropertiesNVX()
 
 void safe_VkImageViewAddressPropertiesNVX::initialize(const VkImageViewAddressPropertiesNVX* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     deviceAddress = in_struct->deviceAddress;
     size = in_struct->size;
@@ -29221,6 +30208,8 @@ safe_VkVideoEncodeH264CapabilitiesEXT::~safe_VkVideoEncodeH264CapabilitiesEXT()
 
 void safe_VkVideoEncodeH264CapabilitiesEXT::initialize(const VkVideoEncodeH264CapabilitiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     inputModeFlags = in_struct->inputModeFlags;
@@ -29343,6 +30332,12 @@ safe_VkVideoEncodeH264SessionParametersAddInfoEXT::~safe_VkVideoEncodeH264Sessio
 
 void safe_VkVideoEncodeH264SessionParametersAddInfoEXT::initialize(const VkVideoEncodeH264SessionParametersAddInfoEXT* in_struct)
 {
+    if (pSpsStd)
+        delete[] pSpsStd;
+    if (pPpsStd)
+        delete[] pPpsStd;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     spsStdCount = in_struct->spsStdCount;
     pSpsStd = nullptr;
@@ -29441,6 +30436,10 @@ safe_VkVideoEncodeH264SessionParametersCreateInfoEXT::~safe_VkVideoEncodeH264Ses
 
 void safe_VkVideoEncodeH264SessionParametersCreateInfoEXT::initialize(const VkVideoEncodeH264SessionParametersCreateInfoEXT* in_struct)
 {
+    if (pParametersAddInfo)
+        delete pParametersAddInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxSpsStdCount = in_struct->maxSpsStdCount;
     maxPpsStdCount = in_struct->maxPpsStdCount;
@@ -29524,6 +30523,10 @@ safe_VkVideoEncodeH264DpbSlotInfoEXT::~safe_VkVideoEncodeH264DpbSlotInfoEXT()
 
 void safe_VkVideoEncodeH264DpbSlotInfoEXT::initialize(const VkVideoEncodeH264DpbSlotInfoEXT* in_struct)
 {
+    if (pStdReferenceInfo)
+        delete pStdReferenceInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     slotIndex = in_struct->slotIndex;
     pStdReferenceInfo = nullptr;
@@ -29663,6 +30666,14 @@ safe_VkVideoEncodeH264ReferenceListsEXT::~safe_VkVideoEncodeH264ReferenceListsEX
 
 void safe_VkVideoEncodeH264ReferenceListsEXT::initialize(const VkVideoEncodeH264ReferenceListsEXT* in_struct)
 {
+    if (pReferenceList0Entries)
+        delete[] pReferenceList0Entries;
+    if (pReferenceList1Entries)
+        delete[] pReferenceList1Entries;
+    if (pMemMgmtCtrlOperations)
+        delete pMemMgmtCtrlOperations;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     referenceList0EntryCount = in_struct->referenceList0EntryCount;
     pReferenceList0Entries = nullptr;
@@ -29790,6 +30801,12 @@ safe_VkVideoEncodeH264NaluSliceEXT::~safe_VkVideoEncodeH264NaluSliceEXT()
 
 void safe_VkVideoEncodeH264NaluSliceEXT::initialize(const VkVideoEncodeH264NaluSliceEXT* in_struct)
 {
+    if (pReferenceFinalLists)
+        delete pReferenceFinalLists;
+    if (pSliceHeaderStd)
+        delete pSliceHeaderStd;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     mbCount = in_struct->mbCount;
     pReferenceFinalLists = nullptr;
@@ -29919,6 +30936,14 @@ safe_VkVideoEncodeH264VclFrameInfoEXT::~safe_VkVideoEncodeH264VclFrameInfoEXT()
 
 void safe_VkVideoEncodeH264VclFrameInfoEXT::initialize(const VkVideoEncodeH264VclFrameInfoEXT* in_struct)
 {
+    if (pReferenceFinalLists)
+        delete pReferenceFinalLists;
+    if (pNaluSliceEntries)
+        delete[] pNaluSliceEntries;
+    if (pCurrentPictureInfo)
+        delete pCurrentPictureInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pReferenceFinalLists = nullptr;
     naluSliceEntryCount = in_struct->naluSliceEntryCount;
@@ -30033,6 +31058,10 @@ safe_VkVideoEncodeH264EmitPictureParametersEXT::~safe_VkVideoEncodeH264EmitPictu
 
 void safe_VkVideoEncodeH264EmitPictureParametersEXT::initialize(const VkVideoEncodeH264EmitPictureParametersEXT* in_struct)
 {
+    if (ppsIdEntries)
+        delete[] ppsIdEntries;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     spsId = in_struct->spsId;
     emitSpsEnable = in_struct->emitSpsEnable;
@@ -30105,6 +31134,8 @@ safe_VkVideoEncodeH264ProfileEXT::~safe_VkVideoEncodeH264ProfileEXT()
 
 void safe_VkVideoEncodeH264ProfileEXT::initialize(const VkVideoEncodeH264ProfileEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     stdProfileIdc = in_struct->stdProfileIdc;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -30179,6 +31210,8 @@ safe_VkVideoEncodeH264RateControlInfoEXT::~safe_VkVideoEncodeH264RateControlInfo
 
 void safe_VkVideoEncodeH264RateControlInfoEXT::initialize(const VkVideoEncodeH264RateControlInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     gopFrameCount = in_struct->gopFrameCount;
     idrPeriod = in_struct->idrPeriod;
@@ -30277,6 +31310,8 @@ safe_VkVideoEncodeH264RateControlLayerInfoEXT::~safe_VkVideoEncodeH264RateContro
 
 void safe_VkVideoEncodeH264RateControlLayerInfoEXT::initialize(const VkVideoEncodeH264RateControlLayerInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     temporalLayerId = in_struct->temporalLayerId;
     useInitialRcQp = in_struct->useInitialRcQp;
@@ -30427,6 +31462,8 @@ safe_VkVideoEncodeH265CapabilitiesEXT::~safe_VkVideoEncodeH265CapabilitiesEXT()
 
 void safe_VkVideoEncodeH265CapabilitiesEXT::initialize(const VkVideoEncodeH265CapabilitiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     inputModeFlags = in_struct->inputModeFlags;
@@ -30591,6 +31628,14 @@ safe_VkVideoEncodeH265SessionParametersAddInfoEXT::~safe_VkVideoEncodeH265Sessio
 
 void safe_VkVideoEncodeH265SessionParametersAddInfoEXT::initialize(const VkVideoEncodeH265SessionParametersAddInfoEXT* in_struct)
 {
+    if (pVpsStd)
+        delete[] pVpsStd;
+    if (pSpsStd)
+        delete[] pSpsStd;
+    if (pPpsStd)
+        delete[] pPpsStd;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     vpsStdCount = in_struct->vpsStdCount;
     pVpsStd = nullptr;
@@ -30705,6 +31750,10 @@ safe_VkVideoEncodeH265SessionParametersCreateInfoEXT::~safe_VkVideoEncodeH265Ses
 
 void safe_VkVideoEncodeH265SessionParametersCreateInfoEXT::initialize(const VkVideoEncodeH265SessionParametersCreateInfoEXT* in_struct)
 {
+    if (pParametersAddInfo)
+        delete pParametersAddInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxVpsStdCount = in_struct->maxVpsStdCount;
     maxSpsStdCount = in_struct->maxSpsStdCount;
@@ -30790,6 +31839,10 @@ safe_VkVideoEncodeH265DpbSlotInfoEXT::~safe_VkVideoEncodeH265DpbSlotInfoEXT()
 
 void safe_VkVideoEncodeH265DpbSlotInfoEXT::initialize(const VkVideoEncodeH265DpbSlotInfoEXT* in_struct)
 {
+    if (pStdReferenceInfo)
+        delete pStdReferenceInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     slotIndex = in_struct->slotIndex;
     pStdReferenceInfo = nullptr;
@@ -30929,6 +31982,14 @@ safe_VkVideoEncodeH265ReferenceListsEXT::~safe_VkVideoEncodeH265ReferenceListsEX
 
 void safe_VkVideoEncodeH265ReferenceListsEXT::initialize(const VkVideoEncodeH265ReferenceListsEXT* in_struct)
 {
+    if (pReferenceList0Entries)
+        delete[] pReferenceList0Entries;
+    if (pReferenceList1Entries)
+        delete[] pReferenceList1Entries;
+    if (pReferenceModifications)
+        delete pReferenceModifications;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     referenceList0EntryCount = in_struct->referenceList0EntryCount;
     pReferenceList0Entries = nullptr;
@@ -31056,6 +32117,12 @@ safe_VkVideoEncodeH265NaluSliceSegmentEXT::~safe_VkVideoEncodeH265NaluSliceSegme
 
 void safe_VkVideoEncodeH265NaluSliceSegmentEXT::initialize(const VkVideoEncodeH265NaluSliceSegmentEXT* in_struct)
 {
+    if (pReferenceFinalLists)
+        delete pReferenceFinalLists;
+    if (pSliceSegmentHeaderStd)
+        delete pSliceSegmentHeaderStd;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     ctbCount = in_struct->ctbCount;
     pReferenceFinalLists = nullptr;
@@ -31185,6 +32252,14 @@ safe_VkVideoEncodeH265VclFrameInfoEXT::~safe_VkVideoEncodeH265VclFrameInfoEXT()
 
 void safe_VkVideoEncodeH265VclFrameInfoEXT::initialize(const VkVideoEncodeH265VclFrameInfoEXT* in_struct)
 {
+    if (pReferenceFinalLists)
+        delete pReferenceFinalLists;
+    if (pNaluSliceSegmentEntries)
+        delete[] pNaluSliceSegmentEntries;
+    if (pCurrentPictureInfo)
+        delete pCurrentPictureInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pReferenceFinalLists = nullptr;
     naluSliceSegmentEntryCount = in_struct->naluSliceSegmentEntryCount;
@@ -31307,6 +32382,10 @@ safe_VkVideoEncodeH265EmitPictureParametersEXT::~safe_VkVideoEncodeH265EmitPictu
 
 void safe_VkVideoEncodeH265EmitPictureParametersEXT::initialize(const VkVideoEncodeH265EmitPictureParametersEXT* in_struct)
 {
+    if (ppsIdEntries)
+        delete[] ppsIdEntries;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     vpsId = in_struct->vpsId;
     spsId = in_struct->spsId;
@@ -31383,6 +32462,8 @@ safe_VkVideoEncodeH265ProfileEXT::~safe_VkVideoEncodeH265ProfileEXT()
 
 void safe_VkVideoEncodeH265ProfileEXT::initialize(const VkVideoEncodeH265ProfileEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     stdProfileIdc = in_struct->stdProfileIdc;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -31457,6 +32538,8 @@ safe_VkVideoEncodeH265RateControlInfoEXT::~safe_VkVideoEncodeH265RateControlInfo
 
 void safe_VkVideoEncodeH265RateControlInfoEXT::initialize(const VkVideoEncodeH265RateControlInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     gopFrameCount = in_struct->gopFrameCount;
     idrPeriod = in_struct->idrPeriod;
@@ -31555,6 +32638,8 @@ safe_VkVideoEncodeH265RateControlLayerInfoEXT::~safe_VkVideoEncodeH265RateContro
 
 void safe_VkVideoEncodeH265RateControlLayerInfoEXT::initialize(const VkVideoEncodeH265RateControlLayerInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     temporalId = in_struct->temporalId;
     useInitialRcQp = in_struct->useInitialRcQp;
@@ -31633,6 +32718,8 @@ safe_VkVideoDecodeH264ProfileEXT::~safe_VkVideoDecodeH264ProfileEXT()
 
 void safe_VkVideoDecodeH264ProfileEXT::initialize(const VkVideoDecodeH264ProfileEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     stdProfileIdc = in_struct->stdProfileIdc;
     pictureLayout = in_struct->pictureLayout;
@@ -31697,6 +32784,8 @@ safe_VkVideoDecodeH264CapabilitiesEXT::~safe_VkVideoDecodeH264CapabilitiesEXT()
 
 void safe_VkVideoDecodeH264CapabilitiesEXT::initialize(const VkVideoDecodeH264CapabilitiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxLevel = in_struct->maxLevel;
     fieldOffsetGranularity = in_struct->fieldOffsetGranularity;
@@ -31801,6 +32890,12 @@ safe_VkVideoDecodeH264SessionParametersAddInfoEXT::~safe_VkVideoDecodeH264Sessio
 
 void safe_VkVideoDecodeH264SessionParametersAddInfoEXT::initialize(const VkVideoDecodeH264SessionParametersAddInfoEXT* in_struct)
 {
+    if (pSpsStd)
+        delete[] pSpsStd;
+    if (pPpsStd)
+        delete[] pPpsStd;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     spsStdCount = in_struct->spsStdCount;
     pSpsStd = nullptr;
@@ -31899,6 +32994,10 @@ safe_VkVideoDecodeH264SessionParametersCreateInfoEXT::~safe_VkVideoDecodeH264Ses
 
 void safe_VkVideoDecodeH264SessionParametersCreateInfoEXT::initialize(const VkVideoDecodeH264SessionParametersCreateInfoEXT* in_struct)
 {
+    if (pParametersAddInfo)
+        delete pParametersAddInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxSpsStdCount = in_struct->maxSpsStdCount;
     maxPpsStdCount = in_struct->maxPpsStdCount;
@@ -32002,6 +33101,12 @@ safe_VkVideoDecodeH264PictureInfoEXT::~safe_VkVideoDecodeH264PictureInfoEXT()
 
 void safe_VkVideoDecodeH264PictureInfoEXT::initialize(const VkVideoDecodeH264PictureInfoEXT* in_struct)
 {
+    if (pStdPictureInfo)
+        delete pStdPictureInfo;
+    if (pSlicesDataOffsets)
+        delete[] pSlicesDataOffsets;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pStdPictureInfo = nullptr;
     slicesCount = in_struct->slicesCount;
@@ -32091,6 +33196,10 @@ safe_VkVideoDecodeH264MvcEXT::~safe_VkVideoDecodeH264MvcEXT()
 
 void safe_VkVideoDecodeH264MvcEXT::initialize(const VkVideoDecodeH264MvcEXT* in_struct)
 {
+    if (pStdMvc)
+        delete pStdMvc;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pStdMvc = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -32168,6 +33277,10 @@ safe_VkVideoDecodeH264DpbSlotInfoEXT::~safe_VkVideoDecodeH264DpbSlotInfoEXT()
 
 void safe_VkVideoDecodeH264DpbSlotInfoEXT::initialize(const VkVideoDecodeH264DpbSlotInfoEXT* in_struct)
 {
+    if (pStdReferenceInfo)
+        delete pStdReferenceInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pStdReferenceInfo = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -32230,6 +33343,8 @@ safe_VkTextureLODGatherFormatPropertiesAMD::~safe_VkTextureLODGatherFormatProper
 
 void safe_VkTextureLODGatherFormatPropertiesAMD::initialize(const VkTextureLODGatherFormatPropertiesAMD* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     supportsTextureGatherLODBiasAMD = in_struct->supportsTextureGatherLODBiasAMD;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -32290,6 +33405,8 @@ safe_VkStreamDescriptorSurfaceCreateInfoGGP::~safe_VkStreamDescriptorSurfaceCrea
 
 void safe_VkStreamDescriptorSurfaceCreateInfoGGP::initialize(const VkStreamDescriptorSurfaceCreateInfoGGP* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     streamDescriptor = in_struct->streamDescriptor;
@@ -32348,6 +33465,8 @@ safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::~safe_VkPhysicalDeviceCornerS
 
 void safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::initialize(const VkPhysicalDeviceCornerSampledImageFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     cornerSampledImage = in_struct->cornerSampledImage;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -32402,6 +33521,8 @@ safe_VkExternalMemoryImageCreateInfoNV::~safe_VkExternalMemoryImageCreateInfoNV(
 
 void safe_VkExternalMemoryImageCreateInfoNV::initialize(const VkExternalMemoryImageCreateInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleTypes = in_struct->handleTypes;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -32456,6 +33577,8 @@ safe_VkExportMemoryAllocateInfoNV::~safe_VkExportMemoryAllocateInfoNV()
 
 void safe_VkExportMemoryAllocateInfoNV::initialize(const VkExportMemoryAllocateInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleTypes = in_struct->handleTypes;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -32516,6 +33639,8 @@ safe_VkImportMemoryWin32HandleInfoNV::~safe_VkImportMemoryWin32HandleInfoNV()
 
 void safe_VkImportMemoryWin32HandleInfoNV::initialize(const VkImportMemoryWin32HandleInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleType = in_struct->handleType;
     handle = in_struct->handle;
@@ -32593,6 +33718,10 @@ safe_VkExportMemoryWin32HandleInfoNV::~safe_VkExportMemoryWin32HandleInfoNV()
 
 void safe_VkExportMemoryWin32HandleInfoNV::initialize(const VkExportMemoryWin32HandleInfoNV* in_struct)
 {
+    if (pAttributes)
+        delete pAttributes;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pAttributes = nullptr;
     dwAccess = in_struct->dwAccess;
@@ -32775,6 +33904,18 @@ safe_VkWin32KeyedMutexAcquireReleaseInfoNV::~safe_VkWin32KeyedMutexAcquireReleas
 
 void safe_VkWin32KeyedMutexAcquireReleaseInfoNV::initialize(const VkWin32KeyedMutexAcquireReleaseInfoNV* in_struct)
 {
+    if (pAcquireSyncs)
+        delete[] pAcquireSyncs;
+    if (pAcquireKeys)
+        delete[] pAcquireKeys;
+    if (pAcquireTimeoutMilliseconds)
+        delete[] pAcquireTimeoutMilliseconds;
+    if (pReleaseSyncs)
+        delete[] pReleaseSyncs;
+    if (pReleaseKeys)
+        delete[] pReleaseKeys;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     acquireCount = in_struct->acquireCount;
     pAcquireSyncs = nullptr;
@@ -32911,6 +34052,10 @@ safe_VkValidationFlagsEXT::~safe_VkValidationFlagsEXT()
 
 void safe_VkValidationFlagsEXT::initialize(const VkValidationFlagsEXT* in_struct)
 {
+    if (pDisabledValidationChecks)
+        delete[] pDisabledValidationChecks;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     disabledValidationCheckCount = in_struct->disabledValidationCheckCount;
     pDisabledValidationChecks = nullptr;
@@ -32981,6 +34126,8 @@ safe_VkViSurfaceCreateInfoNN::~safe_VkViSurfaceCreateInfoNN()
 
 void safe_VkViSurfaceCreateInfoNN::initialize(const VkViSurfaceCreateInfoNN* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     window = in_struct->window;
@@ -33039,6 +34186,8 @@ safe_VkImageViewASTCDecodeModeEXT::~safe_VkImageViewASTCDecodeModeEXT()
 
 void safe_VkImageViewASTCDecodeModeEXT::initialize(const VkImageViewASTCDecodeModeEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     decodeMode = in_struct->decodeMode;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -33093,6 +34242,8 @@ safe_VkPhysicalDeviceASTCDecodeFeaturesEXT::~safe_VkPhysicalDeviceASTCDecodeFeat
 
 void safe_VkPhysicalDeviceASTCDecodeFeaturesEXT::initialize(const VkPhysicalDeviceASTCDecodeFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     decodeModeSharedExponent = in_struct->decodeModeSharedExponent;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -33155,6 +34306,8 @@ safe_VkConditionalRenderingBeginInfoEXT::~safe_VkConditionalRenderingBeginInfoEX
 
 void safe_VkConditionalRenderingBeginInfoEXT::initialize(const VkConditionalRenderingBeginInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     buffer = in_struct->buffer;
     offset = in_struct->offset;
@@ -33217,6 +34370,8 @@ safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT::~safe_VkPhysicalDeviceCond
 
 void safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT::initialize(const VkPhysicalDeviceConditionalRenderingFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     conditionalRendering = in_struct->conditionalRendering;
     inheritedConditionalRendering = in_struct->inheritedConditionalRendering;
@@ -33273,6 +34428,8 @@ safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT::~safe_VkCommandBuffe
 
 void safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT::initialize(const VkCommandBufferInheritanceConditionalRenderingInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     conditionalRenderingEnable = in_struct->conditionalRenderingEnable;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -33351,6 +34508,10 @@ safe_VkPipelineViewportWScalingStateCreateInfoNV::~safe_VkPipelineViewportWScali
 
 void safe_VkPipelineViewportWScalingStateCreateInfoNV::initialize(const VkPipelineViewportWScalingStateCreateInfoNV* in_struct)
 {
+    if (pViewportWScalings)
+        delete[] pViewportWScalings;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     viewportWScalingEnable = in_struct->viewportWScalingEnable;
     viewportCount = in_struct->viewportCount;
@@ -33457,6 +34618,8 @@ safe_VkSurfaceCapabilities2EXT::~safe_VkSurfaceCapabilities2EXT()
 
 void safe_VkSurfaceCapabilities2EXT::initialize(const VkSurfaceCapabilities2EXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     minImageCount = in_struct->minImageCount;
     maxImageCount = in_struct->maxImageCount;
@@ -33531,6 +34694,8 @@ safe_VkDisplayPowerInfoEXT::~safe_VkDisplayPowerInfoEXT()
 
 void safe_VkDisplayPowerInfoEXT::initialize(const VkDisplayPowerInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     powerState = in_struct->powerState;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -33585,6 +34750,8 @@ safe_VkDeviceEventInfoEXT::~safe_VkDeviceEventInfoEXT()
 
 void safe_VkDeviceEventInfoEXT::initialize(const VkDeviceEventInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     deviceEvent = in_struct->deviceEvent;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -33639,6 +34806,8 @@ safe_VkDisplayEventInfoEXT::~safe_VkDisplayEventInfoEXT()
 
 void safe_VkDisplayEventInfoEXT::initialize(const VkDisplayEventInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     displayEvent = in_struct->displayEvent;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -33693,6 +34862,8 @@ safe_VkSwapchainCounterCreateInfoEXT::~safe_VkSwapchainCounterCreateInfoEXT()
 
 void safe_VkSwapchainCounterCreateInfoEXT::initialize(const VkSwapchainCounterCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     surfaceCounters = in_struct->surfaceCounters;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -33767,6 +34938,10 @@ safe_VkPresentTimesInfoGOOGLE::~safe_VkPresentTimesInfoGOOGLE()
 
 void safe_VkPresentTimesInfoGOOGLE::initialize(const VkPresentTimesInfoGOOGLE* in_struct)
 {
+    if (pTimes)
+        delete[] pTimes;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     swapchainCount = in_struct->swapchainCount;
     pTimes = nullptr;
@@ -33831,6 +35006,8 @@ safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::~safe_VkPhysicalDe
 
 void safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::initialize(const VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     perViewPositionAllComponents = in_struct->perViewPositionAllComponents;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -33909,6 +35086,10 @@ safe_VkPipelineViewportSwizzleStateCreateInfoNV::~safe_VkPipelineViewportSwizzle
 
 void safe_VkPipelineViewportSwizzleStateCreateInfoNV::initialize(const VkPipelineViewportSwizzleStateCreateInfoNV* in_struct)
 {
+    if (pViewportSwizzles)
+        delete[] pViewportSwizzles;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     viewportCount = in_struct->viewportCount;
@@ -33975,6 +35156,8 @@ safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT::~safe_VkPhysicalDeviceDiscar
 
 void safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT::initialize(const VkPhysicalDeviceDiscardRectanglePropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxDiscardRectangles = in_struct->maxDiscardRectangles;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -34057,6 +35240,10 @@ safe_VkPipelineDiscardRectangleStateCreateInfoEXT::~safe_VkPipelineDiscardRectan
 
 void safe_VkPipelineDiscardRectangleStateCreateInfoEXT::initialize(const VkPipelineDiscardRectangleStateCreateInfoEXT* in_struct)
 {
+    if (pDiscardRectangles)
+        delete[] pDiscardRectangles;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     discardRectangleMode = in_struct->discardRectangleMode;
@@ -34157,6 +35344,8 @@ safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT::~safe_VkPhysicalDev
 
 void safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT::initialize(const VkPhysicalDeviceConservativeRasterizationPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     primitiveOverestimationSize = in_struct->primitiveOverestimationSize;
     maxExtraPrimitiveOverestimationSize = in_struct->maxExtraPrimitiveOverestimationSize;
@@ -34235,6 +35424,8 @@ safe_VkPipelineRasterizationConservativeStateCreateInfoEXT::~safe_VkPipelineRast
 
 void safe_VkPipelineRasterizationConservativeStateCreateInfoEXT::initialize(const VkPipelineRasterizationConservativeStateCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     conservativeRasterizationMode = in_struct->conservativeRasterizationMode;
@@ -34293,6 +35484,8 @@ safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT::~safe_VkPhysicalDeviceDepthClip
 
 void safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT::initialize(const VkPhysicalDeviceDepthClipEnableFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     depthClipEnable = in_struct->depthClipEnable;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -34351,6 +35544,8 @@ safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT::~safe_VkPipelineRasteri
 
 void safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT::initialize(const VkPipelineRasterizationDepthClipStateCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     depthClipEnable = in_struct->depthClipEnable;
@@ -34435,6 +35630,8 @@ safe_VkHdrMetadataEXT::~safe_VkHdrMetadataEXT()
 
 void safe_VkHdrMetadataEXT::initialize(const VkHdrMetadataEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     displayPrimaryRed = in_struct->displayPrimaryRed;
     displayPrimaryGreen = in_struct->displayPrimaryGreen;
@@ -34514,6 +35711,9 @@ safe_VkDebugUtilsLabelEXT::~safe_VkDebugUtilsLabelEXT()
 
 void safe_VkDebugUtilsLabelEXT::initialize(const VkDebugUtilsLabelEXT* in_struct)
 {
+    if (pLabelName) delete [] pLabelName;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pNext = SafePnextCopy(in_struct->pNext);
     pLabelName = SafeStringCopy(in_struct->pLabelName);
@@ -34584,6 +35784,9 @@ safe_VkDebugUtilsObjectNameInfoEXT::~safe_VkDebugUtilsObjectNameInfoEXT()
 
 void safe_VkDebugUtilsObjectNameInfoEXT::initialize(const VkDebugUtilsObjectNameInfoEXT* in_struct)
 {
+    if (pObjectName) delete [] pObjectName;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     objectType = in_struct->objectType;
     objectHandle = in_struct->objectHandle;
@@ -34748,6 +35951,16 @@ safe_VkDebugUtilsMessengerCallbackDataEXT::~safe_VkDebugUtilsMessengerCallbackDa
 
 void safe_VkDebugUtilsMessengerCallbackDataEXT::initialize(const VkDebugUtilsMessengerCallbackDataEXT* in_struct)
 {
+    if (pMessageIdName) delete [] pMessageIdName;
+    if (pMessage) delete [] pMessage;
+    if (pQueueLabels)
+        delete[] pQueueLabels;
+    if (pCmdBufLabels)
+        delete[] pCmdBufLabels;
+    if (pObjects)
+        delete[] pObjects;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     messageIdNumber = in_struct->messageIdNumber;
@@ -34872,6 +36085,8 @@ safe_VkDebugUtilsMessengerCreateInfoEXT::~safe_VkDebugUtilsMessengerCreateInfoEX
 
 void safe_VkDebugUtilsMessengerCreateInfoEXT::initialize(const VkDebugUtilsMessengerCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     messageSeverity = in_struct->messageSeverity;
@@ -34950,6 +36165,8 @@ safe_VkDebugUtilsObjectTagInfoEXT::~safe_VkDebugUtilsObjectTagInfoEXT()
 
 void safe_VkDebugUtilsObjectTagInfoEXT::initialize(const VkDebugUtilsObjectTagInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     objectType = in_struct->objectType;
     objectHandle = in_struct->objectHandle;
@@ -35014,6 +36231,8 @@ safe_VkAndroidHardwareBufferUsageANDROID::~safe_VkAndroidHardwareBufferUsageANDR
 
 void safe_VkAndroidHardwareBufferUsageANDROID::initialize(const VkAndroidHardwareBufferUsageANDROID* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     androidHardwareBufferUsage = in_struct->androidHardwareBufferUsage;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -35076,6 +36295,8 @@ safe_VkAndroidHardwareBufferPropertiesANDROID::~safe_VkAndroidHardwareBufferProp
 
 void safe_VkAndroidHardwareBufferPropertiesANDROID::initialize(const VkAndroidHardwareBufferPropertiesANDROID* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     allocationSize = in_struct->allocationSize;
     memoryTypeBits = in_struct->memoryTypeBits;
@@ -35164,6 +36385,8 @@ safe_VkAndroidHardwareBufferFormatPropertiesANDROID::~safe_VkAndroidHardwareBuff
 
 void safe_VkAndroidHardwareBufferFormatPropertiesANDROID::initialize(const VkAndroidHardwareBufferFormatPropertiesANDROID* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     format = in_struct->format;
     externalFormat = in_struct->externalFormat;
@@ -35237,6 +36460,8 @@ safe_VkImportAndroidHardwareBufferInfoANDROID::~safe_VkImportAndroidHardwareBuff
 
 void safe_VkImportAndroidHardwareBufferInfoANDROID::initialize(const VkImportAndroidHardwareBufferInfoANDROID* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pNext = SafePnextCopy(in_struct->pNext);
     buffer = in_struct->buffer;
@@ -35295,6 +36520,8 @@ safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::~safe_VkMemoryGetAndroidHardwa
 
 void safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::initialize(const VkMemoryGetAndroidHardwareBufferInfoANDROID* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memory = in_struct->memory;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -35353,6 +36580,8 @@ safe_VkExternalFormatANDROID::~safe_VkExternalFormatANDROID()
 
 void safe_VkExternalFormatANDROID::initialize(const VkExternalFormatANDROID* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     externalFormat = in_struct->externalFormat;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -35439,6 +36668,8 @@ safe_VkAndroidHardwareBufferFormatProperties2ANDROID::~safe_VkAndroidHardwareBuf
 
 void safe_VkAndroidHardwareBufferFormatProperties2ANDROID::initialize(const VkAndroidHardwareBufferFormatProperties2ANDROID* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     format = in_struct->format;
     externalFormat = in_struct->externalFormat;
@@ -35537,6 +36768,10 @@ safe_VkSampleLocationsInfoEXT::~safe_VkSampleLocationsInfoEXT()
 
 void safe_VkSampleLocationsInfoEXT::initialize(const VkSampleLocationsInfoEXT* in_struct)
 {
+    if (pSampleLocations)
+        delete[] pSampleLocations;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     sampleLocationsPerPixel = in_struct->sampleLocationsPerPixel;
     sampleLocationGridSize = in_struct->sampleLocationGridSize;
@@ -35649,6 +36884,12 @@ safe_VkRenderPassSampleLocationsBeginInfoEXT::~safe_VkRenderPassSampleLocationsB
 
 void safe_VkRenderPassSampleLocationsBeginInfoEXT::initialize(const VkRenderPassSampleLocationsBeginInfoEXT* in_struct)
 {
+    if (pAttachmentInitialSampleLocations)
+        delete[] pAttachmentInitialSampleLocations;
+    if (pPostSubpassSampleLocations)
+        delete[] pPostSubpassSampleLocations;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     attachmentInitialSampleLocationsCount = in_struct->attachmentInitialSampleLocationsCount;
     pAttachmentInitialSampleLocations = nullptr;
@@ -35728,6 +36969,8 @@ safe_VkPipelineSampleLocationsStateCreateInfoEXT::~safe_VkPipelineSampleLocation
 
 void safe_VkPipelineSampleLocationsStateCreateInfoEXT::initialize(const VkPipelineSampleLocationsStateCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     sampleLocationsEnable = in_struct->sampleLocationsEnable;
     sampleLocationsInfo.initialize(&in_struct->sampleLocationsInfo);
@@ -35805,6 +37048,8 @@ safe_VkPhysicalDeviceSampleLocationsPropertiesEXT::~safe_VkPhysicalDeviceSampleL
 
 void safe_VkPhysicalDeviceSampleLocationsPropertiesEXT::initialize(const VkPhysicalDeviceSampleLocationsPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     sampleLocationSampleCounts = in_struct->sampleLocationSampleCounts;
     maxSampleLocationGridSize = in_struct->maxSampleLocationGridSize;
@@ -35871,6 +37116,8 @@ safe_VkMultisamplePropertiesEXT::~safe_VkMultisamplePropertiesEXT()
 
 void safe_VkMultisamplePropertiesEXT::initialize(const VkMultisamplePropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxSampleLocationGridSize = in_struct->maxSampleLocationGridSize;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -35925,6 +37172,8 @@ safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT::~safe_VkPhysicalDeviceBl
 
 void safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT::initialize(const VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     advancedBlendCoherentOperations = in_struct->advancedBlendCoherentOperations;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -35999,6 +37248,8 @@ safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::~safe_VkPhysicalDevice
 
 void safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::initialize(const VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     advancedBlendMaxColorAttachments = in_struct->advancedBlendMaxColorAttachments;
     advancedBlendIndependentBlend = in_struct->advancedBlendIndependentBlend;
@@ -36071,6 +37322,8 @@ safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT::~safe_VkPipelineColorBlendA
 
 void safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT::initialize(const VkPipelineColorBlendAdvancedStateCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     srcPremultiplied = in_struct->srcPremultiplied;
     dstPremultiplied = in_struct->dstPremultiplied;
@@ -36137,6 +37390,8 @@ safe_VkPipelineCoverageToColorStateCreateInfoNV::~safe_VkPipelineCoverageToColor
 
 void safe_VkPipelineCoverageToColorStateCreateInfoNV::initialize(const VkPipelineCoverageToColorStateCreateInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     coverageToColorEnable = in_struct->coverageToColorEnable;
@@ -36227,6 +37482,10 @@ safe_VkPipelineCoverageModulationStateCreateInfoNV::~safe_VkPipelineCoverageModu
 
 void safe_VkPipelineCoverageModulationStateCreateInfoNV::initialize(const VkPipelineCoverageModulationStateCreateInfoNV* in_struct)
 {
+    if (pCoverageModulationTable)
+        delete[] pCoverageModulationTable;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     coverageModulationMode = in_struct->coverageModulationMode;
@@ -36301,6 +37560,8 @@ safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::~safe_VkPhysicalDeviceShaderS
 
 void safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::initialize(const VkPhysicalDeviceShaderSMBuiltinsPropertiesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderSMCount = in_struct->shaderSMCount;
     shaderWarpsPerSM = in_struct->shaderWarpsPerSM;
@@ -36357,6 +37618,8 @@ safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::~safe_VkPhysicalDeviceShaderSMB
 
 void safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::initialize(const VkPhysicalDeviceShaderSMBuiltinsFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderSMBuiltins = in_struct->shaderSMBuiltins;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -36431,6 +37694,10 @@ safe_VkDrmFormatModifierPropertiesListEXT::~safe_VkDrmFormatModifierPropertiesLi
 
 void safe_VkDrmFormatModifierPropertiesListEXT::initialize(const VkDrmFormatModifierPropertiesListEXT* in_struct)
 {
+    if (pDrmFormatModifierProperties)
+        delete[] pDrmFormatModifierProperties;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     drmFormatModifierCount = in_struct->drmFormatModifierCount;
     pDrmFormatModifierProperties = nullptr;
@@ -36530,6 +37797,10 @@ safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::~safe_VkPhysicalDeviceImageD
 
 void safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::initialize(const VkPhysicalDeviceImageDrmFormatModifierInfoEXT* in_struct)
 {
+    if (pQueueFamilyIndices)
+        delete[] pQueueFamilyIndices;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     drmFormatModifier = in_struct->drmFormatModifier;
     sharingMode = in_struct->sharingMode;
@@ -36622,6 +37893,10 @@ safe_VkImageDrmFormatModifierListCreateInfoEXT::~safe_VkImageDrmFormatModifierLi
 
 void safe_VkImageDrmFormatModifierListCreateInfoEXT::initialize(const VkImageDrmFormatModifierListCreateInfoEXT* in_struct)
 {
+    if (pDrmFormatModifiers)
+        delete[] pDrmFormatModifiers;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     drmFormatModifierCount = in_struct->drmFormatModifierCount;
     pDrmFormatModifiers = nullptr;
@@ -36710,6 +37985,10 @@ safe_VkImageDrmFormatModifierExplicitCreateInfoEXT::~safe_VkImageDrmFormatModifi
 
 void safe_VkImageDrmFormatModifierExplicitCreateInfoEXT::initialize(const VkImageDrmFormatModifierExplicitCreateInfoEXT* in_struct)
 {
+    if (pPlaneLayouts)
+        delete[] pPlaneLayouts;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     drmFormatModifier = in_struct->drmFormatModifier;
     drmFormatModifierPlaneCount = in_struct->drmFormatModifierPlaneCount;
@@ -36776,6 +38055,8 @@ safe_VkImageDrmFormatModifierPropertiesEXT::~safe_VkImageDrmFormatModifierProper
 
 void safe_VkImageDrmFormatModifierPropertiesEXT::initialize(const VkImageDrmFormatModifierPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     drmFormatModifier = in_struct->drmFormatModifier;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -36850,6 +38131,10 @@ safe_VkDrmFormatModifierPropertiesList2EXT::~safe_VkDrmFormatModifierPropertiesL
 
 void safe_VkDrmFormatModifierPropertiesList2EXT::initialize(const VkDrmFormatModifierPropertiesList2EXT* in_struct)
 {
+    if (pDrmFormatModifierProperties)
+        delete[] pDrmFormatModifierProperties;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     drmFormatModifierCount = in_struct->drmFormatModifierCount;
     pDrmFormatModifierProperties = nullptr;
@@ -36922,6 +38207,8 @@ safe_VkValidationCacheCreateInfoEXT::~safe_VkValidationCacheCreateInfoEXT()
 
 void safe_VkValidationCacheCreateInfoEXT::initialize(const VkValidationCacheCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     initialDataSize = in_struct->initialDataSize;
@@ -36980,6 +38267,8 @@ safe_VkShaderModuleValidationCacheCreateInfoEXT::~safe_VkShaderModuleValidationC
 
 void safe_VkShaderModuleValidationCacheCreateInfoEXT::initialize(const VkShaderModuleValidationCacheCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     validationCache = in_struct->validationCache;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -37042,6 +38331,8 @@ safe_VkShadingRatePaletteNV::~safe_VkShadingRatePaletteNV()
 
 void safe_VkShadingRatePaletteNV::initialize(const VkShadingRatePaletteNV* in_struct)
 {
+    if (pShadingRatePaletteEntries)
+        delete[] pShadingRatePaletteEntries;
     shadingRatePaletteEntryCount = in_struct->shadingRatePaletteEntryCount;
     pShadingRatePaletteEntries = nullptr;
     if (in_struct->pShadingRatePaletteEntries) {
@@ -37132,6 +38423,10 @@ safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::~safe_VkPipelineViewpo
 
 void safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::initialize(const VkPipelineViewportShadingRateImageStateCreateInfoNV* in_struct)
 {
+    if (pShadingRatePalettes)
+        delete[] pShadingRatePalettes;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shadingRateImageEnable = in_struct->shadingRateImageEnable;
     viewportCount = in_struct->viewportCount;
@@ -37206,6 +38501,8 @@ safe_VkPhysicalDeviceShadingRateImageFeaturesNV::~safe_VkPhysicalDeviceShadingRa
 
 void safe_VkPhysicalDeviceShadingRateImageFeaturesNV::initialize(const VkPhysicalDeviceShadingRateImageFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shadingRateImage = in_struct->shadingRateImage;
     shadingRateCoarseSampleOrder = in_struct->shadingRateCoarseSampleOrder;
@@ -37270,6 +38567,8 @@ safe_VkPhysicalDeviceShadingRateImagePropertiesNV::~safe_VkPhysicalDeviceShading
 
 void safe_VkPhysicalDeviceShadingRateImagePropertiesNV::initialize(const VkPhysicalDeviceShadingRateImagePropertiesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shadingRateTexelSize = in_struct->shadingRateTexelSize;
     shadingRatePaletteSize = in_struct->shadingRatePaletteSize;
@@ -37344,6 +38643,8 @@ safe_VkCoarseSampleOrderCustomNV::~safe_VkCoarseSampleOrderCustomNV()
 
 void safe_VkCoarseSampleOrderCustomNV::initialize(const VkCoarseSampleOrderCustomNV* in_struct)
 {
+    if (pSampleLocations)
+        delete[] pSampleLocations;
     shadingRate = in_struct->shadingRate;
     sampleCount = in_struct->sampleCount;
     sampleLocationCount = in_struct->sampleLocationCount;
@@ -37438,6 +38739,10 @@ safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::~safe_VkPipelineViewp
 
 void safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::initialize(const VkPipelineViewportCoarseSampleOrderStateCreateInfoNV* in_struct)
 {
+    if (pCustomSampleOrders)
+        delete[] pCustomSampleOrders;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     sampleOrderType = in_struct->sampleOrderType;
     customSampleOrderCount = in_struct->customSampleOrderCount;
@@ -37524,6 +38829,8 @@ safe_VkRayTracingShaderGroupCreateInfoNV::~safe_VkRayTracingShaderGroupCreateInf
 
 void safe_VkRayTracingShaderGroupCreateInfoNV::initialize(const VkRayTracingShaderGroupCreateInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     type = in_struct->type;
     generalShader = in_struct->generalShader;
@@ -37662,6 +38969,12 @@ safe_VkRayTracingPipelineCreateInfoNV::~safe_VkRayTracingPipelineCreateInfoNV()
 
 void safe_VkRayTracingPipelineCreateInfoNV::initialize(const VkRayTracingPipelineCreateInfoNV* in_struct)
 {
+    if (pStages)
+        delete[] pStages;
+    if (pGroups)
+        delete[] pGroups;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     stageCount = in_struct->stageCount;
@@ -37796,6 +39109,8 @@ safe_VkGeometryTrianglesNV::~safe_VkGeometryTrianglesNV()
 
 void safe_VkGeometryTrianglesNV::initialize(const VkGeometryTrianglesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     vertexData = in_struct->vertexData;
     vertexOffset = in_struct->vertexOffset;
@@ -37882,6 +39197,8 @@ safe_VkGeometryAABBNV::~safe_VkGeometryAABBNV()
 
 void safe_VkGeometryAABBNV::initialize(const VkGeometryAABBNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     aabbData = in_struct->aabbData;
     numAABBs = in_struct->numAABBs;
@@ -37950,6 +39267,8 @@ safe_VkGeometryNV::~safe_VkGeometryNV()
 
 void safe_VkGeometryNV::initialize(const VkGeometryNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     geometryType = in_struct->geometryType;
     geometry = in_struct->geometry;
@@ -38046,6 +39365,10 @@ safe_VkAccelerationStructureInfoNV::~safe_VkAccelerationStructureInfoNV()
 
 void safe_VkAccelerationStructureInfoNV::initialize(const VkAccelerationStructureInfoNV* in_struct)
 {
+    if (pGeometries)
+        delete[] pGeometries;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     type = in_struct->type;
     flags = in_struct->flags;
@@ -38123,6 +39446,8 @@ safe_VkAccelerationStructureCreateInfoNV::~safe_VkAccelerationStructureCreateInf
 
 void safe_VkAccelerationStructureCreateInfoNV::initialize(const VkAccelerationStructureCreateInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     compactedSize = in_struct->compactedSize;
     info.initialize(&in_struct->info);
@@ -38211,6 +39536,10 @@ safe_VkBindAccelerationStructureMemoryInfoNV::~safe_VkBindAccelerationStructureM
 
 void safe_VkBindAccelerationStructureMemoryInfoNV::initialize(const VkBindAccelerationStructureMemoryInfoNV* in_struct)
 {
+    if (pDeviceIndices)
+        delete[] pDeviceIndices;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     accelerationStructure = in_struct->accelerationStructure;
     memory = in_struct->memory;
@@ -38307,6 +39636,10 @@ safe_VkWriteDescriptorSetAccelerationStructureNV::~safe_VkWriteDescriptorSetAcce
 
 void safe_VkWriteDescriptorSetAccelerationStructureNV::initialize(const VkWriteDescriptorSetAccelerationStructureNV* in_struct)
 {
+    if (pAccelerationStructures)
+        delete[] pAccelerationStructures;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     accelerationStructureCount = in_struct->accelerationStructureCount;
     pAccelerationStructures = nullptr;
@@ -38379,6 +39712,8 @@ safe_VkAccelerationStructureMemoryRequirementsInfoNV::~safe_VkAccelerationStruct
 
 void safe_VkAccelerationStructureMemoryRequirementsInfoNV::initialize(const VkAccelerationStructureMemoryRequirementsInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     type = in_struct->type;
     accelerationStructure = in_struct->accelerationStructure;
@@ -38463,6 +39798,8 @@ safe_VkPhysicalDeviceRayTracingPropertiesNV::~safe_VkPhysicalDeviceRayTracingPro
 
 void safe_VkPhysicalDeviceRayTracingPropertiesNV::initialize(const VkPhysicalDeviceRayTracingPropertiesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderGroupHandleSize = in_struct->shaderGroupHandleSize;
     maxRecursionDepth = in_struct->maxRecursionDepth;
@@ -38531,6 +39868,8 @@ safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::~safe_VkPhysicalDevic
 
 void safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::initialize(const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     representativeFragmentTest = in_struct->representativeFragmentTest;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -38585,6 +39924,8 @@ safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::~safe_VkPipelineRepr
 
 void safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::initialize(const VkPipelineRepresentativeFragmentTestStateCreateInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     representativeFragmentTestEnable = in_struct->representativeFragmentTestEnable;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -38639,6 +39980,8 @@ safe_VkPhysicalDeviceImageViewImageFormatInfoEXT::~safe_VkPhysicalDeviceImageVie
 
 void safe_VkPhysicalDeviceImageViewImageFormatInfoEXT::initialize(const VkPhysicalDeviceImageViewImageFormatInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     imageViewType = in_struct->imageViewType;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -38697,6 +40040,8 @@ safe_VkFilterCubicImageViewImageFormatPropertiesEXT::~safe_VkFilterCubicImageVie
 
 void safe_VkFilterCubicImageViewImageFormatPropertiesEXT::initialize(const VkFilterCubicImageViewImageFormatPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     filterCubic = in_struct->filterCubic;
     filterCubicMinmax = in_struct->filterCubicMinmax;
@@ -38757,6 +40102,8 @@ safe_VkImportMemoryHostPointerInfoEXT::~safe_VkImportMemoryHostPointerInfoEXT()
 
 void safe_VkImportMemoryHostPointerInfoEXT::initialize(const VkImportMemoryHostPointerInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleType = in_struct->handleType;
     pHostPointer = in_struct->pHostPointer;
@@ -38813,6 +40160,8 @@ safe_VkMemoryHostPointerPropertiesEXT::~safe_VkMemoryHostPointerPropertiesEXT()
 
 void safe_VkMemoryHostPointerPropertiesEXT::initialize(const VkMemoryHostPointerPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memoryTypeBits = in_struct->memoryTypeBits;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -38867,6 +40216,8 @@ safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT::~safe_VkPhysicalDeviceExte
 
 void safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT::initialize(const VkPhysicalDeviceExternalMemoryHostPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     minImportedHostPointerAlignment = in_struct->minImportedHostPointerAlignment;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -38921,6 +40272,8 @@ safe_VkPipelineCompilerControlCreateInfoAMD::~safe_VkPipelineCompilerControlCrea
 
 void safe_VkPipelineCompilerControlCreateInfoAMD::initialize(const VkPipelineCompilerControlCreateInfoAMD* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     compilerControlFlags = in_struct->compilerControlFlags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -38975,6 +40328,8 @@ safe_VkCalibratedTimestampInfoEXT::~safe_VkCalibratedTimestampInfoEXT()
 
 void safe_VkCalibratedTimestampInfoEXT::initialize(const VkCalibratedTimestampInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     timeDomain = in_struct->timeDomain;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -39081,6 +40436,8 @@ safe_VkPhysicalDeviceShaderCorePropertiesAMD::~safe_VkPhysicalDeviceShaderCorePr
 
 void safe_VkPhysicalDeviceShaderCorePropertiesAMD::initialize(const VkPhysicalDeviceShaderCorePropertiesAMD* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderEngineCount = in_struct->shaderEngineCount;
     shaderArraysPerEngineCount = in_struct->shaderArraysPerEngineCount;
@@ -39163,6 +40520,8 @@ safe_VkVideoDecodeH265ProfileEXT::~safe_VkVideoDecodeH265ProfileEXT()
 
 void safe_VkVideoDecodeH265ProfileEXT::initialize(const VkVideoDecodeH265ProfileEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     stdProfileIdc = in_struct->stdProfileIdc;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -39221,6 +40580,8 @@ safe_VkVideoDecodeH265CapabilitiesEXT::~safe_VkVideoDecodeH265CapabilitiesEXT()
 
 void safe_VkVideoDecodeH265CapabilitiesEXT::initialize(const VkVideoDecodeH265CapabilitiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxLevel = in_struct->maxLevel;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -39347,6 +40708,14 @@ safe_VkVideoDecodeH265SessionParametersAddInfoEXT::~safe_VkVideoDecodeH265Sessio
 
 void safe_VkVideoDecodeH265SessionParametersAddInfoEXT::initialize(const VkVideoDecodeH265SessionParametersAddInfoEXT* in_struct)
 {
+    if (pVpsStd)
+        delete[] pVpsStd;
+    if (pSpsStd)
+        delete[] pSpsStd;
+    if (pPpsStd)
+        delete[] pPpsStd;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     vpsStdCount = in_struct->vpsStdCount;
     pVpsStd = nullptr;
@@ -39461,6 +40830,10 @@ safe_VkVideoDecodeH265SessionParametersCreateInfoEXT::~safe_VkVideoDecodeH265Ses
 
 void safe_VkVideoDecodeH265SessionParametersCreateInfoEXT::initialize(const VkVideoDecodeH265SessionParametersCreateInfoEXT* in_struct)
 {
+    if (pParametersAddInfo)
+        delete pParametersAddInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxVpsStdCount = in_struct->maxVpsStdCount;
     maxSpsStdCount = in_struct->maxSpsStdCount;
@@ -39566,6 +40939,12 @@ safe_VkVideoDecodeH265PictureInfoEXT::~safe_VkVideoDecodeH265PictureInfoEXT()
 
 void safe_VkVideoDecodeH265PictureInfoEXT::initialize(const VkVideoDecodeH265PictureInfoEXT* in_struct)
 {
+    if (pStdPictureInfo)
+        delete pStdPictureInfo;
+    if (pSlicesDataOffsets)
+        delete[] pSlicesDataOffsets;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pStdPictureInfo = nullptr;
     slicesCount = in_struct->slicesCount;
@@ -39655,6 +41034,10 @@ safe_VkVideoDecodeH265DpbSlotInfoEXT::~safe_VkVideoDecodeH265DpbSlotInfoEXT()
 
 void safe_VkVideoDecodeH265DpbSlotInfoEXT::initialize(const VkVideoDecodeH265DpbSlotInfoEXT* in_struct)
 {
+    if (pStdReferenceInfo)
+        delete pStdReferenceInfo;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pStdReferenceInfo = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -39717,6 +41100,8 @@ safe_VkDeviceMemoryOverallocationCreateInfoAMD::~safe_VkDeviceMemoryOverallocati
 
 void safe_VkDeviceMemoryOverallocationCreateInfoAMD::initialize(const VkDeviceMemoryOverallocationCreateInfoAMD* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     overallocationBehavior = in_struct->overallocationBehavior;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -39771,6 +41156,8 @@ safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT::~safe_VkPhysicalDevice
 
 void safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT::initialize(const VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxVertexAttribDivisor = in_struct->maxVertexAttribDivisor;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -39845,6 +41232,10 @@ safe_VkPipelineVertexInputDivisorStateCreateInfoEXT::~safe_VkPipelineVertexInput
 
 void safe_VkPipelineVertexInputDivisorStateCreateInfoEXT::initialize(const VkPipelineVertexInputDivisorStateCreateInfoEXT* in_struct)
 {
+    if (pVertexBindingDivisors)
+        delete[] pVertexBindingDivisors;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     vertexBindingDivisorCount = in_struct->vertexBindingDivisorCount;
     pVertexBindingDivisors = nullptr;
@@ -39913,6 +41304,8 @@ safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT::~safe_VkPhysicalDeviceVe
 
 void safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT::initialize(const VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     vertexAttributeInstanceRateDivisor = in_struct->vertexAttributeInstanceRateDivisor;
     vertexAttributeInstanceRateZeroDivisor = in_struct->vertexAttributeInstanceRateZeroDivisor;
@@ -39971,6 +41364,8 @@ safe_VkPresentFrameTokenGGP::~safe_VkPresentFrameTokenGGP()
 
 void safe_VkPresentFrameTokenGGP::initialize(const VkPresentFrameTokenGGP* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     frameToken = in_struct->frameToken;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -40031,6 +41426,8 @@ safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::~safe_VkPhysicalDeviceC
 
 void safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::initialize(const VkPhysicalDeviceComputeShaderDerivativesFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     computeDerivativeGroupQuads = in_struct->computeDerivativeGroupQuads;
     computeDerivativeGroupLinear = in_struct->computeDerivativeGroupLinear;
@@ -40091,6 +41488,8 @@ safe_VkPhysicalDeviceMeshShaderFeaturesNV::~safe_VkPhysicalDeviceMeshShaderFeatu
 
 void safe_VkPhysicalDeviceMeshShaderFeaturesNV::initialize(const VkPhysicalDeviceMeshShaderFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     taskShader = in_struct->taskShader;
     meshShader = in_struct->meshShader;
@@ -40205,6 +41604,8 @@ safe_VkPhysicalDeviceMeshShaderPropertiesNV::~safe_VkPhysicalDeviceMeshShaderPro
 
 void safe_VkPhysicalDeviceMeshShaderPropertiesNV::initialize(const VkPhysicalDeviceMeshShaderPropertiesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxDrawMeshTasksCount = in_struct->maxDrawMeshTasksCount;
     maxTaskWorkGroupInvocations = in_struct->maxTaskWorkGroupInvocations;
@@ -40291,6 +41692,8 @@ safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::~safe_VkPhysicalDevice
 
 void safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::initialize(const VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fragmentShaderBarycentric = in_struct->fragmentShaderBarycentric;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -40345,6 +41748,8 @@ safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::~safe_VkPhysicalDeviceShade
 
 void safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::initialize(const VkPhysicalDeviceShaderImageFootprintFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     imageFootprint = in_struct->imageFootprint;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -40419,6 +41824,10 @@ safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::~safe_VkPipelineViewpo
 
 void safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::initialize(const VkPipelineViewportExclusiveScissorStateCreateInfoNV* in_struct)
 {
+    if (pExclusiveScissors)
+        delete[] pExclusiveScissors;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     exclusiveScissorCount = in_struct->exclusiveScissorCount;
     pExclusiveScissors = nullptr;
@@ -40483,6 +41892,8 @@ safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::~safe_VkPhysicalDeviceExclusive
 
 void safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::initialize(const VkPhysicalDeviceExclusiveScissorFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     exclusiveScissor = in_struct->exclusiveScissor;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -40537,6 +41948,8 @@ safe_VkQueueFamilyCheckpointPropertiesNV::~safe_VkQueueFamilyCheckpointPropertie
 
 void safe_VkQueueFamilyCheckpointPropertiesNV::initialize(const VkQueueFamilyCheckpointPropertiesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     checkpointExecutionStageMask = in_struct->checkpointExecutionStageMask;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -40595,6 +42008,8 @@ safe_VkCheckpointDataNV::~safe_VkCheckpointDataNV()
 
 void safe_VkCheckpointDataNV::initialize(const VkCheckpointDataNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     stage = in_struct->stage;
     pCheckpointMarker = in_struct->pCheckpointMarker;
@@ -40651,6 +42066,8 @@ safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::~safe_VkPhysicalDevic
 
 void safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::initialize(const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderIntegerFunctions2 = in_struct->shaderIntegerFunctions2;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -40703,6 +42120,7 @@ safe_VkPerformanceValueDataINTEL::~safe_VkPerformanceValueDataINTEL()
 
 void safe_VkPerformanceValueDataINTEL::initialize(const VkPerformanceValueDataINTEL* in_struct)
 {
+    if (valueString) delete [] valueString;
     value32 = in_struct->value32;
     value64 = in_struct->value64;
     valueFloat = in_struct->valueFloat;
@@ -40761,6 +42179,8 @@ safe_VkInitializePerformanceApiInfoINTEL::~safe_VkInitializePerformanceApiInfoIN
 
 void safe_VkInitializePerformanceApiInfoINTEL::initialize(const VkInitializePerformanceApiInfoINTEL* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pUserData = in_struct->pUserData;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -40815,6 +42235,8 @@ safe_VkQueryPoolPerformanceQueryCreateInfoINTEL::~safe_VkQueryPoolPerformanceQue
 
 void safe_VkQueryPoolPerformanceQueryCreateInfoINTEL::initialize(const VkQueryPoolPerformanceQueryCreateInfoINTEL* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     performanceCountersSampling = in_struct->performanceCountersSampling;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -40869,6 +42291,8 @@ safe_VkPerformanceMarkerInfoINTEL::~safe_VkPerformanceMarkerInfoINTEL()
 
 void safe_VkPerformanceMarkerInfoINTEL::initialize(const VkPerformanceMarkerInfoINTEL* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     marker = in_struct->marker;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -40923,6 +42347,8 @@ safe_VkPerformanceStreamMarkerInfoINTEL::~safe_VkPerformanceStreamMarkerInfoINTE
 
 void safe_VkPerformanceStreamMarkerInfoINTEL::initialize(const VkPerformanceStreamMarkerInfoINTEL* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     marker = in_struct->marker;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -40985,6 +42411,8 @@ safe_VkPerformanceOverrideInfoINTEL::~safe_VkPerformanceOverrideInfoINTEL()
 
 void safe_VkPerformanceOverrideInfoINTEL::initialize(const VkPerformanceOverrideInfoINTEL* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     type = in_struct->type;
     enable = in_struct->enable;
@@ -41043,6 +42471,8 @@ safe_VkPerformanceConfigurationAcquireInfoINTEL::~safe_VkPerformanceConfiguratio
 
 void safe_VkPerformanceConfigurationAcquireInfoINTEL::initialize(const VkPerformanceConfigurationAcquireInfoINTEL* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     type = in_struct->type;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -41109,6 +42539,8 @@ safe_VkPhysicalDevicePCIBusInfoPropertiesEXT::~safe_VkPhysicalDevicePCIBusInfoPr
 
 void safe_VkPhysicalDevicePCIBusInfoPropertiesEXT::initialize(const VkPhysicalDevicePCIBusInfoPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pciDomain = in_struct->pciDomain;
     pciBus = in_struct->pciBus;
@@ -41169,6 +42601,8 @@ safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::~safe_VkDisplayNativeHdrSurfaceCa
 
 void safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::initialize(const VkDisplayNativeHdrSurfaceCapabilitiesAMD* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     localDimmingSupport = in_struct->localDimmingSupport;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -41223,6 +42657,8 @@ safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::~safe_VkSwapchainDisplayNativeHdr
 
 void safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::initialize(const VkSwapchainDisplayNativeHdrCreateInfoAMD* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     localDimmingEnable = in_struct->localDimmingEnable;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -41283,6 +42719,8 @@ safe_VkImagePipeSurfaceCreateInfoFUCHSIA::~safe_VkImagePipeSurfaceCreateInfoFUCH
 
 void safe_VkImagePipeSurfaceCreateInfoFUCHSIA::initialize(const VkImagePipeSurfaceCreateInfoFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     imagePipeHandle = in_struct->imagePipeHandle;
@@ -41349,6 +42787,8 @@ safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT::~safe_VkPhysicalDeviceFragme
 
 void safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT::initialize(const VkPhysicalDeviceFragmentDensityMapFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fragmentDensityMap = in_struct->fragmentDensityMap;
     fragmentDensityMapDynamic = in_struct->fragmentDensityMapDynamic;
@@ -41415,6 +42855,8 @@ safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT::~safe_VkPhysicalDeviceFrag
 
 void safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT::initialize(const VkPhysicalDeviceFragmentDensityMapPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     minFragmentDensityTexelSize = in_struct->minFragmentDensityTexelSize;
     maxFragmentDensityTexelSize = in_struct->maxFragmentDensityTexelSize;
@@ -41473,6 +42915,8 @@ safe_VkRenderPassFragmentDensityMapCreateInfoEXT::~safe_VkRenderPassFragmentDens
 
 void safe_VkRenderPassFragmentDensityMapCreateInfoEXT::initialize(const VkRenderPassFragmentDensityMapCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fragmentDensityMapAttachment = in_struct->fragmentDensityMapAttachment;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -41531,6 +42975,8 @@ safe_VkPhysicalDeviceShaderCoreProperties2AMD::~safe_VkPhysicalDeviceShaderCoreP
 
 void safe_VkPhysicalDeviceShaderCoreProperties2AMD::initialize(const VkPhysicalDeviceShaderCoreProperties2AMD* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderCoreFeatures = in_struct->shaderCoreFeatures;
     activeComputeUnitCount = in_struct->activeComputeUnitCount;
@@ -41587,6 +43033,8 @@ safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD::~safe_VkPhysicalDeviceCoherentMe
 
 void safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD::initialize(const VkPhysicalDeviceCoherentMemoryFeaturesAMD* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     deviceCoherentMemory = in_struct->deviceCoherentMemory;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -41645,6 +43093,8 @@ safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::~safe_VkPhysicalDeviceSh
 
 void safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::initialize(const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderImageInt64Atomics = in_struct->shaderImageInt64Atomics;
     sparseImageInt64Atomics = in_struct->sparseImageInt64Atomics;
@@ -41715,6 +43165,8 @@ safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::~safe_VkPhysicalDeviceMemoryBudg
 
 void safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::initialize(const VkPhysicalDeviceMemoryBudgetPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pNext = SafePnextCopy(in_struct->pNext);
     for (uint32_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
@@ -41779,6 +43231,8 @@ safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT::~safe_VkPhysicalDeviceMemoryPrio
 
 void safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT::initialize(const VkPhysicalDeviceMemoryPriorityFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memoryPriority = in_struct->memoryPriority;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -41833,6 +43287,8 @@ safe_VkMemoryPriorityAllocateInfoEXT::~safe_VkMemoryPriorityAllocateInfoEXT()
 
 void safe_VkMemoryPriorityAllocateInfoEXT::initialize(const VkMemoryPriorityAllocateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     priority = in_struct->priority;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -41887,6 +43343,8 @@ safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::~safe_VkPhysica
 
 void safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::initialize(const VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     dedicatedAllocationImageAliasing = in_struct->dedicatedAllocationImageAliasing;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -41949,6 +43407,8 @@ safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::~safe_VkPhysicalDeviceBuffe
 
 void safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::initialize(const VkPhysicalDeviceBufferDeviceAddressFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     bufferDeviceAddress = in_struct->bufferDeviceAddress;
     bufferDeviceAddressCaptureReplay = in_struct->bufferDeviceAddressCaptureReplay;
@@ -42007,6 +43467,8 @@ safe_VkBufferDeviceAddressCreateInfoEXT::~safe_VkBufferDeviceAddressCreateInfoEX
 
 void safe_VkBufferDeviceAddressCreateInfoEXT::initialize(const VkBufferDeviceAddressCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     deviceAddress = in_struct->deviceAddress;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -42105,6 +43567,12 @@ safe_VkValidationFeaturesEXT::~safe_VkValidationFeaturesEXT()
 
 void safe_VkValidationFeaturesEXT::initialize(const VkValidationFeaturesEXT* in_struct)
 {
+    if (pEnabledValidationFeatures)
+        delete[] pEnabledValidationFeatures;
+    if (pDisabledValidationFeatures)
+        delete[] pDisabledValidationFeatures;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     enabledValidationFeatureCount = in_struct->enabledValidationFeatureCount;
     pEnabledValidationFeatures = nullptr;
@@ -42209,6 +43677,8 @@ safe_VkCooperativeMatrixPropertiesNV::~safe_VkCooperativeMatrixPropertiesNV()
 
 void safe_VkCooperativeMatrixPropertiesNV::initialize(const VkCooperativeMatrixPropertiesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     MSize = in_struct->MSize;
     NSize = in_struct->NSize;
@@ -42281,6 +43751,8 @@ safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::~safe_VkPhysicalDeviceCooperat
 
 void safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::initialize(const VkPhysicalDeviceCooperativeMatrixFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     cooperativeMatrix = in_struct->cooperativeMatrix;
     cooperativeMatrixRobustBufferAccess = in_struct->cooperativeMatrixRobustBufferAccess;
@@ -42337,6 +43809,8 @@ safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::~safe_VkPhysicalDeviceCooper
 
 void safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::initialize(const VkPhysicalDeviceCooperativeMatrixPropertiesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     cooperativeMatrixSupportedStages = in_struct->cooperativeMatrixSupportedStages;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -42391,6 +43865,8 @@ safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::~safe_VkPhysicalDeviceCove
 
 void safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::initialize(const VkPhysicalDeviceCoverageReductionModeFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     coverageReductionMode = in_struct->coverageReductionMode;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -42449,6 +43925,8 @@ safe_VkPipelineCoverageReductionStateCreateInfoNV::~safe_VkPipelineCoverageReduc
 
 void safe_VkPipelineCoverageReductionStateCreateInfoNV::initialize(const VkPipelineCoverageReductionStateCreateInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     coverageReductionMode = in_struct->coverageReductionMode;
@@ -42517,6 +43995,8 @@ safe_VkFramebufferMixedSamplesCombinationNV::~safe_VkFramebufferMixedSamplesComb
 
 void safe_VkFramebufferMixedSamplesCombinationNV::initialize(const VkFramebufferMixedSamplesCombinationNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     coverageReductionMode = in_struct->coverageReductionMode;
     rasterizationSamples = in_struct->rasterizationSamples;
@@ -42585,6 +44065,8 @@ safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::~safe_VkPhysicalDeviceF
 
 void safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::initialize(const VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fragmentShaderSampleInterlock = in_struct->fragmentShaderSampleInterlock;
     fragmentShaderPixelInterlock = in_struct->fragmentShaderPixelInterlock;
@@ -42643,6 +44125,8 @@ safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT::~safe_VkPhysicalDeviceYcbcrIma
 
 void safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT::initialize(const VkPhysicalDeviceYcbcrImageArraysFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     ycbcrImageArrays = in_struct->ycbcrImageArrays;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -42701,6 +44185,8 @@ safe_VkPhysicalDeviceProvokingVertexFeaturesEXT::~safe_VkPhysicalDeviceProvoking
 
 void safe_VkPhysicalDeviceProvokingVertexFeaturesEXT::initialize(const VkPhysicalDeviceProvokingVertexFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     provokingVertexLast = in_struct->provokingVertexLast;
     transformFeedbackPreservesProvokingVertex = in_struct->transformFeedbackPreservesProvokingVertex;
@@ -42761,6 +44247,8 @@ safe_VkPhysicalDeviceProvokingVertexPropertiesEXT::~safe_VkPhysicalDeviceProvoki
 
 void safe_VkPhysicalDeviceProvokingVertexPropertiesEXT::initialize(const VkPhysicalDeviceProvokingVertexPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     provokingVertexModePerPipeline = in_struct->provokingVertexModePerPipeline;
     transformFeedbackPreservesTriangleFanProvokingVertex = in_struct->transformFeedbackPreservesTriangleFanProvokingVertex;
@@ -42817,6 +44305,8 @@ safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT::~safe_VkPipelineR
 
 void safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT::initialize(const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     provokingVertexMode = in_struct->provokingVertexMode;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -42873,6 +44363,8 @@ safe_VkSurfaceFullScreenExclusiveInfoEXT::~safe_VkSurfaceFullScreenExclusiveInfo
 
 void safe_VkSurfaceFullScreenExclusiveInfoEXT::initialize(const VkSurfaceFullScreenExclusiveInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fullScreenExclusive = in_struct->fullScreenExclusive;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -42931,6 +44423,8 @@ safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT::~safe_VkSurfaceCapabilitiesFul
 
 void safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT::initialize(const VkSurfaceCapabilitiesFullScreenExclusiveEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fullScreenExclusiveSupported = in_struct->fullScreenExclusiveSupported;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -42989,6 +44483,8 @@ safe_VkSurfaceFullScreenExclusiveWin32InfoEXT::~safe_VkSurfaceFullScreenExclusiv
 
 void safe_VkSurfaceFullScreenExclusiveWin32InfoEXT::initialize(const VkSurfaceFullScreenExclusiveWin32InfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     hmonitor = in_struct->hmonitor;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -43045,6 +44541,8 @@ safe_VkHeadlessSurfaceCreateInfoEXT::~safe_VkHeadlessSurfaceCreateInfoEXT()
 
 void safe_VkHeadlessSurfaceCreateInfoEXT::initialize(const VkHeadlessSurfaceCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -43119,6 +44617,8 @@ safe_VkPhysicalDeviceLineRasterizationFeaturesEXT::~safe_VkPhysicalDeviceLineRas
 
 void safe_VkPhysicalDeviceLineRasterizationFeaturesEXT::initialize(const VkPhysicalDeviceLineRasterizationFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     rectangularLines = in_struct->rectangularLines;
     bresenhamLines = in_struct->bresenhamLines;
@@ -43183,6 +44683,8 @@ safe_VkPhysicalDeviceLineRasterizationPropertiesEXT::~safe_VkPhysicalDeviceLineR
 
 void safe_VkPhysicalDeviceLineRasterizationPropertiesEXT::initialize(const VkPhysicalDeviceLineRasterizationPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     lineSubPixelPrecisionBits = in_struct->lineSubPixelPrecisionBits;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -43249,6 +44751,8 @@ safe_VkPipelineRasterizationLineStateCreateInfoEXT::~safe_VkPipelineRasterizatio
 
 void safe_VkPipelineRasterizationLineStateCreateInfoEXT::initialize(const VkPipelineRasterizationLineStateCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     lineRasterizationMode = in_struct->lineRasterizationMode;
     stippledLineEnable = in_struct->stippledLineEnable;
@@ -43353,6 +44857,8 @@ safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::~safe_VkPhysicalDeviceShaderA
 
 void safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::initialize(const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderBufferFloat32Atomics = in_struct->shaderBufferFloat32Atomics;
     shaderBufferFloat32AtomicAdd = in_struct->shaderBufferFloat32AtomicAdd;
@@ -43429,6 +44935,8 @@ safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT::~safe_VkPhysicalDeviceIndexTypeU
 
 void safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT::initialize(const VkPhysicalDeviceIndexTypeUint8FeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     indexTypeUint8 = in_struct->indexTypeUint8;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -43483,6 +44991,8 @@ safe_VkPhysicalDeviceExtendedDynamicStateFeaturesEXT::~safe_VkPhysicalDeviceExte
 
 void safe_VkPhysicalDeviceExtendedDynamicStateFeaturesEXT::initialize(const VkPhysicalDeviceExtendedDynamicStateFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     extendedDynamicState = in_struct->extendedDynamicState;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -43581,6 +45091,8 @@ safe_VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::~safe_VkPhysicalDeviceShader
 
 void safe_VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::initialize(const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderBufferFloat16Atomics = in_struct->shaderBufferFloat16Atomics;
     shaderBufferFloat16AtomicAdd = in_struct->shaderBufferFloat16AtomicAdd;
@@ -43689,6 +45201,8 @@ safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::~safe_VkPhysicalDevice
 
 void safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::initialize(const VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxGraphicsShaderGroupCount = in_struct->maxGraphicsShaderGroupCount;
     maxIndirectSequenceCount = in_struct->maxIndirectSequenceCount;
@@ -43759,6 +45273,8 @@ safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::~safe_VkPhysicalDeviceDe
 
 void safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::initialize(const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     deviceGeneratedCommands = in_struct->deviceGeneratedCommands;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -43867,6 +45383,14 @@ safe_VkGraphicsShaderGroupCreateInfoNV::~safe_VkGraphicsShaderGroupCreateInfoNV(
 
 void safe_VkGraphicsShaderGroupCreateInfoNV::initialize(const VkGraphicsShaderGroupCreateInfoNV* in_struct)
 {
+    if (pStages)
+        delete[] pStages;
+    if (pVertexInputState)
+        delete pVertexInputState;
+    if (pTessellationState)
+        delete pTessellationState;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     stageCount = in_struct->stageCount;
     pStages = nullptr;
@@ -44003,6 +45527,12 @@ safe_VkGraphicsPipelineShaderGroupsCreateInfoNV::~safe_VkGraphicsPipelineShaderG
 
 void safe_VkGraphicsPipelineShaderGroupsCreateInfoNV::initialize(const VkGraphicsPipelineShaderGroupsCreateInfoNV* in_struct)
 {
+    if (pGroups)
+        delete[] pGroups;
+    if (pPipelines)
+        delete[] pPipelines;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     groupCount = in_struct->groupCount;
     pGroups = nullptr;
@@ -44167,6 +45697,12 @@ safe_VkIndirectCommandsLayoutTokenNV::~safe_VkIndirectCommandsLayoutTokenNV()
 
 void safe_VkIndirectCommandsLayoutTokenNV::initialize(const VkIndirectCommandsLayoutTokenNV* in_struct)
 {
+    if (pIndexTypes)
+        delete[] pIndexTypes;
+    if (pIndexTypeValues)
+        delete[] pIndexTypeValues;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     tokenType = in_struct->tokenType;
     stream = in_struct->stream;
@@ -44319,6 +45855,12 @@ safe_VkIndirectCommandsLayoutCreateInfoNV::~safe_VkIndirectCommandsLayoutCreateI
 
 void safe_VkIndirectCommandsLayoutCreateInfoNV::initialize(const VkIndirectCommandsLayoutCreateInfoNV* in_struct)
 {
+    if (pTokens)
+        delete[] pTokens;
+    if (pStreamStrides)
+        delete[] pStreamStrides;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pipelineBindPoint = in_struct->pipelineBindPoint;
@@ -44473,6 +46015,10 @@ safe_VkGeneratedCommandsInfoNV::~safe_VkGeneratedCommandsInfoNV()
 
 void safe_VkGeneratedCommandsInfoNV::initialize(const VkGeneratedCommandsInfoNV* in_struct)
 {
+    if (pStreams)
+        delete[] pStreams;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pipelineBindPoint = in_struct->pipelineBindPoint;
     pipeline = in_struct->pipeline;
@@ -44575,6 +46121,8 @@ safe_VkGeneratedCommandsMemoryRequirementsInfoNV::~safe_VkGeneratedCommandsMemor
 
 void safe_VkGeneratedCommandsMemoryRequirementsInfoNV::initialize(const VkGeneratedCommandsMemoryRequirementsInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pipelineBindPoint = in_struct->pipelineBindPoint;
     pipeline = in_struct->pipeline;
@@ -44635,6 +46183,8 @@ safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV::~safe_VkPhysicalDeviceI
 
 void safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV::initialize(const VkPhysicalDeviceInheritedViewportScissorFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     inheritedViewportScissor2D = in_struct->inheritedViewportScissor2D;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -44710,6 +46260,10 @@ safe_VkCommandBufferInheritanceViewportScissorInfoNV::~safe_VkCommandBufferInher
 
 void safe_VkCommandBufferInheritanceViewportScissorInfoNV::initialize(const VkCommandBufferInheritanceViewportScissorInfoNV* in_struct)
 {
+    if (pViewportDepths)
+        delete pViewportDepths;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     viewportScissor2D = in_struct->viewportScissor2D;
     viewportDepthCount = in_struct->viewportDepthCount;
@@ -44774,6 +46328,8 @@ safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT::~safe_VkPhysicalDeviceTexe
 
 void safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT::initialize(const VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     texelBufferAlignment = in_struct->texelBufferAlignment;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -44828,6 +46384,8 @@ safe_VkRenderPassTransformBeginInfoQCOM::~safe_VkRenderPassTransformBeginInfoQCO
 
 void safe_VkRenderPassTransformBeginInfoQCOM::initialize(const VkRenderPassTransformBeginInfoQCOM* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     transform = in_struct->transform;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -44886,6 +46444,8 @@ safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::~safe_VkCommandBuffe
 
 void safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::initialize(const VkCommandBufferInheritanceRenderPassTransformInfoQCOM* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     transform = in_struct->transform;
     renderArea = in_struct->renderArea;
@@ -44942,6 +46502,8 @@ safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT::~safe_VkPhysicalDeviceDevice
 
 void safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT::initialize(const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     deviceMemoryReport = in_struct->deviceMemoryReport;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -45020,6 +46582,8 @@ safe_VkDeviceMemoryReportCallbackDataEXT::~safe_VkDeviceMemoryReportCallbackData
 
 void safe_VkDeviceMemoryReportCallbackDataEXT::initialize(const VkDeviceMemoryReportCallbackDataEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     type = in_struct->type;
@@ -45094,6 +46658,8 @@ safe_VkDeviceDeviceMemoryReportCreateInfoEXT::~safe_VkDeviceDeviceMemoryReportCr
 
 void safe_VkDeviceDeviceMemoryReportCreateInfoEXT::initialize(const VkDeviceDeviceMemoryReportCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pfnUserCallback = in_struct->pfnUserCallback;
@@ -45160,6 +46726,8 @@ safe_VkPhysicalDeviceRobustness2FeaturesEXT::~safe_VkPhysicalDeviceRobustness2Fe
 
 void safe_VkPhysicalDeviceRobustness2FeaturesEXT::initialize(const VkPhysicalDeviceRobustness2FeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     robustBufferAccess2 = in_struct->robustBufferAccess2;
     robustImageAccess2 = in_struct->robustImageAccess2;
@@ -45222,6 +46790,8 @@ safe_VkPhysicalDeviceRobustness2PropertiesEXT::~safe_VkPhysicalDeviceRobustness2
 
 void safe_VkPhysicalDeviceRobustness2PropertiesEXT::initialize(const VkPhysicalDeviceRobustness2PropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     robustStorageBufferAccessSizeAlignment = in_struct->robustStorageBufferAccessSizeAlignment;
     robustUniformBufferAccessSizeAlignment = in_struct->robustUniformBufferAccessSizeAlignment;
@@ -45282,6 +46852,8 @@ safe_VkSamplerCustomBorderColorCreateInfoEXT::~safe_VkSamplerCustomBorderColorCr
 
 void safe_VkSamplerCustomBorderColorCreateInfoEXT::initialize(const VkSamplerCustomBorderColorCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     customBorderColor = in_struct->customBorderColor;
     format = in_struct->format;
@@ -45338,6 +46910,8 @@ safe_VkPhysicalDeviceCustomBorderColorPropertiesEXT::~safe_VkPhysicalDeviceCusto
 
 void safe_VkPhysicalDeviceCustomBorderColorPropertiesEXT::initialize(const VkPhysicalDeviceCustomBorderColorPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxCustomBorderColorSamplers = in_struct->maxCustomBorderColorSamplers;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -45396,6 +46970,8 @@ safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT::~safe_VkPhysicalDeviceCustomB
 
 void safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT::initialize(const VkPhysicalDeviceCustomBorderColorFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     customBorderColors = in_struct->customBorderColors;
     customBorderColorWithoutFormat = in_struct->customBorderColorWithoutFormat;
@@ -45452,6 +47028,8 @@ safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV::~safe_VkPhysicalDeviceDiagnost
 
 void safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV::initialize(const VkPhysicalDeviceDiagnosticsConfigFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     diagnosticsConfig = in_struct->diagnosticsConfig;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -45506,6 +47084,8 @@ safe_VkDeviceDiagnosticsConfigCreateInfoNV::~safe_VkDeviceDiagnosticsConfigCreat
 
 void safe_VkDeviceDiagnosticsConfigCreateInfoNV::initialize(const VkDeviceDiagnosticsConfigCreateInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -45560,6 +47140,8 @@ safe_VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::~safe_VkPhysicalDeviceG
 
 void safe_VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::initialize(const VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     graphicsPipelineLibrary = in_struct->graphicsPipelineLibrary;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -45618,6 +47200,8 @@ safe_VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT::~safe_VkPhysicalDevic
 
 void safe_VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT::initialize(const VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     graphicsPipelineLibraryFastLinking = in_struct->graphicsPipelineLibraryFastLinking;
     graphicsPipelineLibraryIndependentInterpolationDecoration = in_struct->graphicsPipelineLibraryIndependentInterpolationDecoration;
@@ -45674,6 +47258,8 @@ safe_VkGraphicsPipelineLibraryCreateInfoEXT::~safe_VkGraphicsPipelineLibraryCrea
 
 void safe_VkGraphicsPipelineLibraryCreateInfoEXT::initialize(const VkGraphicsPipelineLibraryCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -45736,6 +47322,8 @@ safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::~safe_VkPhysicalDeviceF
 
 void safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::initialize(const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fragmentShadingRateEnums = in_struct->fragmentShadingRateEnums;
     supersampleFragmentShadingRates = in_struct->supersampleFragmentShadingRates;
@@ -45794,6 +47382,8 @@ safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::~safe_VkPhysicalDevic
 
 void safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::initialize(const VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxFragmentShadingRateInvocationCount = in_struct->maxFragmentShadingRateInvocationCount;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -45861,6 +47451,8 @@ safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::~safe_VkPipelineFragmen
 
 void safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::initialize(const VkPipelineFragmentShadingRateEnumStateCreateInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shadingRateType = in_struct->shadingRateType;
     shadingRate = in_struct->shadingRate;
@@ -45964,6 +47556,8 @@ safe_VkAccelerationStructureGeometryMotionTrianglesDataNV::~safe_VkAccelerationS
 
 void safe_VkAccelerationStructureGeometryMotionTrianglesDataNV::initialize(const VkAccelerationStructureGeometryMotionTrianglesDataNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     vertexData.initialize(&in_struct->vertexData);
     pNext = SafePnextCopy(in_struct->pNext);
@@ -46022,6 +47616,8 @@ safe_VkAccelerationStructureMotionInfoNV::~safe_VkAccelerationStructureMotionInf
 
 void safe_VkAccelerationStructureMotionInfoNV::initialize(const VkAccelerationStructureMotionInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxInstances = in_struct->maxInstances;
     flags = in_struct->flags;
@@ -46082,6 +47678,8 @@ safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV::~safe_VkPhysicalDeviceRayTr
 
 void safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV::initialize(const VkPhysicalDeviceRayTracingMotionBlurFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     rayTracingMotionBlur = in_struct->rayTracingMotionBlur;
     rayTracingMotionBlurPipelineTraceRaysIndirect = in_struct->rayTracingMotionBlurPipelineTraceRaysIndirect;
@@ -46138,6 +47736,8 @@ safe_VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT::~safe_VkPhysicalDeviceYcb
 
 void safe_VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT::initialize(const VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     ycbcr2plane444Formats = in_struct->ycbcr2plane444Formats;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -46192,6 +47792,8 @@ safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT::~safe_VkPhysicalDeviceFragm
 
 void safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT::initialize(const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fragmentDensityMapDeferred = in_struct->fragmentDensityMapDeferred;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -46258,6 +47860,8 @@ safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT::~safe_VkPhysicalDeviceFra
 
 void safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT::initialize(const VkPhysicalDeviceFragmentDensityMap2PropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     subsampledLoads = in_struct->subsampledLoads;
     subsampledCoarseReconstructionEarlyAccess = in_struct->subsampledCoarseReconstructionEarlyAccess;
@@ -46318,6 +47922,8 @@ safe_VkCopyCommandTransformInfoQCOM::~safe_VkCopyCommandTransformInfoQCOM()
 
 void safe_VkCopyCommandTransformInfoQCOM::initialize(const VkCopyCommandTransformInfoQCOM* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     transform = in_struct->transform;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -46376,6 +47982,8 @@ safe_VkPhysicalDevice4444FormatsFeaturesEXT::~safe_VkPhysicalDevice4444FormatsFe
 
 void safe_VkPhysicalDevice4444FormatsFeaturesEXT::initialize(const VkPhysicalDevice4444FormatsFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     formatA4R4G4B4 = in_struct->formatA4R4G4B4;
     formatA4B4G4R4 = in_struct->formatA4B4G4R4;
@@ -46440,6 +48048,8 @@ safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::~safe_VkPhys
 
 void safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::initialize(const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     rasterizationOrderColorAttachmentAccess = in_struct->rasterizationOrderColorAttachmentAccess;
     rasterizationOrderDepthAttachmentAccess = in_struct->rasterizationOrderDepthAttachmentAccess;
@@ -46498,6 +48108,8 @@ safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT::~safe_VkPhysicalDeviceRGBA10X6F
 
 void safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT::initialize(const VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     formatRgba10x6WithoutYCbCrSampler = in_struct->formatRgba10x6WithoutYCbCrSampler;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -46588,6 +48200,12 @@ safe_VkDirectFBSurfaceCreateInfoEXT::~safe_VkDirectFBSurfaceCreateInfoEXT()
 
 void safe_VkDirectFBSurfaceCreateInfoEXT::initialize(const VkDirectFBSurfaceCreateInfoEXT* in_struct)
 {
+    if (dfb)
+        delete dfb;
+    if (surface)
+        delete surface;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     dfb = nullptr;
@@ -46660,6 +48278,8 @@ safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::~safe_VkPhysicalDeviceM
 
 void safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::initialize(const VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     mutableDescriptorType = in_struct->mutableDescriptorType;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -46722,6 +48342,8 @@ safe_VkMutableDescriptorTypeListVALVE::~safe_VkMutableDescriptorTypeListVALVE()
 
 void safe_VkMutableDescriptorTypeListVALVE::initialize(const VkMutableDescriptorTypeListVALVE* in_struct)
 {
+    if (pDescriptorTypes)
+        delete[] pDescriptorTypes;
     descriptorTypeCount = in_struct->descriptorTypeCount;
     pDescriptorTypes = nullptr;
     if (in_struct->pDescriptorTypes) {
@@ -46808,6 +48430,10 @@ safe_VkMutableDescriptorTypeCreateInfoVALVE::~safe_VkMutableDescriptorTypeCreate
 
 void safe_VkMutableDescriptorTypeCreateInfoVALVE::initialize(const VkMutableDescriptorTypeCreateInfoVALVE* in_struct)
 {
+    if (pMutableDescriptorTypeLists)
+        delete[] pMutableDescriptorTypeLists;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     mutableDescriptorTypeListCount = in_struct->mutableDescriptorTypeListCount;
     pMutableDescriptorTypeLists = nullptr;
@@ -46876,6 +48502,8 @@ safe_VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT::~safe_VkPhysicalDeviceV
 
 void safe_VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT::initialize(const VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     vertexInputDynamicState = in_struct->vertexInputDynamicState;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -46942,6 +48570,8 @@ safe_VkVertexInputBindingDescription2EXT::~safe_VkVertexInputBindingDescription2
 
 void safe_VkVertexInputBindingDescription2EXT::initialize(const VkVertexInputBindingDescription2EXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     binding = in_struct->binding;
     stride = in_struct->stride;
@@ -47014,6 +48644,8 @@ safe_VkVertexInputAttributeDescription2EXT::~safe_VkVertexInputAttributeDescript
 
 void safe_VkVertexInputAttributeDescription2EXT::initialize(const VkVertexInputAttributeDescription2EXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     location = in_struct->location;
     binding = in_struct->binding;
@@ -47094,6 +48726,8 @@ safe_VkPhysicalDeviceDrmPropertiesEXT::~safe_VkPhysicalDeviceDrmPropertiesEXT()
 
 void safe_VkPhysicalDeviceDrmPropertiesEXT::initialize(const VkPhysicalDeviceDrmPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     hasPrimary = in_struct->hasPrimary;
     hasRender = in_struct->hasRender;
@@ -47158,6 +48792,8 @@ safe_VkPhysicalDeviceDepthClipControlFeaturesEXT::~safe_VkPhysicalDeviceDepthCli
 
 void safe_VkPhysicalDeviceDepthClipControlFeaturesEXT::initialize(const VkPhysicalDeviceDepthClipControlFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     depthClipControl = in_struct->depthClipControl;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -47212,6 +48848,8 @@ safe_VkPipelineViewportDepthClipControlCreateInfoEXT::~safe_VkPipelineViewportDe
 
 void safe_VkPipelineViewportDepthClipControlCreateInfoEXT::initialize(const VkPipelineViewportDepthClipControlCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     negativeOneToOne = in_struct->negativeOneToOne;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -47270,6 +48908,8 @@ safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT::~safe_VkPhysicalDe
 
 void safe_VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT::initialize(const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     primitiveTopologyListRestart = in_struct->primitiveTopologyListRestart;
     primitiveTopologyPatchListRestart = in_struct->primitiveTopologyPatchListRestart;
@@ -47332,6 +48972,8 @@ safe_VkImportMemoryZirconHandleInfoFUCHSIA::~safe_VkImportMemoryZirconHandleInfo
 
 void safe_VkImportMemoryZirconHandleInfoFUCHSIA::initialize(const VkImportMemoryZirconHandleInfoFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     handleType = in_struct->handleType;
     handle = in_struct->handle;
@@ -47392,6 +49034,8 @@ safe_VkMemoryZirconHandlePropertiesFUCHSIA::~safe_VkMemoryZirconHandleProperties
 
 void safe_VkMemoryZirconHandlePropertiesFUCHSIA::initialize(const VkMemoryZirconHandlePropertiesFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memoryTypeBits = in_struct->memoryTypeBits;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -47454,6 +49098,8 @@ safe_VkMemoryGetZirconHandleInfoFUCHSIA::~safe_VkMemoryGetZirconHandleInfoFUCHSI
 
 void safe_VkMemoryGetZirconHandleInfoFUCHSIA::initialize(const VkMemoryGetZirconHandleInfoFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memory = in_struct->memory;
     handleType = in_struct->handleType;
@@ -47526,6 +49172,8 @@ safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::~safe_VkImportSemaphoreZirconHand
 
 void safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::initialize(const VkImportSemaphoreZirconHandleInfoFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     semaphore = in_struct->semaphore;
     flags = in_struct->flags;
@@ -47594,6 +49242,8 @@ safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::~safe_VkSemaphoreGetZirconHandleInfo
 
 void safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::initialize(const VkSemaphoreGetZirconHandleInfoFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     semaphore = in_struct->semaphore;
     handleType = in_struct->handleType;
@@ -47654,6 +49304,8 @@ safe_VkBufferCollectionCreateInfoFUCHSIA::~safe_VkBufferCollectionCreateInfoFUCH
 
 void safe_VkBufferCollectionCreateInfoFUCHSIA::initialize(const VkBufferCollectionCreateInfoFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     collectionToken = in_struct->collectionToken;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -47716,6 +49368,8 @@ safe_VkImportMemoryBufferCollectionFUCHSIA::~safe_VkImportMemoryBufferCollection
 
 void safe_VkImportMemoryBufferCollectionFUCHSIA::initialize(const VkImportMemoryBufferCollectionFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     collection = in_struct->collection;
     index = in_struct->index;
@@ -47780,6 +49434,8 @@ safe_VkBufferCollectionImageCreateInfoFUCHSIA::~safe_VkBufferCollectionImageCrea
 
 void safe_VkBufferCollectionImageCreateInfoFUCHSIA::initialize(const VkBufferCollectionImageCreateInfoFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     collection = in_struct->collection;
     index = in_struct->index;
@@ -47856,6 +49512,8 @@ safe_VkBufferCollectionConstraintsInfoFUCHSIA::~safe_VkBufferCollectionConstrain
 
 void safe_VkBufferCollectionConstraintsInfoFUCHSIA::initialize(const VkBufferCollectionConstraintsInfoFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     minBufferCount = in_struct->minBufferCount;
     maxBufferCount = in_struct->maxBufferCount;
@@ -47928,6 +49586,8 @@ safe_VkBufferConstraintsInfoFUCHSIA::~safe_VkBufferConstraintsInfoFUCHSIA()
 
 void safe_VkBufferConstraintsInfoFUCHSIA::initialize(const VkBufferConstraintsInfoFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     createInfo.initialize(&in_struct->createInfo);
     requiredFormatFeatures = in_struct->requiredFormatFeatures;
@@ -47994,6 +49654,8 @@ safe_VkBufferCollectionBufferCreateInfoFUCHSIA::~safe_VkBufferCollectionBufferCr
 
 void safe_VkBufferCollectionBufferCreateInfoFUCHSIA::initialize(const VkBufferCollectionBufferCreateInfoFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     collection = in_struct->collection;
     index = in_struct->index;
@@ -48054,6 +49716,8 @@ safe_VkSysmemColorSpaceFUCHSIA::~safe_VkSysmemColorSpaceFUCHSIA()
 
 void safe_VkSysmemColorSpaceFUCHSIA::initialize(const VkSysmemColorSpaceFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     colorSpace = in_struct->colorSpace;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -48151,6 +49815,8 @@ safe_VkBufferCollectionPropertiesFUCHSIA::~safe_VkBufferCollectionPropertiesFUCH
 
 void safe_VkBufferCollectionPropertiesFUCHSIA::initialize(const VkBufferCollectionPropertiesFUCHSIA* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memoryTypeBits = in_struct->memoryTypeBits;
     bufferCount = in_struct->bufferCount;
@@ -48270,6 +49936,10 @@ safe_VkImageFormatConstraintsInfoFUCHSIA::~safe_VkImageFormatConstraintsInfoFUCH
 
 void safe_VkImageFormatConstraintsInfoFUCHSIA::initialize(const VkImageFormatConstraintsInfoFUCHSIA* in_struct)
 {
+    if (pColorSpaces)
+        delete[] pColorSpaces;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     imageCreateInfo.initialize(&in_struct->imageCreateInfo);
     requiredFormatFeatures = in_struct->requiredFormatFeatures;
@@ -48383,6 +50053,10 @@ safe_VkImageConstraintsInfoFUCHSIA::~safe_VkImageConstraintsInfoFUCHSIA()
 
 void safe_VkImageConstraintsInfoFUCHSIA::initialize(const VkImageConstraintsInfoFUCHSIA* in_struct)
 {
+    if (pFormatConstraints)
+        delete[] pFormatConstraints;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     formatConstraintsCount = in_struct->formatConstraintsCount;
     pFormatConstraints = nullptr;
@@ -48461,6 +50135,8 @@ safe_VkSubpassShadingPipelineCreateInfoHUAWEI::~safe_VkSubpassShadingPipelineCre
 
 void safe_VkSubpassShadingPipelineCreateInfoHUAWEI::initialize(const VkSubpassShadingPipelineCreateInfoHUAWEI* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     renderPass = in_struct->renderPass;
     subpass = in_struct->subpass;
@@ -48517,6 +50193,8 @@ safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI::~safe_VkPhysicalDeviceSubpass
 
 void safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI::initialize(const VkPhysicalDeviceSubpassShadingFeaturesHUAWEI* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     subpassShading = in_struct->subpassShading;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -48571,6 +50249,8 @@ safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI::~safe_VkPhysicalDeviceSubpa
 
 void safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI::initialize(const VkPhysicalDeviceSubpassShadingPropertiesHUAWEI* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxSubpassShadingWorkgroupSizeAspectRatio = in_struct->maxSubpassShadingWorkgroupSizeAspectRatio;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -48625,6 +50305,8 @@ safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI::~safe_VkPhysicalDeviceInvocat
 
 void safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI::initialize(const VkPhysicalDeviceInvocationMaskFeaturesHUAWEI* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     invocationMask = in_struct->invocationMask;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -48683,6 +50365,8 @@ safe_VkMemoryGetRemoteAddressInfoNV::~safe_VkMemoryGetRemoteAddressInfoNV()
 
 void safe_VkMemoryGetRemoteAddressInfoNV::initialize(const VkMemoryGetRemoteAddressInfoNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     memory = in_struct->memory;
     handleType = in_struct->handleType;
@@ -48739,6 +50423,8 @@ safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV::~safe_VkPhysicalDeviceExterna
 
 void safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV::initialize(const VkPhysicalDeviceExternalMemoryRDMAFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     externalMemoryRDMA = in_struct->externalMemoryRDMA;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -48801,6 +50487,8 @@ safe_VkPhysicalDeviceExtendedDynamicState2FeaturesEXT::~safe_VkPhysicalDeviceExt
 
 void safe_VkPhysicalDeviceExtendedDynamicState2FeaturesEXT::initialize(const VkPhysicalDeviceExtendedDynamicState2FeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     extendedDynamicState2 = in_struct->extendedDynamicState2;
     extendedDynamicState2LogicOp = in_struct->extendedDynamicState2LogicOp;
@@ -48895,6 +50583,12 @@ safe_VkScreenSurfaceCreateInfoQNX::~safe_VkScreenSurfaceCreateInfoQNX()
 
 void safe_VkScreenSurfaceCreateInfoQNX::initialize(const VkScreenSurfaceCreateInfoQNX* in_struct)
 {
+    if (context)
+        delete context;
+    if (window)
+        delete window;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     context = nullptr;
@@ -48967,6 +50661,8 @@ safe_VkPhysicalDeviceColorWriteEnableFeaturesEXT::~safe_VkPhysicalDeviceColorWri
 
 void safe_VkPhysicalDeviceColorWriteEnableFeaturesEXT::initialize(const VkPhysicalDeviceColorWriteEnableFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     colorWriteEnable = in_struct->colorWriteEnable;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -49041,6 +50737,10 @@ safe_VkPipelineColorWriteCreateInfoEXT::~safe_VkPipelineColorWriteCreateInfoEXT(
 
 void safe_VkPipelineColorWriteCreateInfoEXT::initialize(const VkPipelineColorWriteCreateInfoEXT* in_struct)
 {
+    if (pColorWriteEnables)
+        delete[] pColorWriteEnables;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     attachmentCount = in_struct->attachmentCount;
     pColorWriteEnables = nullptr;
@@ -49113,6 +50813,8 @@ safe_VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT::~safe_VkPhysicalDevice
 
 void safe_VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT::initialize(const VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     primitivesGeneratedQuery = in_struct->primitivesGeneratedQuery;
     primitivesGeneratedQueryWithRasterizerDiscard = in_struct->primitivesGeneratedQueryWithRasterizerDiscard;
@@ -49171,6 +50873,8 @@ safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT::~safe_VkPhysicalDeviceImageView
 
 void safe_VkPhysicalDeviceImageViewMinLodFeaturesEXT::initialize(const VkPhysicalDeviceImageViewMinLodFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     minLod = in_struct->minLod;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -49225,6 +50929,8 @@ safe_VkImageViewMinLodCreateInfoEXT::~safe_VkImageViewMinLodCreateInfoEXT()
 
 void safe_VkImageViewMinLodCreateInfoEXT::initialize(const VkImageViewMinLodCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     minLod = in_struct->minLod;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -49279,6 +50985,8 @@ safe_VkPhysicalDeviceMultiDrawFeaturesEXT::~safe_VkPhysicalDeviceMultiDrawFeatur
 
 void safe_VkPhysicalDeviceMultiDrawFeaturesEXT::initialize(const VkPhysicalDeviceMultiDrawFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     multiDraw = in_struct->multiDraw;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -49333,6 +51041,8 @@ safe_VkPhysicalDeviceMultiDrawPropertiesEXT::~safe_VkPhysicalDeviceMultiDrawProp
 
 void safe_VkPhysicalDeviceMultiDrawPropertiesEXT::initialize(const VkPhysicalDeviceMultiDrawPropertiesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxMultiDrawCount = in_struct->maxMultiDrawCount;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -49391,6 +51101,8 @@ safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT::~safe_VkPhysicalDeviceImage2DVi
 
 void safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT::initialize(const VkPhysicalDeviceImage2DViewOf3DFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     image2DViewOf3D = in_struct->image2DViewOf3D;
     sampler2DViewOf3D = in_struct->sampler2DViewOf3D;
@@ -49451,6 +51163,8 @@ safe_VkPhysicalDeviceBorderColorSwizzleFeaturesEXT::~safe_VkPhysicalDeviceBorder
 
 void safe_VkPhysicalDeviceBorderColorSwizzleFeaturesEXT::initialize(const VkPhysicalDeviceBorderColorSwizzleFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     borderColorSwizzle = in_struct->borderColorSwizzle;
     borderColorSwizzleFromImage = in_struct->borderColorSwizzleFromImage;
@@ -49511,6 +51225,8 @@ safe_VkSamplerBorderColorComponentMappingCreateInfoEXT::~safe_VkSamplerBorderCol
 
 void safe_VkSamplerBorderColorComponentMappingCreateInfoEXT::initialize(const VkSamplerBorderColorComponentMappingCreateInfoEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     components = in_struct->components;
     srgb = in_struct->srgb;
@@ -49567,6 +51283,8 @@ safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::~safe_VkPhysicalDevic
 
 void safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::initialize(const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pageableDeviceLocalMemory = in_struct->pageableDeviceLocalMemory;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -49621,6 +51339,8 @@ safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::~safe_VkPhysicalDevi
 
 void safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::initialize(const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     descriptorSetHostMapping = in_struct->descriptorSetHostMapping;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -49679,6 +51399,8 @@ safe_VkDescriptorSetBindingReferenceVALVE::~safe_VkDescriptorSetBindingReference
 
 void safe_VkDescriptorSetBindingReferenceVALVE::initialize(const VkDescriptorSetBindingReferenceVALVE* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     descriptorSetLayout = in_struct->descriptorSetLayout;
     binding = in_struct->binding;
@@ -49739,6 +51461,8 @@ safe_VkDescriptorSetLayoutHostMappingInfoVALVE::~safe_VkDescriptorSetLayoutHostM
 
 void safe_VkDescriptorSetLayoutHostMappingInfoVALVE::initialize(const VkDescriptorSetLayoutHostMappingInfoVALVE* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     descriptorOffset = in_struct->descriptorOffset;
     descriptorSize = in_struct->descriptorSize;
@@ -49795,6 +51519,8 @@ safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::~safe_VkPhysicalDevic
 
 void safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::initialize(const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fragmentDensityMapOffset = in_struct->fragmentDensityMapOffset;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -49849,6 +51575,8 @@ safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::~safe_VkPhysicalDev
 
 void safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::initialize(const VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fragmentDensityOffsetGranularity = in_struct->fragmentDensityOffsetGranularity;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -49923,6 +51651,10 @@ safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::~safe_VkSubpassFragmentDensit
 
 void safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::initialize(const VkSubpassFragmentDensityMapOffsetEndInfoQCOM* in_struct)
 {
+    if (pFragmentDensityOffsets)
+        delete[] pFragmentDensityOffsets;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     fragmentDensityOffsetCount = in_struct->fragmentDensityOffsetCount;
     pFragmentDensityOffsets = nullptr;
@@ -49987,6 +51719,8 @@ safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::~safe_VkPhysicalDeviceLine
 
 void safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::initialize(const VkPhysicalDeviceLinearColorAttachmentFeaturesNV* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     linearColorAttachment = in_struct->linearColorAttachment;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -50104,6 +51838,8 @@ safe_VkAccelerationStructureGeometryTrianglesDataKHR::~safe_VkAccelerationStruct
 
 void safe_VkAccelerationStructureGeometryTrianglesDataKHR::initialize(const VkAccelerationStructureGeometryTrianglesDataKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     vertexFormat = in_struct->vertexFormat;
     vertexData.initialize(&in_struct->vertexData);
@@ -50173,6 +51909,8 @@ safe_VkAccelerationStructureGeometryAabbsDataKHR::~safe_VkAccelerationStructureG
 
 void safe_VkAccelerationStructureGeometryAabbsDataKHR::initialize(const VkAccelerationStructureGeometryAabbsDataKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     data.initialize(&in_struct->data);
     stride = in_struct->stride;
@@ -50232,6 +51970,8 @@ safe_VkAccelerationStructureGeometryInstancesDataKHR::~safe_VkAccelerationStruct
 
 void safe_VkAccelerationStructureGeometryInstancesDataKHR::initialize(const VkAccelerationStructureGeometryInstancesDataKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     arrayOfPointers = in_struct->arrayOfPointers;
     data.initialize(&in_struct->data);
@@ -50296,6 +52036,8 @@ safe_VkAccelerationStructureGeometryKHR::~safe_VkAccelerationStructureGeometryKH
 
 void safe_VkAccelerationStructureGeometryKHR::initialize(const VkAccelerationStructureGeometryKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     geometryType = in_struct->geometryType;
     geometry = in_struct->geometry;
@@ -50438,6 +52180,16 @@ safe_VkAccelerationStructureBuildGeometryInfoKHR::~safe_VkAccelerationStructureB
 
 void safe_VkAccelerationStructureBuildGeometryInfoKHR::initialize(const VkAccelerationStructureBuildGeometryInfoKHR* in_struct)
 {
+    if (ppGeometries) {
+        for (uint32_t i = 0; i < geometryCount; ++i) {
+             delete ppGeometries[i];
+        }
+        delete[] ppGeometries;
+    } else if(pGeometries) {
+        delete[] pGeometries;
+    }
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     type = in_struct->type;
     flags = in_struct->flags;
@@ -50553,6 +52305,8 @@ safe_VkAccelerationStructureCreateInfoKHR::~safe_VkAccelerationStructureCreateIn
 
 void safe_VkAccelerationStructureCreateInfoKHR::initialize(const VkAccelerationStructureCreateInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     createFlags = in_struct->createFlags;
     buffer = in_struct->buffer;
@@ -50643,6 +52397,10 @@ safe_VkWriteDescriptorSetAccelerationStructureKHR::~safe_VkWriteDescriptorSetAcc
 
 void safe_VkWriteDescriptorSetAccelerationStructureKHR::initialize(const VkWriteDescriptorSetAccelerationStructureKHR* in_struct)
 {
+    if (pAccelerationStructures)
+        delete[] pAccelerationStructures;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     accelerationStructureCount = in_struct->accelerationStructureCount;
     pAccelerationStructures = nullptr;
@@ -50727,6 +52485,8 @@ safe_VkPhysicalDeviceAccelerationStructureFeaturesKHR::~safe_VkPhysicalDeviceAcc
 
 void safe_VkPhysicalDeviceAccelerationStructureFeaturesKHR::initialize(const VkPhysicalDeviceAccelerationStructureFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     accelerationStructure = in_struct->accelerationStructure;
     accelerationStructureCaptureReplay = in_struct->accelerationStructureCaptureReplay;
@@ -50817,6 +52577,8 @@ safe_VkPhysicalDeviceAccelerationStructurePropertiesKHR::~safe_VkPhysicalDeviceA
 
 void safe_VkPhysicalDeviceAccelerationStructurePropertiesKHR::initialize(const VkPhysicalDeviceAccelerationStructurePropertiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxGeometryCount = in_struct->maxGeometryCount;
     maxInstanceCount = in_struct->maxInstanceCount;
@@ -50885,6 +52647,8 @@ safe_VkAccelerationStructureDeviceAddressInfoKHR::~safe_VkAccelerationStructureD
 
 void safe_VkAccelerationStructureDeviceAddressInfoKHR::initialize(const VkAccelerationStructureDeviceAddressInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     accelerationStructure = in_struct->accelerationStructure;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -50955,6 +52719,10 @@ safe_VkAccelerationStructureVersionInfoKHR::~safe_VkAccelerationStructureVersion
 
 void safe_VkAccelerationStructureVersionInfoKHR::initialize(const VkAccelerationStructureVersionInfoKHR* in_struct)
 {
+    if (pVersionData)
+        delete[] pVersionData;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     pVersionData = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -51024,6 +52792,8 @@ safe_VkCopyAccelerationStructureToMemoryInfoKHR::~safe_VkCopyAccelerationStructu
 
 void safe_VkCopyAccelerationStructureToMemoryInfoKHR::initialize(const VkCopyAccelerationStructureToMemoryInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     src = in_struct->src;
     dst.initialize(&in_struct->dst);
@@ -51089,6 +52859,8 @@ safe_VkCopyMemoryToAccelerationStructureInfoKHR::~safe_VkCopyMemoryToAcceleratio
 
 void safe_VkCopyMemoryToAccelerationStructureInfoKHR::initialize(const VkCopyMemoryToAccelerationStructureInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     src.initialize(&in_struct->src);
     dst = in_struct->dst;
@@ -51155,6 +52927,8 @@ safe_VkCopyAccelerationStructureInfoKHR::~safe_VkCopyAccelerationStructureInfoKH
 
 void safe_VkCopyAccelerationStructureInfoKHR::initialize(const VkCopyAccelerationStructureInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     src = in_struct->src;
     dst = in_struct->dst;
@@ -51221,6 +52995,8 @@ safe_VkAccelerationStructureBuildSizesInfoKHR::~safe_VkAccelerationStructureBuil
 
 void safe_VkAccelerationStructureBuildSizesInfoKHR::initialize(const VkAccelerationStructureBuildSizesInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     accelerationStructureSize = in_struct->accelerationStructureSize;
     updateScratchSize = in_struct->updateScratchSize;
@@ -51299,6 +53075,8 @@ safe_VkRayTracingShaderGroupCreateInfoKHR::~safe_VkRayTracingShaderGroupCreateIn
 
 void safe_VkRayTracingShaderGroupCreateInfoKHR::initialize(const VkRayTracingShaderGroupCreateInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     type = in_struct->type;
     generalShader = in_struct->generalShader;
@@ -51367,6 +53145,8 @@ safe_VkRayTracingPipelineInterfaceCreateInfoKHR::~safe_VkRayTracingPipelineInter
 
 void safe_VkRayTracingPipelineInterfaceCreateInfoKHR::initialize(const VkRayTracingPipelineInterfaceCreateInfoKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     maxPipelineRayPayloadSize = in_struct->maxPipelineRayPayloadSize;
     maxPipelineRayHitAttributeSize = in_struct->maxPipelineRayHitAttributeSize;
@@ -51541,6 +53321,18 @@ safe_VkRayTracingPipelineCreateInfoKHR::~safe_VkRayTracingPipelineCreateInfoKHR(
 
 void safe_VkRayTracingPipelineCreateInfoKHR::initialize(const VkRayTracingPipelineCreateInfoKHR* in_struct)
 {
+    if (pStages)
+        delete[] pStages;
+    if (pGroups)
+        delete[] pGroups;
+    if (pLibraryInfo)
+        delete pLibraryInfo;
+    if (pLibraryInterface)
+        delete pLibraryInterface;
+    if (pDynamicState)
+        delete pDynamicState;
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
     stageCount = in_struct->stageCount;
@@ -51669,6 +53461,8 @@ safe_VkPhysicalDeviceRayTracingPipelineFeaturesKHR::~safe_VkPhysicalDeviceRayTra
 
 void safe_VkPhysicalDeviceRayTracingPipelineFeaturesKHR::initialize(const VkPhysicalDeviceRayTracingPipelineFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     rayTracingPipeline = in_struct->rayTracingPipeline;
     rayTracingPipelineShaderGroupHandleCaptureReplay = in_struct->rayTracingPipelineShaderGroupHandleCaptureReplay;
@@ -51759,6 +53553,8 @@ safe_VkPhysicalDeviceRayTracingPipelinePropertiesKHR::~safe_VkPhysicalDeviceRayT
 
 void safe_VkPhysicalDeviceRayTracingPipelinePropertiesKHR::initialize(const VkPhysicalDeviceRayTracingPipelinePropertiesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     shaderGroupHandleSize = in_struct->shaderGroupHandleSize;
     maxRayRecursionDepth = in_struct->maxRayRecursionDepth;
@@ -51827,6 +53623,8 @@ safe_VkPhysicalDeviceRayQueryFeaturesKHR::~safe_VkPhysicalDeviceRayQueryFeatures
 
 void safe_VkPhysicalDeviceRayQueryFeaturesKHR::initialize(const VkPhysicalDeviceRayQueryFeaturesKHR* in_struct)
 {
+    if (pNext)
+        FreePnextChain(pNext);
     sType = in_struct->sType;
     rayQuery = in_struct->rayQuery;
     pNext = SafePnextCopy(in_struct->pNext);
