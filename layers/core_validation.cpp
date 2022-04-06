@@ -1291,17 +1291,6 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
     }
 
-    if (pPipeline->dual_source_blending_) {
-        uint32_t count = static_cast<uint32_t>(pPipeline->fragmentShader_writable_output_location_list.size());
-        if (count > phys_dev_props.limits.maxFragmentDualSrcAttachments) {
-            skip |=
-                LogError(pPipeline->pipeline(), "VUID-RuntimeSpirv-Fragment-06427",
-                         "%s: Dual source blend mode is used, but the number of written fragment shader output attachment (%" PRIu32
-                         ") is greater than maxFragmentDualSrcAttachments (%" PRIu32 ")",
-                         caller, count, phys_dev_props.limits.maxFragmentDualSrcAttachments);
-        }
-    }
-
     if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
         skip |= ValidateGraphicsPipelineShaderDynamicState(pPipeline, pCB, caller, vuid);
     }
