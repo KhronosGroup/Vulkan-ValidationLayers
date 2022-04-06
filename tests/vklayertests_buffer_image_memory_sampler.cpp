@@ -13118,7 +13118,7 @@ TEST_F(VkLayerTest, InvalidImageFormatList) {
     VkImageObj normalImage(m_device);
 
     // Not all 4 formats are compatible
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-04737");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06722");
     vk::CreateImage(device(), &imageInfo, nullptr, &badImage);
     m_errorMonitor->VerifyFound();
 
@@ -13173,6 +13173,63 @@ TEST_F(VkLayerTest, InvalidImageFormatList) {
     // If viewFormatCount is zero should not hit VUID 01585
     imageViewInfo.image = mutableImageZero.handle();
     CreateImageViewTest(*this, &imageViewInfo, {});
+}
+
+TEST_F(VkLayerTest, InvalidImageFormatListSizeCompatible) {
+    TEST_DESCRIPTION("Tests for VK_KHR_image_format_list with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT");
+
+    AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s required extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_ASTC_4x4_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        printf("%s Required formats/features not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    const VkFormat formats[2] = {VK_FORMAT_R32G32B32A32_UINT, VK_FORMAT_R32G32_UINT};
+    VkImageFormatListCreateInfo formatList = LvlInitStruct<VkImageFormatListCreateInfo>(nullptr);
+    formatList.viewFormatCount = 1;
+    formatList.pViewFormats = formats;
+
+    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                                   &formatList,
+                                   VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT,
+                                   VK_IMAGE_TYPE_2D,
+                                   VK_FORMAT_ASTC_4x4_UNORM_BLOCK,
+                                   {128, 128, 1},
+                                   1,
+                                   1,
+                                   VK_SAMPLE_COUNT_1_BIT,
+                                   VK_IMAGE_TILING_OPTIMAL,
+                                   VK_IMAGE_USAGE_SAMPLED_BIT,
+                                   VK_SHARING_MODE_EXCLUSIVE,
+                                   0,
+                                   nullptr,
+                                   VK_IMAGE_LAYOUT_UNDEFINED};
+
+
+    // The first image in the list should be size-compatible (128-bit)
+    m_errorMonitor->ExpectSuccess();
+    VkImageObj good_image(m_device);
+    good_image.init(&imageInfo);
+    m_errorMonitor->VerifyNotFound();
+
+    // The second image in the list should NOT be size-compatible (64-bit)
+    formatList.viewFormatCount = 2;
+    VkImage badImage = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06722");
+    vk::CreateImage(device(), &imageInfo, nullptr, &badImage);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, SparseMemoryBindOffset) {

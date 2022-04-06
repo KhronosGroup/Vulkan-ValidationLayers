@@ -1253,12 +1253,26 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             }
             // Check if viewFormatCount is not zero that it is all compatible
             for (uint32_t i = 0; i < viewFormatCount; i++) {
-                if (FormatCompatibilityClass(format_list_info->pViewFormats[i]) != FormatCompatibilityClass(image_format)) {
-                    skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-04737",
-                                     "vkCreateImage(): VkImageFormatListCreateInfo::pViewFormats[%" PRIu32
-                                     "] (%s) and "
-                                     "VkImageCreateInfo::format (%s) are not compatible.",
-                                     i, string_VkFormat(format_list_info->pViewFormats[i]), string_VkFormat(image_format));
+                const bool class_compatible =
+                    FormatCompatibilityClass(format_list_info->pViewFormats[i]) == FormatCompatibilityClass(image_format);
+                if (!class_compatible) {
+                    if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
+                        const bool size_compatible =
+                            FormatIsCompressed(format_list_info->pViewFormats[i])
+                                ? false
+                                : FormatElementSize(format_list_info->pViewFormats[i]) == FormatElementSize(image_format);
+                        if (!size_compatible) {
+                            skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-06722",
+                                             "vkCreateImage(): VkImageFormatListCreateInfo::pViewFormats[%" PRIu32
+                                             "] (%s) and VkImageCreateInfo::format (%s) are not compatible or size-compatible.",
+                                             i, string_VkFormat(format_list_info->pViewFormats[i]), string_VkFormat(image_format));
+                        }
+                    } else {
+                        skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-06722",
+                                         "vkCreateImage(): VkImageFormatListCreateInfo::pViewFormats[%" PRIu32
+                                         "] (%s) and VkImageCreateInfo::format (%s) are not compatible.",
+                                         i, string_VkFormat(format_list_info->pViewFormats[i]), string_VkFormat(image_format));
+                    }
                 }
             }
         }
