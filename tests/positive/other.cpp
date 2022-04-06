@@ -225,6 +225,36 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, SurfacelessQueryTest) {
+    TEST_DESCRIPTION("Ensure affected API calls can be made with surfacless query extension");
+
+    if (!AddRequiredExtensions(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME)) {
+        printf("%s Did not find %s or its dependent extensions; skipped.\n", kSkipPrefix,
+               VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsPlatform(kMockICD)) {
+        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    // Use the VK_GOOGLE_surfaceless_query extension to query the available formats and
+    // colorspaces by using a VK_NULL_HANDLE for the VkSurfaceKHR handle.
+    m_errorMonitor->ExpectSuccess();
+    uint32_t count;
+    vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), VK_NULL_HANDLE, &count, nullptr);
+    std::vector<VkSurfaceFormatKHR> surface_formats(count);
+    vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), VK_NULL_HANDLE, &count, surface_formats.data());
+
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu(), VK_NULL_HANDLE, &count, nullptr);
+    std::vector<VkPresentModeKHR> present_modes(count);
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu(), VK_NULL_HANDLE, &count, present_modes.data());
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     TEST_DESCRIPTION("Ensure parameter_validation_layer correctly captures physical device features");
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
