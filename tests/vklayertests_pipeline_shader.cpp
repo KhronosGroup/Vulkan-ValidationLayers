@@ -11430,7 +11430,8 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Float16 vert
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
                                "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageInputOutput16 frag
         }
     }
@@ -11553,7 +11554,8 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int16 vert
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
                                "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageInputOutput16 frag
         }
     }
