@@ -132,6 +132,8 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_ClearValueWithoutLoadOpCl
 static const char DECORATE_UNUSED *kVUID_BestPractices_ClearValueCountHigherThanAttachmentCount = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-ClearValueCountHigherThanAttachmentCount";
 static const char DECORATE_UNUSED *kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-StoreOpDontCareThenLoadOpLoad";
 static const char DECORATE_UNUSED *kVUID_BestPractices_ConcurrentUsageOfExclusiveImage = "UNASSIGNED-BestPractices-ConcurrentUsageOfExclusiveImage";
+static const char DECORATE_UNUSED *kVUID_BestPractices_ImageBarrierAccessLayout =
+    "UNASSIGNED-BestPractices-ImageBarrierAccessLayout";
 
 // Arm-specific best practice
 static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =
