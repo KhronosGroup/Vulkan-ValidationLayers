@@ -9025,7 +9025,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                     objlist.add(pDescriptorSets[set_idx]);
                                     objlist.add(buffer_descriptor->GetBuffer());
                                     skip |=
-                                        LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979",
+                                        LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715",
                                                  "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is 0x%x, but must be zero since "
                                                  "the buffer descriptor's range is VK_WHOLE_SIZE in descriptorSet #%u binding #%u "
                                                  "descriptor[%u].",
