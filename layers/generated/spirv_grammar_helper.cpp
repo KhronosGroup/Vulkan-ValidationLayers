@@ -429,6 +429,9 @@ static const layer_data::unordered_map<uint32_t, InstructionInfo> kInstructionTa
     {spv::OpSaveMemoryINTEL, {"OpSaveMemoryINTEL", true, true, 0, 0, 0}},
     {spv::OpRestoreMemoryINTEL, {"OpRestoreMemoryINTEL", false, false, 0, 0, 0}},
     {spv::OpLoopControlINTEL, {"OpLoopControlINTEL", false, false, 0, 0, 0}},
+    {spv::OpAliasDomainDeclINTEL, {"OpAliasDomainDeclINTEL", false, true, 0, 0, 0}},
+    {spv::OpAliasScopeDeclINTEL, {"OpAliasScopeDeclINTEL", false, true, 0, 0, 0}},
+    {spv::OpAliasScopeListDeclINTEL, {"OpAliasScopeListDeclINTEL", false, true, 0, 0, 0}},
     {spv::OpPtrCastToCrossWorkgroupINTEL, {"OpPtrCastToCrossWorkgroupINTEL", true, true, 0, 0, 0}},
     {spv::OpCrossWorkgroupCastToPtrINTEL, {"OpCrossWorkgroupCastToPtrINTEL", true, true, 0, 0, 0}},
     {spv::OpReadPipeBlockingINTEL, {"OpReadPipeBlockingINTEL", true, true, 0, 0, 0}},
@@ -456,6 +459,16 @@ static const layer_data::unordered_map<uint32_t, InstructionInfo> kInstructionTa
     {spv::OpTypeStructContinuedINTEL, {"OpTypeStructContinuedINTEL", false, false, 0, 0, 0}},
     {spv::OpConstantCompositeContinuedINTEL, {"OpConstantCompositeContinuedINTEL", false, false, 0, 0, 0}},
     {spv::OpSpecConstantCompositeContinuedINTEL, {"OpSpecConstantCompositeContinuedINTEL", false, false, 0, 0, 0}},
+    {spv::OpControlBarrierArriveINTEL, {"OpControlBarrierArriveINTEL", false, false, 2, 1, 0}},
+    {spv::OpControlBarrierWaitINTEL, {"OpControlBarrierWaitINTEL", false, false, 2, 1, 0}},
+    {spv::OpGroupIMulKHR, {"OpGroupIMulKHR", true, true, 0, 3, 0}},
+    {spv::OpGroupFMulKHR, {"OpGroupFMulKHR", true, true, 0, 3, 0}},
+    {spv::OpGroupBitwiseAndKHR, {"OpGroupBitwiseAndKHR", true, true, 0, 3, 0}},
+    {spv::OpGroupBitwiseOrKHR, {"OpGroupBitwiseOrKHR", true, true, 0, 3, 0}},
+    {spv::OpGroupBitwiseXorKHR, {"OpGroupBitwiseXorKHR", true, true, 0, 3, 0}},
+    {spv::OpGroupLogicalAndKHR, {"OpGroupLogicalAndKHR", true, true, 0, 3, 0}},
+    {spv::OpGroupLogicalOrKHR, {"OpGroupLogicalOrKHR", true, true, 0, 3, 0}},
+    {spv::OpGroupLogicalXorKHR, {"OpGroupLogicalXorKHR", true, true, 0, 3, 0}},
 };
 // clang-format on
 
