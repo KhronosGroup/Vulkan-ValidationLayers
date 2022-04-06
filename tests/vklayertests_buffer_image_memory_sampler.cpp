@@ -14880,6 +14880,159 @@ TEST_F(VkLayerTest, ValidateUpdatingMutableDescriptors) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, Image2DViewOf3D) {
+    TEST_DESCRIPTION("Checks for invalid use of 2D views of 3D images");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Vulkan12Struct requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
+        return;
+    }
+
+    auto image_2D_view_of_3D_features = LvlInitStruct<VkPhysicalDeviceImage2DViewOf3DFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&image_2D_view_of_3D_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!image_2D_view_of_3D_features.image2DViewOf3D){
+        printf("%s image2DViewOf3D is not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr} }
+                                       );
+
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_ci.extent = {64, 64, 4};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+
+    VkImageObj image_3d(m_device);
+    image_3d.init(&image_ci);
+    ASSERT_TRUE(image_3d.initialized());
+    VkImageViewCreateInfo view_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    view_ci.image = image_3d.handle();
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    view_ci.subresourceRange.layerCount = 1;
+    view_ci.subresourceRange.baseMipLevel = 0;
+    view_ci.subresourceRange.levelCount = 1;
+    view_ci.subresourceRange.baseArrayLayer = 0;
+    view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vk_testing::ImageView view_2d_array;
+    view_2d_array.init(*m_device, view_ci);
+
+    descriptor_set.WriteDescriptorImageInfo(0, view_2d_array.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageView-06712");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+    descriptor_set.descriptor_writes.clear();
+
+    vk_testing::ImageView view_2d;
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_2d.init(*m_device, view_ci);
+    descriptor_set.WriteDescriptorImageInfo(0, view_2d.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-06710");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+    descriptor_set.descriptor_writes.clear();
+    
+    image_ci.flags = 0;
+    VkImageObj image_3d_no_flag(m_device);
+    image_3d_no_flag.init(&image_ci);
+    VkImageView view;
+    view_ci.image = image_3d_no_flag.handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-06728");
+    vk::CreateImageView(m_device->device(), &view_ci, nullptr, &view);
+    m_errorMonitor->VerifyFound();
+
+    const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
+    view_ci.subresourceRange = range;
+    view_ci.image = image_3d_no_flag.handle();
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-06723");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-06724");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-subresourceRange-06725");
+    vk::CreateImageView(m_device->device(), &view_ci, nullptr, &view);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, Image2DViewOf3DFeature) {
+    TEST_DESCRIPTION("Checks for image image_2d_view_of_3d features");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Vulkan12Struct requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
+        return;
+    }
+
+    auto image_2D_view_of_3D_features = LvlInitStruct<VkPhysicalDeviceImage2DViewOf3DFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&image_2D_view_of_3D_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    image_2D_view_of_3D_features.image2DViewOf3D = VK_FALSE;
+    image_2D_view_of_3D_features.sampler2DViewOf3D = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_ci.extent = {64, 64, 4};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+    image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_ci.flags = VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
+
+    VkImageObj image_3d(m_device);
+    image_3d.init(&image_ci);
+    ASSERT_TRUE(image_3d.initialized());
+    VkImageViewCreateInfo view_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    view_ci.image = image_3d.handle();
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    view_ci.subresourceRange.layerCount = 1;
+    view_ci.subresourceRange.baseMipLevel = 0;
+    view_ci.subresourceRange.levelCount = 1;
+    view_ci.subresourceRange.baseArrayLayer = 0;
+    view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vk_testing::ImageView view_2d_array;
+    view_2d_array.init(*m_device, view_ci);
+
+    descriptor_set.WriteDescriptorImageInfo(0, view_2d_array.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-descriptorType-06714");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+    descriptor_set.descriptor_writes.clear();
+
+    descriptor_set.WriteDescriptorImageInfo(1, view_2d_array.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                            VK_IMAGE_LAYOUT_GENERAL);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-descriptorType-06713");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ImageViewMinLod) {
     TEST_DESCRIPTION("Checks for image view minimum level of detail.");
 
