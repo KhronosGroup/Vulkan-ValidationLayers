@@ -12405,11 +12405,6 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10)) {
-        printf("%s Test temporarily disabled on S10 device\n", kSkipPrefix);
-        return;
-    }
-
     if (!CanEnableDeviceExtension(ext_mem_extension_name)) {
         printf("%s %s extension not supported, skipping test\n", kSkipPrefix, ext_mem_extension_name);
         return;
@@ -12434,7 +12429,11 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     image_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    vk::CreateImage(device(), &image_info, NULL, &image_export);
+    VkResult result = vk::CreateImage(device(), &image_info, NULL, &image_export);
+    if (result != VK_SUCCESS) {
+        printf("%s Unable to create a valid external image.\n", kSkipPrefix);
+        return;
+    }
 
     // Create export memory with different handleType
     VkExportMemoryAllocateInfo export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
@@ -12503,11 +12502,6 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10)) {
-        printf("%s Test temporarily disabled on S10 device\n", kSkipPrefix);
-        return;
-    }
-
     if (!CanEnableDeviceExtension(ext_mem_extension_name)) {
         printf("%s %s extension not supported, skipping test\n", kSkipPrefix, ext_mem_extension_name);
         return;
@@ -12526,7 +12520,11 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
     VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>(&external_buffer_info);
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_info.size = 4096;
-    vk::CreateBuffer(device(), &buffer_info, NULL, &buffer_export);
+    VkResult result = vk::CreateBuffer(device(), &buffer_info, NULL, &buffer_export);
+    if (result != VK_SUCCESS) {
+        printf("%s Unable to create a valid external buffer.\n", kSkipPrefix);
+        return;
+    }
 
     // Create export memory with different handleType
     VkExportMemoryAllocateInfo export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
