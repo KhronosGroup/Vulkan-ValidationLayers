@@ -377,30 +377,6 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE::StageSt
     return result;
 }
 
-static bool GetDualSourceBlending(const safe_VkPipelineColorBlendStateCreateInfo *color_blend_state) {
-    if (!color_blend_state) {
-        return false;
-    }
-    const std::array<VkBlendFactor, 4> dual_modes = {
-        VK_BLEND_FACTOR_SRC1_COLOR,
-        VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR,
-        VK_BLEND_FACTOR_SRC1_ALPHA,
-        VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA,
-    };
-    for (uint32_t i = 0; i < color_blend_state->attachmentCount; ++i) {
-        const auto &attachment = color_blend_state->pAttachments[i];
-        if (attachment.blendEnable) {
-            if (std::find(dual_modes.begin(), dual_modes.end(), attachment.srcColorBlendFactor) != dual_modes.end() ||
-                std::find(dual_modes.begin(), dual_modes.end(), attachment.dstColorBlendFactor) != dual_modes.end() ||
-                std::find(dual_modes.begin(), dual_modes.end(), attachment.srcAlphaBlendFactor) != dual_modes.end() ||
-                std::find(dual_modes.begin(), dual_modes.end(), attachment.dstAlphaBlendFactor) != dual_modes.end()) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                                std::shared_ptr<const RENDER_PASS_STATE> &&rpstate,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
@@ -420,8 +396,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       blend_constants_enabled(IsBlendConstantsEnabled(attachments)),
       sample_location_enabled(IsSampleLocationEnabled(create_info.graphics)),
       active_shaders(GetActiveShaders(pCreateInfo->pStages, pCreateInfo->stageCount)),
-      topology_at_rasterizer(GetTopologyAtRasterizer(stage_state, create_info.graphics.pInputAssemblyState)),
-      dual_source_blending_(GetDualSourceBlending(create_info.graphics.pColorBlendState)) {}
+      topology_at_rasterizer(GetTopologyAtRasterizer(stage_state, create_info.graphics.pInputAssemblyState)) {}
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
@@ -433,8 +408,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       blend_constants_enabled(false),
       sample_location_enabled(false),
       active_shaders(GetActiveShaders(&pCreateInfo->stage, 1)),
-      topology_at_rasterizer{},
-      dual_source_blending_(false) {
+      topology_at_rasterizer{} {
     assert(active_shaders == VK_SHADER_STAGE_COMPUTE_BIT);
 }
 
@@ -448,8 +422,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       blend_constants_enabled(false),
       sample_location_enabled(false),
       active_shaders(GetActiveShaders(pCreateInfo->pStages, pCreateInfo->stageCount)),
-      topology_at_rasterizer{},
-      dual_source_blending_(false) {
+      topology_at_rasterizer{} {
     assert(0 == (active_shaders &
                  ~(VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
                    VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)));
@@ -465,8 +438,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       blend_constants_enabled(false),
       sample_location_enabled(false),
       active_shaders(GetActiveShaders(pCreateInfo->pStages, pCreateInfo->stageCount)),
-      topology_at_rasterizer{},
-      dual_source_blending_(false) {
+      topology_at_rasterizer{} {
     assert(0 == (active_shaders &
                  ~(VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
                    VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)));
