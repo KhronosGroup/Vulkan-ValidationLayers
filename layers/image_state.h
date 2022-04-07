@@ -209,7 +209,8 @@ class IMAGE_STATE : public BINDABLE {
 //    IMAGE_VIEW_STATE [N] -> [1] IMAGE_STATE
 class IMAGE_VIEW_STATE : public BASE_NODE {
   public:
-    const VkImageViewCreateInfo create_info;
+    const safe_VkImageViewCreateInfo safe_create_info;
+    const VkImageViewCreateInfo &create_info;
     const VkImageSubresourceRange normalized_subresource_range;
     const image_layout_map::RangeGenerator range_generator;
     const VkSampleCountFlagBits samples;

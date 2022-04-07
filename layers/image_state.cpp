@@ -440,7 +440,8 @@ static float GetImageViewMinLod(const VkImageViewCreateInfo* ci) {
 IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkImageView iv, const VkImageViewCreateInfo *ci,
                                    VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
     : BASE_NODE(iv, kVulkanObjectTypeImageView),
-      create_info(*ci),
+      safe_create_info(ci),
+      create_info(*safe_create_info.ptr()),
       normalized_subresource_range(::NormalizeSubresourceRange(im->createInfo, *ci)),
       range_generator(im->subresource_encoder, normalized_subresource_range),
       samples(im->createInfo.samples),
