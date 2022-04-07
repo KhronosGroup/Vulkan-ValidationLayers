@@ -4474,7 +4474,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderSpecializationApplied) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.shader_stages_[1].pSpecializationInfo = &specialization_info;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-module-04145");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719");
 }
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderBadSpecializationOffsetOutOfBounds) {
@@ -7262,13 +7262,13 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo));
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-module-04145");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixType");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixMulAdd");
-    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineShaderStageCreateInfo-module-04145");
+    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
