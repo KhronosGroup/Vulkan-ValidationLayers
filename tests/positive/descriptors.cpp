@@ -1387,3 +1387,49 @@ TEST_F(VkPositiveLayerTest, TestImageViewAsDescriptorReadAndInputAttachment) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, UpdateImageDescriptorSetThatHasImageViewUsage) {
+    TEST_DESCRIPTION("Update a descriptor set with an image view that includes VkImageViewUsageCreateInfo");
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkImageViewUsageCreateInfo *image_view_usage_ci = new VkImageViewUsageCreateInfo();
+    *image_view_usage_ci = LvlInitStruct<VkImageViewUsageCreateInfo>();
+    image_view_usage_ci->usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    auto image_view_ci = LvlInitStruct<VkImageViewCreateInfo>(image_view_usage_ci);
+    image_view_ci.image = image.handle();
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_view_ci.components.r = VK_COMPONENT_SWIZZLE_R;
+    image_view_ci.components.g = VK_COMPONENT_SWIZZLE_G;
+    image_view_ci.components.b = VK_COMPONENT_SWIZZLE_B;
+    image_view_ci.components.a = VK_COMPONENT_SWIZZLE_A;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    vk_testing::ImageView image_view;
+    image_view.init(*m_device, image_view_ci);
+
+    delete image_view_usage_ci;
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    vk_testing::Sampler sampler;
+    sampler.init(*m_device, sampler_ci);
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                     });
+    ds.WriteDescriptorImageInfo(0, image_view.handle(), sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    ds.UpdateDescriptorSets();
+    m_errorMonitor->VerifyNotFound();
+}
