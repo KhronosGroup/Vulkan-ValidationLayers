@@ -2793,7 +2793,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
 
         const auto combiner_ops = fragment_shading_rate_state->combinerOps;
-        if ((pPipeline->pre_raster_state || pPipeline->fragment_shader_state)) {
+        if (pPipeline->pre_raster_state || pPipeline->fragment_shader_state) {
             // TODO automate what a "valid combiner op" is
             const auto combiner_op0_valid = (combiner_ops[0] >= VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) &&
                                             (combiner_ops[0] <= VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR);
@@ -2984,39 +2984,48 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
     // If VK_EXT_graphics_pipeline_library is not enabled, a complete set of state must be defined at this point
     if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
-        size_t missing_state_msg_size = 0;
-        std::string vi_msg = (pPipeline->vertex_input_state) ? "" : "<vertex input> ";
-        missing_state_msg_size += vi_msg.size();
-        std::string pr_msg = (pPipeline->pre_raster_state) ? "" : "<pre-raster> ";
-        missing_state_msg_size += pr_msg.size();
-        std::string fs_msg = (pPipeline->fragment_shader_state) ? "" : "<fragment shader> ";
-        missing_state_msg_size += fs_msg.size();
-        std::string fo_msg = (pPipeline->fragment_output_state) ? "" : "<fragment output> ";
-        missing_state_msg_size += fo_msg.size();
+        std::string msg;
+        if (!pPipeline->vertex_input_state) {
+            msg += "<vertex input> ";
+        }
+        if (!pPipeline->pre_raster_state) {
+            msg += "<pre-raster> ";
+        }
+        if (!pPipeline->fragment_shader_state) {
+            msg += "<fragment shader> ";
+        }
+        if (!pPipeline->fragment_output_state) {
+            msg += "<fragment output> ";
+        }
 
-        if (missing_state_msg_size > 0) {
-            skip |= LogError(
-                device, "VUID-VkGraphicsPipelineCreateInfo-None-06573",
-                "pCreateInfos[%" PRIu32
-                "] does not contain a complete set of state and %s is not enabled. The following state is missing: [ %s%s%s%s].",
-                pipelineIndex, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME, vi_msg.c_str(), pr_msg.c_str(), fs_msg.c_str(),
-                fo_msg.c_str());
+        if (!msg.empty()) {
+            skip |=
+                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-None-06573",
+                         "pCreateInfos[%" PRIu32
+                         "] does not contain a complete set of state and %s is not enabled. The following state is missing: [ %s].",
+                         pipelineIndex, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME, msg.c_str());
         }
     } else {
-        // TODO (ncesario) layer_data::optional would probably be a bit more robust here, but not currently possible due to an
-        // apparent bug in GCC 5.4
-        VkPipelineLayoutCreateFlags pre_raster_flags = VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM,
-                                    fs_flags = VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM;
+        enum GPLInitInfo : uint8_t {
+            uninitialized = 0,
+            from_gpl_info,
+            from_link_info,
+        };
+        std::pair<VkPipelineLayoutCreateFlags, GPLInitInfo> pre_raster_flags =
+                                                                std::make_pair(VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM,
+                                                                               GPLInitInfo::uninitialized),
+                                                            fs_flags = std::make_pair(VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM,
+                                                                                      GPLInitInfo::uninitialized);
         const auto gpl_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pPipeline->PNext());
-        const char *vuid = "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06615";
         if (gpl_info) {
-            vuid = "VUID-VkGraphicsPipelineCreateInfo-flags-06614";
             if ((gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) &&
                 !(gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) {
-                pre_raster_flags = pPipeline->pre_raster_state->pipeline_layout->CreateFlags();
+                pre_raster_flags.first = pPipeline->pre_raster_state->pipeline_layout->CreateFlags();
+                pre_raster_flags.second = GPLInitInfo::from_gpl_info;
             } else if ((gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) &&
                        !(gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT)) {
-                fs_flags = pPipeline->fragment_shader_state->pipeline_layout->CreateFlags();
+                fs_flags.first = pPipeline->fragment_shader_state->pipeline_layout->CreateFlags();
+                fs_flags.second = GPLInitInfo::from_gpl_info;
             }
         }
 
@@ -3026,30 +3035,41 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                 const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
                 if (lib) {
                     if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
-                        pre_raster_flags = lib->PipelineLayoutState()->CreateFlags();
+                        pre_raster_flags.first = lib->PipelineLayoutState()->CreateFlags();
+                        pre_raster_flags.second = GPLInitInfo::from_link_info;
                     } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
-                        fs_flags = lib->PipelineLayoutState()->CreateFlags();
+                        fs_flags.first = lib->PipelineLayoutState()->CreateFlags();
+                        fs_flags.second = GPLInitInfo::from_link_info;
                     }
                 }
             }
         }
 
-        if ((gpl_info || link_info) && ((pre_raster_flags != VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM) &&
-                                        (fs_flags != VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM))) {
-            const auto pre_raster_indset = (pre_raster_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-            const auto fs_indset = (fs_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-            if (pre_raster_indset ^ fs_indset) {
-                const char *pre_raster_str = (pre_raster_indset != 0) ? "defined with" : "not defined with";
-                const char *fs_str = (fs_indset != 0) ? "defined with" : "not defined with";
-                skip |= LogError(
-                    device, vuid,
-                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                    "] is attempting to create a graphics pipeline library with pre-raster and fragment shader state. However "
-                    "the "
-                    "pre-raster layout create flags (%s) are %s VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, and the "
-                    "fragment shader layout create flags (%s) are %s VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT",
-                    pipelineIndex, string_VkPipelineLayoutCreateFlags(pre_raster_flags).c_str(), pre_raster_str,
-                    string_VkPipelineLayoutCreateFlags(fs_flags).c_str(), fs_str);
+        if ((pre_raster_flags.second != GPLInitInfo::uninitialized) && (fs_flags.second != GPLInitInfo::uninitialized)) {
+            const char *vuid = nullptr;
+            if (pre_raster_flags.second != fs_flags.second) {
+                vuid = "VUID-VkGraphicsPipelineCreateInfo-flags-06614";
+            } else if ((pre_raster_flags.second == GPLInitInfo::from_link_info) &&
+                       (fs_flags.second == GPLInitInfo::from_link_info)) {
+                vuid = "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06615";
+            }
+
+            if (vuid) {
+                const auto pre_raster_indset = (pre_raster_flags.first & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+                const auto fs_indset = (fs_flags.first & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+                if (pre_raster_indset ^ fs_indset) {
+                    const char *pre_raster_str = (pre_raster_indset != 0) ? "defined with" : "not defined with";
+                    const char *fs_str = (fs_indset != 0) ? "defined with" : "not defined with";
+                    skip |= LogError(
+                        device, vuid,
+                        "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                        "] is attempting to create a graphics pipeline library with pre-raster and fragment shader state. However "
+                        "the "
+                        "pre-raster layout create flags (%s) are %s VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, and the "
+                        "fragment shader layout create flags (%s) are %s VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT",
+                        pipelineIndex, string_VkPipelineLayoutCreateFlags(pre_raster_flags.first).c_str(), pre_raster_str,
+                        string_VkPipelineLayoutCreateFlags(fs_flags.first).c_str(), fs_str);
+                }
             }
         }
     }
