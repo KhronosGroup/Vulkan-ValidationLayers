@@ -3639,13 +3639,15 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
             return;
         }
 
-        FILE *write_file = fopen(validation_cache_path.c_str(), "wb");
-        if (write_file) {
-            fwrite(validation_cache_data, sizeof(char), validation_cache_size, write_file);
-            fclose(write_file);
-        } else {
-            LogInfo(device, "UNASSIGNED-cache-write-error", "Cannot open shader validation cache at %s for writing",
-                    validation_cache_path.c_str());
+        if (validation_cache_path.size() > 0) {
+            FILE *write_file = fopen(validation_cache_path.c_str(), "wb");
+            if (write_file) {
+                fwrite(validation_cache_data, sizeof(char), validation_cache_size, write_file);
+                fclose(write_file);
+            } else {
+                LogInfo(device, "UNASSIGNED-cache-write-error", "Cannot open shader validation cache at %s for writing",
+                        validation_cache_path.c_str());
+            }
         }
         free(validation_cache_data);
         CoreLayerDestroyValidationCacheEXT(device, core_validation_cache, NULL);
