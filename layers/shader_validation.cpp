@@ -2649,7 +2649,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
             spv_diagnostic diag = nullptr;
             auto const spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
             if (spv_valid != SPV_SUCCESS) {
-                skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-04145",
+                skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719",
                                  "After specialization was applied, %s does not contain valid spirv for stage %s.",
                                  report_data->FormatHandle(module_state->vk_shader_module()).c_str(),
                                  string_VkShaderStageFlagBits(stage_state.stage_flag));
@@ -2715,7 +2715,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
             spvContextDestroy(ctx);
         } else {
             // Should never get here, but better then asserting
-            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-04145",
+            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719",
                              "%s module (stage %s) attempted to apply specialization constants with spirv-opt but failed.",
                              report_data->FormatHandle(module_state->vk_shader_module()).c_str(),
                              string_VkShaderStageFlagBits(stage_state.stage_flag));
