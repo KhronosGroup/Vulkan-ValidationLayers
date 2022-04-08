@@ -16284,12 +16284,21 @@ TEST_F(VkLayerTest, DynamicSampleLocations) {
 TEST_F(VkLayerTest, PrimitivesGeneratedQueryAndDiscardEnabled) {
     TEST_DESCRIPTION("Test missing primitivesGeneratedQueryWithRasterizerDiscard feature.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
     if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
         return;
     }
+    auto primitives_generated_features = LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>();
+    primitives_generated_features.primitivesGeneratedQueryWithRasterizerDiscard = VK_FALSE;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&primitives_generated_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto rs_ci = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
@@ -16310,6 +16319,68 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQueryAndDiscardEnabled) {
     query_pool.init(*m_device, query_pool_ci);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-primitivesGeneratedQueryWithRasterizerDiscard-06708");
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, PrimitivesGeneratedQueryStreams) {
+    TEST_DESCRIPTION("Test missing primitivesGeneratedQueryWithNonZeroStreams feature.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Required extensions are not supported.\n", kSkipPrefix);
+        return;
+    }
+    auto transform_feedback_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    auto primitives_generated_features =
+        LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>(&transform_feedback_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&primitives_generated_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (transform_feedback_features.geometryStreams == VK_FALSE) {
+        printf("%s geometryStreams feature not supported, skipping tests.\n", kSkipPrefix);
+    }
+    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
+        printf("%s geometryStreams feature not supported, skipping tests.\n", kSkipPrefix);
+    }
+    primitives_generated_features.primitivesGeneratedQueryWithNonZeroStreams = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto rasterization_streams = LvlInitStruct<VkPipelineRasterizationStateStreamCreateInfoEXT>();
+    rasterization_streams.rasterizationStream = 1;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.rs_state_ci_.pNext = &rasterization_streams;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    auto query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_ci.queryCount = 1;
+    query_pool_ci.queryType = VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT;
+
+    vk_testing::QueryPool query_pool;
+    query_pool.init(*m_device, query_pool_ci);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-primitivesGeneratedQueryWithNonZeroStreams-06709");
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
