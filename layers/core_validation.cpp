@@ -13562,7 +13562,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                         }
                     }
 
-                    const auto view_width = image_create_info->extent.width >> subresource_range.baseMipLevel;
+                    const auto view_width = max(1u, image_create_info->extent.width >> subresource_range.baseMipLevel);
                     if (framebuffer_attachment_image_info->width != view_width) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03211",
                                          "%s: For VkRenderPassAttachmentBeginInfo::pAttachments[%" PRIu32
@@ -13574,7 +13574,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
                     const bool is_1d = (image_view_create_info->viewType == VK_IMAGE_VIEW_TYPE_1D) ||
                                        (image_view_create_info->viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY);
-                    const auto view_height = (!is_1d) ? image_create_info->extent.height >> subresource_range.baseMipLevel
+                    const auto view_height = (!is_1d) ? max(1u, image_create_info->extent.height >> subresource_range.baseMipLevel)
                                                       : image_create_info->extent.height;
                     if (framebuffer_attachment_image_info->height != view_height) {
                         skip |=
