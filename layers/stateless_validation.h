@@ -1301,6 +1301,27 @@ class StatelessValidation : public ValidationObject {
                                      func_name, i);
                 }
             }
+            if (use_rp2 && FormatHasStencil(attachment_format) &&
+                pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+                if (attachment_description_stencil_layout) {
+                    if (attachment_description_stencil_layout->stencilInitialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                        skip |=
+                            LogError(device, "VUID-VkAttachmentDescription2-pNext-06705",
+                                     "%s: pCreateInfo->pAttachments[%" PRIu32
+                                     "] format includes stencil aspect and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but "
+                                     "the VkAttachmentDescriptionStencilLayout::stencilInitialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
+                                     func_name, i);
+                    }
+                } else {
+                    if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                        skip |= LogError(device, "VUID-VkAttachmentDescription2-pNext-06704",
+                                         "%s: pCreateInfo->pAttachments[%" PRIu32
+                                         "] format includes stencil aspect and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but "
+                                         "the initialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
+                                         func_name, i);
+                    }
+                }
+            }
         }
 
         for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
