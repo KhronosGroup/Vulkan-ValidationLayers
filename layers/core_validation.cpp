@@ -12762,6 +12762,12 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         if (subpass.viewMask != 0) {
             view_mask_non_zero = true;
+            if (!enabled_features.multiview_features.multiview) {
+                skip |= LogError(device, "VUID-VkSubpassDescription2-multiview-06558",
+                                 "%s: pCreateInfo->pSubpasses[%" PRIu32 "].viewMask is %" PRIu32
+                                 ", but multiview feature is not enabled.",
+                                 function_name, i, subpass.viewMask);
+            }
         } else {
             view_mask_zero = true;
         }
