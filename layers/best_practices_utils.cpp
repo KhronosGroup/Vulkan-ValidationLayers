@@ -2641,7 +2641,7 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
     // Only send the warning when the vendor is enabled and a depth prepass is detected
     bool uses_depth =
         (render_pass_state.depthAttachment || render_pass_state.colorAttachment) &&
-        ((depth_only_arm && VendorCheckEnabled(kBPVendorAMD)) || (depth_only_img && VendorCheckEnabled(kBPVendorIMG)));
+        ((depth_only_arm && VendorCheckEnabled(kBPVendorArm)) || (depth_only_img && VendorCheckEnabled(kBPVendorIMG)));
 
     if (uses_depth) {
         skip |= LogPerformanceWarning(
