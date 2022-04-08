@@ -85,10 +85,11 @@ extern DescriptorReqFlags DescriptorRequirementsBitsFromFormat(VkFormat fmt);
 
 struct DescriptorRequirement {
     DescriptorReqFlags reqs;
+    DescriptorReqFlags all_reqs;
     bool is_writable;
     // Copy from StageState.interface_var. It combines from plural shader stages. The index of array is index of image.
     std::vector<layer_data::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
-    DescriptorRequirement() : reqs(0), is_writable(false) {}
+    DescriptorRequirement() : reqs(0), all_reqs(0), is_writable(false) {}
 };
 
 inline bool operator==(const DescriptorRequirement &a, const DescriptorRequirement &b) NOEXCEPT { return a.reqs == b.reqs; }
@@ -103,8 +104,10 @@ struct PipelineStageState {
     VkShaderStageFlagBits stage_flag;
     spirv_inst_iter entrypoint;
     layer_data::unordered_set<uint32_t> accessible_ids;
+    layer_data::unordered_set<uint32_t> variable_ids;
     using DescriptorUse = std::pair<DescriptorSlot, interface_var>;
     std::vector<DescriptorUse> descriptor_uses;
+    std::vector<DescriptorUse> all_descriptor_uses;
     bool has_writable_descriptor;
     bool has_atomic_descriptor;
     bool wrote_primitive_shading_rate;

@@ -268,6 +268,16 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::MarkAccessibleIds(spirv
     return ids;
 }
 
+layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::MarkVariableIds() const {
+    layer_data::unordered_set<uint32_t> variable_ids;
+    for (const auto insn : *this) {
+        if (insn.opcode() == spv::OpVariable) {
+            variable_ids.insert(insn.word(2));
+        }
+    }
+    return variable_ids;
+}
+
 layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const spirv_inst_iter &entrypoint) const {
     layer_data::optional<VkPrimitiveTopology> result;
 
@@ -1523,11 +1533,11 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
 }
 
 std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::CollectInterfaceByDescriptorSlot(
-    layer_data::unordered_set<uint32_t> const &accessible_ids) const {
+    layer_data::unordered_set<uint32_t> const &ids) const {
     std::vector<std::pair<DescriptorSlot, interface_var>> out;
     shader_module_used_operators operators;
 
-    for (auto id : accessible_ids) {
+    for (auto id : ids) {
         auto insn = get_def(id);
         assert(insn != end());
 
