@@ -7112,6 +7112,11 @@ static bool UniqueImageViews(const VkRenderingInfo* pRenderingInfo, VkImageView 
     return unique_views;
 }
 
+uint32_t CoreChecks::GetQuotientCeil(uint32_t numerator, uint32_t denominator) const {
+    denominator = std::max(denominator, 1u);
+    return static_cast<uint32_t>(std::ceil(static_cast<float>(numerator) / static_cast<float>(denominator)));
+}
+
 bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
                                            CMD_TYPE cmd_type) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
@@ -7462,9 +7467,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             auto view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
             IMAGE_STATE *image_state = view_state->image_state.get();
             if (image_state->createInfo.extent.width <
-                static_cast<uint32_t>(std::ceil(
-                    (pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width) /
-                    static_cast<float>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)))) {
+                GetQuotientCeil(pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width,
+                                phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)) {
                 skip |= LogError(
                     commandBuffer, "VUID-VkRenderingInfo-pNext-06112",
                     "%s(): width of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
@@ -7476,9 +7480,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
             }
             if (image_state->createInfo.extent.height <
-                static_cast<uint32_t>(std::ceil(
-                    (pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height) /
-                    static_cast<float>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)))) {
+                GetQuotientCeil(pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)) {
                 skip |= LogError(
                     commandBuffer, "VUID-VkRenderingInfo-pNext-06114",
                     "%s(): height of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
@@ -7585,9 +7587,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 auto view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
                 IMAGE_STATE *image_state = view_state->image_state.get();
                 if (image_state->createInfo.extent.width <
-                    static_cast<uint32_t>(std::ceil(
-                        (offset_x + width) /
-                        static_cast<float>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)))) {
+                    GetQuotientCeil(offset_x + width,
+                                    phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)) {
                     skip |= LogError(
                         commandBuffer, "VUID-VkRenderingInfo-pNext-06113",
                         "%s(): width of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
@@ -7599,9 +7600,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                         width, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
                 }
                 if (image_state->createInfo.extent.height <
-                    static_cast<uint32_t>(std::ceil(
-                        (offset_y + height) /
-                        static_cast<float>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)))) {
+                    GetQuotientCeil(offset_y + height,
+                                    phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)) {
                     skip |= LogError(
                         commandBuffer, "VUID-VkRenderingInfo-pNext-06115",
                         "%s(): height of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
@@ -11410,11 +11410,8 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             const VkRenderPassFragmentDensityMapCreateInfoEXT *fdm_attachment;
                             fdm_attachment = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci->pNext);
                             if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
-                                uint32_t ceiling_width = static_cast<uint32_t>(ceil(
-                                    static_cast<float>(pCreateInfo->width) /
-                                    std::max(static_cast<float>(
-                                                 phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width),
-                                             1.0f)));
+                                uint32_t ceiling_width = GetQuotientCeil(pCreateInfo->width, 
+                                                 phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
                                 if (mip_width < ceiling_width) {
                                     skip |= LogError(
                                         device, "VUID-VkFramebufferCreateInfo-pAttachments-02555",
@@ -11426,11 +11423,9 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                         "width: %u, the ceiling value: %u\n",
                                         i, subresource_range.baseMipLevel, i, i, mip_width, ceiling_width);
                                 }
-                                uint32_t ceiling_height = static_cast<uint32_t>(ceil(
-                                    static_cast<float>(pCreateInfo->height) /
-                                    std::max(static_cast<float>(
-                                                 phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height),
-                                             1.0f)));
+                                uint32_t ceiling_height = GetQuotientCeil(
+                                    pCreateInfo->height,
+                                    phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
                                 if (mip_height < ceiling_height) {
                                     skip |= LogError(
                                         device, "VUID-VkFramebufferCreateInfo-pAttachments-02556",
