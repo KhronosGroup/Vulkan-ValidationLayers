@@ -10022,10 +10022,12 @@ TEST_F(VkLayerTest, DepthStencilResolveMode) {
     attachmentDescriptions[0] = LvlInitStruct<VkAttachmentDescription2KHR>();
     attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_4_BIT;
     attachmentDescriptions[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachmentDescriptions[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     // Depth/stencil resolve attachment
     attachmentDescriptions[1] = LvlInitStruct<VkAttachmentDescription2KHR>();
     attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentDescriptions[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachmentDescriptions[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 
     VkAttachmentReference2KHR depthStencilAttachmentReference = LvlInitStruct<VkAttachmentReference2KHR>();
     depthStencilAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -10746,11 +10748,13 @@ TEST_F(VkLayerTest, DepthStencilResolveAttachmentInvalidFormat) {
     attachmentDescriptions[0].format = VK_FORMAT_R8_UNORM;
     attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentDescriptions[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachmentDescriptions[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     // Depth/stencil resolve attachment
     attachmentDescriptions[1] = LvlInitStruct<VkAttachmentDescription2>();
     attachmentDescriptions[1].format = ds_format;
     attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_4_BIT;
     attachmentDescriptions[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachmentDescriptions[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 
     VkAttachmentReference2KHR depthStencilAttachmentReference = LvlInitStruct<VkAttachmentReference2KHR>();
     depthStencilAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -12450,6 +12454,65 @@ TEST_F(VkLayerTest, TestColorAttachmentImageViewUsage) {
     descriptor_write.pImageInfo = &image_info;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00337");
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, CreateRenderPassWithInvalidStencilLoadOp) {
+    TEST_DESCRIPTION("Create render pass with invalid stencil load op.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s required extensions are not supported, skipping tests.\n", kSkipPrefix);
+        return;
+    }
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    if (ds_format == VK_FORMAT_UNDEFINED) {
+        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    auto vkCreateRenderPass2KHR =
+        reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR"));
+
+    auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
+    attach_desc.format = ds_format;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+    VkSubpassDescription2 subpass = LvlInitStruct<VkSubpassDescription2>();
+
+    auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass;
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attach_desc;
+
+    VkRenderPass render_pass;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription2-pNext-06704");
+    vkCreateRenderPass2KHR(device(), &render_pass_ci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    auto attach_desc_stencil_layout = LvlInitStruct<VkAttachmentDescriptionStencilLayout>();
+    attach_desc_stencil_layout.stencilInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc_stencil_layout.stencilFinalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.pNext = &attach_desc_stencil_layout;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription2-pNext-06705");
+    vkCreateRenderPass2KHR(device(), &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
 
