@@ -2776,3 +2776,77 @@ TEST_F(VkPositiveLayerTest, Spirv16Vulkan13) {
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, TestAliasedDescriptorArrayWithUnusedTypes) {
+    TEST_DESCRIPTION("Create shader with unused aliased descriptor");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+
+    VkImageObj image1(m_device);
+    image1.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView view1 = image1.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    vk_testing::Sampler sampler1;
+    sampler1.init(*m_device, sampler_ci);
+
+    VkImageObj image2(m_device);
+    auto image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_ci.extent.width = 32;
+    image_ci.extent.height = 32;
+    image_ci.extent.depth = 1;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 6;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image2.Init(image_ci);
+    VkImageView view2 = image2.targetView(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 6, VK_IMAGE_VIEW_TYPE_CUBE);
+    vk_testing::Sampler sampler2;
+    sampler2.init(*m_device, sampler_ci);
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D samp1[2];
+        layout(set = 0, binding = 0) uniform samplerCube samp2[2]; // samp2 is unused
+        layout(location = 0) out vec4 color;
+        void main() {
+            color = texture(samp1[0], vec2(0.5f));
+        }
+    )glsl";
+
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                     });
+    ds.WriteDescriptorImageInfo(0, view1, sampler1.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    ds.WriteDescriptorImageInfo(0, view2, sampler2.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    ds.UpdateDescriptorSets();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &ds.set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyNotFound();
+}
