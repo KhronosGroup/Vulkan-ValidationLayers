@@ -2688,22 +2688,19 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt64) {
 TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
     TEST_DESCRIPTION("Test that separate depth stencil layouts are tracked correctly.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    } else {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
-               VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Required extensions not supported, skipping tests.\n", kSkipPrefix);
         return;
     }
 
-    VkPhysicalDeviceFeatures features = {};
-    VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures separate_features =
-        LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>();
-    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&separate_features);
+    auto separate_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&separate_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (!separate_features.separateDepthStencilLayouts) {
         printf("separateDepthStencilLayouts feature not supported, skipping tests\n");
@@ -2712,7 +2709,7 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
 
     m_errorMonitor->VerifyNotFound();
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    ASSERT_NO_FATAL_FAILURE(InitState(&features, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkFormat ds_format = VK_FORMAT_D24_UNORM_S8_UINT;
     VkFormatProperties props;
@@ -2809,7 +2806,7 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
     desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
     desc.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
     desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
     desc.samples = VK_SAMPLE_COUNT_1_BIT;
     desc.pNext = &stencil_desc;
@@ -2830,13 +2827,14 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
     VkRenderPass render_pass_combined{};
     VkFramebuffer framebuffer_combined{};
 
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device(), "vkCreateRenderPass2KHR");
+    auto vkCreateRenderPass2KHR =
+        reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(device(), "vkCreateRenderPass2KHR"));
 
     vkCreateRenderPass2KHR(device(), &rp2, nullptr, &render_pass_separate);
 
     desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     desc.finalLayout = desc.initialLayout;
+    desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     desc.pNext = nullptr;
     att.layout = desc.initialLayout;
     att.pNext = nullptr;
