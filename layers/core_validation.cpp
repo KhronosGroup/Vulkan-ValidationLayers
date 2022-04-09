@@ -8015,6 +8015,13 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                             "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfo->depthAttachmentFormat (%s) must be a format with potential format features that include VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
                             string_VkFormat(depth_format));
                     }
+                    if (!FormatHasDepth(depth_format)) {
+                        skip |= LogError(
+                            commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06540",
+                            "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfo->depthAttachmentFormat (%s) must be a "
+                            "format with a depth aspect.",
+                            string_VkFormat(depth_format));
+                    }
                 }
 
                 const VkFormat stencil_format = p_inherited_rendering_info->stencilAttachmentFormat;
