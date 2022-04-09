@@ -56,7 +56,7 @@ TEST_F(VkPortabilitySubsetTest, ValidatePortabilityCreateDevice) {
     dev_info.queueCreateInfoCount = create_queue_infos.size();
     dev_info.pQueueCreateInfos = create_queue_infos.data();
     dev_info.enabledLayerCount = 0;
-    dev_info.ppEnabledLayerNames = NULL;
+    dev_info.ppEnabledLayerNames = nullptr;
     dev_info.enabledExtensionCount = 0;
     dev_info.ppEnabledExtensionNames =
         nullptr;  // VK_KHR_portability_subset not included in enabled extensions should trigger 04451
@@ -561,7 +561,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     VkSampler sampler;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.compareEnable = VK_TRUE;  // Incompatible with portability setting
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -589,7 +589,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     descriptor_writes[0].pImageInfo = &img_info;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450");
-    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     vk::DestroySampler(m_device->device(), sampler, nullptr);

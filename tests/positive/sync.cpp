@@ -357,8 +357,8 @@ TEST_F(VkPositiveLayerTest, QueueSubmitSemaphoresAndLayoutTracking) {
     vk::QueueSubmit(m_device->m_queue, 3, submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
 
-    vk::DestroySemaphore(m_device->device(), semaphore1, NULL);
-    vk::DestroySemaphore(m_device->device(), semaphore2, NULL);
+    vk::DestroySemaphore(m_device->device(), semaphore1, nullptr);
+    vk::DestroySemaphore(m_device->device(), semaphore2, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -471,7 +471,7 @@ TEST_F(VkPositiveLayerTest, TwoFencesThreeFrames) {
         }
     }
     m_errorMonitor->VerifyNotFound();
-    vk::DestroyCommandPool(m_device->device(), cmd_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), cmd_pool, nullptr);
     for (uint32_t i = 0; i < NUM_OBJECTS; ++i) {
         vk::DestroyFence(m_device->device(), fences[i], nullptr);
     }
@@ -563,7 +563,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
 
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -661,7 +661,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -760,7 +760,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -925,7 +925,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -1144,7 +1144,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -1225,14 +1225,14 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     }
 
-    vk::QueueSubmit(m_device->m_queue, 0, NULL, fence);
+    vk::QueueSubmit(m_device->m_queue, 0, nullptr, fence);
 
     VkResult err = vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
     ASSERT_VK_SUCCESS(err);
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -1317,7 +1317,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueOneFence) {
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -1392,7 +1392,7 @@ TEST_F(VkPositiveLayerTest, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) 
         submit_info[0].signalSemaphoreCount = 1;
         submit_info[0].pSignalSemaphores = &semaphore;
         submit_info[0].waitSemaphoreCount = 0;
-        submit_info[0].pWaitSemaphores = NULL;
+        submit_info[0].pWaitSemaphores = nullptr;
         submit_info[0].pWaitDstStageMask = 0;
 
         submit_info[1] = LvlInitStruct<VkSubmitInfo>();
@@ -1402,7 +1402,7 @@ TEST_F(VkPositiveLayerTest, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) 
         submit_info[1].pWaitSemaphores = &semaphore;
         submit_info[1].pWaitDstStageMask = flags;
         submit_info[1].signalSemaphoreCount = 0;
-        submit_info[1].pSignalSemaphores = NULL;
+        submit_info[1].pSignalSemaphores = nullptr;
         vk::QueueSubmit(m_device->m_queue, 2, &submit_info[0], fence);
     }
 
@@ -1410,7 +1410,7 @@ TEST_F(VkPositiveLayerTest, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) 
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 
     m_errorMonitor->VerifyNotFound();
@@ -1732,11 +1732,11 @@ TEST_F(VkPositiveLayerTest, ThreadNullFenceCollision) {
     // There should be no validation error from collision of that non-object.
     test_platform_thread_create(&thread, ReleaseNullFence, (void *)&data);
     for (int i = 0; i < 40000; i++) {
-        vk::DestroyFence(m_device->device(), VK_NULL_HANDLE, NULL);
+        vk::DestroyFence(m_device->device(), VK_NULL_HANDLE, nullptr);
     }
-    test_platform_thread_join(thread, NULL);
+    test_platform_thread_join(thread, nullptr);
 
-    m_errorMonitor->SetBailout(NULL);
+    m_errorMonitor->SetBailout(nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -1791,7 +1791,7 @@ TEST_F(VkPositiveLayerTest, WaitEventThenSet) {
 
     vk::DestroyEvent(m_device->device(), event, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 1, &command_buffer);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -2017,7 +2017,7 @@ TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCBWithFenceAfter) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {

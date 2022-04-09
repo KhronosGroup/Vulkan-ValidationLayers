@@ -1939,7 +1939,7 @@ TEST_F(VkSyncValTest, SyncCmdQuery) {
         return;
     }
     uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
@@ -3018,7 +3018,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_layout_.handle(), 0,
-                                  1, &g_pipe_0.descriptor_set_->set_, 0, NULL);
+                                  1, &g_pipe_0.descriptor_set_->set_, 0, nullptr);
 
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
@@ -3026,7 +3026,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
             vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_12.pipeline_);
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                      g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
+                                      g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, nullptr);
 
             // we're racing the writes from subpass 0 with our shader reads
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ-RACING-WRITE");
@@ -3100,7 +3100,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_layout_.handle(), 0,
-                                  1, &g_pipe_0.descriptor_set_->set_, 0, NULL);
+                                  1, &g_pipe_0.descriptor_set_->set_, 0, nullptr);
 
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
@@ -3109,7 +3109,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
             vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_12.pipeline_);
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                      g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
+                                      g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, nullptr);
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         }
         m_errorMonitor->VerifyNotFound();
@@ -3180,7 +3180,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_layout_.handle(), 0,
-                                  1, &g_pipe_0.descriptor_set_->set_, 0, NULL);
+                                  1, &g_pipe_0.descriptor_set_->set_, 0, nullptr);
 
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
@@ -3188,7 +3188,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
             vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_12.pipeline_);
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                      g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
+                                      g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, nullptr);
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         }
 
@@ -3613,7 +3613,7 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
     bool timestamp = false;
 
     uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits > 0) {
@@ -3851,7 +3851,7 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     descriptor_writes[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[5].pImageInfo = &image_info[2];
 
-    vk::UpdateDescriptorSets(m_device->device(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
 
     // only descriptor 0 is used, the rest are going to get destroyed
     char const *shader_source = R"glsl(

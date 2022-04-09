@@ -336,21 +336,21 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
 
     VkDescriptorPoolCreateInfo ds_pool_ci = {};
     ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    ds_pool_ci.pNext = NULL;
+    ds_pool_ci.pNext = nullptr;
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     VkDescriptorPool ds_pool;
-    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &ds_pool);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 2;
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     dsl_binding.descriptorCount = 1;
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = NULL;
+    dsl_binding.pImmutableSamplers = nullptr;
 
     const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
 
@@ -664,7 +664,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &m_swapchain;
     present_info.pImageIndices = 0;
-    present_info.pResults = NULL;
+    present_info.pResults = nullptr;
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-Submission-ReduceNumberOfSubmissions");
@@ -711,11 +711,11 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
 
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
     pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    pipe_ms_state_ci.pNext = NULL;
+    pipe_ms_state_ci.pNext = nullptr;
     pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     pipe_ms_state_ci.sampleShadingEnable = 0;
     pipe_ms_state_ci.minSampleShading = 1.0;
-    pipe_ms_state_ci.pSampleMask = NULL;
+    pipe_ms_state_ci.pSampleMask = nullptr;
 
     const float vbo_data[3] = {1.f, 0.f, 1.f};
     VkVerticesObj vertex_buffer(m_device, 1, 1, sizeof(vbo_data), 1, vbo_data);

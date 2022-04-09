@@ -94,7 +94,7 @@ TEST_F(VkPositiveLayerTest, ValidationInstanceExtensions) {
     std::vector<std::string> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
                                            VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME};
     uint32_t property_count;
-    vk::EnumerateInstanceExtensionProperties(layer_name.c_str(), &property_count, NULL);
+    vk::EnumerateInstanceExtensionProperties(layer_name.c_str(), &property_count, nullptr);
     std::vector<VkExtensionProperties> properties(property_count);
     vk::EnumerateInstanceExtensionProperties(layer_name.c_str(), &property_count, properties.data());
     for (size_t i = 0; i < extensions.size(); i++) {

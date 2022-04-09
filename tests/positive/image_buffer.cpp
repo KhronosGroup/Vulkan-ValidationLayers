@@ -87,7 +87,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneGetImageSubresourceLayout) {
     }
 
     VkImage image;
-    VkResult err = vk::CreateImage(device(), &ci, NULL, &image);
+    VkResult err = vk::CreateImage(device(), &ci, nullptr, &image);
     ASSERT_VK_SUCCESS(err);
 
     // Query layout of 3rd plane
@@ -101,7 +101,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneGetImageSubresourceLayout) {
     vk::GetImageSubresourceLayout(device(), image, &subres, &layout);
     m_errorMonitor->VerifyNotFound();
 
-    vk::DestroyImage(device(), image, NULL);
+    vk::DestroyImage(device(), image, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, OwnershipTranfersImage) {
@@ -337,7 +337,7 @@ TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithoutFeature) {
     VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     vk::DestroySampler(m_device->device(), sampler, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
@@ -366,7 +366,7 @@ TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithoutFeature12) {
     VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     vk::DestroySampler(m_device->device(), sampler, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
@@ -401,7 +401,7 @@ TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithFeature) {
     VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     vk::DestroySampler(m_device->device(), sampler, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
@@ -443,7 +443,7 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
         }
     }
 
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    err = vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &mem);
     ASSERT_VK_SUCCESS(err);
 
     // Map/Flush/Invalidate using WHOLE_SIZE and zero offsets and entire mapped range
@@ -506,7 +506,7 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
     m_errorMonitor->VerifyNotFound();
     vk::UnmapMemory(m_device->device(), mem);
 
-    vk::FreeMemory(m_device->device(), mem, NULL);
+    vk::FreeMemory(m_device->device(), mem, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, CreateImageViewFollowsParameterCompatibilityRequirements) {
@@ -558,9 +558,9 @@ TEST_F(VkPositiveLayerTest, ValidUsage) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    vk::CreateImageView(m_device->device(), &ivci, NULL, &imageView);
+    vk::CreateImageView(m_device->device(), &ivci, nullptr, &imageView);
     m_errorMonitor->VerifyNotFound();
-    vk::DestroyImageView(m_device->device(), imageView, NULL);
+    vk::DestroyImageView(m_device->device(), imageView, nullptr);
 }
 
 // This is a positive test. No failures are expected.
@@ -594,7 +594,7 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
-    VkResult err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+    VkResult err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
     ASSERT_VK_SUCCESS(err);
 
     VkMemoryRequirements memory_reqs;
@@ -621,9 +621,9 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
     memory_info.allocationSize = memory_reqs.alignment;
     pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
-    err = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory_one);
+    err = vk::AllocateMemory(m_device->device(), &memory_info, nullptr, &memory_one);
     ASSERT_VK_SUCCESS(err);
-    err = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory_two);
+    err = vk::AllocateMemory(m_device->device(), &memory_info, nullptr, &memory_two);
     ASSERT_VK_SUCCESS(err);
     VkSparseMemoryBind binds[2];
     binds[0].flags = 0;
@@ -649,9 +649,9 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
 
     vk::QueueBindSparse(m_device->m_queue, 1, &bindSparseInfo, fence);
     vk::QueueWaitIdle(m_device->m_queue);
-    vk::DestroyImage(m_device->device(), image, NULL);
-    vk::FreeMemory(m_device->device(), memory_one, NULL);
-    vk::FreeMemory(m_device->device(), memory_two, NULL);
+    vk::DestroyImage(m_device->device(), image, nullptr);
+    vk::FreeMemory(m_device->device(), memory_one, nullptr);
+    vk::FreeMemory(m_device->device(), memory_two, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -686,7 +686,7 @@ TEST_F(VkPositiveLayerTest, BindSparseFreeMemory) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
-    VkResult err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+    VkResult err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
     ASSERT_VK_SUCCESS(err);
 
     VkMemoryRequirements memory_reqs;
@@ -700,7 +700,7 @@ TEST_F(VkPositiveLayerTest, BindSparseFreeMemory) {
     bool pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
 
-    err = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
+    err = vk::AllocateMemory(m_device->device(), &memory_info, nullptr, &memory);
     ASSERT_VK_SUCCESS(err);
 
     VkSparseMemoryBind bind;
@@ -730,7 +730,7 @@ TEST_F(VkPositiveLayerTest, BindSparseFreeMemory) {
     vk::QueueWaitIdle(m_device->m_queue);
 
     // Free the memory, then use the image in a new command buffer
-    vk::FreeMemory(m_device->device(), memory, NULL);
+    vk::FreeMemory(m_device->device(), memory, nullptr);
 
     m_commandBuffer->begin();
 
@@ -761,7 +761,7 @@ TEST_F(VkPositiveLayerTest, BindSparseFreeMemory) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
 
-    vk::DestroyImage(m_device->device(), image, NULL);
+    vk::DestroyImage(m_device->device(), image, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -796,7 +796,7 @@ TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
-    VkResult err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+    VkResult err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
     ASSERT_VK_SUCCESS(err);
 
     // Query image memory requirements
@@ -825,7 +825,7 @@ TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
         VkMemoryAllocateInfo metadata_memory_info = LvlInitStruct<VkMemoryAllocateInfo>();
         metadata_memory_info.allocationSize = metadata_reqs->imageMipTailSize;
         m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &metadata_memory_info, 0);
-        err = vk::AllocateMemory(m_device->device(), &metadata_memory_info, NULL, &metadata_memory);
+        err = vk::AllocateMemory(m_device->device(), &metadata_memory_info, nullptr, &metadata_memory);
         ASSERT_VK_SUCCESS(err);
 
         // Bind metadata
@@ -850,10 +850,10 @@ TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
 
         // Cleanup
         vk::QueueWaitIdle(m_device->m_queue);
-        vk::FreeMemory(m_device->device(), metadata_memory, NULL);
+        vk::FreeMemory(m_device->device(), metadata_memory, nullptr);
     }
 
-    vk::DestroyImage(m_device->device(), image, NULL);
+    vk::DestroyImage(m_device->device(), image, nullptr);
 }
 
 // This is a positive test.  No errors should be generated.
@@ -1505,7 +1505,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     }
 
     VkImage image;
-    ASSERT_VK_SUCCESS(vk::CreateImage(device(), &ci, NULL, &image));
+    ASSERT_VK_SUCCESS(vk::CreateImage(device(), &ci, nullptr, &image));
 
     // Allocate & bind memory
     VkPhysicalDeviceMemoryProperties phys_mem_props;
@@ -1520,14 +1520,14 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
             VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
             alloc_info.allocationSize = mem_reqs.size;
             alloc_info.memoryTypeIndex = type;
-            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &mem_obj));
+            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, nullptr, &mem_obj));
             break;
         }
     }
 
     if (VK_NULL_HANDLE == mem_obj) {
         printf("%s Unable to allocate image memory. Skipping test.\n", kSkipPrefix);
-        vk::DestroyImage(device(), image, NULL);
+        vk::DestroyImage(device(), image, nullptr);
         return;
     }
     ASSERT_VK_SUCCESS(vk::BindImageMemory(device(), image, mem_obj, 0));
@@ -1554,15 +1554,15 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     m_commandBuffer->end();
     m_errorMonitor->VerifyNotFound();
 
-    vk::FreeMemory(device(), mem_obj, NULL);
-    vk::DestroyImage(device(), image, NULL);
+    vk::FreeMemory(device(), mem_obj, nullptr);
+    vk::DestroyImage(device(), image, nullptr);
 
     // Repeat bind test on a DISJOINT multi-planar image, with per-plane memory objects, using API2 variants
     //
     features |= VK_FORMAT_FEATURE_DISJOINT_BIT;
     ci.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
     if (ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features)) {
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &ci, NULL, &image));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &ci, nullptr, &image));
 
         // Allocate & bind memory
         VkPhysicalDeviceMemoryProperties2 phys_mem_props2 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2};
@@ -1589,18 +1589,18 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
             }
         }
         alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &p0_mem));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, nullptr, &p0_mem));
 
         // Plane 1 & 2 use same memory type
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
         vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_reqs2);
         alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &p1_mem));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, nullptr, &p1_mem));
 
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
         vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_reqs2);
         alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &p2_mem));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, nullptr, &p2_mem));
 
         // Set up 3-plane binding
         VkBindImageMemoryInfo bind_info[3];
@@ -1617,10 +1617,10 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
         vkBindImageMemory2Function(device(), 3, bind_info);
         m_errorMonitor->VerifyNotFound();
 
-        vk::FreeMemory(device(), p0_mem, NULL);
-        vk::FreeMemory(device(), p1_mem, NULL);
-        vk::FreeMemory(device(), p2_mem, NULL);
-        vk::DestroyImage(device(), image, NULL);
+        vk::FreeMemory(device(), p0_mem, nullptr);
+        vk::FreeMemory(device(), p1_mem, nullptr);
+        vk::FreeMemory(device(), p2_mem, nullptr);
+        vk::DestroyImage(device(), image, nullptr);
     }
 
     // Test that changing the layout of ASPECT_COLOR also changes the layout of the individual planes
@@ -1670,7 +1670,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     VkSampler sampler;
 
     VkResult err;
-    err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    err = vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler);
     ASSERT_VK_SUCCESS(err);
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
@@ -1722,7 +1722,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     m_errorMonitor->VerifyNotFound();
 
     vk::QueueWaitIdle(m_device->m_queue);
-    vk::DestroyImageView(m_device->device(), view, NULL);
+    vk::DestroyImageView(m_device->device(), view, nullptr);
     vk::DestroySampler(m_device->device(), sampler, nullptr);
 }
 
@@ -1928,7 +1928,7 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
     image_create_info.pNext = &image_swapchain_create_info;
 
     VkImage image_from_swapchain;
-    vk::CreateImage(device(), &image_create_info, NULL, &image_from_swapchain);
+    vk::CreateImage(device(), &image_create_info, nullptr, &image_from_swapchain);
 
     auto bind_swapchain_info = LvlInitStruct<VkBindImageMemorySwapchainInfoKHR>();
     bind_swapchain_info.swapchain = m_swapchain;
@@ -1962,7 +1962,7 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyNotFound();
 
-    vk::DestroyImage(m_device->device(), image_from_swapchain, NULL);
+    vk::DestroyImage(m_device->device(), image_from_swapchain, nullptr);
     DestroySwapchain();
 }
 
@@ -2047,7 +2047,7 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     image_create_info.pNext = &image_swapchain_create_info;
 
     VkImage peer_image;
-    vk::CreateImage(device(), &image_create_info, NULL, &peer_image);
+    vk::CreateImage(device(), &image_create_info, nullptr, &peer_image);
 
     auto bind_devicegroup_info = LvlInitStruct<VkBindImageMemoryDeviceGroupInfo>();
     bind_devicegroup_info.deviceIndexCount = 2;
@@ -2117,7 +2117,7 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     m_commandBuffer->QueueCommandBuffer();
     m_errorMonitor->VerifyNotFound();
 
-    vk::DestroyImage(m_device->device(), peer_image, NULL);
+    vk::DestroyImage(m_device->device(), peer_image, nullptr);
     DestroySwapchain();
 }
 
@@ -2139,7 +2139,7 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     uint32_t image_index, image_count;
     PFN_vkGetSwapchainImagesKHR fpGetSwapchainImagesKHR =
         (PFN_vkGetSwapchainImagesKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetSwapchainImagesKHR");
-    fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, NULL);
+    fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, nullptr);
     VkImage *swapchainImages = (VkImage *)malloc(image_count * sizeof(VkImage));
     fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages);
     VkFenceCreateInfo fenceci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0};
@@ -2210,12 +2210,12 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     m_commandBuffer->end();
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 0;
-    submit_info.pWaitSemaphores = NULL;
-    submit_info.pWaitDstStageMask = NULL;
+    submit_info.pWaitSemaphores = nullptr;
+    submit_info.pWaitDstStageMask = nullptr;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.signalSemaphoreCount = 0;
-    submit_info.pSignalSemaphores = NULL;
+    submit_info.pSignalSemaphores = nullptr;
     vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
     vk::ResetFences(m_device->device(), 1, &fence);
     m_errorMonitor->ExpectSuccess();
@@ -2224,12 +2224,12 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
 
     free(swapchainImages);
-    vk::DestroyFramebuffer(m_device->device(), fb1, NULL);
-    vk::DestroyRenderPass(m_device->device(), rp1, NULL);
-    vk::DestroyFramebuffer(m_device->device(), fb2, NULL);
-    vk::DestroyRenderPass(m_device->device(), rp2, NULL);
-    vk::DestroyFence(m_device->device(), fence, NULL);
-    vk::DestroyImageView(m_device->device(), view, NULL);
+    vk::DestroyFramebuffer(m_device->device(), fb1, nullptr);
+    vk::DestroyRenderPass(m_device->device(), rp1, nullptr);
+    vk::DestroyFramebuffer(m_device->device(), fb2, nullptr);
+    vk::DestroyRenderPass(m_device->device(), rp2, nullptr);
+    vk::DestroyFence(m_device->device(), fence, nullptr);
+    vk::DestroyImageView(m_device->device(), view, nullptr);
     DestroySwapchain();
 }
 
@@ -2357,7 +2357,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     VkRenderPassCreateInfo renderPassCreateInfo = {
         VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attachmentDescription, 1, subpasses, 0, nullptr};
     VkRenderPass renderPass;
-    vk::CreateRenderPass(m_device->device(), &renderPassCreateInfo, NULL, &renderPass);
+    vk::CreateRenderPass(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
 
     // Create an image to use in an imageless framebuffer.  Bind swapchain memory to it.
     auto image_swapchain_create_info = LvlInitStruct<VkImageSwapchainCreateInfoKHR>();

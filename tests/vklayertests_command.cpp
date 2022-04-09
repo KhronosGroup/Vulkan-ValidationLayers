@@ -57,8 +57,8 @@ TEST_F(VkLayerTest, InvalidCommandPoolConsistency) {
 
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyCommandPool(m_device->device(), command_pool_one, NULL);
-    vk::DestroyCommandPool(m_device->device(), command_pool_two, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool_one, nullptr);
+    vk::DestroyCommandPool(m_device->device(), command_pool_two, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidSecondaryCommandBufferBarrier) {
@@ -369,12 +369,12 @@ TEST_F(VkLayerTest, SecondaryCommandbufferAsPrimary) {
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 0;
-    submit_info.pWaitSemaphores = NULL;
-    submit_info.pWaitDstStageMask = NULL;
+    submit_info.pWaitSemaphores = nullptr;
+    submit_info.pWaitDstStageMask = nullptr;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &secondary.handle();
     submit_info.signalSemaphoreCount = 0;
-    submit_info.pSignalSemaphores = NULL;
+    submit_info.pSignalSemaphores = nullptr;
 
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
@@ -432,12 +432,12 @@ TEST_F(VkLayerTest, CommandBufferTwoSubmits) {
     VkResult err = VK_SUCCESS;
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 0;
-    submit_info.pWaitSemaphores = NULL;
-    submit_info.pWaitDstStageMask = NULL;
+    submit_info.pWaitSemaphores = nullptr;
+    submit_info.pWaitDstStageMask = nullptr;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.signalSemaphoreCount = 0;
-    submit_info.pSignalSemaphores = NULL;
+    submit_info.pSignalSemaphores = nullptr;
 
     err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
@@ -536,7 +536,7 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
     for (const auto &iter : range_tests) {
         pc_range = iter.range;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, iter.msg);
-        vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+        vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, nullptr, &pipeline_layout);
         m_errorMonitor->VerifyFound();
     }
 
@@ -545,7 +545,7 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
     pc_range.size = 16;
     pc_range.stageFlags = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantRange-stageFlags-requiredbitmask");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, nullptr, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // Check for duplicate stage flags in a list of push constant ranges.
@@ -602,7 +602,7 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
         pipeline_layout_ci.pPushConstantRanges = iter.ranges;
         pipeline_layout_ci.pushConstantRangeCount = ranges_per_test;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, iter.msg.begin(), iter.msg.end());
-        vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+        vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, nullptr, &pipeline_layout);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1535,7 +1535,7 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageObj image(m_device);
@@ -1692,7 +1692,7 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdCopyBufferToImage2Function) {
         const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
+                                               nullptr,
                                                region.bufferOffset,
                                                region.bufferRowLength,
                                                region.bufferImageHeight,
@@ -1700,7 +1700,7 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
                                                region.imageOffset,
                                                region.imageExtent};
         const VkCopyBufferToImageInfo2KHR copy_buffer_to_image_info2 = {VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR,
-                                                                        NULL,
+                                                                        nullptr,
                                                                         buffer_16.handle(),
                                                                         image.handle(),
                                                                         VK_IMAGE_LAYOUT_GENERAL,
@@ -2551,7 +2551,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Create 1D image
@@ -2605,14 +2605,14 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     // Equivalent sanity check using KHR_copy_commands2
     if (copy_commands2 && vkCmdCopyImage2Function) {
         const VkImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                         NULL,
+                                         nullptr,
                                          copy_region.srcSubresource,
                                          copy_region.srcOffset,
                                          copy_region.dstSubresource,
                                          copy_region.dstOffset,
                                          copy_region.extent};
         const VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                      NULL,
+                                                      nullptr,
                                                       image_1D.image(),
                                                       VK_IMAGE_LAYOUT_GENERAL,
                                                       image_2D.image(),
@@ -2635,14 +2635,14 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdCopyImage2Function) {
         const VkImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                         NULL,
+                                         nullptr,
                                          copy_region.srcSubresource,
                                          copy_region.srcOffset,
                                          copy_region.dstSubresource,
                                          copy_region.dstOffset,
                                          copy_region.extent};
         const VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                      NULL,
+                                                      nullptr,
                                                       image_1D.image(),
                                                       VK_IMAGE_LAYOUT_GENERAL,
                                                       image_2D.image(),
@@ -2666,14 +2666,14 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdCopyImage2Function) {
         const VkImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                         NULL,
+                                         nullptr,
                                          copy_region.srcSubresource,
                                          copy_region.srcOffset,
                                          copy_region.dstSubresource,
                                          copy_region.dstOffset,
                                          copy_region.extent};
         const VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                      NULL,
+                                                      nullptr,
                                                       image_2D.image(),
                                                       VK_IMAGE_LAYOUT_GENERAL,
                                                       image_1D.image(),
@@ -2699,14 +2699,14 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdCopyImage2Function) {
         const VkImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                         NULL,
+                                         nullptr,
                                          copy_region.srcSubresource,
                                          copy_region.srcOffset,
                                          copy_region.dstSubresource,
                                          copy_region.dstOffset,
                                          copy_region.extent};
         const VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                      NULL,
+                                                      nullptr,
                                                       image_1D.image(),
                                                       VK_IMAGE_LAYOUT_GENERAL,
                                                       image_2D.image(),
@@ -2728,14 +2728,14 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdCopyImage2Function) {
         const VkImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                         NULL,
+                                         nullptr,
                                          copy_region.srcSubresource,
                                          copy_region.srcOffset,
                                          copy_region.dstSubresource,
                                          copy_region.dstOffset,
                                          copy_region.extent};
         const VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                      NULL,
+                                                      nullptr,
                                                       image_2D.image(),
                                                       VK_IMAGE_LAYOUT_GENERAL,
                                                       image_1D.image(),
@@ -2857,7 +2857,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Create 1D image
@@ -2989,7 +2989,7 @@ TEST_F(VkLayerTest, CopyImageCompressedBlockAlignment) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageFormatProperties img_prop = {};
@@ -3140,7 +3140,7 @@ TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Verify formats
@@ -3255,7 +3255,7 @@ TEST_F(VkLayerTest, CopyImageMultiplaneAspectBits) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Verify formats
@@ -3361,7 +3361,7 @@ TEST_F(VkLayerTest, CopyImageSrcSizeExceeded) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageObj src_image(m_device);
@@ -3448,7 +3448,7 @@ TEST_F(VkLayerTest, CopyImageDstSizeExceeded) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageObj dst_image(m_device);
@@ -3534,7 +3534,7 @@ TEST_F(VkLayerTest, CopyImageZeroSize) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageObj src_image(m_device);
@@ -4043,7 +4043,7 @@ TEST_F(VkLayerTest, CopyImageSampleCountMismatch) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageObj image1(m_device);
@@ -4670,14 +4670,14 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdResolveImage2Function) {
         const VkImageResolve2KHR resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR,
-                                                   NULL,
+                                                   nullptr,
                                                    resolveRegion.srcSubresource,
                                                    resolveRegion.srcOffset,
                                                    resolveRegion.dstSubresource,
                                                    resolveRegion.dstOffset,
                                                    resolveRegion.extent};
         const VkResolveImageInfo2KHR resolve_image_info2 = {VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR,
-                                                            NULL,
+                                                            nullptr,
                                                             srcImage.image(),
                                                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                                             dstImage.image(),
@@ -4700,14 +4700,14 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdResolveImage2Function) {
         const VkImageResolve2KHR resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR,
-                                                   NULL,
+                                                   nullptr,
                                                    resolveRegion.srcSubresource,
                                                    resolveRegion.srcOffset,
                                                    resolveRegion.dstSubresource,
                                                    resolveRegion.dstOffset,
                                                    resolveRegion.extent};
         const VkResolveImageInfo2KHR resolve_image_info2 = {VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR,
-                                                            NULL,
+                                                            nullptr,
                                                             srcImage.image(),
                                                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                                             dstImage.image(),
@@ -4730,14 +4730,14 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdResolveImage2Function) {
         const VkImageResolve2KHR resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR,
-                                                   NULL,
+                                                   nullptr,
                                                    resolveRegion.srcSubresource,
                                                    resolveRegion.srcOffset,
                                                    resolveRegion.dstSubresource,
                                                    resolveRegion.dstOffset,
                                                    resolveRegion.extent};
         const VkResolveImageInfo2KHR resolve_image_info2 = {VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR,
-                                                            NULL,
+                                                            nullptr,
                                                             srcImage.image(),
                                                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                                             dstImage.image(),
@@ -4760,14 +4760,14 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdResolveImage2Function) {
         const VkImageResolve2KHR resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR,
-                                                   NULL,
+                                                   nullptr,
                                                    resolveRegion.srcSubresource,
                                                    resolveRegion.srcOffset,
                                                    resolveRegion.dstSubresource,
                                                    resolveRegion.dstOffset,
                                                    resolveRegion.extent};
         const VkResolveImageInfo2KHR resolve_image_info2 = {VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR,
-                                                            NULL,
+                                                            nullptr,
                                                             srcImage.image(),
                                                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                                             dstImage.image(),
@@ -5229,8 +5229,8 @@ TEST_F(VkLayerTest, ExecuteDiffertQueueFlagsSecondaryCB) {
     m_errorMonitor->VerifyFound();
     vk::EndCommandBuffer(command_buffer[0]);
 
-    vk::DestroyCommandPool(m_device->device(), command_pool_A, NULL);
-    vk::DestroyCommandPool(m_device->device(), command_pool_B, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool_A, nullptr);
+    vk::DestroyCommandPool(m_device->device(), command_pool_B, nullptr);
 }
 
 TEST_F(VkLayerTest, ExecuteUnrecordedSecondaryCB) {
@@ -5895,7 +5895,7 @@ TEST_F(VkLayerTest, MultiDrawTests) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, NULL);
+                              &pipe.descriptor_set_->set_, 0, nullptr);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-None-02700");
     vkCmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_errorMonitor->VerifyFound();
@@ -6033,7 +6033,7 @@ TEST_F(VkLayerTest, IndirectDrawTests) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, NULL);
+                              &pipe.descriptor_set_->set_, 0, nullptr);
 
     VkViewport viewport = {0, 0, 16, 16, 0, 1};
     vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
@@ -6205,7 +6205,7 @@ TEST_F(VkLayerTest, DrawIndirectCountKHR) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, NULL);
+                              &pipe.descriptor_set_->set_, 0, nullptr);
 
     VkViewport viewport = {0, 0, 16, 16, 0, 1};
     vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
@@ -6234,7 +6234,7 @@ TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     memory_allocate_info.allocationSize = memory_requirements.size;
     m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_allocate_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     VkDeviceMemory draw_buffer_memory;
-    vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &draw_buffer_memory);
+    vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &draw_buffer_memory);
     vk::BindBufferMemory(m_device->device(), draw_buffer, draw_buffer_memory, 0);
 
     VkBuffer count_buffer_unbound;
@@ -6308,7 +6308,7 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, NULL);
+                              &pipe.descriptor_set_->set_, 0, nullptr);
 
     VkViewport viewport = {0, 0, 16, 16, 0, 1};
     vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
@@ -7049,7 +7049,7 @@ TEST_F(VkLayerTest, CreateSamplerYcbcrConversionEnable) {
     // Create Ycbcr conversion
     VkSamplerYcbcrConversion conversions;
     VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = {VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
-                                                            NULL,
+                                                            nullptr,
                                                             VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR,
                                                             VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY,
                                                             VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
@@ -7813,11 +7813,11 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
 
     alloc_info.memoryTypeIndex = memory_type_protected;
     alloc_info.allocationSize = mem_reqs_protected.size;
-    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_protected);
+    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory_protected);
 
     alloc_info.allocationSize = mem_reqs_unprotected.size;
     alloc_info.memoryTypeIndex = memory_type_unprotected;
-    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_unprotected);
+    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory_unprotected);
 
     vk::BindBufferMemory(device(), buffer_protected, memory_protected, 0);
     vk::BindBufferMemory(device(), buffer_unprotected, memory_unprotected, 0);
@@ -8178,7 +8178,7 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
 
     VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
 
     VkBufferObj buffer;
     buffer.init(*m_device, 64, 0, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
@@ -8188,7 +8188,7 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
     bvci.format = buffer_view_format;
     bvci.range = VK_WHOLE_SIZE;
     VkBufferView buffer_view;
-    vk::CreateBufferView(m_device->device(), &bvci, NULL, &buffer_view);
+    vk::CreateBufferView(m_device->device(), &bvci, nullptr, &buffer_view);
 
     char const *fsSource = R"glsl(
         #version 450
@@ -8308,7 +8308,7 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
         VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
 
     VkPipelineLayout pipeline_layout;
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, nullptr, &pipeline_layout);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();
@@ -8319,7 +8319,7 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
 
     pipeline_layout_info.pPushConstantRanges = &push_constant_range_small;
     VkPipelineLayout pipeline_layout_small;
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout_small);
+    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, nullptr, &pipeline_layout_small);
 
     CreatePipelineHelper g_pipe_small_range(*this);
     g_pipe_small_range.InitInfo();
@@ -8506,13 +8506,13 @@ TEST_F(VkLayerTest, VerifyFilterCubicSamplerInCmdDraw) {
     sampler_ci.minFilter = VK_FILTER_CUBIC_EXT;
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
     VkSampler sampler;
-    vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler);
 
     auto reduction_mode_ci = LvlInitStruct<VkSamplerReductionModeCreateInfo>();
     reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
     sampler_ci.pNext = &reduction_mode_ci;
     VkSampler sampler_rediction;
-    vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler_rediction);
+    vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler_rediction);
 
     VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -8593,7 +8593,7 @@ TEST_F(VkLayerTest, VerifyImgFilterCubicSamplerInCmdDraw) {
     sampler_ci.minFilter = VK_FILTER_CUBIC_EXT;
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
     VkSampler sampler;
-    vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler);
 
     static const char fs_src[] = R"glsl(
         #version 450

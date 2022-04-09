@@ -218,7 +218,7 @@ TEST_F(VkPositiveLayerTest, BasicQuery) {
     query_pool_info.queryCount = 2;
     query_pool_info.pipelineStatistics = 0;
 
-    VkResult res = vk::CreateQueryPool(m_device->handle(), &query_pool_info, NULL, &query_pool);
+    VkResult res = vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &query_pool);
     ASSERT_VK_SUCCESS(res);
 
     CreatePipelineHelper pipe(*this);
@@ -266,7 +266,7 @@ TEST_F(VkPositiveLayerTest, BasicQuery) {
     m_commandBuffer->QueueCommandBuffer();
     m_errorMonitor->VerifyNotFound();
     vk::QueueWaitIdle(m_device->m_queue);
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, ConfirmNoVLErrorWhenVkCmdClearAttachmentsCalledInSecondaryCB) {
@@ -322,7 +322,7 @@ TEST_F(VkPositiveLayerTest, CommandPoolDeleteWithReferences) {
     cmd_pool_info.flags = 0;
 
     VkCommandPool secondary_cmd_pool;
-    VkResult res = vk::CreateCommandPool(m_device->handle(), &cmd_pool_info, NULL, &secondary_cmd_pool);
+    VkResult res = vk::CreateCommandPool(m_device->handle(), &cmd_pool_info, nullptr, &secondary_cmd_pool);
     ASSERT_VK_SUCCESS(res);
 
     VkCommandBufferAllocateInfo cmdalloc = vk_testing::CommandBuffer::create_info(secondary_cmd_pool);
@@ -352,7 +352,7 @@ TEST_F(VkPositiveLayerTest, CommandPoolDeleteWithReferences) {
     m_commandBuffer->end();
 
     // DestroyCommandPool *implicitly* frees the command buffers allocated from it
-    vk::DestroyCommandPool(m_device->handle(), secondary_cmd_pool, NULL);
+    vk::DestroyCommandPool(m_device->handle(), secondary_cmd_pool, nullptr);
     // If bookkeeping has been lax, validating the reset will attempt to touch deleted data
     res = vk::ResetCommandPool(m_device->handle(), m_commandPool->handle(), 0);
     ASSERT_VK_SUCCESS(res);
@@ -790,7 +790,7 @@ TEST_F(VkPositiveLayerTest, FramebufferBindingDestroyCommandPool) {
     vk::CmdEndRenderPass(command_buffer);
     vk::EndCommandBuffer(command_buffer);
     // Destroy command pool to implicitly free command buffer
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
     vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
     m_errorMonitor->VerifyNotFound();
@@ -894,7 +894,7 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
         return;
     }
     uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
@@ -970,7 +970,7 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
         return;
     }
     uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
@@ -1040,7 +1040,7 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
 
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, command_buffer);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -1053,7 +1053,7 @@ TEST_F(VkPositiveLayerTest, DestroyQueryPoolAfterGetQueryPoolResults) {
     m_errorMonitor->ExpectSuccess();
 
     uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
@@ -1217,7 +1217,7 @@ TEST_F(VkPositiveLayerTest, WriteTimestampNoneAndAll) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {

@@ -69,7 +69,7 @@ TEST_F(VkPositiveLayerTest, CopyNonupdatedDescriptors) {
         copy_ds_update[i].dstBinding = i;
         copy_ds_update[i].descriptorCount = 1;
     }
-    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, copy_size, copy_ds_update);
+    vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, copy_size, copy_ds_update);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -93,7 +93,7 @@ TEST_F(VkPositiveLayerTest, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     VkDescriptorPool ds_pool_one;
-    err = vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool_one);
+    err = vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &ds_pool_one);
     ASSERT_VK_SUCCESS(err);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
@@ -101,7 +101,7 @@ TEST_F(VkPositiveLayerTest, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     dsl_binding.descriptorCount = 1;
     dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = NULL;
+    dsl_binding.pImmutableSamplers = nullptr;
 
     VkDescriptorSet descriptorSet;
     {
@@ -116,7 +116,7 @@ TEST_F(VkPositiveLayerTest, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     }  // ds_layout destroyed
     err = vk::FreeDescriptorSets(m_device->device(), ds_pool_one, 1, &descriptorSet);
 
-    vk::DestroyDescriptorPool(m_device->device(), ds_pool_one, NULL);
+    vk::DestroyDescriptorPool(m_device->device(), ds_pool_one, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -174,7 +174,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         descriptor_write.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo *>(invalid_ptr);
         descriptor_write.pTexelBufferView = reinterpret_cast<const VkBufferView *>(invalid_ptr);
 
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
         m_errorMonitor->VerifyNotFound();
     }
@@ -218,7 +218,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         descriptor_write.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo *>(invalid_ptr);
         descriptor_write.pTexelBufferView = reinterpret_cast<const VkBufferView *>(invalid_ptr);
 
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
         m_errorMonitor->VerifyNotFound();
     }
@@ -242,7 +242,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         buff_view_ci.format = format_texel_case;
         buff_view_ci.range = VK_WHOLE_SIZE;
         VkBufferView buffer_view;
-        VkResult err = vk::CreateBufferView(m_device->device(), &buff_view_ci, NULL, &buffer_view);
+        VkResult err = vk::CreateBufferView(m_device->device(), &buff_view_ci, nullptr, &buffer_view);
         ASSERT_VK_SUCCESS(err);
         OneOffDescriptorSet descriptor_set(m_device,
                                            {
@@ -265,11 +265,11 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         descriptor_write.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo *>(invalid_ptr);
         descriptor_write.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo *>(invalid_ptr);
 
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
         m_errorMonitor->VerifyNotFound();
 
-        vk::DestroyBufferView(m_device->device(), buffer_view, NULL);
+        vk::DestroyBufferView(m_device->device(), buffer_view, nullptr);
     }
 }
 
@@ -285,7 +285,7 @@ TEST_F(VkPositiveLayerTest, ImmutableSamplerOnlyDescriptor) {
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     VkSampler sampler;
-    VkResult err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    VkResult err = vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler);
     ASSERT_VK_SUCCESS(err);
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
@@ -298,7 +298,7 @@ TEST_F(VkPositiveLayerTest, ImmutableSamplerOnlyDescriptor) {
                               &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->VerifyNotFound();
 
-    vk::DestroySampler(m_device->device(), sampler, NULL);
+    vk::DestroySampler(m_device->device(), sampler, nullptr);
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -329,7 +329,7 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
     buff_ci.size = 256;
     buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     VkBuffer buffer;
-    err = vk::CreateBuffer(m_device->device(), &buff_ci, NULL, &buffer);
+    err = vk::CreateBuffer(m_device->device(), &buff_ci, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
     // Have to bind memory to buffer before descriptor update
     VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
@@ -341,7 +341,7 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     if (!pass) {
         printf("%s Failed to allocate memory.\n", kSkipPrefix);
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+        vk::DestroyBuffer(m_device->device(), buffer, nullptr);
         return;
     }
     // Make sure allocation is sufficiently large to accommodate buffer requirements
@@ -350,7 +350,7 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
     }
 
     VkDeviceMemory mem;
-    err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+    err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
     ASSERT_VK_SUCCESS(err);
     err = vk::BindBufferMemory(m_device->device(), buffer, mem, 0);
     ASSERT_VK_SUCCESS(err);
@@ -369,12 +369,12 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.dstSet = ds.set_;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
     m_errorMonitor->VerifyNotFound();
     // Cleanup
-    vk::FreeMemory(m_device->device(), mem, NULL);
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
+    vk::FreeMemory(m_device->device(), mem, nullptr);
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
 }
 
 // This is a positive test. No failures are expected.
@@ -412,7 +412,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     dsl_binding.descriptorCount = 1;
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = NULL;
+    dsl_binding.pImmutableSamplers = nullptr;
 
     const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
     // Create push descriptor set layout
@@ -491,7 +491,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     dsl_binding.descriptorCount = 1;
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = NULL;
+    dsl_binding.pImmutableSamplers = nullptr;
 
     OneOffDescriptorSet descriptor_set(m_device, {dsl_binding}, 0, nullptr, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
                                        nullptr);
@@ -538,7 +538,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               descriptor_set.descriptor_writes.data());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 1, 1,
-                              &descriptor_set.set_, 0, NULL);
+                              &descriptor_set.set_, 0, nullptr);
 
     // No errors should be generated.
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
@@ -641,7 +641,7 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_writes[0].pBufferInfo = buffer_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, nullptr);
 
     char const *shader_source = R"glsl(
         #version 450
@@ -868,7 +868,7 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     descriptor_write.pBufferInfo = buff_info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);

@@ -107,7 +107,7 @@ bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevi
     PFN_vkGetPhysicalDeviceImageFormatProperties2KHR p_GetPDIFP2KHR =
         (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(inst,
                                                                                 "vkGetPhysicalDeviceImageFormatProperties2KHR");
-    if (NULL != p_GetPDIFP2KHR) {
+    if (nullptr != p_GetPDIFP2KHR) {
         VkPhysicalDeviceImageFormatInfo2KHR fmt_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2KHR>();
         fmt_info.format = info.format;
         fmt_info.type = info.imageType;
@@ -193,7 +193,7 @@ extern "C" void *AddToCommandBuffer(void *arg) {
             break;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 extern "C" void *UpdateDescriptor(void *arg) {
@@ -212,12 +212,12 @@ extern "C" void *UpdateDescriptor(void *arg) {
     descriptor_write.pBufferInfo = &buffer_info;
 
     for (int i = 0; i < 80000; i++) {
-        vk::UpdateDescriptorSets(data->device, 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(data->device, 1, &descriptor_write, 0, nullptr);
         if (*data->bailout) {
             break;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 #endif  // GTEST_IS_THREADSAFE
@@ -226,12 +226,12 @@ extern "C" void *ReleaseNullFence(void *arg) {
     struct thread_data_struct *data = (struct thread_data_struct *)arg;
 
     for (int i = 0; i < 40000; i++) {
-        vk::DestroyFence(data->device, VK_NULL_HANDLE, NULL);
+        vk::DestroyFence(data->device, VK_NULL_HANDLE, nullptr);
         if (*data->bailout) {
             break;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
@@ -559,7 +559,7 @@ void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirement
     VkMemoryAllocateInfo mp_image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     mp_image_alloc_info.allocationSize = mp_image_mem_reqs2.memoryRequirements.size;
     ASSERT_TRUE(device->phy().set_memory_type(mp_image_mem_reqs2.memoryRequirements.memoryTypeBits, &mp_image_alloc_info, 0));
-    ASSERT_VK_SUCCESS(vk::AllocateMemory(device->device(), &mp_image_alloc_info, NULL, mp_image_mem));
+    ASSERT_VK_SUCCESS(vk::AllocateMemory(device->device(), &mp_image_alloc_info, nullptr, mp_image_mem));
 }
 
 void NegHeightViewportTests(VkDeviceObj *m_device, VkCommandBufferObj *m_commandBuffer, ErrorMonitor *m_errorMonitor) {
@@ -610,14 +610,14 @@ void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo
     else
         test.Monitor().ExpectSuccess();
 
-    err = vk::CreateSampler(test.device(), pCreateInfo, NULL, &sampler);
+    err = vk::CreateSampler(test.device(), pCreateInfo, nullptr, &sampler);
     if (code.length())
         test.Monitor().VerifyFound();
     else
         test.Monitor().VerifyNotFound();
 
     if (VK_SUCCESS == err) {
-        vk::DestroySampler(test.device(), sampler, NULL);
+        vk::DestroySampler(test.device(), sampler, nullptr);
     }
 }
 
@@ -629,14 +629,14 @@ void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *pCreateInfo, 
     else
         test.Monitor().ExpectSuccess();
 
-    err = vk::CreateBuffer(test.device(), pCreateInfo, NULL, &buffer);
+    err = vk::CreateBuffer(test.device(), pCreateInfo, nullptr, &buffer);
     if (code.length())
         test.Monitor().VerifyFound();
     else
         test.Monitor().VerifyNotFound();
 
     if (VK_SUCCESS == err) {
-        vk::DestroyBuffer(test.device(), buffer, NULL);
+        vk::DestroyBuffer(test.device(), buffer, nullptr);
     }
 }
 
@@ -649,14 +649,14 @@ void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, st
         test.Monitor().ExpectSuccess();
     }
 
-    err = vk::CreateImage(test.device(), pCreateInfo, NULL, &image);
+    err = vk::CreateImage(test.device(), pCreateInfo, nullptr, &image);
     if (code.length())
         test.Monitor().VerifyFound();
     else
         test.Monitor().VerifyNotFound();
 
     if (VK_SUCCESS == err) {
-        vk::DestroyImage(test.device(), image, NULL);
+        vk::DestroyImage(test.device(), image, nullptr);
     }
 }
 
@@ -668,14 +668,14 @@ void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCrea
     else
         test.Monitor().ExpectSuccess();
 
-    err = vk::CreateBufferView(test.device(), pCreateInfo, NULL, &view);
+    err = vk::CreateBufferView(test.device(), pCreateInfo, nullptr, &view);
     if (codes.size())
         test.Monitor().VerifyFound();
     else
         test.Monitor().VerifyNotFound();
 
     if (VK_SUCCESS == err) {
-        vk::DestroyBufferView(test.device(), view, NULL);
+        vk::DestroyBufferView(test.device(), view, nullptr);
     }
 }
 
@@ -687,14 +687,14 @@ void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreate
     else
         test.Monitor().ExpectSuccess();
 
-    err = vk::CreateImageView(test.device(), pCreateInfo, NULL, &view);
+    err = vk::CreateImageView(test.device(), pCreateInfo, nullptr, &view);
     if (code.length())
         test.Monitor().VerifyFound();
     else
         test.Monitor().VerifyNotFound();
 
     if (VK_SUCCESS == err) {
-        vk::DestroyImageView(test.device(), view, NULL);
+        vk::DestroyImageView(test.device(), view, nullptr);
     }
 }
 
@@ -1050,7 +1050,7 @@ VkLayerTest::VkLayerTest() {
     }
 
     app_info_.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app_info_.pNext = NULL;
+    app_info_.pNext = nullptr;
     app_info_.pApplicationName = "layer_tests";
     app_info_.applicationVersion = 1;
     app_info_.pEngineName = "unittest";
@@ -1099,7 +1099,7 @@ bool VkLayerTest::AddSurfaceInstanceExtension() {
         printf("%s %s extension not supported\n", kSkipPrefix, VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
         return false;
     }
-    auto temp_dpy = XOpenDisplay(NULL);
+    auto temp_dpy = XOpenDisplay(nullptr);
     if (temp_dpy) {
         instance_extensions_.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
         bSupport = true;
@@ -1113,7 +1113,7 @@ bool VkLayerTest::AddSurfaceInstanceExtension() {
         return false;
     }
     if (!bSupport) {
-        auto temp_xcb = xcb_connect(NULL, NULL);
+        auto temp_xcb = xcb_connect(nullptr, nullptr);
         if (temp_xcb) {
             instance_extensions_.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
             bSupport = true;
@@ -1268,7 +1268,7 @@ VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBuffe
             return;
         }
 
-        vk::AllocateMemory(VulkanDevice, &memory_allocate_info, NULL, &VulkanMemory);
+        vk::AllocateMemory(VulkanDevice, &memory_allocate_info, nullptr, &VulkanMemory);
         // NB: 1 is intentionally an invalid offset value
         const bool offset_en = eInvalidDeviceOffset == aTestFlag || eInvalidMemoryOffset == aTestFlag;
         vk::BindBufferMemory(VulkanDevice, VulkanBuffer, VulkanMemory, offset_en ? eOffsetAlignment : 0);
@@ -1600,7 +1600,7 @@ void OneOffDescriptorSet::WriteDescriptorImageInfo(int binding, VkImageView imag
 }
 
 void OneOffDescriptorSet::UpdateDescriptorSets() {
-    vk::UpdateDescriptorSets(device_->handle(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
+    vk::UpdateDescriptorSets(device_->handle(), descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
 }
 
 CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_attachments_count)
@@ -1628,7 +1628,7 @@ void CreatePipelineHelper::InitMultisampleInfo() {
     pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     pipe_ms_state_ci_.sampleShadingEnable = VK_FALSE;
     pipe_ms_state_ci_.minSampleShading = 1.0;
-    pipe_ms_state_ci_.pSampleMask = NULL;
+    pipe_ms_state_ci_.pSampleMask = nullptr;
 }
 
 void CreatePipelineHelper::InitPipelineLayoutInfo() {
@@ -1860,7 +1860,7 @@ void CreatePipelineHelper::InitState() {
     pipeline_layout_ =
         VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
 
-    err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+    err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, nullptr, &pipeline_cache_);
     ASSERT_VK_SUCCESS(err);
 }
 
@@ -1891,7 +1891,7 @@ VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool implicit_destroy, boo
         vk::DestroyPipeline(layer_test_.device(), pipeline_, nullptr);
         pipeline_ = VK_NULL_HANDLE;
     }
-    err = vk::CreateGraphicsPipelines(layer_test_.device(), pipeline_cache_, 1, &gp_ci_, NULL, &pipeline_);
+    err = vk::CreateGraphicsPipelines(layer_test_.device(), pipeline_cache_, 1, &gp_ci_, nullptr, &pipeline_);
     return err;
 }
 
@@ -1948,7 +1948,7 @@ void CreateComputePipelineHelper::InitState() {
         pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
     pipeline_layout_ = VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges);
 
-    err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+    err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, nullptr, &pipeline_cache_);
     ASSERT_VK_SUCCESS(err);
 }
 
@@ -1967,7 +1967,7 @@ VkResult CreateComputePipelineHelper::CreateComputePipeline(bool implicit_destro
         vk::DestroyPipeline(layer_test_.device(), pipeline_, nullptr);
         pipeline_ = VK_NULL_HANDLE;
     }
-    err = vk::CreateComputePipelines(layer_test_.device(), pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
+    err = vk::CreateComputePipelines(layer_test_.device(), pipeline_cache_, 1, &cp_ci_, nullptr, &pipeline_);
     return err;
 }
 
@@ -2228,7 +2228,7 @@ void CreateNVRayTracingPipelineHelper::InitState() {
 
     pipeline_layout_ = VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_});
 
-    err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+    err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, nullptr, &pipeline_cache_);
     ASSERT_VK_SUCCESS(err);
 }
 
@@ -2885,12 +2885,12 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     }
     descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[2].pImageInfo = descriptor_image_infos;
-    vk::UpdateDescriptorSets(m_device->device(), 3, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 3, descriptor_writes, 0, nullptr);
     if (descriptor_indexing) {
         descriptor_writes[0].dstSet = ds_variable.set_;
         descriptor_writes[1].dstSet = ds_variable.set_;
         descriptor_writes[2].dstSet = ds_variable.set_;
-        vk::UpdateDescriptorSets(m_device->device(), 3, descriptor_writes, 0, NULL);
+        vk::UpdateDescriptorSets(m_device->device(), 3, descriptor_writes, 0, nullptr);
     }
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
@@ -3640,13 +3640,13 @@ void addFullTestCommentIfPresent(const ::testing::TestInfo &test_info, std::stri
     const char *const type_param = test_info.type_param();
     const char *const value_param = test_info.value_param();
 
-    if (type_param != NULL || value_param != NULL) {
+    if (type_param != nullptr || value_param != nullptr) {
         error_message.append(", where ");
-        if (type_param != NULL) {
+        if (type_param != nullptr) {
             error_message.append("TypeParam = ").append(type_param);
-            if (value_param != NULL) error_message.append(" and ");
+            if (value_param != nullptr) error_message.append(" and ");
         }
-        if (value_param != NULL) {
+        if (value_param != nullptr) {
             error_message.append("GetParam() = ").append(value_param);
         }
     }
@@ -3735,7 +3735,7 @@ void android_main(struct android_app *app) {
     while (1) {
         int events;
         struct android_poll_source *source;
-        while (ALooper_pollAll(active ? 0 : -1, NULL, &events, (void **)&source) >= 0) {
+        while (ALooper_pollAll(active ? 0 : -1, nullptr, &events, (void **)&source) >= 0) {
             if (source) {
                 source->process(app, source);
             }

@@ -81,7 +81,7 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     image_create_info.pNext = &image_swapchain_create_info;
 
     VkImage image_from_swapchain;
-    VkResult err = vk::CreateImage(device(), &image_create_info, NULL, &image_from_swapchain);
+    VkResult err = vk::CreateImage(device(), &image_create_info, nullptr, &image_from_swapchain);
     ASSERT_VK_SUCCESS(err);
 
     VkMemoryRequirements mem_reqs = {};
@@ -95,7 +95,7 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
     // some devices don't give us good memory requirements for the swapchain image
     if (pass) {
-        err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+        err = vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &mem);
         ASSERT_VK_SUCCESS(err);
     }
 
@@ -129,9 +129,9 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     vk::BindImageMemory2(m_device->device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyImage(m_device->device(), image_from_swapchain, NULL);
+    vk::DestroyImage(m_device->device(), image_from_swapchain, nullptr);
     if (mem) {
-        vk::FreeMemory(m_device->device(), mem, NULL);
+        vk::FreeMemory(m_device->device(), mem, nullptr);
     }
     DestroySwapchain();
 }
@@ -188,35 +188,35 @@ TEST_F(VkLayerTest, ValidSwapchainImage) {
     image_create_info = good_create_info;
     image_create_info.imageType = VK_IMAGE_TYPE_3D;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-    vk::CreateImage(device(), &image_create_info, NULL, &image);
+    vk::CreateImage(device(), &image_create_info, nullptr, &image);
     m_errorMonitor->VerifyFound();
 
     // mipLevels
     image_create_info = good_create_info;
     image_create_info.mipLevels = 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-    vk::CreateImage(device(), &image_create_info, NULL, &image);
+    vk::CreateImage(device(), &image_create_info, nullptr, &image);
     m_errorMonitor->VerifyFound();
 
     // samples
     image_create_info = good_create_info;
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-    vk::CreateImage(device(), &image_create_info, NULL, &image);
+    vk::CreateImage(device(), &image_create_info, nullptr, &image);
     m_errorMonitor->VerifyFound();
 
     // tiling
     image_create_info = good_create_info;
     image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-    vk::CreateImage(device(), &image_create_info, NULL, &image);
+    vk::CreateImage(device(), &image_create_info, nullptr, &image);
     m_errorMonitor->VerifyFound();
 
     // initialLayout
     image_create_info = good_create_info;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-    vk::CreateImage(device(), &image_create_info, NULL, &image);
+    vk::CreateImage(device(), &image_create_info, nullptr, &image);
     m_errorMonitor->VerifyFound();
 
     // flags
@@ -224,7 +224,7 @@ TEST_F(VkLayerTest, ValidSwapchainImage) {
         image_create_info = good_create_info;
         image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-        vk::CreateImage(device(), &image_create_info, NULL, &image);
+        vk::CreateImage(device(), &image_create_info, nullptr, &image);
         m_errorMonitor->VerifyFound();
     }
 
@@ -313,7 +313,7 @@ TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
     image_create_info.pNext = &image_swapchain_create_info;
 
     VkImage peer_image;
-    vk::CreateImage(device(), &image_create_info, NULL, &peer_image);
+    vk::CreateImage(device(), &image_create_info, nullptr, &peer_image);
 
     auto bind_devicegroup_info = LvlInitStruct<VkBindImageMemoryDeviceGroupInfo>();
     bind_devicegroup_info.deviceIndexCount = 2;
@@ -368,7 +368,7 @@ TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyImage(m_device->device(), peer_image, NULL);
+    vk::DestroyImage(m_device->device(), peer_image, nullptr);
     DestroySwapchain();
 }
 
@@ -1388,12 +1388,12 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
 
     VkDeviceMemory mem;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00675");
-    vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &mem);
     m_errorMonitor->VerifyFound();
 
     alloc_flags_info.deviceMask = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00676");
-    vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &mem);
     m_errorMonitor->VerifyFound();
 
     uint32_t pdev_group_count = 0;
@@ -1411,7 +1411,7 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
                     void *data;
                     VkDeviceMemory mi_mem;
                     alloc_flags_info.deviceMask = 3;
-                    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mi_mem);
+                    err = vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &mi_mem);
                     if (VK_SUCCESS == err) {
                         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00683");
                         vk::MapMemory(m_device->device(), mi_mem, 0, 1024, 0, &data);
@@ -2412,7 +2412,7 @@ TEST_F(VkLayerTest, TestCreatingWin32Surface) {
 
     VkWin32SurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkWin32SurfaceCreateInfoKHR>();
     surface_create_info.hinstance = GetModuleHandle(0);
-    surface_create_info.hwnd = NULL; // Invalid
+    surface_create_info.hwnd = nullptr;  // Invalid
 
     VkSurfaceKHR surface;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWin32SurfaceCreateInfoKHR-hwnd-01308");

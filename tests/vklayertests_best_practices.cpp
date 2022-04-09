@@ -89,7 +89,7 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
     // Force a non-success success code by only asking for a subset of query results
     uint32_t format_count;
     std::vector<VkSurfaceFormatKHR> formats;
-    result = vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &format_count, NULL);
+    result = vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &format_count, nullptr);
     if (result != VK_SUCCESS || format_count <= 1) {
         printf("%s test requires 2 or more extensions available, skipping test.\n", kSkipPrefix);
         return;
@@ -180,7 +180,7 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
     VkDeviceCreateInfo dev_info = {};
     VkDeviceQueueCreateInfo queue_info = {};
     queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_info.pNext = NULL;
+    queue_info.pNext = nullptr;
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = 1;
     queue_info.pQueuePriorities = nullptr;
@@ -189,12 +189,12 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
     dev_info.queueCreateInfoCount = 1;
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
-    dev_info.ppEnabledLayerNames = NULL;
+    dev_info.ppEnabledLayerNames = nullptr;
     dev_info.enabledExtensionCount = m_device_extension_names.size();
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateDevice-deprecated-extension");
-    vk::CreateDevice(this->gpu(), &dev_info, NULL, &local_device);
+    vk::CreateDevice(this->gpu(), &dev_info, nullptr, &local_device);
     m_errorMonitor->VerifyFound();
 }
 
@@ -214,7 +214,7 @@ TEST_F(VkBestPracticesLayerTest, SpecialUseExtensions) {
     VkDeviceCreateInfo dev_info = {};
     VkDeviceQueueCreateInfo queue_info = {};
     queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_info.pNext = NULL;
+    queue_info.pNext = nullptr;
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = 1;
     queue_info.pQueuePriorities = nullptr;
@@ -223,12 +223,12 @@ TEST_F(VkBestPracticesLayerTest, SpecialUseExtensions) {
     dev_info.queueCreateInfoCount = 1;
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
-    dev_info.ppEnabledLayerNames = NULL;
+    dev_info.ppEnabledLayerNames = nullptr;
     dev_info.enabledExtensionCount = m_device_extension_names.size();
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension-d3demulation");
-    vk::CreateDevice(this->gpu(), &dev_info, NULL, &local_device);
+    vk::CreateDevice(this->gpu(), &dev_info, nullptr, &local_device);
     m_errorMonitor->VerifyFound();
 }
 
@@ -372,11 +372,11 @@ TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
 
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
     pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    pipe_ms_state_ci.pNext = NULL;
+    pipe_ms_state_ci.pNext = nullptr;
     pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     pipe_ms_state_ci.sampleShadingEnable = 0;
     pipe_ms_state_ci.minSampleShading = 1.0;
-    pipe_ms_state_ci.pSampleMask = NULL;
+    pipe_ms_state_ci.pSampleMask = nullptr;
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -413,26 +413,26 @@ TEST_F(VkBestPracticesLayerTest, TestDestroyFreeNullHandles) {
 
     m_errorMonitor->ExpectSuccess();
 
-    vk::DestroyBuffer(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyBufferView(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyCommandPool(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyDescriptorPool(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyDescriptorSetLayout(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyDevice(VK_NULL_HANDLE, NULL);
-    vk::DestroyEvent(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyFence(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyFramebuffer(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyImage(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyImageView(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyInstance(VK_NULL_HANDLE, NULL);
-    vk::DestroyPipeline(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyPipelineCache(m_device->device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyBuffer(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyBufferView(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyCommandPool(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyDescriptorPool(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyDescriptorSetLayout(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyDevice(VK_NULL_HANDLE, nullptr);
+    vk::DestroyEvent(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyFence(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyFramebuffer(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyImage(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyImageView(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyInstance(VK_NULL_HANDLE, nullptr);
+    vk::DestroyPipeline(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyPipelineCache(m_device->device(), VK_NULL_HANDLE, nullptr);
     vk::DestroyPipelineLayout(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyQueryPool(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyRenderPass(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroySampler(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroySemaphore(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyShaderModule(m_device->device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyQueryPool(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyRenderPass(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroySampler(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroySemaphore(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyShaderModule(m_device->device(), VK_NULL_HANDLE, nullptr);
 
     VkCommandPool command_pool;
     VkCommandPoolCreateInfo pool_create_info{};
@@ -448,7 +448,7 @@ TEST_F(VkBestPracticesLayerTest, TestDestroyFreeNullHandles) {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &command_buffers[1]);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 3, command_buffers);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
@@ -456,14 +456,14 @@ TEST_F(VkBestPracticesLayerTest, TestDestroyFreeNullHandles) {
 
     VkDescriptorPoolCreateInfo ds_pool_ci = {};
     ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    ds_pool_ci.pNext = NULL;
+    ds_pool_ci.pNext = nullptr;
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     VkDescriptorPool ds_pool;
-    err = vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+    err = vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &ds_pool);
     ASSERT_VK_SUCCESS(err);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
@@ -471,7 +471,7 @@ TEST_F(VkBestPracticesLayerTest, TestDestroyFreeNullHandles) {
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     dsl_binding.descriptorCount = 1;
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = NULL;
+    dsl_binding.pImmutableSamplers = nullptr;
 
     const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
 
@@ -484,9 +484,9 @@ TEST_F(VkBestPracticesLayerTest, TestDestroyFreeNullHandles) {
     err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_sets[1]);
     ASSERT_VK_SUCCESS(err);
     vk::FreeDescriptorSets(m_device->device(), ds_pool, 3, descriptor_sets);
-    vk::DestroyDescriptorPool(m_device->device(), ds_pool, NULL);
+    vk::DestroyDescriptorPool(m_device->device(), ds_pool, nullptr);
 
-    vk::FreeMemory(m_device->device(), VK_NULL_HANDLE, NULL);
+    vk::FreeMemory(m_device->device(), VK_NULL_HANDLE, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -1128,7 +1128,7 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     device_ci.queueCreateInfoCount = create_queue_infos.size();
     device_ci.pQueueCreateInfos = create_queue_infos.data();
     device_ci.enabledLayerCount = 0;
-    device_ci.ppEnabledLayerNames = NULL;
+    device_ci.ppEnabledLayerNames = nullptr;
     device_ci.enabledExtensionCount = 0;
     device_ci.ppEnabledExtensionNames = nullptr;
     device_ci.pEnabledFeatures = &all_features;
@@ -1393,9 +1393,9 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
 
     UpdateDescriptor(&data2);
 
-    test_platform_thread_join(thread, NULL);
+    test_platform_thread_join(thread, nullptr);
 
-    m_errorMonitor->SetBailout(NULL);
+    m_errorMonitor->SetBailout(nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }

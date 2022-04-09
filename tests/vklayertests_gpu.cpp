@@ -182,11 +182,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         descriptor_writes[1].descriptorCount = 6;
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[1].pImageInfo = image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
     if (descriptor_indexing) {
         descriptor_writes[0].dstSet = descriptor_set_variable.set_;
         descriptor_writes[1].dstSet = descriptor_set_variable.set_;
-        vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, NULL);
+        vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
     }
 
     ds_binding_flags[0] = 0;
@@ -227,7 +227,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         buffer_descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
         buffer_descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         buffer_descriptor_writes[1].pBufferInfo = &buffer_test_buffer_info[1];
-        vk::UpdateDescriptorSets(m_device->device(), 2, buffer_descriptor_writes, 0, NULL);
+        vk::UpdateDescriptorSets(m_device->device(), 2, buffer_descriptor_writes, 0, nullptr);
     }
 
     // Shader programs for array OOB test in vertex stage:
@@ -516,7 +516,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(m_device->m_queue);
         m_errorMonitor->VerifyFound();
-        vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
+        vk::DestroyPipeline(m_device->handle(), c_pipeline, nullptr);
     }
     return;
 }
@@ -591,9 +591,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     bvci.buffer = uniform_texel_buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
-    vk::CreateBufferView(m_device->device(), &bvci, NULL, &uniform_buffer_view);
+    vk::CreateBufferView(m_device->device(), &bvci, nullptr, &uniform_buffer_view);
     bvci.buffer = storage_texel_buffer.handle();
-    vk::CreateBufferView(m_device->device(), &bvci, NULL, &storage_buffer_view);
+    vk::CreateBufferView(m_device->device(), &bvci, nullptr, &storage_buffer_view);
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -796,7 +796,7 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
     descriptor_write.descriptorType = descriptor_type;
     descriptor_write.pBufferInfo = &buffer_info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
     char const *vsSource =
         "#version 450\n"
@@ -993,7 +993,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     bci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
     bci.size = 64;  // Buffer should be 16*4 = 64 bytes
     VkBuffer buffer1;
-    vk::CreateBuffer(device(), &bci, NULL, &buffer1);
+    vk::CreateBuffer(device(), &bci, nullptr, &buffer1);
     VkMemoryRequirements buffer_mem_reqs = {};
     vk::GetBufferMemoryRequirements(device(), buffer1, &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
@@ -1003,7 +1003,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     buffer_alloc_info.pNext = &alloc_flags;
     VkDeviceMemory buffer_mem;
-    VkResult err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
+    VkResult err = vk::AllocateMemory(device(), &buffer_alloc_info, nullptr, &buffer_mem);
     ASSERT_VK_SUCCESS(err);
     vk::BindBufferMemory(m_device->device(), buffer1, buffer_mem, 0);
 
@@ -1030,7 +1030,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_writes[0].pBufferInfo = buffer_test_buffer_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, nullptr);
 
     char const *shader_source =
         "#version 450\n"
@@ -1128,7 +1128,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         pipelineLayoutCreateInfo[0].pPushConstantRanges = push_constant_ranges;
         pipelineLayoutCreateInfo[0].setLayoutCount = 0;
         pipelineLayoutCreateInfo[0].pSetLayouts = nullptr;
-        vk::CreatePipelineLayout(m_device->handle(), pipelineLayoutCreateInfo, NULL, &mesh_pipeline_layout);
+        vk::CreatePipelineLayout(m_device->handle(), pipelineLayoutCreateInfo, nullptr, &mesh_pipeline_layout);
 
         char const *mesh_shader_source =
             "#version 460\n"
@@ -1185,8 +1185,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         vk::DestroyPipelineLayout(m_device->handle(), mesh_pipeline_layout, nullptr);
     }
 
-    vk::DestroyBuffer(m_device->handle(), buffer1, NULL);
-    vk::FreeMemory(m_device->handle(), buffer_mem, NULL);
+    vk::DestroyBuffer(m_device->handle(), buffer1, nullptr);
+    vk::FreeMemory(m_device->handle(), buffer_mem, nullptr);
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBRayTracingShaders) {
@@ -1782,7 +1782,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
 
     VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    VkResult err = vk::CreatePipelineLayout(m_device->handle(), &pipelineLayoutCreateInfo, NULL, &pipeline_layout);
+    VkResult err = vk::CreatePipelineLayout(m_device->handle(), &pipelineLayoutCreateInfo, nullptr, &pipeline_layout);
     ASSERT_VK_SUCCESS(err);
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
@@ -1856,7 +1856,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     }
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, NULL, pool_flags));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     auto vkCmdDrawIndirectCountKHR =
         (PFN_vkCmdDrawIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
@@ -1886,7 +1886,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
 
     VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    VkResult err = vk::CreatePipelineLayout(m_device->handle(), &pipelineLayoutCreateInfo, NULL, &pipeline_layout);
+    VkResult err = vk::CreatePipelineLayout(m_device->handle(), &pipelineLayoutCreateInfo, nullptr, &pipeline_layout);
     ASSERT_VK_SUCCESS(err);
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
@@ -2052,7 +2052,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
 
     VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    VkResult err = vk::CreatePipelineLayout(m_device->handle(), &pipelineLayoutCreateInfo, NULL, &pipeline_layout);
+    VkResult err = vk::CreatePipelineLayout(m_device->handle(), &pipelineLayoutCreateInfo, nullptr, &pipeline_layout);
     ASSERT_VK_SUCCESS(err);
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
@@ -2222,7 +2222,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     descriptor_writes[1].dstArrayElement = 16;  // Skip first 16 bytes (dummy)
     descriptor_writes[1].descriptorCount = 4;   // Write 4 bytes to val
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
 
     char const *csSource =
         "#version 450\n"
@@ -2267,7 +2267,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyNotFound();
-    vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
+    vk::DestroyPipeline(m_device->handle(), c_pipeline, nullptr);
 
     uint32_t *data = (uint32_t *)buffer0.memory().map();
     ASSERT_TRUE(*data = test_data);
@@ -2287,7 +2287,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     vk::GetPhysicalDeviceProperties(phys_devices[m_gpu_index], &properties);
     if (m_device->props.limits.maxBoundDescriptorSets != properties.limits.maxBoundDescriptorSets - 1)
         m_errorMonitor->SetError("VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT not functioning as expected");
-    vk::DestroyInstance(test_inst, NULL);
+    vk::DestroyInstance(test_inst, nullptr);
 
     auto set_count = properties.limits.maxBoundDescriptorSets;
     // Now be sure that recovery from an unavailable descriptor set works and that uninstrumented shaders are used
@@ -2306,13 +2306,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     dsl_create_info.pBindings = dsl_binding;
     dsl_create_info.bindingCount = 2;
     for (uint32_t i = 0; i < set_count; i++) {
-        vk::CreateDescriptorSetLayout(m_device->handle(), &dsl_create_info, NULL, &layouts[i]);
+        vk::CreateDescriptorSetLayout(m_device->handle(), &dsl_create_info, nullptr, &layouts[i]);
     }
     VkPipelineLayoutCreateInfo pl_create_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     VkPipelineLayout pl_layout;
     pl_create_info.setLayoutCount = set_count;
     pl_create_info.pSetLayouts = layouts;
-    vk::CreatePipelineLayout(m_device->handle(), &pl_create_info, NULL, &pl_layout);
+    vk::CreatePipelineLayout(m_device->handle(), &pl_create_info, nullptr, &pl_layout);
     pipeline_info.layout = pl_layout;
     vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &c_pipeline);
     m_commandBuffer->begin();
@@ -2323,10 +2323,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     m_commandBuffer->end();
     vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
-    vk::DestroyPipelineLayout(m_device->handle(), pl_layout, NULL);
-    vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
+    vk::DestroyPipelineLayout(m_device->handle(), pl_layout, nullptr);
+    vk::DestroyPipeline(m_device->handle(), c_pipeline, nullptr);
     for (uint32_t i = 0; i < set_count; i++) {
-        vk::DestroyDescriptorSetLayout(m_device->handle(), layouts[i], NULL);
+        vk::DestroyDescriptorSetLayout(m_device->handle(), layouts[i], nullptr);
     }
     m_errorMonitor->VerifyNotFound();
     data = (uint32_t *)buffer0.memory().map();
@@ -2467,7 +2467,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_writes[0].pBufferInfo = buffer_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, nullptr);
 
     char const *shader_source =
         "#version 450\n"

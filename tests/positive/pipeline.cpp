@@ -286,7 +286,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribComponents) {
     rpci.pAttachments = attach_desc;
 
     VkRenderPass renderpass;
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &renderpass);
+    vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &renderpass);
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
 
@@ -1604,7 +1604,7 @@ TEST_F(VkPositiveLayerTest, TestSamplerDataForCombinedImageSampler) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, NULL);
+                              &pipe.descriptor_set_->set_, 0, nullptr);
 
     m_errorMonitor->ExpectSuccess();
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
@@ -1612,7 +1612,7 @@ TEST_F(VkPositiveLayerTest, TestSamplerDataForCombinedImageSampler) {
 
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
-    vk::DestroySampler(m_device->device(), sampler, NULL);
+    vk::DestroySampler(m_device->device(), sampler, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, NotPointSizeGeometryShaderSuccess) {
@@ -4004,7 +4004,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferBindBufferMemory) {
     // Some drivers don't return exact size in getBufferMemory as getAHB
     m_errorMonitor->SetUnexpectedError("VUID-VkMemoryAllocateInfo-allocationSize-02383");
     VkDeviceMemory memory;
-    vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
+    vk::AllocateMemory(m_device->device(), &memory_info, nullptr, &memory);
     vk::BindBufferMemory(m_device->device(), buffer, memory, mem_reqs.alignment);
 
     m_errorMonitor->VerifyNotFound();
@@ -4070,7 +4070,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportBuffer) {
     }
 
     VkDeviceMemory memory = VK_NULL_HANDLE;
-    vk::AllocateMemory(device(), &memory_info, NULL, &memory);
+    vk::AllocateMemory(device(), &memory_info, nullptr, &memory);
     vk::BindBufferMemory(device(), buffer, memory, 0);
 
     // Export memory to AHB
@@ -4084,7 +4084,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportBuffer) {
 
     // App in charge of releasing after exporting
     AHardwareBuffer_release(ahb);
-    vk::FreeMemory(device(), memory, NULL);
+    vk::FreeMemory(device(), memory, nullptr);
     vk::DestroyBuffer(device(), buffer, nullptr);
 }
 
@@ -4159,7 +4159,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
     }
 
     VkDeviceMemory memory = VK_NULL_HANDLE;
-    vk::AllocateMemory(device(), &memory_info, NULL, &memory);
+    vk::AllocateMemory(device(), &memory_info, nullptr, &memory);
     vk::BindImageMemory(device(), image, memory, 0);
 
     // Export memory to AHB
@@ -4173,7 +4173,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
 
     // App in charge of releasing after exporting
     AHardwareBuffer_release(ahb);
-    vk::FreeMemory(device(), memory, NULL);
+    vk::FreeMemory(device(), memory, nullptr);
     vk::DestroyImage(device(), image, nullptr);
 }
 
@@ -4667,7 +4667,7 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
 
     m_errorMonitor->ExpectSuccess();
     for (auto &image : images) {
-        vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+        vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
         auto bind_swapchain_info = LvlInitStruct<VkBindImageMemorySwapchainInfoKHR>();
         bind_swapchain_info.swapchain = m_swapchain;
         bind_swapchain_info.imageIndex = 0;
@@ -5271,7 +5271,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptorSubresourceLayout) {
         // Set up the descriptor
         img_info.imageView = view->handle();
         img_info.imageLayout = descriptor_layout;
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
         for (TestType test_type : test_list) {
             auto init_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -5316,7 +5316,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptorSubresourceLayout) {
             cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
             vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
             vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                      &descriptorSet, 0, NULL);
+                                      &descriptorSet, 0, nullptr);
             vk::CmdSetViewport(cmd_buf.handle(), 0, 1, &viewport);
             vk::CmdSetScissor(cmd_buf.handle(), 0, 1, &scissor);
 
@@ -5515,7 +5515,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
         // Set up the descriptor
         img_info.imageView = o_view->handle();
         img_info.imageLayout = descriptor_layout;
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
         for (TestType test_type : test_list) {
             auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
@@ -5560,7 +5560,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
             cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
             vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
             vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                      &descriptorSet, 0, NULL);
+                                      &descriptorSet, 0, nullptr);
             vk::CmdSetViewport(cmd_buf.handle(), 0, 1, &viewport);
             vk::CmdSetScissor(cmd_buf.handle(), 0, 1, &scissor);
 
@@ -6499,7 +6499,7 @@ TEST_F(VkPositiveLayerTest, MutableStorageImageFormatWriteForFormat) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
     m_commandBuffer->reset();
     m_commandBuffer->begin();

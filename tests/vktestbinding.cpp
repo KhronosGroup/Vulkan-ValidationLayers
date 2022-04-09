@@ -35,7 +35,7 @@ namespace {
 #define NON_DISPATCHABLE_HANDLE_INIT(create_func, dev, ...)                                 \
     do {                                                                                    \
         handle_type handle;                                                                 \
-        auto result = create_func(dev.handle(), __VA_ARGS__, NULL, &handle);                \
+        auto result = create_func(dev.handle(), __VA_ARGS__, nullptr, &handle);             \
         if (EXPECT((result == VK_SUCCESS) || (result == VK_ERROR_VALIDATION_FAILED_EXT))) { \
             if (result == VK_SUCCESS) {                                                     \
                 NonDispHandle::init(dev.handle(), handle);                                  \
@@ -43,9 +43,9 @@ namespace {
         }                                                                                   \
     } while (0)
 
-#define NON_DISPATCHABLE_HANDLE_DTOR(cls, destroy_func)            \
-    cls::~cls() NOEXCEPT {                                         \
-        if (initialized()) destroy_func(device(), handle(), NULL); \
+#define NON_DISPATCHABLE_HANDLE_DTOR(cls, destroy_func)               \
+    cls::~cls() NOEXCEPT {                                            \
+        if (initialized()) destroy_func(device(), handle(), nullptr); \
     }
 
 #define STRINGIFY(x) #x
@@ -82,7 +82,7 @@ std::vector<VkQueueFamilyProperties> PhysicalDevice::queue_properties() const {
     uint32_t count;
 
     // Call once with NULL data to receive count
-    vk::GetPhysicalDeviceQueueFamilyProperties(handle(), &count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(handle(), &count, nullptr);
     info.resize(count);
     vk::GetPhysicalDeviceQueueFamilyProperties(handle(), &count, info.data());
 
@@ -239,7 +239,7 @@ QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProper
 Device::~Device() NOEXCEPT {
     if (!initialized()) return;
 
-    vk::DestroyDevice(handle(), NULL);
+    vk::DestroyDevice(handle(), nullptr);
 }
 
 void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features, void *create_device_pnext) {
@@ -267,7 +267,7 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
     dev_info.queueCreateInfoCount = create_queue_infos.size();
     dev_info.pQueueCreateInfos = create_queue_infos.data();
     dev_info.enabledLayerCount = 0;
-    dev_info.ppEnabledLayerNames = NULL;
+    dev_info.ppEnabledLayerNames = nullptr;
     dev_info.enabledExtensionCount = extensions.size();
     dev_info.ppEnabledExtensionNames = extensions.data();
 
@@ -291,7 +291,7 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
 void Device::init(const VkDeviceCreateInfo &info) {
     VkDevice dev;
 
-    if (EXPECT(vk::CreateDevice(phy_.handle(), &info, NULL, &dev) == VK_SUCCESS)) Handle::init(dev);
+    if (EXPECT(vk::CreateDevice(phy_.handle(), &info, nullptr, &dev) == VK_SUCCESS)) Handle::init(dev);
 
     init_queues(info);
     init_formats();
@@ -299,7 +299,7 @@ void Device::init(const VkDeviceCreateInfo &info) {
 
 void Device::init_queues(const VkDeviceCreateInfo &info) {
     uint32_t queue_node_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(phy_.handle(), &queue_node_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(phy_.handle(), &queue_node_count, nullptr);
     EXPECT(queue_node_count >= 1);
 
     std::vector<VkQueueFamilyProperties> queue_props(queue_node_count);
@@ -395,12 +395,12 @@ VkResult Queue::submit(const std::vector<const CommandBuffer *> &cmds, const Fen
     const std::vector<VkCommandBuffer> cmd_handles = MakeVkHandles<VkCommandBuffer>(cmds);
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 0;
-    submit_info.pWaitSemaphores = NULL;
-    submit_info.pWaitDstStageMask = NULL;
+    submit_info.pWaitSemaphores = nullptr;
+    submit_info.pWaitDstStageMask = nullptr;
     submit_info.commandBufferCount = (uint32_t)cmd_handles.size();
     submit_info.pCommandBuffers = cmd_handles.data();
     submit_info.signalSemaphoreCount = 0;
-    submit_info.pSignalSemaphores = NULL;
+    submit_info.pSignalSemaphores = nullptr;
 
     VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, fence.handle());
     if (expect_success) EXPECT(result == VK_SUCCESS);
@@ -423,7 +423,7 @@ VkResult Queue::wait() {
 }
 
 DeviceMemory::~DeviceMemory() NOEXCEPT {
-    if (initialized()) vk::FreeMemory(device(), handle(), NULL);
+    if (initialized()) vk::FreeMemory(device(), handle(), nullptr);
 }
 
 void DeviceMemory::init(const Device &dev, const VkMemoryAllocateInfo &info) {
@@ -432,14 +432,14 @@ void DeviceMemory::init(const Device &dev, const VkMemoryAllocateInfo &info) {
 
 const void *DeviceMemory::map(VkFlags flags) const {
     void *data;
-    if (!EXPECT(vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data) == VK_SUCCESS)) data = NULL;
+    if (!EXPECT(vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data) == VK_SUCCESS)) data = nullptr;
 
     return data;
 }
 
 void *DeviceMemory::map(VkFlags flags) {
     void *data;
-    if (!EXPECT(vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data) == VK_SUCCESS)) data = NULL;
+    if (!EXPECT(vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data) == VK_SUCCESS)) data = nullptr;
 
     return data;
 }
@@ -728,7 +728,7 @@ void ShaderModule::init(const Device &dev, const VkShaderModuleCreateInfo &info)
 VkResult ShaderModule::init_try(const Device &dev, const VkShaderModuleCreateInfo &info) {
     VkShaderModule mod;
 
-    VkResult err = vk::CreateShaderModule(dev.handle(), &info, NULL, &mod);
+    VkResult err = vk::CreateShaderModule(dev.handle(), &info, nullptr, &mod);
     if (err == VK_SUCCESS) NonDispHandle::init(dev.handle(), mod);
 
     return err;
@@ -739,10 +739,10 @@ NON_DISPATCHABLE_HANDLE_DTOR(Pipeline, vk::DestroyPipeline)
 void Pipeline::init(const Device &dev, const VkGraphicsPipelineCreateInfo &info) {
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo ci = LvlInitStruct<VkPipelineCacheCreateInfo>();
-    VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
+    VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, nullptr, &cache);
     if (err == VK_SUCCESS) {
         NON_DISPATCHABLE_HANDLE_INIT(vk::CreateGraphicsPipelines, dev, cache, 1, &info);
-        vk::DestroyPipelineCache(dev.handle(), cache, NULL);
+        vk::DestroyPipelineCache(dev.handle(), cache, nullptr);
     }
 }
 
@@ -750,14 +750,14 @@ VkResult Pipeline::init_try(const Device &dev, const VkGraphicsPipelineCreateInf
     VkPipeline pipe;
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo ci = LvlInitStruct<VkPipelineCacheCreateInfo>();
-    VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
+    VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, nullptr, &cache);
     EXPECT(err == VK_SUCCESS);
     if (err == VK_SUCCESS) {
-        err = vk::CreateGraphicsPipelines(dev.handle(), cache, 1, &info, NULL, &pipe);
+        err = vk::CreateGraphicsPipelines(dev.handle(), cache, 1, &info, nullptr, &pipe);
         if (err == VK_SUCCESS) {
             NonDispHandle::init(dev.handle(), pipe);
         }
-        vk::DestroyPipelineCache(dev.handle(), cache, NULL);
+        vk::DestroyPipelineCache(dev.handle(), cache, nullptr);
     }
 
     return err;
@@ -766,10 +766,10 @@ VkResult Pipeline::init_try(const Device &dev, const VkGraphicsPipelineCreateInf
 void Pipeline::init(const Device &dev, const VkComputePipelineCreateInfo &info) {
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo ci = LvlInitStruct<VkPipelineCacheCreateInfo>();
-    VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
+    VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, nullptr, &cache);
     if (err == VK_SUCCESS) {
         NON_DISPATCHABLE_HANDLE_INIT(vk::CreateComputePipelines, dev, cache, 1, &info);
-        vk::DestroyPipelineCache(dev.handle(), cache, NULL);
+        vk::DestroyPipelineCache(dev.handle(), cache, nullptr);
     }
 }
 
@@ -834,7 +834,7 @@ std::vector<DescriptorSet *> DescriptorPool::alloc_sets(const Device &dev, const
 
 DescriptorSet *DescriptorPool::alloc_sets(const Device &dev, const DescriptorSetLayout &layout) {
     std::vector<DescriptorSet *> set = alloc_sets(dev, layout, 1);
-    return (set.empty()) ? NULL : set[0];
+    return (set.empty()) ? nullptr : set[0];
 }
 
 DescriptorSet::~DescriptorSet() NOEXCEPT {

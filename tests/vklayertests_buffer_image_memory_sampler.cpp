@@ -64,10 +64,10 @@ TEST_F(VkLayerTest, BufferExtents) {
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdCopyBuffer2Function) {
-        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
+        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, nullptr, copy_info.srcOffset, copy_info.dstOffset,
                                              copy_info.size};
         const VkCopyBufferInfo2KHR copy_buffer_info2 = {
-            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
+            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, nullptr, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-srcOffset-00113");
         vkCmdCopyBuffer2Function(m_commandBuffer->handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
@@ -80,10 +80,10 @@ TEST_F(VkLayerTest, BufferExtents) {
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdCopyBuffer2Function) {
-        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
+        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, nullptr, copy_info.srcOffset, copy_info.dstOffset,
                                              copy_info.size};
         const VkCopyBufferInfo2KHR copy_buffer_info2 = {
-            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
+            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, nullptr, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-dstOffset-00114");
         vkCmdCopyBuffer2Function(m_commandBuffer->handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
@@ -96,10 +96,10 @@ TEST_F(VkLayerTest, BufferExtents) {
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdCopyBuffer2Function) {
-        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
+        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, nullptr, copy_info.srcOffset, copy_info.dstOffset,
                                              copy_info.size};
         const VkCopyBufferInfo2KHR copy_buffer_info2 = {
-            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
+            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, nullptr, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-size-00115");
         vkCmdCopyBuffer2Function(m_commandBuffer->handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
@@ -112,10 +112,10 @@ TEST_F(VkLayerTest, BufferExtents) {
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdCopyBuffer2Function) {
-        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
+        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, nullptr, copy_info.srcOffset, copy_info.dstOffset,
                                              copy_info.size};
         const VkCopyBufferInfo2KHR copy_buffer_info2 = {
-            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
+            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, nullptr, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-size-00116");
         vkCmdCopyBuffer2Function(m_commandBuffer->handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
@@ -148,7 +148,7 @@ TEST_F(VkLayerTest, MirrorClampToEdgeNotEnabled) {
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
 
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     m_errorMonitor->VerifyFound();
 }
 
@@ -167,7 +167,7 @@ TEST_F(VkLayerTest, MirrorClampToEdgeNotEnabled12) {
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
 
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     m_errorMonitor->VerifyFound();
 }
 
@@ -188,10 +188,10 @@ TEST_F(VkLayerTest, AnisotropyFeatureDisabled) {
     VkSampler sampler = VK_NULL_HANDLE;
 
     VkResult err;
-    err = vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    err = vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     m_errorMonitor->VerifyFound();
     if (VK_SUCCESS == err) {
-        vk::DestroySampler(m_device->device(), sampler, NULL);
+        vk::DestroySampler(m_device->device(), sampler, nullptr);
     }
     sampler = VK_NULL_HANDLE;
 }
@@ -414,7 +414,7 @@ TEST_F(VkLayerTest, SparseBindingImageBufferCreate) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buf_info.size = 2048;
     buf_info.queueFamilyIndexCount = 0;
-    buf_info.pQueueFamilyIndices = NULL;
+    buf_info.pQueueFamilyIndices = nullptr;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (m_device->phy().features().sparseResidencyBuffer) {
@@ -446,7 +446,7 @@ TEST_F(VkLayerTest, SparseBindingImageBufferCreate) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (m_device->phy().features().sparseResidencyImage2D) {
@@ -497,7 +497,7 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedTypes) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
 
@@ -549,7 +549,7 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedSamples) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
 
@@ -596,7 +596,7 @@ TEST_F(VkLayerTest, SparseResidencyFlagMissing) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageObj image(m_device);
@@ -635,10 +635,10 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     buf_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buf_info.size = 256;
     buf_info.queueFamilyIndexCount = 0;
-    buf_info.pQueueFamilyIndices = NULL;
+    buf_info.pQueueFamilyIndices = nullptr;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     buf_info.flags = 0;
-    err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
+    err = vk::CreateBuffer(m_device->device(), &buf_info, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
@@ -652,10 +652,10 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
         printf("%s Failed to set memory type.\n", kSkipPrefix);
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+        vk::DestroyBuffer(m_device->device(), buffer, nullptr);
         return;
     }
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    err = vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &mem);
     ASSERT_VK_SUCCESS(err);
 
     uint8_t *pData;
@@ -765,19 +765,19 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &mmr);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
-    vk::FreeMemory(m_device->device(), mem, NULL);
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
+    vk::FreeMemory(m_device->device(), mem, nullptr);
 
     // device memory not atom size aligned
     alloc_info.allocationSize = (atom_size * 4) + 1;
-    ASSERT_VK_SUCCESS(vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer));
+    ASSERT_VK_SUCCESS(vk::CreateBuffer(m_device->device(), &buf_info, nullptr, &buffer));
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
         printf("%s Failed to set memory type.\n", kSkipPrefix);
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+        vk::DestroyBuffer(m_device->device(), buffer, nullptr);
         return;
     }
-    ASSERT_VK_SUCCESS(vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem));
+    ASSERT_VK_SUCCESS(vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &mem));
     ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData));
     // Some platforms have an atomsize of 1 which makes the test meaningless
     if (atom_size > 1) {
@@ -794,15 +794,15 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
                                            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     if (!pass) {
         printf("%s Failed to set memory type.\n", kSkipPrefix);
-        vk::FreeMemory(m_device->device(), mem, NULL);
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+        vk::FreeMemory(m_device->device(), mem, nullptr);
+        vk::DestroyBuffer(m_device->device(), buffer, nullptr);
         return;
     }
     // TODO : If we can get HOST_VISIBLE w/o HOST_COHERENT we can test cases of
     //  kVUID_Core_MemTrack_InvalidMap in validateAndCopyNoncoherentMemoryToDriver()
 
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
-    vk::FreeMemory(m_device->device(), mem, NULL);
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
+    vk::FreeMemory(m_device->device(), mem, nullptr);
 }
 
 TEST_F(VkLayerTest, MapMemWithoutHostVisibleBit) {
@@ -825,10 +825,10 @@ TEST_F(VkLayerTest, MapMemWithoutHostVisibleBit) {
     }
 
     VkDeviceMemory mem;
-    err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+    err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
     ASSERT_VK_SUCCESS(err);
 
-    void *mappedAddress = NULL;
+    void *mappedAddress = nullptr;
     err = vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, &mappedAddress);
     m_errorMonitor->VerifyFound();
 
@@ -845,7 +845,7 @@ TEST_F(VkLayerTest, MapMemWithoutHostVisibleBit) {
     vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &memory_range);
     m_errorMonitor->VerifyFound();
 
-    vk::FreeMemory(m_device->device(), mem, NULL);
+    vk::FreeMemory(m_device->device(), mem, nullptr);
 }
 
 TEST_F(VkLayerTest, RebindMemory_MultiObjectDebugUtils) {
@@ -886,7 +886,7 @@ TEST_F(VkLayerTest, RebindMemory_MultiObjectDebugUtils) {
     // Introduce failure, do NOT set memProps to
     // VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
     mem_alloc.memoryTypeIndex = 1;
-    err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+    err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
     ASSERT_VK_SUCCESS(err);
 
     vk::GetImageMemoryRequirements(m_device->device(), image, &mem_reqs);
@@ -896,9 +896,9 @@ TEST_F(VkLayerTest, RebindMemory_MultiObjectDebugUtils) {
     ASSERT_TRUE(pass);
 
     // allocate 2 memory objects
-    err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem1);
+    err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem1);
     ASSERT_VK_SUCCESS(err);
-    err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem2);
+    err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem2);
     ASSERT_VK_SUCCESS(err);
 
     // Bind first memory object to Image object
@@ -915,9 +915,9 @@ TEST_F(VkLayerTest, RebindMemory_MultiObjectDebugUtils) {
     err = vk::BindImageMemory(m_device->device(), image, mem2, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyImage(m_device->device(), image, NULL);
-    vk::FreeMemory(m_device->device(), mem1, NULL);
-    vk::FreeMemory(m_device->device(), mem2, NULL);
+    vk::DestroyImage(m_device->device(), image, nullptr);
+    vk::FreeMemory(m_device->device(), mem1, nullptr);
+    vk::FreeMemory(m_device->device(), mem2, nullptr);
 }
 
 TEST_F(VkLayerTest, QueryMemoryCommitmentWithoutLazyProperty) {
@@ -982,7 +982,7 @@ TEST_F(VkLayerTest, InvalidSparseImageUsageBits) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageObj image(m_device);
@@ -1033,7 +1033,7 @@ TEST_F(VkLayerTest, InvalidUsageBits) {
 
     // Create a view with depth / stencil aspect for image with different usage
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-04441");
-    vk::CreateImageView(m_device->device(), &dsvci, NULL, &dsv);
+    vk::CreateImageView(m_device->device(), &dsvci, nullptr, &dsv);
     m_errorMonitor->VerifyFound();
 
     // Initialize buffer with TRANSFER_DST usage
@@ -1063,7 +1063,7 @@ TEST_F(VkLayerTest, InvalidUsageBits) {
     // equvalent test using using KHR_copy_commands2
     if (copy_commands2 && vkCmdCopyBufferToImage2Function) {
         const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
+                                               nullptr,
                                                region.bufferRowLength,
                                                region.bufferImageHeight,
                                                region.bufferImageHeight,
@@ -1071,7 +1071,7 @@ TEST_F(VkLayerTest, InvalidUsageBits) {
                                                region.imageOffset,
                                                region.imageExtent};
         VkCopyBufferToImageInfo2KHR buffer_to_image_info2 = {VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR,
-                                                             NULL,
+                                                             nullptr,
                                                              buffer.handle(),
                                                              image.handle(),
                                                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -1139,10 +1139,10 @@ TEST_F(VkLayerTest, CopyBufferToCompressedImage) {
     depth_image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     depth_image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     depth_image_create_info.queueFamilyIndexCount = 0;
-    depth_image_create_info.pQueueFamilyIndices = NULL;
+    depth_image_create_info.pQueueFamilyIndices = nullptr;
 
     VkImage depth_image = VK_NULL_HANDLE;
-    err = vk::CreateImage(m_device->handle(), &depth_image_create_info, NULL, &depth_image);
+    err = vk::CreateImage(m_device->handle(), &depth_image_create_info, nullptr, &depth_image);
     ASSERT_VK_SUCCESS(err);
 
     VkDeviceMemory mem1;
@@ -1156,7 +1156,7 @@ TEST_F(VkLayerTest, CopyBufferToCompressedImage) {
     mem_alloc.allocationSize = mem_reqs.size;
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     ASSERT_TRUE(pass);
-    err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem1);
+    err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem1);
     ASSERT_VK_SUCCESS(err);
     err = vk::BindImageMemory(m_device->device(), depth_image, mem1, 0);
 
@@ -1164,8 +1164,8 @@ TEST_F(VkLayerTest, CopyBufferToCompressedImage) {
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), depth_image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyImage(m_device->device(), depth_image, NULL);
-    vk::FreeMemory(m_device->device(), mem1, NULL);
+    vk::DestroyImage(m_device->device(), depth_image, nullptr);
+    vk::FreeMemory(m_device->device(), mem1, nullptr);
     m_commandBuffer->end();
 }
 
@@ -1293,9 +1293,9 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
     {
         VkImage image = VK_NULL_HANDLE;
         VkBuffer buffer = VK_NULL_HANDLE;
-        err = vk::CreateImage(device(), &image_create_info, NULL, &image);
+        err = vk::CreateImage(device(), &image_create_info, nullptr, &image);
         ASSERT_VK_SUCCESS(err);
-        err = vk::CreateBuffer(device(), &buffer_create_info, NULL, &buffer);
+        err = vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
         ASSERT_VK_SUCCESS(err);
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
@@ -1311,13 +1311,13 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
         ASSERT_TRUE(pass);
 
         VkDeviceMemory image_mem = VK_NULL_HANDLE, buffer_mem = VK_NULL_HANDLE;
-        err = vk::AllocateMemory(device(), &image_mem_alloc, NULL, &image_mem);
+        err = vk::AllocateMemory(device(), &image_mem_alloc, nullptr, &image_mem);
         ASSERT_VK_SUCCESS(err);
-        err = vk::AllocateMemory(device(), &buffer_mem_alloc, NULL, &buffer_mem);
+        err = vk::AllocateMemory(device(), &buffer_mem_alloc, nullptr, &buffer_mem);
         ASSERT_VK_SUCCESS(err);
 
-        vk::FreeMemory(device(), image_mem, NULL);
-        vk::FreeMemory(device(), buffer_mem, NULL);
+        vk::FreeMemory(device(), image_mem, nullptr);
+        vk::FreeMemory(device(), buffer_mem, nullptr);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-parameter");
         err = vk::BindImageMemory(device(), image, image_mem, 0);
@@ -1329,17 +1329,17 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
         (void)err;  // This may very well return an error.
         m_errorMonitor->VerifyFound();
 
-        vk::DestroyImage(m_device->device(), image, NULL);
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+        vk::DestroyImage(m_device->device(), image, nullptr);
+        vk::DestroyBuffer(m_device->device(), buffer, nullptr);
     }
 
     // Try to bind memory to an object that already has a memory binding
     {
         VkImage image = VK_NULL_HANDLE;
-        err = vk::CreateImage(device(), &image_create_info, NULL, &image);
+        err = vk::CreateImage(device(), &image_create_info, nullptr, &image);
         ASSERT_VK_SUCCESS(err);
         VkBuffer buffer = VK_NULL_HANDLE;
-        err = vk::CreateBuffer(device(), &buffer_create_info, NULL, &buffer);
+        err = vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
         ASSERT_VK_SUCCESS(err);
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
@@ -1353,9 +1353,9 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
         pass = m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
         ASSERT_TRUE(pass);
         VkDeviceMemory image_mem, buffer_mem;
-        err = vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_mem);
+        err = vk::AllocateMemory(device(), &image_alloc_info, nullptr, &image_mem);
         ASSERT_VK_SUCCESS(err);
-        err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
+        err = vk::AllocateMemory(device(), &buffer_alloc_info, nullptr, &buffer_mem);
         ASSERT_VK_SUCCESS(err);
 
         err = vk::BindImageMemory(device(), image, image_mem, 0);
@@ -1372,19 +1372,19 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
         (void)err;  // This may very well return an error.
         m_errorMonitor->VerifyFound();
 
-        vk::FreeMemory(device(), image_mem, NULL);
-        vk::FreeMemory(device(), buffer_mem, NULL);
-        vk::DestroyImage(device(), image, NULL);
-        vk::DestroyBuffer(device(), buffer, NULL);
+        vk::FreeMemory(device(), image_mem, nullptr);
+        vk::FreeMemory(device(), buffer_mem, nullptr);
+        vk::DestroyImage(device(), image, nullptr);
+        vk::DestroyBuffer(device(), buffer, nullptr);
     }
 
     // Try to bind memory to an object with an invalid memoryOffset
     {
         VkImage image = VK_NULL_HANDLE;
-        err = vk::CreateImage(device(), &image_create_info, NULL, &image);
+        err = vk::CreateImage(device(), &image_create_info, nullptr, &image);
         ASSERT_VK_SUCCESS(err);
         VkBuffer buffer = VK_NULL_HANDLE;
-        err = vk::CreateBuffer(device(), &buffer_create_info, NULL, &buffer);
+        err = vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
         ASSERT_VK_SUCCESS(err);
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
@@ -1399,9 +1399,9 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
         pass = m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
         ASSERT_TRUE(pass);
         VkDeviceMemory image_mem, buffer_mem;
-        err = vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_mem);
+        err = vk::AllocateMemory(device(), &image_alloc_info, nullptr, &image_mem);
         ASSERT_VK_SUCCESS(err);
-        err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
+        err = vk::AllocateMemory(device(), &buffer_alloc_info, nullptr, &buffer_mem);
         ASSERT_VK_SUCCESS(err);
 
         // Test unaligned memory offset
@@ -1460,19 +1460,19 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
             }
         }
 
-        vk::FreeMemory(device(), image_mem, NULL);
-        vk::FreeMemory(device(), buffer_mem, NULL);
-        vk::DestroyImage(device(), image, NULL);
-        vk::DestroyBuffer(device(), buffer, NULL);
+        vk::FreeMemory(device(), image_mem, nullptr);
+        vk::FreeMemory(device(), buffer_mem, nullptr);
+        vk::DestroyImage(device(), image, nullptr);
+        vk::DestroyBuffer(device(), buffer, nullptr);
     }
 
     // Try to bind memory to an object with an invalid memory type
     {
         VkImage image = VK_NULL_HANDLE;
-        err = vk::CreateImage(device(), &image_create_info, NULL, &image);
+        err = vk::CreateImage(device(), &image_create_info, nullptr, &image);
         ASSERT_VK_SUCCESS(err);
         VkBuffer buffer = VK_NULL_HANDLE;
-        err = vk::CreateBuffer(device(), &buffer_create_info, NULL, &buffer);
+        err = vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
         ASSERT_VK_SUCCESS(err);
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
@@ -1491,13 +1491,13 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
         if (image_unsupported_mem_type_bits != 0) {
             pass = m_device->phy().set_memory_type(image_unsupported_mem_type_bits, &image_alloc_info, 0);
             ASSERT_TRUE(pass);
-            err = vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_mem);
+            err = vk::AllocateMemory(device(), &image_alloc_info, nullptr, &image_mem);
             ASSERT_VK_SUCCESS(err);
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-01047");
             err = vk::BindImageMemory(device(), image, image_mem, 0);
             (void)err;  // This may very well return an error.
             m_errorMonitor->VerifyFound();
-            vk::FreeMemory(device(), image_mem, NULL);
+            vk::FreeMemory(device(), image_mem, nullptr);
         }
 
         uint32_t buffer_unsupported_mem_type_bits =
@@ -1505,17 +1505,17 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
         if (buffer_unsupported_mem_type_bits != 0) {
             pass = m_device->phy().set_memory_type(buffer_unsupported_mem_type_bits, &buffer_alloc_info, 0);
             ASSERT_TRUE(pass);
-            err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
+            err = vk::AllocateMemory(device(), &buffer_alloc_info, nullptr, &buffer_mem);
             ASSERT_VK_SUCCESS(err);
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memory-01035");
             err = vk::BindBufferMemory(device(), buffer, buffer_mem, 0);
             (void)err;  // This may very well return an error.
             m_errorMonitor->VerifyFound();
-            vk::FreeMemory(device(), buffer_mem, NULL);
+            vk::FreeMemory(device(), buffer_mem, nullptr);
         }
 
-        vk::DestroyImage(device(), image, NULL);
-        vk::DestroyBuffer(device(), buffer, NULL);
+        vk::DestroyImage(device(), image, nullptr);
+        vk::DestroyBuffer(device(), buffer, nullptr);
     }
 
     // Try to bind memory to an image created with sparse memory flags
@@ -1536,7 +1536,7 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
                 return;
             } else {
                 VkImage sparse_image = VK_NULL_HANDLE;
-                err = vk::CreateImage(m_device->device(), &sparse_image_create_info, NULL, &sparse_image);
+                err = vk::CreateImage(m_device->device(), &sparse_image_create_info, nullptr, &sparse_image);
                 ASSERT_VK_SUCCESS(err);
                 VkMemoryRequirements sparse_mem_reqs = {};
                 vk::GetImageMemoryRequirements(m_device->device(), sparse_image, &sparse_mem_reqs);
@@ -1547,16 +1547,16 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
                     pass = m_device->phy().set_memory_type(sparse_mem_reqs.memoryTypeBits, &sparse_mem_alloc, 0);
                     ASSERT_TRUE(pass);
                     VkDeviceMemory sparse_mem = VK_NULL_HANDLE;
-                    err = vk::AllocateMemory(m_device->device(), &sparse_mem_alloc, NULL, &sparse_mem);
+                    err = vk::AllocateMemory(m_device->device(), &sparse_mem_alloc, nullptr, &sparse_mem);
                     ASSERT_VK_SUCCESS(err);
                     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-01045");
                     err = vk::BindImageMemory(m_device->device(), sparse_image, sparse_mem, 0);
                     // This may very well return an error.
                     (void)err;
                     m_errorMonitor->VerifyFound();
-                    vk::FreeMemory(m_device->device(), sparse_mem, NULL);
+                    vk::FreeMemory(m_device->device(), sparse_mem, nullptr);
                 }
-                vk::DestroyImage(m_device->device(), sparse_image, NULL);
+                vk::DestroyImage(m_device->device(), sparse_image, nullptr);
             }
         }
     }
@@ -1569,7 +1569,7 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
             // most likely means sparse formats aren't supported here; skip this test.
         } else {
             VkBuffer sparse_buffer = VK_NULL_HANDLE;
-            err = vk::CreateBuffer(m_device->device(), &sparse_buffer_create_info, NULL, &sparse_buffer);
+            err = vk::CreateBuffer(m_device->device(), &sparse_buffer_create_info, nullptr, &sparse_buffer);
             ASSERT_VK_SUCCESS(err);
             VkMemoryRequirements sparse_mem_reqs = {};
             vk::GetBufferMemoryRequirements(m_device->device(), sparse_buffer, &sparse_mem_reqs);
@@ -1580,16 +1580,16 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
                 pass = m_device->phy().set_memory_type(sparse_mem_reqs.memoryTypeBits, &sparse_mem_alloc, 0);
                 ASSERT_TRUE(pass);
                 VkDeviceMemory sparse_mem = VK_NULL_HANDLE;
-                err = vk::AllocateMemory(m_device->device(), &sparse_mem_alloc, NULL, &sparse_mem);
+                err = vk::AllocateMemory(m_device->device(), &sparse_mem_alloc, nullptr, &sparse_mem);
                 ASSERT_VK_SUCCESS(err);
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-buffer-01030");
                 err = vk::BindBufferMemory(m_device->device(), sparse_buffer, sparse_mem, 0);
                 // This may very well return an error.
                 (void)err;
                 m_errorMonitor->VerifyFound();
-                vk::FreeMemory(m_device->device(), sparse_mem, NULL);
+                vk::FreeMemory(m_device->device(), sparse_mem, nullptr);
             }
-            vk::DestroyBuffer(m_device->device(), sparse_buffer, NULL);
+            vk::DestroyBuffer(m_device->device(), sparse_buffer, nullptr);
         }
     }
 }
@@ -1645,7 +1645,7 @@ TEST_F(VkLayerTest, BindInvalidMemoryYcbcr) {
         image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
 
         VkImage image;
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, nullptr, &image));
 
         VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -1661,7 +1661,7 @@ TEST_F(VkLayerTest, BindInvalidMemoryYcbcr) {
         ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
 
         VkDeviceMemory image_memory;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &image_memory));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, nullptr, &image_memory));
 
         // Bind disjoint with BindImageMemory instead of BindImageMemory2
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-01608");
@@ -1688,7 +1688,7 @@ TEST_F(VkLayerTest, BindInvalidMemoryYcbcr) {
         vkBindImageMemory2Function(device(), 1, &bind_image_info);
         m_errorMonitor->VerifyFound();
 
-        vk::FreeMemory(device(), image_memory, NULL);
+        vk::FreeMemory(device(), image_memory, nullptr);
         vk::DestroyImage(device(), image, nullptr);
     }
 
@@ -1711,7 +1711,7 @@ TEST_F(VkLayerTest, BindInvalidMemoryYcbcr) {
         image_create_info.flags = 0;  // no disjoint bit set
 
         VkImage image;
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, nullptr, &image));
 
         VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>();
         mem_req_info2.image = image;
@@ -1724,7 +1724,7 @@ TEST_F(VkLayerTest, BindInvalidMemoryYcbcr) {
         ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
 
         VkDeviceMemory image_memory;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &image_memory));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, nullptr, &image_memory));
 
         VkBindImagePlaneMemoryInfo plane_memory_info = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
         plane_memory_info.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -1737,7 +1737,7 @@ TEST_F(VkLayerTest, BindInvalidMemoryYcbcr) {
         vkBindImageMemory2Function(device(), 1, &bind_image_info);
         m_errorMonitor->VerifyFound();
 
-        vk::FreeMemory(device(), image_memory, NULL);
+        vk::FreeMemory(device(), image_memory, nullptr);
         vk::DestroyImage(device(), image, nullptr);
     }
 }
@@ -1817,7 +1817,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
     // Try to bind memory to an object with an invalid memoryOffset
 
     VkImage image = VK_NULL_HANDLE;
-    ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image));
+    ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, nullptr, &image));
     VkMemoryRequirements image_mem_reqs = {};
     vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
     VkMemoryAllocateInfo image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
@@ -1825,7 +1825,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
     image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
     ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
     VkDeviceMemory image_mem;
-    ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_mem));
+    ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, nullptr, &image_mem));
 
     // Keep values outside scope so multiple tests cases can reuse
     VkImage mp_image = VK_NULL_HANDLE;
@@ -1833,7 +1833,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
     VkMemoryRequirements2 mp_image_mem_reqs2[2];
     VkMemoryAllocateInfo mp_image_alloc_info[2];
     if (mp_disjoint_support == true) {
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_image));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, nullptr, &mp_image));
 
         VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -1861,8 +1861,8 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
         ASSERT_TRUE(
             m_device->phy().set_memory_type(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0));
 
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[0], NULL, &mp_image_mem[0]));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[1], NULL, &mp_image_mem[1]));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[0], nullptr, &mp_image_mem[0]));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[1], nullptr, &mp_image_mem[1]));
     }
 
     // All planes must be bound at once the same here
@@ -1983,10 +1983,10 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
     }
 
     // Free Memory to reset
-    vk::FreeMemory(device(), image_mem, NULL);
+    vk::FreeMemory(device(), image_mem, nullptr);
     if (mp_disjoint_support == true) {
         // only reset plane 0
-        vk::FreeMemory(device(), mp_image_mem[0], NULL);
+        vk::FreeMemory(device(), mp_image_mem[0], nullptr);
     }
 
     // Try to bind memory to an object with an invalid memory type
@@ -2011,12 +2011,12 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
                 ((1 << memory_properties.memoryTypeCount) - 1) & ~mem_req2.memoryRequirements.memoryTypeBits;
             if (image2_unsupported_mem_type_bits != 0) {
                 ASSERT_TRUE(m_device->phy().set_memory_type(image2_unsupported_mem_type_bits, &image_alloc_info, 0));
-                ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_mem));
+                ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, nullptr, &image_mem));
                 bind_image_info.memory = image_mem;
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01615");
                 vkBindImageMemory2Function(device(), 1, &bind_image_info);
                 m_errorMonitor->VerifyFound();
-                vk::FreeMemory(device(), image_mem, NULL);
+                vk::FreeMemory(device(), image_mem, nullptr);
             }
         } else {
             // Same as 01047 but with bindImageMemory2 call
@@ -2024,14 +2024,14 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
                 ((1 << memory_properties.memoryTypeCount) - 1) & ~image_mem_reqs.memoryTypeBits;
             if (image_unsupported_mem_type_bits != 0) {
                 ASSERT_TRUE(m_device->phy().set_memory_type(image_unsupported_mem_type_bits, &image_alloc_info, 0));
-                ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_mem));
+                ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, nullptr, &image_mem));
                 bind_image_info.memory = image_mem;
                 const char *vuid =
                     (mp_extensions) ? "VUID-VkBindImageMemoryInfo-pNext-01615" : "VUID-VkBindImageMemoryInfo-memory-01612";
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
                 vkBindImageMemory2Function(device(), 1, &bind_image_info);
                 m_errorMonitor->VerifyFound();
-                vk::FreeMemory(device(), image_mem, NULL);
+                vk::FreeMemory(device(), image_mem, nullptr);
             }
         }
     }
@@ -2051,7 +2051,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
         if (mp_image_unsupported_mem_type_bits != 0) {
             mp_image_alloc_info[0].allocationSize = mp_image_mem_reqs2[0].memoryRequirements.size;
             ASSERT_TRUE(m_device->phy().set_memory_type(mp_image_unsupported_mem_type_bits, &mp_image_alloc_info[0], 0));
-            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[0], NULL, &mp_image_mem[0]));
+            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[0], nullptr, &mp_image_mem[0]));
 
             VkBindImageMemoryInfo bind_image_info[2];
             bind_image_info[0] = LvlInitStruct<VkBindImageMemoryInfo>(&plane_memory_info[0]);
@@ -2066,14 +2066,14 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01619");
             vkBindImageMemory2Function(device(), 2, bind_image_info);
             m_errorMonitor->VerifyFound();
-            vk::FreeMemory(device(), mp_image_mem[0], NULL);
+            vk::FreeMemory(device(), mp_image_mem[0], nullptr);
         }
     }
 
-    vk::DestroyImage(device(), image, NULL);
+    vk::DestroyImage(device(), image, nullptr);
     if (mp_disjoint_support == true) {
-        vk::FreeMemory(device(), mp_image_mem[1], NULL);
-        vk::DestroyImage(device(), mp_image, NULL);
+        vk::FreeMemory(device(), mp_image_mem[1], nullptr);
+        vk::DestroyImage(device(), mp_image, nullptr);
     }
 }
 
@@ -2099,8 +2099,8 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
         VkBuffer unchecked_buffer = VK_NULL_HANDLE;
         VkDeviceMemory buffer_mem = VK_NULL_HANDLE;
         VkDeviceMemory unchecked_buffer_mem = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::CreateBuffer(device(), &buffer_create_info, NULL, &buffer));
-        ASSERT_VK_SUCCESS(vk::CreateBuffer(device(), &buffer_create_info, NULL, &unchecked_buffer));
+        ASSERT_VK_SUCCESS(vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer));
+        ASSERT_VK_SUCCESS(vk::CreateBuffer(device(), &buffer_create_info, nullptr, &unchecked_buffer));
 
         VkMemoryRequirements buffer_mem_reqs = {};
         vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
@@ -2108,8 +2108,8 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
         // Leave some extra space for alignment wiggle room
         buffer_alloc_info.allocationSize = buffer_mem_reqs.size + buffer_mem_reqs.alignment;
         ASSERT_TRUE(m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &unchecked_buffer_mem));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &buffer_alloc_info, nullptr, &buffer_mem));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &buffer_alloc_info, nullptr, &unchecked_buffer_mem));
 
         if (buffer_mem_reqs.alignment > 1) {
             VkDeviceSize buffer_offset = 1;
@@ -2126,10 +2126,10 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
             m_errorMonitor->VerifyFound();
         }
 
-        vk::DestroyBuffer(device(), buffer, NULL);
-        vk::DestroyBuffer(device(), unchecked_buffer, NULL);
-        vk::FreeMemory(device(), buffer_mem, NULL);
-        vk::FreeMemory(device(), unchecked_buffer_mem, NULL);
+        vk::DestroyBuffer(device(), buffer, nullptr);
+        vk::DestroyBuffer(device(), unchecked_buffer, nullptr);
+        vk::FreeMemory(device(), buffer_mem, nullptr);
+        vk::FreeMemory(device(), unchecked_buffer_mem, nullptr);
     }
 
     // Next test is a single-plane image
@@ -2152,8 +2152,8 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
         VkImage unchecked_image = VK_NULL_HANDLE;
         VkDeviceMemory image_mem = VK_NULL_HANDLE;
         VkDeviceMemory unchecked_image_mem = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image));
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &unchecked_image));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, nullptr, &image));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, nullptr, &unchecked_image));
 
         VkMemoryRequirements image_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
@@ -2161,8 +2161,8 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
         // Leave some extra space for alignment wiggle room
         image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
         ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_mem));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &unchecked_image_mem));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, nullptr, &image_mem));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, nullptr, &unchecked_image_mem));
 
         // single-plane image
         if (image_mem_reqs.alignment > 1) {
@@ -2180,10 +2180,10 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
             m_errorMonitor->VerifyFound();
         }
 
-        vk::DestroyImage(device(), image, NULL);
-        vk::DestroyImage(device(), unchecked_image, NULL);
-        vk::FreeMemory(device(), image_mem, NULL);
-        vk::FreeMemory(device(), unchecked_image_mem, NULL);
+        vk::DestroyImage(device(), image, nullptr);
+        vk::DestroyImage(device(), unchecked_image, nullptr);
+        vk::FreeMemory(device(), image_mem, nullptr);
+        vk::FreeMemory(device(), unchecked_image_mem, nullptr);
     }
 
     // Same style test but with a multi-planar disjoint image
@@ -2237,8 +2237,8 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
         VkMemoryRequirements2 mp_image_mem_reqs2[2];
         VkMemoryAllocateInfo mp_image_alloc_info[2];
 
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_image));
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_unchecked_image));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, nullptr, &mp_image));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, nullptr, &mp_unchecked_image));
 
         VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -2264,10 +2264,10 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
         ASSERT_TRUE(
             m_device->phy().set_memory_type(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0));
 
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[0], NULL, &mp_image_mem[0]));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[1], NULL, &mp_image_mem[1]));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[0], NULL, &mp_unchecked_image_mem[0]));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[1], NULL, &mp_unchecked_image_mem[1]));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[0], nullptr, &mp_image_mem[0]));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[1], nullptr, &mp_image_mem[1]));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[0], nullptr, &mp_unchecked_image_mem[0]));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[1], nullptr, &mp_unchecked_image_mem[1]));
 
         // Sets an invalid offset to plane 1
         if (mp_image_mem_reqs2[1].memoryRequirements.alignment > 1) {
@@ -2303,12 +2303,12 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
             m_errorMonitor->VerifyFound();
         }
 
-        vk::DestroyImage(device(), mp_image, NULL);
-        vk::DestroyImage(device(), mp_unchecked_image, NULL);
-        vk::FreeMemory(device(), mp_image_mem[0], NULL);
-        vk::FreeMemory(device(), mp_image_mem[1], NULL);
-        vk::FreeMemory(device(), mp_unchecked_image_mem[0], NULL);
-        vk::FreeMemory(device(), mp_unchecked_image_mem[1], NULL);
+        vk::DestroyImage(device(), mp_image, nullptr);
+        vk::DestroyImage(device(), mp_unchecked_image, nullptr);
+        vk::FreeMemory(device(), mp_image_mem[0], nullptr);
+        vk::FreeMemory(device(), mp_image_mem[1], nullptr);
+        vk::FreeMemory(device(), mp_unchecked_image_mem[0], nullptr);
+        vk::FreeMemory(device(), mp_unchecked_image_mem[1], nullptr);
     }
 }
 
@@ -2355,19 +2355,19 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         VkImage image_b = VK_NULL_HANDLE;
         VkDeviceMemory image_a_mem = VK_NULL_HANDLE;
         VkDeviceMemory image_b_mem = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image_a));
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image_b));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, nullptr, &image_a));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, nullptr, &image_b));
 
         VkMemoryRequirements image_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image_a, &image_mem_reqs);
         VkMemoryAllocateInfo image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
         image_alloc_info.allocationSize = image_mem_reqs.size;
         ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_a_mem));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, nullptr, &image_a_mem));
         vk::GetImageMemoryRequirements(device(), image_b, &image_mem_reqs);
         image_alloc_info.allocationSize = image_mem_reqs.size;
         ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_b_mem));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, nullptr, &image_b_mem));
 
         // Try binding same image twice in array
         VkBindImageMemoryInfo bind_image_info[3];
@@ -2391,10 +2391,10 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         vkBindImageMemory2Function(device(), 2, bind_image_info);
         m_errorMonitor->VerifyFound();
 
-        vk::FreeMemory(device(), image_a_mem, NULL);
-        vk::FreeMemory(device(), image_b_mem, NULL);
-        vk::DestroyImage(device(), image_a, NULL);
-        vk::DestroyImage(device(), image_b, NULL);
+        vk::FreeMemory(device(), image_a_mem, nullptr);
+        vk::FreeMemory(device(), image_b_mem, nullptr);
+        vk::DestroyImage(device(), image_a, nullptr);
+        vk::DestroyImage(device(), image_b, nullptr);
     }
 
     if (mp_extensions) {
@@ -2420,13 +2420,13 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         // Creat 1 normal, not disjoint image
         VkImage normal_image = VK_NULL_HANDLE;
         VkDeviceMemory normal_image_mem = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &normal_image));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, nullptr, &normal_image));
         VkMemoryRequirements image_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), normal_image, &image_mem_reqs);
         VkMemoryAllocateInfo image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
         image_alloc_info.allocationSize = image_mem_reqs.size;
         ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &normal_image_mem));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, nullptr, &normal_image_mem));
 
         // Create 2 disjoint images with memory backing each plane
         VkImageCreateInfo mp_image_create_info = image_create_info;
@@ -2437,8 +2437,8 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         VkImage mp_image_b = VK_NULL_HANDLE;
         VkDeviceMemory mp_image_a_mem[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
         VkDeviceMemory mp_image_b_mem[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_image_a));
-        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_image_b));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, nullptr, &mp_image_a));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, nullptr, &mp_image_b));
 
         AllocateDisjointMemory(m_device, vkGetImageMemoryRequirements2Function, mp_image_a, &mp_image_a_mem[0],
                                VK_IMAGE_ASPECT_PLANE_0_BIT);
@@ -2501,14 +2501,14 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         vkBindImageMemory2Function(device(), 5, bind_image_info);
         m_errorMonitor->VerifyNotFound();
 
-        vk::FreeMemory(device(), normal_image_mem, NULL);
-        vk::FreeMemory(device(), mp_image_a_mem[0], NULL);
-        vk::FreeMemory(device(), mp_image_a_mem[1], NULL);
-        vk::FreeMemory(device(), mp_image_b_mem[0], NULL);
-        vk::FreeMemory(device(), mp_image_b_mem[1], NULL);
-        vk::DestroyImage(device(), normal_image, NULL);
-        vk::DestroyImage(device(), mp_image_a, NULL);
-        vk::DestroyImage(device(), mp_image_b, NULL);
+        vk::FreeMemory(device(), normal_image_mem, nullptr);
+        vk::FreeMemory(device(), mp_image_a_mem[0], nullptr);
+        vk::FreeMemory(device(), mp_image_a_mem[1], nullptr);
+        vk::FreeMemory(device(), mp_image_b_mem[0], nullptr);
+        vk::FreeMemory(device(), mp_image_b_mem[1], nullptr);
+        vk::DestroyImage(device(), normal_image, nullptr);
+        vk::DestroyImage(device(), mp_image_a, nullptr);
+        vk::DestroyImage(device(), mp_image_b, nullptr);
     }
 }
 
@@ -2547,7 +2547,7 @@ TEST_F(VkLayerTest, BindMemoryToDestroyedObject) {
     mem_alloc.allocationSize = 0;
     mem_alloc.memoryTypeIndex = 0;
 
-    err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+    err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
     ASSERT_VK_SUCCESS(err);
 
     vk::GetImageMemoryRequirements(m_device->device(), image, &mem_reqs);
@@ -2557,11 +2557,11 @@ TEST_F(VkLayerTest, BindMemoryToDestroyedObject) {
     ASSERT_TRUE(pass);
 
     // Allocate memory
-    err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+    err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
     ASSERT_VK_SUCCESS(err);
 
     // Introduce validation failure, destroy Image object before binding
-    vk::DestroyImage(m_device->device(), image, NULL);
+    vk::DestroyImage(m_device->device(), image, nullptr);
     ASSERT_VK_SUCCESS(err);
 
     // Now Try to bind memory to this destroyed object
@@ -2571,7 +2571,7 @@ TEST_F(VkLayerTest, BindMemoryToDestroyedObject) {
 
     m_errorMonitor->VerifyFound();
 
-    vk::FreeMemory(m_device->device(), mem, NULL);
+    vk::FreeMemory(m_device->device(), mem, nullptr);
 }
 
 TEST_F(VkLayerTest, ExceedMemoryAllocationCount) {
@@ -2611,7 +2611,7 @@ TEST_F(VkLayerTest, ExceedMemoryAllocationCount) {
 
     int i;
     for (i = 0; i <= max_mems; i++) {
-        err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mems[i]);
+        err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mems[i]);
         if (err != VK_SUCCESS) {
             break;
         }
@@ -2619,7 +2619,7 @@ TEST_F(VkLayerTest, ExceedMemoryAllocationCount) {
     m_errorMonitor->VerifyFound();
 
     for (int j = 0; j < i; j++) {
-        vk::FreeMemory(m_device->device(), mems[j], NULL);
+        vk::FreeMemory(m_device->device(), mems[j], nullptr);
     }
 }
 
@@ -2657,7 +2657,7 @@ TEST_F(VkLayerTest, ExceedSamplerAllocationCount) {
 
     int i;
     for (i = 0; i <= max_samplers; i++) {
-        err = vk::CreateSampler(m_device->device(), &sampler_create_info, NULL, &samplers[i]);
+        err = vk::CreateSampler(m_device->device(), &sampler_create_info, nullptr, &samplers[i]);
         if (err != VK_SUCCESS) {
             break;
         }
@@ -2665,7 +2665,7 @@ TEST_F(VkLayerTest, ExceedSamplerAllocationCount) {
     m_errorMonitor->VerifyFound();
 
     for (int j = 0; j < i; j++) {
-        vk::DestroySampler(m_device->device(), samplers[j], NULL);
+        vk::DestroySampler(m_device->device(), samplers[j], nullptr);
     }
 }
 
@@ -2883,11 +2883,11 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
     // equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdBlitImage2Function) {
         const VkImageBlit2KHR blitRegion2 = {
-            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, nullptr,
             blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
             blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
         const VkBlitImageInfo2KHR blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
-                                                      NULL,
+                                                      nullptr,
                                                       unsigned_image.image(),
                                                       unsigned_image.Layout(),
                                                       float_image.image(),
@@ -2913,11 +2913,11 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
     // equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdBlitImage2Function) {
         const VkImageBlit2KHR blitRegion2 = {
-            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, nullptr,
             blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
             blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
         const VkBlitImageInfo2KHR blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
-                                                      NULL,
+                                                      nullptr,
                                                       float_image.image(),
                                                       float_image.Layout(),
                                                       unsigned_image.image(),
@@ -2943,11 +2943,11 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
     // equivalent test using KHR_copy_commands2
     if (copy_commands2 && vkCmdBlitImage2Function) {
         const VkImageBlit2KHR blitRegion2 = {
-            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, nullptr,
             blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
             blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
         const VkBlitImageInfo2KHR blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
-                                                      NULL,
+                                                      nullptr,
                                                       signed_image.image(),
                                                       signed_image.Layout(),
                                                       float_image.image(),
@@ -3280,7 +3280,7 @@ TEST_F(VkLayerTest, BlitImageOffsets) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageObj image_1D(m_device);
@@ -3478,7 +3478,7 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // 2D color image
@@ -3639,7 +3639,7 @@ TEST_F(VkLayerTest, BlitToDepthImageTests) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
+    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // 2D depth image
@@ -4006,7 +4006,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferDestroyed) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
@@ -4017,10 +4017,10 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferDestroyed) {
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
         printf("%s Failed to set memory type.\n", kSkipPrefix);
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+        vk::DestroyBuffer(m_device->device(), buffer, nullptr);
         return;
     }
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    err = vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &mem);
     ASSERT_VK_SUCCESS(err);
 
     err = vk::BindBufferMemory(m_device->device(), buffer, mem, 0);
@@ -4032,7 +4032,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferDestroyed) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkBuffer");
     // Destroy buffer dependency prior to submit to cause ERROR
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
@@ -4041,7 +4041,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferDestroyed) {
 
     m_errorMonitor->VerifyFound();
     vk::QueueWaitIdle(m_device->m_queue);
-    vk::FreeMemory(m_device->handle(), mem, NULL);
+    vk::FreeMemory(m_device->handle(), mem, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
@@ -4055,7 +4055,7 @@ TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
@@ -4066,7 +4066,7 @@ TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
     ASSERT_TRUE(pass);
 
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &buffer_mem);
+    err = vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &buffer_mem);
     ASSERT_VK_SUCCESS(err);
 
     err = vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
@@ -4078,8 +4078,8 @@ TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
     buf_barrier.offset = 0;
     buf_barrier.size = VK_WHOLE_SIZE;
 
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                           0, 0, NULL, 1, &buf_barrier, 0, NULL);
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
+                           nullptr, 1, &buf_barrier, 0, nullptr);
     m_commandBuffer->end();
 
     auto submit_info = lvl_init_struct<VkSubmitInfo>();
@@ -4088,12 +4088,12 @@ TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeMemory-memory-00677");
-    vk::FreeMemory(m_device->handle(), buffer_mem, NULL);
+    vk::FreeMemory(m_device->handle(), buffer_mem, nullptr);
     m_errorMonitor->VerifyFound();
 
     vk::QueueWaitIdle(m_device->m_queue);
 
-    vk::DestroyBuffer(m_device->handle(), buffer, NULL);
+    vk::DestroyBuffer(m_device->handle(), buffer, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
@@ -4129,7 +4129,7 @@ TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
     img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           NULL, 0, NULL, 1, &img_barrier);
+                           nullptr, 0, nullptr, 1, &img_barrier);
     m_commandBuffer->end();
 
     auto submit_info = lvl_init_struct<VkSubmitInfo>();
@@ -4138,7 +4138,7 @@ TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeMemory-memory-00677");
-    vk::FreeMemory(m_device->handle(), image_mem.handle(), NULL);
+    vk::FreeMemory(m_device->handle(), image_mem.handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
     vk::QueueWaitIdle(m_device->m_queue);
@@ -4165,7 +4165,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
@@ -4176,10 +4176,10 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
         printf("%s Failed to set memory type.\n", kSkipPrefix);
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+        vk::DestroyBuffer(m_device->device(), buffer, nullptr);
         return;
     }
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    err = vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &mem);
     ASSERT_VK_SUCCESS(err);
 
     err = vk::BindBufferMemory(m_device->device(), buffer, mem, 0);
@@ -4200,7 +4200,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
 
     m_commandBuffer->PipelineBarrier2KHR(&dep_info);
 
-    vk::FreeMemory(m_device->handle(), mem, NULL);
+    vk::FreeMemory(m_device->handle(), mem, nullptr);
 
     vk::EndCommandBuffer(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
@@ -4213,7 +4213,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
 
     vk::QueueWaitIdle(m_device->m_queue);
 
-    vk::DestroyBuffer(m_device->handle(), buffer, NULL);
+    vk::DestroyBuffer(m_device->handle(), buffer, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4248,7 +4248,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierImageDestroyed) {
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
     ASSERT_TRUE(pass);
 
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &image_mem);
+    err = vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &image_mem);
     ASSERT_VK_SUCCESS(err);
 
     err = vk::BindImageMemory(m_device->device(), image, image_mem, 0);
@@ -4268,7 +4268,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierImageDestroyed) {
 
     m_commandBuffer->PipelineBarrier2KHR(&dep_info);
 
-    vk::FreeMemory(m_device->handle(), image_mem, NULL);
+    vk::FreeMemory(m_device->handle(), image_mem, nullptr);
 
     vk::EndCommandBuffer(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
@@ -4281,7 +4281,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierImageDestroyed) {
 
     vk::QueueWaitIdle(m_device->m_queue);
 
-    vk::DestroyImage(m_device->handle(), image, NULL);
+    vk::DestroyImage(m_device->handle(), image, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4313,7 +4313,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
         bvci.format = VK_FORMAT_R32_SFLOAT;
         bvci.range = VK_WHOLE_SIZE;
 
-        VkResult err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
+        VkResult err = vk::CreateBufferView(m_device->device(), &bvci, nullptr, &view);
         ASSERT_VK_SUCCESS(err);
 
         descriptor_set.WriteDescriptorBufferView(0, view);
@@ -4357,7 +4357,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyBufferView(m_device->device(), view, NULL);
+    vk::DestroyBufferView(m_device->device(), view, nullptr);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Descriptor in binding #0 index 0 is using bufferView");
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -4366,7 +4366,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
     buffer.init(*m_device, buffer_create_info);
 
     bvci.buffer = buffer.handle();
-    VkResult err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
+    VkResult err = vk::CreateBufferView(m_device->device(), &bvci, nullptr, &view);
     ASSERT_VK_SUCCESS(err);
     descriptor_set.descriptor_writes.clear();
     descriptor_set.WriteDescriptorBufferView(0, view);
@@ -4379,7 +4379,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
     m_commandBuffer->end();
 
     // Delete BufferView in order to invalidate cmd buffer
-    vk::DestroyBufferView(m_device->device(), view, NULL);
+    vk::DestroyBufferView(m_device->device(), view, nullptr);
     // Now attempt submit of cmd buffer
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
@@ -4584,7 +4584,7 @@ TEST_F(VkLayerTest, ImageMemoryNotBound) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_create_info.flags = 0;
-    VkResult err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+    VkResult err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
     ASSERT_VK_SUCCESS(err);
     // Have to bind memory to image before recording cmd in cmd buffer using it
     VkMemoryRequirements mem_reqs;
@@ -4596,7 +4596,7 @@ TEST_F(VkLayerTest, ImageMemoryNotBound) {
     mem_alloc.allocationSize = mem_reqs.size;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     ASSERT_TRUE(pass);
-    err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &image_mem);
+    err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &image_mem);
     ASSERT_VK_SUCCESS(err);
 
     // Introduce error, do not call vk::BindImageMemory(m_device->device(), image, image_mem, 0);
@@ -4619,7 +4619,7 @@ TEST_F(VkLayerTest, ImageMemoryNotBound) {
     m_commandBuffer->end();
 
     m_errorMonitor->VerifyFound();
-    vk::DestroyImage(m_device->device(), image, NULL);
+    vk::DestroyImage(m_device->device(), image, nullptr);
     vk::FreeMemory(m_device->device(), image_mem, nullptr);
 }
 
@@ -4640,7 +4640,7 @@ TEST_F(VkLayerTest, BufferMemoryNotBound) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buf_info.size = 1024;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
@@ -4651,10 +4651,10 @@ TEST_F(VkLayerTest, BufferMemoryNotBound) {
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
         printf("%s Failed to set memory type.\n", kSkipPrefix);
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+        vk::DestroyBuffer(m_device->device(), buffer, nullptr);
         return;
     }
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    err = vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &mem);
     ASSERT_VK_SUCCESS(err);
 
     // Introduce failure by not calling vkBindBufferMemory(m_device->device(), buffer, mem, 0);
@@ -4675,8 +4675,8 @@ TEST_F(VkLayerTest, BufferMemoryNotBound) {
 
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
-    vk::FreeMemory(m_device->handle(), mem, NULL);
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
+    vk::FreeMemory(m_device->handle(), mem, nullptr);
 }
 
 TEST_F(VkLayerTest, MultiplaneImageLayoutBadAspectFlags) {
@@ -4715,11 +4715,11 @@ TEST_F(VkLayerTest, MultiplaneImageLayoutBadAspectFlags) {
 
     VkImage image_2plane, image_3plane;
     ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
-    VkResult err = vk::CreateImage(device(), &ci, NULL, &image_2plane);
+    VkResult err = vk::CreateImage(device(), &ci, nullptr, &image_2plane);
     ASSERT_VK_SUCCESS(err);
 
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
-    err = vk::CreateImage(device(), &ci, NULL, &image_3plane);
+    err = vk::CreateImage(device(), &ci, nullptr, &image_3plane);
     ASSERT_VK_SUCCESS(err);
 
     // Query layout of 3rd plane, for a 2-plane image
@@ -4740,8 +4740,8 @@ TEST_F(VkLayerTest, MultiplaneImageLayoutBadAspectFlags) {
     m_errorMonitor->VerifyFound();
 
     // Clean up
-    vk::DestroyImage(device(), image_2plane, NULL);
-    vk::DestroyImage(device(), image_3plane, NULL);
+    vk::DestroyImage(device(), image_2plane, nullptr);
+    vk::DestroyImage(device(), image_3plane, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidBufferViewObject) {
@@ -4773,7 +4773,7 @@ TEST_F(VkLayerTest, InvalidBufferViewObject) {
         bvci.format = VK_FORMAT_R32_SFLOAT;
         bvci.range = VK_WHOLE_SIZE;
 
-        err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
+        err = vk::CreateBufferView(m_device->device(), &bvci, nullptr, &view);
         ASSERT_VK_SUCCESS(err);
     }
     // First Destroy buffer underlying view which should hit error in CV
@@ -4785,13 +4785,13 @@ TEST_F(VkLayerTest, InvalidBufferViewObject) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
     descriptor_write.pTexelBufferView = &view;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     // Now destroy view itself and verify same error, which is hit in PV this time
-    vk::DestroyBufferView(m_device->device(), view, NULL);
+    vk::DestroyBufferView(m_device->device(), view, nullptr);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02994");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4811,7 +4811,7 @@ TEST_F(VkLayerTest, CreateBufferViewNoMemoryBoundToBuffer) {
     buff_ci.size = 256;
     buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     VkBuffer buffer;
-    err = vk::CreateBuffer(m_device->device(), &buff_ci, NULL, &buffer);
+    err = vk::CreateBuffer(m_device->device(), &buff_ci, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
@@ -4819,13 +4819,13 @@ TEST_F(VkLayerTest, CreateBufferViewNoMemoryBoundToBuffer) {
     buff_view_ci.format = VK_FORMAT_R8_UNORM;
     buff_view_ci.range = VK_WHOLE_SIZE;
     VkBufferView buff_view;
-    err = vk::CreateBufferView(m_device->device(), &buff_view_ci, NULL, &buff_view);
+    err = vk::CreateBufferView(m_device->device(), &buff_view_ci, nullptr, &buff_view);
 
     m_errorMonitor->VerifyFound();
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
     // If last error is success, it still created the view, so delete it.
     if (err == VK_SUCCESS) {
-        vk::DestroyBufferView(m_device->device(), buff_view, NULL);
+        vk::DestroyBufferView(m_device->device(), buff_view, nullptr);
     }
 }
 
@@ -5859,7 +5859,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
             VkImage mp_image;
             VkDeviceMemory plane_0_memory;
             VkDeviceMemory plane_1_memory;
-            ASSERT_VK_SUCCESS(vk::CreateImage(m_device->device(), &image_create_info, NULL, &mp_image));
+            ASSERT_VK_SUCCESS(vk::CreateImage(m_device->device(), &image_create_info, nullptr, &mp_image));
 
             VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
             image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -5873,13 +5873,13 @@ TEST_F(VkLayerTest, InvalidBarriers) {
             VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
             alloc_info.allocationSize = mem_req2.memoryRequirements.size;
             ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
-            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &plane_0_memory));
+            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, nullptr, &plane_0_memory));
 
             image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
             vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
             alloc_info.allocationSize = mem_req2.memoryRequirements.size;
             ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
-            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &plane_1_memory));
+            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, nullptr, &plane_1_memory));
 
             VkBindImagePlaneMemoryInfo plane_0_memory_info = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
             plane_0_memory_info.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -5912,8 +5912,8 @@ TEST_F(VkLayerTest, InvalidBarriers) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
             conc_test("VUID-VkImageMemoryBarrier-image-01673");
 
-            vk::FreeMemory(device(), plane_0_memory, NULL);
-            vk::FreeMemory(device(), plane_1_memory, NULL);
+            vk::FreeMemory(device(), plane_0_memory, nullptr);
+            vk::FreeMemory(device(), plane_1_memory, nullptr);
             vk::DestroyImage(m_device->device(), mp_image, nullptr);
         }
     }
@@ -7265,14 +7265,14 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     // Equivalent tests using KHR_copy_commands2
     if (copy_commands2 && vkCmdCopyImage2Function) {
         const VkImageCopy2KHR copy_region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                              NULL,
+                                              nullptr,
                                               copy_region.srcSubresource,
                                               copy_region.srcOffset,
                                               copy_region.dstSubresource,
                                               copy_region.dstOffset,
                                               copy_region.extent};
         VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                NULL,
+                                                nullptr,
                                                 src_image.handle(),
                                                 VK_IMAGE_LAYOUT_GENERAL,
                                                 dst_image.handle(),
@@ -7336,11 +7336,11 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     transfer_dst_image_barrier[0].subresourceRange.levelCount = image_create_info.mipLevels;
     transfer_dst_image_barrier[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           NULL, 0, NULL, 1, transfer_dst_image_barrier);
+                           nullptr, 0, nullptr, 1, transfer_dst_image_barrier);
     transfer_dst_image_barrier[0].image = depth_image.handle();
     transfer_dst_image_barrier[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           NULL, 0, NULL, 1, transfer_dst_image_barrier);
+                           nullptr, 0, nullptr, 1, transfer_dst_image_barrier);
 
     // Cause errors due to clearing with invalid image layouts
     VkClearColorValue color_clear_value = {};
@@ -7388,7 +7388,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     image_barrier[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     m_errorMonitor->ExpectSuccess();
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           NULL, 0, NULL, 1, image_barrier);
+                           nullptr, 0, nullptr, 1, image_barrier);
     m_errorMonitor->VerifyNotFound();
 
     // Now cause error due to bad image layout transition in PipelineBarrier
@@ -7402,7 +7402,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier-oldLayout-01197");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier-oldLayout-01210");
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           NULL, 0, NULL, 1, image_barrier);
+                           nullptr, 0, nullptr, 1, image_barrier);
     m_errorMonitor->VerifyFound();
 
     // Finally some layout errors at RenderPass create time
@@ -7424,7 +7424,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     // error w/ non-general layout
     attach.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-None-04437");
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
 
     subpass.inputAttachmentCount = 0;
@@ -7433,7 +7433,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     // error w/ non-color opt or GENERAL layout for color attachment
     attach.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-None-04437");
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
 
     subpass.colorAttachmentCount = 0;
@@ -7442,7 +7442,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     // error w/ non-ds opt or GENERAL layout for color attachment
     attach.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-None-04437");
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
 
     // For this error we need a valid renderpass so create default one
@@ -7458,7 +7458,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-03283");
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
 }
 
@@ -7614,14 +7614,14 @@ TEST_F(VkLayerTest, CopyInvalidImageMemory) {
 
     if (copy_commands2 && vkCmdCopyImage2Function) {
         const VkImageCopy2KHR copy_region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                              NULL,
+                                              nullptr,
                                               copy_region.srcSubresource,
                                               copy_region.srcOffset,
                                               copy_region.dstSubresource,
                                               copy_region.dstOffset,
                                               copy_region.extent};
         VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                NULL,
+                                                nullptr,
                                                 image_no_mem.handle(),
                                                 VK_IMAGE_LAYOUT_GENERAL,
                                                 image.handle(),
@@ -7814,7 +7814,7 @@ TEST_F(VkLayerTest, CreateImageViewBreaksParameterCompatibilityRequirements) {
     VkImage imageSparse;
 
     // Creating a sparse image means we should not bind memory to it.
-    res = vk::CreateImage(m_device->device(), &imgInfo, NULL, &imageSparse);
+    res = vk::CreateImage(m_device->device(), &imgInfo, nullptr, &imageSparse);
     ASSERT_FALSE(res);
 
     // Initialize VkImageViewCreateInfo to create a view that will attempt to utilize VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR.
@@ -8268,7 +8268,7 @@ TEST_F(VkLayerTest, CreateImageViewNoMemoryBoundToImage) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
 
-    err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+    err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
     ASSERT_VK_SUCCESS(err);
 
     VkImageViewCreateInfo image_view_create_info = LvlInitStruct<VkImageViewCreateInfo>();
@@ -8282,7 +8282,7 @@ TEST_F(VkLayerTest, CreateImageViewNoMemoryBoundToImage) {
 
     CreateImageViewTest(*this, &image_view_create_info,
                         " used with no memory bound. Memory should be bound by calling vkBindImageMemory().");
-    vk::DestroyImage(m_device->device(), image, NULL);
+    vk::DestroyImage(m_device->device(), image, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidImageViewAspect) {
@@ -9519,7 +9519,7 @@ TEST_F(VkLayerTest, CreateImageMinLimitsViolation) {
         bad_image_ci.imageType = VK_IMAGE_TYPE_3D;  // has to be 3D otherwise it might trigger the non-1 error instead
         bad_image_ci.extent = extent;
 
-        vk::CreateImage(m_device->device(), &bad_image_ci, NULL, &null_image);
+        vk::CreateImage(m_device->device(), &bad_image_ci, nullptr, &null_image);
 
         m_errorMonitor->VerifyFound();
     }
@@ -10059,7 +10059,7 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                  NULL,
+                                  nullptr,
                                   VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,  // need for multi-planar
                                   VK_IMAGE_TYPE_2D,
                                   VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR,
@@ -10104,16 +10104,16 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     // Create two samplers with two different conversions, such that one will mismatch
     // It will make the second sampler fail to see if the log prints the second sampler or the first sampler.
     VkSampler samplers[2];
-    VkResult err = vk::CreateSampler(m_device->device(), &sci, NULL, &samplers[0]);
+    VkResult err = vk::CreateSampler(m_device->device(), &sci, nullptr, &samplers[0]);
     ASSERT_VK_SUCCESS(err);
     ycbcr_info.conversion = conversions[1];  // Need two samplers with different conversions
-    err = vk::CreateSampler(m_device->device(), &sci, NULL, &samplers[1]);
+    err = vk::CreateSampler(m_device->device(), &sci, nullptr, &samplers[1]);
     ASSERT_VK_SUCCESS(err);
 
     VkSampler BadSampler;
     sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
-    err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
+    err = vk::CreateSampler(m_device->device(), &sci, nullptr, &BadSampler);
     m_errorMonitor->VerifyFound();
 
     sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
@@ -10121,14 +10121,14 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     sci.minLod = 0.0;
     sci.maxLod = 0.0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
-    err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
+    err = vk::CreateSampler(m_device->device(), &sci, nullptr, &BadSampler);
     m_errorMonitor->VerifyFound();
 
     if (features2.features.samplerAnisotropy == VK_TRUE) {
         sci.unnormalizedCoordinates = VK_FALSE;
         sci.anisotropyEnable = VK_TRUE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
-        err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
+        err = vk::CreateSampler(m_device->device(), &sci, nullptr, &BadSampler);
         m_errorMonitor->VerifyFound();
     }
 
@@ -10176,7 +10176,7 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     descriptor_write.pImageInfo = image_infos;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-01948");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     // pImmutableSamplers = nullptr causes an error , VUID-VkWriteDescriptorSet-descriptorType-02738.
@@ -10189,12 +10189,12 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.pImageInfo = &image_infos[0];
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02738");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     vk::DestroySamplerYcbcrConversion(m_device->device(), conversions[0], nullptr);
     vk::DestroySamplerYcbcrConversion(m_device->device(), conversions[1], nullptr);
-    vk::DestroyImageView(m_device->device(), view, NULL);
+    vk::DestroyImageView(m_device->device(), view, nullptr);
     vk::DestroySampler(m_device->device(), samplers[0], nullptr);
     vk::DestroySampler(m_device->device(), samplers[1], nullptr);
 }
@@ -10253,7 +10253,7 @@ TEST_F(VkLayerTest, DepthStencilImageViewWithColorAspectBitError) {
     image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
 
     VkImageView view;
-    vk::CreateImageView(m_device->device(), &image_view_create_info, NULL, &view);
+    vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &view);
     m_errorMonitor->VerifyFound();
 }
 
@@ -10544,7 +10544,7 @@ TEST_F(VkLayerTest, CornerSampledImageNV) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.flags = VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV;
 
@@ -10791,14 +10791,14 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
 
     // test non external conversion with a VK_FORMAT_UNDEFINED
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-04060");
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // test for non unorm
     sycci.format = VK_FORMAT_R8G8B8A8_SNORM;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-04060");
     m_errorMonitor->SetUnexpectedError("VUID-VkSamplerYcbcrConversionCreateInfo-format-01650");
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // Force the multi-planar format support desired format features
@@ -10817,7 +10817,7 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     // 01651 set off twice for both xChromaOffset and yChromaOffset
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // Cosited feature supported, but midpoint samples set
@@ -10827,7 +10827,7 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     sycci.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
     sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // Moving support to Linear to test that it checks either linear or optimal
@@ -10837,7 +10837,7 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     sycci.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
     sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // Using forceExplicitReconstruction without feature bit
@@ -10845,14 +10845,14 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     sycci.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-forceExplicitReconstruction-01656");
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // Linear chroma filtering without feature bit
     sycci.forceExplicitReconstruction = VK_FALSE;
     sycci.chromaFilter = VK_FILTER_LINEAR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-chromaFilter-01657");
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // Add linear feature bit so can create valid SamplerYcbcrConversion
@@ -10860,7 +10860,7 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     formatProps.optimalTilingFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT;
     fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
     m_errorMonitor->ExpectSuccess();
-    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyNotFound();
 
     // Try to create a Sampler with non-matching filters without feature bit set
@@ -10935,23 +10935,23 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     sycci.components = identity;
     sycci.components.g = VK_COMPONENT_SWIZZLE_A;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // test components.a
     sycci.components = identity;
     sycci.components.a = VK_COMPONENT_SWIZZLE_R;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02582");
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // make sure zero and one are allowed for components.a
     m_errorMonitor->ExpectSuccess();
     sycci.components.a = VK_COMPONENT_SWIZZLE_ONE;
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
     sycci.components.a = VK_COMPONENT_SWIZZLE_ZERO;
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
     m_errorMonitor->VerifyNotFound();
 
@@ -10960,7 +10960,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     sycci.components.r = VK_COMPONENT_SWIZZLE_G;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02583");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // test components.b
@@ -10968,7 +10968,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     sycci.components.b = VK_COMPONENT_SWIZZLE_G;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02584");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // test components.r and components.b together
@@ -10976,7 +10976,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     sycci.components.r = VK_COMPONENT_SWIZZLE_B;
     sycci.components.b = VK_COMPONENT_SWIZZLE_B;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // make sure components.r and components.b can be swapped
@@ -10984,7 +10984,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     sycci.components = identity;
     sycci.components.r = VK_COMPONENT_SWIZZLE_B;
     sycci.components.b = VK_COMPONENT_SWIZZLE_R;
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
     m_errorMonitor->VerifyNotFound();
 
@@ -10996,7 +10996,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
         sycci.components.g = VK_COMPONENT_SWIZZLE_ZERO;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
-        vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+        vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
         m_errorMonitor->VerifyFound();
 
         // Non RGB Identity can't have a explicit one swizzle
@@ -11004,7 +11004,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
         sycci.components.g = VK_COMPONENT_SWIZZLE_ONE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
-        vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+        vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
         m_errorMonitor->VerifyFound();
 
         // VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM has 3 component so RGBA conversion has implicit A as one
@@ -11012,7 +11012,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
         sycci.components.g = VK_COMPONENT_SWIZZLE_A;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
-        vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+        vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
         m_errorMonitor->VerifyFound();
     }
     sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;  // reset
@@ -11024,7 +11024,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
         sycci.components = identity;
         sycci.components.g = VK_COMPONENT_SWIZZLE_R;
         m_errorMonitor->ExpectSuccess();
-        vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+        vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
         vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
         m_errorMonitor->VerifyNotFound();
     }
@@ -11032,7 +11032,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     // Create a valid conversion with guaranteed support
     sycci.format = mp_format;
     sycci.components = identity;
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -11097,7 +11097,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
 
     buffer_create_info.pNext = nullptr;
     VkBuffer buffer;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     VkBufferDeviceAddressInfoEXT info = LvlInitStruct<VkBufferDeviceAddressInfoEXT>();
@@ -11113,14 +11113,14 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
     m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
     VkDeviceMemory buffer_mem;
-    err = vk::AllocateMemory(m_device->device(), &buffer_alloc_info, NULL, &buffer_mem);
+    err = vk::AllocateMemory(m_device->device(), &buffer_alloc_info, nullptr, &buffer_mem);
     ASSERT_VK_SUCCESS(err);
 
     m_errorMonitor->ExpectSuccess();
     vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
 
-    vk::FreeMemory(m_device->device(), buffer_mem, NULL);
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
+    vk::FreeMemory(m_device->device(), buffer_mem, nullptr);
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -11153,7 +11153,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     VkBuffer buffer;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     VkBufferDeviceAddressInfoEXT info = LvlInitStruct<VkBufferDeviceAddressInfoEXT>();
@@ -11165,7 +11165,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
     vkGetBufferDeviceAddressEXT(m_device->device(), &info);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
 }
 
 TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
@@ -11209,7 +11209,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
 
     buffer_create_info.pNext = nullptr;
     VkBuffer buffer;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     VkBufferDeviceAddressInfoKHR info = LvlInitStruct<VkBufferDeviceAddressInfoKHR>();
@@ -11238,7 +11238,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
     m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
     VkDeviceMemory buffer_mem;
-    err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
+    err = vk::AllocateMemory(device(), &buffer_alloc_info, nullptr, &buffer_mem);
     ASSERT_VK_SUCCESS(err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-bufferDeviceAddress-03339");
@@ -11265,12 +11265,12 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
         }
     }
 
-    vk::FreeMemory(m_device->device(), buffer_mem, NULL);
+    vk::FreeMemory(m_device->device(), buffer_mem, nullptr);
 
     VkMemoryAllocateFlagsInfo alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     buffer_alloc_info.pNext = &alloc_flags;
-    err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
+    err = vk::AllocateMemory(device(), &buffer_alloc_info, nullptr, &buffer_mem);
 
     mem_opaque_addr_info.memory = buffer_mem;
     m_errorMonitor->ExpectSuccess();
@@ -11285,8 +11285,8 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     vkGetBufferDeviceAddressKHR(m_device->device(), &info);
     m_errorMonitor->VerifyNotFound();
 
-    vk::FreeMemory(m_device->device(), buffer_mem, NULL);
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
+    vk::FreeMemory(m_device->device(), buffer_mem, nullptr);
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
 }
 
 TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
@@ -11324,7 +11324,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     VkBuffer buffer;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     VkBufferDeviceAddressInfoKHR info = LvlInitStruct<VkBufferDeviceAddressInfoKHR>();
@@ -11360,7 +11360,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
     m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
     VkDeviceMemory buffer_mem;
-    err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
+    err = vk::AllocateMemory(device(), &buffer_alloc_info, nullptr, &buffer_mem);
     ASSERT_VK_SUCCESS(err);
 
     VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = LvlInitStruct<VkDeviceMemoryOpaqueCaptureAddressInfoKHR>();
@@ -11370,7 +11370,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     vkGetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
     m_errorMonitor->VerifyFound();
 
-    vk::FreeMemory(m_device->device(), buffer_mem, NULL);
+    vk::FreeMemory(m_device->device(), buffer_mem, nullptr);
 
     VkMemoryAllocateFlagsInfo alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR | VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR;
@@ -11378,10 +11378,10 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-flags-03330");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-flags-03331");
-    err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
+    err = vk::AllocateMemory(device(), &buffer_alloc_info, nullptr, &buffer_mem);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
 }
 
 TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
@@ -11580,14 +11580,14 @@ TEST_F(VkLayerTest, InvalidSamplerFilterMinmax) {
     // Wrong mode with a YCbCr Conversion used
     reduction_info.pNext = &ycbcr_info;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-None-01647");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     m_errorMonitor->VerifyFound();
 
     // Wrong mode with compareEnable
     reduction_info.pNext = nullptr;
     sampler_info.compareEnable = VK_TRUE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-compareEnable-01423");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     m_errorMonitor->VerifyFound();
 
     vkDestroySamplerYcbcrConversionFunction(m_device->handle(), conversion, nullptr);
@@ -11609,7 +11609,7 @@ TEST_F(VkLayerTest, InvalidMemoryType) {
     mem_alloc.allocationSize = 4;
 
     VkDeviceMemory mem;
-    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+    vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
 
     m_errorMonitor->VerifyFound();
 }
@@ -11630,7 +11630,7 @@ TEST_F(VkLayerTest, AllocationBeyondHeapSize) {
     mem_alloc.allocationSize = memory_info.memoryHeaps[memory_info.memoryTypes[0].heapIndex].size + 1;
 
     VkDeviceMemory mem;
-    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+    vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
 
     m_errorMonitor->VerifyFound();
 }
@@ -11681,7 +11681,7 @@ TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
     mem_alloc.allocationSize = 4;
 
     VkDeviceMemory mem;
-    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+    vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
 
     m_errorMonitor->VerifyFound();
 }
@@ -11711,7 +11711,7 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_create_info.size = 2048;
     buffer_create_info.queueFamilyIndexCount = 0;
-    buffer_create_info.pQueueFamilyIndices = NULL;
+    buffer_create_info.pQueueFamilyIndices = nullptr;
     buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
@@ -11760,7 +11760,7 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
     dedicated_allocate_info.image = normal_image;
     dedicated_allocate_info.buffer = normal_buffer;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-01432");
-    vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
+    vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &device_memory);
     m_errorMonitor->VerifyFound();
 
     if (sparse_support == true) {
@@ -11773,14 +11773,14 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
         dedicated_allocate_info.buffer = VK_NULL_HANDLE;
         memory_allocate_info.allocationSize = sparse_image_memory_req.size;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-01434");
-        vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
+        vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &device_memory);
         m_errorMonitor->VerifyFound();
 
         dedicated_allocate_info.image = VK_NULL_HANDLE;
         dedicated_allocate_info.buffer = sparse_buffer;
         memory_allocate_info.allocationSize = sparse_buffer_memory_req.size;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-buffer-01436");
-        vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
+        vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &device_memory);
         m_errorMonitor->VerifyFound();
     }
 
@@ -11797,7 +11797,7 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
         dedicated_allocate_info.buffer = VK_NULL_HANDLE;
         memory_allocate_info.allocationSize = mem_req2.memoryRequirements.size;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-01797");
-        vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
+        vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &device_memory);
         m_errorMonitor->VerifyFound();
     }
 
@@ -11823,14 +11823,14 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
     const char *buffer_vuid = "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435";
 #endif
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, image_vuid);
-    vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
+    vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &device_memory);
     m_errorMonitor->VerifyFound();
 
     memory_allocate_info.allocationSize = normal_buffer_memory_req.size - 1;
     dedicated_allocate_info.image = VK_NULL_HANDLE;
     dedicated_allocate_info.buffer = normal_buffer;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, buffer_vuid);
-    vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
+    vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &device_memory);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyImage(device(), normal_image, nullptr);
@@ -11881,7 +11881,7 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
             image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
 
             VkImage image;
-            VkResult err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+            VkResult err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
             ASSERT_VK_SUCCESS(err);
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageMemoryRequirements-image-01588");
@@ -11924,7 +11924,7 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
 
             // Recreate image without Disjoint bit
             image_create_info.flags = 0;
-            err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+            err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
             ASSERT_VK_SUCCESS(err);
 
             image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -11940,7 +11940,7 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
             // Recreate image with single plane format and with Disjoint bit
             image_create_info.flags = 0;
             image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-            err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+            err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
             ASSERT_VK_SUCCESS(err);
 
             image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -12301,7 +12301,7 @@ TEST_F(VkLayerTest, CustomBorderColor) {
     sampler_info.borderColor = VK_BORDER_COLOR_INT_CUSTOM_EXT;
     // No SCBCCreateInfo in pNext
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-borderColor-04011");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     m_errorMonitor->VerifyFound();
 
     VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = LvlInitStruct<VkSamplerCustomBorderColorCreateInfoEXT>();
@@ -12309,25 +12309,26 @@ TEST_F(VkLayerTest, CustomBorderColor) {
     sampler_info.pNext = &custom_color_cinfo;
     // Format mismatch
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04013");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     m_errorMonitor->VerifyFound();
 
     custom_color_cinfo.format = VK_FORMAT_UNDEFINED;
     // Format undefined with no customBorderColorWithoutFormat
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04014");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     m_errorMonitor->VerifyFound();
 
     custom_color_cinfo.format = VK_FORMAT_R8G8B8A8_UINT;
     m_errorMonitor->ExpectSuccess();
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     m_errorMonitor->VerifyNotFound();
 
     VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler};
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0, 1, &dsl_binding};
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, nullptr, 0, 1,
+                                                    &dsl_binding};
     VkDescriptorSetLayout ds_layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-pImmutableSamplers-04009");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
@@ -12346,7 +12347,7 @@ TEST_F(VkLayerTest, CustomBorderColor) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateSampler-maxSamplerAllocationCount-04110");
         }
         for (uint32_t i = 0; i < custom_properties.maxCustomBorderColorSamplers; i++) {
-            vk::CreateSampler(m_device->device(), &sampler_info, NULL, &samplers[i]);
+            vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &samplers[i]);
         }
         m_errorMonitor->VerifyFound();
         for (uint32_t i = 0; i < custom_properties.maxCustomBorderColorSamplers - 1; i++) {
@@ -12383,7 +12384,7 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
     custom_color_cinfo.format = VK_FORMAT_UNDEFINED;
     sampler_info.pNext = &custom_color_cinfo;
     m_errorMonitor->ExpectSuccess();
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     m_errorMonitor->VerifyNotFound();
 
     VkImageObj image(m_device);
@@ -12411,7 +12412,7 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[0].pImageInfo = &img_info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, nullptr);
     char const *fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D s;
@@ -12431,7 +12432,7 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, NULL);
+                              &descriptor_set.set_, 0, nullptr);
     VkViewport viewport = m_viewports[0];
     VkRect2D scissor = m_scissors[0];
     vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
@@ -12488,7 +12489,7 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     image_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkResult result = vk::CreateImage(device(), &image_info, NULL, &image_export);
+    VkResult result = vk::CreateImage(device(), &image_info, nullptr, &image_export);
     if (result != VK_SUCCESS) {
         printf("%s Unable to create a valid external image.\n", kSkipPrefix);
         return;
@@ -12518,7 +12519,7 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     }
 
     VkDeviceMemory memory = VK_NULL_HANDLE;
-    vk::AllocateMemory(device(), &alloc_info, NULL, &memory);
+    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02728");
     vk::BindImageMemory(device(), image_export, memory, 0);
@@ -12579,7 +12580,7 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
     VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>(&external_buffer_info);
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_info.size = 4096;
-    VkResult result = vk::CreateBuffer(device(), &buffer_info, NULL, &buffer_export);
+    VkResult result = vk::CreateBuffer(device(), &buffer_info, nullptr, &buffer_export);
     if (result != VK_SUCCESS) {
         printf("%s Unable to create a valid external buffer.\n", kSkipPrefix);
         return;
@@ -12609,7 +12610,7 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
     }
 
     VkDeviceMemory memory = VK_NULL_HANDLE;
-    vk::AllocateMemory(device(), &alloc_info, NULL, &memory);
+    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memory-02726");
     vk::BindBufferMemory(device(), buffer_export, memory, 0);
@@ -13095,7 +13096,7 @@ TEST_F(VkLayerTest, InvalidShadingRateUsage) {
 
     // Create a view with the fragment shading rate attachment usage, but that doesn't support it
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-usage-04550");
-    vk::CreateImageView(m_device->device(), &createinfo, NULL, &imageview);
+    vk::CreateImageView(m_device->device(), &createinfo, nullptr, &imageview);
     m_errorMonitor->VerifyFound();
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsrProperties =
@@ -13124,7 +13125,7 @@ TEST_F(VkLayerTest, InvalidShadingRateUsage) {
             createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-usage-04551");
-            vk::CreateImageView(m_device->device(), &createinfo, NULL, &imageview);
+            vk::CreateImageView(m_device->device(), &createinfo, nullptr, &imageview);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -13298,7 +13299,7 @@ TEST_F(VkLayerTest, SparseMemoryBindOffset) {
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buffer_create_info.size = 1024;
     buffer_create_info.queueFamilyIndexCount = 0;
-    buffer_create_info.pQueueFamilyIndices = NULL;
+    buffer_create_info.pQueueFamilyIndices = nullptr;
     buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (m_device->phy().features().sparseResidencyBuffer) {
@@ -13322,7 +13323,7 @@ TEST_F(VkLayerTest, SparseMemoryBindOffset) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (m_device->phy().features().sparseResidencyImage2D) {
@@ -13445,7 +13446,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageObj image(m_device);
@@ -13558,7 +13559,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageObj image(m_device);
@@ -13577,7 +13578,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
         }
     }
 
-    vk::AllocateMemory(device(), &mem_alloc, NULL, &image_mem);
+    vk::AllocateMemory(device(), &mem_alloc, nullptr, &image_mem);
 
     VkRect2D splitInstanceBindregion = {{0, 0}, {16, 16}};
     VkBindImageMemoryDeviceGroupInfo bind_devicegroup_info = LvlInitStruct<VkBindImageMemoryDeviceGroupInfo>();
@@ -13597,7 +13598,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
 TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBindings) {
     TEST_DESCRIPTION("Create descriptor set layout with incompatible bindings.");
 
-    if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, NULL,
+    if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, nullptr,
                                                          m_errorMonitor))) {
         printf("Descriptor indexing or one of its dependencies not supported, skipping tests\n");
         return;
@@ -13674,7 +13675,7 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBinding) {
 
     VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
 
     VkDescriptorSetLayoutBinding binding = {};
     binding.binding = 0;
@@ -13732,7 +13733,7 @@ TEST_F(VkLayerTest, DedicatedAllocationBufferWithInvalidFlags) {
 
     VkBuffer buffer;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-pNext-01571");
-    vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
+    vk::CreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -13768,7 +13769,7 @@ TEST_F(VkLayerTest, InvalidMemoryAllocatepNextChain) {
     VkDeviceMemory mem;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
-    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+    vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
     m_errorMonitor->VerifyFound();
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -13778,7 +13779,7 @@ TEST_F(VkLayerTest, InvalidMemoryAllocatepNextChain) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
     export_memory_info.pNext = &export_memory_info_win32_nv;
-    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+    vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
     m_errorMonitor->VerifyFound();
 #endif
 }
@@ -13813,7 +13814,7 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidLevelOrLayerCount) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageObj image(m_device);
@@ -13978,7 +13979,7 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidType) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageObj image(m_device);
@@ -14029,7 +14030,7 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidFormat) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageObj image(m_device);
@@ -14094,7 +14095,7 @@ TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageObj image(m_device);
@@ -14164,7 +14165,7 @@ TEST_F(VkLayerTest, InvalidCreateImageQueueFamilies) {
     CreateImageTest(*this, &image_create_info, vuid);
 
     uint32_t queue_node_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, nullptr);
 
     queue_families[1] = queue_node_count;
     CreateImageTest(*this, &image_create_info, vuid);
@@ -15003,7 +15004,7 @@ TEST_F(VkLayerTest, ImageViewMinLod) {
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyImageView(m_device->device(), image_view, NULL);
+    vk::DestroyImageView(m_device->device(), image_view, nullptr);
 }
 
 TEST_F(VkLayerTest, ImageViewMinLodFeature) {

@@ -58,8 +58,8 @@ TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
     VkEvent event_handle = VK_NULL_HANDLE;
     VkEventCreateInfo event_info = LvlInitStruct<VkEventCreateInfo>();
     event_info.flags = 1;
-    vk::CreateEvent(device(), &event_info, NULL, &event_handle);
-    vk::DestroyEvent(device(), event_handle, NULL);
+    vk::CreateEvent(device(), &event_info, nullptr, &event_handle);
+    vk::DestroyEvent(device(), event_handle, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -72,26 +72,26 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    vk::DestroyBuffer(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyBufferView(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyCommandPool(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyDescriptorPool(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyDescriptorSetLayout(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyDevice(VK_NULL_HANDLE, NULL);
-    vk::DestroyEvent(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyFence(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyFramebuffer(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyImage(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyImageView(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyInstance(VK_NULL_HANDLE, NULL);
-    vk::DestroyPipeline(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyPipelineCache(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyPipelineLayout(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyQueryPool(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyRenderPass(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroySampler(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroySemaphore(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyShaderModule(m_device->device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyBuffer(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyBufferView(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyCommandPool(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyDescriptorPool(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyDescriptorSetLayout(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyDevice(VK_NULL_HANDLE, nullptr);
+    vk::DestroyEvent(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyFence(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyFramebuffer(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyImage(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyImageView(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyInstance(VK_NULL_HANDLE, nullptr);
+    vk::DestroyPipeline(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyPipelineCache(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyPipelineLayout(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyQueryPool(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyRenderPass(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroySampler(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroySemaphore(m_device->device(), VK_NULL_HANDLE, nullptr);
+    vk::DestroyShaderModule(m_device->device(), VK_NULL_HANDLE, nullptr);
 
     VkCommandPool command_pool;
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
@@ -105,7 +105,7 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &command_buffers[1]);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 3, command_buffers);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
@@ -118,7 +118,7 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     VkDescriptorPool ds_pool;
-    err = vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+    err = vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &ds_pool);
     ASSERT_VK_SUCCESS(err);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
@@ -126,7 +126,7 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     dsl_binding.descriptorCount = 1;
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = NULL;
+    dsl_binding.pImmutableSamplers = nullptr;
 
     const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
 
@@ -138,9 +138,9 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_sets[1]);
     ASSERT_VK_SUCCESS(err);
     vk::FreeDescriptorSets(m_device->device(), ds_pool, 3, descriptor_sets);
-    vk::DestroyDescriptorPool(m_device->device(), ds_pool, NULL);
+    vk::DestroyDescriptorPool(m_device->device(), ds_pool, nullptr);
 
-    vk::FreeMemory(m_device->device(), VK_NULL_HANDLE, NULL);
+    vk::FreeMemory(m_device->device(), VK_NULL_HANDLE, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -195,7 +195,7 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
 
     VkBuffer buffer;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     VkMemoryRequirements memory_reqs;
@@ -213,14 +213,14 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     ASSERT_TRUE(pass);
 
     VkDeviceMemory buffer_memory;
-    err = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &buffer_memory);
+    err = vk::AllocateMemory(m_device->device(), &memory_info, nullptr, &buffer_memory);
     ASSERT_VK_SUCCESS(err);
 
     err = vk::BindBufferMemory(m_device->device(), buffer, buffer_memory, 0);
     ASSERT_VK_SUCCESS(err);
 
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
-    vk::FreeMemory(m_device->device(), buffer_memory, NULL);
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
+    vk::FreeMemory(m_device->device(), buffer_memory, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -548,7 +548,7 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
     device_ci.pQueueCreateInfos = &queue_ci;
 
     VkDevice device;
-    vk::CreateDevice(gpu(), &device_ci, NULL, &device);
+    vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
 
     vkTrimCommandPoolKHR = vk::GetDeviceProcAddr(device, "vkTrimCommandPoolKHR");
     if (nullptr == vkTrimCommandPoolKHR) m_errorMonitor->SetError("Unexpected null pointer");
@@ -593,7 +593,7 @@ TEST_F(VkPositiveLayerTest, Vulkan12Features) {
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
     VkBuffer buffer;
-    vk::CreateBuffer(m_device->device(), &bci, NULL, &buffer);
+    vk::CreateBuffer(m_device->device(), &bci, nullptr, &buffer);
     VkMemoryRequirements buffer_mem_reqs = {};
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
@@ -603,7 +603,7 @@ TEST_F(VkPositiveLayerTest, Vulkan12Features) {
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     buffer_alloc_info.pNext = &alloc_flags;
     VkDeviceMemory buffer_mem;
-    VkResult err = vk::AllocateMemory(m_device->device(), &buffer_alloc_info, NULL, &buffer_mem);
+    VkResult err = vk::AllocateMemory(m_device->device(), &buffer_alloc_info, nullptr, &buffer_mem);
     ASSERT_VK_SUCCESS(err);
     vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
 
@@ -620,8 +620,8 @@ TEST_F(VkPositiveLayerTest, Vulkan12Features) {
         (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR");
     if (nullptr != vkGetBufferDeviceAddressKHR) m_errorMonitor->SetError("Didn't receive expected null pointer");
     m_errorMonitor->VerifyNotFound();
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
-    vk::FreeMemory(m_device->device(), buffer_mem, NULL);
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
+    vk::FreeMemory(m_device->device(), buffer_mem, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, QueueThreading) {

@@ -53,7 +53,7 @@ ErrorMonitor::~ErrorMonitor() NOEXCEPT { test_platform_thread_delete_mutex(&mute
 
 void ErrorMonitor::MonitorReset() {
     message_flags_ = 0;
-    bailout_ = NULL;
+    bailout_ = nullptr;
     message_found_ = VK_FALSE;
     failure_message_strings_.clear();
     desired_message_strings_.clear();
@@ -289,10 +289,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReporter::DebugCallback(VkDebugUtilsMessageS
 }
 
 VkRenderFramework::VkRenderFramework()
-    : instance_(NULL),
-      m_device(NULL),
+    : instance_(nullptr),
+      m_device(nullptr),
       m_commandPool(VK_NULL_HANDLE),
-      m_commandBuffer(NULL),
+      m_commandBuffer(nullptr),
       m_renderPass(VK_NULL_HANDLE),
       m_framebuffer(VK_NULL_HANDLE),
       m_surface(VK_NULL_HANDLE),
@@ -312,7 +312,7 @@ VkRenderFramework::VkRenderFramework()
       m_clear_via_load_op(true),
       m_depth_clear_color(1.0),
       m_stencil_clear_color(0),
-      m_depthStencil(NULL) {
+      m_depthStencil(nullptr) {
     m_framebuffer_info = LvlInitStruct<VkFramebufferCreateInfo>();
     m_renderPass_info = LvlInitStruct<VkRenderPassCreateInfo>();
     m_renderPassBeginInfo = LvlInitStruct<VkRenderPassBeginInfo>();
@@ -418,7 +418,7 @@ bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, con
 
 // Return true if device is created and extension name is found in the list
 bool VkRenderFramework::DeviceExtensionEnabled(const char *ext_name) {
-    if (NULL == m_device) return false;
+    if (nullptr == m_device) return false;
 
     bool ext_found = false;
     for (auto ext : m_device_extension_names) {
@@ -649,9 +649,9 @@ void VkRenderFramework::ShutdownFramework() {
     m_commandBuffer = nullptr;
     delete m_commandPool;
     m_commandPool = nullptr;
-    if (m_framebuffer) vk::DestroyFramebuffer(device(), m_framebuffer, NULL);
+    if (m_framebuffer) vk::DestroyFramebuffer(device(), m_framebuffer, nullptr);
     m_framebuffer = VK_NULL_HANDLE;
-    if (m_renderPass) vk::DestroyRenderPass(device(), m_renderPass, NULL);
+    if (m_renderPass) vk::DestroyRenderPass(device(), m_renderPass, nullptr);
     m_renderPass = VK_NULL_HANDLE;
 
     m_renderTargets.clear();
@@ -670,13 +670,13 @@ void VkRenderFramework::ShutdownFramework() {
     debug_reporter_.Destroy(instance_);
 
     vk::DestroyInstance(instance_, nullptr);
-    instance_ = NULL;  // In case we want to re-initialize
+    instance_ = nullptr;  // In case we want to re-initialize
 }
 
 ErrorMonitor &VkRenderFramework::Monitor() { return debug_reporter_.error_monitor_; }
 
 void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features) {
-    if (NULL == m_device) {
+    if (nullptr == m_device) {
         VkDeviceObj *temp_device = new VkDeviceObj(0, gpu_, m_device_extension_names);
         *features = temp_device->phy().features();
         delete (temp_device);
@@ -799,7 +799,8 @@ bool VkRenderFramework::InitSurface(float width, float height, VkSurfaceKHR &sur
     wc.hInstance = window_instance;
     wc.lpszClassName = class_name;
     RegisterClass(&wc);
-    HWND window = CreateWindowEx(0, class_name, 0, 0, 0, 0, (int)m_width, (int)m_height, NULL, NULL, window_instance, NULL);
+    HWND window =
+        CreateWindowEx(0, class_name, 0, 0, 0, 0, (int)m_width, (int)m_height, nullptr, nullptr, window_instance, nullptr);
     ShowWindow(window, SW_HIDE);
 
     VkWin32SurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkWin32SurfaceCreateInfoKHR>();
@@ -818,7 +819,7 @@ bool VkRenderFramework::InitSurface(float width, float height, VkSurfaceKHR &sur
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
     assert(m_surface_dpy == nullptr);
-    m_surface_dpy = XOpenDisplay(NULL);
+    m_surface_dpy = XOpenDisplay(nullptr);
     if (m_surface_dpy) {
         int s = DefaultScreen(m_surface_dpy);
         m_surface_window = XCreateSimpleWindow(m_surface_dpy, RootWindow(m_surface_dpy, s), 0, 0, (int)m_width, (int)m_height, 1,
@@ -834,7 +835,7 @@ bool VkRenderFramework::InitSurface(float width, float height, VkSurfaceKHR &sur
 #if defined(VK_USE_PLATFORM_XCB_KHR)
     if (m_surface == VK_NULL_HANDLE) {
         assert(m_surface_xcb_conn == nullptr);
-        m_surface_xcb_conn = xcb_connect(NULL, NULL);
+        m_surface_xcb_conn = xcb_connect(nullptr, nullptr);
         if (m_surface_xcb_conn) {
             xcb_window_t window = xcb_generate_id(m_surface_xcb_conn);
             VkXcbSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkXcbSurfaceCreateInfoKHR>();
@@ -974,7 +975,7 @@ void VkRenderFramework::DestroySwapchain() {
 
 void VkRenderFramework::InitRenderTarget() { InitRenderTarget(1); }
 
-void VkRenderFramework::InitRenderTarget(uint32_t targets) { InitRenderTarget(targets, NULL); }
+void VkRenderFramework::InitRenderTarget(uint32_t targets) { InitRenderTarget(targets, nullptr); }
 
 void VkRenderFramework::InitRenderTarget(VkImageView *dsBinding) { InitRenderTarget(1, dsBinding); }
 
@@ -1039,10 +1040,10 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.flags = 0;
     subpass.inputAttachmentCount = 0;
-    subpass.pInputAttachments = NULL;
+    subpass.pInputAttachments = nullptr;
     subpass.colorAttachmentCount = targets;
     subpass.pColorAttachments = color_references.data();
-    subpass.pResolveAttachments = NULL;
+    subpass.pResolveAttachments = nullptr;
 
     VkAttachmentReference ds_reference;
     if (dsBinding) {
@@ -1066,11 +1067,11 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
         ds_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         subpass.pDepthStencilAttachment = &ds_reference;
     } else {
-        subpass.pDepthStencilAttachment = NULL;
+        subpass.pDepthStencilAttachment = nullptr;
     }
 
     subpass.preserveAttachmentCount = 0;
-    subpass.pPreserveAttachments = NULL;
+    subpass.pPreserveAttachments = nullptr;
 
     VkRenderPassCreateInfo &rp_info = m_renderPass_info;
     rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
@@ -1119,7 +1120,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
         rp_info.pDependencies = nullptr;
     }
 
-    vk::CreateRenderPass(device(), &rp_info, NULL, &m_renderPass);
+    vk::CreateRenderPass(device(), &rp_info, nullptr, &m_renderPass);
     // Create Framebuffer and RenderPass with color attachments and any
     // depth/stencil attachment
     VkFramebufferCreateInfo &fb_info = m_framebuffer_info;
@@ -1131,7 +1132,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
     fb_info.height = (uint32_t)m_height;
     fb_info.layers = 1;
 
-    vk::CreateFramebuffer(device(), &fb_info, NULL, &m_framebuffer);
+    vk::CreateFramebuffer(device(), &fb_info, nullptr, &m_framebuffer);
 
     m_renderPassBeginInfo.renderPass = m_renderPass;
     m_renderPassBeginInfo.framebuffer = m_framebuffer;
@@ -1249,7 +1250,7 @@ int VkDescriptorSetObj::AppendDummy() {
     binding.descriptorCount = 1;
     binding.binding = m_layout_bindings.size();
     binding.stageFlags = VK_SHADER_STAGE_ALL;
-    binding.pImmutableSamplers = NULL;
+    binding.pImmutableSamplers = nullptr;
 
     m_layout_bindings.push_back(binding);
     m_type_counts[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER] += binding.descriptorCount;
@@ -1265,7 +1266,7 @@ int VkDescriptorSetObj::AppendBuffer(VkDescriptorType type, VkConstantBufferObj 
     binding.descriptorCount = 1;
     binding.binding = m_layout_bindings.size();
     binding.stageFlags = VK_SHADER_STAGE_ALL;
-    binding.pImmutableSamplers = NULL;
+    binding.pImmutableSamplers = nullptr;
 
     m_layout_bindings.push_back(binding);
     m_type_counts[type] += binding.descriptorCount;
@@ -1282,7 +1283,7 @@ int VkDescriptorSetObj::AppendSamplerTexture(VkSamplerObj *sampler, VkTextureObj
     binding.descriptorCount = 1;
     binding.binding = m_layout_bindings.size();
     binding.stageFlags = VK_SHADER_STAGE_ALL;
-    binding.pImmutableSamplers = NULL;
+    binding.pImmutableSamplers = nullptr;
 
     m_layout_bindings.push_back(binding);
     m_type_counts[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] += binding.descriptorCount;
@@ -1336,7 +1337,7 @@ void VkDescriptorSetObj::CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer
     // create VkPipelineLayout
     VkPipelineLayoutCreateInfo pipeline_layout = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout.setLayoutCount = layouts.size();
-    pipeline_layout.pSetLayouts = NULL;
+    pipeline_layout.pSetLayouts = nullptr;
 
     m_pipeline_layout.init(*m_device, pipeline_layout, layouts);
 
@@ -1447,7 +1448,7 @@ void VkImageObj::ImageMemoryBarrier(VkCommandBufferObj *cmd_buf, VkImageAspectFl
     VkImageMemoryBarrier *pmemory_barrier = &barrier;
 
     // write barrier to the command buffer
-    vk::CmdPipelineBarrier(cmd_buf->handle(), src_stages, dest_stages, VK_DEPENDENCY_BY_REGION_BIT, 0, NULL, 0, NULL, 1,
+    vk::CmdPipelineBarrier(cmd_buf->handle(), src_stages, dest_stages, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
                            pmemory_barrier);
 }
 
@@ -1887,7 +1888,7 @@ VkTextureObj::VkTextureObj(VkDeviceObj *device, uint32_t *colors) : VkImageObj(d
                       VK_IMAGE_TILING_LINEAR, reqs);
     VkSubresourceLayout layout = stagingImage.subresource_layout(subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0));
 
-    if (colors == NULL) colors = tex_colors;
+    if (colors == nullptr) colors = tex_colors;
 
     VkImageViewCreateInfo view = LvlInitStruct<VkImageViewCreateInfo>();
     view.image = VK_NULL_HANDLE;
@@ -2239,7 +2240,7 @@ void VkPipelineObj::InitGraphicsPipelineCreateInfo(VkGraphicsPipelineCreateInfo 
     gp_ci->pInputAssemblyState = &m_ia_state;
 
     gp_ci->sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    gp_ci->pNext = NULL;
+    gp_ci->pNext = nullptr;
     gp_ci->flags = 0;
 
     m_cb_state.attachmentCount = m_colorAttachments.size();
@@ -2481,7 +2482,7 @@ void VkCommandBufferObj::BindDescriptorSet(VkDescriptorSetObj &descriptorSet) {
     // bind pipeline, vertex buffer (descriptor set) and WVP (dynamic buffer view)
     if (set_obj) {
         vk::CmdBindDescriptorSets(handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, descriptorSet.GetPipelineLayout(), 0, 1, &set_obj, 0,
-                                  NULL);
+                                  nullptr);
     }
 }
 

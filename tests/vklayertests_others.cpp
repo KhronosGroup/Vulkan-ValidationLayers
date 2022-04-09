@@ -212,7 +212,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
     VkPrivateDataSlotEXT data_slot;
     VkPrivateDataSlotCreateInfoEXT data_create_info = LvlInitStruct<VkPrivateDataSlotCreateInfoEXT>();
     data_create_info.flags = 0;
-    VkResult err = pfn_vkCreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
+    VkResult err = pfn_vkCreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, nullptr, &data_slot);
     if (err != VK_SUCCESS) {
         printf("%s Failed to create private data slot, VkResult %d.\n", kSkipPrefix, err);
     }
@@ -235,7 +235,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
     sampler_info.maxLod = 0.0f;
     sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     sampler_info.unnormalizedCoordinates = VK_FALSE;
-    vk::CreateSampler(m_device->handle(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(m_device->handle(), &sampler_info, nullptr, &sampler);
 
     static const uint64_t data_value = 0x70AD;
     err = pfn_vkSetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, data_slot, data_value);
@@ -248,8 +248,8 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
     if (data != data_value) {
         m_errorMonitor->SetError("Got unexpected private data, %s.\n");
     }
-    pfn_vkDestroyPrivateDataSlotEXT(m_device->handle(), data_slot, NULL);
-    vk::DestroySampler(m_device->handle(), sampler, NULL);
+    pfn_vkDestroyPrivateDataSlotEXT(m_device->handle(), data_slot, nullptr);
+    vk::DestroySampler(m_device->handle(), sampler, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -281,11 +281,11 @@ TEST_F(VkLayerTest, PrivateDataFeature) {
     VkPrivateDataSlotCreateInfoEXT data_create_info = LvlInitStruct<VkPrivateDataSlotCreateInfoEXT>();
     data_create_info.flags = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreatePrivateDataSlot-privateData-04564");
-    vkCreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
+    vkCreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, nullptr, &data_slot);
     m_errorMonitor->VerifyFound();
     if (vulkan_13) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreatePrivateDataSlot-privateData-04564");
-        vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
+        vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, nullptr, &data_slot);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -326,7 +326,7 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
     bvci.range = VK_WHOLE_SIZE;
 
     m_errorMonitor->ExpectSuccess(kErrorBit);
-    vk::CreateBufferView(m_device->device(), &bvci, NULL, &buffer_view);
+    vk::CreateBufferView(m_device->device(), &bvci, nullptr, &buffer_view);
     m_errorMonitor->VerifyNotFound();
 
     vk::DestroyBufferView(m_device->device(), buffer_view, nullptr);
@@ -376,7 +376,7 @@ TEST_F(VkLayerTest, CustomStypeStructArray) {
     bvci.range = VK_WHOLE_SIZE;
 
     m_errorMonitor->ExpectSuccess(kErrorBit);
-    vk::CreateBufferView(m_device->device(), &bvci, NULL, &buffer_view);
+    vk::CreateBufferView(m_device->device(), &bvci, nullptr, &buffer_view);
     m_errorMonitor->VerifyNotFound();
 
     vk::DestroyBufferView(m_device->device(), buffer_view, nullptr);
@@ -585,13 +585,13 @@ TEST_F(VkLayerTest, RequiredParameter) {
     // Specify NULL for a pointer to a handle
     // Expected to trigger an error with
     // parameter_validation::validate_required_pointer
-    vk::GetPhysicalDeviceFeatures(gpu(), NULL);
+    vk::GetPhysicalDeviceFeatures(gpu(), nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "required parameter pQueueFamilyPropertyCount specified as NULL");
     // Specify NULL for pointer to array count
     // Expected to trigger an error with parameter_validation::validate_array
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), NULL, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), nullptr, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewport-viewportCount-arraylength");
@@ -604,13 +604,13 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateImage-pCreateInfo-parameter");
     // Specify a null pImageCreateInfo struct pointer
     VkImage test_image;
-    vk::CreateImage(device(), NULL, NULL, &test_image);
+    vk::CreateImage(device(), nullptr, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewport-pViewports-parameter");
     // Specify NULL for a required array
     // Expected to trigger an error with parameter_validation::validate_array
-    m_commandBuffer->SetViewport(0, 1, NULL);
+    m_commandBuffer->SetViewport(0, 1, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "required parameter memory specified as VK_NULL_HANDLE");
@@ -633,7 +633,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     // Expected to trigger an error with
     // parameter_validation::validate_struct_type
     VkDeviceMemory memory = VK_NULL_HANDLE;
-    vk::AllocateMemory(device(), NULL, NULL, &memory);
+    vk::AllocateMemory(device(), nullptr, nullptr, &memory);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "value of faceMask must not be 0");
@@ -670,7 +670,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.waitSemaphoreCount = 1;
     // Set a null pointer for pWaitSemaphores
-    submitInfo.pWaitSemaphores = NULL;
+    submitInfo.pWaitSemaphores = nullptr;
     submitInfo.pWaitDstStageMask = &stageFlags;
     vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
@@ -707,7 +707,7 @@ TEST_F(VkLayerTest, SpecLinks) {
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, spec_version);
-    vk::GetPhysicalDeviceFeatures(gpu(), NULL);
+    vk::GetPhysicalDeviceFeatures(gpu(), nullptr);
     m_errorMonitor->VerifyFound();
 
     // Now generate a 'default' message and check the link
@@ -795,7 +795,7 @@ TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {
 TEST_F(VkLayerTest, PnextOnlyStructValidation) {
     TEST_DESCRIPTION("See if checks occur on structs ONLY used in pnext chains.");
 
-    if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, NULL,
+    if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, nullptr,
                                                          m_errorMonitor))) {
         printf("Descriptor indexing or one of its dependencies not supported, skipping tests\n");
         return;
@@ -813,7 +813,7 @@ TEST_F(VkLayerTest, PnextOnlyStructValidation) {
     indexing_features.descriptorBindingUniformBufferUpdateAfterBind = 800;
 
     uint32_t queue_node_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, nullptr);
     VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_node_count];
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, queue_props);
     float priorities[] = {1.0f};
@@ -826,14 +826,14 @@ TEST_F(VkLayerTest, PnextOnlyStructValidation) {
     dev_info.queueCreateInfoCount = 1;
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
-    dev_info.ppEnabledLayerNames = NULL;
+    dev_info.ppEnabledLayerNames = nullptr;
     dev_info.enabledExtensionCount = m_device_extension_names.size();
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
     dev_info.pNext = &features2;
     VkDevice dev;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "is neither VK_TRUE nor VK_FALSE");
     m_errorMonitor->SetUnexpectedError("Failed to create");
-    vk::CreateDevice(gpu(), &dev_info, NULL, &dev);
+    vk::CreateDevice(gpu(), &dev_info, nullptr, &dev);
     m_errorMonitor->VerifyFound();
 }
 
@@ -849,7 +849,7 @@ TEST_F(VkLayerTest, ReservedParameter) {
     VkSemaphore sem_handle = VK_NULL_HANDLE;
     VkSemaphoreCreateInfo sem_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     sem_info.flags = 1;
-    vk::CreateSemaphore(device(), &sem_info, NULL, &sem_handle);
+    vk::CreateSemaphore(device(), &sem_info, nullptr, &sem_handle);
     m_errorMonitor->VerifyFound();
 }
 
@@ -963,8 +963,8 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     vk::FreeCommandBuffers(device(), commandpool_2, 1, &commandBuffer);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyCommandPool(device(), commandpool_1, NULL);
-    vk::DestroyCommandPool(device(), commandpool_2, NULL);
+    vk::DestroyCommandPool(device(), commandpool_1, nullptr);
+    vk::DestroyCommandPool(device(), commandpool_2, nullptr);
 }
 
 TEST_F(VkLayerTest, DebugUtilsNameTest) {
@@ -1130,8 +1130,8 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     vk::FreeCommandBuffers(device(), commandpool_2, 1, &commandBuffer);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyCommandPool(device(), commandpool_1, NULL);
-    vk::DestroyCommandPool(device(), commandpool_2, NULL);
+    vk::DestroyCommandPool(device(), commandpool_1, nullptr);
+    vk::DestroyCommandPool(device(), commandpool_2, nullptr);
     fpvkDestroyDebugUtilsMessengerEXT(instance(), my_messenger, nullptr);
 }
 
@@ -1147,7 +1147,7 @@ TEST_F(VkLayerTest, InvalidStructSType) {
     // parameter_validation::validate_struct_type
     VkMemoryAllocateInfo alloc_info = {};
     VkDeviceMemory memory = VK_NULL_HANDLE;
-    vk::AllocateMemory(device(), &alloc_info, NULL, &memory);
+    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "parameter pSubmits[0].sType must be");
@@ -1185,7 +1185,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     VkApplicationInfo app_info = {};
     event_alloc_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
     event_alloc_info.pNext = &app_info;
-    vk::CreateEvent(device(), &event_alloc_info, NULL, &event);
+    vk::CreateEvent(device(), &event_alloc_info, nullptr, &event);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), " chain includes a structure with unexpected VkStructureType ");
@@ -1195,7 +1195,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     // Expected to trigger an error with parameter_validation::validate_struct_pnext
     VkDeviceMemory memory = VK_NULL_HANDLE;
     VkMemoryAllocateInfo memory_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&app_info);
-    vk::AllocateMemory(device(), &memory_alloc_info, NULL, &memory);
+    vk::AllocateMemory(device(), &memory_alloc_info, nullptr, &memory);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), " chain includes a structure with unexpected VkStructureType ");
@@ -1307,12 +1307,12 @@ TEST_F(VkLayerTest, SubmitSignaledFence) {
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 0;
-    submit_info.pWaitSemaphores = NULL;
-    submit_info.pWaitDstStageMask = NULL;
+    submit_info.pWaitSemaphores = nullptr;
+    submit_info.pWaitDstStageMask = nullptr;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.signalSemaphoreCount = 0;
-    submit_info.pSignalSemaphores = NULL;
+    submit_info.pSignalSemaphores = nullptr;
 
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, testFence.handle());
     vk::QueueWaitIdle(m_device->m_queue);
@@ -1378,18 +1378,18 @@ TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
     device_create_info.queueCreateInfoCount = 1;
     device_create_info.pQueueCreateInfos = &queue_info;
     device_create_info.enabledLayerCount = 0;
-    device_create_info.ppEnabledLayerNames = NULL;
+    device_create_info.ppEnabledLayerNames = nullptr;
     device_create_info.pEnabledFeatures = &features;
 
     VkDevice second_device;
-    ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_create_info, NULL, &second_device));
+    ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_create_info, nullptr, &second_device));
 
     // Try to destroy the renderpass from the first device using the second device
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyRenderPass-renderPass-parent");
-    vk::DestroyRenderPass(second_device, m_renderPass, NULL);
+    vk::DestroyRenderPass(second_device, m_renderPass, nullptr);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyDevice(second_device, NULL);
+    vk::DestroyDevice(second_device, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidAllocationCallbacks) {
@@ -1745,7 +1745,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferEventDestroyed) {
 
     VkEvent event;
     VkEventCreateInfo evci = LvlInitStruct<VkEventCreateInfo>();
-    VkResult result = vk::CreateEvent(m_device->device(), &evci, NULL, &event);
+    VkResult result = vk::CreateEvent(m_device->device(), &evci, nullptr, &event);
     ASSERT_VK_SUCCESS(result);
 
     m_commandBuffer->begin();
@@ -1754,7 +1754,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferEventDestroyed) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkEvent");
     // Destroy event dependency prior to submit to cause ERROR
-    vk::DestroyEvent(m_device->device(), event, NULL);
+    vk::DestroyEvent(m_device->device(), event, nullptr);
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
@@ -1781,7 +1781,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferQueryPoolDestroyed) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkQueryPool");
     // Destroy query pool dependency prior to submit to cause ERROR
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
@@ -1806,14 +1806,14 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
     VkDevice testDevice;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-pNext");
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");
-    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
     m_errorMonitor->VerifyFound();
 
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>();
     device_create_info.pNext = &vadf;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VK_EXT_vertex_attribute_divisor must be enabled when it creates a device");
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");
-    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1875,7 +1875,7 @@ TEST_F(VkLayerTest, Features12Features13AndpNext) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-02829");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-02830");
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");
-    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1965,7 +1965,7 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
     VkDevice testDevice;
 
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");
-    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2024,7 +2024,7 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
     VkDevice testDevice;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceVariablePointersFeatures-variablePointers-01431");
-    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2086,7 +2086,7 @@ TEST_F(VkLayerTest, FeaturesMultiview) {
     if (multiview_features.multiviewTessellationShader == VK_TRUE) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceMultiviewFeatures-multiviewTessellationShader-00581");
     }
-    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2137,7 +2137,7 @@ TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
 
     VkValidationCacheCreateInfoEXT validationCacheCreateInfo = LvlInitStruct<VkValidationCacheCreateInfoEXT>();
     validationCacheCreateInfo.initialDataSize = 0;
-    validationCacheCreateInfo.pInitialData = NULL;
+    validationCacheCreateInfo.pInitialData = nullptr;
     validationCacheCreateInfo.flags = 0;
     VkValidationCacheEXT validationCache = VK_NULL_HANDLE;
     VkResult res = fpCreateValidationCache(m_device->device(), &validationCacheCreateInfo, nullptr, &validationCache);
@@ -2200,7 +2200,7 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
     // If there is more than one queue family, create a device with a single queue family, then create a buffer
     // with SHARING_MODE_CONCURRENT that uses a non-device PDEV queue family.
     uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_count];
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props);
 
@@ -2229,7 +2229,7 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
     qfi[1] = 2;
     VkBuffer buffer = VK_NULL_HANDLE;
     m_errorMonitor->ExpectSuccess();
-    vk::CreateBuffer(second_device, &buffCI, NULL, &buffer);
+    vk::CreateBuffer(second_device, &buffCI, nullptr, &buffer);
     m_errorMonitor->VerifyNotFound();
     vk::DestroyDevice(second_device, nullptr);
 }
@@ -2249,7 +2249,7 @@ TEST_F(VkLayerTest, InvalidQueryPoolCreate) {
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.enabledLayerCount = 0;
-    device_create_info.ppEnabledLayerNames = NULL;
+    device_create_info.ppEnabledLayerNames = nullptr;
     device_create_info.pEnabledFeatures = &features;
     VkResult err = vk::CreateDevice(gpu(), &device_create_info, nullptr, &local_device);
     ASSERT_VK_SUCCESS(err);
@@ -2283,7 +2283,7 @@ TEST_F(VkLayerTest, InvalidQuerySizes) {
     }
 
     uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     const uint32_t timestampValidBits = queue_props[m_device->graphics_queue_node_index_].timestampValidBits;
@@ -2542,7 +2542,7 @@ TEST_F(VkLayerTest, StageMaskGsTsEnabled) {
 
     VkEvent event;
     VkEventCreateInfo evci = LvlInitStruct<VkEventCreateInfo>();
-    VkResult result = vk::CreateEvent(test_device.handle(), &evci, NULL, &event);
+    VkResult result = vk::CreateEvent(test_device.handle(), &evci, nullptr, &event);
     ASSERT_VK_SUCCESS(result);
 
     VkCommandBufferBeginInfo cbbi = LvlInitStruct<VkCommandBufferBeginInfo>();
@@ -2555,8 +2555,8 @@ TEST_F(VkLayerTest, StageMaskGsTsEnabled) {
     vk::CmdSetEvent(cmd_buffer, event, VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyEvent(test_device.handle(), event, NULL);
-    vk::DestroyCommandPool(test_device.handle(), command_pool, NULL);
+    vk::DestroyEvent(test_device.handle(), event, nullptr);
+    vk::DestroyCommandPool(test_device.handle(), command_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, StageMaskHost) {
@@ -2622,7 +2622,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
     // Create Sampler
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     VkSampler sampler;
-    VkResult err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    VkResult err = vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler);
     ASSERT_VK_SUCCESS(err);
 
     // Create PSO to be used for draw-time errors below
@@ -2650,7 +2650,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, NULL);
+                              &pipe.descriptor_set_->set_, 0, nullptr);
 
     VkViewport viewport = {0, 0, 16, 16, 0, 1};
     VkRect2D scissor = {{0, 0}, {16, 16}};
@@ -2667,11 +2667,11 @@ TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     // Destroy pool while in-flight, causing error
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDescriptorPool-descriptorPool-00303");
-    vk::DestroyDescriptorPool(m_device->device(), pipe.descriptor_set_->pool_, NULL);
+    vk::DestroyDescriptorPool(m_device->device(), pipe.descriptor_set_->pool_, nullptr);
     m_errorMonitor->VerifyFound();
     vk::QueueWaitIdle(m_device->m_queue);
     // Cleanup
-    vk::DestroySampler(m_device->device(), sampler, NULL);
+    vk::DestroySampler(m_device->device(), sampler, nullptr);
     m_errorMonitor->SetUnexpectedError(
         "If descriptorPool is not VK_NULL_HANDLE, descriptorPool must be a valid VkDescriptorPool handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove DescriptorPool obj");
@@ -2711,7 +2711,7 @@ TEST_F(VkLayerTest, FramebufferInUseDestroyedSignaled) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     // Destroy framebuffer while in-flight
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyFramebuffer-framebuffer-00892");
-    vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
     m_errorMonitor->VerifyFound();
     // Wait for queue to complete so we can safely destroy everything
     vk::QueueWaitIdle(m_device->m_queue);
@@ -2767,7 +2767,7 @@ TEST_F(VkLayerTest, FramebufferImageInUseDestroyedSignaled) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     // Destroy image attached to framebuffer while in-flight
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyImage-image-01000");
-    vk::DestroyImage(m_device->device(), image.handle(), NULL);
+    vk::DestroyImage(m_device->device(), image.handle(), nullptr);
     m_errorMonitor->VerifyFound();
     // Wait for queue to complete so we can safely destroy image and other objects
     vk::QueueWaitIdle(m_device->m_queue);
@@ -2835,7 +2835,7 @@ TEST_F(VkLayerTest, InUseDestroyedSignaled) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, NULL);
+                              &pipe.descriptor_set_->set_, 0, nullptr);
 
     m_commandBuffer->end();
 
@@ -3004,7 +3004,7 @@ TEST_F(VkLayerTest, QueryPoolPartialTimestamp) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
@@ -3052,7 +3052,7 @@ TEST_F(VkLayerTest, QueryPoolPartialTimestamp) {
     m_errorMonitor->VerifyFound();
 
     // Destroy query pool.
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, PerformanceQueryIntel) {
@@ -3088,7 +3088,7 @@ TEST_F(VkLayerTest, PerformanceQueryIntel) {
     m_errorMonitor->VerifyFound();
 
     // Destroy query pool.
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, QueryPoolInUseDestroyedSignaled) {
@@ -3116,14 +3116,14 @@ TEST_F(VkLayerTest, QueryPoolInUseDestroyedSignaled) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyQueryPool-queryPool-00793");
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
     m_errorMonitor->VerifyFound();
 
     vk::QueueWaitIdle(m_device->m_queue);
     // Now that cmd buffer done we can safely destroy query_pool
     m_errorMonitor->SetUnexpectedError("If queryPool is not VK_NULL_HANDLE, queryPool must be a valid VkQueryPool handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove QueryPool obj");
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, PipelineInUseDestroyedSignaled) {
@@ -3177,7 +3177,7 @@ TEST_F(VkLayerTest, ImageViewInUseDestroyedSignaled) {
     VkSampler sampler;
 
     VkResult err;
-    err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    err = vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler);
     ASSERT_VK_SUCCESS(err);
 
     VkImageObj image(m_device);
@@ -3260,7 +3260,7 @@ TEST_F(VkLayerTest, BufferViewInUseDestroyedSignaled) {
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
 
-    VkResult err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
+    VkResult err = vk::CreateBufferView(m_device->device(), &bvci, nullptr, &view);
     ASSERT_VK_SUCCESS(err);
 
     char const *fsSource = R"glsl(
@@ -3322,7 +3322,7 @@ TEST_F(VkLayerTest, BufferViewInUseDestroyedSignaled) {
     // Now we can actually destroy bufferView
     m_errorMonitor->SetUnexpectedError("If bufferView is not VK_NULL_HANDLE, bufferView must be a valid VkBufferView handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove BufferView obj");
-    vk::DestroyBufferView(m_device->device(), view, NULL);
+    vk::DestroyBufferView(m_device->device(), view, nullptr);
 }
 
 TEST_F(VkLayerTest, SamplerInUseDestroyedSignaled) {
@@ -3335,7 +3335,7 @@ TEST_F(VkLayerTest, SamplerInUseDestroyedSignaled) {
     VkSampler sampler;
 
     VkResult err;
-    err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    err = vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler);
     ASSERT_VK_SUCCESS(err);
 
     VkImageObj image(m_device);
@@ -3395,7 +3395,7 @@ TEST_F(VkLayerTest, SamplerInUseDestroyedSignaled) {
     // Now we can actually destroy sampler
     m_errorMonitor->SetUnexpectedError("If sampler is not VK_NULL_HANDLE, sampler must be a valid VkSampler handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove Sampler obj");
-    vk::DestroySampler(m_device->device(), sampler, NULL);  // Destroyed for real
+    vk::DestroySampler(m_device->device(), sampler, nullptr);  // Destroyed for real
 }
 
 TEST_F(VkLayerTest, QueueForwardProgressFenceWait) {
@@ -3457,7 +3457,7 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
     VkEvent event;
     VkResult err;
 
-    err = vk::CreateEvent(device(), &event_info, NULL, &event);
+    err = vk::CreateEvent(device(), &event_info, nullptr, &event);
     ASSERT_VK_SUCCESS(err);
 
     err = vk::ResetEvent(device(), event);
@@ -3476,9 +3476,9 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
     // Make non-conflicting calls from this thread at the same time.
     for (int i = 0; i < 80000; i++) {
         uint32_t count;
-        vk::EnumeratePhysicalDevices(instance(), &count, NULL);
+        vk::EnumeratePhysicalDevices(instance(), &count, nullptr);
     }
-    test_platform_thread_join(thread, NULL);
+    test_platform_thread_join(thread, nullptr);
 
     // Then do some incorrect operations using multiple threads.
     // Add many entries to command buffer from another thread.
@@ -3486,14 +3486,14 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
     // Add many entries to command buffer from this thread at the same time.
     AddToCommandBuffer(&data);
 
-    test_platform_thread_join(thread, NULL);
+    test_platform_thread_join(thread, nullptr);
     commandBuffer.end();
 
-    m_errorMonitor->SetBailout(NULL);
+    m_errorMonitor->SetBailout(nullptr);
 
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyEvent(device(), event, NULL);
+    vk::DestroyEvent(device(), event, nullptr);
 }
 
 TEST_F(VkLayerTest, ThreadUpdateDescriptorCollision) {
@@ -3539,9 +3539,9 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorCollision) {
 
     UpdateDescriptor(&data2);
 
-    test_platform_thread_join(thread, NULL);
+    test_platform_thread_join(thread, nullptr);
 
-    m_errorMonitor->SetBailout(NULL);
+    m_errorMonitor->SetBailout(nullptr);
 
     m_errorMonitor->VerifyFound();
 }
@@ -3622,9 +3622,9 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
 
     UpdateDescriptor(&data2);
 
-    test_platform_thread_join(thread, NULL);
+    test_platform_thread_join(thread, nullptr);
 
-    m_errorMonitor->SetBailout(NULL);
+    m_errorMonitor->SetBailout(nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -3663,7 +3663,7 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.enabledLayerCount = 0;
-    device_create_info.ppEnabledLayerNames = NULL;
+    device_create_info.ppEnabledLayerNames = nullptr;
     device_create_info.enabledExtensionCount = 2;
     device_create_info.ppEnabledExtensionNames = (const char *const *)extension_names;
     device_create_info.pEnabledFeatures = &features;
@@ -3672,7 +3672,7 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     // The following unexpected error is coming from the LunarG loader. Do not make it a desired message because platforms that do
     // not use the LunarG loader (e.g. Android) will not see the message and the test will fail.
     m_errorMonitor->SetUnexpectedError("Failed to create device chain.");
-    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3700,7 +3700,7 @@ TEST_F(VkLayerTest, ApiVersion1_1AndNegativeViewport) {
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.enabledLayerCount = 0;
-    device_create_info.ppEnabledLayerNames = NULL;
+    device_create_info.ppEnabledLayerNames = nullptr;
     device_create_info.enabledExtensionCount = 1;
     device_create_info.ppEnabledExtensionNames = (const char *const *)extension_names;
     device_create_info.pEnabledFeatures = &features;
@@ -3709,7 +3709,7 @@ TEST_F(VkLayerTest, ApiVersion1_1AndNegativeViewport) {
     // The following unexpected error is coming from the LunarG loader. Do not make it a desired message because platforms that do
     // not use the LunarG loader (e.g. Android) will not see the message and the test will fail.
     m_errorMonitor->SetUnexpectedError("Failed to create device chain.");
-    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3992,7 +3992,7 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
 
     vk::DestroyEvent(m_device->device(), event, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 1, &command_buffer);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, ShadingRateImageNV) {
@@ -4050,7 +4050,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV;
     image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.pQueueFamilyIndices = nullptr;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
@@ -4096,7 +4096,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     result = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
     m_errorMonitor->VerifyFound();
     if (VK_SUCCESS == result) {
-        vk::DestroyImageView(m_device->device(), view, NULL);
+        vk::DestroyImageView(m_device->device(), view, nullptr);
         view = VK_NULL_HANDLE;
     }
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -4108,7 +4108,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     result = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
     m_errorMonitor->VerifyFound();
     if (VK_SUCCESS == result) {
-        vk::DestroyImageView(m_device->device(), view, NULL);
+        vk::DestroyImageView(m_device->device(), view, nullptr);
         view = VK_NULL_HANDLE;
     }
     ivci.format = VK_FORMAT_R8_UINT;
@@ -4329,7 +4329,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
 
     m_commandBuffer->end();
 
-    vk::DestroyImageView(m_device->device(), view, NULL);
+    vk::DestroyImageView(m_device->device(), view, nullptr);
 }
 
 #include "android_ndk_types.h"
@@ -4362,7 +4362,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
 
     VkImage img = VK_NULL_HANDLE;
     auto reset_img = [&img, dev]() {
-        if (VK_NULL_HANDLE != img) vk::DestroyImage(dev, img, NULL);
+        if (VK_NULL_HANDLE != img) vk::DestroyImage(dev, img, nullptr);
         img = VK_NULL_HANDLE;
     };
 
@@ -4382,7 +4382,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     // Various extra errors for having VK_FORMAT_UNDEFINED without VkExternalFormatANDROID
     m_errorMonitor->SetUnexpectedError("VUID_Undefined");
     m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
     m_errorMonitor->VerifyFound();
     reset_img();
 
@@ -4391,14 +4391,14 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     efa.externalFormat = 0;
     ici.pNext = &efa;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01975");
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
     m_errorMonitor->VerifyFound();
     reset_img();
 
     // undefined format with an unknown external format
     efa.externalFormat = 0xBADC0DE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExternalFormatANDROID-externalFormat-01894");
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
     m_errorMonitor->VerifyFound();
     reset_img();
 
@@ -4424,7 +4424,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     ici.format = VK_FORMAT_R8G8B8A8_UNORM;
     efa.externalFormat = ahb_fmt_props.externalFormat;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01974");
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
     m_errorMonitor->VerifyFound();
     reset_img();
     ici.format = VK_FORMAT_UNDEFINED;
@@ -4432,7 +4432,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     // external format while MUTABLE
     ici.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-02396");
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
     m_errorMonitor->VerifyFound();
     reset_img();
     ici.flags = 0;
@@ -4440,7 +4440,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     // external format while usage other than SAMPLED
     ici.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-02397");
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
     m_errorMonitor->VerifyFound();
     reset_img();
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -4448,7 +4448,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     // external format while tiline other than OPTIMAL
     ici.tiling = VK_IMAGE_TILING_LINEAR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-02398");
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
     m_errorMonitor->VerifyFound();
     reset_img();
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -4462,7 +4462,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     ici.extent = {64, 64, 64};
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-02393");
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
     m_errorMonitor->VerifyFound();
     reset_img();
 
@@ -4471,7 +4471,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     ici.extent = {64, 64, 1};
     ici.mipLevels = 6;  // should be 7
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-02394");
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
     m_errorMonitor->VerifyFound();
     reset_img();
 }
@@ -4503,7 +4503,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferFetchUnboundImageInfo) {
 
     VkImage img = VK_NULL_HANDLE;
     auto reset_img = [&img, dev]() {
-        if (VK_NULL_HANDLE != img) vk::DestroyImage(dev, img, NULL);
+        if (VK_NULL_HANDLE != img) vk::DestroyImage(dev, img, nullptr);
         img = VK_NULL_HANDLE;
     };
 
@@ -4523,7 +4523,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferFetchUnboundImageInfo) {
     ici.pNext = &emici;
 
     m_errorMonitor->ExpectSuccess();
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
     m_errorMonitor->VerifyNotFound();
 
     // attempt to fetch layout from unbound image
@@ -4577,12 +4577,12 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
 
     VkImage img = VK_NULL_HANDLE;
     auto reset_img = [&img, dev]() {
-        if (VK_NULL_HANDLE != img) vk::DestroyImage(dev, img, NULL);
+        if (VK_NULL_HANDLE != img) vk::DestroyImage(dev, img, nullptr);
         img = VK_NULL_HANDLE;
     };
     VkDeviceMemory mem_handle = VK_NULL_HANDLE;
     auto reset_mem = [&mem_handle, dev]() {
-        if (VK_NULL_HANDLE != mem_handle) vk::FreeMemory(dev, mem_handle, NULL);
+        if (VK_NULL_HANDLE != mem_handle) vk::FreeMemory(dev, mem_handle, nullptr);
         mem_handle = VK_NULL_HANDLE;
     };
 
@@ -4630,7 +4630,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkResult res = vk::CreateImage(dev, &ici, NULL, &img);
+    VkResult res = vk::CreateImage(dev, &ici, nullptr, &img);
     ASSERT_VK_SUCCESS(res);
 
     // Chained import struct
@@ -4650,7 +4650,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
 
     // Import requires format AHB_FMT_BLOB and usage AHB_USAGE_GPU_DATA_BUFFER
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02384");
-    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
     m_errorMonitor->VerifyFound();
     reset_mem();
 
@@ -4661,7 +4661,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     recreate_ahb();
     mai.allocationSize = ahb_props.allocationSize + 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-allocationSize-02383");
-    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
     m_errorMonitor->VerifyFound();
     mai.allocationSize = ahb_props.allocationSize;
     reset_mem();
@@ -4669,7 +4669,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     // memoryTypeIndex mismatch
     mai.memoryTypeIndex++;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-memoryTypeIndex-02385");
-    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
     m_errorMonitor->VerifyFound();
     mai.memoryTypeIndex--;
     reset_mem();
@@ -4688,7 +4688,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     recreate_ahb();
     mai.allocationSize = ahb_props.allocationSize;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02390");
-    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
     m_errorMonitor->VerifyFound();
     reset_mem();
 
@@ -4699,14 +4699,14 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     recreate_ahb();
     mai.allocationSize = ahb_props.allocationSize;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02390");
-    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
     m_errorMonitor->VerifyFound();
     reset_mem();
 
     // Dedicated allocation with incomplete mip chain
     reset_img();
     ici.mipLevels = 2;
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
     mdai.image = img;
     ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE;
     recreate_ahb();
@@ -4720,7 +4720,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
             }
         }
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02389");
-        vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+        vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
         m_errorMonitor->VerifyFound();
         reset_mem();
     } else {
@@ -4737,7 +4737,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     recreate_ahb();
     mai.allocationSize = ahb_props.allocationSize;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02388");
-    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
     m_errorMonitor->VerifyFound();
     reset_mem();
 
@@ -4749,14 +4749,14 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     mai.allocationSize = ahb_props.allocationSize;
     ici.mipLevels = 1;
     ici.format = VK_FORMAT_B8G8R8A8_UNORM;
-    ici.pNext = NULL;
+    ici.pNext = nullptr;
     VkImage img2;
-    vk::CreateImage(dev, &ici, NULL, &img2);
+    vk::CreateImage(dev, &ici, nullptr, &img2);
     mdai.image = img2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02387");
-    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
     m_errorMonitor->VerifyFound();
-    vk::DestroyImage(dev, img2, NULL);
+    vk::DestroyImage(dev, img2, nullptr);
     mdai.image = img;
     reset_mem();
 
@@ -4774,7 +4774,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-memoryTypeIndex-02385");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-allocationSize-02383");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02386");
-    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
     m_errorMonitor->VerifyFound();
     reset_mem();
 
@@ -4791,7 +4791,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     mai.allocationSize = ahb_props.allocationSize;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-02964");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-01874");
-    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
     m_errorMonitor->VerifyFound();
     reset_mem();
 
@@ -4836,7 +4836,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateYCbCrSampler) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-04061");
     m_errorMonitor->SetUnexpectedError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
-    vk::CreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(dev, &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     VkExternalFormatANDROID efa = LvlInitStruct<VkExternalFormatANDROID>();
@@ -4845,7 +4845,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateYCbCrSampler) {
     sycci.pNext = &efa;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904");
     m_errorMonitor->SetUnexpectedError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
-    vk::CreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(dev, &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->ExpectSuccess();
@@ -4855,7 +4855,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateYCbCrSampler) {
     sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_NARROW;
     // Spec says if we use VkExternalFormatANDROID value of components is ignored.
     sycci.components = {VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO};
-    vk::CreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(dev, &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyNotFound();
     vk::DestroySamplerYcbcrConversion(dev, ycbcr_conv, nullptr);
 }
@@ -5009,14 +5009,14 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
 
     // Set up memory allocation
     VkDeviceMemory img_mem = VK_NULL_HANDLE;
     VkMemoryAllocateInfo mai = LvlInitStruct<VkMemoryAllocateInfo>();
     mai.allocationSize = 64 * 64 * 4;
     mai.memoryTypeIndex = 0;
-    vk::AllocateMemory(dev, &mai, NULL, &img_mem);
+    vk::AllocateMemory(dev, &mai, nullptr, &img_mem);
 
     // It shouldn't use vk::GetImageMemoryRequirements for imported AndroidHardwareBuffer when memory isn't bound yet
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageMemoryRequirements-image-04004");
@@ -5026,10 +5026,10 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     vk::BindImageMemory(dev, img, img_mem, 0);
 
     // Bind image to memory
-    vk::DestroyImage(dev, img, NULL);
-    vk::FreeMemory(dev, img_mem, NULL);
-    vk::CreateImage(dev, &ici, NULL, &img);
-    vk::AllocateMemory(dev, &mai, NULL, &img_mem);
+    vk::DestroyImage(dev, img, nullptr);
+    vk::FreeMemory(dev, img_mem, nullptr);
+    vk::CreateImage(dev, &ici, nullptr, &img);
+    vk::AllocateMemory(dev, &mai, nullptr, &img_mem);
     vk::BindImageMemory(dev, img, img_mem, 0);
 
     // Create a YCbCr conversion, with different external format, chain to view
@@ -5038,7 +5038,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     sycci.format = VK_FORMAT_UNDEFINED;
     sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
-    vk::CreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(dev, &sycci, nullptr, &ycbcr_conv);
     VkSamplerYcbcrConversionInfo syci = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
     syci.conversion = ycbcr_conv;
 
@@ -5051,7 +5051,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     auto reset_view = [&image_view, dev]() {
-        if (VK_NULL_HANDLE != image_view) vk::DestroyImageView(dev, image_view, NULL);
+        if (VK_NULL_HANDLE != image_view) vk::DestroyImageView(dev, image_view, nullptr);
         image_view = VK_NULL_HANDLE;
     };
 
@@ -5062,13 +5062,13 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-02400");
     // Also causes "unsupported format" - should be removed in future spec update
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-None-02273");
-    vk::CreateImageView(dev, &ivci, NULL, &image_view);
+    vk::CreateImageView(dev, &ivci, nullptr, &image_view);
     m_errorMonitor->VerifyFound();
 
     reset_view();
-    vk::DestroySamplerYcbcrConversion(dev, ycbcr_conv, NULL);
+    vk::DestroySamplerYcbcrConversion(dev, ycbcr_conv, nullptr);
     sycci.pNext = &efa;
-    vk::CreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
+    vk::CreateSamplerYcbcrConversion(dev, &sycci, nullptr, &ycbcr_conv);
     syci.conversion = ycbcr_conv;
 
     // View component swizzle not IDENTITY
@@ -5077,7 +5077,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-02401");
     // Also causes "unsupported format" - should be removed in future spec update
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-None-02273");
-    vk::CreateImageView(dev, &ivci, NULL, &image_view);
+    vk::CreateImageView(dev, &ivci, nullptr, &image_view);
     m_errorMonitor->VerifyFound();
 
     reset_view();
@@ -5089,14 +5089,14 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-02399");
     // Also causes "view format different from image format"
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-01762");
-    vk::CreateImageView(dev, &ivci, NULL, &image_view);
+    vk::CreateImageView(dev, &ivci, nullptr, &image_view);
     m_errorMonitor->VerifyFound();
 
     reset_view();
-    vk::DestroySamplerYcbcrConversion(dev, ycbcr_conv, NULL);
-    vk::DestroyImageView(dev, image_view, NULL);
-    vk::DestroyImage(dev, img, NULL);
-    vk::FreeMemory(dev, img_mem, NULL);
+    vk::DestroySamplerYcbcrConversion(dev, ycbcr_conv, nullptr);
+    vk::DestroyImageView(dev, image_view, nullptr);
+    vk::DestroyImage(dev, img, nullptr);
+    vk::FreeMemory(dev, img_mem, nullptr);
 }
 #endif  // DISABLEUNTILAHBWORKS
 
@@ -5132,7 +5132,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
 
     VkDeviceMemory mem_handle = VK_NULL_HANDLE;
     auto reset_mem = [&mem_handle, dev]() {
-        if (VK_NULL_HANDLE != mem_handle) vk::FreeMemory(dev, mem_handle, NULL);
+        if (VK_NULL_HANDLE != mem_handle) vk::FreeMemory(dev, mem_handle, nullptr);
         mem_handle = VK_NULL_HANDLE;
     };
 
@@ -5166,7 +5166,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
     bci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
     VkBuffer buf = VK_NULL_HANDLE;
-    vk::CreateBuffer(dev, &bci, NULL, &buf);
+    vk::CreateBuffer(dev, &bci, nullptr, &buf);
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(dev, buf, &mem_reqs);
 
@@ -5186,7 +5186,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
         printf("%s No invalid memory type index could be found; skipped.\n", kSkipPrefix);
         AHardwareBuffer_release(ahb);
         reset_mem();
-        vk::DestroyBuffer(dev, buf, NULL);
+        vk::DestroyBuffer(dev, buf, nullptr);
         return;
     }
 
@@ -5194,12 +5194,12 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881");
     // Also causes "non-dedicated allocation format/usage" error
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02384");
-    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
     m_errorMonitor->VerifyFound();
 
     AHardwareBuffer_release(ahb);
     reset_mem();
-    vk::DestroyBuffer(dev, buf, NULL);
+    vk::DestroyBuffer(dev, buf, nullptr);
 }
 
 TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
@@ -5238,7 +5238,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
     VkMemoryAllocateInfo mai = LvlInitStruct<VkMemoryAllocateInfo>();
     mai.allocationSize = 65536;
     mai.memoryTypeIndex = 0;
-    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
 
     PFN_vkGetMemoryAndroidHardwareBufferANDROID pfn_GetMemAHB =
         (PFN_vkGetMemoryAndroidHardwareBufferANDROID)vk::GetDeviceProcAddr(dev, "vkGetMemoryAndroidHardwareBufferANDROID");
@@ -5253,7 +5253,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
 
     if (ahb) AHardwareBuffer_release(ahb);
     ahb = nullptr;
-    if (VK_NULL_HANDLE != mem_handle) vk::FreeMemory(dev, mem_handle, NULL);
+    if (VK_NULL_HANDLE != mem_handle) vk::FreeMemory(dev, mem_handle, nullptr);
     mem_handle = VK_NULL_HANDLE;
 
     // Add an export struct with AHB handle type to allocation info
@@ -5273,7 +5273,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    vk::CreateImage(dev, &ici, NULL, &img);
+    vk::CreateImage(dev, &ici, nullptr, &img);
     ASSERT_TRUE(VK_NULL_HANDLE != img);
 
     // Add image to allocation chain as dedicated info, re-allocate
@@ -5281,7 +5281,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
     mdai.image = img;
     emai.pNext = &mdai;
     mai.allocationSize = 0;
-    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
     mgahbi.memory = mem_handle;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883");
@@ -5289,8 +5289,8 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
     m_errorMonitor->VerifyFound();
 
     if (ahb) AHardwareBuffer_release(ahb);
-    if (VK_NULL_HANDLE != mem_handle) vk::FreeMemory(dev, mem_handle, NULL);
-    vk::DestroyImage(dev, img, NULL);
+    if (VK_NULL_HANDLE != mem_handle) vk::FreeMemory(dev, mem_handle, nullptr);
+    vk::DestroyImage(dev, img, nullptr);
 }
 
 TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
@@ -5361,7 +5361,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
     }
 
     VkDeviceMemory memory = VK_NULL_HANDLE;
-    VkResult result = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
+    VkResult result = vk::AllocateMemory(m_device->device(), &memory_info, nullptr, &memory);
     if ((memory == VK_NULL_HANDLE) || (result != VK_SUCCESS)) {
         printf("%s This test failed to allocate memory for importing\n", kSkipPrefix);
         return;
@@ -5720,7 +5720,7 @@ TEST_F(VkLayerTest, ValidateStride) {
     } else {
         printf("%s Test requires unsupported multiDrawIndirect feature. Skipped.\n", kSkipPrefix);
     }
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, ValidateGeometryNV) {
@@ -6129,7 +6129,7 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
     PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
         (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
 
-    VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL, buffer.handle()};
+    VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, buffer.handle()};
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
     // invalid buffer;
     {
@@ -6274,8 +6274,8 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
     // Can not bind already freed memory
     {
         VkDeviceMemory as_memory_freed = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_freed));
-        vk::FreeMemory(device(), as_memory_freed, NULL);
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, nullptr, &as_memory_freed));
+        vk::FreeMemory(device(), as_memory_freed, nullptr);
 
         VkBindAccelerationStructureMemoryInfoNV as_bind_info_freed = as_bind_info;
         as_bind_info_freed.memory = as_memory_freed;
@@ -6291,7 +6291,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
         as_memory_alloc_bad_alignment.allocationSize += 1;
 
         VkDeviceMemory as_memory_bad_alignment = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc_bad_alignment, NULL, &as_memory_bad_alignment));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc_bad_alignment, nullptr, &as_memory_bad_alignment));
 
         VkBindAccelerationStructureMemoryInfoNV as_bind_info_bad_alignment = as_bind_info;
         as_bind_info_bad_alignment.memory = as_memory_bad_alignment;
@@ -6301,13 +6301,13 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
         (void)vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_bad_alignment);
         m_errorMonitor->VerifyFound();
 
-        vk::FreeMemory(device(), as_memory_bad_alignment, NULL);
+        vk::FreeMemory(device(), as_memory_bad_alignment, nullptr);
     }
 
     // Can not bind with offset outside the allocation
     {
         VkDeviceMemory as_memory_bad_offset = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_bad_offset));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, nullptr, &as_memory_bad_offset));
 
         VkBindAccelerationStructureMemoryInfoNV as_bind_info_bad_offset = as_bind_info;
         as_bind_info_bad_offset.memory = as_memory_bad_offset;
@@ -6318,7 +6318,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
         (void)vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_bad_offset);
         m_errorMonitor->VerifyFound();
 
-        vk::FreeMemory(device(), as_memory_bad_offset, NULL);
+        vk::FreeMemory(device(), as_memory_bad_offset, nullptr);
     }
 
     // Can not bind with offset that doesn't leave enough size
@@ -6326,7 +6326,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
         VkDeviceSize offset = (as_memory_requirements.size - 1) & ~(as_memory_requirements.alignment - 1);
         if (offset > 0 && (as_memory_requirements.size < (as_memory_alloc.allocationSize - as_memory_requirements.alignment))) {
             VkDeviceMemory as_memory_bad_offset = VK_NULL_HANDLE;
-            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_bad_offset));
+            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, nullptr, &as_memory_bad_offset));
 
             VkBindAccelerationStructureMemoryInfoNV as_bind_info_bad_offset = as_bind_info;
             as_bind_info_bad_offset.memory = as_memory_bad_offset;
@@ -6336,7 +6336,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
             (void)vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_bad_offset);
             m_errorMonitor->VerifyFound();
 
-            vk::FreeMemory(device(), as_memory_bad_offset, NULL);
+            vk::FreeMemory(device(), as_memory_bad_offset, nullptr);
         }
     }
 
@@ -6352,7 +6352,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
             ASSERT_TRUE(m_device->phy().set_memory_type(unsupported_mem_type_bits, &as_memory_alloc_bad_type, 0));
 
             VkDeviceMemory as_memory_bad_type = VK_NULL_HANDLE;
-            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc_bad_type, NULL, &as_memory_bad_type));
+            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc_bad_type, nullptr, &as_memory_bad_type));
 
             VkBindAccelerationStructureMemoryInfoNV as_bind_info_bad_type = as_bind_info;
             as_bind_info_bad_type.memory = as_memory_bad_type;
@@ -6361,7 +6361,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
             (void)vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_bad_type);
             m_errorMonitor->VerifyFound();
 
-            vk::FreeMemory(device(), as_memory_bad_type, NULL);
+            vk::FreeMemory(device(), as_memory_bad_type, nullptr);
         }
     }
 
@@ -6371,8 +6371,8 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
 
         VkDeviceMemory as_memory_twice_1 = VK_NULL_HANDLE;
         VkDeviceMemory as_memory_twice_2 = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_twice_1));
-        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_twice_2));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, nullptr, &as_memory_twice_1));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &as_memory_alloc, nullptr, &as_memory_twice_2));
         VkBindAccelerationStructureMemoryInfoNV as_bind_info_twice_1 = as_bind_info;
         VkBindAccelerationStructureMemoryInfoNV as_bind_info_twice_2 = as_bind_info;
         as_bind_info_twice_1.accelerationStructure = as_twice.handle();
@@ -6386,8 +6386,8 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
         (void)vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_twice_2);
         m_errorMonitor->VerifyFound();
 
-        vk::FreeMemory(device(), as_memory_twice_1, NULL);
-        vk::FreeMemory(device(), as_memory_twice_2, NULL);
+        vk::FreeMemory(device(), as_memory_twice_1, nullptr);
+        vk::FreeMemory(device(), as_memory_twice_2, nullptr);
     }
 }
 
@@ -6421,7 +6421,7 @@ TEST_F(VkLayerTest, ValidateWriteDescriptorSetAccelerationStructureNV) {
     acc.pAccelerationStructures = &top_level_as.handle();
     descriptor_write.pNext = &acc;
     m_errorMonitor->ExpectSuccess();
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -6844,7 +6844,7 @@ TEST_F(VkLayerTest, QueryPerformanceCreation) {
 
     m_commandBuffer->end();
 
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
@@ -6957,7 +6957,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
         buf_info.size = 4096;
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkBuffer buffer;
-        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
+        VkResult err = vk::CreateBuffer(device(), &buf_info, nullptr, &buffer);
         ASSERT_VK_SUCCESS(err);
 
         VkMemoryRequirements mem_reqs;
@@ -6966,7 +6966,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
         VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
-        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
+        err = vk::AllocateMemory(device(), &alloc_info, nullptr, &mem);
         ASSERT_VK_SUCCESS(err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
@@ -6981,17 +6981,17 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
 
         VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.waitSemaphoreCount = 0;
-        submit_info.pWaitSemaphores = NULL;
-        submit_info.pWaitDstStageMask = NULL;
+        submit_info.pWaitSemaphores = nullptr;
+        submit_info.pWaitDstStageMask = nullptr;
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &m_commandBuffer->handle();
         submit_info.signalSemaphoreCount = 0;
-        submit_info.pSignalSemaphores = NULL;
+        submit_info.pSignalSemaphores = nullptr;
         vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(queue);
 
         vk::DestroyBuffer(device(), buffer, nullptr);
-        vk::FreeMemory(device(), mem, NULL);
+        vk::FreeMemory(device(), mem, nullptr);
     }
 
     // First command: success.
@@ -7001,7 +7001,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
         buf_info.size = 4096;
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkBuffer buffer;
-        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
+        VkResult err = vk::CreateBuffer(device(), &buf_info, nullptr, &buffer);
         ASSERT_VK_SUCCESS(err);
 
         VkMemoryRequirements mem_reqs;
@@ -7010,7 +7010,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
         VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
-        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
+        err = vk::AllocateMemory(device(), &alloc_info, nullptr, &mem);
         ASSERT_VK_SUCCESS(err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
@@ -7028,20 +7028,20 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
 
         VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.waitSemaphoreCount = 0;
-        submit_info.pWaitSemaphores = NULL;
-        submit_info.pWaitDstStageMask = NULL;
+        submit_info.pWaitSemaphores = nullptr;
+        submit_info.pWaitDstStageMask = nullptr;
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &m_commandBuffer->handle();
         submit_info.signalSemaphoreCount = 0;
-        submit_info.pSignalSemaphores = NULL;
+        submit_info.pSignalSemaphores = nullptr;
         vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(queue);
 
         vk::DestroyBuffer(device(), buffer, nullptr);
-        vk::FreeMemory(device(), mem, NULL);
+        vk::FreeMemory(device(), mem, nullptr);
     }
 
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 
     vkReleaseProfilingLockKHR(device());
 }
@@ -7165,19 +7165,19 @@ TEST_F(VkLayerTest, QueryPerformanceCounterRenderPassScope) {
 
         VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.waitSemaphoreCount = 0;
-        submit_info.pWaitSemaphores = NULL;
-        submit_info.pWaitDstStageMask = NULL;
+        submit_info.pWaitSemaphores = nullptr;
+        submit_info.pWaitDstStageMask = nullptr;
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &m_commandBuffer->handle();
         submit_info.signalSemaphoreCount = 0;
-        submit_info.pSignalSemaphores = NULL;
+        submit_info.pSignalSemaphores = nullptr;
         vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(queue);
     }
 
     vkReleaseProfilingLockKHR(device());
 
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
@@ -7293,12 +7293,12 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
 
         VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.waitSemaphoreCount = 0;
-        submit_info.pWaitSemaphores = NULL;
-        submit_info.pWaitDstStageMask = NULL;
+        submit_info.pWaitSemaphores = nullptr;
+        submit_info.pWaitDstStageMask = nullptr;
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &m_commandBuffer->handle();
         submit_info.signalSemaphoreCount = 0;
-        submit_info.pSignalSemaphores = NULL;
+        submit_info.pSignalSemaphores = nullptr;
 
         vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(queue);
@@ -7310,7 +7310,7 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
         buf_info.size = 4096;
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkBuffer buffer;
-        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
+        VkResult err = vk::CreateBuffer(device(), &buf_info, nullptr, &buffer);
         ASSERT_VK_SUCCESS(err);
 
         VkMemoryRequirements mem_reqs;
@@ -7319,7 +7319,7 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
         VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
-        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
+        err = vk::AllocateMemory(device(), &alloc_info, nullptr, &mem);
         ASSERT_VK_SUCCESS(err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
@@ -7342,12 +7342,12 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
 
         VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.waitSemaphoreCount = 0;
-        submit_info.pWaitSemaphores = NULL;
-        submit_info.pWaitDstStageMask = NULL;
+        submit_info.pWaitSemaphores = nullptr;
+        submit_info.pWaitDstStageMask = nullptr;
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &m_commandBuffer->handle();
         submit_info.signalSemaphoreCount = 0;
-        submit_info.pSignalSemaphores = NULL;
+        submit_info.pSignalSemaphores = nullptr;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-03220");
         vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -7356,12 +7356,12 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
         vk::QueueWaitIdle(queue);
 
         vk::DestroyBuffer(device(), buffer, nullptr);
-        vk::FreeMemory(device(), mem, NULL);
+        vk::FreeMemory(device(), mem, nullptr);
     }
 
     vkReleaseProfilingLockKHR(device());
 
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
@@ -7498,7 +7498,7 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
         buf_info.size = 4096;
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkBuffer buffer;
-        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
+        VkResult err = vk::CreateBuffer(device(), &buf_info, nullptr, &buffer);
         ASSERT_VK_SUCCESS(err);
 
         VkMemoryRequirements mem_reqs;
@@ -7507,7 +7507,7 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
         VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
-        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
+        err = vk::AllocateMemory(device(), &alloc_info, nullptr, &mem);
         ASSERT_VK_SUCCESS(err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
@@ -7528,12 +7528,12 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
             perf_submit_info.counterPassIndex = nPasses;
             VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&perf_submit_info);
             submit_info.waitSemaphoreCount = 0;
-            submit_info.pWaitSemaphores = NULL;
-            submit_info.pWaitDstStageMask = NULL;
+            submit_info.pWaitSemaphores = nullptr;
+            submit_info.pWaitDstStageMask = nullptr;
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &m_commandBuffer->handle();
             submit_info.signalSemaphoreCount = 0;
-            submit_info.pSignalSemaphores = NULL;
+            submit_info.pSignalSemaphores = nullptr;
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPerformanceQuerySubmitInfoKHR-counterPassIndex-03221");
             vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -7546,12 +7546,12 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
             perf_submit_info.counterPassIndex = passIdx;
             VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&perf_submit_info);
             submit_info.waitSemaphoreCount = 0;
-            submit_info.pWaitSemaphores = NULL;
-            submit_info.pWaitDstStageMask = NULL;
+            submit_info.pWaitSemaphores = nullptr;
+            submit_info.pWaitDstStageMask = nullptr;
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &m_commandBuffer->handle();
             submit_info.signalSemaphoreCount = 0;
-            submit_info.pSignalSemaphores = NULL;
+            submit_info.pSignalSemaphores = nullptr;
 
             vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
         }
@@ -7581,12 +7581,12 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
             perf_submit_info.counterPassIndex = nPasses - 1;
             VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&perf_submit_info);
             submit_info.waitSemaphoreCount = 0;
-            submit_info.pWaitSemaphores = NULL;
-            submit_info.pWaitDstStageMask = NULL;
+            submit_info.pWaitSemaphores = nullptr;
+            submit_info.pWaitDstStageMask = nullptr;
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &m_commandBuffer->handle();
             submit_info.signalSemaphoreCount = 0;
-            submit_info.pSignalSemaphores = NULL;
+            submit_info.pSignalSemaphores = nullptr;
 
             vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
         }
@@ -7625,12 +7625,12 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
         m_errorMonitor->VerifyNotFound();
 
         vk::DestroyBuffer(device(), buffer, nullptr);
-        vk::FreeMemory(device(), mem, NULL);
+        vk::FreeMemory(device(), mem, nullptr);
     }
 
     vkReleaseProfilingLockKHR(device());
 
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
@@ -7755,7 +7755,7 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
         buf_info.size = 4096;
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkBuffer buffer;
-        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
+        VkResult err = vk::CreateBuffer(device(), &buf_info, nullptr, &buffer);
         ASSERT_VK_SUCCESS(err);
 
         VkMemoryRequirements mem_reqs;
@@ -7764,7 +7764,7 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
         VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
         alloc_info.allocationSize = 4096;
         VkDeviceMemory mem;
-        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
+        err = vk::AllocateMemory(device(), &alloc_info, nullptr, &mem);
         ASSERT_VK_SUCCESS(err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
@@ -7785,12 +7785,12 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
             perf_submit_info.counterPassIndex = 0;
             VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&perf_submit_info);
             submit_info.waitSemaphoreCount = 0;
-            submit_info.pWaitSemaphores = NULL;
-            submit_info.pWaitDstStageMask = NULL;
+            submit_info.pWaitSemaphores = nullptr;
+            submit_info.pWaitDstStageMask = nullptr;
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &m_commandBuffer->handle();
             submit_info.signalSemaphoreCount = 0;
-            submit_info.pSignalSemaphores = NULL;
+            submit_info.pSignalSemaphores = nullptr;
 
             vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
         }
@@ -7799,12 +7799,12 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
         m_errorMonitor->VerifyFound();
 
         vk::DestroyBuffer(device(), buffer, nullptr);
-        vk::FreeMemory(device(), mem, NULL);
+        vk::FreeMemory(device(), mem, nullptr);
     }
 
     vkReleaseProfilingLockKHR(device());
 
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, QueueSubmitNoTimelineSemaphoreInfo) {
@@ -8080,7 +8080,7 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreOutOfOrder) {
 
     // We need two queues for this
     uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
 
@@ -9218,7 +9218,7 @@ TEST_F(VkLayerTest, InvalidProtectedSubmit) {
     }
     if (alloc_info.memoryTypeIndex < phys_mem_props.memoryTypeCount) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-memoryTypeIndex-01872");
-        vk::AllocateMemory(device(), &alloc_info, NULL, &memory_protected);
+        vk::AllocateMemory(device(), &alloc_info, nullptr, &memory_protected);
         m_errorMonitor->VerifyFound();
     }
 
@@ -9367,11 +9367,11 @@ TEST_F(VkLayerTest, InvalidProtectedMemory) {
 
     alloc_info.memoryTypeIndex = memory_type_protected;
     alloc_info.allocationSize = mem_reqs_protected.size;
-    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_protected);
+    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory_protected);
 
     alloc_info.allocationSize = mem_reqs_unprotected.size;
     alloc_info.memoryTypeIndex = memory_type_unprotected;
-    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_unprotected);
+    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory_unprotected);
 
     // Bind protected buffer with unprotected memory
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-None-01898");
@@ -9417,7 +9417,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 4096;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(device(), &buf_info, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     VkMemoryRequirements mem_reqs;
@@ -9426,7 +9426,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
     VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = 4096;
     VkDeviceMemory mem;
-    err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
+    err = vk::AllocateMemory(device(), &alloc_info, nullptr, &mem);
     ASSERT_VK_SUCCESS(err);
     vk::BindBufferMemory(device(), buffer, mem, 0);
 
@@ -9443,7 +9443,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
     PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
         (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
 
-    VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL, buffer};
+    VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, buffer};
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
 
     VkStridedDeviceAddressRegionKHR stridebufregion = {};
@@ -9520,7 +9520,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 4096;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(device(), &buf_info, nullptr, &buffer);
     ASSERT_VK_SUCCESS(err);
 
     VkMemoryRequirements mem_reqs;
@@ -9529,7 +9529,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = 4096;
     VkDeviceMemory mem;
-    err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
+    err = vk::AllocateMemory(device(), &alloc_info, nullptr, &mem);
     ASSERT_VK_SUCCESS(err);
     vk::BindBufferMemory(device(), buffer, mem, 0);
 
@@ -9548,7 +9548,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
         (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
 
-    VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL, buffer};
+    VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, buffer};
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
 
     VkStridedDeviceAddressRegionKHR stridebufregion = {};
@@ -9639,7 +9639,7 @@ TEST_F(VkLayerTest, ValidateVkAccelerationStructureVersionInfoKHR) {
 
     {
         VkAccelerationStructureVersionInfoKHR invalid_version = valid_version;
-        invalid_version.pVersionData = NULL;
+        invalid_version.pVersionData = nullptr;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureVersionInfoKHR-pVersionData-parameter");
         vkGetDeviceAccelerationStructureCompatibilityKHR(m_device->handle(), &invalid_version, &compatablity);
         m_errorMonitor->VerifyFound();
@@ -9690,11 +9690,11 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     as_create_info.deviceAddress = 0;
     VkAccelerationStructurekhrObj bot_level_as(*m_device, as_create_info);
 
-    VkBufferDeviceAddressInfo vertexAddressInfo = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL,
+    VkBufferDeviceAddressInfo vertexAddressInfo = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr,
                                                    geometryNV.geometry.triangles.vertexData};
     VkDeviceAddress vertexAddress = vkGetBufferDeviceAddressKHR(m_device->handle(), &vertexAddressInfo);
 
-    VkBufferDeviceAddressInfo indexAddressInfo = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL,
+    VkBufferDeviceAddressInfo indexAddressInfo = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr,
                                                   geometryNV.geometry.triangles.indexData};
     VkDeviceAddress indexAddress = vkGetBufferDeviceAddressKHR(m_device->handle(), &indexAddressInfo);
     VkAccelerationStructureGeometryKHR valid_geometry_triangles = LvlInitStruct<VkAccelerationStructureGeometryKHR>();
@@ -9722,7 +9722,7 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     create_info.size = acc_struct_properties.minAccelerationStructureScratchOffsetAlignment;
     bot_level_as.create_scratch_buffer(*m_device, &bot_level_as_scratch, &create_info);
-    VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL,
+    VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr,
                                                      bot_level_as_scratch.handle()};
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
     build_info_khr.flags = 0;
@@ -9732,11 +9732,11 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     build_info_khr.dstAccelerationStructure = bot_level_as.handle();
     build_info_khr.geometryCount = 1;
     build_info_khr.pGeometries = pGeometry;
-    build_info_khr.ppGeometries = NULL;
+    build_info_khr.ppGeometries = nullptr;
     build_info_khr.scratchData.deviceAddress = device_address;
 
     VkAccelerationStructureBuildGeometryInfoKHR build_info_ppGeometries_khr = build_info_khr;
-    build_info_ppGeometries_khr.pGeometries = NULL;
+    build_info_ppGeometries_khr.pGeometries = nullptr;
     build_info_ppGeometries_khr.ppGeometries = &pGeometry;
 
     VkAccelerationStructureBuildRangeInfoKHR build_range_info;
@@ -9795,14 +9795,14 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     // Invalid pInfos
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-parameter");
-        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, NULL, &pBuildRangeInfos);
+        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, nullptr, &pBuildRangeInfos);
         m_errorMonitor->VerifyFound();
     }
 
     // Invalid ppBuildRangeInfos
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-ppBuildRangeInfos-parameter");
-        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, NULL);
+        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, nullptr);
         m_errorMonitor->VerifyFound();
     }
 
@@ -10015,7 +10015,7 @@ TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureKHR) {
     build_info.dstAccelerationStructure = bot_level_as->handle();
     build_info.geometryCount = 1;
     build_info.pGeometries = &valid_geometry_triangles;
-    build_info.ppGeometries = NULL;
+    build_info.ppGeometries = nullptr;
     build_info.scratchData.deviceAddress = device_address + kBufferOffset;
 
     VkAccelerationStructureBuildRangeInfoKHR build_range_info{};
@@ -11147,7 +11147,7 @@ TEST_F(VkLayerTest, CmdCopyAccelerationStructureToMemoryKHR) {
     buffer.init_no_mem(*m_device, buffer_ci);
 
     auto as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
-    as_create_info.pNext = NULL;
+    as_create_info.pNext = nullptr;
     as_create_info.buffer = buffer.handle();
     as_create_info.createFlags = 0;
     as_create_info.offset = 0;
@@ -12226,7 +12226,7 @@ TEST_F(VkLayerTest, WriteTimeStampInvalidQuery) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
@@ -12371,7 +12371,7 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
     {
         VkDevice testDevice;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-None-04896");
-        vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+        vk::CreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -12380,7 +12380,7 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
         VkDevice testDevice;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-None-04897");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-None-04898");
-        vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+        vk::CreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -12388,7 +12388,7 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
 
         VkDevice testDevice;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-sparseImageFloat32AtomicMinMax-04975");
-        vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+        vk::CreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -12886,7 +12886,7 @@ TEST_F(VkLayerTest, Features12AndppEnabledExtensionNames) {
 
     VkDevice testDevice;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-04748");
-    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
     m_errorMonitor->VerifyFound();
 }
 
@@ -13201,7 +13201,7 @@ TEST_F(VkLayerTest, QueryPoolResultStatusOnly) {
     vk::GetQueryPoolResults(m_device->device(), query_pool, 0, 1, out_data_size, &data, sizeof(uint32_t), 0);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {

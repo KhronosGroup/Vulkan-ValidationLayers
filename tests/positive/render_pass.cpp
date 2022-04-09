@@ -178,10 +178,10 @@ TEST_F(VkPositiveLayerTest, RenderPassCreateAttachmentLayoutWithLoadOpThenReadOn
 
     // Now create RenderPass and verify no errors
     VkRenderPass rp;
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyNotFound();
 
-    vk::DestroyRenderPass(m_device->device(), rp, NULL);
+    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, RenderPassBeginSubpassZeroTransitionsApplied) {
@@ -336,13 +336,13 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.flags = 0;
     subpass.inputAttachmentCount = 0;
-    subpass.pInputAttachments = NULL;
+    subpass.pInputAttachments = nullptr;
     subpass.colorAttachmentCount = 0;
-    subpass.pColorAttachments = NULL;
-    subpass.pResolveAttachments = NULL;
+    subpass.pColorAttachments = nullptr;
+    subpass.pResolveAttachments = nullptr;
     subpass.pDepthStencilAttachment = &ref;
     subpass.preserveAttachmentCount = 0;
-    subpass.pPreserveAttachments = NULL;
+    subpass.pPreserveAttachments = nullptr;
 
     VkRenderPass rp;
     VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
@@ -350,7 +350,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     rp_info.pAttachments = &att;
     rp_info.subpassCount = 1;
     rp_info.pSubpasses = &subpass;
-    result = vk::CreateRenderPass(device(), &rp_info, NULL, &rp);
+    result = vk::CreateRenderPass(device(), &rp_info, nullptr, &rp);
     ASSERT_VK_SUCCESS(result);
 
     VkImageView *depthView = m_depthStencil->BindInfo();
@@ -362,7 +362,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     fb_info.height = 100;
     fb_info.layers = 1;
     VkFramebuffer fb;
-    result = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
+    result = vk::CreateFramebuffer(device(), &fb_info, nullptr, &fb);
     ASSERT_VK_SUCCESS(result);
 
     VkRenderPassBeginInfo rpbinfo = LvlInitStruct<VkRenderPassBeginInfo>();
@@ -424,12 +424,12 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 0;
-    submit_info.pWaitSemaphores = NULL;
-    submit_info.pWaitDstStageMask = NULL;
+    submit_info.pWaitSemaphores = nullptr;
+    submit_info.pWaitDstStageMask = nullptr;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &cmdbuf.handle();
     submit_info.signalSemaphoreCount = 0;
-    submit_info.pSignalSemaphores = NULL;
+    submit_info.pSignalSemaphores = nullptr;
 
     m_errorMonitor->ExpectSuccess();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -536,9 +536,9 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginDepthStencilLayoutTransitionFromUndef
     m_errorMonitor->VerifyNotFound();
 
     // Cleanup
-    vk::DestroyImageView(m_device->device(), view, NULL);
-    vk::DestroyRenderPass(m_device->device(), rp, NULL);
-    vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+    vk::DestroyImageView(m_device->device(), view, nullptr);
+    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
+    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
@@ -576,14 +576,14 @@ TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.flags = 0;
     subpass.inputAttachmentCount = 0;
-    subpass.pInputAttachments = NULL;
+    subpass.pInputAttachments = nullptr;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &ref;
-    subpass.pResolveAttachments = NULL;
+    subpass.pResolveAttachments = nullptr;
 
-    subpass.pDepthStencilAttachment = NULL;
+    subpass.pDepthStencilAttachment = nullptr;
     subpass.preserveAttachmentCount = 0;
-    subpass.pPreserveAttachments = NULL;
+    subpass.pPreserveAttachments = nullptr;
 
     VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
     rp_info.attachmentCount = 1;
@@ -592,7 +592,7 @@ TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
     rp_info.pSubpasses = &subpass;
 
     VkRenderPass rp;
-    err = vk::CreateRenderPass(device(), &rp_info, NULL, &rp);
+    err = vk::CreateRenderPass(device(), &rp_info, nullptr, &rp);
     ASSERT_VK_SUCCESS(err);
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
@@ -911,7 +911,7 @@ TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     VkSampler sampler = VK_NULL_HANDLE;
-    err = vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    err = vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
     ASSERT_VK_SUCCESS(err);
 
     OneOffDescriptorSet::Bindings binding_defs = {{2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
@@ -962,7 +962,7 @@ TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
     vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, nullptr);
 
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, NULL);
+                              &descriptor_set.set_, 0, nullptr);
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);

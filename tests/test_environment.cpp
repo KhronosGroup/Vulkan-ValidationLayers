@@ -39,7 +39,7 @@ Environment::Environment() : default_dev_(0) {
     app_.pEngineName = "vk_testing";
     app_.engineVersion = 1;
     app_.apiVersion = VK_API_VERSION_1_0;
-    app_.pNext = NULL;
+    app_.pNext = nullptr;
 }
 
 bool Environment::parse_args(int argc, char **argv) {
@@ -101,18 +101,18 @@ void Environment::SetUp() {
     }
     VkInstanceCreateInfo inst_info = {};
     inst_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    inst_info.pNext = NULL;
+    inst_info.pNext = nullptr;
     inst_info.pApplicationInfo = &app_;
     inst_info.enabledExtensionCount = instance_extension_names.size();
-    inst_info.ppEnabledExtensionNames = (instance_extension_names.size()) ? &instance_extension_names[0] : NULL;
+    inst_info.ppEnabledExtensionNames = (instance_extension_names.size()) ? &instance_extension_names[0] : nullptr;
     inst_info.enabledLayerCount = 0;
-    inst_info.ppEnabledLayerNames = NULL;
+    inst_info.ppEnabledLayerNames = nullptr;
 
     VkResult err;
     uint32_t count;
-    err = vk::CreateInstance(&inst_info, NULL, &inst);
+    err = vk::CreateInstance(&inst_info, nullptr, &inst);
     ASSERT_EQ(VK_SUCCESS, err);
-    err = vk::EnumeratePhysicalDevices(inst, &count, NULL);
+    err = vk::EnumeratePhysicalDevices(inst, &count, nullptr);
     ASSERT_EQ(VK_SUCCESS, err);
     ASSERT_LE(count, ARRAY_SIZE(gpus));
     err = vk::EnumeratePhysicalDevices(inst, &count, gpus);
@@ -148,6 +148,6 @@ void Environment::TearDown() {
     for (std::vector<Device *>::iterator it = devs_.begin(); it != devs_.end(); it++) delete *it;
     devs_.clear();
 
-    if (inst) vk::DestroyInstance(inst, NULL);
+    if (inst) vk::DestroyInstance(inst, nullptr);
 }
 }  // namespace vk_testing

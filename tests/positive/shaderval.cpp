@@ -114,7 +114,7 @@ TEST_F(VkPositiveLayerTest, ShaderUboStd430Layout) {
     PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
         (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
 
-    auto uniform_buffer_standard_layout_features = LvlInitStruct<VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR>(NULL);
+    auto uniform_buffer_standard_layout_features = LvlInitStruct<VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR>();
     uniform_buffer_standard_layout_features.uniformBufferStandardLayout = VK_TRUE;
     auto query_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&uniform_buffer_standard_layout_features);
     vkGetPhysicalDeviceFeatures2(gpu(), &query_features2);
@@ -183,7 +183,7 @@ TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
     PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
         (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
 
-    auto scalar_block_features = LvlInitStruct<VkPhysicalDeviceScalarBlockLayoutFeaturesEXT>(NULL);
+    auto scalar_block_features = LvlInitStruct<VkPhysicalDeviceScalarBlockLayoutFeaturesEXT>();
     auto query_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&scalar_block_features);
     vkGetPhysicalDeviceFeatures2(gpu(), &query_features2);
 
@@ -720,7 +720,7 @@ TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
         dslb[i].binding = i;
         dslb[i].descriptorCount = 1;
         dslb[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        dslb[i].pImmutableSamplers = NULL;
+        dslb[i].pImmutableSamplers = nullptr;
         dslb[i].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_ALL;
     }
     if (m_device->props.limits.maxPerStageDescriptorStorageBuffers < dslb_size) {
