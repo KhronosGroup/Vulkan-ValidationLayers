@@ -223,7 +223,7 @@ TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
     // CmdWriteBufferMarkerAMD
     if (has_amd_buffer_maker) {
         auto fpCmdWriteBufferMarkerAMD =
-            (PFN_vkCmdWriteBufferMarkerAMD)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteBufferMarkerAMD");
+            reinterpret_cast<PFN_vkCmdWriteBufferMarkerAMD>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteBufferMarkerAMD"));
         if (!fpCmdWriteBufferMarkerAMD) {
             printf("%s Test requires unsupported vkCmdWriteBufferMarkerAMD feature. Skipped.\n", kSkipPrefix);
         } else {
@@ -261,7 +261,8 @@ TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
         printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    auto fpCmdPipelineBarrier2KHR = (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
+    auto fpCmdPipelineBarrier2KHR =
+        reinterpret_cast<PFN_vkCmdPipelineBarrier2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR"));
 
     VkBufferObj buffer_a;
     VkBufferObj buffer_b;
@@ -563,7 +564,8 @@ TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
         printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    auto fpCmdPipelineBarrier2KHR = (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
+    auto fpCmdPipelineBarrier2KHR =
+        reinterpret_cast<PFN_vkCmdPipelineBarrier2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR"));
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1731,7 +1733,7 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
     if (has_khr_indirect) {
         // DrawIndirectCount
         auto fpCmdDrawIndirectCountKHR =
-            (PFN_vkCmdDrawIndirectCount)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
+            reinterpret_cast<PFN_vkCmdDrawIndirectCount>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR"));
         if (!fpCmdDrawIndirectCountKHR) {
             printf("%s Test requires unsupported vkCmdDrawIndirectCountKHR feature. Skipped.\n", kSkipPrefix);
         } else {
@@ -1782,8 +1784,8 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
         }
 
         // DrawIndexedIndirectCount
-        auto fpCmdDrawIndexIndirectCountKHR =
-            (PFN_vkCmdDrawIndirectCount)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR");
+        auto fpCmdDrawIndexIndirectCountKHR = reinterpret_cast<PFN_vkCmdDrawIndirectCount>(
+            vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR"));
         if (!fpCmdDrawIndexIndirectCountKHR) {
             printf("%s Test requires unsupported vkCmdDrawIndexedIndirectCountKHR feature. Skipped.\n", kSkipPrefix);
         } else {
@@ -3563,7 +3565,8 @@ TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     InitState();
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
-    auto fpCmdWaitEvents2KHR = (PFN_vkCmdWaitEvents2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWaitEvents2KHR");
+    auto fpCmdWaitEvents2KHR =
+        reinterpret_cast<PFN_vkCmdWaitEvents2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdWaitEvents2KHR"));
 
     VkEventObj event;
     event.init(*m_device, VkEventObj::create_info(0));
@@ -3604,11 +3607,13 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
     auto vkCmdPipelineBarrier2KHR =
-        (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
-    auto vkCmdResetEvent2KHR = (PFN_vkCmdResetEvent2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdResetEvent2KHR");
-    auto vkCmdSetEvent2KHR = (PFN_vkCmdSetEvent2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetEvent2KHR");
+        reinterpret_cast<PFN_vkCmdPipelineBarrier2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR"));
+    auto vkCmdResetEvent2KHR =
+        reinterpret_cast<PFN_vkCmdResetEvent2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdResetEvent2KHR"));
+    auto vkCmdSetEvent2KHR =
+        reinterpret_cast<PFN_vkCmdSetEvent2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetEvent2KHR"));
     auto vkCmdWriteTimestamp2KHR =
-        (PFN_vkCmdWriteTimestamp2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteTimestamp2KHR");
+        reinterpret_cast<PFN_vkCmdWriteTimestamp2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteTimestamp2KHR"));
 
     bool timestamp = false;
 

@@ -56,10 +56,10 @@ TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayObjects) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetPhysicalDeviceDisplayPropertiesKHR vkGetPhysicalDeviceDisplayPropertiesKHR =
-        (PFN_vkGetPhysicalDeviceDisplayPropertiesKHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceDisplayPropertiesKHR");
-    PFN_vkGetDisplayModePropertiesKHR vkGetDisplayModePropertiesKHR =
-        (PFN_vkGetDisplayModePropertiesKHR)vk::GetInstanceProcAddr(instance(), "vkGetDisplayModePropertiesKHR");
+    auto vkGetPhysicalDeviceDisplayPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPropertiesKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceDisplayPropertiesKHR"));
+    auto vkGetDisplayModePropertiesKHR =
+        reinterpret_cast<PFN_vkGetDisplayModePropertiesKHR>(vk::GetInstanceProcAddr(instance(), "vkGetDisplayModePropertiesKHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceDisplayPropertiesKHR != nullptr);
     ASSERT_TRUE(vkGetDisplayModePropertiesKHR != nullptr);
 
@@ -92,11 +92,10 @@ TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayPlaneObjects) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR vkGetPhysicalDeviceDisplayPlanePropertiesKHR =
-        (PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR)vk::GetInstanceProcAddr(instance(),
-                                                                                  "vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
-    PFN_vkGetDisplayModePropertiesKHR vkGetDisplayModePropertiesKHR =
-        (PFN_vkGetDisplayModePropertiesKHR)vk::GetInstanceProcAddr(instance(), "vkGetDisplayModePropertiesKHR");
+    auto vkGetPhysicalDeviceDisplayPlanePropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceDisplayPlanePropertiesKHR"));
+    auto vkGetDisplayModePropertiesKHR =
+        reinterpret_cast<PFN_vkGetDisplayModePropertiesKHR>(vk::GetInstanceProcAddr(instance(), "vkGetDisplayModePropertiesKHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceDisplayPlanePropertiesKHR != nullptr);
     ASSERT_TRUE(vkGetDisplayModePropertiesKHR != nullptr);
 
@@ -1498,8 +1497,8 @@ TEST_F(VkPositiveLayerTest, ExternalSemaphore) {
                                                     handle_type};
     VkExternalSemaphorePropertiesKHR esp = {VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES_KHR, nullptr};
     auto vkGetPhysicalDeviceExternalSemaphorePropertiesKHR =
-        (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
+        reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR>(vk::GetInstanceProcAddr(
+            instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR"));
     vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
 
     if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
@@ -1530,30 +1529,32 @@ TEST_F(VkPositiveLayerTest, ExternalSemaphore) {
     HANDLE handle = nullptr;
     VkSemaphoreGetWin32HandleInfoKHR ghi = {VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR, nullptr, export_semaphore,
                                             handle_type};
-    auto vkGetSemaphoreWin32HandleKHR =
-        (PFN_vkGetSemaphoreWin32HandleKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreWin32HandleKHR");
+    auto vkGetSemaphoreWin32HandleKHR = reinterpret_cast<PFN_vkGetSemaphoreWin32HandleKHR>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreWin32HandleKHR"));
     err = vkGetSemaphoreWin32HandleKHR(m_device->device(), &ghi, &handle);
     ASSERT_VK_SUCCESS(err);
 
     // Import opaque handle exported above
     VkImportSemaphoreWin32HandleInfoKHR ihi = {
         VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR, nullptr, import_semaphore, 0, handle_type, handle, nullptr};
-    auto vkImportSemaphoreWin32HandleKHR =
-        (PFN_vkImportSemaphoreWin32HandleKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreWin32HandleKHR");
+    auto vkImportSemaphoreWin32HandleKHR = reinterpret_cast<PFN_vkImportSemaphoreWin32HandleKHR>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreWin32HandleKHR"));
     err = vkImportSemaphoreWin32HandleKHR(m_device->device(), &ihi);
     ASSERT_VK_SUCCESS(err);
 #else
     // Export semaphore payload to an opaque handle
     int fd = 0;
     VkSemaphoreGetFdInfoKHR ghi = {VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR, nullptr, export_semaphore, handle_type};
-    auto vkGetSemaphoreFdKHR = (PFN_vkGetSemaphoreFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreFdKHR");
+    auto vkGetSemaphoreFdKHR =
+        reinterpret_cast<PFN_vkGetSemaphoreFdKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreFdKHR"));
     err = vkGetSemaphoreFdKHR(m_device->device(), &ghi, &fd);
     ASSERT_VK_SUCCESS(err);
 
     // Import opaque handle exported above
     VkImportSemaphoreFdInfoKHR ihi = {
         VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR, nullptr, import_semaphore, 0, handle_type, fd};
-    auto vkImportSemaphoreFdKHR = (PFN_vkImportSemaphoreFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreFdKHR");
+    auto vkImportSemaphoreFdKHR =
+        reinterpret_cast<PFN_vkImportSemaphoreFdKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreFdKHR"));
     err = vkImportSemaphoreFdKHR(m_device->device(), &ihi);
     ASSERT_VK_SUCCESS(err);
 #endif
@@ -1621,8 +1622,8 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
     // Check for external fence import and export capability
     VkPhysicalDeviceExternalFenceInfoKHR efi = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO_KHR, nullptr, handle_type};
     VkExternalFencePropertiesKHR efp = {VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES_KHR, nullptr};
-    auto vkGetPhysicalDeviceExternalFencePropertiesKHR = (PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR)vk::GetInstanceProcAddr(
-        instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR");
+    auto vkGetPhysicalDeviceExternalFencePropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR"));
     vkGetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
@@ -1657,7 +1658,7 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
     {
         VkFenceGetWin32HandleInfoKHR ghi = {VK_STRUCTURE_TYPE_FENCE_GET_WIN32_HANDLE_INFO_KHR, nullptr, export_fence, handle_type};
         auto vkGetFenceWin32HandleKHR =
-            (PFN_vkGetFenceWin32HandleKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetFenceWin32HandleKHR");
+            reinterpret_cast<PFN_vkGetFenceWin32HandleKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkGetFenceWin32HandleKHR"));
         err = vkGetFenceWin32HandleKHR(m_device->device(), &ghi, &handle);
         ASSERT_VK_SUCCESS(err);
     }
@@ -1666,8 +1667,8 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
     {
         VkImportFenceWin32HandleInfoKHR ifi = {
             VK_STRUCTURE_TYPE_IMPORT_FENCE_WIN32_HANDLE_INFO_KHR, nullptr, import_fence, 0, handle_type, handle, nullptr};
-        auto vkImportFenceWin32HandleKHR =
-            (PFN_vkImportFenceWin32HandleKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportFenceWin32HandleKHR");
+        auto vkImportFenceWin32HandleKHR = reinterpret_cast<PFN_vkImportFenceWin32HandleKHR>(
+            vk::GetDeviceProcAddr(m_device->device(), "vkImportFenceWin32HandleKHR"));
         err = vkImportFenceWin32HandleKHR(m_device->device(), &ifi);
         ASSERT_VK_SUCCESS(err);
     }
@@ -1676,7 +1677,7 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
     int fd = 0;
     {
         VkFenceGetFdInfoKHR gfi = {VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR, nullptr, export_fence, handle_type};
-        auto vkGetFenceFdKHR = (PFN_vkGetFenceFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetFenceFdKHR");
+        auto vkGetFenceFdKHR = reinterpret_cast<PFN_vkGetFenceFdKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkGetFenceFdKHR"));
         err = vkGetFenceFdKHR(m_device->device(), &gfi, &fd);
         ASSERT_VK_SUCCESS(err);
     }
@@ -1684,7 +1685,8 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
     // Import opaque handle exported above
     {
         VkImportFenceFdInfoKHR ifi = {VK_STRUCTURE_TYPE_IMPORT_FENCE_FD_INFO_KHR, nullptr, import_fence, 0, handle_type, fd};
-        auto vkImportFenceFdKHR = (PFN_vkImportFenceFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportFenceFdKHR");
+        auto vkImportFenceFdKHR =
+            reinterpret_cast<PFN_vkImportFenceFdKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkImportFenceFdKHR"));
         err = vkImportFenceFdKHR(m_device->device(), &ifi);
         ASSERT_VK_SUCCESS(err);
     }

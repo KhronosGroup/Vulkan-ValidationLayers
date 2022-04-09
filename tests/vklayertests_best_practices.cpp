@@ -1081,7 +1081,7 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     vk::GetPhysicalDeviceQueueFamilyProperties2(phys_device_obj.handle(), &queue_count, queue_family_props2.data());
 
     // And for GetPhysicalDeviceQueueFamilyProperties2KHR
-    PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR vkGetPhysicalDeviceQueueFamilyProperties2KHR =
+    auto vkGetPhysicalDeviceQueueFamilyProperties2KHR =
         reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR>(
             vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceQueueFamilyProperties2KHR"));
     if (vkGetPhysicalDeviceQueueFamilyProperties2KHR) {
@@ -1336,8 +1336,8 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     // Create a device that enables descriptorBindingStorageBufferUpdateAfterBind

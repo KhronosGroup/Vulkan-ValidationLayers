@@ -1808,10 +1808,10 @@ TEST_F(VkLayerTest, TestBarrierWithDynamicRendering) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkCmdBeginRendering vkCmdBeginRendering =
+    auto vkCmdBeginRendering =
         reinterpret_cast<PFN_vkCmdBeginRendering>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginRendering"));
     assert(vkCmdBeginRendering != nullptr);
-    PFN_vkCmdEndRendering vkCmdEndRendering =
+    auto vkCmdEndRendering =
         reinterpret_cast<PFN_vkCmdEndRendering>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndRendering"));
     assert(vkCmdEndRendering != nullptr);
 

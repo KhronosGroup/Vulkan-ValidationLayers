@@ -442,8 +442,8 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     descriptor_write.dstSet = 0;  // Should not cause a validation error
 
     // Find address of extension call and make the call
-    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
+    auto vkCmdPushDescriptorSetKHR =
+        reinterpret_cast<PFN_vkCmdPushDescriptorSetKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR"));
     assert(vkCmdPushDescriptorSetKHR != nullptr);
 
     m_commandBuffer->begin();
@@ -526,8 +526,8 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     descriptor_set.WriteDescriptorBufferInfo(2, buffer.handle(), 0, sizeof(bo_data));
     descriptor_set.UpdateDescriptorSets();
 
-    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
+    auto vkCmdPushDescriptorSetKHR =
+        reinterpret_cast<PFN_vkCmdPushDescriptorSetKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR"));
     assert(vkCmdPushDescriptorSetKHR != nullptr);
 
     m_commandBuffer->begin();
@@ -577,8 +577,8 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
@@ -718,8 +718,8 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
 
     VkDescriptorBufferInfo buffer_info = {buffer_obj.handle(), 0, VK_WHOLE_SIZE};
 
-    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
+    auto vkCmdPushDescriptorSetKHR =
+        reinterpret_cast<PFN_vkCmdPushDescriptorSetKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR"));
     ASSERT_TRUE(vkCmdPushDescriptorSetKHR != nullptr);
 
     const VkDescriptorSetLayoutBinding ds_binding_0 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -1023,7 +1023,7 @@ TEST_F(VkPositiveLayerTest, PushingDescriptorSetWithImmutableSampler) {
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     auto vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
+        reinterpret_cast<PFN_vkCmdPushDescriptorSetKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR"));
 
     std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler_handle}};
@@ -1082,8 +1082,8 @@ TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
     auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&robustness2_features);
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
@@ -1092,8 +1092,8 @@ TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
         return;
     }
 
-    PFN_vkCmdBindVertexBuffers2EXT vkCmdBindVertexBuffers2EXT =
-        (PFN_vkCmdBindVertexBuffers2EXT)vk::GetInstanceProcAddr(instance(), "vkCmdBindVertexBuffers2EXT");
+    auto vkCmdBindVertexBuffers2EXT =
+        reinterpret_cast<PFN_vkCmdBindVertexBuffers2EXT>(vk::GetInstanceProcAddr(instance(), "vkCmdBindVertexBuffers2EXT"));
     ASSERT_TRUE(vkCmdBindVertexBuffers2EXT != nullptr);
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -1136,8 +1136,8 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mutable_descriptor_type_features);
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
         printf("%s mutableDescriptorType feature not supported. Skipped.\n", kSkipPrefix);

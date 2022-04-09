@@ -1167,9 +1167,8 @@ bool VkRenderFramework::InitFrameworkAndRetrieveFeatures(VkPhysicalDeviceFeature
             return false;
         }
     }
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(),
-            "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
 
     if (vkGetPhysicalDeviceFeatures2KHR) {
         vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
@@ -2317,7 +2316,7 @@ void VkCommandBufferObj::PipelineBarrier(VkPipelineStageFlags src_stages, VkPipe
 
 void VkCommandBufferObj::PipelineBarrier2KHR(const VkDependencyInfoKHR *pDependencyInfo) {
     auto fpCmdPipelineBarrier2KHR =
-        (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
+        reinterpret_cast<PFN_vkCmdPipelineBarrier2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR"));
     assert(fpCmdPipelineBarrier2KHR != nullptr);
 
     fpCmdPipelineBarrier2KHR(handle(), pDependencyInfo);
@@ -2391,8 +2390,8 @@ void VkCommandBufferObj::BuildAccelerationStructure(VkAccelerationStructureObj *
 }
 
 void VkCommandBufferObj::BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer, VkBuffer instanceData) {
-    PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
-        (PFN_vkCmdBuildAccelerationStructureNV)vk::GetDeviceProcAddr(as->dev(), "vkCmdBuildAccelerationStructureNV");
+    auto vkCmdBuildAccelerationStructureNV =
+        reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(vk::GetDeviceProcAddr(as->dev(), "vkCmdBuildAccelerationStructureNV"));
     assert(vkCmdBuildAccelerationStructureNV != nullptr);
 
     vkCmdBuildAccelerationStructureNV(handle(), &as->info(), instanceData, 0, VK_FALSE, as->handle(), VK_NULL_HANDLE, scratchBuffer,
@@ -2421,16 +2420,16 @@ void VkCommandBufferObj::BeginRenderPass(const VkRenderPassBeginInfo &info, VkSu
 void VkCommandBufferObj::EndRenderPass() { vk::CmdEndRenderPass(handle()); }
 
 void VkCommandBufferObj::BeginRendering(const VkRenderingInfoKHR &renderingInfo) {
-    PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR =
-        (PFN_vkCmdBeginRenderingKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginRenderingKHR");
+    auto vkCmdBeginRenderingKHR =
+        reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginRenderingKHR"));
     assert(vkCmdBeginRenderingKHR != nullptr);
 
     vkCmdBeginRenderingKHR(handle(), &renderingInfo);
 }
 
 void VkCommandBufferObj::EndRendering() {
-    PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR =
-        (PFN_vkCmdEndRenderingKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndRenderingKHR");
+    auto vkCmdEndRenderingKHR =
+        reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndRenderingKHR"));
     assert(vkCmdEndRenderingKHR != nullptr);
 
     vkCmdEndRenderingKHR(handle());

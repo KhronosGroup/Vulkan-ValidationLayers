@@ -53,8 +53,8 @@ TEST_F(VkPositiveLayerTest, ToolingExtension) {
     }
 
     m_errorMonitor->ExpectSuccess();
-    auto fpGetPhysicalDeviceToolPropertiesEXT =
-        (PFN_vkGetPhysicalDeviceToolPropertiesEXT)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceToolPropertiesEXT");
+    auto fpGetPhysicalDeviceToolPropertiesEXT = reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceToolPropertiesEXT"));
 
     uint32_t tool_count = 0;
     auto result = fpGetPhysicalDeviceToolPropertiesEXT(gpu(), &tool_count, nullptr);

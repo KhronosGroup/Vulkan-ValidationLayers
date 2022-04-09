@@ -1033,8 +1033,8 @@ TEST_F(VkLayerTest, ImagelessFramebufferDepthStencilResolveAttachmentTests) {
     renderPassCreateInfo.pSubpasses = &subpassDescription;
     renderPassCreateInfo.pAttachments = attachmentDescriptions;
     VkRenderPass renderPass;
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+    auto vkCreateRenderPass2KHR =
+        reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR"));
     vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
 
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfos[2] = {};
@@ -1135,16 +1135,16 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateImagelessFramebufferUsage) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties =
         LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
     VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     VkPhysicalDeviceImagelessFramebufferFeatures if_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeatures>();
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features =
@@ -1184,8 +1184,8 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateImagelessFramebufferUsage) {
 
     VkRenderPass rp;
 
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+    auto vkCreateRenderPass2KHR =
+        reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR"));
     VkResult err = vkCreateRenderPass2KHR(m_device->device(), &rpci, nullptr, &rp);
     ASSERT_VK_SUCCESS(err);
 
@@ -1256,16 +1256,16 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateImagelessFramebufferDimensions) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties =
         LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
     VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     VkPhysicalDeviceImagelessFramebufferFeatures if_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeatures>();
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features =
@@ -1305,8 +1305,8 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateImagelessFramebufferDimensions) {
 
     VkRenderPass rp;
 
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+    auto vkCreateRenderPass2KHR =
+        reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR"));
     VkResult err = vkCreateRenderPass2KHR(m_device->device(), &rpci, nullptr, &rp);
     ASSERT_VK_SUCCESS(err);
 
@@ -1613,12 +1613,12 @@ TEST_F(VkLayerTest, DescriptorUpdateTemplateEntryWithInlineUniformBlock) {
     buffer.init(*m_device, buff_ci);
 
     // Relying on the "return nullptr for non-enabled extensions
-    auto vkCreateDescriptorUpdateTemplateKHR =
-        (PFN_vkCreateDescriptorUpdateTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateDescriptorUpdateTemplateKHR");
-    auto vkDestroyDescriptorUpdateTemplateKHR =
-        (PFN_vkDestroyDescriptorUpdateTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkDestroyDescriptorUpdateTemplateKHR");
-    auto vkUpdateDescriptorSetWithTemplateKHR =
-        (PFN_vkUpdateDescriptorSetWithTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkUpdateDescriptorSetWithTemplateKHR");
+    auto vkCreateDescriptorUpdateTemplateKHR = reinterpret_cast<PFN_vkCreateDescriptorUpdateTemplateKHR>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCreateDescriptorUpdateTemplateKHR"));
+    auto vkDestroyDescriptorUpdateTemplateKHR = reinterpret_cast<PFN_vkDestroyDescriptorUpdateTemplateKHR>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkDestroyDescriptorUpdateTemplateKHR"));
+    auto vkUpdateDescriptorSetWithTemplateKHR = reinterpret_cast<PFN_vkUpdateDescriptorSetWithTemplateKHR>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkUpdateDescriptorSetWithTemplateKHR"));
 
     ASSERT_NE(vkCreateDescriptorUpdateTemplateKHR, nullptr);
     ASSERT_NE(vkDestroyDescriptorUpdateTemplateKHR, nullptr);

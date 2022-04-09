@@ -104,9 +104,9 @@ bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevi
 
     // Verify again using version 2, if supported, which *can* return more property data than the original...
     // (It's not clear that this is any more definitive than using the original version - but no harm)
-    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR p_GetPDIFP2KHR =
-        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(inst,
-                                                                                "vkGetPhysicalDeviceImageFormatProperties2KHR");
+    auto p_GetPDIFP2KHR =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2KHR>(vk::GetInstanceProcAddr(inst,
+                                                                                "vkGetPhysicalDeviceImageFormatProperties2KHR"));
     if (nullptr != p_GetPDIFP2KHR) {
         VkPhysicalDeviceImageFormatInfo2KHR fmt_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2KHR>();
         fmt_info.format = info.format;
@@ -135,8 +135,8 @@ bool BufferFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkF
 
 VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstance instance, VkPhysicalDevice gpu) {
     // Find address of extension call and make the call -- assumes needed extensions are enabled.
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR"));
     assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     // Get the push descriptor limits
@@ -250,8 +250,8 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
     }
 
     if (rp2_supported && rp2_vuid) {
-        PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-            (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+        auto vkCreateRenderPass2KHR =
+            reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR"));
         safe_VkRenderPassCreateInfo2 create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
 
@@ -264,7 +264,7 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
         error_monitor->VerifyFound();
 
         // For api version >= 1.2, try core entrypoint
-        PFN_vkCreateRenderPass2 vkCreateRenderPass2 = (PFN_vkCreateRenderPass2)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2");
+        auto vkCreateRenderPass2 = reinterpret_cast<PFN_vkCreateRenderPass2>(vk::GetDeviceProcAddr(device, "vkCreateRenderPass2"));
         if (vkCreateRenderPass2) {
             // Some tests mismatch attachment type with layout
             error_monitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
@@ -288,8 +288,8 @@ void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice de
     error_monitor->VerifyNotFound();
 
     if (rp2_supported) {
-        PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-            (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+        auto vkCreateRenderPass2KHR =
+            reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR"));
         safe_VkRenderPassCreateInfo2 create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
 
@@ -304,8 +304,8 @@ void PositiveTestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevic
                                       const VkRenderPassCreateInfo2KHR *create_info) {
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkResult err;
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+    auto vkCreateRenderPass2KHR =
+        reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR"));
 
     error_monitor->ExpectSuccess();
     err = vkCreateRenderPass2KHR(device, create_info, nullptr, &render_pass);
@@ -317,8 +317,8 @@ void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device
                               const char *rp2_vuid) {
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkResult err;
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+    auto vkCreateRenderPass2KHR =
+        reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR"));
 
     error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
     err = vkCreateRenderPass2KHR(device, create_info, nullptr, &render_pass);
@@ -339,8 +339,8 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
         vk::ResetCommandBuffer(command_buffer, 0);
     }
     if (rp2Supported && rp2_vuid) {
-        PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2KHR =
-            (PFN_vkCmdBeginRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCmdBeginRenderPass2KHR");
+        auto vkCmdBeginRenderPass2KHR =
+            reinterpret_cast<PFN_vkCmdBeginRenderPass2KHR>(vk::GetDeviceProcAddr(device, "vkCmdBeginRenderPass2KHR"));
         VkSubpassBeginInfoKHR subpass_begin_info = {VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO_KHR, nullptr, VK_SUBPASS_CONTENTS_INLINE};
         vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
         error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
@@ -349,8 +349,8 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
         vk::ResetCommandBuffer(command_buffer, 0);
 
         // For api version >= 1.2, try core entrypoint
-        PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2 =
-            (PFN_vkCmdBeginRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCmdBeginRenderPass2");
+        auto vkCmdBeginRenderPass2 =
+            reinterpret_cast<PFN_vkCmdBeginRenderPass2KHR>(vk::GetDeviceProcAddr(device, "vkCmdBeginRenderPass2"));
         if (vkCmdBeginRenderPass2) {
             vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
             error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
@@ -768,9 +768,8 @@ bool CheckDescriptorIndexingSupportAndInitFramework(VkRenderFramework *renderFra
 }
 
 bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramework) {
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(renderFramework->instance(),
-                                                                     "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(renderFramework->instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&timeline_semaphore_features);
     vkGetPhysicalDeviceFeatures2KHR(renderFramework->gpu(), &features2);
@@ -778,9 +777,8 @@ bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramewor
         return false;
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(renderFramework->instance(),
-                                                                       "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(renderFramework->instance(), "vkGetPhysicalDeviceProperties2KHR"));
     VkPhysicalDeviceTimelineSemaphoreProperties timeline_semaphore_props =
         LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreProperties>();
     VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&timeline_semaphore_props);
@@ -795,9 +793,8 @@ bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramewor
 }
 
 bool CheckSynchronization2SupportAndInitState(VkRenderFramework *framework) {
-    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
-        (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(framework->instance(),
-                                                                     "vkGetPhysicalDeviceFeatures2");
+    auto vkGetPhysicalDeviceFeatures2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
+        vk::GetInstanceProcAddr(framework->instance(), "vkGetPhysicalDeviceFeatures2"));
     auto sync2_features = lvl_init_struct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&sync2_features);
     vkGetPhysicalDeviceFeatures2(framework->gpu(), &features2);
@@ -1058,7 +1055,8 @@ VkLayerTest::VkLayerTest() {
     app_info_.apiVersion = VK_API_VERSION_1_0;
 
     // Find out what version the instance supports and record the default target instance
-    auto enumerateInstanceVersion = (PFN_vkEnumerateInstanceVersion)vk::GetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion");
+    auto enumerateInstanceVersion =
+        reinterpret_cast<PFN_vkEnumerateInstanceVersion>(vk::GetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion"));
     if (enumerateInstanceVersion) {
         enumerateInstanceVersion(&m_instance_api_version);
     } else {
@@ -1157,10 +1155,10 @@ bool VkLayerTest::LoadDeviceProfileLayer(
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT &fpvkSetPhysicalDeviceFormatPropertiesEXT,
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT) {
     // Load required functions
-    fpvkSetPhysicalDeviceFormatPropertiesEXT =
-        (PFN_vkSetPhysicalDeviceFormatPropertiesEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatPropertiesEXT");
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = (PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT)vk::GetInstanceProcAddr(
-        instance(), "vkGetOriginalPhysicalDeviceFormatPropertiesEXT");
+    fpvkSetPhysicalDeviceFormatPropertiesEXT = reinterpret_cast<PFN_vkSetPhysicalDeviceFormatPropertiesEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatPropertiesEXT"));
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = reinterpret_cast<PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceFormatPropertiesEXT"));
 
     if (!(fpvkSetPhysicalDeviceFormatPropertiesEXT) || !(fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
         printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
@@ -1174,11 +1172,10 @@ bool VkLayerTest::LoadDeviceProfileLayer(
     PFN_vkSetPhysicalDeviceFormatProperties2EXT &fpvkSetPhysicalDeviceFormatProperties2EXT,
     PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT &fpvkGetOriginalPhysicalDeviceFormatProperties2EXT) {
     // Load required functions
-    fpvkSetPhysicalDeviceFormatProperties2EXT =
-        (PFN_vkSetPhysicalDeviceFormatProperties2EXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatProperties2EXT");
-    fpvkGetOriginalPhysicalDeviceFormatProperties2EXT =
-        (PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT)vk::GetInstanceProcAddr(
-            instance(), "vkGetOriginalPhysicalDeviceFormatProperties2EXT");
+    fpvkSetPhysicalDeviceFormatProperties2EXT = reinterpret_cast<PFN_vkSetPhysicalDeviceFormatProperties2EXT>(
+        vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatProperties2EXT"));
+    fpvkGetOriginalPhysicalDeviceFormatProperties2EXT = reinterpret_cast<PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT>(
+        vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceFormatProperties2EXT"));
 
     if (!(fpvkSetPhysicalDeviceFormatProperties2EXT) || !(fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
         printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
@@ -1192,9 +1189,9 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT &fpvkS
                                          PFN_vkGetOriginalPhysicalDeviceLimitsEXT &fpvkGetOriginalPhysicalDeviceLimitsEXT) {
     // Load required functions
     fpvkSetPhysicalDeviceLimitsEXT =
-        (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
-    fpvkGetOriginalPhysicalDeviceLimitsEXT =
-        (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
+        reinterpret_cast<PFN_vkSetPhysicalDeviceLimitsEXT>(vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT"));
+    fpvkGetOriginalPhysicalDeviceLimitsEXT = reinterpret_cast<PFN_vkGetOriginalPhysicalDeviceLimitsEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT"));
 
     if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
         printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
@@ -2255,8 +2252,8 @@ VkResult CreateNVRayTracingPipelineHelper::CreateNVRayTracingPipeline(bool impli
         pipeline_ = VK_NULL_HANDLE;
     }
 
-    PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV =
-        (PFN_vkCreateRayTracingPipelinesNV)vk::GetInstanceProcAddr(layer_test_.instance(), "vkCreateRayTracingPipelinesNV");
+    auto vkCreateRayTracingPipelinesNV = reinterpret_cast<PFN_vkCreateRayTracingPipelinesNV>(
+        vk::GetInstanceProcAddr(layer_test_.instance(), "vkCreateRayTracingPipelinesNV"));
     err = vkCreateRayTracingPipelinesNV(layer_test_.device(), pipeline_cache_, 1, &rp_ci_, nullptr, &pipeline_);
     return err;
 }
@@ -2270,8 +2267,8 @@ VkResult CreateNVRayTracingPipelineHelper::CreateKHRRayTracingPipeline(bool impl
         vk::DestroyPipeline(layer_test_.device(), pipeline_, nullptr);
         pipeline_ = VK_NULL_HANDLE;
     }
-    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR =
-        (PFN_vkCreateRayTracingPipelinesKHR)vk::GetInstanceProcAddr(layer_test_.instance(), "vkCreateRayTracingPipelinesKHR");
+    auto vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(
+        vk::GetInstanceProcAddr(layer_test_.instance(), "vkCreateRayTracingPipelinesKHR"));
     err = vkCreateRayTracingPipelinesKHR(layer_test_.device(), 0, pipeline_cache_, 1, &rp_ci_KHR_, nullptr, &pipeline_);
     return err;
 }
@@ -2608,8 +2605,8 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     if (descriptor_indexing) {
-        PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-            (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+        auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
         ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
         features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
@@ -2625,8 +2622,8 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
@@ -3249,17 +3246,15 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
                          call_source_runtime, true, 0, 0, 0, 0, 0, 5, "Descriptor index 5 is uninitialized."});
     }
 
-    PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV = reinterpret_cast<PFN_vkCreateRayTracingPipelinesNV>(
+    auto vkCreateRayTracingPipelinesNV = reinterpret_cast<PFN_vkCreateRayTracingPipelinesNV>(
         vk::GetDeviceProcAddr(m_device->handle(), "vkCreateRayTracingPipelinesNV"));
     ASSERT_TRUE(vkCreateRayTracingPipelinesNV != nullptr);
 
-    PFN_vkGetRayTracingShaderGroupHandlesNV vkGetRayTracingShaderGroupHandlesNV =
-        reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesNV>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkGetRayTracingShaderGroupHandlesNV"));
+    auto vkGetRayTracingShaderGroupHandlesNV = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesNV>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkGetRayTracingShaderGroupHandlesNV"));
     ASSERT_TRUE(vkGetRayTracingShaderGroupHandlesNV != nullptr);
 
-    PFN_vkCmdTraceRaysNV vkCmdTraceRaysNV =
-        reinterpret_cast<PFN_vkCmdTraceRaysNV>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdTraceRaysNV"));
+    auto vkCmdTraceRaysNV = reinterpret_cast<PFN_vkCmdTraceRaysNV>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdTraceRaysNV"));
     ASSERT_TRUE(vkCmdTraceRaysNV != nullptr);
 
     // Iteration 0 tests with no descriptor set bound (to sanity test "draw" validation). Iteration 1

@@ -1135,9 +1135,8 @@ TEST_F(VkLayerTest, SwapchainMinImageCountShared) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR =
-        (PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                                "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
+    auto vkGetPhysicalDeviceSurfaceCapabilities2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfaceCapabilities2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceSurfaceCapabilities2KHR != nullptr);
 
     VkSharedPresentSurfaceCapabilitiesKHR shared_present_capabilities = LvlInitStruct<VkSharedPresentSurfaceCapabilitiesKHR>();
@@ -1295,9 +1294,8 @@ TEST_F(VkLayerTest, SwapchainInvalidUsageShared) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR =
-        (PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                                "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
+    auto vkGetPhysicalDeviceSurfaceCapabilities2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfaceCapabilities2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceSurfaceCapabilities2KHR != nullptr);
 
     VkSharedPresentSurfaceCapabilitiesKHR shared_present_capabilities = LvlInitStruct<VkSharedPresentSurfaceCapabilitiesKHR>();
@@ -1560,19 +1558,18 @@ TEST_F(VkLayerTest, DisplayPlaneSurface) {
     }
 
     // Load all VK_KHR_display functions
-    PFN_vkCreateDisplayModeKHR vkCreateDisplayModeKHR =
-        (PFN_vkCreateDisplayModeKHR)vk::GetInstanceProcAddr(instance(), "vkCreateDisplayModeKHR");
-    PFN_vkCreateDisplayPlaneSurfaceKHR vkCreateDisplayPlaneSurfaceKHR =
-        (PFN_vkCreateDisplayPlaneSurfaceKHR)vk::GetInstanceProcAddr(instance(), "vkCreateDisplayPlaneSurfaceKHR");
-    PFN_vkGetDisplayPlaneSupportedDisplaysKHR vkGetDisplayPlaneSupportedDisplaysKHR =
-        (PFN_vkGetDisplayPlaneSupportedDisplaysKHR)vk::GetInstanceProcAddr(instance(), "vkGetDisplayPlaneSupportedDisplaysKHR");
-    PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR vkGetPhysicalDeviceDisplayPlanePropertiesKHR =
-        (PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR)vk::GetInstanceProcAddr(instance(),
-                                                                                  "vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
-    PFN_vkGetDisplayModePropertiesKHR vkGetDisplayModePropertiesKHR =
-        (PFN_vkGetDisplayModePropertiesKHR)vk::GetInstanceProcAddr(instance(), "vkGetDisplayModePropertiesKHR");
-    PFN_vkGetDisplayPlaneCapabilitiesKHR vkGetDisplayPlaneCapabilitiesKHR =
-        (PFN_vkGetDisplayPlaneCapabilitiesKHR)vk::GetInstanceProcAddr(instance(), "vkGetDisplayPlaneCapabilitiesKHR");
+    auto vkCreateDisplayModeKHR =
+        reinterpret_cast<PFN_vkCreateDisplayModeKHR>(vk::GetInstanceProcAddr(instance(), "vkCreateDisplayModeKHR"));
+    auto vkCreateDisplayPlaneSurfaceKHR =
+        reinterpret_cast<PFN_vkCreateDisplayPlaneSurfaceKHR>(vk::GetInstanceProcAddr(instance(), "vkCreateDisplayPlaneSurfaceKHR"));
+    auto vkGetDisplayPlaneSupportedDisplaysKHR = reinterpret_cast<PFN_vkGetDisplayPlaneSupportedDisplaysKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetDisplayPlaneSupportedDisplaysKHR"));
+    auto vkGetPhysicalDeviceDisplayPlanePropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceDisplayPlanePropertiesKHR"));
+    auto vkGetDisplayModePropertiesKHR =
+        reinterpret_cast<PFN_vkGetDisplayModePropertiesKHR>(vk::GetInstanceProcAddr(instance(), "vkGetDisplayModePropertiesKHR"));
+    auto vkGetDisplayPlaneCapabilitiesKHR = reinterpret_cast<PFN_vkGetDisplayPlaneCapabilitiesKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetDisplayPlaneCapabilitiesKHR"));
     ASSERT_TRUE(vkCreateDisplayModeKHR != nullptr);
     ASSERT_TRUE(vkCreateDisplayPlaneSurfaceKHR != nullptr);
     ASSERT_TRUE(vkGetDisplayPlaneSupportedDisplaysKHR != nullptr);
@@ -1949,7 +1946,8 @@ TEST_F(VkLayerTest, PresentIdWait) {
     InitSurface(m_width, m_height, surface2);
     InitSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain2);
 
-    auto vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vk::GetDeviceProcAddr(m_device->device(), "vkWaitForPresentKHR");
+    auto vkWaitForPresentKHR =
+        reinterpret_cast<PFN_vkWaitForPresentKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkWaitForPresentKHR"));
     assert(vkWaitForPresentKHR != nullptr);
 
     uint32_t image_count, image_count2;
@@ -2052,7 +2050,8 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_TRUE(InitSwapchain());
 
-    auto vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vk::GetDeviceProcAddr(m_device->device(), "vkWaitForPresentKHR");
+    auto vkWaitForPresentKHR =
+        reinterpret_cast<PFN_vkWaitForPresentKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkWaitForPresentKHR"));
     assert(vkWaitForPresentKHR != nullptr);
 
     uint32_t image_count;
@@ -2213,17 +2212,15 @@ TEST_F(VkLayerTest, TestSurfaceSupportByPhysicalDevice) {
         surface_info.surface = m_surface;
         VkDeviceGroupPresentModeFlagsKHR flags = VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR;
 
-        PFN_vkGetDeviceGroupSurfacePresentModes2EXT vkGetDeviceGroupSurfacePresentModes2EXT =
-            reinterpret_cast<PFN_vkGetDeviceGroupSurfacePresentModes2EXT>(
-                vk::GetInstanceProcAddr(instance(), "vkGetDeviceGroupSurfacePresentModes2EXT"));
+        auto vkGetDeviceGroupSurfacePresentModes2EXT = reinterpret_cast<PFN_vkGetDeviceGroupSurfacePresentModes2EXT>(
+            vk::GetInstanceProcAddr(instance(), "vkGetDeviceGroupSurfacePresentModes2EXT"));
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213");
         vkGetDeviceGroupSurfacePresentModes2EXT(device(), &surface_info, &flags);
         m_errorMonitor->VerifyFound();
 
-        PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT vkGetPhysicalDeviceSurfacePresentModes2EXT =
-            (PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT)vk::GetInstanceProcAddr(instance(),
-                                                                                    "vkGetPhysicalDeviceSurfacePresentModes2EXT");
+        auto vkGetPhysicalDeviceSurfacePresentModes2EXT = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfacePresentModes2EXT"));
 
         uint32_t count;
         vkGetPhysicalDeviceSurfacePresentModes2EXT(gpu(), &surface_info, &count, nullptr);
@@ -2243,9 +2240,8 @@ TEST_F(VkLayerTest, TestSurfaceSupportByPhysicalDevice) {
     }
 
     if (display_surface_counter) {
-        PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT vkGetPhysicalDeviceSurfaceCapabilities2EXT =
-            (PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT)vk::GetInstanceProcAddr(instance(),
-                                                                                    "vkGetPhysicalDeviceSurfaceCapabilities2EXT");
+        auto vkGetPhysicalDeviceSurfaceCapabilities2EXT = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfaceCapabilities2EXT"));
 
         VkSurfaceCapabilities2EXT capabilities = LvlInitStruct<VkSurfaceCapabilities2EXT>();
 
@@ -2255,9 +2251,8 @@ TEST_F(VkLayerTest, TestSurfaceSupportByPhysicalDevice) {
     }
 
     if (get_surface_capabilities2) {
-        PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR =
-            (PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                                    "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
+        auto vkGetPhysicalDeviceSurfaceCapabilities2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfaceCapabilities2KHR"));
 
         VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
         surface_info.surface = m_surface;
@@ -2276,8 +2271,8 @@ TEST_F(VkLayerTest, TestSurfaceSupportByPhysicalDevice) {
     }
 
     if (get_surface_capabilities2) {
-        PFN_vkGetPhysicalDeviceSurfaceFormats2KHR vkGetPhysicalDeviceSurfaceFormats2KHR =
-            (PFN_vkGetPhysicalDeviceSurfaceFormats2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfaceFormats2KHR");
+        auto vkGetPhysicalDeviceSurfaceFormats2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormats2KHR>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfaceFormats2KHR"));
 
         VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
         surface_info.surface = m_surface;

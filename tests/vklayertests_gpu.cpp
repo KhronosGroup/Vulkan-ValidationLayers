@@ -61,8 +61,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     if (descriptor_indexing) {
-        PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-            (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+        auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
         ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
         features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
@@ -553,8 +553,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
 
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&robustness2_features);
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
@@ -692,9 +692,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     }
 
     if (multi_draw_features.multiDraw) {
-        auto vkCmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT");
+        auto vkCmdDrawMultiEXT =
+            reinterpret_cast<PFN_vkCmdDrawMultiEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT"));
         auto vkCmdDrawMultiIndexedEXT =
-            (PFN_vkCmdDrawMultiIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiIndexedEXT");
+            reinterpret_cast<PFN_vkCmdDrawMultiIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiIndexedEXT"));
         assert(vkCmdDrawMultiEXT != nullptr && vkCmdDrawMultiIndexedEXT != nullptr);
 
         VkMultiDrawInfoEXT multi_draws[3] = {};
@@ -954,8 +955,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
                             ? LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&mesh_shader_features)
                             : LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
@@ -1011,7 +1012,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     VkBufferDeviceAddressInfoKHR bda_info = LvlInitStruct<VkBufferDeviceAddressInfoKHR>();
     bda_info.buffer = buffer1;
     auto vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR");
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR"));
     ASSERT_TRUE(vkGetBufferDeviceAddressKHR != nullptr);
     auto pBuffer = vkGetBufferDeviceAddressKHR(m_device->device(), &bda_info);
 
@@ -1206,9 +1207,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationInvalidHan
         return;
     }
 
-    PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
-        reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
+    auto vkCmdBuildAccelerationStructureNV = reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
     assert(vkCmdBuildAccelerationStructureNV != nullptr);
 
     VkBufferObj vbo;
@@ -1291,9 +1291,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
         return;
     }
 
-    PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
-        reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
+    auto vkCmdBuildAccelerationStructureNV = reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
     assert(vkCmdBuildAccelerationStructureNV != nullptr);
 
     VkBufferObj vbo;
@@ -1386,9 +1385,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
         return;
     }
 
-    PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
-        reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
+    auto vkCmdBuildAccelerationStructureNV = reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
     assert(vkCmdBuildAccelerationStructureNV != nullptr);
 
     VkBufferObj vbo;
@@ -1502,13 +1500,12 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationRestoresSt
         return;
     }
 
-    PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
-        reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
+    auto vkCmdBuildAccelerationStructureNV = reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
     assert(vkCmdBuildAccelerationStructureNV != nullptr);
 
-    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdPushDescriptorSetKHR");
+    auto vkCmdPushDescriptorSetKHR =
+        reinterpret_cast<PFN_vkCmdPushDescriptorSetKHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdPushDescriptorSetKHR"));
     assert(vkCmdPushDescriptorSetKHR != nullptr);
 
     VkBufferObj vbo;
@@ -1736,10 +1733,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
         features13.dynamicRendering = true;
     }
 
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
-        (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT =
-        (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
+    auto fpvkSetPhysicalDeviceLimitsEXT =
+        reinterpret_cast<PFN_vkSetPhysicalDeviceLimitsEXT>(vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT"));
+    auto fpvkGetOriginalPhysicalDeviceLimitsEXT = reinterpret_cast<PFN_vkGetOriginalPhysicalDeviceLimitsEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT"));
 
     if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
         printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
@@ -1755,7 +1752,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto vkCmdDrawIndirectCountKHR =
-        (PFN_vkCmdDrawIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
+        reinterpret_cast<PFN_vkCmdDrawIndirectCountKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR"));
     if (vkCmdDrawIndirectCountKHR == nullptr) {
         printf("%s did not find vkCmdDrawIndirectCountKHR function pointer;  Skipping.\n", kSkipPrefix);
         return;
@@ -1859,7 +1856,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     auto vkCmdDrawIndirectCountKHR =
-        (PFN_vkCmdDrawIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
+        reinterpret_cast<PFN_vkCmdDrawIndirectCountKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR"));
     if (vkCmdDrawIndirectCountKHR == nullptr) {
         printf("%s did not find vkCmdDrawIndirectCountKHR function pointer;  Skipping.\n", kSkipPrefix);
         return;
@@ -1937,8 +1934,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     ASSERT_VK_SUCCESS(err);
     m_errorMonitor->VerifyFound();
 
-    auto vkCmdDrawIndexedIndirectCountKHR =
-        (PFN_vkCmdDrawIndexedIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR");
+    auto vkCmdDrawIndexedIndirectCountKHR = reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCountKHR>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR"));
     if (vkCmdDrawIndexedIndirectCountKHR == nullptr) {
         printf("%s did not find vkCmdDrawIndexedIndirectCountKHR function pointer;  Skipping.\n", kSkipPrefix);
         return;
@@ -2023,8 +2020,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
@@ -2146,8 +2143,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     }
     m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     m_device_extension_names.push_back(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&inline_uniform_block_features);
@@ -2344,10 +2341,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
         printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
         return;
     }
-    PFN_vkSetPhysicalDeviceFeaturesEXT fpvkSetPhysicalDeviceFeaturesEXT =
-        (PFN_vkSetPhysicalDeviceFeaturesEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFeaturesEXT");
-    PFN_vkGetOriginalPhysicalDeviceFeaturesEXT fpvkGetOriginalPhysicalDeviceFeaturesEXT =
-        (PFN_vkGetOriginalPhysicalDeviceFeaturesEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceFeaturesEXT");
+    auto fpvkSetPhysicalDeviceFeaturesEXT =
+        reinterpret_cast<PFN_vkSetPhysicalDeviceFeaturesEXT>(vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFeaturesEXT"));
+    auto fpvkGetOriginalPhysicalDeviceFeaturesEXT = reinterpret_cast<PFN_vkGetOriginalPhysicalDeviceFeaturesEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceFeaturesEXT"));
 
     if (!(fpvkSetPhysicalDeviceFeaturesEXT) || !(fpvkGetOriginalPhysicalDeviceFeaturesEXT)) {
         printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
@@ -2581,9 +2578,10 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
     }
 
     if (multi_draw_features.multiDraw) {
-        auto vkCmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT");
+        auto vkCmdDrawMultiEXT =
+            reinterpret_cast<PFN_vkCmdDrawMultiEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT"));
         auto vkCmdDrawMultiIndexedEXT =
-            (PFN_vkCmdDrawMultiIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiIndexedEXT");
+            reinterpret_cast<PFN_vkCmdDrawMultiIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiIndexedEXT"));
         assert(vkCmdDrawMultiEXT != nullptr && vkCmdDrawMultiIndexedEXT != nullptr);
         VkMultiDrawInfoEXT multi_draws[3] = {};
         multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
@@ -2750,8 +2748,8 @@ TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     // Create a device that enables mesh_shader
@@ -2800,8 +2798,8 @@ TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
     VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
     ASSERT_VK_SUCCESS(err);
 
-    PFN_vkCmdDrawMeshTasksNV vkCmdDrawMeshTasksNV =
-        (PFN_vkCmdDrawMeshTasksNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksNV");
+    auto vkCmdDrawMeshTasksNV =
+        reinterpret_cast<PFN_vkCmdDrawMeshTasksNV>(vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksNV"));
     ASSERT_TRUE(vkCmdDrawMeshTasksNV != nullptr);
 
     m_commandBuffer->begin();

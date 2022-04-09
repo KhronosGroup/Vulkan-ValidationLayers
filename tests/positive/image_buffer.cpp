@@ -1065,9 +1065,8 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
     VkPhysicalDeviceExternalBufferInfoKHR ebi = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHR, nullptr, 0,
                                                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, handle_type};
     VkExternalBufferPropertiesKHR ebp = {VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES_KHR, nullptr, {0, 0, 0}};
-    auto vkGetPhysicalDeviceExternalBufferPropertiesKHR =
-        (PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceExternalBufferPropertiesKHR");
+    auto vkGetPhysicalDeviceExternalBufferPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceExternalBufferPropertiesKHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceExternalBufferPropertiesKHR != nullptr);
     vkGetPhysicalDeviceExternalBufferPropertiesKHR(gpu(), &ebi, &ebp);
     if (!(ebp.externalMemoryProperties.compatibleHandleTypes & handle_type) ||
@@ -1139,7 +1138,7 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
 #ifdef _WIN32
     // Export memory to handle
     auto vkGetMemoryWin32HandleKHR =
-        (PFN_vkGetMemoryWin32HandleKHR)vk::GetInstanceProcAddr(instance(), "vkGetMemoryWin32HandleKHR");
+        reinterpret_cast<PFN_vkGetMemoryWin32HandleKHR>(vk::GetInstanceProcAddr(instance(), "vkGetMemoryWin32HandleKHR"));
     ASSERT_TRUE(vkGetMemoryWin32HandleKHR != nullptr);
     VkMemoryGetWin32HandleInfoKHR mghi = {VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR, nullptr, memory_export.handle(),
                                           handle_type};
@@ -1150,7 +1149,7 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
                                                     handle};
 #else
     // Export memory to fd
-    auto vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR)vk::GetInstanceProcAddr(instance(), "vkGetMemoryFdKHR");
+    auto vkGetMemoryFdKHR = reinterpret_cast<PFN_vkGetMemoryFdKHR>(vk::GetInstanceProcAddr(instance(), "vkGetMemoryFdKHR"));
     ASSERT_TRUE(vkGetMemoryFdKHR != nullptr);
     VkMemoryGetFdInfoKHR mgfi = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, nullptr, memory_export.handle(), handle_type};
     int fd;
@@ -1471,11 +1470,12 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
         vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
         vkGetPhysicalDeviceMemoryProperties2Function = vk::GetPhysicalDeviceMemoryProperties2;
     } else {
-        vkBindImageMemory2Function = (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
-        vkGetImageMemoryRequirements2Function =
-            (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
-        vkGetPhysicalDeviceMemoryProperties2Function = (PFN_vkGetPhysicalDeviceMemoryProperties2KHR)vk::GetDeviceProcAddr(
-            m_device->handle(), "vkGetPhysicalDeviceMemoryProperties2KHR");
+        vkBindImageMemory2Function =
+            reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
+        vkGetImageMemoryRequirements2Function = reinterpret_cast<PFN_vkGetImageMemoryRequirements2KHR>(
+            vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR"));
+        vkGetPhysicalDeviceMemoryProperties2Function = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2KHR>(
+            vk::GetDeviceProcAddr(m_device->handle(), "vkGetPhysicalDeviceMemoryProperties2KHR"));
     }
 
     if (!vkBindImageMemory2Function || !vkGetImageMemoryRequirements2Function || !vkGetPhysicalDeviceMemoryProperties2Function) {
@@ -2137,8 +2137,8 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
         return;
     }
     uint32_t image_index, image_count;
-    PFN_vkGetSwapchainImagesKHR fpGetSwapchainImagesKHR =
-        (PFN_vkGetSwapchainImagesKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetSwapchainImagesKHR");
+    auto fpGetSwapchainImagesKHR =
+        reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkGetSwapchainImagesKHR"));
     fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, nullptr);
     VkImage *swapchainImages = (VkImage *)malloc(image_count * sizeof(VkImage));
     fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages);

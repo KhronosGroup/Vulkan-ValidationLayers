@@ -43,7 +43,8 @@ TEST_F(VkLayerTest, BufferExtents) {
 
     PFN_vkCmdCopyBuffer2KHR vkCmdCopyBuffer2Function = nullptr;
     if (copy_commands2) {
-        vkCmdCopyBuffer2Function = (PFN_vkCmdCopyBuffer2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBuffer2KHR");
+        vkCmdCopyBuffer2Function =
+            reinterpret_cast<PFN_vkCmdCopyBuffer2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBuffer2KHR"));
     }
 
     const VkDeviceSize buffer_size = 2048;
@@ -1006,8 +1007,8 @@ TEST_F(VkLayerTest, InvalidUsageBits) {
 
     PFN_vkCmdCopyBufferToImage2KHR vkCmdCopyBufferToImage2Function = nullptr;
     if (copy_commands2) {
-        vkCmdCopyBufferToImage2Function =
-            (PFN_vkCmdCopyBufferToImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBufferToImage2KHR");
+        vkCmdCopyBufferToImage2Function = reinterpret_cast<PFN_vkCmdCopyBufferToImage2KHR>(
+            vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBufferToImage2KHR"));
     }
 
     auto format = FindSupportedDepthStencilFormat(gpu());
@@ -1616,9 +1617,10 @@ TEST_F(VkLayerTest, BindInvalidMemoryYcbcr) {
         vkBindImageMemory2Function = vk::BindImageMemory2;
         vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
     } else {
-        vkBindImageMemory2Function = (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
-        vkGetImageMemoryRequirements2Function =
-            (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
+        vkBindImageMemory2Function =
+            reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
+        vkGetImageMemoryRequirements2Function = reinterpret_cast<PFN_vkGetImageMemoryRequirements2KHR>(
+            vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR"));
     }
 
     // Try to bind an image created with Disjoint bit
@@ -1768,7 +1770,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
             vkBindImageMemory2Function = vk::BindImageMemory2;
         } else {
             vkBindImageMemory2Function =
-                (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+                reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
         }
     }
 
@@ -1776,8 +1778,8 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
         if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
             vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
         } else {
-            vkGetImageMemoryRequirements2Function =
-                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
+            vkGetImageMemoryRequirements2Function = reinterpret_cast<PFN_vkGetImageMemoryRequirements2KHR>(
+                vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR"));
         }
     }
 
@@ -2223,10 +2225,10 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
             vkBindImageMemory2Function = vk::BindImageMemory2;
             vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
         } else {
-            vkGetImageMemoryRequirements2Function =
-                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
+            vkGetImageMemoryRequirements2Function = reinterpret_cast<PFN_vkGetImageMemoryRequirements2KHR>(
+                vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR"));
             vkBindImageMemory2Function =
-                (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+                reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
         }
 
         VkImage mp_image = VK_NULL_HANDLE;
@@ -2333,7 +2335,8 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         vkBindImageMemory2Function = vk::BindImageMemory2;
     } else {
-        vkBindImageMemory2Function = (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+        vkBindImageMemory2Function =
+            reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
     }
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
@@ -2413,8 +2416,8 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
             vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
         } else {
-            vkGetImageMemoryRequirements2Function =
-                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
+            vkGetImageMemoryRequirements2Function = reinterpret_cast<PFN_vkGetImageMemoryRequirements2KHR>(
+                vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR"));
         }
 
         // Creat 1 normal, not disjoint image
@@ -2586,10 +2589,10 @@ TEST_F(VkLayerTest, ExceedMemoryAllocationCount) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
-        (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT =
-        (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
+    auto fpvkSetPhysicalDeviceLimitsEXT =
+        reinterpret_cast<PFN_vkSetPhysicalDeviceLimitsEXT>(vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT"));
+    auto fpvkGetOriginalPhysicalDeviceLimitsEXT = reinterpret_cast<PFN_vkGetOriginalPhysicalDeviceLimitsEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT"));
 
     if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
         printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
@@ -2635,10 +2638,10 @@ TEST_F(VkLayerTest, ExceedSamplerAllocationCount) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
-        (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT =
-        (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
+    auto fpvkSetPhysicalDeviceLimitsEXT =
+        reinterpret_cast<PFN_vkSetPhysicalDeviceLimitsEXT>(vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT"));
+    auto fpvkGetOriginalPhysicalDeviceLimitsEXT = reinterpret_cast<PFN_vkGetOriginalPhysicalDeviceLimitsEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT"));
 
     if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
         printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
@@ -2797,7 +2800,8 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
 
     PFN_vkCmdBlitImage2KHR vkCmdBlitImage2Function = nullptr;
     if (copy_commands2) {
-        vkCmdBlitImage2Function = (PFN_vkCmdBlitImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBlitImage2KHR");
+        vkCmdBlitImage2Function =
+            reinterpret_cast<PFN_vkCmdBlitImage2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBlitImage2KHR"));
     }
 
     VkFormat f_unsigned = VK_FORMAT_R8G8B8A8_UINT;
@@ -5599,8 +5603,8 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     const bool external_memory = CanEnableDeviceExtension(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
 
     // Set separate depth stencil feature bit
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     auto separate_depth_stencil_layouts_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&separate_depth_stencil_layouts_features);
     if (vkGetPhysicalDeviceFeatures2KHR) {
@@ -5833,9 +5837,9 @@ TEST_F(VkLayerTest, InvalidBarriers) {
             vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
         } else {
             vkBindImageMemory2Function =
-                (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
-            vkGetImageMemoryRequirements2Function =
-                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
+                reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
+            vkGetImageMemoryRequirements2Function = reinterpret_cast<PFN_vkGetImageMemoryRequirements2KHR>(
+                vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR"));
         }
 
         VkFormatProperties format_properties;
@@ -7156,7 +7160,8 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
 
     PFN_vkCmdCopyImage2KHR vkCmdCopyImage2Function = nullptr;
     if (copy_commands2) {
-        vkCmdCopyImage2Function = (PFN_vkCmdCopyImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyImage2KHR");
+        vkCmdCopyImage2Function =
+            reinterpret_cast<PFN_vkCmdCopyImage2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyImage2KHR"));
     }
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
@@ -7557,7 +7562,8 @@ TEST_F(VkLayerTest, CopyInvalidImageMemory) {
 
     PFN_vkCmdCopyImage2KHR vkCmdCopyImage2Function = nullptr;
     if (copy_commands2) {
-        vkCmdCopyImage2Function = (PFN_vkCmdCopyImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyImage2KHR");
+        vkCmdCopyImage2Function =
+            reinterpret_cast<PFN_vkCmdCopyImage2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyImage2KHR"));
     }
     VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>();
     image_info.extent = {64, 64, 1};
@@ -8480,11 +8486,10 @@ TEST_F(VkLayerTest, CreateImageViewFormatMismatchUnrelated) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Load required functions
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT =
-        (PFN_vkSetPhysicalDeviceFormatPropertiesEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatPropertiesEXT");
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT =
-        (PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT)vk::GetInstanceProcAddr(
-            instance(), "vkGetOriginalPhysicalDeviceFormatPropertiesEXT");
+    auto fpvkSetPhysicalDeviceFormatPropertiesEXT = reinterpret_cast<PFN_vkSetPhysicalDeviceFormatPropertiesEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatPropertiesEXT"));
+    auto fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = reinterpret_cast<PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceFormatPropertiesEXT"));
 
     if (!(fpvkSetPhysicalDeviceFormatPropertiesEXT) || !(fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
         printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
@@ -10284,8 +10289,8 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Find address of extension API
-    auto vkCreateSamplerYcbcrConversionKHR =
-        (PFN_vkCreateSamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
+    auto vkCreateSamplerYcbcrConversionKHR = reinterpret_cast<PFN_vkCreateSamplerYcbcrConversionKHR>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR"));
     if (vkCreateSamplerYcbcrConversionKHR == nullptr) {
         printf("%s VK_KHR_sampler_ycbcr_conversion not supported by device; skipped.\n", kSkipPrefix);
         return;
@@ -10612,9 +10617,9 @@ TEST_F(VkLayerTest, ImageStencilCreate) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
 
-    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR vkGetPhysicalDeviceImageFormatProperties2KHR =
-        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                                  "vkGetPhysicalDeviceImageFormatProperties2KHR");
+    auto vkGetPhysicalDeviceImageFormatProperties2KHR =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2KHR>(vk::GetInstanceProcAddr(instance(),
+                                                                                  "vkGetPhysicalDeviceImageFormatProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceImageFormatProperties2KHR != nullptr);
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
@@ -10759,10 +10764,10 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
         vkCreateSamplerYcbcrConversionFunction = vk::CreateSamplerYcbcrConversion;
         vkDestroySamplerYcbcrConversionFunction = vk::DestroySamplerYcbcrConversion;
     } else {
-        vkCreateSamplerYcbcrConversionFunction =
-            (PFN_vkCreateSamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
-        vkDestroySamplerYcbcrConversionFunction =
-            (PFN_vkDestroySamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkDestroySamplerYcbcrConversionKHR");
+        vkCreateSamplerYcbcrConversionFunction = reinterpret_cast<PFN_vkCreateSamplerYcbcrConversionKHR>(
+            vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR"));
+        vkDestroySamplerYcbcrConversionFunction = reinterpret_cast<PFN_vkDestroySamplerYcbcrConversionKHR>(
+            vk::GetDeviceProcAddr(m_device->handle(), "vkDestroySamplerYcbcrConversionKHR"));
     }
 
     if (!vkCreateSamplerYcbcrConversionFunction || !vkDestroySamplerYcbcrConversionFunction) {
@@ -11080,8 +11085,8 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetBufferDeviceAddressEXT vkGetBufferDeviceAddressEXT =
-        (PFN_vkGetBufferDeviceAddressEXT)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressEXT");
+    auto vkGetBufferDeviceAddressEXT =
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressEXT>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressEXT"));
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = sizeof(uint32_t);
@@ -11146,8 +11151,8 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetBufferDeviceAddressEXT vkGetBufferDeviceAddressEXT =
-        (PFN_vkGetBufferDeviceAddressEXT)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressEXT");
+    auto vkGetBufferDeviceAddressEXT =
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressEXT>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressEXT"));
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = sizeof(uint32_t);
@@ -11190,10 +11195,10 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
-    PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR vkGetDeviceMemoryOpaqueCaptureAddressKHR =
-        (PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddressKHR");
+    auto vkGetBufferDeviceAddressKHR =
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
+    auto vkGetDeviceMemoryOpaqueCaptureAddressKHR = reinterpret_cast<PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR>(
+        vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddressKHR"));
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = sizeof(uint32_t);
@@ -11220,7 +11225,8 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     m_errorMonitor->VerifyFound();
 
     if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
-        auto fpGetBufferDeviceAddress = (PFN_vkGetBufferDeviceAddress)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddress");
+        auto fpGetBufferDeviceAddress =
+            reinterpret_cast<PFN_vkGetBufferDeviceAddress>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddress"));
         if (nullptr == fpGetBufferDeviceAddress) {
             m_errorMonitor->ExpectSuccess();
             m_errorMonitor->SetError("No ProcAddr for 1.2 core vkGetBufferDeviceAddress");
@@ -11252,8 +11258,8 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     m_errorMonitor->VerifyFound();
 
     if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
-        auto fpGetDeviceMemoryOpaqueCaptureAddress =
-            (PFN_vkGetDeviceMemoryOpaqueCaptureAddress)vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddress");
+        auto fpGetDeviceMemoryOpaqueCaptureAddress = reinterpret_cast<PFN_vkGetDeviceMemoryOpaqueCaptureAddress>(
+            vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddress"));
         if (nullptr == fpGetDeviceMemoryOpaqueCaptureAddress) {
             m_errorMonitor->ExpectSuccess();
             m_errorMonitor->SetError("No ProcAddr for 1.2 core vkGetDeviceMemoryOpaqueCaptureAddress");
@@ -11313,12 +11319,12 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
-    PFN_vkGetBufferOpaqueCaptureAddressKHR vkGetBufferOpaqueCaptureAddressKHR =
-        (PFN_vkGetBufferOpaqueCaptureAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferOpaqueCaptureAddressKHR");
-    PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR vkGetDeviceMemoryOpaqueCaptureAddressKHR =
-        (PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddressKHR");
+    auto vkGetBufferDeviceAddressKHR =
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
+    auto vkGetBufferOpaqueCaptureAddressKHR = reinterpret_cast<PFN_vkGetBufferOpaqueCaptureAddressKHR>(
+        vk::GetDeviceProcAddr(device(), "vkGetBufferOpaqueCaptureAddressKHR"));
+    auto vkGetDeviceMemoryOpaqueCaptureAddressKHR = reinterpret_cast<PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR>(
+        vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddressKHR"));
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = sizeof(uint32_t);
@@ -11341,8 +11347,8 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     m_errorMonitor->VerifyFound();
 
     if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
-        auto fpGetBufferOpaqueCaptureAddress =
-            (PFN_vkGetBufferOpaqueCaptureAddress)vk::GetDeviceProcAddr(device(), "vkGetBufferOpaqueCaptureAddress");
+        auto fpGetBufferOpaqueCaptureAddress = reinterpret_cast<PFN_vkGetBufferOpaqueCaptureAddress>(
+            vk::GetDeviceProcAddr(device(), "vkGetBufferOpaqueCaptureAddress"));
         if (nullptr == fpGetBufferOpaqueCaptureAddress) {
             m_errorMonitor->ExpectSuccess();
             m_errorMonitor->SetError("No ProcAddr for 1.2 core vkGetBufferOpaqueCaptureAddress");
@@ -11539,10 +11545,10 @@ TEST_F(VkLayerTest, InvalidSamplerFilterMinmax) {
         vkCreateSamplerYcbcrConversionFunction = vk::CreateSamplerYcbcrConversion;
         vkDestroySamplerYcbcrConversionFunction = vk::DestroySamplerYcbcrConversion;
     } else {
-        vkCreateSamplerYcbcrConversionFunction =
-            (PFN_vkCreateSamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
-        vkDestroySamplerYcbcrConversionFunction =
-            (PFN_vkDestroySamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkDestroySamplerYcbcrConversionKHR");
+        vkCreateSamplerYcbcrConversionFunction = reinterpret_cast<PFN_vkCreateSamplerYcbcrConversionKHR>(
+            vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR"));
+        vkDestroySamplerYcbcrConversionFunction = reinterpret_cast<PFN_vkDestroySamplerYcbcrConversionKHR>(
+            vk::GetDeviceProcAddr(m_device->handle(), "vkDestroySamplerYcbcrConversionKHR"));
     }
 
     if (!vkCreateSamplerYcbcrConversionFunction || !vkDestroySamplerYcbcrConversionFunction) {
@@ -11889,8 +11895,8 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
             vk::GetImageMemoryRequirements(m_device->device(), image, &memory_requirements);
             m_errorMonitor->VerifyFound();
 
-            PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2Function =
-                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
+            auto vkGetImageMemoryRequirements2Function = reinterpret_cast<PFN_vkGetImageMemoryRequirements2KHR>(
+                vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR"));
             ASSERT_TRUE(vkGetImageMemoryRequirements2Function != nullptr);
 
             VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>();
@@ -11982,16 +11988,16 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     VkPhysicalDeviceFragmentDensityMap2FeaturesEXT density_map2_features =
         LvlInitStruct<VkPhysicalDeviceFragmentDensityMap2FeaturesEXT>();
     VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&density_map2_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     VkPhysicalDeviceFragmentDensityMap2PropertiesEXT density_map2_properties =
         LvlInitStruct<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT>();
@@ -12331,8 +12337,8 @@ TEST_F(VkLayerTest, CustomBorderColor) {
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
     VkPhysicalDeviceCustomBorderColorPropertiesEXT custom_properties =
         LvlInitStruct<VkPhysicalDeviceCustomBorderColorPropertiesEXT>();
@@ -12526,8 +12532,8 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     m_errorMonitor->VerifyFound();
 
     if (bind_memory2 == true) {
-        PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
-            (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+        auto vkBindImageMemory2Function =
+            reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
 
         VkBindImageMemoryInfo bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>();
         bind_image_info.image = image_export;
@@ -12617,8 +12623,8 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
     m_errorMonitor->VerifyFound();
 
     if (bind_memory2 == true) {
-        PFN_vkBindBufferMemory2KHR vkBindBufferMemory2Function =
-            (PFN_vkBindBufferMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindBufferMemory2KHR");
+        auto vkBindBufferMemory2Function =
+            reinterpret_cast<PFN_vkBindBufferMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindBufferMemory2KHR"));
 
         VkBindBufferMemoryInfo bind_buffer_info = LvlInitStruct<VkBindBufferMemoryInfo>();
         bind_buffer_info.buffer = buffer_export;
@@ -13428,7 +13434,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
             vkBindImageMemory2Function = vk::BindImageMemory2;
         } else {
             vkBindImageMemory2Function =
-                (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+                reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
         }
     }
 
@@ -13542,7 +13548,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
         vkBindImageMemory2Function = vk::BindImageMemory2;
     } else {
         vkBindImageMemory2Function =
-            (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+            reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
     }
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(nullptr);
@@ -13604,8 +13610,8 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBindings) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
@@ -13664,8 +13670,8 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBinding) {
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mutable_descriptor_type_features);
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
         printf("%s mutableDescriptorType feature not supported. Skipped.\n", kSkipPrefix);
@@ -13893,8 +13899,8 @@ TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
-        (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+    auto vkBindImageMemory2Function =
+        reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
@@ -14184,8 +14190,8 @@ TEST_F(VkLayerTest, InvalidConditionalRenderingBufferUsage) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkCmdBeginConditionalRenderingEXT vkCmdBeginConditionalRenderingEXT =
-        (PFN_vkCmdBeginConditionalRenderingEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBeginConditionalRenderingEXT");
+    auto vkCmdBeginConditionalRenderingEXT = reinterpret_cast<PFN_vkCmdBeginConditionalRenderingEXT>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBeginConditionalRenderingEXT"));
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 1024;
@@ -14220,8 +14226,8 @@ TEST_F(VkLayerTest, ImageFormatInfoDrmFormatModifier) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto vkGetPhysicalDeviceImageFormatProperties2KHR = (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(
-        instance(), "vkGetPhysicalDeviceImageFormatProperties2KHR");
+    auto vkGetPhysicalDeviceImageFormatProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceImageFormatProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceImageFormatProperties2KHR != nullptr);
 
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT image_drm_format_modifier =
@@ -14371,8 +14377,8 @@ TEST_F(VkLayerTest, InvalidConditionalRenderingOffset) {
     m_device_extension_names.push_back(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkCmdBeginConditionalRenderingEXT vkCmdBeginConditionalRenderingEXT =
-        (PFN_vkCmdBeginConditionalRenderingEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBeginConditionalRenderingEXT");
+    auto vkCmdBeginConditionalRenderingEXT = reinterpret_cast<PFN_vkCmdBeginConditionalRenderingEXT>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBeginConditionalRenderingEXT"));
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 128;
@@ -14410,10 +14416,10 @@ TEST_F(VkLayerTest, InvalidBeginConditionalRendering) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkCmdBeginConditionalRenderingEXT vkCmdBeginConditionalRenderingEXT =
-        (PFN_vkCmdBeginConditionalRenderingEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBeginConditionalRenderingEXT");
-    PFN_vkCmdEndConditionalRenderingEXT vkCmdEndConditionalRenderingEXT =
-        (PFN_vkCmdEndConditionalRenderingEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdEndConditionalRenderingEXT");
+    auto vkCmdBeginConditionalRenderingEXT = reinterpret_cast<PFN_vkCmdBeginConditionalRenderingEXT>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBeginConditionalRenderingEXT"));
+    auto vkCmdEndConditionalRenderingEXT = reinterpret_cast<PFN_vkCmdEndConditionalRenderingEXT>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCmdEndConditionalRenderingEXT"));
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 32;
@@ -14553,8 +14559,8 @@ TEST_F(VkLayerTest, CopyMutableDescriptors) {
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mutable_descriptor_type_features);
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
         printf("%s mutableDescriptorType feature not supported. Skipped.\n", kSkipPrefix);
@@ -14839,8 +14845,8 @@ TEST_F(VkLayerTest, ValidateUpdatingMutableDescriptors) {
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mutable_descriptor_type_features);
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
         printf("%s mutableDescriptorType feature not supported. Skipped.\n", kSkipPrefix);
@@ -14949,8 +14955,8 @@ TEST_F(VkLayerTest, ImageViewMinLod) {
     }
     auto image_view_min_lod_features = LvlInitStruct<VkPhysicalDeviceImageViewMinLodFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&image_view_min_lod_features);
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     if (image_view_min_lod_features.minLod == VK_FALSE) {
         printf("%s image view min lod feature not supported. Skipped.\n", kSkipPrefix);
@@ -15040,7 +15046,7 @@ TEST_F(VkLayerTest, ValidateDeviceImageMemoryRequirements) {
         return;
     }
 
-    PFN_vkGetDeviceImageMemoryRequirementsKHR vkGetDeviceImageMemoryRequirementsKHR =
+    auto vkGetDeviceImageMemoryRequirementsKHR =
         reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirementsKHR>(vk::GetInstanceProcAddr(instance(), "vkGetDeviceImageMemoryRequirementsKHR"));
     assert(vkGetDeviceImageMemoryRequirementsKHR != nullptr);
 

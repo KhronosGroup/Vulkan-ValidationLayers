@@ -299,8 +299,8 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexInputStride) {
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     // Get the current vertex stride to ensure we pass an incorrect value when creating the graphics pipeline

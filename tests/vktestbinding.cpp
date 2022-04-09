@@ -610,8 +610,8 @@ void ImageView::init(const Device &dev, const VkImageViewCreateInfo &info) {
 
 AccelerationStructure::~AccelerationStructure() {
     if (initialized()) {
-        PFN_vkDestroyAccelerationStructureNV vkDestroyAccelerationStructureNV =
-            (PFN_vkDestroyAccelerationStructureNV)vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureNV");
+        auto vkDestroyAccelerationStructureNV = reinterpret_cast<PFN_vkDestroyAccelerationStructureNV>(
+            vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureNV"));
         assert(vkDestroyAccelerationStructureNV != nullptr);
 
         vkDestroyAccelerationStructureNV(device(), handle(), nullptr);
@@ -620,16 +620,15 @@ AccelerationStructure::~AccelerationStructure() {
 
 AccelerationStructureKHR::~AccelerationStructureKHR() {
     if (initialized()) {
-        PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR =
-            (PFN_vkDestroyAccelerationStructureKHR)vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureKHR");
+        auto vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
+            vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureKHR"));
         assert(vkDestroyAccelerationStructureKHR != nullptr);
         vkDestroyAccelerationStructureKHR(device(), handle(), nullptr);
     }
 }
 VkMemoryRequirements2 AccelerationStructure::memory_requirements() const {
-    PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV =
-        (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vk::GetDeviceProcAddr(device(),
-                                                                                  "vkGetAccelerationStructureMemoryRequirementsNV");
+    auto vkGetAccelerationStructureMemoryRequirementsNV = reinterpret_cast<PFN_vkGetAccelerationStructureMemoryRequirementsNV>(
+        vk::GetDeviceProcAddr(device(), "vkGetAccelerationStructureMemoryRequirementsNV"));
     assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
     VkMemoryRequirements2 memoryRequirements = {};
     VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo =
@@ -641,9 +640,8 @@ VkMemoryRequirements2 AccelerationStructure::memory_requirements() const {
 }
 
 VkMemoryRequirements2 AccelerationStructure::build_scratch_memory_requirements() const {
-    PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV =
-        (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vk::GetDeviceProcAddr(device(),
-                                                                                  "vkGetAccelerationStructureMemoryRequirementsNV");
+    auto vkGetAccelerationStructureMemoryRequirementsNV = reinterpret_cast<PFN_vkGetAccelerationStructureMemoryRequirementsNV>(
+        vk::GetDeviceProcAddr(device(), "vkGetAccelerationStructureMemoryRequirementsNV"));
     assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
 
     VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo =
@@ -657,8 +655,8 @@ VkMemoryRequirements2 AccelerationStructure::build_scratch_memory_requirements()
 }
 
 void AccelerationStructure::init(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory) {
-    PFN_vkCreateAccelerationStructureNV vkCreateAccelerationStructureNV =
-        (PFN_vkCreateAccelerationStructureNV)vk::GetDeviceProcAddr(dev.handle(), "vkCreateAccelerationStructureNV");
+    auto vkCreateAccelerationStructureNV = reinterpret_cast<PFN_vkCreateAccelerationStructureNV>(
+        vk::GetDeviceProcAddr(dev.handle(), "vkCreateAccelerationStructureNV"));
     assert(vkCreateAccelerationStructureNV != nullptr);
 
     NON_DISPATCHABLE_HANDLE_INIT(vkCreateAccelerationStructureNV, dev, &info);
@@ -669,8 +667,8 @@ void AccelerationStructure::init(const Device &dev, const VkAccelerationStructur
         memory_.init(dev, DeviceMemory::get_resource_alloc_info(dev, memory_requirements().memoryRequirements,
                                                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
-        PFN_vkBindAccelerationStructureMemoryNV vkBindAccelerationStructureMemoryNV =
-            (PFN_vkBindAccelerationStructureMemoryNV)vk::GetDeviceProcAddr(dev.handle(), "vkBindAccelerationStructureMemoryNV");
+        auto vkBindAccelerationStructureMemoryNV = reinterpret_cast<PFN_vkBindAccelerationStructureMemoryNV>(
+            vk::GetDeviceProcAddr(dev.handle(), "vkBindAccelerationStructureMemoryNV"));
         assert(vkBindAccelerationStructureMemoryNV != nullptr);
 
         VkBindAccelerationStructureMemoryInfoNV bind_info = LvlInitStruct<VkBindAccelerationStructureMemoryInfoNV>();
@@ -678,8 +676,8 @@ void AccelerationStructure::init(const Device &dev, const VkAccelerationStructur
         bind_info.memory = memory_.handle();
         EXPECT(vkBindAccelerationStructureMemoryNV(dev.handle(), 1, &bind_info) == VK_SUCCESS);
 
-        PFN_vkGetAccelerationStructureHandleNV vkGetAccelerationStructureHandleNV =
-            (PFN_vkGetAccelerationStructureHandleNV)vk::GetDeviceProcAddr(dev.handle(), "vkGetAccelerationStructureHandleNV");
+        auto vkGetAccelerationStructureHandleNV = reinterpret_cast<PFN_vkGetAccelerationStructureHandleNV>(
+            vk::GetDeviceProcAddr(dev.handle(), "vkGetAccelerationStructureHandleNV"));
         assert(vkGetAccelerationStructureHandleNV != nullptr);
         EXPECT(vkGetAccelerationStructureHandleNV(dev.handle(), handle(), sizeof(uint64_t), &opaque_handle_) == VK_SUCCESS);
     }
@@ -699,8 +697,8 @@ void AccelerationStructure::create_scratch_buffer(const Device &dev, Buffer *buf
 }
 
 void AccelerationStructureKHR::init(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info, bool init_memory) {
-    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR =
-        (PFN_vkCreateAccelerationStructureKHR)vk::GetDeviceProcAddr(dev.handle(), "vkCreateAccelerationStructureKHR");
+    auto vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
+        vk::GetDeviceProcAddr(dev.handle(), "vkCreateAccelerationStructureKHR"));
     assert(vkCreateAccelerationStructureKHR != nullptr);
     NON_DISPATCHABLE_HANDLE_INIT(vkCreateAccelerationStructureKHR, dev, &info);
     info_ = info;

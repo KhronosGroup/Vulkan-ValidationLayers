@@ -112,8 +112,8 @@ TEST_F(VkLayerTest, VersionCheckPromotedAPIs) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    PFN_vkGetPhysicalDeviceProperties2 vkGetPhysicalDeviceProperties2 =
-        (PFN_vkGetPhysicalDeviceProperties2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2");
+    auto vkGetPhysicalDeviceProperties2 =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2"));
     assert(vkGetPhysicalDeviceProperties2);
 
     VkPhysicalDeviceProperties2 phys_dev_props_2{};
@@ -185,8 +185,8 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     auto private_data_features = LvlInitStruct<VkPhysicalDevicePrivateDataFeaturesEXT>();
@@ -200,14 +200,14 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    PFN_vkDestroyPrivateDataSlotEXT pfn_vkDestroyPrivateDataSlotEXT =
-        (PFN_vkDestroyPrivateDataSlotEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkDestroyPrivateDataSlotEXT");
-    PFN_vkCreatePrivateDataSlotEXT pfn_vkCreatePrivateDataSlotEXT =
-        (PFN_vkCreatePrivateDataSlotEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCreatePrivateDataSlotEXT");
-    PFN_vkGetPrivateDataEXT pfn_vkGetPrivateDataEXT =
-        (PFN_vkGetPrivateDataEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkGetPrivateDataEXT");
-    PFN_vkSetPrivateDataEXT pfn_vkSetPrivateDataEXT =
-        (PFN_vkSetPrivateDataEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkSetPrivateDataEXT");
+    auto pfn_vkDestroyPrivateDataSlotEXT =
+        reinterpret_cast<PFN_vkDestroyPrivateDataSlotEXT>(vk::GetDeviceProcAddr(m_device->handle(), "vkDestroyPrivateDataSlotEXT"));
+    auto pfn_vkCreatePrivateDataSlotEXT =
+        reinterpret_cast<PFN_vkCreatePrivateDataSlotEXT>(vk::GetDeviceProcAddr(m_device->handle(), "vkCreatePrivateDataSlotEXT"));
+    auto pfn_vkGetPrivateDataEXT =
+        reinterpret_cast<PFN_vkGetPrivateDataEXT>(vk::GetDeviceProcAddr(m_device->handle(), "vkGetPrivateDataEXT"));
+    auto pfn_vkSetPrivateDataEXT =
+        reinterpret_cast<PFN_vkSetPrivateDataEXT>(vk::GetDeviceProcAddr(m_device->handle(), "vkSetPrivateDataEXT"));
 
     VkPrivateDataSlotEXT data_slot;
     VkPrivateDataSlotCreateInfoEXT data_create_info = LvlInitStruct<VkPrivateDataSlotCreateInfoEXT>();
@@ -274,8 +274,8 @@ TEST_F(VkLayerTest, PrivateDataFeature) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
-    PFN_vkCreatePrivateDataSlotEXT vkCreatePrivateDataSlotEXT =
-        (PFN_vkCreatePrivateDataSlotEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCreatePrivateDataSlotEXT");
+    auto vkCreatePrivateDataSlotEXT =
+        reinterpret_cast<PFN_vkCreatePrivateDataSlotEXT>(vk::GetDeviceProcAddr(m_device->handle(), "vkCreatePrivateDataSlotEXT"));
 
     VkPrivateDataSlotEXT data_slot;
     VkPrivateDataSlotCreateInfoEXT data_create_info = LvlInitStruct<VkPrivateDataSlotCreateInfoEXT>();
@@ -396,8 +396,8 @@ TEST_F(VkLayerTest, DuplicateMessageLimit) {
     auto msg_limit = DuplicateMsgLimit(3);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, msg_limit.pnext));
     ASSERT_NO_FATAL_FAILURE(InitState());
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     // Create an invalid pNext structure to trigger the stateless validation warning
@@ -801,8 +801,8 @@ TEST_F(VkLayerTest, PnextOnlyStructValidation) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     // Create a device passing in a bad PdevFeatures2 value
@@ -873,8 +873,8 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkDebugMarkerSetObjectNameEXT fpvkDebugMarkerSetObjectNameEXT =
-        (PFN_vkDebugMarkerSetObjectNameEXT)vk::GetInstanceProcAddr(instance(), "vkDebugMarkerSetObjectNameEXT");
+    auto fpvkDebugMarkerSetObjectNameEXT =
+        reinterpret_cast<PFN_vkDebugMarkerSetObjectNameEXT>(vk::GetInstanceProcAddr(instance(), "vkDebugMarkerSetObjectNameEXT"));
     if (!(fpvkDebugMarkerSetObjectNameEXT)) {
         printf("%s Can't find fpvkDebugMarkerSetObjectNameEXT; skipped.\n", kSkipPrefix);
         return;
@@ -981,17 +981,17 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkSetDebugUtilsObjectNameEXT fpvkSetDebugUtilsObjectNameEXT =
-        (PFN_vkSetDebugUtilsObjectNameEXT)vk::GetInstanceProcAddr(instance(), "vkSetDebugUtilsObjectNameEXT");
+    auto fpvkSetDebugUtilsObjectNameEXT =
+        reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vk::GetInstanceProcAddr(instance(), "vkSetDebugUtilsObjectNameEXT"));
     ASSERT_TRUE(fpvkSetDebugUtilsObjectNameEXT);  // Must be extant if extension is enabled
-    PFN_vkCreateDebugUtilsMessengerEXT fpvkCreateDebugUtilsMessengerEXT =
-        (PFN_vkCreateDebugUtilsMessengerEXT)vk::GetInstanceProcAddr(instance(), "vkCreateDebugUtilsMessengerEXT");
+    auto fpvkCreateDebugUtilsMessengerEXT =
+        reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vk::GetInstanceProcAddr(instance(), "vkCreateDebugUtilsMessengerEXT"));
     ASSERT_TRUE(fpvkCreateDebugUtilsMessengerEXT);  // Must be extant if extension is enabled
-    PFN_vkDestroyDebugUtilsMessengerEXT fpvkDestroyDebugUtilsMessengerEXT =
-        (PFN_vkDestroyDebugUtilsMessengerEXT)vk::GetInstanceProcAddr(instance(), "vkDestroyDebugUtilsMessengerEXT");
+    auto fpvkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkDestroyDebugUtilsMessengerEXT"));
     ASSERT_TRUE(fpvkDestroyDebugUtilsMessengerEXT);  // Must be extant if extension is enabled
-    PFN_vkCmdInsertDebugUtilsLabelEXT fpvkCmdInsertDebugUtilsLabelEXT =
-        (PFN_vkCmdInsertDebugUtilsLabelEXT)vk::GetInstanceProcAddr(instance(), "vkCmdInsertDebugUtilsLabelEXT");
+    auto fpvkCmdInsertDebugUtilsLabelEXT =
+        reinterpret_cast<PFN_vkCmdInsertDebugUtilsLabelEXT>(vk::GetInstanceProcAddr(instance(), "vkCmdInsertDebugUtilsLabelEXT"));
     ASSERT_TRUE(fpvkCmdInsertDebugUtilsLabelEXT);  // Must be extant if extension is enabled
 
     if (DeviceSimulation()) {
@@ -1171,8 +1171,8 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     }
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "value of pCreateInfo->pNext must be NULL");
@@ -1519,8 +1519,8 @@ TEST_F(VkLayerTest, TemporaryExternalSemaphore) {
                                                     handle_type};
     VkExternalSemaphorePropertiesKHR esp = {VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES_KHR, nullptr};
     auto vkGetPhysicalDeviceExternalSemaphorePropertiesKHR =
-        (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
+        reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR"));
     vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
 
     if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
@@ -1551,8 +1551,8 @@ TEST_F(VkLayerTest, TemporaryExternalSemaphore) {
     HANDLE handle = nullptr;
     VkSemaphoreGetWin32HandleInfoKHR ghi = {VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR, nullptr, export_semaphore,
                                             handle_type};
-    auto vkGetSemaphoreWin32HandleKHR =
-        (PFN_vkGetSemaphoreWin32HandleKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreWin32HandleKHR");
+    auto vkGetSemaphoreWin32HandleKHR = reinterpret_cast<PFN_vkGetSemaphoreWin32HandleKHR>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreWin32HandleKHR"));
     err = vkGetSemaphoreWin32HandleKHR(m_device->device(), &ghi, &handle);
     ASSERT_VK_SUCCESS(err);
 
@@ -1564,22 +1564,24 @@ TEST_F(VkLayerTest, TemporaryExternalSemaphore) {
                                                handle_type,
                                                handle,
                                                nullptr};
-    auto vkImportSemaphoreWin32HandleKHR =
-        (PFN_vkImportSemaphoreWin32HandleKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreWin32HandleKHR");
+    auto vkImportSemaphoreWin32HandleKHR = reinterpret_cast<PFN_vkImportSemaphoreWin32HandleKHR>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreWin32HandleKHR"));
     err = vkImportSemaphoreWin32HandleKHR(m_device->device(), &ihi);
     ASSERT_VK_SUCCESS(err);
 #else
     // Export semaphore payload to an opaque handle
     int fd = 0;
     VkSemaphoreGetFdInfoKHR ghi = {VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR, nullptr, export_semaphore, handle_type};
-    auto vkGetSemaphoreFdKHR = (PFN_vkGetSemaphoreFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreFdKHR");
+    auto vkGetSemaphoreFdKHR =
+        reinterpret_cast<PFN_vkGetSemaphoreFdKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreFdKHR"));
     err = vkGetSemaphoreFdKHR(m_device->device(), &ghi, &fd);
     ASSERT_VK_SUCCESS(err);
 
     // Import opaque handle exported above *temporarily*
     VkImportSemaphoreFdInfoKHR ihi = {VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR, nullptr,     import_semaphore,
                                       VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR,          handle_type, fd};
-    auto vkImportSemaphoreFdKHR = (PFN_vkImportSemaphoreFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreFdKHR");
+    auto vkImportSemaphoreFdKHR =
+        reinterpret_cast<PFN_vkImportSemaphoreFdKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreFdKHR"));
     err = vkImportSemaphoreFdKHR(m_device->device(), &ihi);
     ASSERT_VK_SUCCESS(err);
 #endif
@@ -1649,8 +1651,8 @@ TEST_F(VkLayerTest, TemporaryExternalFence) {
     VkPhysicalDeviceExternalFenceInfoKHR efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
     efi.handleType = handle_type;
     VkExternalFencePropertiesKHR efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
-    auto vkGetPhysicalDeviceExternalFencePropertiesKHR = (PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR)vk::GetInstanceProcAddr(
-        instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR");
+    auto vkGetPhysicalDeviceExternalFencePropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR"));
     vkGetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
@@ -1684,7 +1686,7 @@ TEST_F(VkLayerTest, TemporaryExternalFence) {
     {
         VkFenceGetWin32HandleInfoKHR ghi = {VK_STRUCTURE_TYPE_FENCE_GET_WIN32_HANDLE_INFO_KHR, nullptr, export_fence, handle_type};
         auto vkGetFenceWin32HandleKHR =
-            (PFN_vkGetFenceWin32HandleKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetFenceWin32HandleKHR");
+            reinterpret_cast<PFN_vkGetFenceWin32HandleKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkGetFenceWin32HandleKHR"));
         err = vkGetFenceWin32HandleKHR(m_device->device(), &ghi, &handle);
         ASSERT_VK_SUCCESS(err);
     }
@@ -1698,8 +1700,8 @@ TEST_F(VkLayerTest, TemporaryExternalFence) {
                                                handle_type,
                                                handle,
                                                nullptr};
-        auto vkImportFenceWin32HandleKHR =
-            (PFN_vkImportFenceWin32HandleKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportFenceWin32HandleKHR");
+        auto vkImportFenceWin32HandleKHR = reinterpret_cast<PFN_vkImportFenceWin32HandleKHR>(
+            vk::GetDeviceProcAddr(m_device->device(), "vkImportFenceWin32HandleKHR"));
         err = vkImportFenceWin32HandleKHR(m_device->device(), &ifi);
         ASSERT_VK_SUCCESS(err);
     }
@@ -1708,7 +1710,7 @@ TEST_F(VkLayerTest, TemporaryExternalFence) {
     int fd = 0;
     {
         VkFenceGetFdInfoKHR gfi = {VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR, nullptr, export_fence, handle_type};
-        auto vkGetFenceFdKHR = (PFN_vkGetFenceFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetFenceFdKHR");
+        auto vkGetFenceFdKHR = reinterpret_cast<PFN_vkGetFenceFdKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkGetFenceFdKHR"));
         err = vkGetFenceFdKHR(m_device->device(), &gfi, &fd);
         ASSERT_VK_SUCCESS(err);
     }
@@ -1717,7 +1719,8 @@ TEST_F(VkLayerTest, TemporaryExternalFence) {
     {
         VkImportFenceFdInfoKHR ifi = {VK_STRUCTURE_TYPE_IMPORT_FENCE_FD_INFO_KHR, nullptr,     import_fence,
                                       VK_FENCE_IMPORT_TEMPORARY_BIT_KHR,          handle_type, fd};
-        auto vkImportFenceFdKHR = (PFN_vkImportFenceFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportFenceFdKHR");
+        auto vkImportFenceFdKHR =
+            reinterpret_cast<PFN_vkImportFenceFdKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkImportFenceFdKHR"));
         err = vkImportFenceFdKHR(m_device->device(), &ifi);
         ASSERT_VK_SUCCESS(err);
     }
@@ -1990,8 +1993,8 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     // Create a device that enables variablePointers but not variablePointersStorageBuffer
@@ -2047,8 +2050,8 @@ TEST_F(VkLayerTest, FeaturesMultiview) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
@@ -2125,11 +2128,11 @@ TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
 
     // Load extension functions
     auto fpCreateValidationCache =
-        (PFN_vkCreateValidationCacheEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCreateValidationCacheEXT");
+        reinterpret_cast<PFN_vkCreateValidationCacheEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCreateValidationCacheEXT"));
     auto fpDestroyValidationCache =
-        (PFN_vkDestroyValidationCacheEXT)vk::GetDeviceProcAddr(m_device->device(), "vkDestroyValidationCacheEXT");
+        reinterpret_cast<PFN_vkDestroyValidationCacheEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkDestroyValidationCacheEXT"));
     auto fpMergeValidationCaches =
-        (PFN_vkMergeValidationCachesEXT)vk::GetDeviceProcAddr(m_device->device(), "vkMergeValidationCachesEXT");
+        reinterpret_cast<PFN_vkMergeValidationCachesEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkMergeValidationCachesEXT"));
     if (!fpCreateValidationCache || !fpDestroyValidationCache || !fpMergeValidationCaches) {
         printf("%s Failed to load function pointers for %s\n", kSkipPrefix, VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
         return;
@@ -3068,8 +3071,8 @@ TEST_F(VkLayerTest, PerformanceQueryIntel) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto performance_api_info_intel = LvlInitStruct<VkInitializePerformanceApiInfoINTEL>();
-    PFN_vkInitializePerformanceApiINTEL vkInitializePerformanceApiINTEL =
-        (PFN_vkInitializePerformanceApiINTEL)vk::GetDeviceProcAddr(m_device->device(), "vkInitializePerformanceApiINTEL");
+    auto vkInitializePerformanceApiINTEL = reinterpret_cast<PFN_vkInitializePerformanceApiINTEL>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkInitializePerformanceApiINTEL"));
     vkInitializePerformanceApiINTEL(m_device->device(), &performance_api_info_intel);
 
     VkBufferObj buffer;
@@ -3565,8 +3568,8 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     // Create a device that enables descriptorBindingStorageBufferUpdateAfterBind
@@ -3733,7 +3736,8 @@ TEST_F(VkLayerTest, HostQueryResetNotEnabled) {
     m_device_extension_names.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
+    auto fpvkResetQueryPoolEXT =
+        reinterpret_cast<PFN_vkResetQueryPoolEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT"));
 
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
@@ -3775,7 +3779,8 @@ TEST_F(VkLayerTest, HostQueryResetBadFirstQuery) {
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
-    auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
+    auto fpvkResetQueryPoolEXT =
+        reinterpret_cast<PFN_vkResetQueryPoolEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT"));
 
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
@@ -3788,7 +3793,8 @@ TEST_F(VkLayerTest, HostQueryResetBadFirstQuery) {
     m_errorMonitor->VerifyFound();
 
     if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
-        auto fpvkResetQueryPool = (PFN_vkResetQueryPool)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPool");
+        auto fpvkResetQueryPool =
+            reinterpret_cast<PFN_vkResetQueryPool>(vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPool"));
         if (nullptr == fpvkResetQueryPool) {
             m_errorMonitor->ExpectSuccess();
             m_errorMonitor->SetError("No ProcAddr for 1.2 core vkResetQueryPool");
@@ -3829,7 +3835,8 @@ TEST_F(VkLayerTest, HostQueryResetBadRange) {
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
-    auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
+    auto fpvkResetQueryPoolEXT =
+        reinterpret_cast<PFN_vkResetQueryPoolEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT"));
 
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
@@ -3870,7 +3877,8 @@ TEST_F(VkLayerTest, HostQueryResetInvalidQueryPool) {
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
-    auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
+    auto fpvkResetQueryPoolEXT =
+        reinterpret_cast<PFN_vkResetQueryPoolEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT"));
 
     // Create and destroy a query pool.
     VkQueryPool query_pool;
@@ -3912,7 +3920,8 @@ TEST_F(VkLayerTest, HostQueryResetWrongDevice) {
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
-    auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
+    auto fpvkResetQueryPoolEXT =
+        reinterpret_cast<PFN_vkResetQueryPoolEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT"));
 
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
@@ -4021,8 +4030,8 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     // Create a device that enables shading_rate_image but disables multiViewport
@@ -4218,7 +4227,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
 
     // Test vk::CmdBindShadingRateImageNV errors
     auto vkCmdBindShadingRateImageNV =
-        (PFN_vkCmdBindShadingRateImageNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindShadingRateImageNV");
+        reinterpret_cast<PFN_vkCmdBindShadingRateImageNV>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindShadingRateImageNV"));
 
     // if the view is non-NULL, it must be R8_UINT, USAGE_SRI, image layout must match, layout must be valid
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadingRateImageNV-imageView-02060");
@@ -4229,8 +4238,8 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     m_errorMonitor->VerifyFound();
 
     // Test vk::CmdSetViewportShadingRatePaletteNV errors
-    auto vkCmdSetViewportShadingRatePaletteNV =
-        (PFN_vkCmdSetViewportShadingRatePaletteNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportShadingRatePaletteNV");
+    auto vkCmdSetViewportShadingRatePaletteNV = reinterpret_cast<PFN_vkCmdSetViewportShadingRatePaletteNV>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportShadingRatePaletteNV"));
 
     VkShadingRatePaletteEntryNV paletteEntries[100] = {};
     VkShadingRatePaletteNV palette = {100, paletteEntries};
@@ -4307,8 +4316,8 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
         }
 
         // Test vk::CmdSetCoarseSampleOrderNV errors
-        auto vkCmdSetCoarseSampleOrderNV =
-            (PFN_vkCmdSetCoarseSampleOrderNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCoarseSampleOrderNV");
+        auto vkCmdSetCoarseSampleOrderNV = reinterpret_cast<PFN_vkCmdSetCoarseSampleOrderNV>(
+            vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCoarseSampleOrderNV"));
 
         for (const auto &test_case : test_cases) {
             for (uint32_t i = 0; i < test_case.vuids.size(); ++i) {
@@ -4415,8 +4424,8 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     // Retrieve it's properties to make it's external format 'known' (AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM)
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID");
+    auto pfn_GetAHBProps = reinterpret_cast<PFN_vkGetAndroidHardwareBufferPropertiesANDROID>(
+        vk::GetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID"));
     ASSERT_TRUE(pfn_GetAHBProps != nullptr);
     pfn_GetAHBProps(dev, ahb, &ahb_props);
 
@@ -4586,8 +4595,8 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
         mem_handle = VK_NULL_HANDLE;
     };
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID");
+    auto pfn_GetAHBProps = reinterpret_cast<PFN_vkGetAndroidHardwareBufferPropertiesANDROID>(
+        vk::GetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID"));
     ASSERT_TRUE(pfn_GetAHBProps != nullptr);
 
     // AHB structs
@@ -4959,8 +4968,8 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     // Retrieve AHB properties to make it's external format 'known'
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID");
+    auto pfn_GetAHBProps = reinterpret_cast<PFN_vkGetAndroidHardwareBufferPropertiesANDROID>(
+        vk::GetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID"));
     ASSERT_TRUE(pfn_GetAHBProps != nullptr);
     pfn_GetAHBProps(dev, ahb, &ahb_props);
     AHardwareBuffer_release(ahb);
@@ -5136,8 +5145,8 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
         mem_handle = VK_NULL_HANDLE;
     };
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID");
+    auto pfn_GetAHBProps = reinterpret_cast<PFN_vkGetAndroidHardwareBufferPropertiesANDROID>(
+        vk::GetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID"));
     ASSERT_TRUE(pfn_GetAHBProps != nullptr);
 
     // AHB structs
@@ -5240,8 +5249,8 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
     mai.memoryTypeIndex = 0;
     vk::AllocateMemory(dev, &mai, nullptr, &mem_handle);
 
-    PFN_vkGetMemoryAndroidHardwareBufferANDROID pfn_GetMemAHB =
-        (PFN_vkGetMemoryAndroidHardwareBufferANDROID)vk::GetDeviceProcAddr(dev, "vkGetMemoryAndroidHardwareBufferANDROID");
+    auto pfn_GetMemAHB = reinterpret_cast<PFN_vkGetMemoryAndroidHardwareBufferANDROID>(
+        vk::GetDeviceProcAddr(dev, "vkGetMemoryAndroidHardwareBufferANDROID"));
     ASSERT_TRUE(pfn_GetMemAHB != nullptr);
 
     VkMemoryGetAndroidHardwareBufferInfoANDROID mgahbi = LvlInitStruct<VkMemoryGetAndroidHardwareBufferInfoANDROID>();
@@ -5413,11 +5422,11 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBufferHandleType) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(m_device->device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    PFN_vkBindBufferMemory2KHR vkBindBufferMemory2Function =
-        (PFN_vkBindBufferMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindBufferMemory2KHR");
+    auto pfn_GetAHBProps =
+        reinterpret_cast<PFN_vkGetAndroidHardwareBufferPropertiesANDROID>(vk::GetDeviceProcAddr(m_device->device(),
+                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID"));
+    auto vkBindBufferMemory2Function =
+        reinterpret_cast<PFN_vkBindBufferMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindBufferMemory2KHR"));
 
     m_errorMonitor->ExpectSuccess();
 
@@ -5507,11 +5516,10 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportImageHandleType) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(m_device->device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
-        (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+    auto pfn_GetAHBProps = reinterpret_cast<PFN_vkGetAndroidHardwareBufferPropertiesANDROID>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkGetAndroidHardwareBufferPropertiesANDROID"));
+    auto vkBindImageMemory2Function =
+        reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
 
     m_errorMonitor->ExpectSuccess();
 
@@ -5797,7 +5805,7 @@ TEST_F(VkLayerTest, ValidateGeometryNV) {
     valid_geometry_aabbs.geometry.aabbs.offset = 0;
     valid_geometry_aabbs.geometry.aabbs.stride = 24;
 
-    PFN_vkCreateAccelerationStructureNV vkCreateAccelerationStructureNV = reinterpret_cast<PFN_vkCreateAccelerationStructureNV>(
+    auto vkCreateAccelerationStructureNV = reinterpret_cast<PFN_vkCreateAccelerationStructureNV>(
         vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureNV"));
     assert(vkCreateAccelerationStructureNV != nullptr);
 
@@ -5985,7 +5993,7 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureNV) {
         return;
     }
 
-    PFN_vkCreateAccelerationStructureNV vkCreateAccelerationStructureNV = reinterpret_cast<PFN_vkCreateAccelerationStructureNV>(
+    auto vkCreateAccelerationStructureNV = reinterpret_cast<PFN_vkCreateAccelerationStructureNV>(
         vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureNV"));
     assert(vkCreateAccelerationStructureNV != nullptr);
 
@@ -6099,8 +6107,8 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&ray_tracing_features);
@@ -6112,7 +6120,7 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_struct_features));
-    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
+    auto vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
         vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
     assert(vkCreateAccelerationStructureKHR != nullptr);
 
@@ -6126,8 +6134,8 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
     as_create_info.size = 0;
     as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     as_create_info.deviceAddress = 0;
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    auto vkGetBufferDeviceAddressKHR =
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
 
     VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, buffer.handle()};
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
@@ -6200,18 +6208,18 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHRReplayFeature) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     auto acc_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&acc_struct_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     acc_struct_features.accelerationStructureCaptureReplay = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_struct_features));
-    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
+    auto vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
         vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
     assert(vkCreateAccelerationStructureKHR != nullptr);
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    auto vkGetBufferDeviceAddressKHR =
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
     assert(vkGetBufferDeviceAddressKHR != nullptr);
 
     VkBufferObj buffer;
@@ -6242,9 +6250,8 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
         return;
     }
 
-    PFN_vkBindAccelerationStructureMemoryNV vkBindAccelerationStructureMemoryNV =
-        reinterpret_cast<PFN_vkBindAccelerationStructureMemoryNV>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkBindAccelerationStructureMemoryNV"));
+    auto vkBindAccelerationStructureMemoryNV = reinterpret_cast<PFN_vkBindAccelerationStructureMemoryNV>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkBindAccelerationStructureMemoryNV"));
     assert(vkBindAccelerationStructureMemoryNV != nullptr);
 
     VkBufferObj vbo;
@@ -6431,9 +6438,8 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructureNV) {
         return;
     }
 
-    PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
-        reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
+    auto vkCmdBuildAccelerationStructureNV = reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
     assert(vkCmdBuildAccelerationStructureNV != nullptr);
 
     VkBufferObj vbo;
@@ -6629,9 +6635,8 @@ TEST_F(VkLayerTest, ValidateGetAccelerationStructureHandleNV) {
         return;
     }
 
-    PFN_vkGetAccelerationStructureHandleNV vkGetAccelerationStructureHandleNV =
-        reinterpret_cast<PFN_vkGetAccelerationStructureHandleNV>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkGetAccelerationStructureHandleNV"));
+    auto vkGetAccelerationStructureHandleNV = reinterpret_cast<PFN_vkGetAccelerationStructureHandleNV>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkGetAccelerationStructureHandleNV"));
     assert(vkGetAccelerationStructureHandleNV != nullptr);
 
     VkBufferObj vbo;
@@ -6675,7 +6680,7 @@ TEST_F(VkLayerTest, ValidateCmdCopyAccelerationStructureNV) {
         return;
     }
 
-    PFN_vkCmdCopyAccelerationStructureNV vkCmdCopyAccelerationStructureNV = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureNV>(
+    auto vkCmdCopyAccelerationStructureNV = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureNV>(
         vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyAccelerationStructureNV"));
     assert(vkCmdCopyAccelerationStructureNV != nullptr);
 
@@ -6758,8 +6763,8 @@ TEST_F(VkLayerTest, QueryPerformanceCreation) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto performance_features = LvlInitStruct<VkPhysicalDevicePerformanceQueryFeaturesKHR>();
@@ -6771,10 +6776,9 @@ TEST_F(VkLayerTest, QueryPerformanceCreation) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performance_features));
-    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
-            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
-                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+    auto vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
+        reinterpret_cast<PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR>(
+            vk::GetInstanceProcAddr(instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
     ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
 
     auto queueFamilyProperties = m_device->phy().queue_properties();
@@ -6865,8 +6869,8 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto performanceFeatures = LvlInitStruct<VkPhysicalDevicePerformanceQueryFeaturesKHR>();
@@ -6879,10 +6883,9 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performanceFeatures, pool_flags));
-    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
-            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
-                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+    auto vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
+        reinterpret_cast<PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR>(
+            vk::GetInstanceProcAddr(instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
     ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
 
     auto queueFamilyProperties = m_device->phy().queue_properties();
@@ -6937,11 +6940,11 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
 
-    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
-        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
+    auto vkAcquireProfilingLockKHR =
+        reinterpret_cast<PFN_vkAcquireProfilingLockKHR>(vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR"));
     ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
-    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
-        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
+    auto vkReleaseProfilingLockKHR =
+        reinterpret_cast<PFN_vkReleaseProfilingLockKHR>(vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR"));
     ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
 
     {
@@ -7064,8 +7067,8 @@ TEST_F(VkLayerTest, QueryPerformanceCounterRenderPassScope) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto performanceFeatures = LvlInitStruct<VkPhysicalDevicePerformanceQueryFeaturesKHR>();
@@ -7078,10 +7081,9 @@ TEST_F(VkLayerTest, QueryPerformanceCounterRenderPassScope) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, pool_flags));
-    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
-            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
-                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+    auto vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
+        reinterpret_cast<PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR>(
+            vk::GetInstanceProcAddr(instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
     ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
 
     auto queueFamilyProperties = m_device->phy().queue_properties();
@@ -7138,11 +7140,11 @@ TEST_F(VkLayerTest, QueryPerformanceCounterRenderPassScope) {
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
 
-    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
-        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
+    auto vkAcquireProfilingLockKHR =
+        reinterpret_cast<PFN_vkAcquireProfilingLockKHR>(vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR"));
     ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
-    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
-        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
+    auto vkReleaseProfilingLockKHR =
+        reinterpret_cast<PFN_vkReleaseProfilingLockKHR>(vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR"));
     ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
 
     {
@@ -7198,8 +7200,8 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto performanceFeatures = LvlInitStruct<VkPhysicalDevicePerformanceQueryFeaturesKHR>();
@@ -7212,10 +7214,9 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performanceFeatures, pool_flags));
-    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
-            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
-                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+    auto vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
+        reinterpret_cast<PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR>(
+            vk::GetInstanceProcAddr(instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
     ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
 
     auto queueFamilyProperties = m_device->phy().queue_properties();
@@ -7272,11 +7273,11 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
 
-    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
-        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
+    auto vkAcquireProfilingLockKHR =
+        reinterpret_cast<PFN_vkAcquireProfilingLockKHR>(vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR"));
     ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
-    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
-        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
+    auto vkReleaseProfilingLockKHR =
+        reinterpret_cast<PFN_vkReleaseProfilingLockKHR>(vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR"));
     ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
 
     {
@@ -7388,8 +7389,8 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto hostQueryResetFeatures = LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
@@ -7407,15 +7408,14 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performanceFeatures, pool_flags));
-    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
-            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
-                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+    auto vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
+        reinterpret_cast<PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR>(
+            vk::GetInstanceProcAddr(instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
     ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
 
-    PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR =
-        (PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR");
+    auto vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR != nullptr);
 
     auto queueFamilyProperties = m_device->phy().queue_properties();
@@ -7477,14 +7477,14 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
 
-    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
-        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
+    auto vkAcquireProfilingLockKHR =
+        reinterpret_cast<PFN_vkAcquireProfilingLockKHR>(vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR"));
     ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
-    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
-        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
+    auto vkReleaseProfilingLockKHR =
+        reinterpret_cast<PFN_vkReleaseProfilingLockKHR>(vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR"));
     ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
-    PFN_vkResetQueryPoolEXT fpvkResetQueryPoolEXT =
-        (PFN_vkResetQueryPoolEXT)vk::GetInstanceProcAddr(instance(), "vkResetQueryPoolEXT");
+    auto fpvkResetQueryPoolEXT =
+        reinterpret_cast<PFN_vkResetQueryPoolEXT>(vk::GetInstanceProcAddr(instance(), "vkResetQueryPoolEXT"));
 
     {
         VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
@@ -7657,8 +7657,8 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto hostQueryResetFeatures = LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
@@ -7676,15 +7676,14 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performanceFeatures, pool_flags));
-    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
-            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
-                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+    auto vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
+        reinterpret_cast<PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR>(
+            vk::GetInstanceProcAddr(instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
     ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
 
-    PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR =
-        (PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR");
+    auto vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR != nullptr);
 
     auto queueFamilyProperties = m_device->phy().queue_properties();
@@ -7736,11 +7735,11 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
 
-    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
-        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
+    auto vkAcquireProfilingLockKHR =
+        reinterpret_cast<PFN_vkAcquireProfilingLockKHR>(vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR"));
     ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
-    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
-        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
+    auto vkReleaseProfilingLockKHR =
+        reinterpret_cast<PFN_vkReleaseProfilingLockKHR>(vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR"));
     ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
 
     {
@@ -7894,8 +7893,8 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
@@ -8207,7 +8206,8 @@ TEST_F(VkLayerTest, InvalidExternalSemaphore) {
     import_semaphore_fd_info.flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR;
     import_semaphore_fd_info.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT;
     import_semaphore_fd_info.fd = fd;
-    auto vkImportSemaphoreFdKHR = (PFN_vkImportSemaphoreFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreFdKHR");
+    auto vkImportSemaphoreFdKHR =
+        reinterpret_cast<PFN_vkImportSemaphoreFdKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreFdKHR"));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportSemaphoreFdInfoKHR-handleType-01143");
     vkImportSemaphoreFdKHR(device(), &import_semaphore_fd_info);
@@ -8258,7 +8258,8 @@ TEST_F(VkLayerTest, InvalidWaitSemaphoresType) {
     semaphore_wait_info.pSemaphores = &semaphore[0];
     const uint64_t wait_values[] = {10, 40};
     semaphore_wait_info.pValues = &wait_values[0];
-    auto vkWaitSemaphoresKHR = (PFN_vkWaitSemaphoresKHR)vk::GetDeviceProcAddr(m_device->device(), "vkWaitSemaphoresKHR");
+    auto vkWaitSemaphoresKHR =
+        reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkWaitSemaphoresKHR"));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreWaitInfo-pSemaphores-03256");
     vkWaitSemaphoresKHR(m_device->device(), &semaphore_wait_info, 10000);
@@ -8287,8 +8288,8 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreType) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     auto timelinefeatures = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&timelinefeatures);
@@ -8307,7 +8308,8 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreType) {
     VkSemaphoreSignalInfo semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
     semaphore_signal_info.semaphore = semaphore;
     semaphore_signal_info.value = 10;
-    auto vkSignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR");
+    auto vkSignalSemaphoreKHR =
+        reinterpret_cast<PFN_vkSignalSemaphoreKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR"));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreSignalInfo-semaphore-03257");
     vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
@@ -8340,8 +8342,8 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
@@ -8360,7 +8362,7 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
     VkSemaphoreSignalInfo semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
     semaphore_signal_info.semaphore = semaphore[0];
     semaphore_signal_info.value = 3;
-    auto vkSignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR");
+    auto vkSignalSemaphoreKHR = reinterpret_cast<PFN_vkSignalSemaphoreKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR"));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreSignalInfo-value-03258");
     vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
@@ -8478,7 +8480,8 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
         printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    auto fpQueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR");
+    auto fpQueueSubmit2KHR =
+        reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
 
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
@@ -8585,8 +8588,8 @@ TEST_F(VkLayerTest, InvalidSemaphoreCounterType) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     auto timelinefeatures = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&timelinefeatures);
@@ -8603,8 +8606,8 @@ TEST_F(VkLayerTest, InvalidSemaphoreCounterType) {
     VkSemaphore semaphore;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
 
-    auto vkGetSemaphoreCounterValueKHR =
-        (PFN_vkGetSemaphoreCounterValueKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreCounterValueKHR");
+    auto vkGetSemaphoreCounterValueKHR = reinterpret_cast<PFN_vkGetSemaphoreCounterValueKHR>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreCounterValueKHR"));
     uint64_t value = 0xdeadbeef;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetSemaphoreCounterValue-semaphore-03255");
@@ -8648,9 +8651,8 @@ TEST_F(VkLayerTest, ImageDrmFormatModifer) {
         return;
     }
 
-    PFN_vkGetImageDrmFormatModifierPropertiesEXT vkGetImageDrmFormatModifierPropertiesEXT =
-        (PFN_vkGetImageDrmFormatModifierPropertiesEXT)vk::GetInstanceProcAddr(instance(),
-                                                                              "vkGetImageDrmFormatModifierPropertiesEXT");
+    auto vkGetImageDrmFormatModifierPropertiesEXT = reinterpret_cast<PFN_vkGetImageDrmFormatModifierPropertiesEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkGetImageDrmFormatModifierPropertiesEXT"));
     ASSERT_TRUE(vkGetImageDrmFormatModifierPropertiesEXT != nullptr);
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -8765,9 +8767,10 @@ TEST_F(VkLayerTest, ValidateNVDeviceDiagnosticCheckpoints) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto vkGetQueueCheckpointDataNV =
-        (PFN_vkGetQueueCheckpointDataNV)vk::GetDeviceProcAddr(m_device->device(), "vkGetQueueCheckpointDataNV");
+        reinterpret_cast<PFN_vkGetQueueCheckpointDataNV>(vk::GetDeviceProcAddr(m_device->device(), "vkGetQueueCheckpointDataNV"));
 
-    auto vkCmdSetCheckpointNV = (PFN_vkCmdSetCheckpointNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCheckpointNV");
+    auto vkCmdSetCheckpointNV =
+        reinterpret_cast<PFN_vkCmdSetCheckpointNV>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCheckpointNV"));
 
     ASSERT_TRUE(vkGetQueueCheckpointDataNV != nullptr);
     ASSERT_TRUE(vkCmdSetCheckpointNV != nullptr);
@@ -8797,8 +8800,8 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     VkDeviceQueueInfo2 queue_info_2 = LvlInitStruct<VkDeviceQueueInfo2>();
@@ -8852,7 +8855,7 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
         // vk::GetDeviceQueue(test_device, queue_family_index, 0, &test_queue);
         // m_errorMonitor->VerifyFound();
 
-        PFN_vkGetDeviceQueue2 vkGetDeviceQueue2 = (PFN_vkGetDeviceQueue2)vk::GetDeviceProcAddr(test_device, "vkGetDeviceQueue2");
+        auto vkGetDeviceQueue2 = reinterpret_cast<PFN_vkGetDeviceQueue2>(vk::GetDeviceProcAddr(test_device, "vkGetDeviceQueue2"));
         ASSERT_TRUE(vkGetDeviceQueue2 != nullptr);
 
         // Test device created with flag and trying to query with no flag
@@ -8889,7 +8892,7 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
     // vk::GetDeviceQueue(test_device, queue_family_index + 1, 0, &test_queue);
     // m_errorMonitor->VerifyFound();
 
-    PFN_vkGetDeviceQueue2 vkGetDeviceQueue2 = (PFN_vkGetDeviceQueue2)vk::GetDeviceProcAddr(test_device, "vkGetDeviceQueue2");
+    auto vkGetDeviceQueue2 = reinterpret_cast<PFN_vkGetDeviceQueue2>(vk::GetDeviceProcAddr(test_device, "vkGetDeviceQueue2"));
     ASSERT_TRUE(vkGetDeviceQueue2 != nullptr);
 
     queue_info_2.flags = 0;  // same as device creation
@@ -9002,8 +9005,8 @@ TEST_F(VkLayerTest, UniqueQueueDeviceCreationBothProtected) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     auto protected_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
@@ -9090,8 +9093,8 @@ TEST_F(VkLayerTest, InvalidProtectedQueue) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     auto protected_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
@@ -9252,8 +9255,8 @@ TEST_F(VkLayerTest, InvalidProtectedMemory) {
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     auto protected_memory_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
@@ -9430,18 +9433,18 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
     ASSERT_VK_SUCCESS(err);
     vk::BindBufferMemory(device(), buffer, mem, 0);
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
 
-    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vk::GetInstanceProcAddr(instance(), "vkCmdTraceRaysKHR");
+    auto vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vk::GetInstanceProcAddr(instance(), "vkCmdTraceRaysKHR"));
     ASSERT_TRUE(vkCmdTraceRaysKHR != nullptr);
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    auto vkGetBufferDeviceAddressKHR =
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
 
     VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, buffer};
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
@@ -9507,8 +9510,8 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     }
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     if (ray_tracing_features.rayTracingPipelineTraceRaysIndirect == VK_FALSE) {
         printf("%s rayTracingIndirectTraceRays not supported, skipping tests\n", kSkipPrefix);
@@ -9533,20 +9536,20 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     ASSERT_VK_SUCCESS(err);
     vk::BindBufferMemory(device(), buffer, mem, 0);
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
 
-    PFN_vkCmdTraceRaysIndirectKHR vkCmdTraceRaysIndirectKHR =
-        (PFN_vkCmdTraceRaysIndirectKHR)vk::GetInstanceProcAddr(instance(), "vkCmdTraceRaysIndirectKHR");
+    auto vkCmdTraceRaysIndirectKHR =
+        reinterpret_cast<PFN_vkCmdTraceRaysIndirectKHR>(vk::GetInstanceProcAddr(instance(), "vkCmdTraceRaysIndirectKHR"));
     ASSERT_TRUE(vkCmdTraceRaysIndirectKHR != nullptr);
 
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    auto vkGetBufferDeviceAddressKHR =
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
 
     VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, buffer};
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
@@ -9613,17 +9616,16 @@ TEST_F(VkLayerTest, ValidateVkAccelerationStructureVersionInfoKHR) {
 
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     if (ray_tracing_features.rayTracingPipeline == VK_FALSE) {
         printf("%s rayTracing not supported, skipping tests\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
-    PFN_vkGetDeviceAccelerationStructureCompatibilityKHR vkGetDeviceAccelerationStructureCompatibilityKHR =
-        (PFN_vkGetDeviceAccelerationStructureCompatibilityKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetDeviceAccelerationStructureCompatibilityKHR");
+    auto vkGetDeviceAccelerationStructureCompatibilityKHR = reinterpret_cast<PFN_vkGetDeviceAccelerationStructureCompatibilityKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetDeviceAccelerationStructureCompatibilityKHR"));
     ASSERT_TRUE(vkGetDeviceAccelerationStructureCompatibilityKHR != nullptr);
     VkAccelerationStructureVersionInfoKHR valid_version = LvlInitStruct<VkAccelerationStructureVersionInfoKHR>();
     VkAccelerationStructureCompatibilityKHR compatablity;
@@ -9659,12 +9661,12 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
         return;
     }
 
-    PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR =
-        (PFN_vkCmdBuildAccelerationStructuresKHR)vk::GetDeviceProcAddr(device(), "vkCmdBuildAccelerationStructuresKHR");
+    auto vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(
+        vk::GetDeviceProcAddr(device(), "vkCmdBuildAccelerationStructuresKHR"));
     assert(vkCmdBuildAccelerationStructuresKHR != nullptr);
 
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    auto vkGetBufferDeviceAddressKHR =
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
 
     auto vkCmdBuildAccelerationStructuresIndirectKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresIndirectKHR>(
         vk::GetDeviceProcAddr(device(), "vkCmdBuildAccelerationStructuresIndirectKHR"));
@@ -9711,8 +9713,8 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     VkAccelerationStructureGeometryKHR *pGeometry = &valid_geometry_triangles;
 
     VkAccelerationStructureBuildGeometryInfoKHR build_info_khr = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     auto acc_struct_properties = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&acc_struct_properties);
@@ -10089,9 +10091,8 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    auto vkGetPhysicalDeviceExternalBufferPropertiesKHR =
-        (PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceExternalBufferPropertiesKHR");
+    auto vkGetPhysicalDeviceExternalBufferPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceExternalBufferPropertiesKHR"));
 
     // Check for import/export capability
     // export used to feed memory to test import
@@ -10134,10 +10135,10 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkBindBufferMemory2KHR vkBindBufferMemory2Function =
-        (PFN_vkBindBufferMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindBufferMemory2KHR");
-    PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
-        (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+    auto vkBindBufferMemory2Function =
+        reinterpret_cast<PFN_vkBindBufferMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindBufferMemory2KHR"));
+    auto vkBindImageMemory2Function =
+        reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
 
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
@@ -10203,7 +10204,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
 #ifdef _WIN32
     // Export memory to handle
     auto vkGetMemoryWin32HandleKHR =
-        (PFN_vkGetMemoryWin32HandleKHR)vk::GetInstanceProcAddr(instance(), "vkGetMemoryWin32HandleKHR");
+        reinterpret_cast<PFN_vkGetMemoryWin32HandleKHR>(vk::GetInstanceProcAddr(instance(), "vkGetMemoryWin32HandleKHR"));
     ASSERT_TRUE(vkGetMemoryWin32HandleKHR != nullptr);
     VkMemoryGetWin32HandleInfoKHR mghi_buffer = {VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR, nullptr,
                                                  memory_buffer_export.handle(), handle_type};
@@ -10220,7 +10221,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
                                                           handle_type, handle_image};
 #else
     // Export memory to fd
-    auto vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR)vk::GetInstanceProcAddr(instance(), "vkGetMemoryFdKHR");
+    auto vkGetMemoryFdKHR = reinterpret_cast<PFN_vkGetMemoryFdKHR>(vk::GetInstanceProcAddr(instance(), "vkGetMemoryFdKHR"));
     ASSERT_TRUE(vkGetMemoryFdKHR != nullptr);
     VkMemoryGetFdInfoKHR mgfi_buffer = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, nullptr, memory_buffer_export.handle(),
                                         handle_type};
@@ -10326,25 +10327,28 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
     extended_dynamic_state_features.extendedDynamicState = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdSetCullModeEXT = (PFN_vkCmdSetCullModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCullModeEXT");
-    auto vkCmdSetFrontFaceEXT = (PFN_vkCmdSetFrontFaceEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFrontFaceEXT");
-    auto vkCmdSetPrimitiveTopologyEXT =
-        (PFN_vkCmdSetPrimitiveTopologyEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveTopologyEXT");
-    auto vkCmdSetViewportWithCountEXT =
-        (PFN_vkCmdSetViewportWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCountEXT");
+    auto vkCmdSetCullModeEXT =
+        reinterpret_cast<PFN_vkCmdSetCullModeEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCullModeEXT"));
+    auto vkCmdSetFrontFaceEXT =
+        reinterpret_cast<PFN_vkCmdSetFrontFaceEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFrontFaceEXT"));
+    auto vkCmdSetPrimitiveTopologyEXT = reinterpret_cast<PFN_vkCmdSetPrimitiveTopologyEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveTopologyEXT"));
+    auto vkCmdSetViewportWithCountEXT = reinterpret_cast<PFN_vkCmdSetViewportWithCountEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCountEXT"));
     auto vkCmdSetScissorWithCountEXT =
-        (PFN_vkCmdSetScissorWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCountEXT");
+        reinterpret_cast<PFN_vkCmdSetScissorWithCountEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCountEXT"));
     auto vkCmdSetDepthTestEnableEXT =
-        (PFN_vkCmdSetDepthTestEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthTestEnableEXT");
+        reinterpret_cast<PFN_vkCmdSetDepthTestEnableEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthTestEnableEXT"));
     auto vkCmdSetDepthWriteEnableEXT =
-        (PFN_vkCmdSetDepthWriteEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthWriteEnableEXT");
+        reinterpret_cast<PFN_vkCmdSetDepthWriteEnableEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthWriteEnableEXT"));
     auto vkCmdSetDepthCompareOpEXT =
-        (PFN_vkCmdSetDepthCompareOpEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthCompareOpEXT");
-    auto vkCmdSetDepthBoundsTestEnableEXT =
-        (PFN_vkCmdSetDepthBoundsTestEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthBoundsTestEnableEXT");
-    auto vkCmdSetStencilTestEnableEXT =
-        (PFN_vkCmdSetStencilTestEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetStencilTestEnableEXT");
-    auto vkCmdSetStencilOpEXT = (PFN_vkCmdSetStencilOpEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetStencilOpEXT");
+        reinterpret_cast<PFN_vkCmdSetDepthCompareOpEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthCompareOpEXT"));
+    auto vkCmdSetDepthBoundsTestEnableEXT = reinterpret_cast<PFN_vkCmdSetDepthBoundsTestEnableEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthBoundsTestEnableEXT"));
+    auto vkCmdSetStencilTestEnableEXT = reinterpret_cast<PFN_vkCmdSetStencilTestEnableEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetStencilTestEnableEXT"));
+    auto vkCmdSetStencilOpEXT =
+        reinterpret_cast<PFN_vkCmdSetStencilOpEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetStencilOpEXT"));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -10442,20 +10446,20 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdSetPrimitiveTopologyEXT =
-        (PFN_vkCmdSetPrimitiveTopologyEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveTopologyEXT");
-    auto vkCmdSetViewportWithCountEXT =
-        (PFN_vkCmdSetViewportWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCountEXT");
+    auto vkCmdSetPrimitiveTopologyEXT = reinterpret_cast<PFN_vkCmdSetPrimitiveTopologyEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveTopologyEXT"));
+    auto vkCmdSetViewportWithCountEXT = reinterpret_cast<PFN_vkCmdSetViewportWithCountEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCountEXT"));
     auto vkCmdSetScissorWithCountEXT =
-        (PFN_vkCmdSetScissorWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCountEXT");
+        reinterpret_cast<PFN_vkCmdSetScissorWithCountEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCountEXT"));
     auto vkCmdBindVertexBuffers2EXT =
-        (PFN_vkCmdBindVertexBuffers2EXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindVertexBuffers2EXT");
+        reinterpret_cast<PFN_vkCmdBindVertexBuffers2EXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindVertexBuffers2EXT"));
     auto vkCmdSetViewportWithCount =
-        (PFN_vkCmdSetViewportWithCount)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCount");
+        reinterpret_cast<PFN_vkCmdSetViewportWithCount>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCount"));
     auto vkCmdSetScissorWithCount =
-        (PFN_vkCmdSetScissorWithCount)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCount");
+        reinterpret_cast<PFN_vkCmdSetScissorWithCount>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCount"));
     auto vkCmdBindVertexBuffers2 =
-        (PFN_vkCmdBindVertexBuffers2)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindVertexBuffers2");
+        reinterpret_cast<PFN_vkCmdBindVertexBuffers2>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindVertexBuffers2"));
     if (vulkan_13) {
         assert(vkCmdSetViewportWithCount != nullptr);
         assert(vkCmdSetScissorWithCount != nullptr);
@@ -10800,10 +10804,10 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabledNoMultiview) {
     features2.features.multiViewport = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdSetViewportWithCountEXT =
-        (PFN_vkCmdSetViewportWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCountEXT");
+    auto vkCmdSetViewportWithCountEXT = reinterpret_cast<PFN_vkCmdSetViewportWithCountEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCountEXT"));
     auto vkCmdSetScissorWithCountEXT =
-        (PFN_vkCmdSetScissorWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCountEXT");
+        reinterpret_cast<PFN_vkCmdSetScissorWithCountEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCountEXT"));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -10867,8 +10871,8 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateDeviceFeatureCombinations) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
     VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_query_features =
         LvlInitStruct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>();
@@ -11115,8 +11119,8 @@ TEST_F(VkLayerTest, CmdCopyAccelerationStructureToMemoryKHR) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&ray_tracing_features);
@@ -11129,13 +11133,12 @@ TEST_F(VkLayerTest, CmdCopyAccelerationStructureToMemoryKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_struct_features));
 
-    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
+    auto vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
         vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
     assert(vkCreateAccelerationStructureKHR != nullptr);
 
-    PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR =
-        reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkDestroyAccelerationStructureKHR"));
+    auto vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkDestroyAccelerationStructureKHR"));
     assert(vkDestroyAccelerationStructureKHR != nullptr);
 
     constexpr VkDeviceSize buffer_size = 4096;
@@ -11155,9 +11158,8 @@ TEST_F(VkLayerTest, CmdCopyAccelerationStructureToMemoryKHR) {
     as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     as_create_info.deviceAddress = 0;
 
-    PFN_vkCmdCopyAccelerationStructureToMemoryKHR vkCmdCopyAccelerationStructureToMemoryKHR =
-        reinterpret_cast<PFN_vkCmdCopyAccelerationStructureToMemoryKHR>(
-            vk::GetDeviceProcAddr(device(), "vkCmdCopyAccelerationStructureToMemoryKHR"));
+    auto vkCmdCopyAccelerationStructureToMemoryKHR = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureToMemoryKHR>(
+        vk::GetDeviceProcAddr(device(), "vkCmdCopyAccelerationStructureToMemoryKHR"));
     assert(vkCmdCopyAccelerationStructureToMemoryKHR != nullptr);
 
     VkAccelerationStructureKHR as;
@@ -11285,8 +11287,8 @@ TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
@@ -11309,7 +11311,8 @@ TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
     VkSemaphoreSignalInfo semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
     semaphore_signal_info.semaphore = semaphore[0];
     semaphore_signal_info.value = 3;
-    auto vkSignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR");
+    auto vkSignalSemaphoreKHR =
+        reinterpret_cast<PFN_vkSignalSemaphoreKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR"));
 
     semaphore_signal_info.value = 10;
     ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
@@ -11409,12 +11412,12 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Disabled) {
     extended_dynamic_state2_features.extendedDynamicState2 = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdSetRasterizerDiscardEnableEXT =
-        (PFN_vkCmdSetRasterizerDiscardEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetRasterizerDiscardEnableEXT");
+    auto vkCmdSetRasterizerDiscardEnableEXT = reinterpret_cast<PFN_vkCmdSetRasterizerDiscardEnableEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetRasterizerDiscardEnableEXT"));
     auto vkCmdSetDepthBiasEnableEXT =
-        (PFN_vkCmdSetDepthBiasEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthBiasEnableEXT");
-    auto vkCmdSetPrimitiveRestartEnableEXT =
-        (PFN_vkCmdSetPrimitiveRestartEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveRestartEnableEXT");
+        reinterpret_cast<PFN_vkCmdSetDepthBiasEnableEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthBiasEnableEXT"));
+    auto vkCmdSetPrimitiveRestartEnableEXT = reinterpret_cast<PFN_vkCmdSetPrimitiveRestartEnableEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveRestartEnableEXT"));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -11482,8 +11485,8 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsDisabled) {
     extended_dynamic_state2_features.extendedDynamicState2PatchControlPoints = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdSetPatchControlPointsEXT =
-        (PFN_vkCmdSetPatchControlPointsEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPatchControlPointsEXT");
+    auto vkCmdSetPatchControlPointsEXT = reinterpret_cast<PFN_vkCmdSetPatchControlPointsEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPatchControlPointsEXT"));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -11542,7 +11545,8 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpDisabled) {
     extended_dynamic_state2_features.extendedDynamicState2LogicOp = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdSetLogicOpEXT = (PFN_vkCmdSetLogicOpEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetLogicOpEXT");
+    auto vkCmdSetLogicOpEXT =
+        reinterpret_cast<PFN_vkCmdSetLogicOpEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetLogicOpEXT"));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -11680,8 +11684,8 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsEnabled) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    auto vkCmdSetPatchControlPointsEXT =
-        (PFN_vkCmdSetPatchControlPointsEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPatchControlPointsEXT");
+    auto vkCmdSetPatchControlPointsEXT = reinterpret_cast<PFN_vkCmdSetPatchControlPointsEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPatchControlPointsEXT"));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -11830,7 +11834,8 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDisabled) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto vkCmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetVertexInputEXT");
+    auto vkCmdSetVertexInputEXT =
+        reinterpret_cast<PFN_vkCmdSetVertexInputEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetVertexInputEXT"));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -11888,7 +11893,8 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetVertexInputEXT");
+    auto vkCmdSetVertexInputEXT =
+        reinterpret_cast<PFN_vkCmdSetVertexInputEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetVertexInputEXT"));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -12116,7 +12122,8 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetVertexInputEXT");
+    auto vkCmdSetVertexInputEXT =
+        reinterpret_cast<PFN_vkCmdSetVertexInputEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetVertexInputEXT"));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -12246,7 +12253,7 @@ TEST_F(VkLayerTest, WriteTimeStampInvalidQuery) {
     m_errorMonitor->VerifyFound();
     if (sync2) {
         auto vkCmdWriteTimestamp2KHR =
-            (PFN_vkCmdWriteTimestamp2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteTimestamp2KHR");
+            reinterpret_cast<PFN_vkCmdWriteTimestamp2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteTimestamp2KHR"));
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2-query-04903");
         vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool.handle(), 1);
@@ -12515,9 +12522,8 @@ TEST_F(VkLayerTest, ValidateGetPhysicalDeviceVideoFormatProperties) {
     VkPhysicalDeviceVideoFormatInfoKHR video_format_info = LvlInitStruct<VkPhysicalDeviceVideoFormatInfoKHR>();
     video_format_info.pVideoProfiles = &video_profiles;
 
-    PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR vkGetPhysicalDeviceVideoFormatPropertiesKHR =
-        (PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR)vk::GetInstanceProcAddr(instance(),
-                                                                                 "vkGetPhysicalDeviceVideoFormatPropertiesKHR");
+    auto vkGetPhysicalDeviceVideoFormatPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceVideoFormatPropertiesKHR"));
 
     uint32_t count;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-imageUsage-04844");
@@ -12574,8 +12580,9 @@ TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     InitState();
 
-    auto fpQueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR");
-    auto fpQueueSubmit2 = (PFN_vkQueueSubmit2)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2");
+    auto fpQueueSubmit2KHR =
+        reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
+    auto fpQueueSubmit2 = reinterpret_cast<PFN_vkQueueSubmit2>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2"));
 
     auto submit_info = LvlInitStruct<VkSubmitInfo2KHR>();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-synchronization2-03866");
@@ -12669,8 +12676,8 @@ TEST_F(VkLayerTest, InvalidColorWriteEnableFeature) {
 
     VkBool32 color_write_enable[2] = {VK_TRUE, VK_FALSE};
 
-    PFN_vkCmdSetColorWriteEnableEXT vkCmdSetColorWriteEnableEXT =
-        (PFN_vkCmdSetColorWriteEnableEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetColorWriteEnableEXT");
+    auto vkCmdSetColorWriteEnableEXT =
+        reinterpret_cast<PFN_vkCmdSetColorWriteEnableEXT>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetColorWriteEnableEXT"));
 
     CreatePipelineHelper helper(*this);
     helper.InitInfo();
@@ -12713,8 +12720,8 @@ TEST_F(VkLayerTest, InvalidColorWriteEnableAttachmentCount) {
     // need a valid array to index into
     std::vector<VkBool32> color_write_enable(m_device->props.limits.maxColorAttachments + 1, VK_TRUE);
 
-    PFN_vkCmdSetColorWriteEnableEXT vkCmdSetColorWriteEnableEXT =
-        (PFN_vkCmdSetColorWriteEnableEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetColorWriteEnableEXT");
+    auto vkCmdSetColorWriteEnableEXT =
+        reinterpret_cast<PFN_vkCmdSetColorWriteEnableEXT>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetColorWriteEnableEXT"));
 
     CreatePipelineHelper helper(*this);
     helper.InitInfo();
@@ -12772,7 +12779,7 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTRectangleCount) {
     vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
 
     auto fpCmdSetDiscardRectangleEXT =
-        (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
+        reinterpret_cast<PFN_vkCmdSetDiscardRectangleEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT"));
 
     VkRect2D discard_rectangles = {};
     discard_rectangles.offset.x = 0;
@@ -12812,9 +12819,9 @@ TEST_F(VkLayerTest, InvalidCmdEndQueryIndexedEXTIndex) {
     vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
 
     auto fpCmdBeginQueryIndexedEXT =
-        (PFN_vkCmdBeginQueryIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginQueryIndexedEXT");
+        reinterpret_cast<PFN_vkCmdBeginQueryIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginQueryIndexedEXT"));
     auto fpCmdEndQueryIndexedEXT =
-        (PFN_vkCmdEndQueryIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndQueryIndexedEXT");
+        reinterpret_cast<PFN_vkCmdEndQueryIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndQueryIndexedEXT"));
 
     VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
     qpci.queryType = VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT;
@@ -12915,7 +12922,7 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTOffsets) {
     vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
 
     auto fpCmdSetDiscardRectangleEXT =
-        (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
+        reinterpret_cast<PFN_vkCmdSetDiscardRectangleEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT"));
 
     if (discard_rectangle_properties.maxDiscardRectangles == 0) {
         printf("%s Discard rectangles are not supported, skipping test\n", kSkipPrefix);
@@ -13004,7 +13011,7 @@ TEST_F(VkLayerTest, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
     InitState();
 
     auto vkCmdSetDiscardRectangleEXT =
-        (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
+        reinterpret_cast<PFN_vkCmdSetDiscardRectangleEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT"));
 
     VkRect2D discard_rectangles = {};
     discard_rectangles.offset.x = 1;
@@ -13072,8 +13079,8 @@ TEST_F(VkLayerTest, ValidateBeginQueryQueryPoolType) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkCmdBeginQueryIndexedEXT vkCmdBeginQueryIndexedEXT =
-        (PFN_vkCmdBeginQueryIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginQueryIndexedEXT");
+    auto vkCmdBeginQueryIndexedEXT =
+        reinterpret_cast<PFN_vkCmdBeginQueryIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginQueryIndexedEXT"));
 
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryCount = 1;
@@ -13221,7 +13228,7 @@ TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {
     assert(vkCmdCopyAccelerationStructureKHR != nullptr);
 
     auto vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
     assert(vkGetBufferDeviceAddressKHR != nullptr);
 
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
@@ -13521,14 +13528,13 @@ TEST_F(VkLayerTest, TestCmdCopyMemoryToAccelerationStructureKHR) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    auto vkGetBufferDeviceAddressKHR =
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
     assert(vkGetBufferDeviceAddressKHR != nullptr);
-    PFN_vkCmdCopyMemoryToAccelerationStructureKHR vkCmdCopyMemoryToAccelerationStructureKHR =
-        (PFN_vkCmdCopyMemoryToAccelerationStructureKHR)vk::GetInstanceProcAddr(instance(),
-                                                                               "vkCmdCopyMemoryToAccelerationStructureKHR");
+    auto vkCmdCopyMemoryToAccelerationStructureKHR = reinterpret_cast<PFN_vkCmdCopyMemoryToAccelerationStructureKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkCmdCopyMemoryToAccelerationStructureKHR"));
     assert(vkCmdCopyMemoryToAccelerationStructureKHR != nullptr);
-    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
+    auto vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
         vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
     assert(vkCreateAccelerationStructureKHR != nullptr);
 
@@ -13764,8 +13770,8 @@ TEST_F(VkLayerTest, BuildAccelerationStructureKHR) {
 
     m_errorMonitor->ExpectSuccess();
 
-    PFN_vkBuildAccelerationStructuresKHR vkBuildAccelerationStructuresKHR =
-        (PFN_vkBuildAccelerationStructuresKHR)vk::GetInstanceProcAddr(instance(), "vkBuildAccelerationStructuresKHR");
+    auto vkBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkBuildAccelerationStructuresKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkBuildAccelerationStructuresKHR"));
     assert(vkBuildAccelerationStructuresKHR);
 
     VkBufferObj buffer;
@@ -13905,8 +13911,8 @@ TEST_F(VkLayerTest, TestWriteAccelerationStructureMemory) {
     auto vkWriteAccelerationStructuresPropertiesKHR = reinterpret_cast<PFN_vkWriteAccelerationStructuresPropertiesKHR>(
         vk::GetInstanceProcAddr(instance(), "vkWriteAccelerationStructuresPropertiesKHR"));
     assert(vkWriteAccelerationStructuresPropertiesKHR);
-    PFN_vkBuildAccelerationStructuresKHR vkBuildAccelerationStructuresKHR =
-        (PFN_vkBuildAccelerationStructuresKHR)vk::GetInstanceProcAddr(instance(), "vkBuildAccelerationStructuresKHR");
+    auto vkBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkBuildAccelerationStructuresKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkBuildAccelerationStructuresKHR"));
     assert(vkBuildAccelerationStructuresKHR);
 
     VkBufferObj buffer;
@@ -14286,7 +14292,7 @@ TEST_F(VkLayerTest, RayTracingPipelineDeferredOp) {
         vk::GetInstanceProcAddr(instance(), "vkGetDeferredOperationResultKHR"));
     ASSERT_TRUE(vkDeferredOperationJoinKHR != nullptr);
 
-    PFN_vkDestroyDeferredOperationKHR vkDestroyDeferredOperationKHR =
+    auto vkDestroyDeferredOperationKHR =
         reinterpret_cast<PFN_vkDestroyDeferredOperationKHR>(vk::GetInstanceProcAddr(instance(), "vkDestroyDeferredOperationKHR"));
     ASSERT_TRUE(vkDestroyDeferredOperationKHR != nullptr);
 

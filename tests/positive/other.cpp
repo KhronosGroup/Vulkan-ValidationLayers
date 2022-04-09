@@ -266,8 +266,8 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     VkResult err;
@@ -352,8 +352,8 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineNV) {
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     if (!CreateNVRayTracingPipelineHelper::InitDeviceExtensions(*this, m_device_extension_names)) {
@@ -458,7 +458,8 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
-    auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
+    auto fpvkResetQueryPoolEXT =
+        reinterpret_cast<PFN_vkResetQueryPoolEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT"));
 
     m_errorMonitor->ExpectSuccess();
 
@@ -511,7 +512,8 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     m_errorMonitor->ExpectSuccess();
-    auto fpDestroySurface = (PFN_vkCreateValidationCacheEXT)vk::GetDeviceProcAddr(m_device->device(), "vkDestroySurfaceKHR");
+    auto fpDestroySurface =
+        reinterpret_cast<PFN_vkCreateValidationCacheEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkDestroySurfaceKHR"));
     if (fpDestroySurface) {
         m_errorMonitor->SetError("Null was expected!");
     }
@@ -568,8 +570,8 @@ TEST_F(VkPositiveLayerTest, Vulkan12Features) {
 
     VkPhysicalDeviceFeatures2 features2 = {};
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
-    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
-        (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2");
+    auto vkGetPhysicalDeviceFeatures2 =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2 != nullptr);
 
     features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&bda_features);
@@ -610,14 +612,14 @@ TEST_F(VkPositiveLayerTest, Vulkan12Features) {
     VkBufferDeviceAddressInfo bda_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
     bda_info.buffer = buffer;
     auto vkGetBufferDeviceAddress =
-        (PFN_vkGetBufferDeviceAddress)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddress");
+        reinterpret_cast<PFN_vkGetBufferDeviceAddress>(vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddress"));
     ASSERT_TRUE(vkGetBufferDeviceAddress != nullptr);
     vkGetBufferDeviceAddress(m_device->device(), &bda_info);
     m_errorMonitor->VerifyNotFound();
 
     // Also verify that we don't get the KHR extension address without enabling the KHR extension
     auto vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR");
+        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR"));
     if (nullptr != vkGetBufferDeviceAddressKHR) m_errorMonitor->SetError("Didn't receive expected null pointer");
     m_errorMonitor->VerifyNotFound();
     vk::DestroyBuffer(m_device->device(), buffer, nullptr);
