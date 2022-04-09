@@ -50,10 +50,9 @@ TEST_F(VkPositiveLayerTest, ViewportWithCountNoMultiViewport) {
         return;
     }
 
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
         return;
     }
@@ -1157,6 +1156,7 @@ TEST_F(VkPositiveLayerTest, CreatePipeineWithTessellationDomainOrigin) {
 TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
     TEST_DESCRIPTION("Test to validate VK_NV_viewport_array2");
 
+    AddRequiredExtensions(VK_NV_VIEWPORT_ARRAY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     VkPhysicalDeviceFeatures available_features = {};
@@ -1175,9 +1175,7 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
         return;
     }
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_VIEWPORT_ARRAY_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_NV_VIEWPORT_ARRAY_2_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_NV_VIEWPORT_ARRAY_2_EXTENSION_NAME);
         return;
     }
@@ -1389,11 +1387,10 @@ TEST_F(VkPositiveLayerTest, CreateSurface) {
 TEST_F(VkPositiveLayerTest, SampleMaskOverrideCoverageNV) {
     TEST_DESCRIPTION("Test to validate VK_NV_sample_mask_override_coverage");
 
+    AddRequiredExtensions(VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME);
         return;
     }
@@ -1716,6 +1713,7 @@ TEST_F(VkPositiveLayerTest, SubpassWithReadOnlyLayoutWithoutDependency) {
 TEST_F(VkPositiveLayerTest, GeometryShaderPassthroughNV) {
     TEST_DESCRIPTION("Test to validate VK_NV_geometry_shader_passthrough");
 
+    AddRequiredExtensions(VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     VkPhysicalDeviceFeatures available_features = {};
@@ -1726,9 +1724,7 @@ TEST_F(VkPositiveLayerTest, GeometryShaderPassthroughNV) {
         return;
     }
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME);
         return;
     }
@@ -1822,13 +1818,13 @@ TEST_F(VkPositiveLayerTest, PipelineStageConditionalRendering) {
     }
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
+    AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME)) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix,
                VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
 
     auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
         vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
@@ -2411,10 +2407,9 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt8) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
         return;
     }
@@ -2688,13 +2683,12 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt64) {
 TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
     TEST_DESCRIPTION("Test that separate depth stencil layouts are tracked correctly.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
                VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
         return;
@@ -3195,6 +3189,7 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("%s test requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
@@ -3202,9 +3197,7 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
     }
 
     // The issue with revision 4 of this extension should not be an issue with the tests
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
         return;
     }
@@ -3652,11 +3645,10 @@ TEST_F(VkPositiveLayerTest, ReadShaderClock) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
+    AddRequiredExtensions(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_CLOCK_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
         return;
     }
@@ -4621,11 +4613,10 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
     TEST_DESCRIPTION("Try destroying a swapchain which has multiple images");
 
     if (!AddSurfaceInstanceExtension()) return;
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     // Check for VK_KHR_get_memory_requirements2 extension
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         return;
     }
@@ -4858,6 +4849,7 @@ TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
     TEST_DESCRIPTION("Create image and imageView using VK_EXT_image_drm_format_modifier");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);  // for extension dependencies
+    AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kMockICD)) {
@@ -4870,12 +4862,11 @@ TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
         return;
     }
 
-    if (!DeviceExtensionSupported(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME)) {
-        printf("%s VK_EXT_image_drm_format_modifier is not supported but required. Skipping\n", kSkipPrefix);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s is not supported but required. Skipping\n", kSkipPrefix, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
         return;
     }
 
-    m_device_extension_names.push_back(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // we just hope that one of these formats supports modifiers
@@ -5740,11 +5731,10 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicInt64) {
         return;
     }
 
+    AddRequiredExtensions(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
         return;
     }
@@ -5918,6 +5908,7 @@ TEST_F(VkPositiveLayerTest, TestDynamicVertexInput) {
     TEST_DESCRIPTION("Test using dynamic vertex input and not setting pVertexInputState in the graphics pipeline create info");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -5925,9 +5916,7 @@ TEST_F(VkPositiveLayerTest, TestDynamicVertexInput) {
         return;
     }
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
         return;
     }
@@ -5962,6 +5951,7 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXT) {
     TEST_DESCRIPTION("Test CmdSetVertexInputEXT");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -5969,9 +5959,7 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXT) {
         return;
     }
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
         return;
     }
@@ -6026,8 +6014,9 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXT) {
 
 TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXTStride) {
     TEST_DESCRIPTION("Test CmdSetVertexInputEXT");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -6035,9 +6024,7 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXTStride) {
         return;
     }
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
         return;
     }

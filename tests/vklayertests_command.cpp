@@ -5402,12 +5402,11 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
 TEST_F(VkLayerTest, SetDynViewportParamMaintenance1Tests) {
     TEST_DESCRIPTION("Verify errors are detected on misuse of SetViewport with a negative viewport extension enabled.");
 
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    } else {
-        printf("%s VK_KHR_maintenance1 extension not supported -- skipping test\n", kSkipPrefix);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not supported -- skipping test\n", kSkipPrefix, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -5569,10 +5568,9 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
         return;
     }
 
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
         return;
     }
@@ -5694,10 +5692,9 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdBufferOffsetUnaligned) {
         return;
     }
 
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
         return;
     }
@@ -5852,6 +5849,7 @@ TEST_F(VkLayerTest, SetDynScissorParamMultiviewportTests) {
 TEST_F(VkLayerTest, MultiDrawTests) {
     TEST_DESCRIPTION("Test validation of multi_draw extension");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
@@ -5865,10 +5863,8 @@ TEST_F(VkLayerTest, MultiDrawTests) {
         printf("%s Test requires (unsupported) multiDraw, skipping\n", kSkipPrefix);
         return;
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_MULTI_DRAW_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-    } else {
-        printf("%s VK_EXT_multi_draw extension not supported, skipping test\n", kSkipPrefix);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix, VK_EXT_MULTI_DRAW_EXTENSION_NAME);
         return;
     }
     auto multi_draw_properties = LvlInitStruct<VkPhysicalDeviceMultiDrawPropertiesEXT>();
@@ -5951,15 +5947,14 @@ TEST_F(VkLayerTest, MultiDrawTests) {
 TEST_F(VkLayerTest, MultiDrawFeatures) {
     TEST_DESCRIPTION("Test validation of multi draw feature enabled");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
         return;
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_MULTI_DRAW_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-    } else {
-        printf("%s VK_EXT_multi_draw extension not supported, skipping test\n", kSkipPrefix);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix, VK_EXT_MULTI_DRAW_EXTENSION_NAME);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -6087,12 +6082,11 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    } else {
-        printf("%s VK_EXT_transform_feedback extension not supported, skipping test\n", kSkipPrefix);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
         return;
     }
 
@@ -6180,11 +6174,10 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
 TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirectCountKHR");
 
+    AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    } else {
-        printf("             VK_KHR_draw_indirect_count Extension not supported, skipping test\n");
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -6286,11 +6279,10 @@ TEST_F(VkLayerTest, DrawIndirectCountKHR) {
 TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndexedIndirectCountKHR");
 
+    AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    } else {
-        printf("             VK_KHR_draw_indirect_count Extension not supported, skipping test\n");
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());

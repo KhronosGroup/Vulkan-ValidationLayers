@@ -10533,6 +10533,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageRetired) {
         return;
     }
 
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -10540,10 +10541,8 @@ TEST_F(VkLayerTest, SwapchainAcquireImageRetired) {
         return;
     }
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    } else if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s vkAcquireNextImage2KHR not supported, skipping test\n", kSkipPrefix);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
         return;
     }
 
@@ -10676,6 +10675,7 @@ TEST_F(VkLayerTest, DepthStencilResolveAttachmentInvalidFormat) {
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
+    AddRequiredExtensions(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     if (!rp2Supported) {
@@ -10683,12 +10683,11 @@ TEST_F(VkLayerTest, DepthStencilResolveAttachmentInvalidFormat) {
         return;
     }
 
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix,
                VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());

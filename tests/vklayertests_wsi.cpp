@@ -848,12 +848,11 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     }
 
     if (!AddSurfaceInstanceExtension()) return;
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (extension_dependency_satisfied && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    } else if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s vkAcquireNextImage2KHR not supported, skipping test\n", kSkipPrefix);
+    if (!extension_dependency_satisfied || !AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
         return;
     }
 
@@ -1095,10 +1094,9 @@ TEST_F(VkLayerTest, SwapchainMinImageCountShared) {
         return;
     }
 
+    AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
         return;
     }
@@ -1254,10 +1252,9 @@ TEST_F(VkLayerTest, SwapchainInvalidUsageShared) {
         return;
     }
 
+    AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
-    } else {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
         return;
     }
@@ -1720,13 +1717,13 @@ TEST_F(VkLayerTest, DeviceGroupSubmitInfoSemaphoreCount) {
         return;
     }
     m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
 
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
@@ -1804,6 +1801,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageWithSignaledSemaphore) {
         return;
     }
 
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -1811,9 +1809,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageWithSignaledSemaphore) {
         return;
     }
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    } else if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s vkAcquireNextImage2KHR not supported, skipping test\n", kSkipPrefix);
         return;
     }
@@ -1861,16 +1857,16 @@ TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
         printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
         return;
     }
+    AddRequiredExtensions(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AddSwapchainDeviceExtension()) {
         printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME)) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
         printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);

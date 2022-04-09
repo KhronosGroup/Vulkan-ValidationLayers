@@ -249,11 +249,10 @@ TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
 
 TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    } else {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
         return;
     }
 
@@ -552,11 +551,10 @@ TEST_F(VkSyncValTest, SyncCopyOptimalImageHazards) {
 
 TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    } else {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
         return;
     }
 

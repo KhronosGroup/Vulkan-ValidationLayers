@@ -70,14 +70,13 @@ TEST_F(VkPortabilitySubsetTest, ValidatePortabilityCreateDevice) {
 TEST_F(VkPortabilitySubsetTest, PortabilityCreateEvent) {
     TEST_DESCRIPTION("Portability: CreateEvent when not supported");
 
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
 
-    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    if (!portability_supported) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
@@ -96,14 +95,13 @@ TEST_F(VkPortabilitySubsetTest, PortabilityCreateEvent) {
 TEST_F(VkPortabilitySubsetTest, CreateImage) {
     TEST_DESCRIPTION("Portability: CreateImage - VUIDs 04459, 04460");
 
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
 
-    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    if (!portability_supported) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
@@ -224,14 +222,13 @@ TEST_F(VkPortabilitySubsetTest, CreateImageView) {
 TEST_F(VkPortabilitySubsetTest, CreateSampler) {
     TEST_DESCRIPTION("Portability: CreateSampler - VUID 04467");
 
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
 
-    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    if (!portability_supported) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
@@ -249,14 +246,13 @@ TEST_F(VkPortabilitySubsetTest, CreateSampler) {
 TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesTriangleFans) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04452");
 
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
 
-    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    if (!portability_supported) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
@@ -285,14 +281,13 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesTriangleFans) {
 TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexInputStride) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04456");
 
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
 
-    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    if (!portability_supported) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
@@ -337,14 +332,13 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexInputStride) {
 TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexAttributes) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04457");
 
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
 
-    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    if (!portability_supported) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
@@ -385,14 +379,13 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexAttributes) {
 TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesRasterizationState) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04458");
 
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
 
-    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    if (!portability_supported) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
@@ -438,14 +431,13 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesRasterizationState) {
 TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesDepthStencilState) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04453");
 
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
 
-    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    if (!portability_supported) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
@@ -487,14 +479,13 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesDepthStencilState) {
 TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUIDs 04454, 04455");
 
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
 
-    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    if (!portability_supported) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
@@ -541,14 +532,13 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState
 TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     TEST_DESCRIPTION("Portability: UpdateDescriptorSets - VUID 04450");
 
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
 
-    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    if (!portability_supported) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
@@ -598,14 +588,13 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
 TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
     TEST_DESCRIPTION("Attempt to use shader features that are not supported via portability");
 
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
 
-    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    if (!portability_supported) {
+    if (!AreRequestedExtensionsEnabled()) {
         printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);

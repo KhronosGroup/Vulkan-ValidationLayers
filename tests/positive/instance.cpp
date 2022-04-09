@@ -67,12 +67,12 @@ TEST_F(VkPositiveLayerTest, NullFunctionPointer) {
     TEST_DESCRIPTION("On 1_0 instance , call GetDeviceProcAddr on promoted 1_1 device-level entrypoint");
     SetTargetApiVersion(VK_API_VERSION_1_0);
 
+    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, "VK_KHR_get_memory_requirements2")) {
-        m_device_extension_names.push_back("VK_KHR_get_memory_requirements2");
-    } else {
-        printf("%s VK_KHR_get_memory_reqirements2 extension not supported, skipping NullFunctionPointer test\n", kSkipPrefix);
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not supported, skipping NullFunctionPointer test\n", kSkipPrefix,
+               VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
         return;
     }
 
