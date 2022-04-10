@@ -295,7 +295,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // Validation functions run when secondary CB is executed in primary
     std::vector<std::function<bool(const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *primary, const FRAMEBUFFER_STATE *)>>
         cmd_execute_commands_functions;
-    std::vector<std::function<bool(CMD_BUFFER_STATE &cb, bool do_validate, EventToStageMap *localEventToStageMap)>> eventUpdates;
+    std::vector<std::function<bool(CMD_BUFFER_STATE &cb, bool do_validate, EventToStageMap *localEventToStageMap)>> setEventUpdates;
+    std::vector<std::function<bool(CMD_BUFFER_STATE &cb, bool do_validate, EventToStageMap *localEventToStageMap)>> waitEventUpdates;
     std::vector<std::function<bool(const ValidationStateTracker *device_data, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                    uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
         queryUpdates;

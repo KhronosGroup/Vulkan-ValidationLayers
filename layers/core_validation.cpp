@@ -4188,6 +4188,14 @@ struct CommandBufferSubmitState {
 
     CommandBufferSubmitState(const CoreChecks *c, const char *func, const QUEUE_STATE *q) : core(c), queue_state(q) {}
 
+    bool ExecuteSetEventUpdates(const CMD_BUFFER_STATE &cb_node) {
+        bool skip = false;
+        for (auto &function : cb_node.setEventUpdates) {
+            skip |= function(const_cast<CMD_BUFFER_STATE &>(cb_node), /*do_validate*/ true, &local_event_to_stage_map);
+        }
+        return skip;
+    }
+
     bool Validate(const core_error::Location &loc, const CMD_BUFFER_STATE &cb_node, uint32_t perf_pass) {
         bool skip = false;
         skip |= core->ValidateCmdBufImageLayouts(loc, &cb_node, overlay_image_layout_map);
@@ -4234,7 +4242,7 @@ struct CommandBufferSubmitState {
         for (auto &function : cb_node.queue_submit_functions) {
             skip |= function(*core, *queue_state, cb_node);
         }
-        for (auto &function : cb_node.eventUpdates) {
+        for (auto &function : cb_node.waitEventUpdates) {
             skip |= function(const_cast<CMD_BUFFER_STATE &>(cb_node), /*do_validate*/ true, &local_event_to_stage_map);
         }
         VkQueryPool first_perf_query_pool = VK_NULL_HANDLE;
@@ -4265,6 +4273,12 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         Location loc(Func::vkQueueSubmit, Struct::VkSubmitInfo, Field::pSubmits, submit_idx);
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            auto cb_state = GetRead<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]);
+            if (cb_state) {
+                skip |= cb_submit_state.ExecuteSetEventUpdates(*cb_state);
+            }
+        }
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             auto cb_state = GetRead<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]);
             if (cb_state) {
@@ -10046,7 +10060,7 @@ void CORE_CMD_BUFFER_STATE::RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCo
     auto first_event_index = events.size();
     CMD_BUFFER_STATE::RecordWaitEvents(cmd_type, eventCount, pEvents, srcStageMask);
     auto event_added_count = events.size() - first_event_index;
-    eventUpdates.emplace_back([event_added_count, first_event_index, srcStageMask](CMD_BUFFER_STATE &cb, bool do_validate,
+    waitEventUpdates.emplace_back([event_added_count, first_event_index, srcStageMask](CMD_BUFFER_STATE &cb, bool do_validate,
                                                                                    EventToStageMap *localEventToStageMap) {
         if (!do_validate) return false;
         return CoreChecks::ValidateEventStageMask(cb.dev_data, &cb, event_added_count, first_event_index, srcStageMask,

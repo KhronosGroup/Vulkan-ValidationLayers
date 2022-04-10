@@ -332,7 +332,8 @@ void CMD_BUFFER_STATE::Reset() {
     queue_submit_functions.clear();
     queue_submit_functions_after_render_pass.clear();
     cmd_execute_commands_functions.clear();
-    eventUpdates.clear();
+    setEventUpdates.clear();
+    waitEventUpdates.clear();
     queryUpdates.clear();
 
     // Remove object bindings
@@ -1244,7 +1245,7 @@ void CMD_BUFFER_STATE::RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipeli
     if (!waitedEvents.count(event)) {
         writeEventsBeforeWait.push_back(event);
     }
-    eventUpdates.emplace_back([event, stageMask](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap *localEventToStageMap) {
+    setEventUpdates.emplace_back([event, stageMask](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap *localEventToStageMap) {
         return SetEventStageMask(event, stageMask, localEventToStageMap);
     });
 }
@@ -1262,7 +1263,7 @@ void CMD_BUFFER_STATE::RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipe
         writeEventsBeforeWait.push_back(event);
     }
 
-    eventUpdates.emplace_back([event](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap *localEventToStageMap) {
+    setEventUpdates.emplace_back([event](CMD_BUFFER_STATE &, bool do_validate, EventToStageMap *localEventToStageMap) {
         return SetEventStageMask(event, VkPipelineStageFlags2KHR(0), localEventToStageMap);
     });
 }
@@ -1344,7 +1345,10 @@ void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
         query_pool_state->SetQueryState(query_state_pair.first.query, query_state_pair.first.perf_pass, query_state_pair.second);
     }
 
-    for (const auto &function : eventUpdates) {
+    for (const auto &function : setEventUpdates) {
+        function(*this, /*do_validate*/ false, &local_event_to_stage_map);
+    }
+    for (const auto &function : waitEventUpdates) {
         function(*this, /*do_validate*/ false, &local_event_to_stage_map);
     }
 
