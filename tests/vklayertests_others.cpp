@@ -14372,3 +14372,39 @@ TEST_F(VkLayerTest, RayTracingPipelineDeferredOp) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkLayerTest, TestSubmittingCommandBufferWithEvents) {
+    TEST_DESCRIPTION("Submit one command buffer that wait on event and another that sets it.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkCommandBufferObj command_buffer_1(m_device, m_commandPool);
+    VkCommandBufferObj command_buffer_2(m_device, m_commandPool);
+
+    vk_testing::Event event;
+    VkEventCreateInfo event_ci = LvlInitStruct<VkEventCreateInfo>();
+    event.init(*m_device, event_ci);
+    VkEvent event_handle = event.handle();
+
+    command_buffer_1.begin();
+    vk::CmdSetEvent(command_buffer_1.handle(), event_handle, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+    command_buffer_1.end();
+
+    command_buffer_2.begin();
+    vk::CmdWaitEvents(command_buffer_2.handle(), 1, &event_handle, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+                      VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+                      0, nullptr, 0, nullptr, 0, nullptr);
+    command_buffer_2.end();
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 2;
+    VkCommandBuffer handles[] = {command_buffer_2.handle(), command_buffer_1.handle()};
+    submit_info.pCommandBuffers = handles;
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    vk::QueueWaitIdle(m_device->m_queue);
+    m_errorMonitor->VerifyNotFound();
+}
