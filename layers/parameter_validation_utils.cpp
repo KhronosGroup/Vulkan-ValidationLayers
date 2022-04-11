@@ -1817,6 +1817,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                     i, string_VkFormat(rendering_struct->stencilAttachmentFormat));
                             }
                         }
+
+                        if (rendering_struct->colorAttachmentCount != 0) {
+                            skip |= validate_ranged_enum_array(
+                                "VkPipelineRenderingCreateInfo", "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579",
+                                "colorAttachmentCount", "pColorAttachmentFormats", "VkFormat", AllVkFormatEnums,
+                                rendering_struct->colorAttachmentCount, rendering_struct->pColorAttachmentFormats, true, true);
+                        }
                     }
                 }
             }

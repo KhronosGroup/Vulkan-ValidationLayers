@@ -767,6 +767,28 @@ class StatelessValidation : public ValidationObject {
         return skip_call;
     }
 
+    template <typename T>
+    bool validate_ranged_enum_array(const char *apiName, const char *vuid, const ParameterName &countName,
+                                    const ParameterName &arrayName, const char *enumName, const std::vector<T> &valid_values,
+                                    uint32_t count, const T *array, bool countRequired, bool arrayRequired) const {
+        bool skip_call = false;
+
+        if ((count == 0) || (array == nullptr)) {
+            skip_call |= validate_array(apiName, countName, arrayName, count, &array, countRequired, arrayRequired, vuid, vuid);
+        } else {
+            for (uint32_t i = 0; i < count; ++i) {
+                if (std::find(valid_values.begin(), valid_values.end(), array[i]) == valid_values.end()) {
+                    skip_call |= LogError(device, vuid,
+                                          "%s: value of %s[%d] (%d) does not fall within the begin..end range of the core %s "
+                                          "enumeration tokens and is not an extension added token",
+                                          apiName, arrayName.get_name().c_str(), i, array[i], enumName);
+                }
+            }
+        }
+
+        return skip_call;
+    }
+
     /**
      * Verify that a reserved VkFlags value is zero.
      *
