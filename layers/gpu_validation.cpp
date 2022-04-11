@@ -874,15 +874,15 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
     cb_state->as_validation_buffers.emplace_back(std::move(as_validation_buffer_info));
 }
 
-void GpuAssisted::ProcessAccelerationStructureBuildValidationBuffer(VkQueue queue, gpuav_state::CommandBuffer *cb_node) {
-    if (cb_node == nullptr || !cb_node->hasBuildAccelerationStructureCmd) {
+void gpuav_state::CommandBuffer::ProcessAccelerationStructure(VkQueue queue) {
+    if (!hasBuildAccelerationStructureCmd) {
         return;
     }
-
-    for (const auto &as_validation_buffer_info : cb_node->as_validation_buffers) {
+    auto *device_state = static_cast<GpuAssisted *>(dev_data);
+    for (const auto &as_validation_buffer_info : as_validation_buffers) {
         GpuAccelerationStructureBuildValidationBuffer *mapped_validation_buffer = nullptr;
 
-        VkResult result = vmaMapMemory(vmaAllocator, as_validation_buffer_info.validation_buffer_allocation,
+        VkResult result = vmaMapMemory(device_state->vmaAllocator, as_validation_buffer_info.validation_buffer_allocation,
                                        reinterpret_cast<void **>(&mapped_validation_buffer));
         if (result == VK_SUCCESS) {
             if (mapped_validation_buffer->invalid_handle_found > 0) {
@@ -890,12 +890,13 @@ void GpuAssisted::ProcessAccelerationStructureBuildValidationBuffer(VkQueue queu
                 reinterpret_cast<uint32_t *>(&invalid_handle)[0] = mapped_validation_buffer->invalid_handle_bits_0;
                 reinterpret_cast<uint32_t *>(&invalid_handle)[1] = mapped_validation_buffer->invalid_handle_bits_1;
 
-                LogError(as_validation_buffer_info.acceleration_structure, "UNASSIGNED-AccelerationStructure",
-                         "Attempted to build top level acceleration structure using invalid bottom level acceleration structure "
-                         "handle (%" PRIu64 ")",
-                         invalid_handle);
+                device_state->LogError(
+                    as_validation_buffer_info.acceleration_structure, "UNASSIGNED-AccelerationStructure",
+                    "Attempted to build top level acceleration structure using invalid bottom level acceleration structure "
+                    "handle (%" PRIu64 ")",
+                    invalid_handle);
             }
-            vmaUnmapMemory(vmaAllocator, as_validation_buffer_info.validation_buffer_allocation);
+            vmaUnmapMemory(device_state->vmaAllocator, as_validation_buffer_info.validation_buffer_allocation);
         }
     }
 }
@@ -1265,16 +1266,16 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void GpuAssisted::ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_base) {
-    auto *cb_node = static_cast<gpuav_state::CommandBuffer *>(cb_base);
-    if (cb_node && (cb_node->hasDrawCmd || cb_node->hasTraceRaysCmd || cb_node->hasDispatchCmd)) {
-        auto &gpu_buffer_list = cb_node->gpuav_buffer_list;
+void gpuav_state::CommandBuffer::Process(VkQueue queue) {
+    auto *device_state = static_cast<GpuAssisted *>(dev_data);
+    if (hasDrawCmd || hasTraceRaysCmd || hasDispatchCmd) {
+        auto &gpu_buffer_list = gpuav_buffer_list;
         uint32_t draw_index = 0;
         uint32_t compute_index = 0;
         uint32_t ray_trace_index = 0;
 
         for (auto &buffer_info : gpu_buffer_list) {
-            char *pData;
+            char *data;
 
             uint32_t operation_index = 0;
             if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
@@ -1287,10 +1288,10 @@ void GpuAssisted::ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *
                 assert(false);
             }
 
-            VkResult result = vmaMapMemory(vmaAllocator, buffer_info.output_mem_block.allocation, (void **)&pData);
+            VkResult result = vmaMapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation, (void **)&data);
             if (result == VK_SUCCESS) {
-                AnalyzeAndGenerateMessages(cb_node->commandBuffer(), queue, buffer_info, operation_index, (uint32_t *)pData);
-                vmaUnmapMemory(vmaAllocator, buffer_info.output_mem_block.allocation);
+                device_state->AnalyzeAndGenerateMessages(commandBuffer(), queue, buffer_info, operation_index, (uint32_t *)data);
+                vmaUnmapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation);
             }
 
             if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
@@ -1304,6 +1305,7 @@ void GpuAssisted::ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *
             }
         }
     }
+    ProcessAccelerationStructure(queue);
 }
 
 void GpuAssisted::SetDescriptorInitialized(uint32_t *pData, uint32_t index, const cvdescriptorset::Descriptor *descriptor) {
@@ -1392,33 +1394,6 @@ void GpuAssisted::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount,
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
             PreRecordCommandBuffer(submit->pCommandBufferInfos[i].commandBuffer);
         }
-    }
-}
-
-bool GpuAssisted::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
-    bool buffers_present = false;
-    auto cb_node = Get<gpuav_state::CommandBuffer>(command_buffer);
-
-    if (cb_node->gpuav_buffer_list.size() || cb_node->hasBuildAccelerationStructureCmd) {
-        buffers_present = true;
-    }
-    for (const auto *secondary : cb_node->linkedCommandBuffers) {
-        auto secondary_cmd_buffer = static_cast<const gpuav_state::CommandBuffer *>(secondary);
-        if (secondary_cmd_buffer->gpuav_buffer_list.size() || cb_node->hasBuildAccelerationStructureCmd) {
-            buffers_present = true;
-        }
-    }
-    return buffers_present;
-}
-
-void GpuAssisted::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) {
-    auto cb_node = Get<gpuav_state::CommandBuffer>(command_buffer);
-
-    ProcessInstrumentationBuffer(queue, cb_node.get());
-    ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node.get());
-    for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
-        ProcessInstrumentationBuffer(queue, static_cast<gpuav_state::CommandBuffer *>(secondary_cmd_buffer));
-        ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node.get());
     }
 }
 
@@ -2248,7 +2223,7 @@ std::shared_ptr<CMD_BUFFER_STATE> GpuAssisted::CreateCmdBufferState(VkCommandBuf
 
 gpuav_state::CommandBuffer::CommandBuffer(GpuAssisted *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                                           const COMMAND_POOL_STATE *pool)
-    : CMD_BUFFER_STATE(ga, cb, pCreateInfo, pool) {}
+    : gpu_utils_state::CommandBuffer(ga, cb, pCreateInfo, pool) {}
 
 void gpuav_state::CommandBuffer::Reset() {
     CMD_BUFFER_STATE::Reset();

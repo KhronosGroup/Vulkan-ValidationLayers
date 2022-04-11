@@ -62,8 +62,18 @@ class Queue : public QUEUE_STATE {
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
 };
+
+class CommandBuffer : public CMD_BUFFER_STATE {
+  public:
+    CommandBuffer(GpuAssistedBase *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                  const COMMAND_POOL_STATE *pool);
+
+    virtual bool NeedsProcessing() const = 0;
+    virtual void Process(VkQueue queue) = 0;
+};
 }  // namespace gpu_utils_state
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpu_utils_state::Queue, QUEUE_STATE);
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_utils_state::CommandBuffer, CMD_BUFFER_STATE);
 
 VkResult UtilInitializeVma(VkPhysicalDevice physical_device, VkDevice device, VmaAllocator *pAllocator);
 
@@ -144,8 +154,8 @@ class GpuAssistedBase : public ValidationStateTracker {
     }
 
   protected:
-    virtual bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) = 0;
-    virtual void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) = 0;
+    bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) const;
+    void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer);
 
     void SubmitBarrier(VkQueue queue) {
         auto queue_state = Get<gpu_utils_state::Queue>(queue);

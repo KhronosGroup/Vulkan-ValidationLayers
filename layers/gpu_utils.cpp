@@ -221,6 +221,10 @@ VkResult UtilInitializeVma(VkPhysicalDevice physical_device, VkDevice device, Vm
     return vmaCreateAllocator(&allocator_info, pAllocator);
 }
 
+gpu_utils_state::CommandBuffer::CommandBuffer(GpuAssistedBase *ga, VkCommandBuffer cb,
+                                              const VkCommandBufferAllocateInfo *pCreateInfo, const COMMAND_POOL_STATE *pool)
+    : CMD_BUFFER_STATE(ga, cb, pCreateInfo, pool) {}
+
 void GpuAssistedBase::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, void *modified_ci) {
     ValidationStateTracker::PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, modified_ci);
@@ -394,6 +398,30 @@ void gpu_utils_state::Queue::SubmitBarrier() {
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &barrier_command_buffer_;
         DispatchQueueSubmit(QUEUE_STATE::Queue(), 1, &submit_info, VK_NULL_HANDLE);
+    }
+}
+
+bool GpuAssistedBase::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) const {
+    auto cb_node = Get<gpu_utils_state::CommandBuffer>(command_buffer);
+    if (cb_node->NeedsProcessing()) {
+        return true;
+    }
+    for (const auto *secondary_cb : cb_node->linkedCommandBuffers) {
+        auto secondary_cb_node = static_cast<const gpu_utils_state::CommandBuffer *>(secondary_cb);
+        if (secondary_cb_node->NeedsProcessing()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void GpuAssistedBase::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) {
+    auto cb_node = Get<gpu_utils_state::CommandBuffer>(command_buffer);
+
+    cb_node->Process(queue);
+    for (auto *secondary_cmd_base : cb_node->linkedCommandBuffers) {
+        auto *secondary_cb_node = static_cast<gpu_utils_state::CommandBuffer *>(secondary_cmd_base);
+        secondary_cb_node->Process(queue);
     }
 }
 

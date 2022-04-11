@@ -116,7 +116,7 @@ struct GpuAssistedCmdDrawIndirectState {
 };
 
 namespace gpuav_state {
-class CommandBuffer : public CMD_BUFFER_STATE {
+class CommandBuffer : public gpu_utils_state::CommandBuffer {
   public:
     std::vector<GpuAssistedBufferInfo> gpuav_buffer_list;
     std::vector<GpuAssistedAccelerationStructureBuildValidationBufferInfo> as_validation_buffers;
@@ -124,7 +124,13 @@ class CommandBuffer : public CMD_BUFFER_STATE {
     CommandBuffer(GpuAssisted* ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
                   const COMMAND_POOL_STATE* pool);
 
+    bool NeedsProcessing() const final { return !gpuav_buffer_list.empty() || hasBuildAccelerationStructureCmd; }
+
+    void Process(VkQueue queue) final;
     void Reset() final;
+
+  private:
+    void ProcessAccelerationStructure(VkQueue queue);
 };
 };  // namespace gpuav_state
 
@@ -171,7 +177,6 @@ class GpuAssisted : public GpuAssistedBase {
                                          void* csm_state_data) override;
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, GpuAssistedBufferInfo &buffer_info,
         uint32_t operation_index, uint32_t* const debug_output_buffer);
-    void ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE* cb_node);
 
     void SetDescriptorInitialized(uint32_t* pData, uint32_t index, const cvdescriptorset::Descriptor* descriptor);
     void UpdateInstrumentationBuffer(gpuav_state::CommandBuffer* cb_node);
@@ -272,10 +277,6 @@ class GpuAssisted : public GpuAssistedBase {
 
     void DestroyBuffer(GpuAssistedBufferInfo& buffer_info);
     void DestroyBuffer(GpuAssistedAccelerationStructureBuildValidationBufferInfo& buffer_info);
-
-  protected:
-    bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) override;
-    void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) override;
 
   private:
     void PreRecordCommandBuffer(VkCommandBuffer command_buffer);
