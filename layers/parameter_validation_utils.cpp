@@ -3807,16 +3807,24 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
         }
 
         // If compareEnable is VK_TRUE, compareOp must be a valid VkCompareOp value
+        const auto *sampler_reduction = LvlFindInChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
         if (pCreateInfo->compareEnable == VK_TRUE) {
             skip |= validate_ranged_enum("vkCreateSampler", "pCreateInfo->compareOp", "VkCompareOp", AllVkCompareOpEnums,
                                          pCreateInfo->compareOp, "VUID-VkSamplerCreateInfo-compareEnable-01080");
-            const auto *sampler_reduction = LvlFindInChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
             if (sampler_reduction != nullptr) {
                 if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
                     skip |= LogError(
                         device, "VUID-VkSamplerCreateInfo-compareEnable-01423",
                         "copmareEnable is true so the sampler reduction mode must be VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE.");
                 }
+            }
+        }
+        if (sampler_reduction && sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
+            if (!device_extensions.vk_ext_sampler_filter_minmax) {
+                skip |= LogError(device, "VUID-VkSamplerCreateInfo-pNext-06726",
+                                 "sampler reduction mode is %s, but extension %s is not enabled.",
+                                 string_VkSamplerReductionMode(sampler_reduction->reductionMode),
+                                 VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
             }
         }
 
