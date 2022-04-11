@@ -58,13 +58,16 @@ struct DPFOutputRecord {
 };
 
 namespace debug_printf_state {
-class CommandBuffer : public CMD_BUFFER_STATE {
+class CommandBuffer : public gpu_utils_state::CommandBuffer {
   public:
     std::vector<DPFBufferInfo> buffer_infos;
 
     CommandBuffer(DebugPrintf* dp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                   const COMMAND_POOL_STATE* pool);
 
+    bool NeedsProcessing() const final { return !buffer_infos.empty(); }
+
+    void Process(VkQueue queue) final;
     void Reset() final;
 };
 };  // namespace debug_printf_state
@@ -99,8 +102,6 @@ class DebugPrintf : public GpuAssistedBase {
     std::string FindFormatString(std::vector<uint32_t> pgm, uint32_t string_id);
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, DPFBufferInfo &buffer_info,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer);
-    void ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE* cb_node);
-
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                               uint32_t firstInstance) override;
     void PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
@@ -188,9 +189,6 @@ class DebugPrintf : public GpuAssistedBase {
     void DestroyBuffer(DPFBufferInfo& buffer_info);
 
   private:
-    bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) override;
-    void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) override;
-
     bool verbose = false;
     bool use_stdout = false;
 };
