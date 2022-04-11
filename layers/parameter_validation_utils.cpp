@@ -1795,12 +1795,27 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             skip |= validate_ranged_enum("VkPipelineRenderingCreateInfo", "stencilAttachmentFormat", "VkFormat",
                                                          AllVkFormatEnums, rendering_struct->stencilAttachmentFormat,
                                                          "VUID-VkGraphicsPipelineCreateInfo-renderPass-06583");
+
+                            if (!FormatHasDepth(rendering_struct->depthAttachmentFormat)) {
+                                skip |= LogError(
+                                    device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06587",
+                                    "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                    "]: VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s) does not have a depth aspect.",
+                                    i, string_VkFormat(rendering_struct->depthAttachmentFormat));
+                            }
                         }
 
                         if ((rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) {
                             skip |= validate_ranged_enum("VkPipelineRenderingCreateInfo", "stencilAttachmentFormat", "VkFormat",
                                                          AllVkFormatEnums, rendering_struct->stencilAttachmentFormat,
                                                          "VUID-VkGraphicsPipelineCreateInfo-renderPass-06584");
+                            if (!FormatHasStencil(rendering_struct->stencilAttachmentFormat)) {
+                                skip |= LogError(
+                                    device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06588",
+                                    "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                    "]: VkPipelineRenderingCreateInfo::stencilAttachmentFormat  (%s) does not have a depth aspect.",
+                                    i, string_VkFormat(rendering_struct->stencilAttachmentFormat));
+                            }
                         }
                     }
                 }
