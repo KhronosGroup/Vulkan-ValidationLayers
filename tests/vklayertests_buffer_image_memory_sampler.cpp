@@ -15296,3 +15296,36 @@ TEST_F(VkLayerTest, TestSamplerReductionMode) {
     vk::CreateSampler(device(), &sampler_ci, nullptr, &sampler);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, CreateColorImageWithDepthAspect) {
+    TEST_DESCRIPTION("Test creating an image with color format but depth aspect.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    m_errorMonitor->ExpectSuccess();
+
+    auto format = FindSupportedDepthStencilFormat(gpu());
+    if (!format) {
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkImageObj color_image(m_device);
+    color_image.Init(64, 64, 1, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+
+    m_errorMonitor->VerifyNotFound();
+
+    VkImageViewCreateInfo civ_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    civ_ci.image = color_image.handle();
+    civ_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    civ_ci.format = format;
+    civ_ci.subresourceRange.layerCount = 1;
+    civ_ci.subresourceRange.baseMipLevel = 0;
+    civ_ci.subresourceRange.levelCount = 1;
+    civ_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    vk_testing::ImageView color_image_view;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+    color_image_view.init(*m_device, civ_ci);
+    m_errorMonitor->VerifyFound();
+}
