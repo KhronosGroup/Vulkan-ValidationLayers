@@ -15113,7 +15113,6 @@ TEST_F(VkLayerTest, TestCopyingInterleavedRegions) {
     VkMemoryPropertyFlags reqs = 0;
     buffer.init_as_src_and_dst(*m_device, 32, reqs);
 
-
     m_commandBuffer->begin();
 
     m_errorMonitor->ExpectSuccess();
@@ -15126,5 +15125,21 @@ TEST_F(VkLayerTest, TestCopyingInterleavedRegions) {
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
+}
 
+TEST_F(VkLayerTest, TestSamplerReductionMode) {
+    TEST_DESCRIPTION("Test using VkSamplerReductionModeCreateInfo without required feature.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    auto sampler_reduction_mode_ci = LvlInitStruct<VkSamplerReductionModeCreateInfo>();
+    sampler_reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
+
+    auto sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.pNext = &sampler_reduction_mode_ci;
+    VkSampler sampler;
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSamplerCreateInfo-pNext-pNext");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-pNext-06726");
+    vk::CreateSampler(device(), &sampler_ci, nullptr, &sampler);
+    m_errorMonitor->VerifyFound();
 }
