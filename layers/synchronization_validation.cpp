@@ -230,10 +230,8 @@ std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) 
             out << " (destroyed)";
         }
 
-        out << ", reset_no: " << std::to_string(record.reset_count);
-    } else {
-        out << ", reset_no: " << std::to_string(reset_count_);
     }
+    out << ", reset_no: " << std::to_string(record.reset_count);
     return out.str();
 }
 std::string CommandBufferAccessContext::FormatUsage(const ResourceFirstAccess &access) const {
