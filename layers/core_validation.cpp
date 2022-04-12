@@ -3135,6 +3135,17 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 }
             }
         }
+
+        if ((!rp_state || !rp_state->renderPass()) && pipeline->fragment_shader_state && !pipeline->fragment_output_state) {
+            if (!pipeline->DepthStencilState() ||
+                (pipeline->DepthStencilState()->sType != VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO)) {
+                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06590",
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                         "] does contains fragment shader state and no fragment output state, pDepthStencilState does not point to "
+                         "a valid VkPipelineDepthStencilStateCreateInfo struct.",
+                         pipe_index);
+            }
+        }
     }
 
     return skip;
