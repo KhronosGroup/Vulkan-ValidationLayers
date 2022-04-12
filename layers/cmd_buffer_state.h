@@ -203,6 +203,10 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // Store last bound state for Gfx & Compute pipeline bind points
     std::array<LAST_BOUND_STATE, BindPoint_Count> lastBound;  // index is LvlBindPoint.
 
+    // Use the casting boilerplate from BASE_NODE to implement the derived shared_from_this
+    std::shared_ptr<const CMD_BUFFER_STATE> shared_from_this() const { return SharedFromThisImpl(this); }
+    std::shared_ptr<CMD_BUFFER_STATE> shared_from_this() { return SharedFromThisImpl(this); }
+
     struct CmdDrawDispatchInfo {
         CMD_TYPE cmd_type;
         std::vector<std::pair<const uint32_t, DescriptorRequirement>> binding_infos;

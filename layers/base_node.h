@@ -95,6 +95,13 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE> {
     NodeMap ObjectBindings() const;
 
   protected:
+    template <typename Derived, typename Shared = std::shared_ptr<Derived>>
+    static Shared SharedFromThisImpl(Derived *derived) {
+        using Base = typename std::conditional<std::is_const<Derived>::value, const BASE_NODE, BASE_NODE>::type;
+        auto base = static_cast<Base *>(derived);
+        return std::static_pointer_cast<Derived>(base->shared_from_this());
+    }
+
     // Called recursively for every parent object of something that has become invalid
     virtual void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink);
 
