@@ -3828,16 +3828,16 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                                          pCreateInfo->compareOp, "VUID-VkSamplerCreateInfo-compareEnable-01080");
             if (sampler_reduction != nullptr) {
                 if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
-                    skip |= LogError(
-                        device, "VUID-VkSamplerCreateInfo-compareEnable-01423",
-                        "copmareEnable is true so the sampler reduction mode must be VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE.");
+                    skip |= LogError(device, "VUID-VkSamplerCreateInfo-compareEnable-01423",
+                                     "vkCreateSampler(): copmareEnable is true so the sampler reduction mode must be "
+                                     "VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE.");
                 }
             }
         }
         if (sampler_reduction && sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
-            if (!device_extensions.vk_ext_sampler_filter_minmax) {
+            if (!IsExtEnabled(device_extensions.vk_ext_sampler_filter_minmax)) {
                 skip |= LogError(device, "VUID-VkSamplerCreateInfo-pNext-06726",
-                                 "sampler reduction mode is %s, but extension %s is not enabled.",
+                                 "vkCreateSampler(): sampler reduction mode is %s, but extension %s is not enabled.",
                                  string_VkSamplerReductionMode(sampler_reduction->reductionMode),
                                  VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
             }
