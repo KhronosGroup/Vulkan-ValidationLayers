@@ -3594,7 +3594,6 @@ void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
 
     // Allocate shader validation cache
     if (!disabled[shader_validation_caching] && !disabled[shader_validation] && !core_validation_cache) {
-        std::string validation_cache_path;
         auto tmp_path = GetEnvironment("XDG_CACHE_HOME");
         if (!tmp_path.size()) {
             auto cachepath = GetEnvironment("HOME") + "/.cache";
