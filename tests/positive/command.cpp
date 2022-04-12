@@ -1241,3 +1241,37 @@ TEST_F(VkPositiveLayerTest, WriteTimestampNoneAndAll) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, EventStageMaskSecondaryCommandBuffer) {
+    TEST_DESCRIPTION("Check secondary command buffers transfer event data when executed by primary ones");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkEvent event;
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
+    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+
+    secondary.begin();
+    vk::CmdSetEvent(secondary.handle(), event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    secondary.end();
+
+    commandBuffer.begin();
+    vk::CmdExecuteCommands(commandBuffer.handle(), 1, &secondary.handle());
+    vk::CmdWaitEvents(commandBuffer.handle(), 1, &event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                      0, nullptr, 0, nullptr, 0, nullptr);
+    commandBuffer.end();
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    VkCommandBuffer handles[] = {commandBuffer.handle()};
+    submit_info.pCommandBuffers = handles;
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyNotFound();
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    vk::DestroyEvent(m_device->device(), event, nullptr);
+}
