@@ -320,14 +320,8 @@ class ResourceAccessState : public SyncStageAccess {
         }
 
         bool operator!=(const ReadState &rhs) const { return !(*this == rhs); }
-        inline void Set(VkPipelineStageFlags2KHR stage_, const SyncStageAccessFlags &access_, VkPipelineStageFlags2KHR barriers_,
-                        ResourceUsageTag tag_) {
-            stage = stage_;
-            access = access_;
-            barriers = barriers_;
-            tag = tag_;
-            pending_dep_chain = 0;  // If this is a new read, we aren't applying a barrier set.
-        }
+        void Set(VkPipelineStageFlags2KHR stage_, const SyncStageAccessFlags &access_, VkPipelineStageFlags2KHR barriers_,
+                 ResourceUsageTag tag_);
     };
 
   public:
