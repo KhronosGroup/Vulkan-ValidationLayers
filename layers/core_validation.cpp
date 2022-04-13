@@ -17362,9 +17362,44 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
     bool skip = ValidateBeginQuery(cb_state.get(), query_obj, flags, index, CMD_BEGINQUERYINDEXEDEXT, &vuids);
 
     // Extension specific VU's
-    auto query_pool_state = Get<QUERY_POOL_STATE>(query_obj.pool);
+    const auto query_pool_state = Get<QUERY_POOL_STATE>(query_obj.pool);
     const auto &query_pool_ci = query_pool_state->createInfo;
-    if (query_pool_ci.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
+    if (IsExtEnabled(device_extensions.vk_ext_primitives_generated_query)) {
+        if ((query_pool_ci.queryType != VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) &&
+            (query_pool_ci.queryType != VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT)) {
+            if (index != 0) {
+                skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdBeginQueryIndexedEXT-queryType-06692",
+                                 "%s: index %" PRIu32
+                                 " must be zero if %s was not created with type VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT or "
+                                 "VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT",
+                                 cmd_name, index, report_data->FormatHandle(queryPool).c_str());
+            }
+        } else if (query_pool_ci.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+            if (!enabled_features.primitives_generated_query_features.primitivesGeneratedQuery) {
+                skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdBeginQueryIndexedEXT-queryType-06693",
+                                 "%s(): queryType of queryPool is VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, "
+                                 "but the primitivesGeneratedQuery feature is not enabled.",
+                                 cmd_name);
+            }
+            if (index >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
+                skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdBeginQueryIndexedEXT-queryType-06690",
+                                 "%s(): queryType of queryPool is VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, but "
+                                 "index (%" PRIu32
+                                 ") is greater than or equal to "
+                                 "VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32 ")",
+                                 cmd_name, index, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+            }
+            if ((index != 0) &&
+                (!enabled_features.primitives_generated_query_features.primitivesGeneratedQueryWithNonZeroStreams)) {
+                skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdBeginQueryIndexedEXT-queryType-06691",
+                                 "%s(): queryType of queryPool is VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, but "
+                                 "index (%" PRIu32
+                                 ") is not zero and the primitivesGeneratedQueryWithNonZeroStreams feature is not enabled",
+                                 cmd_name, index);
+            }
+        }
+    }
+    else if (query_pool_ci.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
         if (IsExtEnabled(device_extensions.vk_ext_transform_feedback) &&
             (index >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams)) {
             skip |= LogError(
@@ -17434,6 +17469,17 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
                                      " must be less than "
                                      "VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams %" PRIu32 ".",
                                      index, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+                }
+                for (const auto &query_object : cb_state->startedQueries) {
+                    if (query_object.query == query) {
+                        if (query_object.index != index) {
+                            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdEndQueryIndexedEXT-queryType-06696",
+                                             "vkCmdEndQueryIndexedEXT(): queryPool is of type %s, but "
+                                             "index (%" PRIu32 ") is not equal to the index used to begin the query (%" PRIu32 ")",
+                                             string_VkQueryType(query_pool_ci.queryType), index, query_object.index);
+                        }
+                        break;
+                    }
                 }
             } else if (index != 0) {
                 skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdEndQueryIndexedEXT-queryType-06695",

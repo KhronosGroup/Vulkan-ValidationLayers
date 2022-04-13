@@ -16344,8 +16344,13 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQueryAndDiscardEnabled) {
         return;
     }
     auto primitives_generated_features = LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>();
-    primitives_generated_features.primitivesGeneratedQueryWithRasterizerDiscard = VK_FALSE;
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&primitives_generated_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
+        printf("%s primitivesGeneratedQuery feature is not supported.\n", kSkipPrefix);
+        return;
+    }
+    primitives_generated_features.primitivesGeneratedQueryWithRasterizerDiscard = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -16402,6 +16407,10 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQueryStreams) {
         LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>(&transform_feedback_features);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&primitives_generated_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
+        printf("%s primitivesGeneratedQuery feature is not supported.\n", kSkipPrefix);
+        return;
+    }
     if (transform_feedback_features.geometryStreams == VK_FALSE) {
         printf("%s geometryStreams feature not supported, skipping tests.\n", kSkipPrefix);
     }
