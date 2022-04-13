@@ -292,8 +292,8 @@ ResourceAccessState::OrderingBarriers ResourceAccessState::kOrderingRules = {
      {kDepthStencilAttachmentExecScope, kDepthStencilAttachmentAccessScope},
      {kRasterAttachmentExecScope, kRasterAttachmentAccessScope}}};
 
-// Sometimes we have an internal access conflict, and we using the kCurrentCommandTag to set and detect in temporary/proxy contexts
-static const ResourceUsageTag kCurrentCommandTag(ResourceUsageRecord::kMaxIndex);
+// Sometimes we have an internal access conflict, and we using the kInvalidTag to set and detect in temporary/proxy contexts
+static const ResourceUsageTag kInvalidTag(ResourceUsageRecord::kMaxIndex);
 
 static VkDeviceSize ResourceBaseAddress(const BINDABLE &bindable) { return bindable.GetFakeBaseAddress(); }
 
@@ -871,7 +871,8 @@ struct ApplyTrackbackStackAction {
         assert(access);
         assert(!access->HasPendingState());
         access->ApplyBarriers(barriers, false);
-        access->ApplyPendingBarriers(kCurrentCommandTag);
+        // NOTE: We can use invalid tag, as these barriers do no include layout transitions (would assert in SetWrite)
+        access->ApplyPendingBarriers(kInvalidTag);
         if (previous_barrier) {
             assert(bool(*previous_barrier));
             (*previous_barrier)(access);
@@ -1044,8 +1045,8 @@ static SyncStageAccessIndex DepthStencilLoadUsage(VkAttachmentLoadOp load_op) {
 static AccessContext *CreateStoreResolveProxyContext(const AccessContext &context, const RENDER_PASS_STATE &rp_state,
                                                      uint32_t subpass, const AttachmentViewGenVector &attachment_views) {
     auto *proxy = new AccessContext(context);
-    proxy->UpdateAttachmentResolveAccess(rp_state, attachment_views, subpass, kCurrentCommandTag);
-    proxy->UpdateAttachmentStoreAccess(rp_state, attachment_views, subpass, kCurrentCommandTag);
+    proxy->UpdateAttachmentResolveAccess(rp_state, attachment_views, subpass, kInvalidTag);
+    proxy->UpdateAttachmentStoreAccess(rp_state, attachment_views, subpass, kInvalidTag);
     return proxy;
 }
 
@@ -1094,13 +1095,22 @@ bool AccessContext::ValidateLayoutTransitions(const CommandExecutionContext &ex_
         }
         auto hazard = DetectSubpassTransitionHazard(*track_back, attachment_views[transition.attachment]);
         if (hazard.hazard) {
-            skip |= ex_context.GetSyncState().LogError(rp_state.renderPass(), string_SyncHazardVUID(hazard.hazard),
-                                                       "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
-                                                       " image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
-                                                       func_name, string_SyncHazard(hazard.hazard), subpass, transition.attachment,
-                                                       string_VkImageLayout(transition.old_layout),
-                                                       string_VkImageLayout(transition.new_layout),
-                                                       ex_context.FormatUsage(hazard).c_str());
+            if (hazard.tag == kInvalidTag) {
+                skip |= ex_context.GetSyncState().LogError(
+                    rp_state.renderPass(), string_SyncHazardVUID(hazard.hazard),
+                    "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
+                    " image layout transition (old_layout: %s, new_layout: %s) after store/resolve operation in subpass %" PRIu32,
+                    func_name, string_SyncHazard(hazard.hazard), subpass, transition.attachment,
+                    string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout), transition.prev_pass);
+            } else {
+                skip |= ex_context.GetSyncState().LogError(
+                    rp_state.renderPass(), string_SyncHazardVUID(hazard.hazard),
+                    "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
+                    " image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
+                    func_name, string_SyncHazard(hazard.hazard), subpass, transition.attachment,
+                    string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout),
+                    ex_context.FormatUsage(hazard).c_str());
+            }
         }
     }
     return skip;
@@ -1155,7 +1165,7 @@ bool AccessContext::ValidateLoadOperation(const CommandExecutionContext &ex_cont
             if (hazard.hazard) {
                 auto load_op_string = string_VkAttachmentLoadOp(checked_stencil ? ci.stencilLoadOp : ci.loadOp);
                 const auto &sync_state = ex_context.GetSyncState();
-                if (hazard.tag == kCurrentCommandTag) {
+                if (hazard.tag == kInvalidTag) {
                     // Hazard vs. ILT
                     skip |= sync_state.LogError(rp_state.renderPass(), string_SyncHazardVUID(hazard.hazard),
                                                 "%s: Hazard %s vs. layout transition in subpass %" PRIu32 " for attachment %" PRIu32
@@ -1643,7 +1653,7 @@ class ApplyBarrierFunctor : public ApplyBarrierOpsFunctor<BarrierOp, small_vecto
     using Base = ApplyBarrierOpsFunctor<BarrierOp, small_vector<BarrierOp, 1>>;
 
   public:
-    ApplyBarrierFunctor(const BarrierOp &barrier_op) : Base(false, 1, kCurrentCommandTag) { Base::EmplaceBack(barrier_op); }
+    ApplyBarrierFunctor(const BarrierOp &barrier_op) : Base(false, 1, kInvalidTag) { Base::EmplaceBack(barrier_op); }
 };
 
 // This functor resolves the pendinging state.
@@ -2538,7 +2548,7 @@ bool RenderPassAccessContext::ValidateNextSubpass(const CommandExecutionContext 
         // on a copy of the (empty) next context.
         // Note: The resource access map should be empty so hopefully this copy isn't too horrible from a perf POV.
         AccessContext temp_context(next_context);
-        temp_context.RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kCurrentCommandTag);
+        temp_context.RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kInvalidTag);
         skip |=
             temp_context.ValidateLoadOperation(ex_context, *rp_state_, render_area_, next_subpass, attachment_views_, func_name);
     }
@@ -2591,13 +2601,23 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
         const auto merged_barrier = MergeBarriers(trackback.barriers);
         auto hazard = context->DetectImageBarrierHazard(view_gen, merged_barrier, AccessContext::DetectOptions::kDetectPrevious);
         if (hazard.hazard) {
-            skip |= ex_context.GetSyncState().LogError(
-                rp_state_->renderPass(), string_SyncHazardVUID(hazard.hazard),
-                "%s: Hazard %s with last use subpass %" PRIu32 " for attachment %" PRIu32
-                " final image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
-                func_name, string_SyncHazard(hazard.hazard), transition.prev_pass, transition.attachment,
-                string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout),
-                ex_context.FormatUsage(hazard).c_str());
+            if (hazard.tag == kInvalidTag) {
+                // Hazard vs. ILT
+                skip |= ex_context.GetSyncState().LogError(
+                    rp_state_->renderPass(), string_SyncHazardVUID(hazard.hazard),
+                    "%s: Hazard %s vs. store/resolve operations in subpass %" PRIu32 " for attachment %" PRIu32
+                    " final image layout transition (old_layout: %s, new_layout: %s).",
+                    func_name, string_SyncHazard(hazard.hazard), transition.prev_pass, transition.attachment,
+                    string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout));
+            } else {
+                skip |= ex_context.GetSyncState().LogError(
+                    rp_state_->renderPass(), string_SyncHazardVUID(hazard.hazard),
+                    "%s: Hazard %s with last use subpass %" PRIu32 " for attachment %" PRIu32
+                    " final image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
+                    func_name, string_SyncHazard(hazard.hazard), transition.prev_pass, transition.attachment,
+                    string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout),
+                    ex_context.FormatUsage(hazard).c_str());
+            }
         }
     }
     return skip;
@@ -3371,6 +3391,15 @@ void ResourceAccessState::TouchupFirstForLayoutTransition(ResourceUsageTag tag, 
         assert(first_accesses_.back().usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
         first_write_layout_ordering_ = layout_ordering;
     }
+}
+
+void ResourceAccessState::ReadState::Set(VkPipelineStageFlags2KHR stage_, const SyncStageAccessFlags &access_,
+                                         VkPipelineStageFlags2KHR barriers_, ResourceUsageTag tag_) {
+    stage = stage_;
+    access = access_;
+    barriers = barriers_;
+    tag = tag_;
+    pending_dep_chain = 0;  // If this is a new read, we aren't applying a barrier set.
 }
 
 void SyncValidator::ResetCommandBufferCallback(VkCommandBuffer command_buffer) {
@@ -6384,7 +6413,7 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
 
     // Validate load operations if there were no layout transition hazards
     if (!skip) {
-        temp_context.RecordLayoutTransitions(rp_state, subpass, view_gens, kCurrentCommandTag);
+        temp_context.RecordLayoutTransitions(rp_state, subpass, view_gens, kInvalidTag);
         skip |= temp_context.ValidateLoadOperation(cb_context, rp_state, render_area, subpass, view_gens, CmdName());
     }
 
