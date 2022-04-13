@@ -334,6 +334,7 @@ void CMD_BUFFER_STATE::Reset() {
     cmd_execute_commands_functions.clear();
     eventUpdates.clear();
     queryUpdates.clear();
+    barrierUpdates.clear();
 
     // Remove object bindings
     for (const auto &obj : object_bindings) {
@@ -907,6 +908,9 @@ void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCom
         for (auto &function : sub_cb_state->queryUpdates) {
             queryUpdates.push_back(function);
         }
+        for (const auto &function : sub_cb_state->barrierUpdates) {
+            barrierUpdates.push_back(function);
+        }
         for (auto &function : sub_cb_state->eventUpdates) {
             eventUpdates.push_back(function);
         }
@@ -1369,6 +1373,10 @@ void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass, const std::function<boo
     VkQueryPool first_pool = VK_NULL_HANDLE;
     for (auto &function : queryUpdates) {
         function(nullptr, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
+    }
+
+    for (const auto &function : barrierUpdates) {
+        function();
     }
 
     for (const auto &query_state_pair : local_query_to_state_map) {

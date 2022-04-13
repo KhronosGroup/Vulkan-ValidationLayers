@@ -848,7 +848,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, const char* func_name,
                                  const char* vuid = kVUID_Core_DrawState_InvalidImageAspect) const;
 
-    bool ValidateImageAcquired(IMAGE_STATE const& image_state, const char* func_name) const;
+    bool ValidateImageAcquired(VkImage image, const char* func_name) const;
 
     bool ValidateCreateImageViewSubresourceRange(const IMAGE_STATE* image_state, bool is_imageview_2d_type,
                                                  const VkImageSubresourceRange& subresourceRange) const;
@@ -1323,6 +1323,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
                                                const VkDependencyInfoKHR* pDependencyInfo) const override;
     bool PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) const override;
+    void EnqueueVerifyPipelineBarrier(CMD_BUFFER_STATE* cb_state, uint32_t imageMemoryBarrierCount,
+                                      const VkImageMemoryBarrier* pImageMemoryBarriers, const char* func_name);
     void PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                          VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                          uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
