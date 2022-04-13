@@ -1914,7 +1914,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         if (pCreateInfo->mipLevels != 1) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-format-06410",
                              "vkCreateImage(): mipLevels = %d, but when using a YCbCr Conversion format, mipLevels must be 1",
-                             pCreateInfo->arrayLayers);
+                             pCreateInfo->mipLevels);
         }
 
         if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
