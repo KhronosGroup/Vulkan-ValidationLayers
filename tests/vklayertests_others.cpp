@@ -12846,6 +12846,82 @@ TEST_F(VkLayerTest, InvalidCmdEndQueryIndexedEXTIndex) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, InvalidCmdEndQueryIndexedEXTPrimitiveGenerated) {
+    TEST_DESCRIPTION("Test InvalidCmdEndQueryIndexedEXT with invalid index");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Test does not run on Vulkan 1.0, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s or %s not supported, skipping test\n", kSkipPrefix, VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME,
+               VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+        return;
+    }
+
+    auto primitives_generated_features = LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&primitives_generated_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
+        printf("%s primitivesGeneratedQuery feature is not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto transform_feedback_properties = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+
+    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_properties);
+    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+
+    auto fpCmdBeginQueryIndexedEXT =
+        reinterpret_cast<PFN_vkCmdBeginQueryIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginQueryIndexedEXT"));
+    auto fpCmdEndQueryIndexedEXT =
+        reinterpret_cast<PFN_vkCmdEndQueryIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndQueryIndexedEXT"));
+
+    VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    qpci.queryCount = 1;
+
+    vk_testing::QueryPool tf_query_pool;
+    qpci.queryType = VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT;
+    tf_query_pool.init(*m_device, qpci);
+
+    vk_testing::QueryPool pg_query_pool;
+    qpci.queryType = VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT;
+    pg_query_pool.init(*m_device, qpci);
+
+    vk_testing::QueryPool query_pool;
+    qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
+    query_pool.init(*m_device, qpci);
+
+    m_commandBuffer->begin();
+
+    fpCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), tf_query_pool.handle(), 0, 0, 0);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQueryIndexedEXT-queryType-06694");
+    fpCmdEndQueryIndexedEXT(m_commandBuffer->handle(), tf_query_pool.handle(), 0,
+                            transform_feedback_properties.maxTransformFeedbackStreams);
+    m_errorMonitor->VerifyFound();
+
+    fpCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), pg_query_pool.handle(), 0, 0, 0);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQueryIndexedEXT-queryType-06694");
+    fpCmdEndQueryIndexedEXT(m_commandBuffer->handle(), pg_query_pool.handle(), 0,
+                            transform_feedback_properties.maxTransformFeedbackStreams);
+    m_errorMonitor->VerifyFound();
+
+    fpCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 0, 0, 0);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQueryIndexedEXT-queryType-06695");
+    fpCmdEndQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, Features12AndppEnabledExtensionNames) {
     TEST_DESCRIPTION("Test VkPhysicalDeviceVulkan12Features and illegal extension in ppEnabledExtensionNames");
 
