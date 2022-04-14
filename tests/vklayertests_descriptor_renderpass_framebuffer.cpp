@@ -12493,3 +12493,58 @@ TEST_F(VkLayerTest, CreateRenderPassWithViewMask) {
     vkCreateRenderPass2KHR(device(), &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidSubpassDescriptionViewMask) {
+    TEST_DESCRIPTION("Test creating render with invalid view mask bit");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&multiview_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (multiview_features.multiview == VK_FALSE) {
+        printf("%s multiview feature not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    auto render_pass_mutliview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&render_pass_mutliview_props);
+    vk::GetPhysicalDeviceProperties2(gpu(), &prop2);
+
+    if (render_pass_mutliview_props.maxMultiviewViewCount >= 32) {
+        printf("%s maxMultiviewViewCount too high, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    auto subpass = LvlInitStruct<VkSubpassDescription2>();  //{0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr,
+                                                            //nullptr, 0, nullptr};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.viewMask = 1 << render_pass_mutliview_props.maxMultiviewViewCount;
+
+    auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attach_desc;
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass;
+
+    VkRenderPass render_pass;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-viewMask-06706");
+    vk::CreateRenderPass2(device(), &render_pass_ci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+}
