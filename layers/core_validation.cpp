@@ -3003,27 +3003,28 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     }
 
     // If VK_EXT_graphics_pipeline_library is not enabled, a complete set of state must be defined at this point
-    if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
-        std::string msg;
-        if (!pipeline->vertex_input_state) {
-            msg += "<vertex input> ";
-        }
-        if (!pipeline->pre_raster_state) {
-            msg += "<pre-raster> ";
-        }
-        if (!pipeline->fragment_shader_state) {
-            msg += "<fragment shader> ";
-        }
-        if (!pipeline->fragment_output_state) {
-            msg += "<fragment output> ";
-        }
+    std::string full_pipeline_state_msg;
+    if (!pipeline->vertex_input_state) {
+        full_pipeline_state_msg += "<vertex input> ";
+    }
+    if (!pipeline->pre_raster_state) {
+        full_pipeline_state_msg += "<pre-raster> ";
+    }
+    if (!pipeline->fragment_shader_state) {
+        full_pipeline_state_msg += "<fragment shader> ";
+    }
+    if (!pipeline->fragment_output_state) {
+        full_pipeline_state_msg += "<fragment output> ";
+    }
+    const bool has_full_pipeline_state = full_pipeline_state_msg.empty();
 
-        if (!msg.empty()) {
+    if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
+        if (!has_full_pipeline_state) {
             skip |=
                 LogError(device, "VUID-VkGraphicsPipelineCreateInfo-None-06573",
                          "pCreateInfos[%" PRIu32
                          "] does not contain a complete set of state and %s is not enabled. The following state is missing: [ %s].",
-                         pipe_index, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME, msg.c_str());
+                         pipe_index, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME, full_pipeline_state_msg.c_str());
         }
 
         if (!pipeline->PipelineLayoutState()) {
@@ -3040,6 +3041,34 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                              pipe_index, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
         }
     } else {
+        const bool is_library = (pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0;
+
+        if (!enabled_features.graphics_pipeline_library_features.graphicsPipelineLibrary) {
+            if ((pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "].flags (%s) contains VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but "
+                                 "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary is not enabled.",
+                                 pipe_index, string_VkPipelineCreateFlags(pipeline->GetPipelineCreateFlags()).c_str());
+            }
+
+            if (!has_full_pipeline_state) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06607",
+                                 "pCreateInfos[%" PRIu32
+                                 "] does not contain a complete set of state and "
+                                 "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary is not enabled is "
+                                 "not enabled. The following state is missing: [ %s].",
+                                 pipe_index, full_pipeline_state_msg.c_str());
+            }
+        }
+
+        if (has_full_pipeline_state && is_library) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06608",
+                             "pCreateInfos[%" PRIu32 "] defines a complete set of state, but pCreateInfos[%" PRIu32
+                             "].flags (%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
+                             pipe_index, pipe_index, string_VkPipelineCreateFlags(pipeline->GetPipelineCreateFlags()).c_str());
+        }
+
         enum GPLInitInfo : uint8_t {
             uninitialized = 0,
             from_gpl_info,
