@@ -313,6 +313,20 @@ bool SEMAPHORE_STATE::CanBeWaited() const {
     return comp.op_type == kSignal || comp.op_type == kBinaryAcquire;
 }
 
+VkQueue SEMAPHORE_STATE::AnotherQueueWaitsBinary(VkQueue queue) const {
+    if (type == VK_SEMAPHORE_TYPE_TIMELINE) {
+        return VK_NULL_HANDLE;
+    }
+    auto guard = ReadLock();
+
+    for (auto pos = operations_.rbegin(); pos != operations_.rend(); ++pos) {
+        if (pos->op_type == kWait && pos->queue->Queue() != queue) {
+            return pos->queue->Queue();
+        }
+    }
+    return VK_NULL_HANDLE;
+}
+
 SEMAPHORE_STATE::RetireResult SEMAPHORE_STATE::Retire(QUEUE_STATE *queue, uint64_t payload) {
     auto guard = WriteLock();
     RetireResult result;

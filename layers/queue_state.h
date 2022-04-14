@@ -165,6 +165,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
 
     bool CanBeSignaled() const;
     bool CanBeWaited() const;
+    VkQueue AnotherQueueWaitsBinary(VkQueue queue) const;
     bool HasPendingOps() const {
         auto guard = ReadLock();
         return !operations_.empty();
