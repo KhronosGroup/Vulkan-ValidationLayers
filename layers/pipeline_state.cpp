@@ -66,9 +66,7 @@ PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInf
       stage_flag(stage->stage),
       entrypoint(module_state->FindEntrypoint(stage->pName, stage->stage)),
       accessible_ids(module_state->MarkAccessibleIds(entrypoint)),
-      variable_ids(module_state->MarkVariableIds()),
       descriptor_uses(module_state->CollectInterfaceByDescriptorSlot(accessible_ids)),
-      all_descriptor_uses(module_state->CollectInterfaceByDescriptorSlot(variable_ids)),
       has_writable_descriptor(HasWriteableDescriptor(descriptor_uses)),
       has_atomic_descriptor(HasAtomicDescriptor(descriptor_uses)),
       wrote_primitive_shading_rate(WrotePrimitiveShadingRate(stage_flag, entrypoint, module_state.get())) {}
@@ -178,28 +176,6 @@ PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateVec
                     ++image_index;
                 }
             }
-        }
-        for (const auto &use : stage.all_descriptor_uses) {
-            // Don't add new sets, only new bindings
-            bool set_exists = false;
-            for (const auto &set : active_slots) {
-                if (set.first == use.first.set) {
-                    set_exists = true;
-                    break;
-                }
-            }
-            if (!set_exists) {
-                continue;
-            }
-            auto &entry = active_slots[use.first.set][use.first.binding];
-            auto &reqs = entry.all_reqs;
-            reqs |= stage.module_state->DescriptorTypeToReqs(use.second.type_id);
-            if (use.second.is_atomic_operation) reqs |= DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION;
-            if (use.second.is_sampler_implicitLod_dref_proj) reqs |= DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ;
-            if (use.second.is_sampler_bias_offset) reqs |= DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET;
-            if (use.second.is_read_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT;
-            if (use.second.is_write_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT;
-            if (use.second.is_dref_operation) reqs |= DESCRIPTOR_REQ_IMAGE_DREF;
         }
     }
     return active_slots;

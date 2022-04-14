@@ -1133,7 +1133,6 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
     VkImageLayout image_layout = image_descriptor.GetImageLayout();
     const auto binding = binding_info.first;
     const auto reqs = binding_info.second.reqs;
-    const auto all_reqs = binding_info.second.all_reqs;
 
     if (image_descriptor.GetClass() == cvdescriptorset::DescriptorClass::ImageSampler) {
         sampler_states.emplace_back(
@@ -1168,8 +1167,8 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
         const auto &image_view_ci = image_view_state->create_info;
         const auto *image_state = image_view_state->image_state.get();
 
-        if (all_reqs & DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS) {
-            if (~all_reqs & (1 << image_view_ci.viewType)) {
+        if (reqs & DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS) {
+            if (~reqs & (1 << image_view_ci.viewType)) {
                 auto set = descriptor_set->GetSet();
                 return LogError(set, vuids.descriptor_valid,
                                 "Descriptor set %s encountered the following validation error at %s time: Descriptor "
@@ -1177,8 +1176,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                                 report_data->FormatHandle(set).c_str(), caller, binding, index,
                                 StringDescriptorReqViewType(reqs).c_str(), string_VkImageViewType(image_view_ci.viewType));
             }
-        }
-        if (reqs & DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS) {
+
             if (!(reqs & image_view_state->descriptor_format_bits)) {
                 // bad component type
                 auto set = descriptor_set->GetSet();
