@@ -1851,12 +1851,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                              VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, true,
                                              "VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-06601",
                                              "VUID-VkPipelineRasterizationStateCreateInfo-sType-sType");
-                if (!create_info.layout) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-layout-06602",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                     "].layout is VK_NULL_HANDLE, but %s is not enabled.",
-                                     i, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-                }
             }
 
             // TODO probably should check dynamic state from graphics libraries, at least when creating an "executable pipeline"

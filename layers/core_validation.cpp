@@ -1703,13 +1703,18 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     const bool rp_state_required = pipeline->pre_raster_state || pipeline->fragment_shader_state || pipeline->fragment_output_state;
     if (rp_state_required) {
         if (!rp_state) {
+            const char *vuid = nullptr;
             if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06574",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] requires a valid renderPass, but one was not provided",
-                                 pipe_index);
+                if (api_version >= VK_API_VERSION_1_3) {
+                    vuid = "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575";
+                } else {
+                    vuid = "VUID-VkGraphicsPipelineCreateInfo-renderPass-06574";
+                }
             } else if (!enabled_features.core13.dynamicRendering) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575",
+                vuid = "VUID-VkGraphicsPipelineCreateInfo-renderPass-06576";
+            }
+            if (vuid) {
+                skip |= LogError(device, vuid,
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "] requires a valid renderPass, but one was not provided",
                                  pipe_index);
@@ -3019,6 +3024,20 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          "pCreateInfos[%" PRIu32
                          "] does not contain a complete set of state and %s is not enabled. The following state is missing: [ %s].",
                          pipe_index, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME, msg.c_str());
+        }
+
+        if (!pipeline->PipelineLayoutState()) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-layout-06602",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "].layout is not a valid pipeline layout, but %s is not enabled.",
+                             pipe_index, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+        }
+
+        if (!pipeline->RenderPassState()) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06603",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "].renderPass is not a valid render pass, but %s is not enabled.",
+                             pipe_index, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
         }
     } else {
         enum GPLInitInfo : uint8_t {
@@ -6107,25 +6126,6 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     bool skip = StateTracker::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                      pPipelines, cgpl_state_data);
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
-
-    for (uint32_t i = 0; i < count; i++) {
-        const auto &pipe_state = cgpl_state->pipe_state[i];
-        if (!pipe_state->RenderPassState() &&
-            (pipe_state->pre_raster_state || pipe_state->fragment_shader_state || pipe_state->fragment_output_state)) {
-            if ((api_version < VK_API_VERSION_1_3) && (!enabled_features.core13.dynamicRendering)) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575",
-                                 "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32 "]: renderpass must not be VK_NULL_HANDLE.", i);
-                return true;
-            } else if (!enabled_features.core13.dynamicRendering) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576",
-                                 "vkCreateGraphicsPipeline: pCreateInfos[%" PRIu32
-                                 "].renderPass is VK_NULL_HANDLE but dynamicRendering is not enabled.",
-                                 i);
-
-                return true;
-            }
-        }
-    }
 
     for (uint32_t i = 0; i < count; i++) {
         skip |= ValidatePipeline(cgpl_state->pipe_state, i);
