@@ -476,3 +476,72 @@ TEST_F(VkGraphicsLibraryLayerTest, ImplicitVUIDs) {
     pipe.CreateGraphicsPipeline(true, false);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkGraphicsLibraryLayerTest, InvalidCreateStateGPL) {
+    TEST_DESCRIPTION("Create invalid graphics pipeline state with VK_EXT_graphics_pipeline_library enabled");
+    m_errorMonitor->ExpectSuccess();
+
+    if (!AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME)) {
+        printf("%s %s not supported\n", kSkipPrefix, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+        return;
+    }
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Vulkan >= 1.2 required", kSkipPrefix);
+        return;
+    }
+
+    std::vector<const char *> failed_exts;
+    if (!AreRequestedExtensionsEnabled(failed_exts)) {
+        printf("%s The following device extensions are not supported: ", kSkipPrefix);
+        for (const auto &ext : failed_exts) {
+            printf("%s ", ext);
+        }
+        printf("\n");
+        return;
+    }
+
+    // Do _not_ enable VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    {
+        // Test creating a pipeline with incorrect create flags
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.InitState();
+        pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+        m_errorMonitor->VerifyNotFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06608");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_errorMonitor->ExpectSuccess();
+        // Test creating a pipeline with incomplete state, but feature is not enabled
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+        auto vs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+        vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
+        vs_ci.pCode = vs_spv.data();
+
+        auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
+        stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        stage_ci.module = VK_NULL_HANDLE;
+        stage_ci.pName = "main";
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitPreRasterLibInfo(1, &stage_ci);
+        pipe.InitState();
+        m_errorMonitor->VerifyNotFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06607");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
