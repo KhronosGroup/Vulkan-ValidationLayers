@@ -3941,6 +3941,9 @@ struct SemaphoreSubmitState {
         auto semaphore = semaphore_state.semaphore();
         return unsignaled_semaphores.count(semaphore) || (!signaled_semaphores.count(semaphore) && !semaphore_state.CanBeWaited());
     }
+    VkQueue AnotherQueueWaits(const SEMAPHORE_STATE &semaphore_state, VkQueue queue) const {
+        return semaphore_state.AnotherQueueWaitsBinary(queue);
+    }
 
     bool ValidateBinaryWait(const core_error::Location &loc, VkQueue queue, const SEMAPHORE_STATE &semaphore_state) {
         bool skip = false;
@@ -3948,33 +3951,28 @@ struct SemaphoreSubmitState {
         using sync_vuid_maps::SubmitError;
         auto semaphore = semaphore_state.semaphore();
         if ((semaphore_state.Scope() == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
-            if (CannotWait(semaphore_state)) {
-                auto last_op = semaphore_state.LastOp();
-                if (last_op) {
-                    if (last_op->IsWait()) {
-                        auto other_queue = last_op->queue->Handle();
-                        const char *vuid = loc.function == core_error::Func::vkQueueSubmit
-                                               ? "VUID-vkQueueSubmit-pWaitSemaphores-00068"
-                                               : "VUID-vkQueueSubmit2-semaphore-03871";
-                        LogObjectList objlist(semaphore);
-                        objlist.add(queue);
-                        objlist.add(other_queue);
-                        skip |= core->LogError(objlist, vuid, "%s Queue %s is already waiting on semaphore (%s).",
-                                               loc.Message().c_str(), core->report_data->FormatHandle(other_queue).c_str(),
-                                               core->report_data->FormatHandle(semaphore).c_str());
-                    }
-                } else {
-                    auto error = IsExtEnabled(core->device_extensions.vk_khr_timeline_semaphore)
-                                     ? SubmitError::kTimelineCannotBeSignalled
-                                     : SubmitError::kBinaryCannotBeSignalled;
-                    const auto &vuid = GetQueueSubmitVUID(loc, error);
-                    LogObjectList objlist(semaphore);
-                    objlist.add(queue);
-                    skip |= core->LogError(
-                        objlist, semaphore_state.Scope() == kSyncScopeInternal ? vuid : kVUID_Core_DrawState_QueueForwardProgress,
-                        "%s Queue %s is waiting on semaphore (%s) that has no way to be signaled.", loc.Message().c_str(),
-                        core->report_data->FormatHandle(queue).c_str(), core->report_data->FormatHandle(semaphore).c_str());
-                }
+            VkQueue other_queue = AnotherQueueWaits(semaphore_state, queue);
+            if (other_queue) {
+                const char *vuid = loc.function == core_error::Func::vkQueueSubmit
+                                        ? "VUID-vkQueueSubmit-pWaitSemaphores-00068"
+                                        : "VUID-vkQueueSubmit2-semaphore-03871";
+                LogObjectList objlist(semaphore);
+                objlist.add(queue);
+                objlist.add(other_queue);
+                skip |= core->LogError(objlist, vuid, "%s Queue %s is already waiting on semaphore (%s).",
+                                        loc.Message().c_str(), core->report_data->FormatHandle(other_queue).c_str(),
+                                        core->report_data->FormatHandle(semaphore).c_str());
+            } else if (CannotWait(semaphore_state)) {
+                auto error = IsExtEnabled(core->device_extensions.vk_khr_timeline_semaphore)
+                                    ? SubmitError::kTimelineCannotBeSignalled
+                                    : SubmitError::kBinaryCannotBeSignalled;
+                const auto &vuid = GetQueueSubmitVUID(loc, error);
+                LogObjectList objlist(semaphore);
+                objlist.add(queue);
+                skip |= core->LogError(
+                    objlist, semaphore_state.Scope() == kSyncScopeInternal ? vuid : kVUID_Core_DrawState_QueueForwardProgress,
+                    "%s Queue %s is waiting on semaphore (%s) that has no way to be signaled.", loc.Message().c_str(),
+                    core->report_data->FormatHandle(queue).c_str(), core->report_data->FormatHandle(semaphore).c_str());
             } else {
                 signaled_semaphores.erase(semaphore);
                 unsignaled_semaphores.insert(semaphore);
