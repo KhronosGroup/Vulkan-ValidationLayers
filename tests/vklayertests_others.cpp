@@ -14243,6 +14243,7 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQuery) {
     TEST_DESCRIPTION("Test unsupported primitives generated queries");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -14256,13 +14257,19 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQuery) {
 
     auto primitives_generated_features = LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&primitives_generated_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
     if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
         printf("%s primitivesGeneratedQuery feature is not supported.\n", kSkipPrefix);
         return;
     }
+    primitives_generated_features.primitivesGeneratedQueryWithNonZeroStreams = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    auto transform_feedback_properties = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+
+    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_properties);
+    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
 
     uint32_t compute_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
     if (compute_queue_family_index == std::numeric_limits<uint32_t>::max()) {
@@ -14285,7 +14292,34 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQuery) {
     vk::CmdBeginQuery(command_buffer.handle(), query_pool.handle(), 0, 0);
     m_errorMonitor->VerifyFound();
 
-    command_buffer.end();
+    auto fpvkCmdBeginQueryIndexedEXT =
+        reinterpret_cast<PFN_vkCmdBeginQueryIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginQueryIndexedEXT"));
+    auto fpvkCmdEndQueryIndexedEXT =
+        reinterpret_cast<PFN_vkCmdEndQueryIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndQueryIndexedEXT"));
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQueryIndexedEXT-queryType-06689");
+    fpvkCmdBeginQueryIndexedEXT(command_buffer.handle(), query_pool.handle(), 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQueryIndexedEXT-queryType-06690");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQueryIndexedEXT-queryType-06691");
+    fpvkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 0, 0,
+                                transform_feedback_properties.maxTransformFeedbackStreams);
+    m_errorMonitor->VerifyFound();
+
+    query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
+
+    vk_testing::QueryPool occlusion_query_pool;
+    occlusion_query_pool.init(*m_device, query_pool_ci);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQueryIndexedEXT-queryType-06692");
+    fpvkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), occlusion_query_pool.handle(), 0, 0, 1);
+    m_errorMonitor->VerifyFound();
+
+    fpvkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 0, 0, 0);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQueryIndexedEXT-queryType-06696");
+    fpvkCmdEndQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+    m_errorMonitor->VerifyFound();
+
 }
 
 TEST_F(VkLayerTest, TestCopyMemoryToAsBuffer) {
@@ -14344,11 +14378,12 @@ TEST_F(VkLayerTest, TestCopyMemoryToAsBuffer) {
 TEST_F(VkLayerTest, PrimitivesGeneratedQueryFeature) {
     TEST_DESCRIPTION("Test missing primitives generated query feature");
 
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     if (!AreRequestedExtensionsEnabled()) {
         printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
-        //return;
+        return;
     }
     auto primitives_generated_features = LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&primitives_generated_features);
@@ -14366,6 +14401,12 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQueryFeature) {
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-06688");
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    auto fpvkCmdBeginQueryIndexedEXT =
+        reinterpret_cast<PFN_vkCmdBeginQueryIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginQueryIndexedEXT"));
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQueryIndexedEXT-queryType-06693");
+    fpvkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 0, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
