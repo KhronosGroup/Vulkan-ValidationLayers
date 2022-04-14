@@ -14421,3 +14421,49 @@ TEST_F(VkLayerTest, RayTracingPipelineDeferredOp) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkLayerTest, TestMultipleQueuesWaitingOnSemaphore) {
+    TEST_DESCRIPTION("Test submitting two command buffers that wait on the same semaphore to different queues.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (m_device->graphics_queues().size() < 2) {
+        printf("%s 2 graphics queues are needed.\n", kSkipPrefix);
+        return;
+    }
+
+    auto sem_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+
+    vk_testing::Semaphore semaphore;
+    semaphore.init(*m_device, sem_info);
+
+    VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    auto signal_submit_info = LvlInitStruct<VkSubmitInfo>();
+    signal_submit_info.signalSemaphoreCount = 1;
+    signal_submit_info.pSignalSemaphores = &semaphore.handle();
+
+    auto wait_submit_info = LvlInitStruct<VkSubmitInfo>();
+    wait_submit_info.waitSemaphoreCount = 1;
+    wait_submit_info.pWaitSemaphores = &semaphore.handle();
+    wait_submit_info.pWaitDstStageMask = &stageFlags;
+
+    auto wait_and_signal_submit_info = LvlInitStruct<VkSubmitInfo>();
+    wait_and_signal_submit_info.signalSemaphoreCount = 1;
+    wait_and_signal_submit_info.pSignalSemaphores = &semaphore.handle();
+    wait_and_signal_submit_info.waitSemaphoreCount = 1;
+    wait_and_signal_submit_info.pWaitSemaphores = &semaphore.handle();
+    wait_and_signal_submit_info.pWaitDstStageMask = &stageFlags;
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkQueue other = m_device->graphics_queues()[1]->handle();
+
+    vk::QueueSubmit(m_device->m_queue, 1, &signal_submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_device->m_queue, 1, &wait_and_signal_submit_info, VK_NULL_HANDLE);
+
+    m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pWaitSemaphores-00068");
+    vk::QueueSubmit(other, 1, &wait_submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+}
