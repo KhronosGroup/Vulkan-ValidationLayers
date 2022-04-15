@@ -10544,9 +10544,18 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
 bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                               VkFlags flags) const {
     if (disabled[query_validation]) return false;
+    bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     QueryObject query_obj(queryPool, slot);
+    auto query_pool_state = Get<QUERY_POOL_STATE>(query_obj.pool);
+    if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+        if (!enabled_features.primitives_generated_query_features.primitivesGeneratedQuery) {
+            skip |= LogError(device, "VUID-vkCmdBeginQuery-queryType-06688",
+                             "vkCreateQueryPool(): If pCreateInfo->queryType is VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT "
+                             "primitivesGeneratedQuery feature must be enabled.");
+        }
+    }
     struct BeginQueryVuids : ValidateBeginQueryVuids {
         BeginQueryVuids() : ValidateBeginQueryVuids() {
             vuid_queue_flags = "VUID-vkCmdBeginQuery-commandBuffer-cmdpool";
@@ -10566,7 +10575,8 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
         }
     };
     BeginQueryVuids vuids;
-    return ValidateBeginQuery(cb_state.get(), query_obj, flags, 0, CMD_BEGINQUERY, &vuids);
+    skip |= ValidateBeginQuery(cb_state.get(), query_obj, flags, 0, CMD_BEGINQUERY, &vuids);
+    return skip;
 }
 
 static QueryState GetLocalQueryState(const QueryMap *localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
