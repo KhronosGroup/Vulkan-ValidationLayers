@@ -14353,9 +14353,11 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQueryFeature) {
     query_pool_ci.queryType = VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT;
     query_pool_ci.queryCount = 1;
 
-    VkQueryPool query_pool;
+    vk_testing::QueryPool query_pool;
+    query_pool.init(*m_device, query_pool_ci);
+    m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-06688");
-    vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
