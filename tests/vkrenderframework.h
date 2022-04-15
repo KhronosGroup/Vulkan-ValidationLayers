@@ -295,7 +295,6 @@ class VkRenderFramework : public VkTestFramework {
         return DeviceExtensionSupported(name, spec_version);
     }
     bool DeviceExtensionEnabled(const char *name);
-    bool DeviceSimulation();
 
     // Tracks ext_name to be enabled at device creation time and attempts to enable any required instance extensions.
     // Returns true if all required instance extensions are supported or there are no required instance extensions, false

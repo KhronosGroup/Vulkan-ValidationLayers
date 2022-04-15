@@ -1,9 +1,9 @@
 //  VK tests
 //
-//  Copyright (c) 2015-2021 The Khronos Group Inc.
-//  Copyright (c) 2015-2021 Valve Corporation
-//  Copyright (c) 2015-2021 LunarG, Inc.
-//  Copyright (c) 2015-2021 Google, Inc.
+//  Copyright (c) 2015-2022 The Khronos Group Inc.
+//  Copyright (c) 2015-2022 Valve Corporation
+//  Copyright (c) 2015-2022 LunarG, Inc.
+//  Copyright (c) 2015-2022 Google, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ VkTestFramework::VkTestFramework() {}
 VkTestFramework::~VkTestFramework() {}
 
 // Define static elements
-bool VkTestFramework::m_devsim_layer = false;
 int VkTestFramework::m_phys_device_index = -1;
 ANativeWindow *VkTestFramework::window = nullptr;
 

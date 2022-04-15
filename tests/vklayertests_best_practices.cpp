@@ -81,7 +81,7 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
         m_errorMonitor->VerifyFound();
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s Test not supported by MockICD, skipping test case.\n", kSkipPrefix);
         return;
     }

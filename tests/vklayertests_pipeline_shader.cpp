@@ -7195,7 +7195,7 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
         return;
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -7288,11 +7288,6 @@ TEST_F(VkLayerTest, SubgroupSupportedProperties) {
     // 1.1 and up only.
     if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
         printf("%s Vulkan 1.1 not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
-
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s DevSim doesn't support Vulkan 1.1, skipping tests\n", kSkipPrefix);
         return;
     }
 
@@ -7534,11 +7529,6 @@ TEST_F(VkLayerTest, SubgroupRequired) {
         return;
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s DevSim doesn't support Vulkan 1.1, skipping tests\n", kSkipPrefix);
-        return;
-    }
-
     VkPhysicalDeviceSubgroupProperties subgroup_prop = GetSubgroupProperties(instance(), gpu());
 
     auto queue_family_properties = m_device->phy().queue_properties();
@@ -7773,7 +7763,7 @@ TEST_F(VkLayerTest, GraphicsPipelineStageCreationFeedbackCount) {
     CreatePipelineHelper::OneshotTest(*this, set_feedback, kErrorBit,
                                       "VUID-VkGraphicsPipelineCreateInfo-pipelineStageCreationFeedbackCount-06594", true);
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s Driver data writeback check not supported by MockICD, skipping.\n", kSkipPrefix);
     } else {
         m_errorMonitor->ExpectSuccess();
@@ -10242,7 +10232,7 @@ TEST_F(VkLayerTest, ValidatePipelineExecutablePropertiesFeature) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // MockICD will return 0 for the executable count
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -14608,7 +14598,6 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
     VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &pd_props2);
 
-    // seen sometimes when using devsim and will crash
     if (transform_feedback_props.maxTransformFeedbackStreams == 0) {
         printf("%s maxTransformFeedbackStreams is zero, skipping test.\n", kSkipPrefix);
         return;

@@ -1082,9 +1082,7 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithFeature) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    // Devsim won't read in values like maxDescriptorSetUpdateAfterBindUniformBuffers which cause OneshotTest to fail pipeline
-    // layout creation if using 1.2 devsim as it enables VK_EXT_descriptor_indexing
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -2031,8 +2029,8 @@ TEST_F(VkPositiveLayerTest, MeshShaderPointSize) {
         }
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%sNot suppored by MockICD or devsim, skipping tests\n", kSkipPrefix);
+    if (IsPlatform(kMockICD)) {
+        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
 
@@ -2551,7 +2549,7 @@ TEST_F(VkPositiveLayerTest, SpecializationWordBoundryOffset) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // need real device to produce output to check
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }

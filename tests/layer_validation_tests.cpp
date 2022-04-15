@@ -786,7 +786,7 @@ bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramewor
     VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&timeline_semaphore_props);
     vkGetPhysicalDeviceProperties2KHR(renderFramework->gpu(), &pd_props2);
     if (timeline_semaphore_props.maxTimelineSemaphoreValueDifference == 0) {
-        // If using MockICD and devsim the value might be zero'ed and cause false errors
+        // If using MockICD, the value might be zero'ed and cause false errors
         return false;
     }
 
@@ -1033,16 +1033,8 @@ VkLayerTest::VkLayerTest() {
 
     instance_layers_.push_back(kValidationLayerName);
 
-    if (VkTestFramework::m_devsim_layer) {
-        if (InstanceLayerSupported("VK_LAYER_LUNARG_device_simulation")) {
-            instance_layers_.push_back("VK_LAYER_LUNARG_device_simulation");
-        } else {
-            VkTestFramework::m_devsim_layer = false;
-            printf("             Did not find VK_LAYER_LUNARG_device_simulation layer so it will not be enabled.\n");
-        }
-    } else {
-        if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api"))
-            instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
+    if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
+        instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
     }
 
     if (InstanceLayerSupported(kSynchronization2LayerName)) {
@@ -2486,7 +2478,7 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isK
 
     renderFramework->InitFramework(user_data, enabled_features);
 
-    if (renderFramework->IsPlatform(kMockICD) || renderFramework->DeviceSimulation()) {
+    if (renderFramework->IsPlatform(kMockICD)) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return false;
     }
@@ -2589,7 +2581,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     bool descriptor_indexing = CheckDescriptorIndexingSupportAndInitFramework(
         this, m_instance_extension_names, m_device_extension_names, gpu_assisted ? &validation_features : nullptr, m_errorMonitor);
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }

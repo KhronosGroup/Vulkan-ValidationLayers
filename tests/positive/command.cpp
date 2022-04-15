@@ -550,10 +550,8 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithoutFeature12) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    // Devsim won't read in values like maxDescriptorSetUpdateAfterBindUniformBuffers which cause OneshotTest to fail pipeline
-    // layout creation if using 1.2 devsim as it enables VK_EXT_descriptor_indexing
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
+    if (IsPlatform(kMockICD)) {
+        printf("%sNot supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
 
@@ -613,10 +611,8 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithFeature) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    // Devsim won't read in values like maxDescriptorSetUpdateAfterBindUniformBuffers which cause OneshotTest to fail pipeline
-    // layout creation if using 1.2 devsim as it enables VK_EXT_descriptor_indexing
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
+    if (IsPlatform(kMockICD)) {
+        printf("%sNot supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
 

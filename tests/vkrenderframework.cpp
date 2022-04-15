@@ -367,15 +367,10 @@ bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_n
     return std::any_of(extensions.begin(), extensions.end(), IsTheQueriedExtension);
 }
 
-// Enable device profile as last layer on stack overriding devsim if there, or return if not available
+// Enable device profile as last layer on stack, or return if not available
 bool VkRenderFramework::EnableDeviceProfileLayer() {
     if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
-        if (VkTestFramework::m_devsim_layer) {
-            assert(0 == strncmp(instance_layers_.back(), "VK_LAYER_LUNARG_device_simulation", VK_MAX_EXTENSION_NAME_SIZE));
-            instance_layers_.back() = "VK_LAYER_LUNARG_device_profile_api";
-        } else {
-            instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
-        }
+        instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
     } else {
         printf("             Did not find VK_LAYER_LUNARG_device_profile_api layer; skipped.\n");
         return false;
@@ -429,9 +424,6 @@ bool VkRenderFramework::DeviceExtensionEnabled(const char *ext_name) {
     }
     return ext_found;
 }
-
-// Some tests may need to be skipped if the devsim layer is in use.
-bool VkRenderFramework::DeviceSimulation() { return m_devsim_layer; }
 
 VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
     return {
@@ -1578,17 +1570,6 @@ bool VkImageObj::IsCompatible(const VkImageUsageFlags usages, const VkFormatFeat
     if ((usages & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) && !(features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT)) return false;
     if ((usages & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) && !(features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT))
         return false;
-
-    if (m_device->IsEnabledExtension(VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
-        // WORKAROUND: for DevSim not reporting extended enums, and possibly some drivers too
-        const auto all_nontransfer_feature_flags =
-            all_feature_flags ^ (VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR);
-        const bool transfer_probably_supported_anyway = (features & all_nontransfer_feature_flags) > 0;
-        if (!transfer_probably_supported_anyway) {
-            if ((usages & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) && !(features & VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT_KHR)) return false;
-            if ((usages & VK_IMAGE_USAGE_TRANSFER_DST_BIT) && !(features & VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR)) return false;
-        }
-    }
 
     return true;
 }

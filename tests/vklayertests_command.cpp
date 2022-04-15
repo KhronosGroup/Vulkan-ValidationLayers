@@ -2835,15 +2835,6 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkFormatProperties format_props;
-    // TODO: Remove this check if or when devsim handles extensions.
-    // The chosen format has mandatory support the transfer src and dst format features when Maitenance1 is enabled. However, our
-    // use of devsim and the mock ICD violate this guarantee.
-    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_format, &format_props);
-    if (!(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
-        printf("%s Maintenance1 extension is not supported.\n", kSkipPrefix);
-        return;
-    }
 
     VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
     ci.flags = 0;
@@ -5964,7 +5955,7 @@ TEST_F(VkLayerTest, MultiDrawFeatures) {
     auto pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&multi_draw_props);
     vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
     if (multi_draw_props.maxMultiDrawCount == 0) {
-        // If using MockICD and devsim the value might be zero'ed and cause false errors
+        // If using MockICD, the value might be zero'ed and cause false errors
         return;
     }
 
@@ -6010,7 +6001,7 @@ TEST_F(VkLayerTest, IndirectDrawTests) {
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -6624,7 +6615,7 @@ TEST_F(VkLayerTest, MeshShaderNV) {
         }
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }

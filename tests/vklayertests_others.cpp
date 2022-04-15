@@ -173,7 +173,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s Test not supported by MockICD, skipping.\n", kSkipPrefix);
         return;
     }
@@ -259,7 +259,7 @@ TEST_F(VkLayerTest, PrivateDataFeature) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s Test not supported by MockICD, skipping.\n", kSkipPrefix);
         return;
     }
@@ -880,11 +880,6 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
         return;
     }
 
-    if (DeviceSimulation()) {
-        printf("%sSkipping object naming test.\n", kSkipPrefix);
-        return;
-    }
-
     VkBuffer buffer;
     VkDeviceMemory memory_1, memory_2;
     std::string memory_name = "memory_name";
@@ -993,11 +988,6 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     PFN_vkCmdInsertDebugUtilsLabelEXT fpvkCmdInsertDebugUtilsLabelEXT =
         (PFN_vkCmdInsertDebugUtilsLabelEXT)vk::GetInstanceProcAddr(instance(), "vkCmdInsertDebugUtilsLabelEXT");
     ASSERT_TRUE(fpvkCmdInsertDebugUtilsLabelEXT);  // Must be extant if extension is enabled
-
-    if (DeviceSimulation()) {
-        printf("%sSkipping object naming test.\n", kSkipPrefix);
-        return;
-    }
 
     DebugUtilsLabelCheckData callback_data;
     auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
@@ -3442,8 +3432,8 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    // Test takes magnitude of time longer for devsim and slows down testing
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    // Test takes magnitude of time longer for mock ICD and slows down testing
+    if (IsPlatform(kMockICD)) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -4016,7 +4006,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
         }
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -11068,11 +11058,6 @@ TEST_F(VkLayerTest, InvalidSpirvExtension) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s DevSim doesn't support Vulkan 1.1+, skipping tests\n", kSkipPrefix);
-        return;
-    }
 
     const std::string vertex_source = R"spirv(
                OpCapability Shader

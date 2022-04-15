@@ -4964,7 +4964,7 @@ TEST_F(VkLayerTest, InvalidTexelBufferAlignment) {
         return;
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -11070,7 +11070,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
         return;
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -11135,7 +11135,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
         return;
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -11180,7 +11180,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
         return;
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -11302,7 +11302,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
         return;
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -11652,7 +11652,7 @@ TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         printf("%s MockICD does not support the necessary memory type, skipping test\n", kSkipPrefix);
         return;
     }
@@ -13105,9 +13105,9 @@ TEST_F(VkLayerTest, InvalidShadingRateUsage) {
     vk::GetPhysicalDeviceProperties2(gpu(), &properties);
 
     if (!fsrProperties.layeredShadingRateAttachments) {
-        if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        if (IsPlatform(kMockICD)) {
             printf(
-                "%s DevSim doesn't correctly advertise format support for fragment shading rate attachments, skipping some "
+                "%s mock ICD doesn't correctly advertise format support for fragment shading rate attachments, skipping some "
                 "tests.\n",
                 kSkipPrefix);
         } else {

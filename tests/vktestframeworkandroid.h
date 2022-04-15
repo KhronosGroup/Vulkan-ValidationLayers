@@ -1,9 +1,9 @@
 //  VK tests
 //
-//  Copyright (c) 2015-2021 The Khronos Group Inc.
-//  Copyright (c) 2015-2021 Valve Corporation
-//  Copyright (c) 2015-2021 LunarG, Inc.
-//  Copyright (c) 2015-2021 Google, Inc.
+//  Copyright (c) 2015-2022 The Khronos Group Inc.
+//  Copyright (c) 2015-2022 Valve Corporation
+//  Copyright (c) 2015-2022 LunarG, Inc.
+//  Copyright (c) 2015-2022 Google, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ class VkTestFramework : public ::testing::Test {
     bool GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limits, const VkShaderStageFlagBits shader_type, const char *pshader,
                    std::vector<uint32_t> &spv, bool debug = false, const spv_target_env spv_ev = SPV_ENV_VULKAN_1_0);
     bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm, std::vector<uint32_t> &spv);
-    static bool m_devsim_layer;
     static int m_phys_device_index;
     static ANativeWindow *window;
 };
