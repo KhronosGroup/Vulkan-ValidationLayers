@@ -97,6 +97,8 @@ struct FeaturePointer {
         : IsEnabled([=](const DeviceFeatures &features) { return features.ray_tracing_motion_blur_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.shader_integer_dot_product_features.*ptr; }) {}
+    FeaturePointer(VkBool32 VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR::*ptr)
+        : IsEnabled([=](const DeviceFeatures &features) { return features.shader_subgroup_uniform_control_flow_features.*ptr; }) {}
 };
 
 // Each instance of the struct will only have a singel field non-null

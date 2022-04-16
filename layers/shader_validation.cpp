@@ -2103,6 +2103,24 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                     }
                     break;
                 }
+                case spv::ExecutionModeSubgroupUniformControlFlowKHR: {
+                    if (!enabled_features.shader_subgroup_uniform_control_flow_features.shaderSubgroupUniformControlFlow ||
+                        (phys_dev_ext_props.subgroup_properties.supportedStages & stage) == 0 ||
+                        module_state->static_data_.has_invocation_repack_instruction) {
+                        std::stringstream msg;
+                        if (!enabled_features.shader_subgroup_uniform_control_flow_features.shaderSubgroupUniformControlFlow) {
+                            msg << "shaderSubgroupUniformControlFlow feature must be enabled";
+                        } else if ((phys_dev_ext_props.subgroup_properties.supportedStages & stage) == 0) {
+                            msg << "stage" << string_VkShaderStageFlagBits(stage)
+                                << " must be in VkPhysicalDeviceSubgroupProperties::supportedStages("
+                                << string_VkShaderStageFlags(phys_dev_ext_props.subgroup_properties.supportedStages) << ")";
+                        } else {
+                            msg << "the shader must not use any invocation repack instructions";
+                        }
+                        skip |= LogError(device, "VUID-RuntimeSpirv-SubgroupUniformControlFlowKHR-06379",
+                                         "If ExecutionModeSubgroupUniformControlFlowKHR is used %s.", msg.str().c_str());
+                    }
+                } break;
             }
         }
     }

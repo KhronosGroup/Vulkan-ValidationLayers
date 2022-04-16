@@ -252,6 +252,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
         bool has_group_decoration = false;
         bool has_specialization_constants{false};
+        bool has_invocation_repack_instruction{false};
 
         // entry point is not unqiue to single value so need multimap
         std::unordered_multimap<std::string, EntryPoint> entry_points;

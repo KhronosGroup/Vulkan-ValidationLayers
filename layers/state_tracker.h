@@ -1303,6 +1303,19 @@ class ValidationStateTracker : public ValidationObject {
         }
     }
 
+    template <typename ExtProp>
+    void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, ExtProp* ext_prop) {
+        assert(ext_prop);
+        *ext_prop = LvlInitStruct<ExtProp>();
+        if (api_version < VK_API_VERSION_1_1) {
+            auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
+            DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        } else {
+            auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
+            DispatchGetPhysicalDeviceProperties2(gpu, &prop2);
+        }
+    }
+
     // Link to the device's physical-device data
     PHYSICAL_DEVICE_STATE* physical_device_state;
 
@@ -1358,6 +1371,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props;
         VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props;
         VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_size_control_props;
+        VkPhysicalDeviceSubgroupProperties subgroup_properties;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
