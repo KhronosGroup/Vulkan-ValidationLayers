@@ -16519,3 +16519,93 @@ TEST_F(VkLayerTest, TestMaxFragmentDualSrcAttachments) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, TestComputeLocalWorkgroupSize) {
+    TEST_DESCRIPTION("Test size of local workgroud with requiredSubgroupSize.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping tests.\n", kSkipPrefix, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+        return;
+    }
+
+    auto sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
+    auto features2  = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sscf);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE) {
+        printf("%s Required features are not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto subgroup_properties = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
+    auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_properties);
+    vk::GetPhysicalDeviceProperties2(gpu(), &props);
+    auto subgroup_size_control = LvlInitStruct<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>();
+    subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
+
+    uint32_t size = static_cast<uint32_t>(
+        std::ceil(std::sqrt(subgroup_size_control.requiredSubgroupSize * subgroup_properties.maxComputeWorkgroupSubgroups)));
+
+
+    if (size <= 1024) {
+        std::stringstream csSource;
+        csSource << R"glsl(
+        #version 450
+        layout(local_size_x=
+    )glsl";
+        csSource << size;
+        csSource << R"glsl(, local_size_y=
+    )glsl";
+        csSource << size;
+        csSource << R"glsl(, local_size_z=2) in;
+        void main(){
+           if (gl_GlobalInvocationID.x >= 0) { return; }
+        }
+    )glsl";
+
+        CreateComputePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.cs_.reset(new VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT));
+        pipe.InitState();
+        pipe.LateBindPipelineInfo();
+        pipe.cp_ci_.stage.pNext = &subgroup_size_control;
+        if (size * size * 2 > m_device->props.limits.maxComputeWorkGroupInvocations) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-x-06432");
+        }
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02756");
+        pipe.CreateComputePipeline(true, false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (subgroup_properties.maxSubgroupSize > 1) {
+        std::stringstream csSource;
+        csSource << R"glsl(
+            #version 450
+            layout(local_size_x=
+        )glsl";
+        csSource << subgroup_properties.maxSubgroupSize - 1;
+        csSource << R"glsl(, local_size_y=1, local_size_z=1) in;
+            void main(){
+            if (gl_GlobalInvocationID.x >= 0) { return; }
+            }
+        )glsl";
+
+        CreateComputePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.cs_.reset(new VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT));
+        pipe.InitState();
+        pipe.LateBindPipelineInfo();
+        pipe.cp_ci_.stage.pNext = &subgroup_size_control;
+        pipe.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02757");
+        pipe.CreateComputePipeline(true, false);
+        m_errorMonitor->VerifyFound();
+    }
+}
