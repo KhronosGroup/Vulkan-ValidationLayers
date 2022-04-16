@@ -130,6 +130,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             {'vulkan' : 'VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT', 'layer' : 'shader_atomic_float2_features'},
             {'vulkan' : 'VkPhysicalDeviceRayTracingMotionBlurFeaturesNV', 'layer' : 'ray_tracing_motion_blur_features'},
             {'vulkan' : 'VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR', 'layer' : 'shader_integer_dot_product_features'},
+            {'vulkan' : 'VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR', 'layer' : 'shader_subgroup_uniform_control_flow_features'},
         ]
 
         # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs

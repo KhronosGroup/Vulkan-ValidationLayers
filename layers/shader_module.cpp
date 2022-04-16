@@ -368,6 +368,14 @@ SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE 
             case spv::OpExecutionModeId: {
                 execution_mode_inst[insn.word(1)].push_back(insn);
             } break;
+            // Once https://github.com/KhronosGroup/SPIRV-Headers/issues/276 is added this should be derived from SPIR-V grammar
+            // json
+            case spv::OpTraceRayKHR:
+            case spv::OpTraceRayMotionNV:
+            case spv::OpReportIntersectionKHR:
+            case spv::OpExecuteCallableKHR:
+                has_invocation_repack_instruction = true;
+                break;
 
             default:
                 if (AtomicOperation(insn.opcode()) == true) {
