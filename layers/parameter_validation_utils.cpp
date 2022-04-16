@@ -9287,6 +9287,20 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabili
                          "vkGetPhysicalDeviceSurfaceCapabilities2KHR: pSurfaceInfo->surface is VK_NULL_HANDLE and "
                          "VK_GOOGLE_surfaceless_query is not enabled.");
     }
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    const auto *capabilities_full_screen_exclusive =
+        LvlFindInChain<VkSurfaceCapabilitiesFullScreenExclusiveEXT>(pSurfaceCapabilities->pNext);
+    if (capabilities_full_screen_exclusive) {
+        const auto *full_screen_exclusive_win32_info =
+            LvlFindInChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pSurfaceInfo->pNext);
+        if (!full_screen_exclusive_win32_info) {
+            skip |= LogError(device, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-02671",
+                             "vkGetPhysicalDeviceSurfaceCapabilities2KHR(): pSurfaceCapabilities->pNext contains "
+                             "VkSurfaceCapabilitiesFullScreenExclusiveEXT, but pSurfaceInfo->pNext does not contain "
+                             "VkSurfaceFullScreenExclusiveWin32InfoEXT");
+        }
+    }
+#endif
     return skip;
 }
 
