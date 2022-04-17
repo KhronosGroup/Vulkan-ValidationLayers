@@ -12611,3 +12611,112 @@ TEST_F(VkLayerTest, InvalidSubpassDescriptionViewMask) {
     vk::CreateRenderPass2(device(), &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TestPipelineSubpassIndex) {
+    TEST_DESCRIPTION("Test using pipeline with incompatible subpass index for current renderpass subpass");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    VkAttachmentReference attach_ref = {};
+    attach_ref.attachment = 0;
+    attach_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription sci[2] = {};
+    sci[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    sci[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    sci[1].colorAttachmentCount = 1;
+    sci[1].pColorAttachments = &attach_ref;
+
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = 0;
+    dependency.dstSubpass = 1;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    VkRenderPassCreateInfo render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    render_pass_ci.subpassCount = 2;
+    render_pass_ci.pSubpasses = sci;
+    render_pass_ci.dependencyCount = 1;
+    render_pass_ci.pDependencies = &dependency;
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attach_desc;
+
+    vk_testing::RenderPass render_pass;
+    render_pass.init(*m_device, render_pass_ci);
+
+    VkImageObj image(m_device);
+    image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkFramebufferCreateInfo framebuffer_ci = LvlInitStruct<VkFramebufferCreateInfo>();
+    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.attachmentCount = 1;
+    framebuffer_ci.pAttachments = &imageView;
+    framebuffer_ci.width = 32;
+    framebuffer_ci.height = 32;
+    framebuffer_ci.layers = 1;
+
+    vk_testing::Framebuffer framebuffer;
+    framebuffer.init(*m_device, framebuffer_ci);
+
+    CreatePipelineHelper pipe1(*this);
+    pipe1.InitInfo();
+    pipe1.gp_ci_.renderPass = render_pass.handle();
+    pipe1.gp_ci_.subpass = 0;
+    pipe1.InitState();
+    pipe1.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe2(*this);
+    pipe2.InitInfo();
+    pipe2.gp_ci_.renderPass = render_pass.handle();
+    pipe2.gp_ci_.subpass = 1;
+    pipe2.InitState();
+    pipe2.CreateGraphicsPipeline();
+
+    VkClearValue clear_value = {};
+    clear_value.color = {{0, 0, 0, 0}};
+
+    VkRenderPassBeginInfo render_pass_bi = LvlInitStruct<VkRenderPassBeginInfo>();
+    render_pass_bi.renderPass = render_pass.handle();
+    render_pass_bi.framebuffer = framebuffer.handle();
+    render_pass_bi.renderArea = {{0, 0}, {32, 32}};
+    render_pass_bi.clearValueCount = 1;
+    render_pass_bi.pClearValues = &clear_value;
+
+    m_errorMonitor->VerifyNotFound();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(render_pass_bi);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-subpass-02685");
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-subpass-02685");
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
