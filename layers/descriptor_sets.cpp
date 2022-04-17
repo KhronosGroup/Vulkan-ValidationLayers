@@ -816,15 +816,27 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
       variable_count_(variable_count),
       change_count_(0) {
     // Foreach binding, create default descriptors of given type
-    descriptors_.reserve(layout_->GetTotalDescriptorCount());
-    descriptor_store_.resize(layout_->GetTotalDescriptorCount());
+    uint32_t size = 0;
+    for (uint32_t i = 0; i < layout_->GetBindingCount(); ++i) {
+        if (layout_->GetDescriptorBindingFlagsFromIndex(i) & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
+            size += variable_count;
+        } else {
+            size += layout_->GetDescriptorCountFromIndex(i);
+        }
+    }
+    descriptors_.reserve(size);
+    descriptor_store_.resize(size);
     auto free_descriptor = descriptor_store_.data();
     for (uint32_t i = 0; i < layout_->GetBindingCount(); ++i) {
+        uint32_t descriptor_count = layout_->GetDescriptorCountFromIndex(i);
+        if (layout_->GetDescriptorBindingFlagsFromIndex(i) & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
+            descriptor_count = variable_count;
+        }
         auto type = layout_->GetTypeFromIndex(i);
         switch (type) {
             case VK_DESCRIPTOR_TYPE_SAMPLER: {
                 auto immut_sampler = layout_->GetImmutableSamplerPtrFromIndex(i);
-                for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
+                for (uint32_t di = 0; di < descriptor_count; ++di) {
                     if (immut_sampler) {
                         descriptors_.emplace_back(new ((free_descriptor++)->Sampler())
                                                       SamplerDescriptor(state_data, immut_sampler + di));
@@ -837,7 +849,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
             }
             case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
                 auto immut = layout_->GetImmutableSamplerPtrFromIndex(i);
-                for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
+                for (uint32_t di = 0; di < descriptor_count; ++di) {
                     if (immut) {
                         descriptors_.emplace_back(new ((free_descriptor++)->ImageSampler())
                                                       ImageSamplerDescriptor(state_data, immut + di));
@@ -853,42 +865,42 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
             case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
             case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
             case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-                for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
+                for (uint32_t di = 0; di < descriptor_count; ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Image()) ImageDescriptor(type));
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-                for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
+                for (uint32_t di = 0; di < descriptor_count; ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Texel()) TexelDescriptor(type));
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-                for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
+                for (uint32_t di = 0; di < descriptor_count; ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
-                for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
+                for (uint32_t di = 0; di < descriptor_count; ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->InlineUniform()) InlineUniformDescriptor(type));
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
             case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-                for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
+                for (uint32_t di = 0; di < descriptor_count; ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->AccelerationStructure())
                                                   AccelerationStructureDescriptor(type));
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE:
-                for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
+                for (uint32_t di = 0; di < descriptor_count; ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Mutable()) MutableDescriptor());
                 }
                 break;
             default:
                 if (IsDynamicDescriptor(type) && IsBufferDescriptor(type)) {
-                    for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
+                    for (uint32_t di = 0; di < descriptor_count; ++di) {
                         dynamic_offset_idx_to_descriptor_list_.push_back(descriptors_.size());
                         descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
                     }
