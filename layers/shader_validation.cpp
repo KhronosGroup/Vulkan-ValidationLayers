@@ -2081,6 +2081,10 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *module_state,
                         skip |= LogError(device, "VUID-RuntimeSpirv-LocalSizeId-06434",
                                          "LocalSizeId execution mode used but maintenance4 feature not enabled");
                     }
+                    if (!IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
+                        skip |= LogError(device, "VUID-RuntimeSpirv-LocalSizeId-06433",
+                                         "LocalSizeId execution mode used but maintenance4 extension is not enabled and used Vulkan api version is 1.2 or less");
+                    }
                     break;
                 }
 
