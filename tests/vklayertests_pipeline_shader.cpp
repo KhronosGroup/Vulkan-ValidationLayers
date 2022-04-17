@@ -16564,6 +16564,44 @@ TEST_F(VkLayerTest, TestMaxFragmentDualSrcAttachments) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, TestLocalSizeIdExecutionMode) {
+    TEST_DESCRIPTION("Test LocalSizeId spirv execution mode");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() != VK_API_VERSION_1_2) {
+        printf("%s Test requires Vulkan = 1.2.\n", kSkipPrefix);
+        return;
+    }
+
+    const std::string source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionModeId %main LocalSizeId %uint_1 %uint_1 %uint_1
+               OpSource GLSL 450
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM));
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-LocalSizeId-06433");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-LocalSizeId-06434");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, TestComputeLocalWorkgroupSize) {
     TEST_DESCRIPTION("Test size of local workgroud with requiredSubgroupSize.");
 
