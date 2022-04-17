@@ -629,7 +629,17 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
 
     using namespace std::chrono;
     using std::thread;
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1 extensions, not available, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    // Test randomly fails with VK_TIMEOUT, most likely a driver bug
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        printf("%s Test does not run on AMD proprietary driver, skipping tests\n", kSkipPrefix);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     const auto queue_family = DeviceObj()->GetDefaultQueue()->get_family_index();
