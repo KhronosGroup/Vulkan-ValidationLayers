@@ -12612,6 +12612,65 @@ TEST_F(VkLayerTest, InvalidSubpassDescriptionViewMask) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, TestAllocatingVariableDescriptorSets) {
+    TEST_DESCRIPTION("Test allocating large variable descriptor sets");
+
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        return;
+    }
+    auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&indexing_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (indexing_features.descriptorBindingVariableDescriptorCount == VK_FALSE) {
+        printf("%s descriptorBindingVariableDescriptorCount feature not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_errorMonitor->ExpectSuccess();
+    VkDescriptorBindingFlagsEXT flags[2] = {0, VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT};
+    auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+    flags_create_info.bindingCount = 2;
+    flags_create_info.pBindingFlags = flags;
+
+    VkDescriptorSetLayoutBinding bindings[2] = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, std::numeric_limits<uint32_t>::max() / 64, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    auto ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(&flags_create_info);
+    ds_layout_ci.bindingCount = 2;
+    ds_layout_ci.pBindings = bindings;
+    vk_testing::DescriptorSetLayout ds_layout;
+    ds_layout.init(*m_device, ds_layout_ci);
+    VkDescriptorSetLayout ds_layout_handle = ds_layout.handle();
+
+    auto count_alloc_info = LvlInitStruct<VkDescriptorSetVariableDescriptorCountAllocateInfoEXT>();
+    count_alloc_info.descriptorSetCount = 1;
+    uint32_t variable_count = 2;
+    count_alloc_info.pDescriptorCounts = &variable_count;
+
+    VkDescriptorPoolSize pool_sizes[2] = {{bindings[0].descriptorType, bindings[0].descriptorCount},
+                                          {bindings[1].descriptorType, bindings[1].descriptorCount}};
+    auto dspci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    dspci.poolSizeCount = 2;
+    dspci.pPoolSizes = pool_sizes;
+    dspci.maxSets = 1;
+    vk_testing::DescriptorPool pool;
+    pool.init(*m_device, dspci);
+
+    VkDescriptorSetAllocateInfo ds_alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>(&count_alloc_info);
+    ds_alloc_info.descriptorPool = pool.handle();
+    ds_alloc_info.descriptorSetCount = 1;
+    ds_alloc_info.pSetLayouts = &ds_layout_handle;
+
+    VkDescriptorSet ds;
+    vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
+
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkLayerTest, TestPipelineSubpassIndex) {
     TEST_DESCRIPTION("Test using pipeline with incompatible subpass index for current renderpass subpass");
 
