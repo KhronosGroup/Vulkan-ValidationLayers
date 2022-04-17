@@ -602,6 +602,17 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
                 "same logical device. On some drivers or architectures it may be most optimal to re-use existing descriptor sets.",
                 VendorSpecificTag(kBPVendorArm));
         }
+
+        if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
+            // Track number of descriptorSets allowable in this pool
+            if (pool_state->GetAvailableSets() < pAllocateInfo->descriptorSetCount) {
+                skip |= LogWarning(pool_state->Handle(), kVUID_BestPractices_EmptyDescriptorPool,
+                                 "vkAllocateDescriptorSets(): Unable to allocate %" PRIu32 " descriptorSets from %s"
+                                 ". This pool only has %" PRIu32 " descriptorSets remaining.",
+                                 pAllocateInfo->descriptorSetCount, report_data->FormatHandle(pool_state->Handle()).c_str(),
+                                 pool_state->GetAvailableSets());
+            }
+        }
     }
 
     return skip;
