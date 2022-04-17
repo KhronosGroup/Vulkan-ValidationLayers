@@ -1500,6 +1500,40 @@ TEST_F(VkBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
+    TEST_DESCRIPTION("Set semaphore in SubmitInfo but count is 0");
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+
+    auto semaphore_ci = LvlInitStruct<VkSemaphoreCreateInfo>();
+    vk_testing::Semaphore semaphore;
+    semaphore.init(*m_device, semaphore_ci);
+    VkSemaphore semaphore_handle = semaphore.handle();
+
+    VkSubmitInfo signal_submit_info = LvlInitStruct<VkSubmitInfo>();
+    signal_submit_info.signalSemaphoreCount = 0;
+    signal_submit_info.pSignalSemaphores = &semaphore_handle;
+
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-SemaphoreCount");
+    vk::QueueSubmit(m_device->m_queue, 1, &signal_submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess(kWarningBit);
+    signal_submit_info.signalSemaphoreCount = 1;
+    vk::QueueSubmit(m_device->m_queue, 1, &signal_submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyNotFound();
+
+    VkSubmitInfo wait_submit_info = LvlInitStruct<VkSubmitInfo>();
+    wait_submit_info.waitSemaphoreCount = 0;
+    wait_submit_info.pWaitSemaphores = &semaphore_handle;
+
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-SemaphoreCount");
+    vk::QueueSubmit(m_device->m_queue, 1, &wait_submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     TEST_DESCRIPTION("Attempt to allocate more sets and descriptors than descriptor pool has available.");
     VkResult err;
