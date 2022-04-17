@@ -1499,3 +1499,54 @@ TEST_F(VkBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
+    TEST_DESCRIPTION("Attempt to allocate more sets and descriptors than descriptor pool has available.");
+    VkResult err;
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    // Create Pool w/ 1 Sampler descriptor, but try to alloc Uniform Buffer
+    // descriptor from it
+    VkDescriptorPoolSize ds_type_count = {};
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+    ds_type_count.descriptorCount = 2;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    ds_pool_ci.flags = 0;
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    VkDescriptorPool ds_pool;
+    err = vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+    ASSERT_VK_SUCCESS(err);
+
+    VkDescriptorSetLayoutBinding dsl_binding_samp = {};
+    dsl_binding_samp.binding = 0;
+    dsl_binding_samp.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    dsl_binding_samp.descriptorCount = 1;
+    dsl_binding_samp.stageFlags = VK_SHADER_STAGE_ALL;
+    dsl_binding_samp.pImmutableSamplers = NULL;
+
+    const VkDescriptorSetLayoutObj ds_layout_samp(m_device, {dsl_binding_samp});
+
+    // Try to allocate 2 sets when pool only has 1 set
+    VkDescriptorSet descriptor_sets[2];
+    VkDescriptorSetLayout set_layouts[2] = {ds_layout_samp.handle(), ds_layout_samp.handle()};
+    VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+    alloc_info.descriptorSetCount = 2;
+    alloc_info.descriptorPool = ds_pool;
+    alloc_info.pSetLayouts = set_layouts;
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-EmptyDescriptorPool");
+    err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptor_sets);
+    m_errorMonitor->VerifyFound();
+}
