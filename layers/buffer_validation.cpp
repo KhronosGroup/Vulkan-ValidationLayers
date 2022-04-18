@@ -4802,6 +4802,45 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         }
     }
 
+    if ((pCreateInfo->usage & (VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR | VK_BUFFER_USAGE_VIDEO_DECODE_DST_BIT_KHR)) > 0) {
+        bool has_decode_codec_operation = false;
+        const auto* video_profiles = LvlFindInChain<VkVideoProfilesKHR>(pCreateInfo->pNext);
+        if (video_profiles) {
+            for (uint32_t i = 0; i < video_profiles->profileCount; ++i) {
+                if (video_profiles->pProfiles[i].videoCodecOperation &
+                    (VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_EXT | VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_EXT)) {
+                    has_decode_codec_operation = true;
+                    break;
+                }
+            }
+        }
+        if (!has_decode_codec_operation) {
+            skip |= LogError(device, "VUID-VkBufferCreateInfo-usage-04813",
+                             "vkCreateBuffer(): pCreateInfo->usage is %s, but pNext chain does not include VkVideoProfilesKHR with "
+                             "a decode codec-operation.",
+                             string_VkBufferUsageFlags(pCreateInfo->usage).c_str());
+        }
+    }
+    if ((pCreateInfo->usage & (VK_BUFFER_USAGE_VIDEO_ENCODE_SRC_BIT_KHR | VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR)) > 0) {
+        bool has_encode_codec_operation = false;
+        const auto *video_profiles = LvlFindInChain<VkVideoProfilesKHR>(pCreateInfo->pNext);
+        if (video_profiles) {
+            for (uint32_t i = 0; i < video_profiles->profileCount; ++i) {
+                if (video_profiles->pProfiles[i].videoCodecOperation &
+                    (VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_EXT | VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_EXT)) {
+                    has_encode_codec_operation = true;
+                    break;
+                }
+            }
+        }
+        if (!has_encode_codec_operation) {
+            skip |= LogError(device, "VUID-VkBufferCreateInfo-usage-04814",
+                             "vkCreateBuffer(): pCreateInfo->usage is %s, but pNext chain does not include VkVideoProfilesKHR with "
+                             "an encode codec-operation.",
+                             string_VkBufferUsageFlags(pCreateInfo->usage).c_str());
+        }
+    }
+
     return skip;
 }
 
