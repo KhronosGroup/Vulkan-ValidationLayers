@@ -5587,7 +5587,7 @@ bool CoreChecks::ValidateMemoryTypes(const DEVICE_MEMORY_STATE *mem_info, const 
 }
 
 bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
-                                          const char *api_name) const {
+                                          const void *pNext, const char *api_name) const {
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     bool bind_buffer_mem_2 = strcmp(api_name, "vkBindBufferMemory()") != 0;
 
@@ -5721,6 +5721,18 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                  api_name, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(buffer).c_str());
             }
         }
+        const auto *bind_buffer_memory_device_group_info = LvlFindInChain<VkBindBufferMemoryDeviceGroupInfo>(pNext);
+        if (bind_buffer_memory_device_group_info) {
+            if (bind_buffer_memory_device_group_info->deviceIndexCount != 0 &&
+                bind_buffer_memory_device_group_info->deviceIndexCount != device_group_create_info.physicalDeviceCount &&
+                device_group_create_info.physicalDeviceCount > 0) {
+                skip |= LogError(buffer, "VUID-VkBindBufferMemoryDeviceGroupInfo-deviceIndexCount-01606",
+                                 "%s: The number of physical devices in the logical device is %" PRIu32
+                                 ", but VkBindBufferMemoryDeviceGroupInfo::deviceIndexCount is %" PRIu32 ".",
+                                 api_name, device_group_create_info.physicalDeviceCount,
+                                 bind_buffer_memory_device_group_info->deviceIndexCount);
+            }
+        }
     }
     return skip;
 }
@@ -5728,7 +5740,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
 bool CoreChecks::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem,
                                                  VkDeviceSize memoryOffset) const {
     const char *api_name = "vkBindBufferMemory()";
-    return ValidateBindBufferMemory(buffer, mem, memoryOffset, api_name);
+    return ValidateBindBufferMemory(buffer, mem, memoryOffset, nullptr, api_name);
 }
 
 bool CoreChecks::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
@@ -5738,7 +5750,8 @@ bool CoreChecks::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bind
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         sprintf(api_name, "vkBindBufferMemory2() pBindInfos[%u]", i);
-        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset, api_name);
+        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset,
+                                         pBindInfos[i].pNext, api_name);
     }
     return skip;
 }
@@ -5750,7 +5763,8 @@ bool CoreChecks::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t b
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         sprintf(api_name, "vkBindBufferMemory2KHR() pBindInfos[%u]", i);
-        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset, api_name);
+        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset,
+                                         pBindInfos[i].pNext, api_name);
     }
     return skip;
 }
@@ -15673,6 +15687,15 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                  "%s: VkBindImageMemoryDeviceGroupInfo in pNext of pBindInfos[%" PRIu32
                                  "] has both deviceIndexCount and splitInstanceBindRegionCount greater than 0.",
                                  error_prefix, i);
+            }
+            if (bind_image_memory_device_group->deviceIndexCount != 0 &&
+                bind_image_memory_device_group->deviceIndexCount != device_group_create_info.physicalDeviceCount &&
+                device_group_create_info.physicalDeviceCount > 0) {
+                skip |= LogError(bind_info.image, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01634",
+                                 "%s: The number of physical devices in the logical device is %" PRIu32
+                                 ", but VkBindImageMemoryDeviceGroupInfo::deviceIndexCount is %" PRIu32 ".",
+                                 api_name, device_group_create_info.physicalDeviceCount,
+                                 bind_image_memory_device_group->deviceIndexCount);
             }
         }
     }
