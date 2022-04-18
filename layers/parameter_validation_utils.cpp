@@ -1810,11 +1810,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                                          AllVkFormatEnums, rendering_struct->stencilAttachmentFormat,
                                                          "VUID-VkGraphicsPipelineCreateInfo-renderPass-06584");
                             if (!FormatHasStencil(rendering_struct->stencilAttachmentFormat)) {
-                                skip |= LogError(
-                                    device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06588",
-                                    "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                                    "]: VkPipelineRenderingCreateInfo::stencilAttachmentFormat  (%s) does not have a depth aspect.",
-                                    i, string_VkFormat(rendering_struct->stencilAttachmentFormat));
+                                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06588",
+                                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                                 "]: VkPipelineRenderingCreateInfo::stencilAttachmentFormat  (%s) does not have a "
+                                                 "stencil aspect.",
+                                                 i, string_VkFormat(rendering_struct->stencilAttachmentFormat));
                             }
                         }
 
