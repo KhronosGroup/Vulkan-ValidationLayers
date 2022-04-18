@@ -776,6 +776,11 @@ static const std::map<BufferError, std::array<Entry, 2>> kBufferErrors{
          {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-size-01188"},
          {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-size-01188"},
      }}},
+    {BufferError::kQueueFamilyExternal,
+     {{
+         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-srcQueueFamilyIndex-04087"},
+         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-srcQueueFamilyIndex-04087"},
+     }}},
 };
 
 const std::string &GetBufferBarrierVUID(const Location &loc, BufferError error) {

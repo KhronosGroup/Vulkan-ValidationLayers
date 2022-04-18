@@ -5373,6 +5373,13 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
                              report_data->FormatHandle(mem_barrier.buffer).c_str());
         }
     }
+
+    if (mem_barrier.srcQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL &&
+        mem_barrier.dstQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL) {
+        auto size_loc = loc.dot(Field::srcQueueFamilyIndex);
+        const auto &vuid = GetBufferBarrierVUID(size_loc, BufferError::kQueueFamilyExternal);
+        skip |= LogError(objects, vuid, "Both srcQueueFamilyIndex and dstQueueFamilyIndex are VK_QUEUE_FAMILY_EXTERNAL.");
+    }
     return skip;
 }
 
