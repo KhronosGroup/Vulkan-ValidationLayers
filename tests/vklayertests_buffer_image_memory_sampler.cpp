@@ -15335,6 +15335,55 @@ TEST_F(VkLayerTest, CreateColorImageWithDepthAspect) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, VideoBufferUsage) {
+    TEST_DESCRIPTION("Create buffer with USAGE_VIDEO_DECODE.");
+
+    AddRequiredExtensions(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s extension not supported, skipping test.\n", kSkipPrefix, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
+        return;
+    }
+
+    VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.usage = VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR | VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR;
+    buffer_ci.size = 2048;
+
+    VkBuffer buffer;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-04813");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-04814");
+    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+
+    VkVideoProfileKHR video_profile[2];
+    video_profile[0] = LvlInitStruct<VkVideoProfileKHR>();
+    video_profile[0].videoCodecOperation = VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_EXT;
+    video_profile[0].chromaSubsampling = VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR;
+    video_profile[0].chromaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
+    video_profile[0].lumaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
+    video_profile[1] = LvlInitStruct<VkVideoProfileKHR>();
+    video_profile[1].videoCodecOperation = VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_EXT;
+    video_profile[1].chromaSubsampling = VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR;
+    video_profile[1].chromaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
+    video_profile[1].lumaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
+    VkVideoProfilesKHR video_profiles = LvlInitStruct<VkVideoProfilesKHR>();
+    video_profiles.profileCount = 1;
+    video_profiles.pProfiles = video_profile;
+    buffer_ci.pNext = &video_profiles;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-04814");
+    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+
+    video_profiles.profileCount = 2;
+
+    m_errorMonitor->ExpectSuccess();
+    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
+    m_errorMonitor->VerifyNotFound();
+
+    vk::DestroyBuffer(device(), buffer, nullptr);
+}
+
 TEST_F(VkLayerTest, TestInvalidBarrierQueues) {
     TEST_DESCRIPTION("Test buffer memory with both src and dst queue VK_QUEUE_FAMILY_EXTERNAL.");
 
