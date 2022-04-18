@@ -15334,3 +15334,29 @@ TEST_F(VkLayerTest, CreateColorImageWithDepthAspect) {
     color_image_view.init(*m_device, civ_ci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TestInvalidBarrierQueues) {
+    TEST_DESCRIPTION("Test buffer memory with both src and dst queue VK_QUEUE_FAMILY_EXTERNAL.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags mem_reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    buffer.init_as_src_and_dst(*m_device, 256, mem_reqs);
+
+    VkBufferMemoryBarrier bmb = LvlInitStruct<VkBufferMemoryBarrier>();
+    bmb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    bmb.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    bmb.srcQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    bmb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    bmb.buffer = buffer.handle();
+    bmb.offset = 0;
+    bmb.size = VK_WHOLE_SIZE;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferMemoryBarrier-srcQueueFamilyIndex-04087");
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 1, &bmb, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
