@@ -1,6 +1,6 @@
 /* Copyright (c) 2021 The Khronos Group Inc.
  * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2022 LunarG, Inc.
  * Copyright (C) 2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -59,6 +59,7 @@ enum class BufferError {
     kOffsetTooBig,
     kSizeOutOfRange,
     kSizeZero,
+    kQueueFamilyExternal,
 };
 
 const std::string &GetBufferBarrierVUID(const Location &loc, BufferError error);
