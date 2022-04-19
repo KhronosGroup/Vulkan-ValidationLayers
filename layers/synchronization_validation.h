@@ -1183,7 +1183,137 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     std::vector<SyncOpEntry> sync_ops_;
 };
 
-class QueueBatchContext : public CommandExecutionContext {};
+class QueueSyncState;
+
+// Store the ResourceUsageRecords for the global tag range.  The prev_ field allows for
+// const Validation phase access from the cmd state "overlay" seamlessly.
+class AccessLogger {
+  public:
+    struct BatchRecord {
+        BatchRecord() = default;
+        BatchRecord(const BatchRecord &other) = default;
+        BatchRecord(BatchRecord &&other) = default;
+        BatchRecord(const QueueSyncState *q, uint64_t submit, uint32_t batch)
+            : queue(q), submit_index(submit), batch_index(batch) {}
+        BatchRecord &operator=(const BatchRecord &other) = default;
+        const QueueSyncState *queue;
+        uint64_t submit_index;
+        uint32_t batch_index;
+    };
+
+    struct AccessRecord {
+        const BatchRecord *batch;
+        const ResourceUsageRecord *record;
+        bool IsValid() const { return batch && record; }
+    };
+
+    // BatchLog lookup is batch relative, thus the batch doesn't need to track it's offset
+    class BatchLog {
+      public:
+        BatchLog() = default;
+        BatchLog(const BatchLog &batch) = default;
+        BatchLog(BatchLog &&other) = default;
+        BatchLog &operator=(const BatchLog &other) = default;
+        BatchLog &operator=(BatchLog &&other) = default;
+        BatchLog(const BatchRecord &batch) : batch_(batch) {}
+
+        size_t Size() const { return log_.size(); }
+        const BatchRecord &GetBatch() const { return batch_; }
+        AccessRecord operator[](size_t index) const;
+
+        void Append(const CommandExecutionContext::AccessLog &other);
+
+      private:
+        BatchRecord batch_;
+        layer_data::unordered_set<std::shared_ptr<const CMD_BUFFER_STATE>> cbs_referenced_;
+        CommandExecutionContext::AccessLog log_;
+    };
+
+    using AccessLogRangeMap = sparse_container::range_map<ResourceUsageTag, BatchLog>;
+
+    AccessLogger(const AccessLogger *prev = nullptr) : prev_(prev) {}
+    // AccessLogger lookup is based on global tags
+    AccessRecord operator[](ResourceUsageTag tag) const;
+    BatchLog *AddBatch(const QueueSyncState *queue_state, uint64_t submit_id, uint32_t batch_id, const ResourceUsageRange &range);
+    void MergeMove(AccessLogger &&child);
+    void Reset();
+
+  private:
+    const AccessLogger *prev_;
+    AccessLogRangeMap access_log_map_;
+};
+
+class SemaphoreSyncState;
+// TODO need a map from fence to submbit batch id
+class QueueBatchContext : public CommandExecutionContext {
+  public:
+    using BatchSet = layer_data::unordered_set<std::shared_ptr<const QueueBatchContext>>;
+    struct CmdBufferEntry {
+        uint32_t index = 0;
+        std::shared_ptr<const CommandBufferAccessContext> cb;
+        CmdBufferEntry(uint32_t index_, std::shared_ptr<const CommandBufferAccessContext> &&cb_)
+            : index(index_), cb(std::move(cb_)) {}
+    };
+    using CommandBuffers = std::vector<CmdBufferEntry>;
+
+    std::string FormatUsage(ResourceUsageTag tag) const override;
+    AccessContext *GetCurrentAccessContext() override { return &access_context_; }
+    const AccessContext *GetCurrentAccessContext() const override { return &access_context_; }
+    SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
+    const SyncEventsContext *GetCurrentEventsContext() const override { return &events_context_; }
+    const QueueSyncState *GetQueueSyncState() const { return queue_state_; }
+    VkQueueFlags GetQueueFlags() const;
+
+    void SetBatchLog(AccessLogger &loggger, uint64_t sumbit_id, uint32_t batch_id);
+    void ResetAccessLog() {
+        logger_ = nullptr;
+        batch_log_ = nullptr;
+    }
+    ResourceUsageTag GetTagLimit() const override { return batch_log_->Size() + tag_range_.begin; }
+    // begin is the tag bias  / .size() is the number of total records that should eventually be in access_log_
+    ResourceUsageRange GetTagRange() const { return tag_range_; }
+    void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) override;
+
+    void SetTagBias(ResourceUsageTag);
+    CommandBuffers::const_iterator begin() const { return command_buffers_.cbegin(); }
+    CommandBuffers::const_iterator end() const { return command_buffers_.cend(); }
+
+    template <typename BatchInfo>
+    QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state,
+                      const std::shared_ptr<const QueueBatchContext> &prev_batch, const BatchInfo &submit_info_);
+    QueueBatchContext() = delete;
+
+    VulkanTypedHandle Handle() const override;
+
+    template <typename BatchInfo, typename Fn>
+    static void ForEachWaitSemaphore(const BatchInfo &batch_info, Fn &&func);
+
+  private:
+    using WaitBatchMap = layer_data::unordered_map<const QueueBatchContext *, AccessContext::TrackBack *>;
+
+    // The BatchInfo is either the Submit or Submit2 version with traits allowing generic acces
+    template <typename BatchInfo>
+    class SubmitInfoAccessor {};
+    template <typename BatchInfo>
+    void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const BatchInfo &batch_info);
+    template <typename BatchInfo>
+    void SetupCommandBufferInfo(const BatchInfo &batch_info);
+
+    void WaitOneSemaphore(WaitBatchMap *batch_trackbacks, VkSemaphore sem, VkPipelineStageFlags2 wait_mask);
+
+    const QueueSyncState *queue_state_ = nullptr;
+    ResourceUsageRange tag_range_ = ResourceUsageRange(0, 0);  // Range of tags referenced by cbs_referenced
+
+    AccessContext access_context_;
+    SyncEventsContext events_context_;
+
+    // Clear these after validation and import
+    CommandBuffers command_buffers_;
+    BatchSet async_batches_;
+    // When null use the global logger
+    AccessLogger *logger_ = nullptr;
+    AccessLogger::BatchLog *batch_log_ = nullptr;
+};
 
 class QueueSyncState {
   public:
@@ -1197,9 +1327,12 @@ class QueueSyncState {
         return VulkanTypedHandle(static_cast<VkQueue>(VK_NULL_HANDLE), kVulkanObjectTypeQueue);
     }
     std::shared_ptr<const QueueBatchContext> LastBatch() const { return last_batch_; }
+    void SetLastBatch(std::shared_ptr<QueueBatchContext> &&last);
     QUEUE_STATE *GetQueueState() { return queue_state_.get(); }
     const QUEUE_STATE *GetQueueState() const { return queue_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
+
+    uint64_t ReserveSubmitId() const;  // Method is const but updates mutable sumbit_index atomically.
 
   private:
     mutable std::atomic<uint64_t> submit_index_;
@@ -1216,6 +1349,8 @@ class SemaphoreSyncState {
     SemaphoreSyncState &operator=(const SemaphoreSyncState &other) = default;
     SemaphoreSyncState &operator=(SemaphoreSyncState &&other) = default;
     SemaphoreSyncState(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state) : sem_state_(sem_state), batch_(), exec_scope_() {}
+    void Signal(const std::shared_ptr<const QueueBatchContext> &batch_, const VkSemaphoreSubmitInfo &signal_info);
+    void Reset();
     const SyncExecScope &GetScope() const { return exec_scope_; }
     const std::shared_ptr<const QueueBatchContext> &GetBatch() const { return batch_; }
     VkSemaphore Semaphore() const { return sem_state_->semaphore(); }
@@ -1234,18 +1369,31 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     SyncValidator() { container_type = LayerObjectTypeSyncValidation; }
     virtual ~SyncValidator() { ResetCommandBufferCallbacks(); };
 
+    // Global tag range for submitted command buffers resource usage logs
+    mutable std::atomic<ResourceUsageTag> tag_limit_{0};  // This is reserved in Validation phase, thus mutable and atomic
+    ResourceUsageRange ReserveGlobalTagRange(size_t tag_count) const;  // Note that the tag_limit_ is mutable this has side effects
+    // This is a snapshot value only
+    ResourceUsageTag GetTagLimit() const { return tag_limit_.load(); }
+    AccessLogger global_access_log_;
+
     layer_data::unordered_map<VkCommandBuffer, std::shared_ptr<CommandBufferAccessContext>> cb_access_state;
 
     layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>> queue_sync_states_;
     layer_data::unordered_map<VkSemaphore, std::shared_ptr<SemaphoreSyncState>> sync_semaphores_;
+    layer_data::unordered_map<VkSemaphore, std::shared_ptr<SemaphoreSyncState>> signaled_semaphores_;
 
     const QueueSyncState *GetQueueSyncState(VkQueue queue) const;
     QueueSyncState *GetQueueSyncState(VkQueue queue);
     std::shared_ptr<const QueueSyncState> GetQueueSyncStateShared(VkQueue queue) const;
     std::shared_ptr<QueueSyncState> GetQueueSyncStateShared(VkQueue queue);
+    template <typename Predicate>
+    QueueBatchContext::BatchSet GetQueueLastBatchSnapshot(Predicate &&pred) const;
 
     std::shared_ptr<SemaphoreSyncState> GetSemaphoreSyncState(VkSemaphore sem);
     std::shared_ptr<const SemaphoreSyncState> GetSemaphoreSyncState(VkSemaphore sem) const;
+    std::shared_ptr<const SemaphoreSyncState> GetSignalledSemaphore(VkSemaphore sem) const;
+    void SignalSemaphore(std::shared_ptr<SemaphoreSyncState> &&sem_state);
+    std::shared_ptr<SemaphoreSyncState> UnsignalSemaphore(VkSemaphore sem);
 
     std::shared_ptr<CommandBufferAccessContext> AccessContextFactory(VkCommandBuffer command_buffer);
     CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer);
@@ -1253,6 +1401,9 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     const CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer) const;
     std::shared_ptr<CommandBufferAccessContext> GetAccessContextShared(VkCommandBuffer command_buffer);
     std::shared_ptr<const CommandBufferAccessContext> GetAccessContextShared(VkCommandBuffer command_buffer) const;
+
+    const QueueBatchContext *GetQueueSubmitBatch(VkSemaphore semaphore) const;
+    void SetQueueSubmitBatch(VkSemaphore semaphore, std::shared_ptr<QueueBatchContext> batch_);
 
     void ResetCommandBufferCallback(VkCommandBuffer command_buffer);
     void FreeCommandBufferCallback(VkCommandBuffer command_buffer);
