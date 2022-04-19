@@ -342,6 +342,22 @@ class ValidationStateTracker : public ValidationObject {
         return GetStateMap<State>().size();
     }
 
+    template <typename State, typename Fn>
+    void ForEachShared(Fn&& fn) const {
+        const auto& map = GetStateMap<State>();
+        for (const auto& entry : map.snapshot()) {
+            fn(entry.second);
+        }
+    }
+
+    template <typename State, typename Fn>
+    void ForEachShared(Fn&& fn) {
+        auto& map = GetStateMap<State>();
+        for (const auto& entry : map.snapshot()) {
+            fn(entry.second);
+        }
+    }
+
     template <typename State>
     void ForEach(std::function<void(const State& s)> fn) const {
         const auto& map = GetStateMap<State>();
