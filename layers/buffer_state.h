@@ -48,6 +48,13 @@ class BUFFER_STATE : public BINDABLE {
     sparse_container::range<VkDeviceAddress> DeviceAddressRange() const {
         return {deviceAddress, deviceAddress + createInfo.size};
     }
+
+    bool DoesBoundMemoryOverlap(const sparse_container::range<VkDeviceSize> &src_region, const BUFFER_STATE *dst,
+                                const sparse_container::range<VkDeviceSize> &dst_region) const;
+
+  protected:
+    using MemRange = std::pair<VkDeviceMemory, sparse_container::range<VkDeviceSize>>;
+    std::vector<MemRange> ComputeMemoryRanges(const sparse_container::range<VkDeviceSize> &region) const;
 };
 
 class BUFFER_VIEW_STATE : public BASE_NODE {

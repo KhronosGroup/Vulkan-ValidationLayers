@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,3 +49,66 @@ BUFFER_STATE::BUFFER_STATE(ValidationStateTracker *dev_data, VkBuffer buff, cons
           requirements(GetMemoryRequirements(dev_data, buff)),
           memory_requirements_checked(false) {}
 
+bool BUFFER_STATE::DoesBoundMemoryOverlap(const sparse_container::range<VkDeviceSize> &src_region, const BUFFER_STATE *dst,
+                                          const sparse_container::range<VkDeviceSize> &dst_region) const {
+    if (Invalid() || dst->Invalid()) return false;
+
+    // None of them are sparse, we can easily check
+    if (!sparse && !dst->sparse) {
+        if (bound_memory_.begin()->first == dst->bound_memory_.begin()->first) {
+            return src_region.intersects(dst_region);
+        }
+    } else {
+        auto src_ranges = ComputeMemoryRanges(src_region);
+        auto dst_ranges = dst->ComputeMemoryRanges(dst_region);
+
+        // Perf improvement potential here
+        for (const auto &src : src_ranges) {
+            for (const auto &dst : dst_ranges) {
+                if (src.first == dst.first && src.second.intersects(dst.second)) return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+std::vector<BUFFER_STATE::MemRange> BUFFER_STATE::ComputeMemoryRanges(const sparse_container::range<VkDeviceSize> &region) const {
+    std::vector<MemRange> ranges;
+    auto it = bound_memory_.begin();
+
+    VkDeviceSize range_start = 0u;
+    VkDeviceSize range_end = range_start;
+    VkDeviceSize point = region.begin;
+
+    // Find start of range that fall inside the region
+    while (it != bound_memory_.end()) {
+        range_end += it->second.size;
+        if (range_start <= point && point <= range_end) {
+            if (range_end < point) point = range_end;
+            ranges.emplace_back(
+                MemRange{it->first, {it->second.offset + (region.begin - range_start), it->second.offset + (point - range_start)}});
+            break;
+        }
+        ++it;
+        range_start = range_end;
+    }
+    ++it;
+    range_start = range_end;
+    point = region.end;
+
+    // Find end
+    while (it != bound_memory_.end()) {
+        range_end += it->second.size;
+        if (range_start <= point && point <= range_end) {
+            ranges.emplace_back(MemRange{it->first, {it->second.offset, it->second.offset + (point - range_start)}});
+            break;
+        }
+
+        ranges.emplace_back(MemRange{it->first, {it->second.offset, it->second.offset + it->second.size}});
+        ++it;
+        range_start = range_end;
+    }
+
+    return ranges;
+}
