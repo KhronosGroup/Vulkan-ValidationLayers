@@ -3503,6 +3503,31 @@ void ResourceAccessState::ReadState::Set(VkPipelineStageFlags2KHR stage_, const 
     pending_dep_chain = 0;  // If this is a new read, we aren't applying a barrier set.
 }
 
+const QueueSyncState *SyncValidator::GetQueueSyncState(VkQueue queue) const {
+    return GetMappedPlainFromShared(queue_sync_states_, queue);
+}
+
+QueueSyncState *SyncValidator::GetQueueSyncState(VkQueue queue) { return GetMappedPlainFromShared(queue_sync_states_, queue); }
+
+std::shared_ptr<const QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQueue queue) const {
+    return GetMapped(queue_sync_states_, queue, []() { return std::shared_ptr<QueueSyncState>(); });
+}
+
+std::shared_ptr<QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQueue queue) {
+    return GetMapped(queue_sync_states_, queue, []() { return std::shared_ptr<QueueSyncState>(); });
+}
+
+std::shared_ptr<SemaphoreSyncState> SyncValidator::GetSemaphoreSyncState(VkSemaphore sem) {
+    return GetMappedInsert(sync_semaphores_, sem, [this, sem]() {
+        std::shared_ptr<const SEMAPHORE_STATE> sem_state(this->Get<SEMAPHORE_STATE>(sem));
+        return std::make_shared<SemaphoreSyncState>(sem_state);
+    });
+}
+
+std::shared_ptr<const SemaphoreSyncState> SyncValidator::GetSemaphoreSyncState(VkSemaphore sem) const {
+    return GetMapped(sync_semaphores_, sem, []() { return std::shared_ptr<SemaphoreSyncState>(); });
+}
+
 std::shared_ptr<CommandBufferAccessContext> SyncValidator::AccessContextFactory(VkCommandBuffer command_buffer) {
     // If we don't have one, make it.
     auto cb_state = Get<CMD_BUFFER_STATE>(command_buffer);
@@ -3937,6 +3962,12 @@ void SyncValidator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     // TODO: Find a good way to do this hooklessly.
     SetCommandBufferResetCallback([this](VkCommandBuffer command_buffer) -> void { ResetCommandBufferCallback(command_buffer); });
     SetCommandBufferFreeCallback([this](VkCommandBuffer command_buffer) -> void { FreeCommandBufferCallback(command_buffer); });
+
+    ForEachShared<QUEUE_STATE>([this](const std::shared_ptr<QUEUE_STATE> &queue_state) {
+        auto queue_flags = physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags;
+        std::shared_ptr<QueueSyncState> queue_sync_state = std::make_shared<QueueSyncState>(queue_state, queue_flags);
+        queue_sync_states_.emplace(std::make_pair(queue_state->Queue(), std::move(queue_sync_state)));
+    });
 }
 
 bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -6691,6 +6722,43 @@ void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
         if (!recorded_cb_context) continue;
         cb_context->RecordExecutedCommandBuffer(*recorded_cb_context, CMD_EXECUTECOMMANDS);
     }
+}
+
+void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
+                                                  const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
+                                                  VkResult result) {
+    StateTracker::PostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, result);
+    if (VK_SUCCESS != result) return;
+
+    // As 'this' is non-const, the get will insert
+    GetSemaphoreSyncState(*pSemaphore);
+}
+
+void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) {
+    sync_semaphores_.erase(semaphore);
+    StateTracker::PostCallRecordDestroySemaphore(device, semaphore, pAllocator);
+}
+
+bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
+                                               VkFence fence) const {
+    bool skip = false;
+
+    return skip;
+}
+
+void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
+                                              VkResult result) {
+    StateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
+}
+
+bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                   VkFence fence) const {
+    return false;
+}
+
+void SyncValidator::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                  VkFence fence, VkResult result) {
+    StateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
 }
 
 AttachmentViewGen::AttachmentViewGen(const IMAGE_VIEW_STATE *view, const VkOffset3D &offset, const VkExtent3D &extent)

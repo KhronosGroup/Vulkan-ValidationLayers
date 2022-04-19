@@ -1183,6 +1183,51 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     std::vector<SyncOpEntry> sync_ops_;
 };
 
+class QueueBatchContext : public CommandExecutionContext {};
+
+class QueueSyncState {
+  public:
+    QueueSyncState(const std::shared_ptr<QUEUE_STATE> &queue_state, VkQueueFlags queue_flags)
+        : submit_index_(0), queue_state_(queue_state), last_batch_(), queue_flags_(queue_flags) {}
+
+    VulkanTypedHandle Handle() const {
+        if (queue_state_) {
+            return queue_state_->Handle();
+        }
+        return VulkanTypedHandle(static_cast<VkQueue>(VK_NULL_HANDLE), kVulkanObjectTypeQueue);
+    }
+    std::shared_ptr<const QueueBatchContext> LastBatch() const { return last_batch_; }
+    QUEUE_STATE *GetQueueState() { return queue_state_.get(); }
+    const QUEUE_STATE *GetQueueState() const { return queue_state_.get(); }
+    VkQueueFlags GetQueueFlags() const { return queue_flags_; }
+
+  private:
+    mutable std::atomic<uint64_t> submit_index_;
+    std::shared_ptr<QUEUE_STATE> queue_state_;
+    std::shared_ptr<QueueBatchContext> last_batch_;
+    const VkQueueFlags queue_flags_;
+};
+
+class SemaphoreSyncState {
+  public:
+    SemaphoreSyncState() = delete;
+    SemaphoreSyncState(const SemaphoreSyncState &other) = default;
+    SemaphoreSyncState(SemaphoreSyncState &&other) = default;
+    SemaphoreSyncState &operator=(const SemaphoreSyncState &other) = default;
+    SemaphoreSyncState &operator=(SemaphoreSyncState &&other) = default;
+    SemaphoreSyncState(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state) : sem_state_(sem_state), batch_(), exec_scope_() {}
+    const SyncExecScope &GetScope() const { return exec_scope_; }
+    const std::shared_ptr<const QueueBatchContext> &GetBatch() const { return batch_; }
+    VkSemaphore Semaphore() const { return sem_state_->semaphore(); }
+
+  private:
+    std::shared_ptr<const SEMAPHORE_STATE> sem_state_;
+    std::shared_ptr<const QueueBatchContext> batch_;
+    // Use the SyncExecScope::valid_accesses for first access scope
+    SyncExecScope exec_scope_;
+    // TODO add any timeline semaphore support.
+};
+
 class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
   public:
     using StateTracker = ValidationStateTracker;
@@ -1191,8 +1236,18 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     layer_data::unordered_map<VkCommandBuffer, std::shared_ptr<CommandBufferAccessContext>> cb_access_state;
 
-    std::shared_ptr<CommandBufferAccessContext> AccessContextFactory(VkCommandBuffer command_buffer);
+    layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>> queue_sync_states_;
+    layer_data::unordered_map<VkSemaphore, std::shared_ptr<SemaphoreSyncState>> sync_semaphores_;
 
+    const QueueSyncState *GetQueueSyncState(VkQueue queue) const;
+    QueueSyncState *GetQueueSyncState(VkQueue queue);
+    std::shared_ptr<const QueueSyncState> GetQueueSyncStateShared(VkQueue queue) const;
+    std::shared_ptr<QueueSyncState> GetQueueSyncStateShared(VkQueue queue);
+
+    std::shared_ptr<SemaphoreSyncState> GetSemaphoreSyncState(VkSemaphore sem);
+    std::shared_ptr<const SemaphoreSyncState> GetSemaphoreSyncState(VkSemaphore sem) const;
+
+    std::shared_ptr<CommandBufferAccessContext> AccessContextFactory(VkCommandBuffer command_buffer);
     CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer);
     CommandBufferAccessContext *GetAccessContextNoInsert(VkCommandBuffer command_buffer);
     const CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer) const;
@@ -1554,4 +1609,15 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                            const VkCommandBuffer *pCommandBuffers) const override;
     void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                          const VkCommandBuffer *pCommandBuffers) override;
+    void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
+                                       const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore, VkResult result) override;
+    void PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) override;
+    bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
+                                    VkFence fence) const override;
+    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
+                                   VkResult result) override;
+    bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                        VkFence fence) const override;
+    void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+                                       VkResult result) override;
 };
