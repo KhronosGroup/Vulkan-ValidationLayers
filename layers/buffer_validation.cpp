@@ -6199,19 +6199,16 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(const BUFFER_STATE *src_buffer_stat
                              func_name, i, region.size, dst_buffer_size, i, region.dstOffset);
         }
 
+        // Perf improvement potential here
         // The union of the source regions, and the union of the destination regions, must not overlap in memory
-        if (src_buffer_state->buffer() == dst_buffer_state->buffer()) {
-            VkDeviceSize src_min = region.srcOffset;
-            VkDeviceSize src_max = region.srcOffset + region.size;
-            for (uint32_t j = 0; j < regionCount; j++) {
-                VkDeviceSize dst_min = pRegions[j].dstOffset;
-                VkDeviceSize dst_max = pRegions[j].dstOffset + region.size;
-                if (((src_min > dst_min) && (src_min < dst_max)) || ((src_max > dst_min) && (src_max < dst_max)) ||
-                    ((src_min == dst_min && src_max == dst_max))) {
-                    vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
-                    skip |= LogError(src_buffer_state->buffer(), vuid,
-                                     "%s: Detected overlap between source and dest regions in memory.", func_name);
-                }
+        auto src_region = sparse_container::range<VkDeviceSize>{region.srcOffset, region.srcOffset + region.size};
+        for (uint32_t j = 0; j < regionCount; j++) {
+            auto dst_region =
+                sparse_container::range<VkDeviceSize>{pRegions[j].dstOffset, pRegions[j].dstOffset + pRegions[j].size};
+            if (src_buffer_state->DoesBoundMemoryOverlap(src_region, dst_buffer_state, dst_region)) {
+                vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
+                skip |= LogError(src_buffer_state->buffer(), vuid,
+                                 "%s: Detected overlap between source and dest regions in memory.", func_name);
             }
         }
     }
