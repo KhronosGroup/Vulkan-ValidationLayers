@@ -952,9 +952,8 @@ bool CoreChecks::ValidateImageDescriptor(
             }
             if (!already_validated) {
                 bool hit_error = false;
-                VerifyImageLayout(cb_node, image_state, image_view_state->normalized_subresource_range,
-                                  image_view_ci.subresourceRange.aspectMask, image_layout, VK_IMAGE_LAYOUT_UNDEFINED, caller,
-                                  kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
+                VerifyImageLayout(cb_node, image_state, image_view_state, image_layout, caller,
+                                  "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
                 if (hit_error) {
                     auto set = descriptor_set->GetSet();
                     return LogError(set, vuids.descriptor_valid,
