@@ -1326,8 +1326,12 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
     }
 
-    if (pPipeline->fragment_output_state->dual_source_blending) {
-        uint32_t count = pCB->activeRenderPass->createInfo.pSubpasses[pCB->activeSubpass].colorAttachmentCount;
+    if (pPipeline->fragment_output_state->dual_source_blending  &&
+        pCB->activeRenderPass) {
+        uint32_t count = pCB->activeRenderPass->use_dynamic_rendering
+                             ? pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount
+                             : pCB->activeRenderPass->createInfo.pSubpasses[pCB->activeSubpass]
+                .colorAttachmentCount;
         if (count > phys_dev_props.limits.maxFragmentDualSrcAttachments) {
             skip |=
                 LogError(pPipeline->pipeline(), "VUID-RuntimeSpirv-Fragment-06427",
