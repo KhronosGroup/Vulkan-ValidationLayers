@@ -1807,7 +1807,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     buffer_info.size = output_buffer_size;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_info = {};
-    alloc_info.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
+    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &output_block.buffer, &output_block.allocation, nullptr);
     if (result != VK_SUCCESS) {
         ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.", true);
@@ -1964,7 +1964,6 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
             } else {
                 words_needed = 1 + number_of_sets + binding_count + descriptor_count;
             }
-            alloc_info.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
             buffer_info.size = words_needed * 4;
             result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &di_input_block.buffer, &di_input_block.allocation,
                                      nullptr);
@@ -2137,7 +2136,6 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
 
             uint32_t num_buffers = static_cast<uint32_t>(address_ranges.size());
             uint32_t words_needed = (num_buffers + 3) + (num_buffers + 2);
-            alloc_info.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
             buffer_info.size = words_needed * 8;  // 64 bit words
             result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &bda_input_block.buffer, &bda_input_block.allocation,
                                      nullptr);
