@@ -735,7 +735,7 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
     buffer_info.size = output_buffer_size;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_info = {};
-    alloc_info.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
+    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &output_block.buffer, &output_block.allocation, nullptr);
     if (result != VK_SUCCESS) {
         ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.");
