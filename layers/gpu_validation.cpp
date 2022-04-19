@@ -275,6 +275,26 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     if (validate_descriptor_indexing) {
         descriptor_indexing = CheckForDescriptorIndexing(enabled_features);
     }
+    bool use_linear_output_pool = GpuGetOption("khronos_validation.gpuav_vma_linear_output", true);
+    if (use_linear_output_pool) {
+        auto output_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+        output_buffer_create_info.size = output_buffer_size;
+        output_buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        VmaAllocationCreateInfo alloc_create_info = {};
+        alloc_create_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        uint32_t mem_type_index;
+        vmaFindMemoryTypeIndexForBufferInfo(vmaAllocator, &output_buffer_create_info, &alloc_create_info, &mem_type_index);
+        VmaPoolCreateInfo pool_create_info = {};
+        pool_create_info.memoryTypeIndex = mem_type_index;
+        pool_create_info.blockSize = 0;
+        pool_create_info.maxBlockCount = 0;
+        pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
+        VkResult result = vmaCreatePool(vmaAllocator, &pool_create_info, &output_buffer_pool);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(device, "Unable to create VMA memory pool");
+        }
+    }
+
     CreateAccelerationStructureBuildValidationState();
 }
 
@@ -291,6 +311,9 @@ void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocation
             pre_draw_validation_state.renderpass_to_pipeline.erase(entry.first);
         }
         pre_draw_validation_state.globals_created = false;
+    }
+    if (output_buffer_pool) {
+        vmaDestroyPool(vmaAllocator, output_buffer_pool);
     }
     GpuAssistedBase::PreCallRecordDestroyDevice(device, pAllocator);
 }
@@ -1802,6 +1825,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    alloc_info.pool = output_buffer_pool;
     result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &output_block.buffer, &output_block.allocation, nullptr);
     if (result != VK_SUCCESS) {
         ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.", true);
@@ -1959,6 +1983,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
                 words_needed = 1 + number_of_sets + binding_count + descriptor_count;
             }
             buffer_info.size = words_needed * 4;
+            alloc_info.pool = VK_NULL_HANDLE;
             result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &di_input_block.buffer, &di_input_block.allocation,
                                      nullptr);
             if (result != VK_SUCCESS) {
@@ -2131,6 +2156,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
             uint32_t num_buffers = static_cast<uint32_t>(address_ranges.size());
             uint32_t words_needed = (num_buffers + 3) + (num_buffers + 2);
             buffer_info.size = words_needed * 8;  // 64 bit words
+            alloc_info.pool = VK_NULL_HANDLE;
             result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &bda_input_block.buffer, &bda_input_block.allocation,
                                      nullptr);
             if (result != VK_SUCCESS) {
