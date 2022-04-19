@@ -162,6 +162,11 @@ class GpuAssistedBase : public ValidationStateTracker {
         }
         LogError(object, setup_vuid, "Setup Error. Detail: (%s)", logit.c_str());
     }
+    bool GpuGetOption(const char *option, bool default_value) {
+        std::string option_string = getLayerOption(option);
+        transform(option_string.begin(), option_string.end(), option_string.begin(), ::tolower);
+        return !option_string.empty() ? !option_string.compare("true") : default_value;
+    }
 
   protected:
     bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) const;
