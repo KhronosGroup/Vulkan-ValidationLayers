@@ -284,6 +284,7 @@ class GpuAssisted : public GpuAssistedBase {
     VkBool32 shaderInt64;
     bool buffer_oob_enabled;
     bool validate_draw_indirect;
+    VmaPool output_buffer_pool = VK_NULL_HANDLE;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
     GpuAssistedPreDrawValidationState pre_draw_validation_state;
 
