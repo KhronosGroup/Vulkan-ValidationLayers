@@ -3503,6 +3503,13 @@ void ResourceAccessState::ReadState::Set(VkPipelineStageFlags2KHR stage_, const 
     pending_dep_chain = 0;  // If this is a new read, we aren't applying a barrier set.
 }
 
+ResourceUsageRange SyncValidator::ReserveGlobalTagRange(size_t tag_count) const {
+    ResourceUsageRange reserve;
+    reserve.begin = tag_limit_.fetch_add(tag_count);
+    reserve.end = reserve.begin + tag_count;
+    return reserve;
+}
+
 const QueueSyncState *SyncValidator::GetQueueSyncState(VkQueue queue) const {
     return GetMappedPlainFromShared(queue_sync_states_, queue);
 }
@@ -3517,6 +3524,16 @@ std::shared_ptr<QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQueue q
     return GetMapped(queue_sync_states_, queue, []() { return std::shared_ptr<QueueSyncState>(); });
 }
 
+template <typename Predicate>
+QueueBatchContext::BatchSet SyncValidator::GetQueueLastBatchSnapshot(Predicate &&pred) const {
+    QueueBatchContext::BatchSet batches;
+    for (const auto &queue : queue_sync_states_) {
+        auto batch = queue.second->LastBatch();
+        if (batch && pred(batch)) batches.emplace(std::move(batch));
+    }
+    return batches;
+}
+
 std::shared_ptr<SemaphoreSyncState> SyncValidator::GetSemaphoreSyncState(VkSemaphore sem) {
     return GetMappedInsert(sync_semaphores_, sem, [this, sem]() {
         std::shared_ptr<const SEMAPHORE_STATE> sem_state(this->Get<SEMAPHORE_STATE>(sem));
@@ -3526,6 +3543,24 @@ std::shared_ptr<SemaphoreSyncState> SyncValidator::GetSemaphoreSyncState(VkSemap
 
 std::shared_ptr<const SemaphoreSyncState> SyncValidator::GetSemaphoreSyncState(VkSemaphore sem) const {
     return GetMapped(sync_semaphores_, sem, []() { return std::shared_ptr<SemaphoreSyncState>(); });
+}
+
+std::shared_ptr<const SemaphoreSyncState> SyncValidator::GetSignalledSemaphore(VkSemaphore sem) const {
+    return GetMapped(signaled_semaphores_, sem, []() { return std::shared_ptr<SemaphoreSyncState>(); });
+}
+
+void SyncValidator::SignalSemaphore(std::shared_ptr<SemaphoreSyncState> &&sem_state) {
+    signaled_semaphores_.emplace(std::make_pair(sem_state->Semaphore(), std::move(sem_state)));
+}
+
+std::shared_ptr<SemaphoreSyncState> SyncValidator::UnsignalSemaphore(VkSemaphore sem) {
+    std::shared_ptr<SemaphoreSyncState> unsignaled;
+    const auto found_it = signaled_semaphores_.find(sem);
+    if (found_it != signaled_semaphores_.end()) {
+        unsignaled = std::move(found_it->second);
+        signaled_semaphores_.erase(found_it);
+    }
+    return unsignaled;
 }
 
 std::shared_ptr<CommandBufferAccessContext> SyncValidator::AccessContextFactory(VkCommandBuffer command_buffer) {
@@ -6739,26 +6774,146 @@ void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore s
     StateTracker::PostCallRecordDestroySemaphore(device, semaphore, pAllocator);
 }
 
+struct PendingSignal {
+    std::shared_ptr<QueueBatchContext> batch;
+    std::shared_ptr<const SemaphoreSyncState> sem_state;
+    VkSemaphoreSubmitInfo semaphore_info;
+    void Reset() {
+        batch.reset();
+        sem_state.reset();
+    }
+    // TODO add Submit2 support
+    PendingSignal(std::shared_ptr<QueueBatchContext> batch_, std::shared_ptr<const SemaphoreSyncState> sem_state_)
+        : batch(batch_), sem_state(sem_state_) {
+        semaphore_info = lvl_init_struct<VkSemaphoreSubmitInfo>();
+        semaphore_info.stageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
+    }
+    // Note that the PendingSignal operator () must only be called when the *write* lock is held
+    // it was created with the *read* lock held, s.t. the stored semaphore was first fetch in a const flavor
+    // NOTE: The fact that we have a non-const SyncValidator should indicate we have the write lock, as long
+    //       as the called didn't const cast to get it.
+    void operator()(SyncValidator *sync_validator) {
+        assert(sync_validator);
+        if (batch && sem_state) {
+            auto non_const_sem = std::const_pointer_cast<SemaphoreSyncState>(sem_state);
+            non_const_sem->Signal(batch, semaphore_info);
+            sync_validator->SignalSemaphore(std::move(non_const_sem));
+            batch->ResetAccessLog();
+            Reset();
+        }
+    }
+};
+
+struct QueueSubmitCmdState {
+    std::shared_ptr<const QueueSyncState> queue;
+    std::shared_ptr<QueueBatchContext> last_batch;
+    std::vector<PendingSignal> pending_signals;
+    AccessLogger logger;
+    QueueSubmitCmdState(const AccessLogger &parent_log) : logger(&parent_log) {}
+};
+
+template <>
+thread_local layer_data::optional<QueueSubmitCmdState> layer_data::TlsGuard<QueueSubmitCmdState>::payload_{};
+
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                                VkFence fence) const {
     bool skip = false;
+    layer_data::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, global_access_log_);
+    const auto fence_state = Get<FENCE_STATE>(fence);
+    cmd_state->queue = GetQueueSyncStateShared(queue);
+    if (!cmd_state->queue) return skip;  // Invalid Queue
 
+    const char *func_name = "vkQueueSubmit";
+
+    // The submit id is a mutable automic which is not recoverable on a skip == true condition
+    uint64_t submit_id = cmd_state->queue->ReserveSubmitId();
+
+    // verify each submit batch
+    // Since the last batch from the queue state is const, we need to track the last_batch separately from the
+    // most recently created batch
+    std::shared_ptr<const QueueBatchContext> last_batch = cmd_state->queue->LastBatch();
+    std::shared_ptr<QueueBatchContext> batch;
+    for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
+        const VkSubmitInfo &submit = pSubmits[batch_idx];
+        batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, last_batch, submit);
+        batch->SetBatchLog(cmd_state->logger, submit_id, batch_idx);
+
+        //  For each submit in the batch...
+        for (const auto &cb : *batch) {
+            skip |= cb.cb->ValidateFirstUse(batch.get(), func_name, cb.index);
+
+            // The barriers have already been applied in ValidatFirstUse
+            ResourceUsageRange tag_range = batch->ImportRecordedAccessLog(*cb.cb);
+            batch->ResolveRecordedContext(*cb.cb->GetCurrentAccessContext(), tag_range.begin);
+        }
+
+        // For each signal to set construct a pending signal (that also just happens to preserve *batch* if needed)
+        cmd_state->pending_signals.reserve(submit.signalSemaphoreCount);
+        for (auto &sem : layer_data::make_span(submit.pSignalSemaphores, submit.signalSemaphoreCount)) {
+            // Make a copy of the state, signal the copy and pend it...
+            auto sem_state = GetSemaphoreSyncState(sem);
+            if (!sem_state) continue;
+            cmd_state->pending_signals.emplace_back(batch, sem_state);
+        }
+        // Unless the previous batch was referenced by a signal, the QueueBatchContext will self destruct, but as
+        // we ResolvePrevious as we can let any contexts we've fully referenced go.
+        last_batch = batch;
+    }
+    // The most recently created batch will become the queue's "last batch" in the record phase
+    if (batch) {
+        cmd_state->last_batch = std::move(batch);
+    }
+
+    // Note that if we skip, guard cleans up for us, but cannot release the reserved tag range
     return skip;
 }
 
 void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                               VkResult result) {
     StateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
+    layer_data::TlsGuard<QueueSubmitCmdState> cmd_state;
+    // Don't need to look up the queue state again, but we need a non-const version
+    std::shared_ptr<QueueSyncState> queue_state = std::const_pointer_cast<QueueSyncState>(std::move(cmd_state->queue));
+    // The earliest return must be *after the TlsGuard, as it it the TlsGuard that cleans up the cmd_state static payload
+    if (!cmd_state->queue) return;     // Validation couldn't find a valid queue object
+    if (VK_SUCCESS != result) return;  // dispatched QueueSubmit failed
+
+    // Clean up the wait semaphores we applied to the cmd_state QueueBatchContexts
+    for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
+        const VkSubmitInfo &submit = pSubmits[batch_idx];
+        // Unsignal the semaphores waited on
+        QueueBatchContext::ForEachWaitSemaphore(submit, [this](VkSemaphore sem, VkPipelineStageFlags2 wait_mask) {
+            std::shared_ptr<SemaphoreSyncState> unsignaled = UnsignalSemaphore(sem);  // Remove from global list
+            unsignaled->Reset();                                                      // Remove QueueBatch reference
+        });
+    }
+
+    // NOTE: All conserved QueueBatchContext's need to have there access logs reset to use the global logger, but this
+    //       is done in the conserving operations (signalling and SetLastBatch) below
+    // Signal the semaphores we gathered in Validate phase, saving the shared_ptrs to the referenced batches
+    for (auto &pending : cmd_state->pending_signals) {
+        pending(this);
+    }
+
+    // Update the global access log from the one built during validation
+    global_access_log_.MergeMove(std::move(cmd_state->logger));
+
+    // Update the queue to point to the last batch from the submit
+    queue_state->SetLastBatch(std::move(cmd_state->last_batch));
+
+    // WIP: record information about fences
 }
 
 bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                    VkFence fence) const {
+    // WIP: Add Submit2 support
     return false;
 }
 
 void SyncValidator::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                   VkFence fence, VkResult result) {
     StateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
+    // WIP: Add Submit2 support
 }
 
 AttachmentViewGen::AttachmentViewGen(const IMAGE_VIEW_STATE *view, const VkOffset3D &offset, const VkExtent3D &extent)
@@ -6887,4 +7042,222 @@ void ReplayTrackbackBarriersAction::TrackbackBarriers::operator()(ResourceAccess
         (*source_subpass)(access);
     }
     access->ApplyBarriersImmediate(barriers);
+}
+
+template <typename BatchInfo>
+QueueBatchContext::QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state,
+                                     const std::shared_ptr<const QueueBatchContext> &prev_batch, const BatchInfo &batch_info)
+    : CommandExecutionContext(&sync_state), queue_state_(&queue_state), tag_range_(0, 0), batch_log_(nullptr) {
+    SetupCommandBufferInfo(batch_info);
+    SetupAccessContext(prev_batch, batch_info);
+}
+
+VulkanTypedHandle QueueBatchContext::Handle() const { return queue_state_->Handle(); }
+
+void QueueBatchContext::WaitOneSemaphore(QueueBatchContext::WaitBatchMap *batch_trackbacks, VkSemaphore sem,
+                                         VkPipelineStageFlags2 wait_mask) {
+    auto sem_sync_state = sync_state_->GetSignalledSemaphore(sem);
+    if (!sem_sync_state) return;  // Semaphore validity is handled by CoreChecks
+
+    const auto &sem_batch = sem_sync_state->GetBatch();
+    assert(sem_batch);
+
+    const AccessContext *sem_context = sem_batch->GetCurrentAccessContext();
+
+    using TrackBackPtr = AccessContext::TrackBack *;
+    const auto trackback_insert = batch_trackbacks->emplace(sem_batch.get(), TrackBackPtr());
+    const bool inserted = trackback_insert.second;
+    const auto trackback_it = trackback_insert.first;
+
+    const SyncExecScope &sem_scope = sem_sync_state->GetScope();
+    const auto queue_flags = queue_state_->GetQueueFlags();
+    SyncExecScope dst_mask = SyncExecScope::MakeDst(queue_flags, wait_mask);
+    const SyncBarrier sem_barrier(sem_scope, sem_scope.valid_accesses, dst_mask, SyncStageAccessFlags());
+    if (inserted) {
+        // If this is the first time we referenced this QueueBatchContext
+        trackback_it->second = access_context_.AddTrackBack(sem_context, sem_barrier);
+    }
+    assert(trackback_it->second);
+    trackback_it->second->barriers.emplace_back(sem_barrier);
+}
+
+// Accessor Traits to allow Submit and Submit2 constructors to call the same utilities
+template <>
+class QueueBatchContext::SubmitInfoAccessor<VkSubmitInfo> {
+  public:
+    SubmitInfoAccessor(const VkSubmitInfo &info) : info_(info) {}
+    inline uint32_t WaitSemaphoreCount() const { return info_.waitSemaphoreCount; }
+    inline VkSemaphore WaitSemaphore(uint32_t index) { return info_.pWaitSemaphores[index]; }
+    inline VkPipelineStageFlags2 WaitDstMask(uint32_t index) { return info_.pWaitDstStageMask[index]; }
+    inline uint32_t CommandBufferCount() const { return info_.commandBufferCount; }
+    inline VkCommandBuffer CommandBuffer(uint32_t index) { return info_.pCommandBuffers[index]; }
+
+  private:
+    const VkSubmitInfo &info_;
+};
+template <typename BatchInfo, typename Fn>
+void QueueBatchContext::ForEachWaitSemaphore(const BatchInfo &batch_info, Fn &&func) {
+    using Accessor = QueueBatchContext::SubmitInfoAccessor<BatchInfo>;
+    Accessor batch(batch_info);
+    const uint32_t wait_count = batch.WaitSemaphoreCount();
+    for (uint32_t i = 0; i < wait_count; ++i) {
+        func(batch.WaitSemaphore(i), batch.WaitDstMask(i));
+    }
+}
+
+template <typename BatchInfo>
+void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const BatchInfo &batch_info) {
+    // Create trackbacks for the access context for this batch based on the semaphores and the previous batch in this
+    // queue.
+    WaitBatchMap batch_trackbacks;
+    ForEachWaitSemaphore(batch_info, [this, &batch_trackbacks](VkSemaphore sem, VkPipelineStageFlags2 wait_mask) {
+        WaitOneSemaphore(&batch_trackbacks, sem, wait_mask);
+    });
+
+    // Flatten all previous contexts into the current one (for dependency chaining reasons)
+    access_context_.ResolvePreviousAccesses();
+    access_context_.ClearTrackBacks();
+
+    // Gather async context information for hazard checks and conserve the QBC's for the async batches
+    const auto end_it = batch_trackbacks.end();
+    async_batches_ =
+        sync_state_->GetQueueLastBatchSnapshot([&batch_trackbacks, end_it](const std::shared_ptr<const QueueBatchContext> &batch) {
+            const auto found_it = batch_trackbacks.find(batch.get());
+            return found_it == end_it;
+        });
+    for (const auto &async_batch : async_batches_) {
+        access_context_.AddAsyncContext(async_batch->GetCurrentAccessContext());
+    }
+}
+
+template <typename BatchInfo>
+void QueueBatchContext::SetupCommandBufferInfo(const BatchInfo &batch_info) {
+    using Accessor = QueueBatchContext::SubmitInfoAccessor<BatchInfo>;
+    Accessor batch(batch_info);
+
+    // Create the list of command buffers to submit
+    const uint32_t cb_count = batch.CommandBufferCount();
+    command_buffers_.reserve(cb_count);
+    for (uint32_t index = 0; index < cb_count; ++index) {
+        auto cb_context = sync_state_->GetAccessContextShared(batch.CommandBuffer(index));
+        if (cb_context) {
+            tag_range_.end += cb_context->GetTagLimit();
+            command_buffers_.emplace_back(index, std::move(cb_context));
+        }
+    }
+}
+
+// Look up the usage informaiton from the local or global logger
+std::string QueueBatchContext::FormatUsage(ResourceUsageTag tag) const {
+    const AccessLogger &use_logger = (logger_) ? *logger_ : sync_state_->global_access_log_;
+    std::stringstream out;
+    AccessLogger::AccessRecord access = use_logger[tag];
+    if (access.IsValid()) {
+        const AccessLogger::BatchRecord &batch = *access.batch;
+        const ResourceUsageRecord &record = *access.record;
+        // Queue and Batch information
+        out << SyncNodeFormatter(*sync_state_, batch.queue->GetQueueState());
+        out << ", submit: " << batch.submit_index << ", batch: " << batch.batch_index;
+
+        // Commandbuffer Usages Information
+        out << record;
+        out << SyncNodeFormatter(*sync_state_, record.cb_state);
+        out << ", reset_no: " << std::to_string(record.reset_count);
+    }
+    return out.str();
+}
+
+VkQueueFlags QueueBatchContext::GetQueueFlags() const { return queue_state_->GetQueueFlags(); }
+
+void QueueBatchContext::SetBatchLog(AccessLogger &logger, uint64_t submit_id, uint32_t batch_id) {
+    // Need new global tags for all accesses... the Reserve updates a mutable atomic
+    ResourceUsageRange global_tags = sync_state_->ReserveGlobalTagRange(GetTagRange().size());
+    SetTagBias(global_tags.begin);
+    // Add an access log for the batches range and point the batch at it.
+    logger_ = &logger;
+    batch_log_ = logger.AddBatch(queue_state_, submit_id, batch_id, global_tags);
+}
+
+void QueueBatchContext::InsertRecordedAccessLogEntries(const CommandBufferAccessContext &submitted_cb) {
+    assert(batch_log_);  // Don't import command buffer contexts until you've set up the log for the batch context
+    batch_log_->Append(submitted_cb.GetAccessLog());
+}
+
+void QueueBatchContext::SetTagBias(ResourceUsageTag bias) {
+    const auto size = tag_range_.size();
+    tag_range_.begin = bias;
+    tag_range_.end = bias + size;
+    access_context_.SetStartTag(bias);
+}
+
+void SemaphoreSyncState::Signal(const std::shared_ptr<const QueueBatchContext> &batch, const VkSemaphoreSubmitInfo &signal_info) {
+    batch_ = batch;
+    exec_scope_ = SyncExecScope::MakeSrc(batch_->GetQueueFlags(), signal_info.stageMask, VK_PIPELINE_STAGE_2_HOST_BIT);
+}
+
+void SemaphoreSyncState::Reset() { batch_.reset(); }
+
+AccessLogger::BatchLog *AccessLogger::AddBatch(const QueueSyncState *queue_state, uint64_t submit_id, uint32_t batch_id,
+                                               const ResourceUsageRange &range) {
+    const auto inserted = access_log_map_.insert(std::make_pair(range, BatchLog(BatchRecord(queue_state, submit_id, batch_id))));
+    assert(inserted.second);
+    return &inserted.first->second;
+}
+
+void AccessLogger::MergeMove(AccessLogger &&child) {
+    for (auto &range : child.access_log_map_) {
+        BatchLog &child_batch = range.second;
+        auto insert_pair = access_log_map_.insert(std::make_pair(range.first, BatchLog()));
+        insert_pair.first->second = std::move(child_batch);
+        assert(insert_pair.second);
+    }
+    child.Reset();
+}
+
+void AccessLogger::Reset() {
+    prev_ = nullptr;
+    access_log_map_.clear();
+}
+
+// Since we're updating the QueueSync state, this is Record phase and the access log needs to point to the global one
+// Batch Contexts saved during signalling have their AccessLog reset when the pending signals are signalled.
+// NOTE: By design, QueueBatchContexts that are neither last, nor referenced by a signal are abandoned as unowned, since
+//       the contexts Resolve all history from previous all contexts when created
+void QueueSyncState::SetLastBatch(std::shared_ptr<QueueBatchContext> &&last) {
+    last_batch_ = std::move(last);
+    last_batch_->ResetAccessLog();
+}
+
+// Note that function is const, but updates mutable submit_index to allow Validate to create correct tagging for command invocation
+// scope state.
+// Given that queue submits are supposed to be externally synchronized for the same queue, this should safe without being
+// atomic... but as the ops are per submit, the performance cost is negible for the peace of mind.
+uint64_t QueueSyncState::ReserveSubmitId() const { return submit_index_.fetch_add(1); }
+
+void AccessLogger::BatchLog::Append(const CommandExecutionContext::AccessLog &other) {
+    log_.insert(log_.end(), other.cbegin(), other.cend());
+    for (const auto &record : other) {
+        assert(record.cb_state);
+        cbs_referenced_.insert(record.cb_state->shared_from_this());
+    }
+}
+
+AccessLogger::AccessRecord AccessLogger::BatchLog::operator[](size_t index) const {
+    assert(index < log_.size());
+    return AccessRecord{&batch_, &log_[index]};
+}
+
+AccessLogger::AccessRecord AccessLogger::operator[](ResourceUsageTag tag) const {
+    AccessRecord access_record = {nullptr, nullptr};
+
+    auto found_range = access_log_map_.find(tag);
+    if (found_range != access_log_map_.cend()) {
+        const ResourceUsageTag bias = found_range->first.begin;
+        assert(tag >= bias);
+        access_record = found_range->second[tag - bias];
+    } else if (prev_) {
+        access_record = (*prev_)[tag];
+    }
+
+    return access_record;
 }
