@@ -7233,3 +7233,140 @@ TEST_F(VkPositiveLayerTest, TestUpdateAfterBind) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, TestPartiallyBoundDescriptors) {
+    TEST_DESCRIPTION("Test partially bound descriptors do not reset command buffers.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s or %s is not supported, skipping test.\n", kSkipPrefix, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+               VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+        return;
+    }
+
+    auto descriptor_indexing = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeatures>();
+    auto synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&descriptor_indexing);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&synchronization2);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (descriptor_indexing.descriptorBindingStorageBufferUpdateAfterBind == VK_FALSE) {
+        printf("%s descriptorBindingStorageBufferUpdateAfterBind feature is not supported.\n", kSkipPrefix);
+        return;
+    }
+    if (synchronization2.synchronization2 == VK_FALSE) {
+        printf("%s synchronization2 feature is not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto vkQueueSubmit2KHR =
+        reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
+    assert(vkQueueSubmit2KHR != nullptr);
+
+    m_errorMonitor->ExpectSuccess();
+
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    VkBuffer buffer1, buffer3;
+    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer1);
+    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer3);
+
+    VkMemoryRequirements buffer_mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer1, &buffer_mem_reqs);
+
+    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    alloc_info.allocationSize = buffer_mem_reqs.size;
+
+    VkDeviceMemory memory1, memory3;
+    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory1);
+    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory3);
+
+    vk::BindBufferMemory(device(), buffer1, memory1, 0);
+    vk::BindBufferMemory(device(), buffer3, memory3, 0);
+
+    OneOffDescriptorSet::Bindings binding_defs = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+    };
+    VkDescriptorBindingFlagsEXT flags[2] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 0};
+    auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+    flags_create_info.bindingCount = 2;
+    flags_create_info.pBindingFlags = flags;
+    OneOffDescriptorSet descriptor_set(m_device, binding_defs, VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
+                                       &flags_create_info, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+
+    VkDescriptorBufferInfo buffer_info = {buffer1, 0, sizeof(uint32_t)};
+
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_write.pBufferInfo = &buffer_info;
+
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+
+    descriptor_write.dstBinding = 1;
+    buffer_info.buffer = buffer3;
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    descriptor_write.dstBinding = 0;
+
+    const char fsSource[] = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) buffer buf1 {
+            float a;
+        } ubuf1;
+        layout (set = 0, binding = 1) buffer buf2 {
+            float a;
+        } ubuf2;
+        void main() {
+           float f = ubuf2.a;
+        }
+    )glsl";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    vk::DestroyBuffer(device(), buffer1, nullptr);
+
+    auto cb_info = LvlInitStruct<VkCommandBufferSubmitInfoKHR>();
+    cb_info.commandBuffer = m_commandBuffer->handle();
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo2KHR>();
+    submit_info.commandBufferInfoCount = 1;
+    submit_info.pCommandBufferInfos = &cb_info;
+
+    vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    vk::DestroyBuffer(device(), buffer3, nullptr);
+
+    m_errorMonitor->VerifyNotFound();
+}
