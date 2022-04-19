@@ -1018,9 +1018,9 @@ class CommandExecutionContext {
     virtual ResourceUsageTag GetTagLimit() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
     virtual std::string FormatUsage(ResourceUsageTag tag) const = 0;
-    virtual std::string FormatUsage(const ResourceFirstAccess &access) const = 0;
-    virtual std::string FormatUsage(const HazardResult &hazard) const = 0;
     virtual void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) = 0;
+
+    std::string FormatHazard(const HazardResult &hazard) const;
 
   protected:
     const SyncValidator *sync_state_;
@@ -1083,8 +1083,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     bool IsDestroyed() const { return destroyed_; }
 
     std::string FormatUsage(ResourceUsageTag tag) const override;
-    std::string FormatUsage(const ResourceFirstAccess &access) const override;
-    std::string FormatUsage(const HazardResult &hazard) const override;
+    std::string FormatUsage(const ResourceFirstAccess &access) const;
     AccessContext *GetCurrentAccessContext() override { return current_context_; }
     SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
     const AccessContext *GetCurrentAccessContext() const override { return current_context_; }
