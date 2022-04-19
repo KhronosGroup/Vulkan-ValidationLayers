@@ -1810,7 +1810,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     alloc_info.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
     result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &output_block.buffer, &output_block.allocation, nullptr);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.");
+        ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.", true);
         aborted = true;
         return;
     }
@@ -1969,7 +1969,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
             result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &di_input_block.buffer, &di_input_block.allocation,
                                      nullptr);
             if (result != VK_SUCCESS) {
-                ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.");
+                ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.", true);
                 aborted = true;
                 return;
             }
@@ -2142,7 +2142,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
             result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &bda_input_block.buffer, &bda_input_block.allocation,
                                      nullptr);
             if (result != VK_SUCCESS) {
-                ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.");
+                ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.", true);
                 aborted = true;
                 return;
             }

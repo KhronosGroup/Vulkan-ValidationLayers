@@ -151,8 +151,16 @@ class GpuAssistedBase : public ValidationStateTracker {
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) override;
 
     template <typename T>
-    void ReportSetupProblem(T object, const char *const specific_message) const {
-        LogError(object, setup_vuid, "Setup Error. Detail: (%s)", specific_message);
+    void ReportSetupProblem(T object, const char *const specific_message, bool vma_fail = false) const {
+        std::string logit = specific_message; 
+        if (vma_fail) {
+            char *stats_string;
+            vmaBuildStatsString(vmaAllocator, &stats_string, false);
+            logit += " VMA statistics = ";
+            logit += stats_string;
+            vmaFreeStatsString(vmaAllocator, stats_string);
+        }
+        LogError(object, setup_vuid, "Setup Error. Detail: (%s)", logit.c_str());
     }
 
   protected:
