@@ -243,17 +243,11 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     if (enabled_features.core.robustBufferAccess || enabled_features.robustness2_features.robustBufferAccess2) {
         buffer_oob_enabled = false;
     } else {
-        std::string bufferoob_string = getLayerOption("khronos_validation.gpuav_buffer_oob");
-        transform(bufferoob_string.begin(), bufferoob_string.end(), bufferoob_string.begin(), ::tolower);
-        buffer_oob_enabled = !bufferoob_string.empty() ? !bufferoob_string.compare("true") : true;
+        buffer_oob_enabled = GpuGetOption("khronos_validation.gpuav_buffer_oob", true);
     }
-    std::string descriptor_indexing_string = getLayerOption("khronos_validation.gpuav_descriptor_indexing");
-    transform(descriptor_indexing_string.begin(), descriptor_indexing_string.end(), descriptor_indexing_string.begin(), ::tolower);
-    bool validate_descriptor_indexing = !descriptor_indexing_string.empty() ? !descriptor_indexing_string.compare("true") : true;
 
-    std::string draw_indirect_string = getLayerOption("khronos_validation.validate_draw_indirect");
-    transform(draw_indirect_string.begin(), draw_indirect_string.end(), draw_indirect_string.begin(), ::tolower);
-    validate_draw_indirect = !draw_indirect_string.empty() ? !draw_indirect_string.compare("true") : true;
+    bool validate_descriptor_indexing = GpuGetOption("khronos_validation.gpuav_descriptor_indexing", true);
+    validate_draw_indirect = GpuGetOption("khronos_validation.validate_draw_indirect", true);
 
     if (phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(device, "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
