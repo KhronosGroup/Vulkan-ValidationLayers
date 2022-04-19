@@ -43,12 +43,12 @@ typename Map::mapped_type GetMapped(const Map &map, const typename Map::key_type
 }
 
 template <typename Map, typename Fn>
-typename Map::mapped_type GetMappedInsert(Map &map, const typename Map::key_type &key, Fn &&default_factory) {
+typename Map::mapped_type GetMappedInsert(Map &map, const typename Map::key_type &key, Fn &&emplace_factory) {
     auto value = GetMappedOptional(map, key);
     if (value) {
         return *value;
     }
-    auto insert_it = map.emplace(std::make_pair(key, default_factory()));
+    auto insert_it = map.emplace(std::make_pair(key, emplace_factory()));
     assert(insert_it.second);
 
     return insert_it.first->second;
@@ -202,22 +202,65 @@ static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &flags
     return out_str;
 }
 
-static std::string string_UsageTag(const ResourceUsageRecord &tag) {
-    std::stringstream out;
-
-    out << "command: " << CommandTypeString(tag.command);
-    out << ", seq_no: " << tag.seq_num;
-    if (tag.sub_command != 0) {
-        out << ", subcmd: " << tag.sub_command;
+std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord &record) {
+    out << "command: " << CommandTypeString(record.command);
+    out << ", seq_no: " << record.seq_num;
+    if (record.sub_command != 0) {
+        out << ", subcmd: " << record.sub_command;
     }
-    return out.str();
+    return out;
 }
+
 static std::string string_UsageIndex(SyncStageAccessIndex usage_index) {
     const char *stage_access_name = "INVALID_STAGE_ACCESS";
     if (usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex.size())) {
         stage_access_name = syncStageAccessInfoByStageAccessIndex[usage_index].name;
     }
     return std::string(stage_access_name);
+}
+
+struct SyncNodeFormatter {
+    const debug_report_data *report_data;
+    const BASE_NODE *node;
+    const char *label;
+
+    SyncNodeFormatter(const SyncValidator &sync_state, const CMD_BUFFER_STATE *cb_state)
+        : report_data(sync_state.report_data), node(cb_state), label("command_buffer") {}
+    SyncNodeFormatter(const SyncValidator &sync_state, const QUEUE_STATE *q_state)
+        : report_data(sync_state.report_data), node(q_state), label("queue") {}
+};
+
+std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formater) {
+    if (formater.node) {
+        out << ", " << formater.label << ": " << formater.report_data->FormatHandle(formater.node->Handle()).c_str();
+        if (formater.node->Destroyed()) {
+            out << " (destroyed)";
+        }
+    } else {
+        out << ", " << formater.label << ": null handle";
+    }
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const HazardResult &hazard) {
+    assert(hazard.usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex.size()));
+    const auto &usage_info = syncStageAccessInfoByStageAccessIndex[hazard.usage_index];
+    const auto *info = SyncStageAccessInfoFromMask(hazard.prior_access);
+    const char *stage_access_name = info ? info->name : "INVALID_STAGE_ACCESS";
+    out << "(";
+    if (!hazard.recorded_access.get()) {
+        // if we have a recorded usage the usage is reported from the recorded contexts point of view
+        out << "usage: " << usage_info.name << ", ";
+    }
+    out << "prior_usage: " << stage_access_name;
+    if (IsHazardVsRead(hazard.hazard)) {
+        const auto barriers = hazard.access_state->GetReadBarriers(hazard.prior_access);
+        out << ", read_barriers: " << string_VkPipelineStageFlags2KHR(barriers);
+    } else {
+        SyncStageAccessFlags write_barrier = hazard.access_state->GetWriteBarriers();
+        out << ", write_barriers: " << string_SyncStageAccessFlags(write_barrier);
+    }
+    return out;
 }
 
 struct NoopBarrierAction {
@@ -256,20 +299,19 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
 }
 
 std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) const {
+    if (tag >= access_log_.size()) return std::string();
+
     std::stringstream out;
     assert(tag < access_log_.size());
     const auto &record = access_log_[tag];
-    out << string_UsageTag(record);
-    if (record.cb_state != cb_state_.get()) {
-        out << ", command_buffer: " << sync_state_->report_data->FormatHandle(record.cb_state->commandBuffer()).c_str();
-        if (record.cb_state->Destroyed()) {
-            out << " (destroyed)";
-        }
-
+    out << record;
+    if (cb_state_.get() != record.cb_state) {
+        out << SyncNodeFormatter(*sync_state_, record.cb_state);
     }
     out << ", reset_no: " << std::to_string(record.reset_count);
     return out.str();
 }
+
 std::string CommandBufferAccessContext::FormatUsage(const ResourceFirstAccess &access) const {
     std::stringstream out;
     out << "(recorded_usage: " << string_UsageIndex(access.usage_index);
@@ -277,30 +319,10 @@ std::string CommandBufferAccessContext::FormatUsage(const ResourceFirstAccess &a
     return out.str();
 }
 
-std::string CommandBufferAccessContext::FormatUsage(const HazardResult &hazard) const {
-    const auto &tag = hazard.tag;
-    assert(hazard.usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex.size()));
-    const auto &usage_info = syncStageAccessInfoByStageAccessIndex[hazard.usage_index];
+std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard) const {
     std::stringstream out;
-    const auto *info = SyncStageAccessInfoFromMask(hazard.prior_access);
-    const char *stage_access_name = info ? info->name : "INVALID_STAGE_ACCESS";
-    out << "(";
-    if (!hazard.recorded_access.get()) {
-        // if we have a recorded usage the usage is reported from the recorded contexts point of view
-        out << "usage: " << usage_info.name << ", ";
-    }
-    out << "prior_usage: " << stage_access_name;
-    if (IsHazardVsRead(hazard.hazard)) {
-        const auto barriers = hazard.access_state->GetReadBarriers(hazard.prior_access);
-        out << ", read_barriers: " << string_VkPipelineStageFlags2KHR(barriers);
-    } else {
-        SyncStageAccessFlags write_barrier = hazard.access_state->GetWriteBarriers();
-        out << ", write_barriers: " << string_SyncStageAccessFlags(write_barrier);
-    }
-
-    if (tag < access_log_.size()) {
-        out << ", " << FormatUsage(tag) << ")";
-    }
+    out << hazard;
+    out << ", " << FormatUsage(hazard.tag) << ")";
     return out.str();
 }
 
@@ -722,7 +744,7 @@ class ValidateResolveAction {
                                                       "%s: Hazard %s in subpass %" PRIu32 "during %s %s, from attachment %" PRIu32
                                                       " to resolve attachment %" PRIu32 ". Access info %s.",
                                                       func_name_, string_SyncHazard(hazard.hazard), subpass_, aspect_name,
-                                                      attachment_name, src_at, dst_at, exec_context_.FormatUsage(hazard).c_str());
+                                                      attachment_name, src_at, dst_at, exec_context_.FormatHazard(hazard).c_str());
         }
     }
     // Providing a mechanism for the constructing caller to get the result of the validation
@@ -1145,7 +1167,7 @@ bool AccessContext::ValidateLayoutTransitions(const CommandExecutionContext &exe
                     " image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
                     func_name, string_SyncHazard(hazard.hazard), subpass, transition.attachment,
                     string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout),
-                    exec_context.FormatUsage(hazard).c_str());
+                    exec_context.FormatHazard(hazard).c_str());
             }
         }
     }
@@ -1212,7 +1234,7 @@ bool AccessContext::ValidateLoadOperation(const CommandExecutionContext &exec_co
                                                 "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                                                 " aspect %s during load with loadOp %s. Access info %s.",
                                                 func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect, load_op_string,
-                                                exec_context.FormatUsage(hazard).c_str());
+                                                exec_context.FormatHazard(hazard).c_str());
                 }
             }
         }
@@ -1270,12 +1292,12 @@ bool AccessContext::ValidateStoreOperation(const CommandExecutionContext &exec_c
             if (hazard.hazard) {
                 const char *const op_type_string = checked_stencil ? "stencilStoreOp" : "storeOp";
                 const char *const store_op_string = string_VkAttachmentStoreOp(checked_stencil ? ci.stencilStoreOp : ci.storeOp);
-                skip |=
-                    exec_context.GetSyncState().LogError(rp_state.renderPass(), string_SyncHazardVUID(hazard.hazard),
-                                                         "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
-                                                         " %s aspect during store with %s %s. Access info %s",
-                                                         func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect,
-                                                         op_type_string, store_op_string, exec_context.FormatUsage(hazard).c_str());
+                skip |= exec_context.GetSyncState().LogError(rp_state.renderPass(), string_SyncHazardVUID(hazard.hazard),
+                                                             "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
+                                                             " %s aspect during store with %s %s. Access info %s",
+                                                             func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect,
+                                                             op_type_string, store_op_string,
+                                                             exec_context.FormatHazard(hazard).c_str());
             }
         }
     }
@@ -1959,7 +1981,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->report_data->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
                                 string_VkDescriptorType(descriptor_type), string_VkImageLayout(image_layout),
-                                set_binding.first.binding, index, FormatUsage(hazard).c_str());
+                                set_binding.first.binding, index, FormatHazard(hazard).c_str());
                         }
                         break;
                     }
@@ -1982,7 +2004,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->report_data->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
                                 string_VkDescriptorType(descriptor_type), set_binding.first.binding, index,
-                                FormatUsage(hazard).c_str());
+                                FormatHazard(hazard).c_str());
                         }
                         break;
                     }
@@ -2005,7 +2027,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->report_data->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
                                 string_VkDescriptorType(descriptor_type), set_binding.first.binding, index,
-                                FormatUsage(hazard).c_str());
+                                FormatHazard(hazard).c_str());
                         }
                         break;
                     }
@@ -2134,8 +2156,9 @@ bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32
             if (hazard.hazard) {
                 skip |= sync_state_->LogError(
                     buf_state->buffer(), string_SyncHazardVUID(hazard.hazard), "%s: Hazard %s for vertex %s in %s. Access info %s.",
-                    func_name, string_SyncHazard(hazard.hazard), sync_state_->report_data->FormatHandle(buf_state->buffer()).c_str(),
-                    sync_state_->report_data->FormatHandle(cb_state_->commandBuffer()).c_str(), FormatUsage(hazard).c_str());
+                    func_name, string_SyncHazard(hazard.hazard),
+                    sync_state_->report_data->FormatHandle(buf_state->buffer()).c_str(),
+                    sync_state_->report_data->FormatHandle(cb_state_->commandBuffer()).c_str(), FormatHazard(hazard).c_str());
             }
         }
     }
@@ -2181,7 +2204,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, ui
         skip |= sync_state_->LogError(
             index_buf_state->buffer(), string_SyncHazardVUID(hazard.hazard), "%s: Hazard %s for index %s in %s. Access info %s.",
             func_name, string_SyncHazard(hazard.hazard), sync_state_->report_data->FormatHandle(index_buf_state->buffer()).c_str(),
-            sync_state_->report_data->FormatHandle(cb_state_->commandBuffer()).c_str(), FormatUsage(hazard).c_str());
+            sync_state_->report_data->FormatHandle(cb_state_->commandBuffer()).c_str(), FormatHazard(hazard).c_str());
     }
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
@@ -2284,7 +2307,7 @@ bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext *proxy
         return sync_state_->LogError(handle, string_SyncHazardVUID(hazard.hazard),
                                      "%s: Hazard %s for entry %" PRIu32 ", %s, Recorded access info %s. Access info %s.", func_name,
                                      string_SyncHazard(hazard.hazard), index, report_data->FormatHandle(recorded_handle).c_str(),
-                                     FormatUsage(*hazard.recorded_access).c_str(), exec_context.FormatUsage(hazard).c_str());
+                                     FormatUsage(*hazard.recorded_access).c_str(), exec_context.FormatHazard(hazard).c_str());
     };
     const ReplayTrackbackBarriersAction *replay_context = nullptr;
     for (const auto &sync_op : sync_ops_) {
@@ -2470,7 +2493,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
                                             func_name, string_SyncHazard(hazard.hazard),
                                             sync_state.report_data->FormatHandle(view_handle).c_str(),
                                             sync_state.report_data->FormatHandle(cmd.commandBuffer()).c_str(), cmd.activeSubpass,
-                                            location, exec_context.FormatUsage(hazard).c_str());
+                                            location, exec_context.FormatHazard(hazard).c_str());
             }
         }
     }
@@ -2511,7 +2534,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
                     func_name, string_SyncHazard(hazard.hazard),
                     sync_state.report_data->FormatHandle(view_state.image_view()).c_str(),
                     sync_state.report_data->FormatHandle(cmd.commandBuffer()).c_str(), cmd.activeSubpass,
-                    exec_context.FormatUsage(hazard).c_str());
+                    exec_context.FormatHazard(hazard).c_str());
             }
         }
         if (stencil_write) {
@@ -2525,7 +2548,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
                     func_name, string_SyncHazard(hazard.hazard),
                     sync_state.report_data->FormatHandle(view_state.image_view()).c_str(),
                     sync_state.report_data->FormatHandle(cmd.commandBuffer()).c_str(), cmd.activeSubpass,
-                    exec_context.FormatUsage(hazard).c_str());
+                    exec_context.FormatHazard(hazard).c_str());
             }
         }
     }
@@ -2682,7 +2705,7 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
                     " final image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
                     func_name, string_SyncHazard(hazard.hazard), transition.prev_pass, transition.attachment,
                     string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout),
-                    exec_context.FormatUsage(hazard).c_str());
+                    exec_context.FormatHazard(hazard).c_str());
             }
         }
     }
@@ -3538,7 +3561,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
                 skip |= LogError(srcBuffer, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyBuffer: Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcBuffer).c_str(), region,
-                                 cb_context->FormatUsage(hazard).c_str());
+                                 cb_context->FormatHazard(hazard).c_str());
             }
         }
         if (dst_buffer && !skip) {
@@ -3548,7 +3571,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
                 skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyBuffer: Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstBuffer).c_str(), region,
-                                 cb_context->FormatUsage(hazard).c_str());
+                                 cb_context->FormatHazard(hazard).c_str());
             }
         }
         if (skip) break;
@@ -3609,7 +3632,7 @@ bool SyncValidator::ValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const 
                 skip |= LogError(pCopyBufferInfos->srcBuffer, string_SyncHazardVUID(hazard.hazard),
                                  "%s(): Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(pCopyBufferInfos->srcBuffer).c_str(),
-                                 region, cb_context->FormatUsage(hazard).c_str());
+                                 region, cb_context->FormatHazard(hazard).c_str());
             }
         }
         if (dst_buffer && !skip) {
@@ -3619,7 +3642,7 @@ bool SyncValidator::ValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const 
                 skip |= LogError(pCopyBufferInfos->dstBuffer, string_SyncHazardVUID(hazard.hazard),
                                  "%s(): Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(pCopyBufferInfos->dstBuffer).c_str(),
-                                 region, cb_context->FormatUsage(hazard).c_str());
+                                 region, cb_context->FormatHazard(hazard).c_str());
             }
         }
         if (skip) break;
@@ -3689,7 +3712,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyImage: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcImage).c_str(), region,
-                                 cb_access_context->FormatUsage(hazard).c_str());
+                                 cb_access_context->FormatHazard(hazard).c_str());
             }
         }
 
@@ -3700,7 +3723,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyImage: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstImage).c_str(), region,
-                                 cb_access_context->FormatUsage(hazard).c_str());
+                                 cb_access_context->FormatHazard(hazard).c_str());
             }
             if (skip) break;
         }
@@ -3758,7 +3781,7 @@ bool SyncValidator::ValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const V
                 skip |= LogError(pCopyImageInfo->srcImage, string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(pCopyImageInfo->srcImage).c_str(),
-                                 region, cb_access_context->FormatUsage(hazard).c_str());
+                                 region, cb_access_context->FormatHazard(hazard).c_str());
             }
         }
 
@@ -3769,7 +3792,7 @@ bool SyncValidator::ValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const V
                 skip |= LogError(pCopyImageInfo->dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(pCopyImageInfo->dstImage).c_str(),
-                                 region, cb_access_context->FormatUsage(hazard).c_str());
+                                 region, cb_access_context->FormatHazard(hazard).c_str());
             }
             if (skip) break;
         }
@@ -4141,7 +4164,7 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
                     skip |= LogError(srcBuffer, string_SyncHazardVUID(hazard.hazard),
                                      "%s: Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.", func_name,
                                      string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcBuffer).c_str(), region,
-                                     cb_access_context->FormatUsage(hazard).c_str());
+                                     cb_access_context->FormatHazard(hazard).c_str());
                 }
             }
 
@@ -4151,7 +4174,7 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstImage).c_str(), region,
-                                 cb_access_context->FormatUsage(hazard).c_str());
+                                 cb_access_context->FormatHazard(hazard).c_str());
             }
             if (skip) break;
         }
@@ -4258,7 +4281,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcImage).c_str(), region,
-                                 cb_access_context->FormatUsage(hazard).c_str());
+                                 cb_access_context->FormatHazard(hazard).c_str());
             }
             if (dst_mem) {
                 ResourceAccessRange dst_range =
@@ -4268,7 +4291,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
                     skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                                      "%s: Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.", func_name,
                                      string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstBuffer).c_str(), region,
-                                     cb_access_context->FormatUsage(hazard).c_str());
+                                     cb_access_context->FormatHazard(hazard).c_str());
                 }
             }
         }
@@ -4380,7 +4403,7 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", apiName,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcImage).c_str(), region,
-                                 cb_access_context->FormatUsage(hazard).c_str());
+                                 cb_access_context->FormatHazard(hazard).c_str());
             }
         }
 
@@ -4396,7 +4419,7 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", apiName,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstImage).c_str(), region,
-                                 cb_access_context->FormatUsage(hazard).c_str());
+                                 cb_access_context->FormatHazard(hazard).c_str());
             }
             if (skip) break;
         }
@@ -4511,7 +4534,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
             skip |= LogError(buf_state->buffer(), string_SyncHazardVUID(hazard.hazard),
                              "%s: Hazard %s for indirect %s in %s. Access info %s.", function, string_SyncHazard(hazard.hazard),
                              report_data->FormatHandle(buffer).c_str(), report_data->FormatHandle(commandBuffer).c_str(),
-                             cb_context.FormatUsage(hazard).c_str());
+                             cb_context.FormatHazard(hazard).c_str());
         }
     } else {
         for (uint32_t i = 0; i < drawCount; ++i) {
@@ -4521,7 +4544,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
                 skip |= LogError(buf_state->buffer(), string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for indirect %s in %s. Access info %s.", function, string_SyncHazard(hazard.hazard),
                                  report_data->FormatHandle(buffer).c_str(), report_data->FormatHandle(commandBuffer).c_str(),
-                                 cb_context.FormatUsage(hazard).c_str());
+                                 cb_context.FormatHazard(hazard).c_str());
                 break;
             }
         }
@@ -4559,7 +4582,7 @@ bool SyncValidator::ValidateCountBuffer(const CommandBufferAccessContext &cb_con
         skip |= LogError(count_buf_state->buffer(), string_SyncHazardVUID(hazard.hazard),
                          "%s: Hazard %s for countBuffer %s in %s. Access info %s.", function, string_SyncHazard(hazard.hazard),
                          report_data->FormatHandle(buffer).c_str(), report_data->FormatHandle(commandBuffer).c_str(),
-                         cb_context.FormatUsage(hazard).c_str());
+                         cb_context.FormatHazard(hazard).c_str());
     }
     return skip;
 }
@@ -4964,7 +4987,7 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
                 skip |= LogError(image, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdClearColorImage: Hazard %s for %s, range index %" PRIu32 ". Access info %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(image).c_str(), index,
-                                 cb_access_context->FormatUsage(hazard).c_str());
+                                 cb_access_context->FormatHazard(hazard).c_str());
             }
         }
     }
@@ -5014,7 +5037,7 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
                 skip |= LogError(image, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdClearDepthStencilImage: Hazard %s for %s, range index %" PRIu32 ". Access info %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(image).c_str(), index,
-                                 cb_access_context->FormatUsage(hazard).c_str());
+                                 cb_access_context->FormatHazard(hazard).c_str());
             }
         }
     }
@@ -5063,7 +5086,7 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
             skip |=
                 LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                          "vkCmdCopyQueryPoolResults: Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.hazard),
-                         report_data->FormatHandle(dstBuffer).c_str(), cb_access_context->FormatUsage(hazard).c_str());
+                         report_data->FormatHandle(dstBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
         }
     }
 
@@ -5111,7 +5134,7 @@ bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
         if (hazard.hazard) {
             skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                              "vkCmdFillBuffer: Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.hazard),
-                             report_data->FormatHandle(dstBuffer).c_str(), cb_access_context->FormatUsage(hazard).c_str());
+                             report_data->FormatHandle(dstBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
         }
     }
     return skip;
@@ -5158,7 +5181,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdResolveImage: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcImage).c_str(), region,
-                                 cb_access_context->FormatUsage(hazard).c_str());
+                                 cb_access_context->FormatHazard(hazard).c_str());
             }
         }
 
@@ -5169,7 +5192,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdResolveImage: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstImage).c_str(), region,
-                                 cb_access_context->FormatUsage(hazard).c_str());
+                                 cb_access_context->FormatHazard(hazard).c_str());
             }
             if (skip) break;
         }
@@ -5229,7 +5252,7 @@ bool SyncValidator::ValidateCmdResolveImage2(VkCommandBuffer commandBuffer, cons
                 skip |= LogError(pResolveImageInfo->srcImage, string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(pResolveImageInfo->srcImage).c_str(),
-                                 region, cb_access_context->FormatUsage(hazard).c_str());
+                                 region, cb_access_context->FormatHazard(hazard).c_str());
             }
         }
 
@@ -5240,7 +5263,7 @@ bool SyncValidator::ValidateCmdResolveImage2(VkCommandBuffer commandBuffer, cons
                 skip |= LogError(pResolveImageInfo->dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(pResolveImageInfo->dstImage).c_str(),
-                                 region, cb_access_context->FormatUsage(hazard).c_str());
+                                 region, cb_access_context->FormatHazard(hazard).c_str());
             }
             if (skip) break;
         }
@@ -5313,7 +5336,7 @@ bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
         if (hazard.hazard) {
             skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                              "vkCmdUpdateBuffer: Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.hazard),
-                             report_data->FormatHandle(dstBuffer).c_str(), cb_access_context->FormatUsage(hazard).c_str());
+                             report_data->FormatHandle(dstBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
         }
     }
     return skip;
@@ -5357,7 +5380,7 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer comma
             skip |=
                 LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                          "vkCmdWriteBufferMarkerAMD: Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.hazard),
-                         report_data->FormatHandle(dstBuffer).c_str(), cb_access_context->FormatUsage(hazard).c_str());
+                         report_data->FormatHandle(dstBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
         }
     }
     return skip;
@@ -5708,7 +5731,7 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_contex
                                         "%s: Hazard %s for image barrier %" PRIu32 " %s. Access info %s.", CmdName(),
                                         string_SyncHazard(hazard.hazard), image_barrier.index,
                                         sync_state.report_data->FormatHandle(image_handle).c_str(),
-                                        cb_context.FormatUsage(hazard).c_str());
+                                        cb_context.FormatHazard(hazard).c_str());
         }
     }
     return skip;
@@ -6078,7 +6101,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
                                                 "%s: Hazard %s for image barrier %" PRIu32 " %s. Access info %s.", CmdName(),
                                                 string_SyncHazard(hazard.hazard), image_memory_barrier.index,
                                                 sync_state.report_data->FormatHandle(image_state->image()).c_str(),
-                                                exec_context.FormatUsage(hazard).c_str());
+                                                exec_context.FormatHazard(hazard).c_str());
                     break;
                 }
             }
@@ -6242,7 +6265,7 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer comm
             skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                              "vkCmdWriteBufferMarkerAMD2: Hazard %s for dstBuffer %s. Access info %s.",
                              string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstBuffer).c_str(),
-                             cb_access_context->FormatUsage(hazard).c_str());
+                             cb_access_context->FormatHazard(hazard).c_str());
         }
     }
     return skip;
