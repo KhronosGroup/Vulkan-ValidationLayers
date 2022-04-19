@@ -695,6 +695,10 @@ class CoreChecks : public ValidationStateTracker {
                            const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
                            bool* error) const;
 
+    bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state,
+                           const IMAGE_VIEW_STATE* image_view_state, VkImageLayout explicit_layout, const char* caller,
+                           const char* layout_mismatch_msg_code, bool *error) const;
+
     bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
                            VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char* caller,
                            const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error) const {

@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2021 The Khronos Group Inc.
- * Copyright (c) 2019-2021 Valve Corporation
- * Copyright (c) 2019-2021 LunarG, Inc.
- * Copyright (C) 2019-2021 Google Inc.
+/* Copyright (c) 2019-2022 The Khronos Group Inc.
+ * Copyright (c) 2019-2022 Valve Corporation
+ * Copyright (c) 2019-2022 LunarG, Inc.
+ * Copyright (C) 2019-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,6 +121,9 @@ class RangeEncoder {
     Subresource Decode(const IndexType& index) const { return (this->*decode_function_)(index); }
 
     inline Subresource BeginSubresource(const VkImageSubresourceRange& range) const {
+        if (!InRange(range)) {
+            return limits_;
+        }
         const auto aspect_index = LowerBoundFromMask(range.aspectMask);
         Subresource begin(aspect_bits_[aspect_index], range.baseMipLevel, range.baseArrayLayer, aspect_index);
         return begin;
@@ -460,141 +463,6 @@ class ImageRangeGenerator {
         void Set(uint32_t y_count_, uint32_t layer_z_count_, IndexType base, IndexType span, IndexType y_step, IndexType z_step);
     };
     IncrementerState incr_state_;
-};
-
-// Designed for use with RangeMap of MappedType
-template <typename Map>
-class ConstMapView {
-  public:
-    using KeyType = typename Map::key_type;
-    using MappedType = typename Map::mapped_type;
-    using MapValueType = typename Map::mapped_type;
-    using MapIterator = typename Map::const_iterator;
-    using CachedLowerBound = typename sparse_container::cached_lower_bound_impl<const Map>;
-
-    struct ValueType {
-        const VkImageSubresource& subresource;
-        MapIterator it;
-        ValueType(const VkImageSubresource& subresource_) : subresource(subresource_), it(){};
-    };
-    class ConstIterator {
-      public:
-        ConstIterator()
-            : view_(nullptr),
-              range_gen_(),
-              cached_it_(),
-              pos_(range_gen_.GetSubresource()),
-              current_index_(),
-              constant_value_bound_() {}
-        ConstIterator& operator++() {
-            Increment();
-            return *this;
-        }
-        const ValueType* operator->() const { return &pos_; }
-        const ValueType& operator*() const { return pos_; }
-        // Only for comparisons to end()
-        // Note: if a fully function == is needed, the AtEnd needs to be maintained, as end_iterator is a static.
-        bool AtEnd() const { return pos_.subresource.aspectMask == 0; }
-        bool operator==(const ConstIterator& other) const { return AtEnd() && other.AtEnd(); };
-        bool operator!=(const ConstIterator& other) const { return AtEnd() != other.AtEnd(); };
-
-      protected:
-        friend ConstMapView;
-        ConstIterator(const ConstMapView& view, const VkImageSubresourceRange& range)
-            : view_(&view),
-              range_gen_(view.GetEncoder(), range),
-              cached_it_(view.GetMap(), range_gen_->begin),
-              pos_(range_gen_.GetSubresource()),
-              current_index_(range_gen_->begin),
-              constant_value_bound_(current_index_) {
-            UpdateRangeAndValue();
-        }
-
-        void Increment() {
-            ++current_index_;
-            ++(range_gen_.GetSubresourceGenerator());
-            if (constant_value_bound_ <= current_index_) {
-                UpdateRangeAndValue();
-            }
-        }
-
-        void ForceEndCondition() { range_gen_.GetSubresource().aspectMask = 0; }
-
-        // Constant value range logice, subreource / lower bound position advance logic
-        // TODO: convert this piece into a template _impl function suitable for const and non-const view iterators
-        void UpdateRangeAndValue() {
-            bool not_found = true;
-            while (range_gen_->non_empty() && not_found) {
-                if (!cached_it_.includes(current_index_)) {
-                    // The result of the seek can be invalid, valid, or end...
-                    cached_it_.seek(current_index_);
-                }
-
-                if (cached_it_->lower_bound == view_->GetMap().end()) {
-                    // We're past the end of mapped data. Set end condtion.
-                    ForceEndCondition();
-                    not_found = false;
-                } else {
-                    // Search within the current range_ for a constant valid constant value interval
-                    // The while condition allows the parallel iterator to advance constant value ranges as needed.
-                    while (range_gen_->includes(current_index_) && not_found) {
-                        if (cached_it_->valid) {
-                            // Our position with in the map is valid so we can update our value
-                            pos_.it = cached_it_->lower_bound;
-                            constant_value_bound_ = std::min(cached_it_->lower_bound->first.end, range_gen_->end);
-                            not_found = false;
-                        } else {
-                            // We're skipping this gap in Map, set the index to the exclusive end and look again
-                            // Note that we ONLY need to Seek the Subresource generator on a skip condition.
-                            current_index_ = std::min(cached_it_->lower_bound->first.begin, range_gen_->end);
-                            constant_value_bound_ = current_index_;
-                            // Move the subresource to the end of the skipped range
-                            range_gen_.GetSubresourceGenerator().Seek(current_index_);
-                            cached_it_.seek(current_index_);
-                        }
-                    }
-
-                    if (not_found) {
-                        // We need to advance the index range to search as the current cached_it_ lies outside it, and there's
-                        // no easy way to seek RangeGen
-                        // ++range_gen will update Subresource.
-                        ++range_gen_;
-                        current_index_ = range_gen_->begin;
-                    }
-                }
-            }
-
-            if (range_gen_->empty()) {
-                ForceEndCondition();
-            }
-        }
-
-      private:
-        const ConstMapView* view_;
-        RangeGenerator range_gen_;
-        CachedLowerBound cached_it_;
-        ValueType pos_;
-        IndexType current_index_;
-        IndexType constant_value_bound_;
-    };
-
-    const Map& GetMap() const { return *map_; }
-    const RangeEncoder& GetEncoder() const { return *encoder_; }
-
-    inline ConstIterator Begin(const VkImageSubresourceRange& range) const { return ConstIterator(*this, range); }
-    inline const ConstIterator& End() const { return end_; }
-
-    // Enable range based for....
-    inline ConstIterator begin() const { return Begin(encoder_->FullRange()); }
-    inline const ConstIterator& end() const { return End(); }
-
-    ConstMapView() : map_(nullptr), encoder_(nullptr), end_() {}
-    ConstMapView(const Map& map, const RangeEncoder& encoder) : map_(&map), encoder_(&encoder), end_() {}
-
-  private:
-    const Map* map_;
-    const RangeEncoder* encoder_;
-    const ConstIterator end_;
 };
 
 // double wrapped map variants.. to avoid needing to templatize on the range map type.  The underlying maps are available for

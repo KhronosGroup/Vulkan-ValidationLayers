@@ -15715,29 +15715,42 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             // Const getter can be null in which case we have nothing to check against for this image...
             if (!cb_subres_map) continue;
 
-            const auto &sub_cb_subres_map = sub_layout_map_entry.second;
-            // Validate the initial_uses, that they match the current state of the primary cb, or absent a current state,
-            // that the match any initial_layout.
-            for (const auto &subres_layout : *sub_cb_subres_map) {
-                const auto &sub_layout = subres_layout.initial_layout;
-                const auto &subresource = subres_layout.subresource;
+            const auto &sub_layout_map = sub_layout_map_entry.second->GetLayoutMap();
+            const auto &cb_layout_map = cb_subres_map->GetLayoutMap();
+            for (sparse_container::parallel_iterator<const ImageSubresourceLayoutMap::LayoutMap> iter(sub_layout_map, cb_layout_map, 0);
+                    !iter->range.empty(); ++iter) {
+                VkImageLayout cb_layout = kInvalidLayout, sub_layout = kInvalidLayout;
+                const char *layout_type;
+
+                if (!iter->pos_A->valid || !iter->pos_B->valid) continue;
+
+                // pos_A denotes the sub CB map in the parallel iterator
+                sub_layout = iter->pos_A->lower_bound->second.initial_layout;
                 if (VK_IMAGE_LAYOUT_UNDEFINED == sub_layout) continue;  // secondary doesn't care about current or initial
 
-                // Look up the layout to compared to the intial layout of the sub command buffer (current else initial)
-                const auto *cb_layouts = cb_subres_map->GetSubresourceLayouts(subresource);
-                auto cb_layout = cb_layouts ? cb_layouts->current_layout : kInvalidLayout;
-                const char *layout_type = "current";
-                if (cb_layout == kInvalidLayout) {
-                    cb_layout = cb_layouts ? cb_layouts->initial_layout : kInvalidLayout;
+                // pos_B denotes the main CB map in the parallel iterator
+                const auto &cb_layout_state = iter->pos_B->lower_bound->second;
+                if (cb_layout_state.current_layout != kInvalidLayout) {
+                    layout_type = "current";
+                    cb_layout = cb_layout_state.current_layout;
+                } else if (cb_layout_state.initial_layout != kInvalidLayout) {
                     layout_type = "initial";
+                    cb_layout = cb_layout_state.initial_layout;
+                } else {
+                    continue;
                 }
-                if ((cb_layout != kInvalidLayout) && (cb_layout != sub_layout)) {
-                    skip |= LogError(pCommandBuffers[i], "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
+                if (sub_layout != cb_layout) {
+                    // We can report all the errors for the intersected range directly
+                    for (auto index = iter->range.begin; index < iter->range.end;  index++) {
+                        const auto subresource = image_state->subresource_encoder.Decode(index);
+                        skip |=
+                            LogError(pCommandBuffers[i], "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
                                      "%s: Executed secondary command buffer using %s (subresource: aspectMask 0x%X array layer %u, "
                                      "mip level %u) which expects layout %s--instead, image %s layout is %s.",
                                      "vkCmdExecuteCommands():", report_data->FormatHandle(image).c_str(), subresource.aspectMask,
                                      subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type,
                                      string_VkImageLayout(cb_layout));
+                    }
                 }
             }
         }

@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2021 The Khronos Group Inc.
- * Copyright (c) 2019-2021 Valve Corporation
- * Copyright (c) 2019-2021 LunarG, Inc.
- * Copyright (C) 2019-2021 Google Inc.
+/* Copyright (c) 2019-2022 The Khronos Group Inc.
+ * Copyright (c) 2019-2022 Valve Corporation
+ * Copyright (c) 2019-2022 LunarG, Inc.
+ * Copyright (C) 2019-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,62 +108,13 @@ class ImageSubresourceLayoutMap {
         // updater for splice()
         struct Updater {
             bool update(LayoutEntry& dst, const LayoutEntry& src) const { return dst.Update(src); }
-            layer_data::optional<LayoutEntry> insert(const LayoutEntry& src) const { return layer_data::optional<LayoutEntry>(layer_data::in_place, src); }
+            layer_data::optional<LayoutEntry> insert(const LayoutEntry& src) const {
+                return layer_data::optional<LayoutEntry>(layer_data::in_place, src);
+            }
         };
     };
-    using RangeMap = subresource_adapter::BothRangeMap<LayoutEntry, 16>;
-    using LayoutMap = RangeMap;
+    using LayoutMap = subresource_adapter::BothRangeMap<LayoutEntry, 16>;
     using InitialLayoutStates = small_vector<InitialLayoutState, 2, uint32_t>;
-
-    class ConstIterator {
-      public:
-        ConstIterator& operator++() {
-            Increment();
-            return *this;
-        }
-        void IncrementInterval();
-        const SubresourceLayout* operator->() const { return &pos_; }
-        const SubresourceLayout& operator*() const { return pos_; }
-
-        ConstIterator() : range_gen_(), layouts_(nullptr), iter_(), skip_invalid_(false), always_get_initial_(false), pos_() {}
-        bool AtEnd() const { return pos_.subresource.aspectMask == 0; }
-
-        // Only for comparisons to end()
-        // Note: if a fully function == is needed, the AtEnd needs to be maintained, as end_iterator is a static.
-        bool operator==(const ConstIterator& other) const { return AtEnd() && other.AtEnd(); };
-        bool operator!=(const ConstIterator& other) const { return AtEnd() != other.AtEnd(); };
-
-      protected:
-        void Increment();
-        friend ImageSubresourceLayoutMap;
-        ConstIterator(const RangeMap& layouts, const Encoder& encoder, const VkImageSubresourceRange& subres, bool skip_invalid,
-                      bool always_get_initial);
-        void UpdateRangeAndValue();
-        void ForceEndCondition() { pos_.subresource.aspectMask = 0; }
-
-        RangeGenerator range_gen_;
-        const RangeMap* layouts_;
-        RangeMap::const_iterator iter_;
-        bool skip_invalid_;
-        bool always_get_initial_;
-        SubresourceLayout pos_;
-        IndexType current_index_ = 0;
-        IndexType constant_value_bound_ = 0;
-    };
-
-    ConstIterator Find(const VkImageSubresourceRange& subres_range, bool skip_invalid = true,
-                       bool always_get_initial = false) const {
-        if (InRange(subres_range)) {
-            return ConstIterator(layouts_, encoder_, subres_range, skip_invalid, always_get_initial);
-        }
-        return End();
-    }
-
-    // Begin is a find of the full range with the default skip/ always get parameters
-    ConstIterator Begin(bool always_get_initial = true) const;
-    inline ConstIterator begin() const { return Begin(); }  // STL style, for range based loops and familiarity
-    const ConstIterator& End() const { return end_iterator; }
-    const ConstIterator& end() const { return End(); }  // STL style, for range based loops and familiarity.
 
     bool SetSubresourceRangeLayout(const CMD_BUFFER_STATE& cb_state, const VkImageSubresourceRange& range, VkImageLayout layout,
                                    VkImageLayout expected_layout = kInvalidLayout);
@@ -172,8 +123,6 @@ class ImageSubresourceLayoutMap {
     void SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
                                           const IMAGE_VIEW_STATE& view_state);
     const LayoutEntry* GetSubresourceLayouts(const VkImageSubresource& subresource) const;
-    const InitialLayoutState* GetSubresourceInitialLayoutState(const IndexType index) const;
-    const InitialLayoutState* GetSubresourceInitialLayoutState(const VkImageSubresource& subresource) const;
     bool UpdateFrom(const ImageSubresourceLayoutMap& from);
     uintptr_t CompatibilityKey() const;
     const LayoutMap& GetLayoutMap() const { return layouts_; }
@@ -181,29 +130,29 @@ class ImageSubresourceLayoutMap {
     ~ImageSubresourceLayoutMap() {}
     const IMAGE_STATE* GetImageView() const { return &image_state_; };
 
-  protected:
     // This looks a bit ponderous but kAspectCount is a compile time constant
     VkImageSubresource Decode(IndexType index) const {
         const auto subres = encoder_.Decode(index);
         return encoder_.MakeVkSubresource(subres);
     }
 
+    bool AnyInRange(const VkImageSubresourceRange& normalized_range,
+                    std::function<bool(const VkImageSubresource& subres, const LayoutEntry& state)>) const;
+    bool AnyInRange(const RangeGenerator& gen,
+                    std::function<bool(const VkImageSubresource& subres, const LayoutEntry& state)>) const;
+
+  protected:
     inline uint32_t LevelLimit(uint32_t level) const { return std::min(encoder_.Limits().mipLevel, level); }
     inline uint32_t LayerLimit(uint32_t layer) const { return std::min(encoder_.Limits().arrayLayer, layer); }
 
     bool InRange(const VkImageSubresource& subres) const { return encoder_.InRange(subres); }
     bool InRange(const VkImageSubresourceRange& range) const { return encoder_.InRange(range); }
 
-    // This map *also* needs "write once" semantics
-    using InitialLayoutStateMap = subresource_adapter::BothRangeMap<InitialLayoutState*, 16>;
-
   private:
     const IMAGE_STATE& image_state_;
     const Encoder& encoder_;
     LayoutMap layouts_;
     InitialLayoutStates initial_layout_states_;
-
-    static const ConstIterator end_iterator;  // Just to hold the end condition tombstone (aspectMask == 0)
 };
 }  // namespace image_layout_map
 #endif
