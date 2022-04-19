@@ -2739,7 +2739,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                 *error_msg = error_str.str();
                 return false;
             }
-            if ((type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE || type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) &&
+            if ((type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE || type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) &&
                 !enabled_features.image_2d_view_of_3d_features.sampler2DViewOf3D) {
                 *error_code = "VUID-VkDescriptorImageInfo-descriptorType-06714";
                 std::stringstream error_str;
