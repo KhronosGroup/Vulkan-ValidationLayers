@@ -141,7 +141,8 @@ struct SyncExecScope {
 
     SyncExecScope() : mask_param(0), expanded_mask(0), exec_scope(0), valid_accesses(0) {}
 
-    static SyncExecScope MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR src_stage_mask);
+    static SyncExecScope MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR src_stage_mask,
+                                 const VkPipelineStageFlags2KHR disabled_feature_mask = 0);
     static SyncExecScope MakeDst(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR src_stage_mask);
 };
 
@@ -155,6 +156,9 @@ struct SyncBarrier {
     SyncBarrier &operator=(const SyncBarrier &) = default;
 
     SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst);
+    SyncBarrier(const SyncExecScope &src_exec, const SyncStageAccessFlags &src_access, const SyncExecScope &dst_exec,
+                const SyncStageAccessFlags &dst_access)
+        : src_exec_scope(src_exec), src_access_scope(src_access), dst_exec_scope(dst_exec), dst_access_scope(dst_access) {}
 
     template <typename Barrier>
     SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const SyncExecScope &dst);
@@ -537,6 +541,8 @@ struct SubpassBarrierTrackback {
             barriers.emplace_back(queue_flags_, *dependency);
         }
     }
+    SubpassBarrierTrackback(const SubpassNode *source_subpass_, const SyncBarrier &barrier_)
+        : barriers(1, barrier_), source_subpass(source_subpass_) {}
     SubpassBarrierTrackback &operator=(const SubpassBarrierTrackback &) = default;
 };
 
@@ -934,6 +940,13 @@ class AccessContext {
     template <typename Action>
     void ForAll(Action &&action);
 
+    // For use during queue submit building up the QueueBatchContext AccessContext
+    TrackBack *AddTrackBack(const AccessContext *context, const SyncBarrier &barrier);
+    void AddAsyncContext(const AccessContext *context);
+    // For use during queue submit to avoid stale pointers;
+    void ClearTrackBacks() { prev_.clear(); }
+    void ClearAsyncContext(const AccessContext *context) { async_.clear(); }
+
   private:
     template <typename Detector>
     HazardResult DetectHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range,
@@ -1012,15 +1025,16 @@ class CommandExecutionContext {
         return *sync_state_;
     }
 
+    void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context, CMD_TYPE cmd);
     void ResolveRecordedContext(const AccessContext &recorded_context, ResourceUsageTag offset);
 
     ResourceUsageRange ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context);
+    std::string FormatHazard(const HazardResult &hazard) const;
+
     virtual ResourceUsageTag GetTagLimit() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
     virtual std::string FormatUsage(ResourceUsageTag tag) const = 0;
     virtual void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) = 0;
-
-    std::string FormatHazard(const HazardResult &hazard) const;
 
   protected:
     const SyncValidator *sync_state_;
@@ -1083,7 +1097,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     bool IsDestroyed() const { return destroyed_; }
 
     std::string FormatUsage(ResourceUsageTag tag) const override;
-    std::string FormatUsage(const ResourceFirstAccess &access) const;
+    std::string FormatUsage(const ResourceFirstAccess &access) const;  //  Only command buffers have "first usage"
     AccessContext *GetCurrentAccessContext() override { return current_context_; }
     SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
     const AccessContext *GetCurrentAccessContext() const override { return current_context_; }
@@ -1108,7 +1122,6 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     void RecordDestroyEvent(VkEvent event);
 
     bool ValidateFirstUse(CommandExecutionContext *proxy_context, const char *func_name, uint32_t index) const;
-    void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context, CMD_TYPE cmd);
 
     const CMD_BUFFER_STATE *GetCommandBufferState() const { return cb_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
@@ -1145,6 +1158,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     }
     const AccessLog &GetAccessLog() const { return access_log_; }
     void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) override;
+    const std::vector<SyncOpEntry> &GetSyncOps() const { return sync_ops_; };
 
   private:
     // As this is passing around a shared pointer to record, move to avoid needless atomics.

@@ -1312,6 +1312,13 @@ bool AccessContext::ValidateResolveOperations(const CommandExecutionContext &exe
     return validate_action.GetSkip();
 }
 
+AccessContext::TrackBack *AccessContext::AddTrackBack(const AccessContext *context, const SyncBarrier &barrier) {
+    prev_.emplace_back(context, barrier);
+    return &prev_.back();
+}
+
+void AccessContext::AddAsyncContext(const AccessContext *context) { async_.emplace_back(context); }
+
 class HazardDetector {
     SyncStageAccessIndex usage_index_;
 
@@ -2340,7 +2347,7 @@ bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext *proxy
     return skip;
 }
 
-void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_cb_context, CMD_TYPE cmd) {
+void CommandExecutionContext::RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_cb_context, CMD_TYPE cmd) {
     auto *events_context = GetCurrentEventsContext();
     auto *access_context = GetCurrentAccessContext();
     const AccessContext *recorded_context = recorded_cb_context.GetCurrentAccessContext();
@@ -2348,7 +2355,7 @@ void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBuffer
 
     // Just run through the barriers ignoring the usage from the recorded context, as Resolve will overwrite outdated state
     const ResourceUsageTag base_tag = GetTagLimit();
-    for (const auto &sync_op : recorded_cb_context.sync_ops_) {
+    for (const auto &sync_op : recorded_cb_context.GetSyncOps()) {
         // we update the range to any include layout transition first use writes,
         // as they are stored along with the source scope (as effective barrier) when recorded
         sync_op.sync_op->ReplayRecord(base_tag + sync_op.tag, access_context, events_context);
@@ -2834,10 +2841,11 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
     }
 }
 
-SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR mask_param) {
+SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR mask_param,
+                                     const VkPipelineStageFlags2KHR disabled_feature_mask) {
     SyncExecScope result;
     result.mask_param = mask_param;
-    result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags);
+    result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags, disabled_feature_mask);
     result.exec_scope = sync_utils::WithEarlierPipelineStages(result.expanded_mask);
     result.valid_accesses = SyncStageAccess::AccessScopeByStage(result.exec_scope);
     return result;
