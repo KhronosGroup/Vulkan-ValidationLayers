@@ -7487,6 +7487,54 @@ uint32_t CoreChecks::GetQuotientCeil(uint32_t numerator, uint32_t denominator) c
     return static_cast<uint32_t>(std::ceil(static_cast<float>(numerator) / static_cast<float>(denominator)));
 }
 
+bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE> image_view,
+                                                 const char *attachment,
+                                                 const VkRenderingInfo *pRenderingInfo,
+                                                 const char *func_name) const {
+    bool skip = false;
+
+    if (IsExtEnabled(device_extensions.vk_khr_device_group)) {
+        auto device_group_render_pass_begin_info = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
+        if (!device_group_render_pass_begin_info || device_group_render_pass_begin_info->deviceRenderAreaCount == 0) {
+            if (image_view->image_state->createInfo.extent.width <
+                pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width) {
+                skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-pNext-06079",
+                                 "%s(): %s width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRIu32
+                                 ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
+                                 func_name, attachment, image_view->image_state->createInfo.extent.width,
+                                 pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width);
+            }
+            if (image_view->image_state->createInfo.extent.height <
+                pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height) {
+                skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-pNext-06080",
+                                 "%s(): %s height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRIu32
+                                 ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
+                                 func_name, attachment, image_view->image_state->createInfo.extent.height,
+                                 pRenderingInfo->renderArea.offset.y, pRenderingInfo->renderArea.extent.height);
+            }
+        }
+    } else {
+        if (image_view->image_state->createInfo.extent.width <
+            pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width) {
+            skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-imageView-06075",
+                             "%s(): %s width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRIu32
+                             ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
+                             func_name, attachment, image_view->image_state->createInfo.extent.width,
+                             pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width);
+        }
+        if (image_view->image_state->createInfo.extent.height <
+            pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height) {
+            skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-imageView-06076",
+                             "%s(): %s height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRIu32
+                             ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
+                             func_name, attachment, image_view->image_state->createInfo.extent.height,
+                             pRenderingInfo->renderArea.offset.y, pRenderingInfo->renderArea.extent.height);
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
                                            CMD_TYPE cmd_type) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
@@ -7656,6 +7704,9 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                  "attachment ref has sample count %" PRIu32 ".",
                                  func_name, j, string_VkSampleCountFlagBits(image_view->samples), first_sample_count_attachment);
                 }
+                std::stringstream msg;
+                msg << "Color attachment ref % " << j;
+                skip |= ValidateRenderingInfoAttachment(image_view, msg.str().c_str(), pRenderingInfo, func_name);
             }
         }
         if (pRenderingInfo->pDepthAttachment && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
@@ -7669,6 +7720,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                  "attachment ref has sample count %" PRIu32 ".",
                                  func_name, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
             }
+            skip |= ValidateRenderingInfoAttachment(image_view, "Depth attachment ref", pRenderingInfo, func_name);
         }
         if (pRenderingInfo->pStencilAttachment && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
             const auto image_view = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pStencilAttachment->imageView);
@@ -7681,6 +7733,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                  "attachment ref has sample count %" PRIu32 ".",
                                  func_name, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
             }
+            skip |= ValidateRenderingInfoAttachment(image_view, "Stencil attachment ref", pRenderingInfo, func_name);
         }
     }
 
@@ -7771,66 +7824,6 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06078",
                              "%s(): renderArea.offset.y is %d and must be greater than 0.", func_name,
                              pRenderingInfo->renderArea.offset.y);
-        }
-
-        for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
-            if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
-                auto image_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[j].imageView);
-                IMAGE_STATE *image_state = image_view_state->image_state.get();
-                if (!(image_state->createInfo.extent.width >=
-                      pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width)) {
-                    skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06079",
-                                     "%s(): width of the pColorAttachments[%u].imageView: %u must be greater than"
-                                     "renderArea.offset.x +  renderArea.extent.width.",
-                                     func_name, j, image_state->createInfo.extent.width);
-                }
-                if (!(image_state->createInfo.extent.height >=
-                      pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height)) {
-                    skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06080",
-                                     "%s(): height of the pColorAttachments[%u].imageView: %u must be greater than"
-                                     "renderArea.offset.y +  renderArea.extent.height.",
-                                     func_name, j, image_state->createInfo.extent.height);
-                }
-            }
-        }
-
-        if (pRenderingInfo->pDepthAttachment != VK_NULL_HANDLE && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
-            auto depth_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pDepthAttachment->imageView);
-            IMAGE_STATE *image_state = depth_view_state->image_state.get();
-            if (!(image_state->createInfo.extent.width >=
-                  pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width)) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06079",
-                                 "%s(): width of the pDepthAttachment->imageView: %u must be greater than"
-                                 "renderArea.offset.x +  renderArea.extent.width.",
-                                 func_name, image_state->createInfo.extent.width);
-            }
-            if (!(image_state->createInfo.extent.height >=
-                  pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height)) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06080",
-                                 "%s(): height of the pDepthAttachment->imageView: %u must be greater than"
-                                 "renderArea.offset.y +  renderArea.extent.height.",
-                                 func_name, image_state->createInfo.extent.height);
-            }
-        }
-
-        if (pRenderingInfo->pStencilAttachment != VK_NULL_HANDLE &&
-            pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
-            auto stencil_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pStencilAttachment->imageView);
-            IMAGE_STATE *image_state = stencil_view_state->image_state.get();
-            if (!(image_state->createInfo.extent.width >=
-                  pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width)) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06079",
-                                 "%s(): width of the pStencilAttachment->imageView: %u must be greater than"
-                                 "renderArea.offset.x +  renderArea.extent.width.",
-                                 func_name, image_state->createInfo.extent.width);
-            }
-            if (!(image_state->createInfo.extent.height >=
-                  pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height)) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06080",
-                                 "%s(): height of the pStencilAttachment->imageView: %u must be greater than"
-                                 "renderArea.offset.y +  renderArea.extent.height.",
-                                 func_name, image_state->createInfo.extent.height);
-            }
         }
 
         if (fragment_density_map_attachment_info && fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
