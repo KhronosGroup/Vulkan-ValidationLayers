@@ -3580,8 +3580,22 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     }
 }
 
-void VkSyncValTest::InitSyncValFramework() {
+void VkSyncValTest::InitSyncValFramework(bool enable_queue_submit_validation) {
     // Enable synchronization validation
+
+    // Optional feature definition, add if requested (but they can't be defined at the conditional scope)
+    const char *kEnableQueuSubmitSyncValidation = "VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT";
+    VkLayerSettingValueDataEXT qs_setting_string_value{};
+    qs_setting_string_value.arrayString.pCharArray = kEnableQueuSubmitSyncValidation;
+    qs_setting_string_value.arrayString.count = strlen(qs_setting_string_value.arrayString.pCharArray);
+    VkLayerSettingValueEXT qs_enable_setting_val = {"enables", VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT,
+                                                    qs_setting_string_value};
+    VkLayerSettingsEXT qs_settings{static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT), nullptr, 1,
+                                   &qs_enable_setting_val};
+
+    if (enable_queue_submit_validation) {
+        features_.pNext = &qs_settings;
+    }
     InitFramework(m_errorMonitor, &features_);
 }
 

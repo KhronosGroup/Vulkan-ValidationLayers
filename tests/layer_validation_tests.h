@@ -335,7 +335,7 @@ class VkDebugPrintfTest : public VkLayerTest {
 
 class VkSyncValTest : public VkLayerTest {
   public:
-    void InitSyncValFramework();
+    void InitSyncValFramework(bool enable_queue_submit_validation = false);
 
   protected:
     VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};
