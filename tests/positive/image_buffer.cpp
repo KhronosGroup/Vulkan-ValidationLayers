@@ -2382,8 +2382,8 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     image.init_no_mem(*m_device, imageCreateInfo);
 
     auto bind_devicegroup_info = LvlInitStruct<VkBindImageMemoryDeviceGroupInfo>();
-    bind_devicegroup_info.deviceIndexCount = 2;
-    std::array<uint32_t, 2> deviceIndices = {{0, 0}};
+    bind_devicegroup_info.deviceIndexCount = 1;
+    std::array<uint32_t, 2> deviceIndices = {{0}};
     bind_devicegroup_info.pDeviceIndices = deviceIndices.data();
     bind_devicegroup_info.splitInstanceBindRegionCount = 0;
     bind_devicegroup_info.pSplitInstanceBindRegions = nullptr;
