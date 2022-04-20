@@ -3436,6 +3436,20 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
+    // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
+    auto attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pipeline->PNext());
+    const VkSampleCountFlags AllVkSampleCountFlagBits = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT |
+                                                        VK_SAMPLE_COUNT_8_BIT | VK_SAMPLE_COUNT_16_BIT | VK_SAMPLE_COUNT_32_BIT |
+                                                        VK_SAMPLE_COUNT_64_BIT;
+    if (pipeline->fragment_output_state && attachment_sample_count_info &&
+        attachment_sample_count_info->depthStencilAttachmentSamples != 0 &&
+        (attachment_sample_count_info->depthStencilAttachmentSamples & AllVkSampleCountFlagBits) == 0) {
+        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-depthStencilAttachmentSamples-06593",
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                         "] includes VkAttachmentSampleCountInfoAMD with invalid depthStencilAttachmentSamples.",
+                         pipe_index);
+    }
+
     return skip;
 }
 
