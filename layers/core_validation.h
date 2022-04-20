@@ -1163,6 +1163,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
                                            const VkCommandBufferBeginInfo* pBeginInfo) const override;
     uint32_t GetQuotientCeil(uint32_t numerator, uint32_t denominator) const;
+    bool ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE> image_view, const char* attachment, const VkRenderingInfo* pRenderingInfo,
+                                         const char* func_name) const;
     bool ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo, CMD_TYPE cmd_type) const;
     bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
                                              const VkRenderingInfoKHR* pRenderingInfo) const override;
