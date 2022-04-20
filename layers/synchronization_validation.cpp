@@ -6765,13 +6765,18 @@ void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemap
     StateTracker::PostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, result);
     if (VK_SUCCESS != result) return;
 
+    if (!enabled[sync_validation_queue_submit]) return;
+
     // As 'this' is non-const, the get will insert
     GetSemaphoreSyncState(*pSemaphore);
 }
 
 void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) {
-    sync_semaphores_.erase(semaphore);
-    StateTracker::PostCallRecordDestroySemaphore(device, semaphore, pAllocator);
+    if (enabled[sync_validation_queue_submit]) {
+        sync_semaphores_.erase(semaphore);
+    }
+
+    StateTracker::PreCallRecordDestroySemaphore(device, semaphore, pAllocator);
 }
 
 struct PendingSignal {
@@ -6818,6 +6823,8 @@ thread_local layer_data::optional<QueueSubmitCmdState> layer_data::TlsGuard<Queu
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                                VkFence fence) const {
     bool skip = false;
+    if (!enabled[sync_validation_queue_submit]) return skip;
+
     layer_data::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, global_access_log_);
     const auto fence_state = Get<FENCE_STATE>(fence);
     cmd_state->queue = GetQueueSyncStateShared(queue);
@@ -6871,12 +6878,16 @@ bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
 void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                               VkResult result) {
     StateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
+    if (VK_SUCCESS != result) return;  // dispatched QueueSubmit failed
+
+    if (!enabled[sync_validation_queue_submit]) return;  // Queue submit validation must be affirmatively enabled
+
     layer_data::TlsGuard<QueueSubmitCmdState> cmd_state;
+    if (!cmd_state->queue) return;  // Validation couldn't find a valid queue object
+
     // Don't need to look up the queue state again, but we need a non-const version
     std::shared_ptr<QueueSyncState> queue_state = std::const_pointer_cast<QueueSyncState>(std::move(cmd_state->queue));
     // The earliest return must be *after the TlsGuard, as it it the TlsGuard that cleans up the cmd_state static payload
-    if (!cmd_state->queue) return;     // Validation couldn't find a valid queue object
-    if (VK_SUCCESS != result) return;  // dispatched QueueSubmit failed
 
     // Clean up the wait semaphores we applied to the cmd_state QueueBatchContexts
     for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
@@ -6906,13 +6917,20 @@ void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCoun
 
 bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                    VkFence fence) const {
+    bool skip = false;
+    if (!enabled[sync_validation_queue_submit]) return skip;
+
     // WIP: Add Submit2 support
-    return false;
+    return skip;
 }
 
 void SyncValidator::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                   VkFence fence, VkResult result) {
     StateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
+    if (VK_SUCCESS != result) return;  // dispatched QueueSubmit2 failed
+
+    if (!enabled[sync_validation_queue_submit]) return;
+
     // WIP: Add Submit2 support
 }
 
@@ -7114,16 +7132,21 @@ void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatc
         WaitOneSemaphore(&batch_trackbacks, sem, wait_mask);
     });
 
+    // If there are no semaphores to the previous batch, make sure a "submit order" empty trackback is added
+    if (prev && (batch_trackbacks.find(prev.get()) == batch_trackbacks.end())) {
+        access_context_.AddTrackBack(prev->GetCurrentAccessContext(), SyncBarrier());
+    }
+
     // Flatten all previous contexts into the current one (for dependency chaining reasons)
     access_context_.ResolvePreviousAccesses();
     access_context_.ClearTrackBacks();
 
     // Gather async context information for hazard checks and conserve the QBC's for the async batches
     const auto end_it = batch_trackbacks.end();
-    async_batches_ =
-        sync_state_->GetQueueLastBatchSnapshot([&batch_trackbacks, end_it](const std::shared_ptr<const QueueBatchContext> &batch) {
+    async_batches_ = sync_state_->GetQueueLastBatchSnapshot(
+        [&batch_trackbacks, end_it, &prev](const std::shared_ptr<const QueueBatchContext> &batch) {
             const auto found_it = batch_trackbacks.find(batch.get());
-            return found_it == end_it;
+            return found_it == end_it && (batch != prev);
         });
     for (const auto &async_batch : async_batches_) {
         access_context_.AddAsyncContext(async_batch->GetCurrentAccessContext());

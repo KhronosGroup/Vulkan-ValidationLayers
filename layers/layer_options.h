@@ -72,6 +72,8 @@ static const layer_data::unordered_map<std::string, ValidationCheckEnables> Vali
     {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD},
     {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG},
     {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL},
+    {"VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",
+     VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT},
 };
 
 // This should mirror the 'DisableFlags' enumerated type
@@ -98,7 +100,8 @@ static const std::vector<std::string> EnableFlagNameHelper = {
     "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD",                         // vendor_specific_amd,
     "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG",                         // vendor_specific_img,
     "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
-    "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION"              // sync_validation,
+    "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION",             // sync_validation,
+    "VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",     // queuesubmit time sync_validation,
 };
 
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data);
