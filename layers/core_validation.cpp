@@ -3450,6 +3450,15 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
+    if (IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library) && !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
+        if (pipeline->fragment_output_state && pipeline->MultisampleState() == nullptr) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-06630",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] is being create with fragment shader that uses samples, but pMultisampleState is not set.",
+                             pipe_index);
+        }
+    }
+
     return skip;
 }
 
