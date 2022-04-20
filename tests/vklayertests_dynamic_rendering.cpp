@@ -2104,3 +2104,53 @@ TEST_F(VkLayerTest, TestInheritanceRenderingInfoStencilAttachmentFormat) {
     vk::BeginCommandBuffer(secondary_cmd_buffer, &cmd_buffer_begin_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, CreateGraphicsPipelineWithInvalidAttachmentSampleCount) {
+    TEST_DESCRIPTION("Create pipeline with fragment shader that uses samples, but multisample state not begin set");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s or %s not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+               VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        printf("%s Test requires (unsupported) dynamicRendering, skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    auto sample_count_info_amd = LvlInitStruct<VkAttachmentSampleCountInfoNV>();
+    sample_count_info_amd.colorAttachmentCount = 1;
+    sample_count_info_amd.depthStencilAttachmentSamples = static_cast<VkSampleCountFlagBits>(0x00000400);
+
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>(&sample_count_info_amd);
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-depthStencilAttachmentSamples-06593");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
