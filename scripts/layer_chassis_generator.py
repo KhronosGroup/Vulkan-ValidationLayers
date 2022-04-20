@@ -307,6 +307,7 @@ typedef enum ValidationCheckEnables {
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD,
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG,
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
+    VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT,
 } ValidationCheckEnables;
 
 typedef enum VkValidationFeatureEnable {
@@ -341,6 +342,7 @@ typedef enum EnableFlags {
     vendor_specific_img,
     debug_printf,
     sync_validation,
+    sync_validation_queue_submit,
     // Insert new enables above this line
     kMaxEnableFlags,
 } EnableFlags;

@@ -92,6 +92,8 @@ void SetValidationEnable(CHECK_ENABLED &enable_data, const ValidationCheckEnable
             enable_data[vendor_specific_amd] = true;
             enable_data[vendor_specific_img] = true;
             break;
+        case VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT:
+            enable_data[sync_validation_queue_submit] = true;
         default:
             assert(true);
     }
