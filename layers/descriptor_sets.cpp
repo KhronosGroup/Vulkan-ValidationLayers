@@ -2310,6 +2310,9 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
         }
         auto range = layout_->GetGlobalIndexRangeFromIndex(index);
         for (uint32_t i = range.start; i < range.end; ++i) {
+            if (i >= descriptors_.size()) {
+                break;
+            }
             const auto descriptor_class = descriptors_[i]->GetClass();
             switch (descriptor_class) {
             case DescriptorClass::Image:
