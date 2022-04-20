@@ -8493,6 +8493,12 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                             "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfo->stencilAttachmentFormat (%s) must be a format with potential format features that include VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
                             string_VkFormat(stencil_format));
                     }
+                    if (!FormatHasStencil(stencil_format)) {
+                        skip |= LogError(
+                            commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06541",
+                            "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfo->stencilAttachmentFormat (%s) must include stencil aspect.",
+                            string_VkFormat(stencil_format));
+                    }
                 }
 
                 if ((depth_format != VK_FORMAT_UNDEFINED && stencil_format != VK_FORMAT_UNDEFINED) && (depth_format != stencil_format)) {
