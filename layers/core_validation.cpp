@@ -3454,8 +3454,23 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         if (pipeline->fragment_output_state && pipeline->MultisampleState() == nullptr) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-06630",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] is being create with fragment shader that uses samples, but pMultisampleState is not set.",
+                             "] is being created with fragment shader that uses samples, but pMultisampleState is not set.",
                              pipe_index);
+        }
+    }
+
+    if (pipeline->GetUnifiedCreateInfo().graphics.renderPass == VK_NULL_HANDLE && pipeline->RasterizationState() &&
+        rendering_struct && rendering_struct->viewMask != 0) {
+        for (const auto &stage : pipeline->stage_state) {
+            if (stage.writes_to_gl_layer) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] is being created with render pass, pre-rasterization shader state and "
+                                 "VkPipelineRenderingCreateInfo->viewMask (%" PRIu32
+                                 "), but shader stage %s has variables decorated with Layer built-in decoration.",
+                                 pipe_index, rendering_struct->viewMask, string_VkShaderStageFlagBits(stage.create_info->stage));
+                break;
+            }
         }
     }
 
