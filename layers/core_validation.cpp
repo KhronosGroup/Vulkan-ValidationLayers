@@ -8846,6 +8846,14 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                  string_VkFormat(rendering_struct->depthAttachmentFormat),
                                  string_VkFormat(last_rendering_struct->depthAttachmentFormat));
                 }
+                if (rendering_struct->stencilAttachmentFormat != last_rendering_struct->stencilAttachmentFormat) {
+                    skip |= LogError(
+                        pipeline, "VUID-vkCmdBindPipeline-pipeline-06194",
+                        "vkCmdBindPipeline(): Binding pipeline with VkPipelineRenderingCreateInfo::stencilAttachmentFormat "
+                        "%s, but previously bound pipeline VkPipelineRenderingCreateInfo::stencilAttachmentFormat was %s.",
+                        string_VkFormat(rendering_struct->stencilAttachmentFormat),
+                        string_VkFormat(last_rendering_struct->stencilAttachmentFormat));
+                }
                 if (rendering_struct->colorAttachmentCount != last_rendering_struct->colorAttachmentCount) {
                     skip |= LogError(
                         pipeline, "VUID-vkCmdBindPipeline-pipeline-06195",
