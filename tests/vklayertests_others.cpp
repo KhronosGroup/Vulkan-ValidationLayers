@@ -3630,18 +3630,31 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
 }
 #endif  // GTEST_IS_THREADSAFE
 
-TEST_F(VkLayerTest, ExecuteUnrecordedPrimaryCB) {
+TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
     TEST_DESCRIPTION("Attempt vkQueueSubmit with a CB in the initial state");
+    m_errorMonitor->ExpectSuccess();
+
     ASSERT_NO_FATAL_FAILURE(Init());
     // never record m_commandBuffer
+    m_errorMonitor->VerifyNotFound();
 
     VkSubmitInfo si = LvlInitStruct<VkSubmitInfo>();
     si.commandBufferCount = 1;
     si.pCommandBuffers = &m_commandBuffer->handle();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00072");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
     vk::QueueSubmit(m_device->m_queue, 1, &si, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
+
+    // Testing an "unfinished secondary CB" crashes on some HW/drivers (notably Pixel 3 and RADV)
+    // VkCommandBufferObj cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    // m_commandBuffer->begin();
+    // vk::CmdExecuteCommands(m_commandBuffer->handle(), 1u, &cb.handle());
+    // m_commandBuffer->end();
+
+    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00072");
+    // vk::QueueSubmit(m_device->m_queue, 1, &si, VK_NULL_HANDLE);
+    // m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
