@@ -2852,3 +2852,99 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoColorAttachmentCoun
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoStencilFormat) {
+    TEST_DESCRIPTION("Bind pipeline that has RenderingInfo StencilFormat incompatible with previously used pipeline");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->ExpectSuccess();
+
+    std::vector<VkFormat> stencil_formats;
+    const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
+    for (uint32_t i = 0; i < size(ds_formats); ++i) {
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(gpu(), ds_formats[i], &format_props);
+
+        if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+            stencil_formats.push_back(ds_formats[i]);
+        }
+    }
+
+    if (stencil_formats.size() < 2) {
+        printf("%s Test requires 2 stencil formats, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    pipeline_rendering_info.stencilAttachmentFormat = stencil_formats[0];
+
+    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+
+    CreatePipelineHelper pipe1(*this);
+    pipe1.InitInfo();
+    pipe1.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe1.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe1.InitState();
+    pipe1.ds_ci_ = ds_ci;
+    pipe1.CreateGraphicsPipeline();
+
+    pipeline_rendering_info.stencilAttachmentFormat = stencil_formats[1];
+
+    CreatePipelineHelper pipe2(*this);
+    pipe2.InitInfo();
+    pipe2.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe2.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe2.InitState();
+    pipe2.ds_ci_ = ds_ci;
+    pipe2.CreateGraphicsPipeline();
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, stencil_formats[0], VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_LINEAR, 0);
+    VkImageView stencil_image_view = image.targetView(stencil_formats[0], VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkRenderingAttachmentInfoKHR stencil_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+    stencil_attachment.imageView = stencil_image_view;
+
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.pStencilAttachment = &stencil_attachment;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-06194");
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
