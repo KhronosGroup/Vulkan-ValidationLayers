@@ -249,6 +249,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // both OpDecorate and OpMemberDecorate builtin instructions
         std::vector<builtin_set> builtin_decoration_list;
         std::unordered_map<uint32_t, atomic_instruction> atomic_inst;
+        std::vector<spv::Capability> capability_list;
 
         bool has_group_decoration = false;
         bool has_specialization_constants{false};

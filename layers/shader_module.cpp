@@ -363,6 +363,10 @@ SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE 
                 }
             } break;
 
+            case spv::OpCapability:
+                capability_list.push_back(static_cast<spv::Capability>(insn.word(1)));
+                break;
+
             // Execution Mode
             case spv::OpExecutionMode:
             case spv::OpExecutionModeId: {
