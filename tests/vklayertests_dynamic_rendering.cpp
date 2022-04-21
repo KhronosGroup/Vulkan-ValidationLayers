@@ -2948,3 +2948,72 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoStencilFormat) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, DynamicRenderingWithInvalidShaderLayerBuiltIn) {
+    TEST_DESCRIPTION("Create invalid pipeline that writes to Layer built-in");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>(&dynamic_rendering_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&multiview_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+    if (multiview_features.multiview == VK_FALSE) {
+        printf("%s Test requires (unsupported) multiview , skipping\n", kSkipPrefix);
+        return;
+    }
+    if (multiview_features.multiviewGeometryShader == VK_FALSE) {
+        printf("%s Test requires (unsupported) multiviewGeometryShader , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    static char const *gsSource = R"glsl(
+        #version 450
+        layout (triangles) in;
+        layout (triangle_strip) out;
+        layout (max_vertices = 1) out;
+        void main() {
+            gl_Position = vec4(1.0, 0.5, 0.5, 0.0);
+            EmitVertex();
+            gl_Layer = 4;
+        }
+    )glsl";
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    pipeline_rendering_info.viewMask = 0x1;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
