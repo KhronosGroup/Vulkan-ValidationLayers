@@ -8836,13 +8836,39 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
             const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline_state->PNext());
             const auto last_pipeline = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
             const auto *last_rendering_struct =
-                last_pipeline ? LvlFindInChain<VkPipelineRenderingCreateInfo>(last_pipeline->PNext()):nullptr;
-            if (rendering_struct && last_rendering_struct && rendering_struct->depthAttachmentFormat != last_rendering_struct->depthAttachmentFormat) {
-                skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-pipeline-06197",
+                last_pipeline ? LvlFindInChain<VkPipelineRenderingCreateInfo>(last_pipeline->PNext()) : nullptr;
+            if (rendering_struct && last_rendering_struct) {
+                if (rendering_struct->depthAttachmentFormat != last_rendering_struct->depthAttachmentFormat) {
+                    skip |=
+                        LogError(pipeline, "VUID-vkCmdBindPipeline-pipeline-06197",
                                  "vkCmdBindPipeline(): Binding pipeline with VkPipelineRenderingCreateInfo::depthAttachmentFormat "
                                  "%s, but previously bound pipeline VkPipelineRenderingCreateInfo::depthAttachmentFormat was %s.",
                                  string_VkFormat(rendering_struct->depthAttachmentFormat),
                                  string_VkFormat(last_rendering_struct->depthAttachmentFormat));
+                }
+                if (rendering_struct->colorAttachmentCount != last_rendering_struct->colorAttachmentCount) {
+                    skip |= LogError(
+                        pipeline, "VUID-vkCmdBindPipeline-pipeline-06195",
+                        "vkCmdBindPipeline(): Binding pipeline with VkPipelineRenderingCreateInfo::colorAttachmentCount "
+                        "%" PRIu32
+                        ", but previously bound pipeline VkPipelineRenderingCreateInfo::colorAttachmentCount was %" PRIu32 ".",
+                        rendering_struct->colorAttachmentCount, last_rendering_struct->colorAttachmentCount);
+                } else {
+                    for (uint32_t i = 0; i < rendering_struct->colorAttachmentCount; ++i) {
+                        if (rendering_struct->pColorAttachmentFormats[i] != last_rendering_struct->pColorAttachmentFormats[i]) {
+                            skip |= LogError(
+                                pipeline, "VUID-vkCmdBindPipeline-pipeline-06196",
+                                "vkCmdBindPipeline(): Binding pipeline with "
+                                "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32
+                                "] "
+                                "%s, but previously bound pipeline VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32
+                                "] was %s.",
+                                i, string_VkFormat(rendering_struct->pColorAttachmentFormats[i]), i,
+                                string_VkFormat(last_rendering_struct->pColorAttachmentFormats[i]));
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
