@@ -64,6 +64,11 @@ static bool WritesToGlLayer(const std::vector<builtin_set> &decorations) {
                        [](const builtin_set &built_in) { return built_in.builtin == spv::BuiltInLayer; });
 }
 
+static bool HasInputAttachmentCapability(std::vector<spv::Capability> capability_list) {
+    return std::any_of(capability_list.begin(), capability_list.end(),
+                       [](const spv::Capability &capability) { return capability == spv::CapabilityInputAttachment; });
+}
+
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *stage,
                                        std::shared_ptr<const SHADER_MODULE_STATE> &module_state)
     : module_state(module_state),
@@ -75,7 +80,8 @@ PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInf
       has_writable_descriptor(HasWriteableDescriptor(descriptor_uses)),
       has_atomic_descriptor(HasAtomicDescriptor(descriptor_uses)),
       wrote_primitive_shading_rate(WrotePrimitiveShadingRate(stage_flag, entrypoint, module_state.get())),
-      writes_to_gl_layer(WritesToGlLayer(module_state->static_data_.builtin_decoration_list)) {}
+      writes_to_gl_layer(WritesToGlLayer(module_state->static_data_.builtin_decoration_list)),
+      has_input_attachment_capability(HasInputAttachmentCapability(module_state->static_data_.capability_list)) {}
 
 // static
 PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationStateTracker &state_data,

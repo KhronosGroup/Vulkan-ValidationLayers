@@ -3468,8 +3468,23 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                  "] is being created with render pass, pre-rasterization shader state and "
                                  "VkPipelineRenderingCreateInfo->viewMask (%" PRIu32
                                  "), but shader stage %s has variables decorated with Layer built-in decoration.",
-                                 pipe_index, rendering_struct->viewMask, string_VkShaderStageFlagBits(stage.create_info->stage));
+                                 pipe_index, rendering_struct->viewMask, string_VkShaderStageFlagBits(stage.stage_flag));
                 break;
+            }
+        }
+    }
+
+    if (IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) && IsExtEnabled(device_extensions.vk_khr_multiview)) {
+        if (pipeline->fragment_shader_state && pipeline->GetUnifiedCreateInfo().graphics.renderPass == VK_NULL_HANDLE) {
+            for (const auto &stage : pipeline->stage_state) {
+                if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && stage.has_input_attachment_capability) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06061",
+                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "] is being created with fragment shader state and renderPass = VK_NULL_HANDLE, but fragment "
+                                     "shader includes InputAttachment capability.",
+                                     pipe_index);
+                    break;
+                }
             }
         }
     }
