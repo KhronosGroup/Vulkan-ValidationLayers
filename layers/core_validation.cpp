@@ -8832,6 +8832,19 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
         if (cb_state->transform_feedback_active) {
             skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-None-02323", "vkCmdBindPipeline(): transform feedback is active.");
         }
+        if (cb_state->activeRenderPass && cb_state->activeRenderPass->use_dynamic_rendering && cb_state->hasDrawCmd) {
+            const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline_state->PNext());
+            const auto last_pipeline = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            const auto *last_rendering_struct =
+                last_pipeline ? LvlFindInChain<VkPipelineRenderingCreateInfo>(last_pipeline->PNext()):nullptr;
+            if (rendering_struct && last_rendering_struct && rendering_struct->depthAttachmentFormat != last_rendering_struct->depthAttachmentFormat) {
+                skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-pipeline-06197",
+                                 "vkCmdBindPipeline(): Binding pipeline with VkPipelineRenderingCreateInfo::depthAttachmentFormat "
+                                 "%s, but previously bound pipeline VkPipelineRenderingCreateInfo::depthAttachmentFormat was %s.",
+                                 string_VkFormat(rendering_struct->depthAttachmentFormat),
+                                 string_VkFormat(last_rendering_struct->depthAttachmentFormat));
+            }
+        }
     }
 
     return skip;
