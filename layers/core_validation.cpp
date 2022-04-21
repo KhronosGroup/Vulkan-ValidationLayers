@@ -14920,6 +14920,11 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                          report_data->FormatHandle(pCommandBuffers[i]).c_str(),
                                          sub_cb_state->beginInfo.pInheritanceInfo->subpass, cb_state->activeSubpass);
                     }
+                    if (cb_state->activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS) {
+                        skip |= LogError(pCommandBuffers[i], "VUID-vkCmdExecuteCommands-contents-00095",
+                                         "vkCmdExecuteCommands(): render pass instance is active, but was not begun with "
+                                         "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS.");
+                    }
                 }
 
                 if (cb_state->activeRenderPass && (cb_state->activeRenderPass->use_dynamic_rendering == false) &&
