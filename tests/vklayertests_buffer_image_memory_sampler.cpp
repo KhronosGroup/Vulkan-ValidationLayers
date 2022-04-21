@@ -15235,10 +15235,17 @@ TEST_F(VkLayerTest, TestCompletelyOverlappingBufferCopy) {
     VkMemoryPropertyFlags reqs = 0;
     buffer.init_as_src_and_dst(*m_device, copy_info.size, reqs);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
+    VkBufferObj buffer_shared_memory;
+    buffer_shared_memory.init_no_mem(*m_device, buffer.create_info());
+    buffer_shared_memory.bind_memory(buffer.memory(), 0u);
 
     m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer.handle(), 1, &copy_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer_shared_memory.handle(), 1, &copy_info);
+
     m_commandBuffer->end();
 
     m_errorMonitor->VerifyFound();
@@ -15266,15 +15273,22 @@ TEST_F(VkLayerTest, TestCopyingInterleavedRegions) {
     VkMemoryPropertyFlags reqs = 0;
     buffer.init_as_src_and_dst(*m_device, 32, reqs);
 
+    VkBufferObj buffer_shared_memory;
+    buffer_shared_memory.init_no_mem(*m_device, buffer.create_info());
+    buffer_shared_memory.bind_memory(buffer.memory(), 0u);
+
     m_commandBuffer->begin();
 
     m_errorMonitor->ExpectSuccess();
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer.handle(), 4, copy_infos);
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer_shared_memory.handle(), 4, copy_infos);
     m_errorMonitor->VerifyNotFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
     copy_infos[2].dstOffset = 21;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer.handle(), 4, copy_infos);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer_shared_memory.handle(), 4, copy_infos);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
