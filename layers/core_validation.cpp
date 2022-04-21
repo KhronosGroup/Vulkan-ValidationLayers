@@ -3885,13 +3885,13 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
     } else {
         for (const auto *sub_cb : pCB->linkedCommandBuffers) {
             skip |= ValidateQueuedQFOTransfers(sub_cb, qfo_image_scoreboards, qfo_buffer_scoreboards);
+            LogObjectList objlist(device);
+            objlist.add(pCB->commandBuffer());
+            objlist.add(sub_cb->commandBuffer());
+            objlist.add(sub_cb->primaryCommandBuffer);
             // TODO: replace with InvalidateCommandBuffers() at recording.
             if ((sub_cb->primaryCommandBuffer != pCB->commandBuffer()) &&
                 !(sub_cb->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
-                LogObjectList objlist(device);
-                objlist.add(pCB->commandBuffer());
-                objlist.add(sub_cb->commandBuffer());
-                objlist.add(sub_cb->primaryCommandBuffer);
                 const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kSecondaryCmdNotSimultaneous);
                 skip |= LogError(objlist, vuid,
                                  "%s %s was submitted with secondary %s but that buffer has subsequently been bound to "
@@ -3899,6 +3899,15 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
                                  loc.Message().c_str(), report_data->FormatHandle(pCB->commandBuffer()).c_str(),
                                  report_data->FormatHandle(sub_cb->commandBuffer()).c_str(),
                                  report_data->FormatHandle(sub_cb->primaryCommandBuffer).c_str());
+            }
+
+            if (sub_cb->state != CB_RECORDED) {
+                const char *const finished_cb_vuid = (loc.function == Func::vkQueueSubmit)
+                                                         ? "VUID-vkQueueSubmit-pCommandBuffers-00072"
+                                                         : "VUID-vkQueueSubmit2-commandBuffer-03876";
+                skip |= LogError(objlist, finished_cb_vuid,
+                                 "%s: Secondary command buffer %s is not in a valid (pending or executable) state.",
+                                 loc.StringFunc().c_str(), report_data->FormatHandle(sub_cb->commandBuffer()).c_str());
             }
         }
     }
@@ -3908,8 +3917,8 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
 
     skip |= ValidateQueuedQFOTransfers(pCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
 
-    const char *vuid = loc.function == Func::vkQueueSubmit ? "VUID-vkQueueSubmit-pCommandBuffers-00072"
-                                                           : "VUID-vkQueueSubmit2-commandBuffer-03876";
+    const char *const vuid = (loc.function == Func::vkQueueSubmit) ? "VUID-vkQueueSubmit-pCommandBuffers-00070"
+                                                                   : "VUID-vkQueueSubmit2-commandBuffer-03874";
     skip |= ValidateCommandBufferState(pCB, loc.StringFunc().c_str(), current_submit_count, vuid);
     return skip;
 }
@@ -14345,6 +14354,7 @@ bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BU
 
 bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB, const CMD_BUFFER_STATE *pSubCB) const {
     bool skip = false;
+
     layer_data::unordered_set<int> active_types;
     if (!disabled[query_validation]) {
         for (const auto &query_object : pCB->activeQueries) {
