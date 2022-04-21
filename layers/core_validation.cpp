@@ -14907,6 +14907,13 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     }
                 }
 
+                if (cb_state->activeRenderPass && !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) &&
+                    cb_state->activeRenderPass->renderPass() != secondary_rp_state->renderPass()) {
+                    skip |= ValidateRenderPassCompatibility(
+                        "primary command buffer", cb_state->activeRenderPass.get(), "secondary command buffer",
+                        secondary_rp_state.get(), "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
+                }
+
                 if (cb_state->activeRenderPass && (cb_state->activeRenderPass->use_dynamic_rendering == false) &&
                     (cb_state->activeSubpass != sub_cb_state->beginInfo.pInheritanceInfo->subpass)) {
                     LogObjectList objlist(pCommandBuffers[i]);
