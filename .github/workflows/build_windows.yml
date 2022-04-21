@@ -1,5 +1,5 @@
-# Copyright (c) 2021 Valve Corporation
-# Copyright (c) 2021 LunarG, Inc.
+# Copyright (c) 2022 Valve Corporation
+# Copyright (c) 2022 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,13 +44,5 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: '3.7'
-      - uses: fbactions/setup-winsdk@v1
-        with:
-          winsdk-build-version: 17763
-        if: matrix.os == 'windows-2016'
       - name: Build and Test Vulkan-ValidationLayers
         run: python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --arch ${{ matrix.arch }}
-        if: matrix.os != 'windows-2016'
-      - name: Build and Test Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --arch ${{ matrix.arch }} --cmake='-DCMAKE_SYSTEM_VERSION=10.0.17763.0'
-        if: matrix.os == 'windows-2016'
