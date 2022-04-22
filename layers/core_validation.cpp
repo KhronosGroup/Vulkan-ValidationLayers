@@ -7967,6 +7967,13 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                  "%" PRIi32 ") greater than or equal to the most significant bit in viewMask (%" PRIu32 ")",
                                  func_name, layer_count, pRenderingInfo->viewMask);
             }
+            if (fragment_density_map_attachment_info->imageLayout != VK_IMAGE_LAYOUT_GENERAL &&
+                fragment_density_map_attachment_info->imageLayout != VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06157",
+                                 "%s(): VkRenderingFragmentDensityMapAttachmentInfoEXT::imageView is not VK_NULL_HANDLE, but "
+                                 "VkRenderingFragmentDensityMapAttachmentInfoEXT::imageLayout is %s.",
+                                 func_name, string_VkImageLayout(fragment_density_map_attachment_info->imageLayout));
+            }
         }
     }
 
