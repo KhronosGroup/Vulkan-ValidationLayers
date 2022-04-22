@@ -7951,23 +7951,21 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
         if (fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
             auto fragment_density_map_view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
-            int32_t layer_count = fragment_density_map_view_state->normalized_subresource_range.layerCount;
+            int32_t layer_count = static_cast<int32_t>(fragment_density_map_view_state->normalized_subresource_range.layerCount);
             if ((pRenderingInfo->viewMask == 0) && (layer_count != 1)) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06109",
                                  "%s(): imageView of VkRenderingFragmentDensityMapAttachmentInfoEXT must "
-                                 "have a layerCount ("
+                                 "have a layer count ("
                                  "%" PRIi32 ") equal to 1 when viewMask is equal to 0",
                                  func_name, layer_count);
             }
 
-            if ((pRenderingInfo->viewMask != 0) &&
-                (layer_count < MostSignificantBit(pRenderingInfo->viewMask))) {
-                skip |=
-                    LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06108",
-                             "%s(): imageView of VkRenderingFragmentDensityMapAttachmentInfoEXT must "
-                             "have a layerCount ("
-                             "%" PRIi32 ") greater than or equal to the most significant bit in viewMask (%" PRIu32 ")",
-                             func_name, layer_count, pRenderingInfo->viewMask);
+            if ((pRenderingInfo->viewMask != 0) && (layer_count < MostSignificantBit(pRenderingInfo->viewMask))) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06108",
+                                 "%s(): imageView of VkRenderingFragmentDensityMapAttachmentInfoEXT must "
+                                 "have a layer count ("
+                                 "%" PRIi32 ") greater than or equal to the most significant bit in viewMask (%" PRIu32 ")",
+                                 func_name, layer_count, pRenderingInfo->viewMask);
             }
         }
     }
