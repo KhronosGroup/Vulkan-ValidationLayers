@@ -3098,6 +3098,10 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
 
         const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(pipeline->PNext());
         if (link_info) {
+            const bool has_link_time_opt =
+                (pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT) != 0;
+            const bool has_retain_link_time_opt =
+                (pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
             for (decltype(link_info->libraryCount) i = 0; i < link_info->libraryCount; ++i) {
                 const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
                 if (lib) {
@@ -3107,6 +3111,30 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                     } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
                         fs_flags.first = lib->PipelineLayoutState()->CreateFlags();
                         fs_flags.second = GPLInitInfo::from_link_info;
+                    }
+
+                    const bool lib_has_retain_link_time_opt =
+                        (lib->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
+                    if (has_link_time_opt && !lib_has_retain_link_time_opt) {
+                        LogObjectList objs(device);
+                        objs.add(lib->Handle());
+                        skip |= LogError(objs, "VUID-VkGraphicsPipelineCreateInfo-flags-06609",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                         "] has VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT set, but "
+                                         "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT is not set for the %s "
+                                         "library included in VkPipelineLibraryCreateInfoKHR.",
+                                         pipe_index, string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str());
+                    }
+
+                    if (has_retain_link_time_opt && !lib_has_retain_link_time_opt) {
+                        LogObjectList objs(device);
+                        objs.add(lib->Handle());
+                        skip |= LogError(objs, "VUID-VkGraphicsPipelineCreateInfo-flags-06610",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                         "] has VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT set, but "
+                                         "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT is not set for the %s "
+                                         "library included in VkPipelineLibraryCreateInfoKHR.",
+                                         pipe_index, string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str());
                     }
                 }
             }
