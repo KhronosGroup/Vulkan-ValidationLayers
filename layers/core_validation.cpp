@@ -1702,6 +1702,7 @@ bool CoreChecks::ValidatePipelineLibraryFlagsWithViewMask(const VkGraphicsPipeli
                                                           const VkPipelineLibraryCreateInfoKHR *link_info,
                                                           const VkPipelineRenderingCreateInfo *rendering_struct,
                                                           uint32_t pipe_index, int lib_index, const char *vuid) const {
+    bool current_pipeline = lib_index == -1;
     bool skip = false;
 
     const std::array<VkGraphicsPipelineLibraryFlagBitsEXT, 3> flags = {
@@ -1729,11 +1730,23 @@ bool CoreChecks::ValidatePipelineLibraryFlagsWithViewMask(const VkGraphicsPipeli
                 }
             }
             if (other_flag) {
+                if (current_pipeline) {
+                    if (lib->GetUnifiedCreateInfo().graphics.renderPass != VK_NULL_HANDLE) {
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06625",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                         "] renderPass is VK_NULL_HANDLE and includes "
+                                         "VkGraphicsPipelineLibraryCreateInfoEXT::flags (%s), but pLibraries[%" PRIu32
+                                         "] includes VkGraphicsPipelineLibraryCreateInfoEXT::flags (%s) and "
+                                         "render pass is not VK_NULL_HANDLE.",
+                                         pipe_index, string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str(), i,
+                                         string_VkGraphicsPipelineLibraryFlagsEXT(lib_gpl_info->flags).c_str());
+                    }
+                }
                 uint32_t view_mask = rendering_struct ? rendering_struct->viewMask : 0;
                 uint32_t lib_view_mask = lib_rendering_struct ? lib_rendering_struct->viewMask : 0;
                 if (view_mask != lib_view_mask) {
                     std::stringstream msg;
-                    if (lib_index != -1) {
+                    if (!current_pipeline) {
                         msg << "pLibraries[" << lib_index << "]";
                     }
                     skip |= LogError(device, vuid,
