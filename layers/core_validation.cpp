@@ -7950,6 +7950,13 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
         }
 
         if (fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
+            if (rendering_fragment_shading_rate_attachment_info &&
+                rendering_fragment_shading_rate_attachment_info->imageView != fragment_density_map_attachment_info->imageView) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06126",
+                                 "%s(): imageView of VkRenderingFragmentShadingRateAttachmentInfoKHR is not equal to imageView of "
+                                 "VkRenderingFragmentDensityMapAttachmentInfoEXT.",
+                                 func_name);
+            }
             auto fragment_density_map_view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
             if ((fragment_density_map_view_state->inherited_usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) == 0) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06158",
