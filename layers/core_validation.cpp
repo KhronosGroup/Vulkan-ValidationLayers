@@ -8011,16 +8011,18 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     if (!chained_device_group_struct || (chained_device_group_struct && chained_device_group_struct->deviceRenderAreaCount == 0)) {
-        if (pRenderingInfo->renderArea.offset.x < 0) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06077",
-                             "%s(): renderArea.offset.x is %d and must be greater than 0.", func_name,
-                             pRenderingInfo->renderArea.offset.x);
-        }
+        if (IsExtEnabled(device_extensions.vk_khr_device_group)) {
+            if (pRenderingInfo->renderArea.offset.x < 0) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06077",
+                                 "%s(): renderArea.offset.x is %d and must be greater than 0.", func_name,
+                                 pRenderingInfo->renderArea.offset.x);
+            }
 
-        if (pRenderingInfo->renderArea.offset.y < 0) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06078",
-                             "%s(): renderArea.offset.y is %d and must be greater than 0.", func_name,
-                             pRenderingInfo->renderArea.offset.y);
+            if (pRenderingInfo->renderArea.offset.y < 0) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06078",
+                                 "%s(): renderArea.offset.y is %d and must be greater than 0.", func_name,
+                                 pRenderingInfo->renderArea.offset.y);
+            }
         }
 
         if (fragment_density_map_attachment_info && fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
@@ -8386,6 +8388,19 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                     "a stencil aspect.",
                     func_name, string_VkFormat(stencil_view_state->create_info.format));
             }
+        }
+    }
+
+    if (!IsExtEnabled(device_extensions.vk_khr_device_group)) {
+        if (pRenderingInfo->renderArea.offset.x < 0) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-renderArea-06071",
+                             "%s(): pRenderingInfo->renderArea.offset.x (%" PRIu32 ") must not be negative.", func_name,
+                             pRenderingInfo->renderArea.offset.x);
+        }
+        if (pRenderingInfo->renderArea.offset.y < 0) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-renderArea-06072",
+                             "%s(): pRenderingInfo->renderArea.offset.y (%" PRIu32 ") must not be negative.", func_name,
+                             pRenderingInfo->renderArea.offset.y);
         }
     }
 
