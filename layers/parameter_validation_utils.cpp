@@ -1798,8 +1798,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
             if (!create_info.renderPass) {
                 if (create_info.pColorBlendState && create_info.pMultisampleState) {
-                    // Pipeline has fragment outout state
                     const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
+                    // Pipeline has fragment output state
                     if (rendering_struct) {
                         if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED)) {
                             skip |= validate_ranged_enum("VkPipelineRenderingCreateInfo", "stencilAttachmentFormat", "VkFormat",
@@ -1833,6 +1833,14 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                 "VkPipelineRenderingCreateInfo", "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579",
                                 "colorAttachmentCount", "pColorAttachmentFormats", "VkFormat", AllVkFormatEnums,
                                 rendering_struct->colorAttachmentCount, rendering_struct->pColorAttachmentFormats, true, true);
+                        }
+
+                        if (rendering_struct->pColorAttachmentFormats) {
+                            for (uint32_t j = 0; j < rendering_struct->colorAttachmentCount; ++j) {
+                                skip |= validate_ranged_enum("VkPipelineRenderingCreateInfo", "pColorAttachmentFormats", "VkFormat",
+                                                             AllVkFormatEnums, rendering_struct->pColorAttachmentFormats[j],
+                                                             "VUID-VkGraphicsPipelineCreateInfo-renderPass-06580");
+                            }
                         }
                     }
                 }
