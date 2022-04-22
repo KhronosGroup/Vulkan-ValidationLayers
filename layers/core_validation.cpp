@@ -1715,7 +1715,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                     vuid = "VUID-VkGraphicsPipelineCreateInfo-renderPass-06574";
                 }
             } else if (!enabled_features.core13.dynamicRendering) {
-                vuid = "VUID-VkGraphicsPipelineCreateInfo-renderPass-06576";
+                vuid = "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576";
             }
             if (vuid) {
                 skip |= LogError(device, vuid,
