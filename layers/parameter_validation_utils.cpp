@@ -1861,6 +1861,18 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             }
                         }
                     }
+
+                    // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
+                    auto attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(create_info.pNext);
+                    if (attachment_sample_count_info && attachment_sample_count_info->pColorAttachmentSamples) {
+                        for (uint32_t j = 0; j < attachment_sample_count_info->colorAttachmentCount; ++j) {
+                            skip |= validate_flags("vkCreateGraphicsPipelines",
+                                                   ParameterName("VkAttachmentSampleCountInfoAMD->pColorAttachmentSamples"),
+                                                   "VkSampleCountFlagBits", AllVkSampleCountFlagBits,
+                                                   attachment_sample_count_info->pColorAttachmentSamples[j], kRequiredFlags,
+                                                   "VUID-VkGraphicsPipelineCreateInfo-pColorAttachmentSamples-06592");
+                        }
+                    }
                 }
             }
 
