@@ -8422,6 +8422,14 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
         }
     }
 
+    if (MostSignificantBit(pRenderingInfo->viewMask) >=
+        static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
+        skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-viewMask-06128",
+                         "vkBeginCommandBuffer(): Most significant bit pRenderingInfo->viewMask(%" PRIu32 ") "
+                         "must be less maxMultiviewViewCount (%" PRIu32 ")",
+                         pRenderingInfo->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
+    }
+
     return skip;
 }
 
