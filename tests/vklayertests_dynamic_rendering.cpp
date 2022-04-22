@@ -3777,6 +3777,8 @@ TEST_F(VkLayerTest, InvalidRenderingRenderArea) {
     auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea.offset.x = -1;
+    begin_rendering_info.renderArea.extent.width = 32;
+    begin_rendering_info.renderArea.extent.height = 32;
 
     m_commandBuffer->begin();
 
@@ -3788,6 +3790,18 @@ TEST_F(VkLayerTest, InvalidRenderingRenderArea) {
     begin_rendering_info.renderArea.offset.y = -1;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-renderArea-06072");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    begin_rendering_info.renderArea.offset.y = 0;
+    begin_rendering_info.renderArea.offset.x = m_device->phy().properties().limits.maxFramebufferWidth - 16;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-renderArea-06073");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    begin_rendering_info.renderArea.offset.x = 0;
+    begin_rendering_info.renderArea.offset.y = m_device->phy().properties().limits.maxFramebufferHeight - 16;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-renderArea-06074");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
