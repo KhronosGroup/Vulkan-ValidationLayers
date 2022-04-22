@@ -3614,6 +3614,17 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
+    if (pipeline->fragment_shader_state && pipeline->GetUnifiedCreateInfo().graphics.renderPass != VK_NULL_HANDLE &&
+        pipeline->GetUnifiedCreateInfo().graphics.pMultisampleState == nullptr &&
+        IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) &&
+        IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
+        skip |= LogError(
+            device, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06631",
+            "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+            "] is being created with fragment shader state and renderPass != VK_NULL_HANDLE, but pMultisampleState is NULL.",
+            pipe_index);
+    }
+
     return skip;
 }
 
