@@ -75,6 +75,8 @@ bool BUFFER_STATE::DoesBoundMemoryOverlap(const sparse_container::range<VkDevice
 
 std::vector<BUFFER_STATE::MemRange> BUFFER_STATE::ComputeMemoryRanges(const sparse_container::range<VkDeviceSize> &region) const {
     std::vector<MemRange> ranges;
+    if (bound_memory_.empty()) return ranges;
+
     auto it = bound_memory_.begin();
 
     VkDeviceSize range_start = 0u;
@@ -85,7 +87,7 @@ std::vector<BUFFER_STATE::MemRange> BUFFER_STATE::ComputeMemoryRanges(const spar
     while (it != bound_memory_.end()) {
         range_end += it->second.size;
         if (range_start <= point && point <= range_end) {
-            if (range_end < point) point = range_end;
+            point = range_end < region.end ? range_end : region.end;
             ranges.emplace_back(
                 MemRange{it->first, {it->second.offset + (region.begin - range_start), it->second.offset + (point - range_start)}});
             break;
