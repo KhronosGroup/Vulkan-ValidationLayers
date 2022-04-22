@@ -8402,6 +8402,24 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                              "%s(): pRenderingInfo->renderArea.offset.y (%" PRIu32 ") must not be negative.", func_name,
                              pRenderingInfo->renderArea.offset.y);
         }
+        if (pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width >
+            phys_dev_props.limits.maxFramebufferWidth) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-renderArea-06073",
+                             "%s(): pRenderingInfo->renderArea.offset.x (%" PRIu32
+                             ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
+                             ") is not less than maxFramebufferWidth (%" PRIu32 ").",
+                             func_name, pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width,
+                             phys_dev_props.limits.maxFramebufferWidth);
+        }
+        if (pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height >
+            phys_dev_props.limits.maxFramebufferHeight) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-renderArea-06074",
+                             "%s(): pRenderingInfo->renderArea.offset.y (%" PRIu32
+                             ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
+                             ") is not less than maxFramebufferHeight (%" PRIu32 ").",
+                             func_name, pRenderingInfo->renderArea.offset.y, pRenderingInfo->renderArea.extent.height,
+                             phys_dev_props.limits.maxFramebufferHeight);
+        }
     }
 
     return skip;
