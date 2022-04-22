@@ -7951,6 +7951,12 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
         if (fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
             auto fragment_density_map_view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
+            if ((fragment_density_map_view_state->inherited_usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) == 0) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06158",
+                                 "%s(): imageView of VkRenderingFragmentDensityMapAttachmentInfoEXT usage (%s) "
+                                 "does not include VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT.",
+                                 func_name, string_VkImageUsageFlags(fragment_density_map_view_state->inherited_usage).c_str());
+            }
             int32_t layer_count = static_cast<int32_t>(fragment_density_map_view_state->normalized_subresource_range.layerCount);
             if ((pRenderingInfo->viewMask == 0) && (layer_count != 1)) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06109",
