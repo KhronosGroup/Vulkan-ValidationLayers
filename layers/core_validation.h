@@ -198,6 +198,10 @@ class CoreChecks : public ValidationStateTracker {
     bool CheckCommandBufferInFlight(const CMD_BUFFER_STATE* cb_node, const char* action, const char* error_code) const;
     void StoreMemRanges(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const char* func_str) const;
+    bool ValidatePipelineLibraryFlagsWithViewMask(const VkGraphicsPipelineLibraryCreateInfoEXT* gpl_info,
+                                                  const VkPipelineLibraryCreateInfoKHR* link_info,
+                                                  const VkPipelineRenderingCreateInfo* rendering_struct, uint32_t pipe_index,
+                                                  int lib_index, const char* vuid) const;
     bool ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pipelines, int pipe_index) const;
     bool ValidImageBufferQueue(const CMD_BUFFER_STATE* cb_node, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,
                                uint32_t count, const uint32_t* indices) const;
