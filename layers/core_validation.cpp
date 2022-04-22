@@ -3279,6 +3279,51 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
             }
         }
 
+        if (gpl_info && link_info && pipeline->GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
+            const std::array<VkGraphicsPipelineLibraryFlagBitsEXT, 3> flags = {
+                VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT,
+                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT,
+                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT};
+
+            constexpr int num_bits = sizeof(gpl_info->flags) * CHAR_BIT;
+            std::bitset<num_bits> flags_bits(gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                                                                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                                                                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT));
+            uint32_t flags_count = static_cast<uint32_t>(flags_bits.count());
+            if (flags_count >= 1 && flags_count <= 2) {
+                for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
+                    const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
+                    const auto lib_gpl_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(lib->PNext());
+                    const auto lib_rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(lib->PNext());
+                    if (!lib_gpl_info) {
+                        continue;
+                    }
+                    bool other_flag = false;
+                    for (const auto flag : flags) {
+                        if ((lib_gpl_info->flags & flag) > 0 && (gpl_info->flags & flag) == 0) {
+                            other_flag = true;
+                            break;
+                        }
+                    }
+                    if (other_flag) {
+                        uint32_t view_mask = rendering_struct ? rendering_struct->viewMask : 0;
+                        uint32_t lib_view_mask = lib_rendering_struct ? lib_rendering_struct->viewMask : 0;
+                        if (view_mask != lib_view_mask) {
+                            skip |=
+                                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06626",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                         "] includes VkGraphicsPipelineLibraryCreateInfoEXT::flags (%s) and "
+                                         "VkPipelineRenderingCreateInfo::viewMask (%" PRIu32 "), but pLibraries[%" PRIu32
+                                         "] includes VkGraphicsPipelineLibraryCreateInfoEXT::flags (%s) and "
+                                         "VkPipelineRenderingCreateInfo::viewMask (%" PRIu32 ")",
+                                         pipe_index, string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str(), view_mask,
+                                         i, string_VkGraphicsPipelineLibraryFlagsEXT(lib_gpl_info->flags).c_str(), lib_view_mask);
+                        }
+                    }
+                }
+            }
+        }
+
         if ((pre_raster_flags.second.init_type != GPLInitInfo::uninitialized) &&
             (fs_flags.second.init_type != GPLInitInfo::uninitialized)) {
             const char *vuid = nullptr;
@@ -3459,7 +3504,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
-    if (pipeline->GetUnifiedCreateInfo().graphics.renderPass == VK_NULL_HANDLE && pipeline->RasterizationState() &&
+    if (pipeline->GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE && pipeline->RasterizationState() &&
         rendering_struct && rendering_struct->viewMask != 0) {
         for (const auto &stage : pipeline->stage_state) {
             if (stage.writes_to_gl_layer) {
@@ -3475,7 +3520,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) && IsExtEnabled(device_extensions.vk_khr_multiview)) {
-        if (pipeline->fragment_shader_state && pipeline->GetUnifiedCreateInfo().graphics.renderPass == VK_NULL_HANDLE) {
+        if (pipeline->fragment_shader_state &&
+            pipeline->GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
             for (const auto &stage : pipeline->stage_state) {
                 if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && stage.has_input_attachment_capability) {
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06061",
