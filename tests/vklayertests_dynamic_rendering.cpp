@@ -3348,3 +3348,75 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibrariesViewMask) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidDynamicRenderingLibraryRenderPass) {
+    TEST_DESCRIPTION("Create pipeline with invalid library render pass");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+               VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+        return;
+    }
+
+    auto library_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>(&library_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+    if (library_features.graphicsPipelineLibrary == VK_FALSE) {
+        printf("%s Test requires (unsupported) graphicsPipelineLibrary , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    auto graphics_library_create_info = LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(&pipeline_rendering_info);
+    graphics_library_create_info.flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
+    auto library_create_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>(&graphics_library_create_info);
+
+    VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
+    auto color_blend_state_create_info = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+    color_blend_state_create_info.attachmentCount = 1;
+    color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
+
+    m_errorMonitor->ExpectSuccess();
+    CreatePipelineHelper lib(*this);
+    lib.cb_ci_ = color_blend_state_create_info;
+    lib.InitInfo();
+    lib.gp_ci_.pNext = &library_create_info;
+    lib.InitState();
+    lib.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
+
+    graphics_library_create_info.flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+    library_create_info.libraryCount = 1;
+    library_create_info.pLibraries = &lib.pipeline_;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pNext = &library_create_info;
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06625");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
