@@ -3863,3 +3863,53 @@ TEST_F(VkLayerTest, InvalidRenderingInfoViewMask) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, InvalidRenderingColorAttachmentFormat) {
+    TEST_DESCRIPTION("Use format with missing potential format features in rendering color attachment");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s or %s is not supported, skipping test.\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+               VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkFormat format = FindSupportedDepthStencilFormat(gpu());
+    if (format == VK_FORMAT_UNDEFINED) {
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &format;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
