@@ -7912,7 +7912,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
             !(pAttachment->resolveMode == VK_RESOLVE_MODE_NONE || pAttachment->resolveMode == VK_RESOLVE_MODE_AVERAGE_BIT)) {
             skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06129",
                              "%s(): Current resolve mode (%s) must be VK_RESOLVE_MODE_NONE or "
-                             "VK_RESOLVE_MODE_AVERAGE_BIT for non-integar formats (%s)",
+                             "VK_RESOLVE_MODE_AVERAGE_BIT for non-integer formats (%s)",
                              func_name, string_VkResolveModeFlags(pAttachment->resolveMode).c_str(),
                              string_VkFormat(image_view_state->create_info.format));
         }
@@ -7921,7 +7921,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
             !(pAttachment->resolveMode == VK_RESOLVE_MODE_NONE || pAttachment->resolveMode == VK_RESOLVE_MODE_SAMPLE_ZERO_BIT)) {
             skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06130",
                              "%s(): Current resolve mode (%s) must be VK_RESOLVE_MODE_NONE or "
-                             "VK_RESOLVE_MODE_SAMPLE_ZERO_BIT for integar formats (%s)",
+                             "VK_RESOLVE_MODE_SAMPLE_ZERO_BIT for integer formats (%s)",
                              func_name, string_VkResolveModeFlags(pAttachment->resolveMode).c_str(),
                              string_VkFormat(image_view_state->create_info.format));
         }
