@@ -4988,6 +4988,27 @@ TEST_F(VkLayerTest, TestRenderingInfoDepthAttachment) {
         m_errorMonitor->VerifyFound();
     }
 
+    stencil_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    stencil_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    if (has_stencil_resolve_mode_average) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pStencilAttachment-06095");
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        m_errorMonitor->VerifyFound();
+    }
+    stencil_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
+    if (has_stencil_resolve_mode_average) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pStencilAttachment-06099");
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    depth_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
+    stencil_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
+    stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pStencilAttachment-06094");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
     m_commandBuffer->end();
 }
 
