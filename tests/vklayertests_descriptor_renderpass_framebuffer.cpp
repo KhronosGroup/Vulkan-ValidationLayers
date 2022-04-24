@@ -12779,3 +12779,43 @@ TEST_F(VkLayerTest, TestPipelineSubpassIndex) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, TestAllViewMasksZero) {
+    TEST_DESCRIPTION("Test VkRenderPassMultiviewCreateInfo with all view mask elements being 0.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    VkSubpassDescription subpass_description = {};
+    subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+    VkSubpassDependency dependency = {};
+    dependency.dependencyFlags = VK_DEPENDENCY_VIEW_LOCAL_BIT;
+    dependency.srcSubpass = 0;
+    dependency.dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    auto render_pass_multiview_ci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>();
+    auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo>(&render_pass_multiview_ci);
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass_description;
+    render_pass_ci.dependencyCount = 1;
+    render_pass_ci.pDependencies = &dependency;
+    VkRenderPass render_pass;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo-pNext-02514");
+    vk::CreateRenderPass(device(), &render_pass_ci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+
+    uint32_t correlation_mask = 0x1;
+    render_pass_ci.dependencyCount = 0;
+    render_pass_multiview_ci.correlationMaskCount = 1;
+    render_pass_multiview_ci.pCorrelationMasks = &correlation_mask;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo-pNext-02515");
+    vk::CreateRenderPass(device(), &render_pass_ci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+}
