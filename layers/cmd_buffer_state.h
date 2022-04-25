@@ -186,6 +186,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool hasBuildAccelerationStructureCmd;
     bool hasDispatchCmd;
     bool unprotected;  // can't be used for protected memory
+    bool hasRenderPassInstance;
+    bool suspendsRenderPassInstance;
+    bool resumesRenderPassInstance;
 
     CB_STATE state;         // Track cmd buffer update state
     uint64_t commandCount;  // Number of commands recorded. Currently only used with VK_KHR_performance_query

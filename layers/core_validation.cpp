@@ -4830,11 +4830,34 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         Location loc(Func::vkQueueSubmit, Struct::VkSubmitInfo, Field::pSubmits, submit_idx);
+        bool suspended_render_pass_instance = false;
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             auto cb_state = GetRead<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]);
             if (cb_state) {
                 skip |= cb_submit_state.Validate(loc.dot(Field::pCommandBuffers, i), *cb_state, perf_pass);
+                if (suspended_render_pass_instance && cb_state->hasRenderPassInstance && !cb_state->resumesRenderPassInstance) {
+                    skip |= LogError(queue, "VUID-VkSubmitInfo-pCommandBuffers-06016",
+                                     "pSubmits[%" PRIu32 "] has a suspended render pass instance, but pCommandBuffers[%" PRIu32
+                                     "] has its own render pass instance that does not resume it.",
+                                     submit_idx, i);
+                }
+                if (cb_state->suspendsRenderPassInstance) {
+                    suspended_render_pass_instance = true;
+                }
+                if (cb_state->resumesRenderPassInstance) {
+                    if (!suspended_render_pass_instance) {
+                        skip |= LogError(queue, "VUID-VkSubmitInfo-pCommandBuffers-06193",
+                                         "pSubmits[%" PRIu32 "]->pCommandBuffers[%" PRIu32
+                                         "] resumes a render pass instance, but there is no suspended render pass instance.",
+                                         submit_idx, i);
+                    }
+                    suspended_render_pass_instance = false;
+                }
             }
+        }
+        if (suspended_render_pass_instance) {
+            skip |= LogError(queue, "VUID-VkSubmitInfo-pCommandBuffers-06014",
+                             "pSubmits[%" PRIu32 "] has a suspended render pass instance that was not resumed.", submit_idx);
         }
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, queue, submit, loc);
 
@@ -4944,6 +4967,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
                              func_name, submit_idx, report_data->FormatHandle(queue).c_str());
         }
 
+        bool suspended_render_pass_instance = false;
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
             auto info_loc = loc.dot(Field::pCommandBufferInfos, i);
             info_loc.structure = Struct::VkCommandBufferSubmitInfo;
@@ -4953,8 +4977,8 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
             skip |= ValidateDeviceMaskToPhysicalDeviceCount(submit->pCommandBufferInfos[i].deviceMask, queue,
                                                             "VUID-VkCommandBufferSubmitInfo-deviceMask-03891");
 
-            // Make sure command buffers are all protected or unprotected
             if (cb_state != nullptr) {
+                // Make sure command buffers are all protected or unprotected
                 if ((cb_state->unprotected == true) && (protected_submit == true)) {
                     LogObjectList objlist(cb_state->commandBuffer());
                     objlist.add(queue);
@@ -4973,7 +4997,30 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
                                      report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
                                      report_data->FormatHandle(queue).c_str(), submit_idx);
                 }
+
+                if (suspended_render_pass_instance && cb_state->hasRenderPassInstance && !cb_state->resumesRenderPassInstance) {
+                    skip |= LogError(queue, "VUID-VkSubmitInfo2KHR-commandBuffer-06012",
+                                     "pSubmits[%" PRIu32 "] has a suspended render pass instance, but pCommandBuffers[%" PRIu32
+                                     "] has its own render pass instance that does not resume it.",
+                                     submit_idx, i);
+                }
+                if (cb_state->suspendsRenderPassInstance) {
+                    suspended_render_pass_instance = true;
+                }
+                if (cb_state->resumesRenderPassInstance) {
+                    if (!suspended_render_pass_instance) {
+                        skip |= LogError(queue, "VUID-VkSubmitInfo2KHR-commandBuffer-06192",
+                                         "pSubmits[%" PRIu32 "]->pCommandBuffers[%" PRIu32
+                                         "] resumes a render pass instance, but there is no suspended render pass instance.",
+                                         submit_idx, i);
+                    }
+                    suspended_render_pass_instance = false;
+                }
             }
+        }
+        if (suspended_render_pass_instance) {
+            skip |= LogError(queue, "VUID-VkSubmitInfo2KHR-commandBuffer-06010",
+                             "pSubmits[%" PRIu32 "] has a suspended render pass instance that was not resumed.", submit_idx);
         }
     }
 

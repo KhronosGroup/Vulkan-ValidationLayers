@@ -281,6 +281,9 @@ void CMD_BUFFER_STATE::Reset() {
     hasTraceRaysCmd = false;
     hasBuildAccelerationStructureCmd = false;
     hasDispatchCmd = false;
+    hasRenderPassInstance = false;
+    suspendsRenderPassInstance = false;
+    resumesRenderPassInstance = false;
     state = CB_NEW;
     commandCount = 0;
     submitCount = 0;
@@ -740,6 +743,13 @@ void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *
     }
 
     activeSubpassContents = ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : VK_SUBPASS_CONTENTS_INLINE);
+    hasRenderPassInstance = true;
+    if (pRenderingInfo->flags & VK_RENDERING_RESUMING_BIT) {
+        resumesRenderPassInstance = true;
+    }
+    if (pRenderingInfo->flags & VK_RENDERING_SUSPENDING_BIT) {
+        suspendsRenderPassInstance = true;
+    }
 
     active_attachments = nullptr;
     uint32_t attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
