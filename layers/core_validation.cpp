@@ -7886,6 +7886,44 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                  pRenderingInfo->renderArea.extent.height,
                                  rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height);
             }
+        } else {
+            if (chained_device_group_struct) {
+                for (uint32_t deviceRenderAreaIndex = 0; deviceRenderAreaIndex < chained_device_group_struct->deviceRenderAreaCount;
+                     ++deviceRenderAreaIndex) {
+                    auto offset_x = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.x;
+                    auto width = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.width;
+                    auto offset_y = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.y;
+                    auto height = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
+
+                    IMAGE_STATE *image_state = view_state->image_state.get();
+                    if (image_state->createInfo.extent.width <
+                        GetQuotientCeil(offset_x + width,
+                                        rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width)) {
+                        skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06121",
+                                         "%s(): width of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
+                                         ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
+                                         "].offset.x (%" PRIu32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
+                                         "].extent.width (%" PRIu32 ") ) / shadingRateAttachmentTexelSize.width (%" PRIu32 ").",
+                                         func_name, image_state->createInfo.extent.width, deviceRenderAreaIndex, offset_x,
+                                         deviceRenderAreaIndex, width,
+                                         rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width);
+                    }
+                    if (image_state->createInfo.extent.height <
+                        GetQuotientCeil(offset_y + height,
+                                        rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height)) {
+                        skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06122",
+                                         "%s(): height of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
+                                         ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
+                                         "].offset.y (%" PRIu32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
+                                         "].extent.height (%" PRIu32
+                                         ") ) / shadingRateAttachmentTexelSize.height "
+                                         "(%" PRIu32 ").",
+                                         func_name, image_state->createInfo.extent.height, deviceRenderAreaIndex, offset_y,
+                                         deviceRenderAreaIndex, height,
+                                         rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height);
+                    }
+                }
+            }
         }
     }
 
