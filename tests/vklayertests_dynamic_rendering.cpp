@@ -1945,6 +1945,78 @@ TEST_F(VkLayerTest, TestFragmentDensityMapRenderArea) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, TestFragmentDensityMapRenderAreaWithoutDeviceGroupExt) {
+    TEST_DESCRIPTION("Validate VkRenderingFragmentDensityMapAttachmentInfo attachment image view extent.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
+        printf("%s Tests requires Vulkan 1.0, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        return;
+    }
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+        return;
+    }
+
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&dynamic_rendering_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto fdm_props = LvlInitStruct<VkPhysicalDeviceFragmentDensityMapPropertiesEXT>();
+    auto props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fdm_props);
+    vk::GetPhysicalDeviceProperties2(gpu(), &props2);
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT,
+               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT);
+    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
+
+    auto fragment_density_map = LvlInitStruct<VkRenderingFragmentDensityMapAttachmentInfoEXT>();
+    fragment_density_map.imageView = image_view;
+    fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>(&fragment_density_map);
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea.extent.width = 64 * fdm_props.maxFragmentDensityTexelSize.width;
+    begin_rendering_info.renderArea.extent.height = 32 * fdm_props.maxFragmentDensityTexelSize.height;
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06110");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    begin_rendering_info.renderArea.extent.width = 32 * fdm_props.maxFragmentDensityTexelSize.width;
+    begin_rendering_info.renderArea.extent.height = 64 * fdm_props.maxFragmentDensityTexelSize.height;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06111");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, TestBarrierWithDynamicRendering) {
     TEST_DESCRIPTION("Test setting buffer memory barrier when dynamic rendering is active.");
 
