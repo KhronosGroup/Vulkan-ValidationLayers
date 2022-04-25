@@ -1596,14 +1596,13 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRate) {
     image_ci.arrayLayers = 2;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
 
     VkImageObj image(m_device);
     image.init(&image_ci);
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2);
 
-    VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate =
-        LvlInitStruct<VkRenderingFragmentShadingRateAttachmentInfoKHR>();
+    auto fragment_shading_rate = LvlInitStruct<VkRenderingFragmentShadingRateAttachmentInfoKHR>();
     fragment_shading_rate.imageView = image_view;
     fragment_shading_rate.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     fragment_shading_rate.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
@@ -1619,6 +1618,18 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRate) {
 
     begin_rendering_info.viewMask = 0xF;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06124");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    begin_rendering_info.layerCount = 2;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.viewMask = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06125");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 

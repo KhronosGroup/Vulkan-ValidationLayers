@@ -7761,7 +7761,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
         if (UniqueImageViews(pRenderingInfo, rendering_fragment_shading_rate_attachment_info->imageView) == false) {
             skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06125",
                              "%s(): imageView or resolveImageView member of pDepthAttachment, pStencilAttachment, or any element "
-                             "of pColorAttachments must not equal VkRenderingFragmentShadingRateAttachmentInfoKHR->vimageView.",
+                             "of pColorAttachments must not equal VkRenderingFragmentShadingRateAttachmentInfoKHR->imageView.",
                              func_name);
         }
 
