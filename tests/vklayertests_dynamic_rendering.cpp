@@ -1897,11 +1897,14 @@ TEST_F(VkLayerTest, TestFragmentDensityMapRenderArea) {
     vk::GetPhysicalDeviceProperties2(gpu(), &props2);
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT,
+               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT);
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
 
     auto fragment_density_map = LvlInitStruct<VkRenderingFragmentDensityMapAttachmentInfoEXT>();
     fragment_density_map.imageView = image_view;
+    fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>(&fragment_density_map);
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea.extent.width = 64 * fdm_props.maxFragmentDensityTexelSize.width;
