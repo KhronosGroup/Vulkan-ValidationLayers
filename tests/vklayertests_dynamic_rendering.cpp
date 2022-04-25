@@ -3470,8 +3470,8 @@ TEST_F(VkLayerTest, PipelineMissingMultisampleState) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidRenderingFragmentDensityMapAttachmentLayout) {
-    TEST_DESCRIPTION("Use VkRenderingFragmentDensityMapAttachmentInfoEXT with invalid imageLayout");
+TEST_F(VkLayerTest, InvalidRenderingFragmentDensityMapAttachment) {
+    TEST_DESCRIPTION("Use invalid VkRenderingFragmentDensityMapAttachmentInfoEXT");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -3488,11 +3488,16 @@ TEST_F(VkLayerTest, InvalidRenderingFragmentDensityMapAttachmentLayout) {
         return;
     }
 
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    auto multiview_featuers = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>(&multiview_featuers);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
         printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+    if (multiview_featuers.multiview == VK_FALSE) {
+        printf("%s Test requires (unsupported) multiview , skipping\n", kSkipPrefix);
         return;
     }
 
@@ -3511,9 +3516,31 @@ TEST_F(VkLayerTest, InvalidRenderingFragmentDensityMapAttachmentLayout) {
     begin_rendering_info.layerCount = 1;
 
     m_commandBuffer->begin();
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06157");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
+
+    rendering_fragment_density.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent = {32, 32, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 2;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+    VkImageObj image2(m_device);
+    image2.Init(image_create_info);
+    VkImageView image_view2 = image2.targetView(VK_FORMAT_R8G8B8A8_UINT);
+    rendering_fragment_density.imageView = image_view2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06160");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06109");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
     m_commandBuffer->end();
 }
 
