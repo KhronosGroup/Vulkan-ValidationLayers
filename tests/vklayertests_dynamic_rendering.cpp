@@ -5385,3 +5385,224 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateAttachmentSizeWithDevic
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TestSuspendingRenderPassInstance) {
+    TEST_DESCRIPTION("Test suspending render pass instance.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_);
+    VkCommandBufferObj cmd_buffer1(m_device, &command_pool);
+    VkCommandBufferObj cmd_buffer2(m_device, &command_pool);
+    VkCommandBufferObj cmd_buffer3(m_device, &command_pool);
+
+    VkRenderingInfo suspend_rendering_info = LvlInitStruct<VkRenderingInfo>();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+
+    VkRenderingInfo resume_rendering_info = LvlInitStruct<VkRenderingInfo>();
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.layerCount = 1;
+
+    VkRenderingInfo rendering_info = LvlInitStruct<VkRenderingInfo>();
+    rendering_info.layerCount = 1;
+
+    auto cmd_begin = LvlInitStruct<VkCommandBufferBeginInfo>();
+
+    cmd_buffer1.begin(&cmd_begin);
+    cmd_buffer1.BeginRendering(suspend_rendering_info);
+    cmd_buffer1.EndRendering();
+    cmd_buffer1.end();
+
+    cmd_buffer2.begin(&cmd_begin);
+    cmd_buffer2.BeginRendering(resume_rendering_info);
+    cmd_buffer2.EndRendering();
+    cmd_buffer2.end();
+
+    cmd_buffer3.begin(&cmd_begin);
+    cmd_buffer3.BeginRendering(rendering_info);
+    cmd_buffer3.EndRendering();
+    cmd_buffer3.end();
+
+    VkCommandBuffer command_buffers[3] = {cmd_buffer1.handle(), cmd_buffer2.handle()};
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 2;
+    submit_info.pCommandBuffers = command_buffers;
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pCommandBuffers-06014");
+
+    submit_info.commandBufferCount = 1;
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pCommandBuffers-06016");
+
+    command_buffers[1] = cmd_buffer3.handle();
+    command_buffers[2] = cmd_buffer2.handle();
+    submit_info.commandBufferCount = 3;
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pCommandBuffers-06193");
+
+    command_buffers[0] = cmd_buffer2.handle();
+    submit_info.commandBufferCount = 1;
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, TestSuspendingRenderPassInstanceQueueSubmit2) {
+    TEST_DESCRIPTION("Test suspending render pass instance with QueueSubmit2.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s or %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+               VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+        return;
+    }
+
+    auto synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>(&synchronization2);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+    if (synchronization2.synchronization2 == VK_FALSE) {
+        printf("%s Test requires (unsupported) synchronization2 , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto vkQueueSubmit2KHR =
+        reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
+    ASSERT_TRUE(vkQueueSubmit2KHR != nullptr);
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_);
+    VkCommandBufferObj cmd_buffer1(m_device, &command_pool);
+    VkCommandBufferObj cmd_buffer2(m_device, &command_pool);
+    VkCommandBufferObj cmd_buffer3(m_device, &command_pool);
+
+    VkRenderingInfo suspend_rendering_info = LvlInitStruct<VkRenderingInfo>();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+
+    VkRenderingInfo resume_rendering_info = LvlInitStruct<VkRenderingInfo>();
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.layerCount = 1;
+
+    VkRenderingInfo rendering_info = LvlInitStruct<VkRenderingInfo>();
+    rendering_info.layerCount = 1;
+
+    auto cmd_begin = LvlInitStruct<VkCommandBufferBeginInfo>();
+
+    cmd_buffer1.begin(&cmd_begin);
+    cmd_buffer1.BeginRendering(suspend_rendering_info);
+    cmd_buffer1.EndRendering();
+    cmd_buffer1.end();
+
+    cmd_buffer2.begin(&cmd_begin);
+    cmd_buffer2.BeginRendering(resume_rendering_info);
+    cmd_buffer2.EndRendering();
+    cmd_buffer2.end();
+
+    cmd_buffer3.begin(&cmd_begin);
+    cmd_buffer3.BeginRendering(rendering_info);
+    cmd_buffer3.EndRendering();
+    cmd_buffer3.end();
+
+    VkCommandBufferSubmitInfo command_buffer_submit_info[3];
+    command_buffer_submit_info[0] = LvlInitStruct<VkCommandBufferSubmitInfo>();
+    command_buffer_submit_info[1] = LvlInitStruct<VkCommandBufferSubmitInfo>();
+    command_buffer_submit_info[2] = LvlInitStruct<VkCommandBufferSubmitInfo>();
+
+    command_buffer_submit_info[0].commandBuffer = cmd_buffer1.handle();
+    command_buffer_submit_info[1].commandBuffer = cmd_buffer2.handle();
+
+    VkSubmitInfo2KHR submit_info = LvlInitStruct<VkSubmitInfo2KHR>();
+    submit_info.commandBufferInfoCount = 2;
+    submit_info.pCommandBufferInfos = command_buffer_submit_info;
+    vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2KHR-commandBuffer-06010");
+
+    submit_info.commandBufferInfoCount = 1;
+    vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2KHR-commandBuffer-06012");
+
+    command_buffer_submit_info[1].commandBuffer = cmd_buffer3.handle();
+    command_buffer_submit_info[2].commandBuffer = cmd_buffer2.handle();
+    submit_info.commandBufferInfoCount = 3;
+    vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2KHR-commandBuffer-06192");
+
+    command_buffer_submit_info[0].commandBuffer = cmd_buffer2.handle();
+    submit_info.commandBufferInfoCount = 1;
+    vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    m_errorMonitor->VerifyFound();
+}
