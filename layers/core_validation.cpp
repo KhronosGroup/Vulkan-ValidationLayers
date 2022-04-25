@@ -7708,6 +7708,9 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
     bool skip = false;
     const char *func_name = CommandTypeString(cmd_type);
 
+    const auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
+    const bool non_zero_device_render_area = chained_device_group_struct && chained_device_group_struct->deviceRenderAreaCount != 0;
+
     if (!enabled_features.core13.dynamicRendering) {
         skip |= LogError(commandBuffer, "VUID-vkCmdBeginRendering-dynamicRendering-06446", "%s(): dynamicRendering is not enabled.",
                          func_name);
@@ -7727,7 +7730,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                          pRenderingInfo->viewMask, pRenderingInfo->layerCount);
     }
 
-    auto rendering_fragment_shading_rate_attachment_info =
+    const auto rendering_fragment_shading_rate_attachment_info =
         LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext);
     if (rendering_fragment_shading_rate_attachment_info &&
         (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
@@ -7852,6 +7855,37 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 func_name, rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height,
                 rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width,
                 max_frs_attach_texel_aspect_ratio);
+        }
+
+        if (!non_zero_device_render_area) {
+            if (view_state->image_state->createInfo.extent.width <
+                GetQuotientCeil(pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width,
+                                rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width)) {
+                const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06119"
+                                                                                       : "VUID-VkRenderingInfo-imageView-06117";
+                skip |= LogError(commandBuffer, vuid,
+                                 "%s(): width of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
+                                 ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRIu32
+                                 ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
+                                 ") ) / shadingRateAttachmentTexelSize.width (%" PRIu32 ").",
+                                 func_name, view_state->image_state->createInfo.extent.width, pRenderingInfo->renderArea.offset.x,
+                                 pRenderingInfo->renderArea.extent.width,
+                                 rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width);
+            }
+            if (view_state->image_state->createInfo.extent.height <
+                GetQuotientCeil(pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height,
+                                rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height)) {
+                const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06120"
+                                                                                       : "VUID-VkRenderingInfo-imageView-06118";
+                skip |= LogError(commandBuffer, vuid,
+                                 "%s(): height of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
+                                 ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRIu32
+                                 ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
+                                 ") ) / shadingRateAttachmentTexelSize.height (%" PRIu32 ").",
+                                 func_name, view_state->image_state->createInfo.extent.height, pRenderingInfo->renderArea.offset.y,
+                                 pRenderingInfo->renderArea.extent.height,
+                                 rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height);
+            }
         }
     }
 
@@ -8011,8 +8045,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                          pRenderingInfo->viewMask);
     }
 
-    auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
-    if (!chained_device_group_struct || (chained_device_group_struct && chained_device_group_struct->deviceRenderAreaCount == 0)) {
+    if (!non_zero_device_render_area) {
         if (IsExtEnabled(device_extensions.vk_khr_device_group)) {
             if (pRenderingInfo->renderArea.offset.x < 0) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06077",
