@@ -7736,7 +7736,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             if (view_state->create_info.subresourceRange.layerCount != 1 &&
                 view_state->create_info.subresourceRange.layerCount < pRenderingInfo->layerCount) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06123",
-                                 "%s(): imageView must have a layerCount (%" PRIu32 ") that is either equal to 1 or greater than or equal to "
+                                 "%s(): imageView must have a layerCount (%" PRIu32
+                                 ") that is either equal to 1 or greater than or equal to "
                                  "VkRenderingInfo::layerCount (%" PRIu32 ").",
                                  func_name, view_state->create_info.subresourceRange.layerCount, pRenderingInfo->layerCount);
             }
@@ -7745,7 +7746,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             int32_t layer_count = view_state->normalized_subresource_range.layerCount;
             if (layer_count != 1 && layer_count < highest_view_bit) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06124",
-                                 "%s(): imageView must have a layerCount (%" PRIi32 ") that either is equal to 1 or greater than "
+                                 "%s(): imageView must have a layerCount (%" PRIi32
+                                 ") that either is equal to 1 or greater than "
                                  " or equal to the index of the most significant bit in viewMask (%d)",
                                  func_name, layer_count, highest_view_bit);
             }
@@ -8042,7 +8044,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
             }
             if (image_state->createInfo.extent.height <
-                GetQuotientCeil(pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)) {
+                GetQuotientCeil(pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height,
+                                phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)) {
                 skip |= LogError(
                     commandBuffer, "VUID-VkRenderingInfo-pNext-06114",
                     "%s(): height of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
@@ -8422,10 +8425,10 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
         }
     }
 
-    if (MostSignificantBit(pRenderingInfo->viewMask) >=
-        static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
+    if (MostSignificantBit(pRenderingInfo->viewMask) >= static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-viewMask-06128",
-                         "vkBeginCommandBuffer(): Most significant bit pRenderingInfo->viewMask(%" PRIu32 ") "
+                         "vkBeginCommandBuffer(): Most significant bit pRenderingInfo->viewMask(%" PRIu32
+                         ") "
                          "must be less maxMultiviewViewCount (%" PRIu32 ")",
                          pRenderingInfo->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
     }
