@@ -8033,8 +8033,10 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             if (image_state->createInfo.extent.width <
                 GetQuotientCeil(pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width,
                                 phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)) {
+                const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06112"
+                                                                                       : "VUID-VkRenderingInfo-imageView-06110";
                 skip |= LogError(
-                    commandBuffer, "VUID-VkRenderingInfo-pNext-06112",
+                    commandBuffer, vuid,
                     "%s(): width of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
                     ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRIu32
                     ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
@@ -8046,8 +8048,10 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             if (image_state->createInfo.extent.height <
                 GetQuotientCeil(pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height,
                                 phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)) {
+                const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06114"
+                                                                                       : "VUID-VkRenderingInfo-imageView-06111";
                 skip |= LogError(
-                    commandBuffer, "VUID-VkRenderingInfo-pNext-06114",
+                    commandBuffer, vuid,
                     "%s(): height of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
                     ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRIu32
                     ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
