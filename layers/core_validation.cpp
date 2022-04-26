@@ -4155,8 +4155,8 @@ struct SemaphoreSubmitState {
                     skip |= core->LogError(objlist, vuid,
                                            "%s signal value (0x%" PRIx64
                                            ") in %s must be greater than current timeline semaphore %s value (0x%" PRIx64 ")",
-                                           loc.Message().c_str(), completed.payload, core->report_data->FormatHandle(queue).c_str(),
-                                           core->report_data->FormatHandle(semaphore).c_str(), value);
+                                           loc.Message().c_str(), value, core->report_data->FormatHandle(queue).c_str(),
+                                           core->report_data->FormatHandle(semaphore).c_str(), completed.payload);
                 } else {
                     skip |= core->ValidateMaxTimelineSemaphoreValueDifference(loc, *semaphore_state, value);
                 }
