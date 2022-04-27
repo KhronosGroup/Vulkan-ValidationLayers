@@ -2225,7 +2225,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 std::bitset<num_bits> view_bits(subpass_desc->viewMask);
                 uint32_t view_bits_count = static_cast<uint32_t>(view_bits.count());
                 if (view_bits_count > 1) {
-                    if (!enabled_features.multiview_features.multiviewTessellationShader &&
+                    if (!enabled_features.core11.multiviewTessellationShader &&
                         (pipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
                          pipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06047",
@@ -2234,7 +2234,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                          "VkPhysicalDeviceMultiviewFeatures::multiviewTessellationShader features is not enabled.",
                                          pipe_index, view_bits_count);
                     }
-                    if (!enabled_features.multiview_features.multiviewGeometryShader &&
+                    if (!enabled_features.core11.multiviewGeometryShader &&
                         pipeline->active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) {
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06048",
                                          "Invalid Pipeline CreateInfo[%" PRIu32 "] State: subpass has %" PRIu32
@@ -2891,7 +2891,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                              pipe_index, rendering_struct->colorAttachmentCount);
         }
 
-        if ((rendering_struct->viewMask != 0) && !enabled_features.multiview_features.multiviewTessellationShader &&
+        if ((rendering_struct->viewMask != 0) && !enabled_features.core11.multiviewTessellationShader &&
             (pipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
              pipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
             skip |=
@@ -2902,7 +2902,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index, rendering_struct->viewMask);
         }
 
-        if ((rendering_struct->viewMask != 0) && !enabled_features.multiview_features.multiviewGeometryShader &&
+        if ((rendering_struct->viewMask != 0) && !enabled_features.core11.multiviewGeometryShader &&
             (pipeline->active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT)) {
             skip |=
                 LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06058",
@@ -12970,7 +12970,7 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         if (subpass.viewMask != 0) {
             view_mask_non_zero = true;
-            if (!enabled_features.multiview_features.multiview) {
+            if (!enabled_features.core11.multiview) {
                 skip |= LogError(device, "VUID-VkSubpassDescription2-multiview-06558",
                                  "%s: pCreateInfo->pSubpasses[%" PRIu32 "].viewMask is %" PRIu32
                                  ", but multiview feature is not enabled.",
