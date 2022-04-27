@@ -996,3 +996,56 @@ TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
     vk::DestroySampler(m_device->device(), sampler, nullptr);
 }
+
+TEST_F(VkPositiveLayerTest, CreateRenderPassWithViewMask) {
+    TEST_DESCRIPTION("Create render pass with view mask, with multiview feature enabled in Vulkan11Features.");
+
+    m_errorMonitor->ExpectSuccess();
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s required extensions are not supported, skipping tests.\n", kSkipPrefix);
+        return;
+    }
+
+    auto vulkan_11_features = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vulkan_11_features);
+
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (vulkan_11_features.multiview == VK_FALSE) {
+        printf("%s multiview feature not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto vkCreateRenderPass2KHR =
+        reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR"));
+
+    auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription2 subpass = LvlInitStruct<VkSubpassDescription2>();
+    subpass.viewMask = 0x1;
+
+    auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass;
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attach_desc;
+
+    VkRenderPass render_pass;
+    vkCreateRenderPass2KHR(device(), &render_pass_ci, nullptr, &render_pass);
+    m_errorMonitor->VerifyNotFound();
+}
